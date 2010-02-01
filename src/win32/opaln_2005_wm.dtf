@@ -4758,6 +4758,7 @@ EXPORTS
     ??0OpalCall@@QAA@AAVOpalManager@@@Z @4339 NONAME
     ??0OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@QAA@XZ @38629 NONAME
     ??0OpalConnection@@QAA@AAVOpalCall@@AAVOpalEndPoint@@ABVPString@@IPAVStringOptions@0@@Z @4340 NONAME
+    ??0OpalContext@@QAA@XZ @45157 NONAME
     ??0OpalEchoCanceler@@QAA@XZ @4341 NONAME
     ??0OpalEndPoint@@QAA@AAVOpalManager@@ABVPCaselessString@@I@Z @4342 NONAME
     ??0OpalFaxConnection@@QAA@AAVOpalCall@@AAVOpalFaxEndPoint@@ABVPString@@_N3PAVStringOptions@OpalConnection@@@Z @41327 NONAME
@@ -4857,6 +4858,7 @@ EXPORTS
     ??0OpalMediaType@@QAA@XZ @35503 NONAME
     ??0OpalMediaTypeDefinition@@QAA@PBD0IW4AutoStartMode@OpalMediaType@@@Z @38647 NONAME
     ??0OpalMessageBuffer@@QAA@W4OpalMessageType@@@Z @4409 NONAME
+    ??0OpalMessagePtr@@QAA@W4OpalMessageType@@@Z @45158 NONAME
     ??0OpalMixerConnection@@QAA@V?$PSafePtr@VOpalMixerNode@@VPSafePtrBase@@@@AAVOpalCall@@AAVOpalMixerEndPoint@@PAXIPAVStringOptions@OpalConnection@@@Z @41338 NONAME
     ??0OpalMixerEndPoint@@QAA@AAVOpalManager@@PBD@Z @41339 NONAME
     ??0OpalMixerMediaStream@@QAA@AAVOpalConnection@@ABVOpalMediaFormat@@I_NV?$PSafePtr@VOpalMixerNode@@VPSafePtrBase@@@@2@Z @41340 NONAME
@@ -4980,6 +4982,8 @@ EXPORTS
     ??0Params@OpalEchoCanceler@@QAA@W4Mode@1@@Z @4498 NONAME
     ??0Params@OpalSilenceDetector@@QAA@W4Mode@1@IIII@Z @4499 NONAME
     ??0Params@RTP_Session@@QAA@XZ @38673 NONAME
+    ??0Params@SIPMessage@@QAA@ABU01@@Z @45159 NONAME
+    ??0Params@SIPMessage@@QAA@XZ @45160 NONAME
     ??0Params@SIPRegister@@QAA@ABU01@@Z @4500 NONAME
     ??0Params@SIPRegister@@QAA@XZ @4501 NONAME
     ??0Params@SIPSubscribe@@QAA@ABU01@@Z @35519 NONAME
@@ -5077,8 +5081,8 @@ EXPORTS
     ??0SIPHandlersList@@QAA@XZ @4565 NONAME
     ??0SIPInvite@@QAA@AAVSIPConnection@@ABVOpalRTPSessionManager@@@Z @41388 NONAME
     ??0SIPLocal_Presentity@@QAA@XZ @41389 NONAME
-    ??0SIPMessage@@QAA@AAVSIPEndPoint@@AAVOpalTransport@@ABVSIPURL@@2ABVPString@@3AAV3@@Z @41390 NONAME
-    ??0SIPMessageHandler@@QAA@AAVSIPEndPoint@@ABVPString@@111@Z @38699 NONAME
+    ??0SIPMessage@@QAA@AAVSIPEndPoint@@AAVOpalTransport@@ABUParams@0@ABVPString@@@Z @45161 NONAME
+    ??0SIPMessageHandler@@QAA@AAVSIPEndPoint@@ABUParams@SIPMessage@@ABVPString@@@Z @45162 NONAME
     ??0SIPMIMEInfo@@QAA@ABV0@@Z @4570 NONAME
     ??0SIPMIMEInfo@@QAA@_N@Z @4571 NONAME
     ??0SIPMwiEventPackageHandler@@QAA@XZ @38700 NONAME
@@ -7238,6 +7242,7 @@ EXPORTS
     ??1OpalCall@@UAA@XZ @6644 NONAME
     ??1OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@UAA@XZ @38802 NONAME
     ??1OpalConnection@@UAA@XZ @6645 NONAME
+    ??1OpalContext@@UAA@XZ @45163 NONAME
     ??1OpalEchoCanceler@@UAA@XZ @6646 NONAME
     ??1OpalEndPoint@@UAA@XZ @6647 NONAME
     ??1OpalFaxConnection@@UAA@XZ @6651 NONAME
@@ -7309,6 +7314,7 @@ EXPORTS
     ??1OpalMediaType@@UAA@XZ @35709 NONAME
     ??1OpalMediaTypeDefinition@@UAA@XZ @35710 NONAME
     ??1OpalMessageBuffer@@QAA@XZ @6693 NONAME
+    ??1OpalMessagePtr@@QAA@XZ @45164 NONAME
     ??1OpalMixerConnection@@UAA@XZ @41625 NONAME
     ??1OpalMixerEndPoint@@UAA@XZ @41626 NONAME
     ??1OpalMixerMediaStream@@UAA@XZ @41627 NONAME
@@ -7404,6 +7410,7 @@ EXPORTS
     ??1OpenFaxStreams_PNotifier@OpalFaxConnection@@UAA@XZ @41645 NONAME
     ??1Options@OpalRecordManager@@QAA@XZ @41646 NONAME
     ??1Params@RTP_Session@@QAA@XZ @38826 NONAME
+    ??1Params@SIPMessage@@QAA@XZ @45165 NONAME
     ??1Params@SIPRegister@@QAA@XZ @6761 NONAME
     ??1Params@SIPSubscribe@@QAA@XZ @35717 NONAME
     ??1Participant@SIPDialogNotification@@QAA@XZ @38827 NONAME
@@ -12163,6 +12170,7 @@ EXPORTS
     ??_7OpalCall@@6B@ @11477 NONAME
     ??_7OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@6B@ @39025 NONAME
     ??_7OpalConnection@@6B@ @11478 NONAME
+    ??_7OpalContext@@6B@ @45166 NONAME
     ??_7OpalEchoCanceler@@6B@ @11479 NONAME
     ??_7OpalEndPoint@@6B@ @11480 NONAME
     ??_7OpalFaxConnection@@6B@ @11483 NONAME
@@ -14379,6 +14387,7 @@ EXPORTS
     ??_R0?AVOpalBaseMixer@@@8 @42335 NONAME
     ??_R0?AVOpalCall@@@8 @13620 NONAME
     ??_R0?AVOpalConnection@@@8 @13621 NONAME
+    ??_R0?AVOpalContext@@@8 @45167 NONAME
     ??_R0?AVOpalEchoCanceler@@@8 @13622 NONAME
     ??_R0?AVOpalEndPoint@@@8 @13623 NONAME
     ??_R0?AVOpalFaxConnection@@@8 @13626 NONAME
@@ -16559,6 +16568,7 @@ EXPORTS
     ??_R1A@?0A@EA@OpalCall@@8 @15740 NONAME
     ??_R1A@?0A@EA@OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@8 @39209 NONAME
     ??_R1A@?0A@EA@OpalConnection@@8 @15741 NONAME
+    ??_R1A@?0A@EA@OpalContext@@8 @45168 NONAME
     ??_R1A@?0A@EA@OpalEchoCanceler@@8 @15742 NONAME
     ??_R1A@?0A@EA@OpalEndPoint@@8 @15743 NONAME
     ??_R1A@?0A@EA@OpalFaxConnection@@8 @15746 NONAME
@@ -18769,6 +18779,7 @@ EXPORTS
     ??_R2OpalCall@@8 @17875 NONAME
     ??_R2OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@8 @39304 NONAME
     ??_R2OpalConnection@@8 @17876 NONAME
+    ??_R2OpalContext@@8 @45169 NONAME
     ??_R2OpalEchoCanceler@@8 @17877 NONAME
     ??_R2OpalEndPoint@@8 @17878 NONAME
     ??_R2OpalFaxConnection@@8 @17881 NONAME
@@ -20949,6 +20960,7 @@ EXPORTS
     ??_R3OpalCall@@8 @19995 NONAME
     ??_R3OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@8 @39396 NONAME
     ??_R3OpalConnection@@8 @19996 NONAME
+    ??_R3OpalContext@@8 @45170 NONAME
     ??_R3OpalEchoCanceler@@8 @19997 NONAME
     ??_R3OpalEndPoint@@8 @19998 NONAME
     ??_R3OpalFaxConnection@@8 @20001 NONAME
@@ -23153,6 +23165,7 @@ EXPORTS
     ??_R4OpalCall@@6B@ @22126 NONAME
     ??_R4OpalCiscoNSEMediaFormat@?1??GetOpalCiscoNSE@@YAABVOpalMediaFormat@@XZ@6B@ @39496 NONAME
     ??_R4OpalConnection@@6B@ @22127 NONAME
+    ??_R4OpalContext@@6B@ @45171 NONAME
     ??_R4OpalEchoCanceler@@6B@ @22128 NONAME
     ??_R4OpalEndPoint@@6B@ @22129 NONAME
     ??_R4OpalFaxConnection@@6B@ @22132 NONAME
@@ -23667,6 +23680,7 @@ EXPORTS
     ?AllowDuplicateAlias@H323GatekeeperServer@@UAA_NABVH225_ArrayOf_AliasAddress@@@Z @22495 NONAME
     ?AllSessionsFailing@OpalRTPSessionManager@@UAA_NXZ @39553 NONAME
     ?AlterTimeStamp@IAX2MiniFrame@@QAAXH@Z @22496 NONAME
+    ?AnswerCall@OpalContext@@QAA_NPBD@Z @45172 NONAME
     ?AnsweringCall@H323Connection@@UAAXW4AnswerCallResponse@OpalConnection@@@Z @22499 NONAME
     ?AnsweringCall@IAX2Connection@@UAAXW4AnswerCallResponse@OpalConnection@@@Z @22500 NONAME
     ?AnsweringCall@OpalConnection@@UAAXW4AnswerCallResponse@1@@Z @22501 NONAME
@@ -24658,6 +24672,7 @@ EXPORTS
     ?ClearAllCalls@OpalManager@@UAAXUCallEndReason@OpalConnection@@_N@Z @43272 NONAME
     ?ClearCall@IAX2CallProcessor@@QAAXUCallEndReason@OpalConnection@@@Z @43273 NONAME
     ?ClearCall@OpalConnection@@QAAXUCallEndReason@1@@Z @43274 NONAME
+    ?ClearCall@OpalContext@@QAA_NPBDW4OpalCallEndReason@@@Z @45173 NONAME
     ?ClearCall@OpalEndPoint@@UAA_NABVPString@@UCallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @43275 NONAME
     ?ClearCall@OpalManager@@UAA_NABVPString@@UCallEndReason@OpalConnection@@PAVPSyncPoint@@@Z @43276 NONAME
     ?ClearCallSynchronous@OpalConnection@@UAAXPAVPSyncPoint@@UCallEndReason@1@@Z @43277 NONAME
@@ -30016,6 +30031,7 @@ EXPORTS
     ?erase@?$_Tree@V?$_Tmap_traits@VPString@@V?$PSafePtr@VSIPHandler@@VPSafePtrBase@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@V?$PSafePtr@VSIPHandler@@VPSafePtrBase@@@@@std@@@4@$0A@@std@@@std@@QAA?AViterator@12@V312@@Z @43651 NONAME
     ?erase@?$_Tree@V?$_Tmap_traits@W4Methods@SIP_PDU@@IU?$less@W4Methods@SIP_PDU@@@std@@V?$allocator@U?$pair@$$CBW4Methods@SIP_PDU@@I@std@@@4@$0A@@std@@@std@@QAA?AViterator@12@V312@0@Z @37203 NONAME
     ?erase@?$_Tree@V?$_Tmap_traits@W4Methods@SIP_PDU@@IU?$less@W4Methods@SIP_PDU@@@std@@V?$allocator@U?$pair@$$CBW4Methods@SIP_PDU@@I@std@@@4@$0A@@std@@@std@@QAA?AViterator@12@V312@@Z @37204 NONAME
+    ?ExceptionClear@JNIEnv_@@QAAXXZ @45174 NONAME
     ?ExecuteCommand@OpalFaxTranscoder@@UAA_NABVOpalMediaCommand@@@Z @43652 NONAME
     ?ExecuteCommand@OpalMediaPatch@@UAA_NABVOpalMediaCommand@@_N@Z @28860 NONAME
     ?ExecuteCommand@OpalMediaStream@@UAA_NABVOpalMediaCommand@@@Z @28861 NONAME
@@ -30086,6 +30102,7 @@ EXPORTS
     ?FindChannel@H245NegLogicalChannels@@QAAPAVH323Channel@@I_N@Z @28901 NONAME
     ?FindChannel@H323Connection@@QBAPAVH323Channel@@I_N@Z @28902 NONAME
     ?FindChannelBySession@H245NegLogicalChannels@@QAAPAVH323Channel@@I_N@Z @28903 NONAME
+    ?FindClass@JNIEnv_@@QAAPAV_jclass@@PBD@Z @45175 NONAME
     ?FindConnectionWithLock@H323EndPoint@@QAA?AV?$PSafePtr@VH323Connection@@VPSafePtrBase@@@@ABVPString@@W4PSafetyMode@@@Z @43680 NONAME
     ?FindDestinationEndPoint@H323GatekeeperServer@@QAA?AV?$PSafePtr@VH323RegisteredEndPoint@@VPSafePtrBase@@@@ABVPGloballyUniqueID@@W4Direction@H323GatekeeperCall@@@Z @43681 NONAME
     ?FindEndPoint@OpalManager@@QAAPAVOpalEndPoint@@ABVPString@@@Z @28906 NONAME
@@ -30221,6 +30238,7 @@ EXPORTS
     ?GetAndLockVXMLChannel@PVXMLSession@@QAAPAVPVXMLChannel@@XZ @43733 NONAME
     ?GetAnnexQEncodedSize@Q922_Frame@@QBAHXZ @39810 NONAME
     ?GetApplicationInfo@H323RegisteredEndPoint@@QBA?AVPCaselessString@@XZ @29001 NONAME
+    ?GetArrayLength@JNIEnv_@@QAAJPAV_jarray@@@Z @45176 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBAPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @29002 NONAME
     ?GetAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBAPAVH460_Feature@@ABVH460_FeatureID@@@Z @29003 NONAME
     ?GetAt@?$PDictionary@VOpalMediaFormat@@VOpalTranscoder@@@@UBAPAVOpalTranscoder@@ABVOpalMediaFormat@@@Z @43734 NONAME
@@ -30301,6 +30319,7 @@ EXPORTS
     ?GetC1@H224_Frame@@QBA_NXZ @29054 NONAME
     ?GetCall@H323RegisteredEndPoint@@QAAAAVH323GatekeeperCall@@H@Z @29055 NONAME
     ?GetCall@OpalConnection@@QBAAAVOpalCall@@XZ @29056 NONAME
+    ?GetCallCleared@OpalMessagePtr@@QBAPAUOpalStatusCallCleared@@XZ @45177 NONAME
     ?GetCallCount@H323RegisteredEndPoint@@QBAHXZ @29057 NONAME
     ?GetCallCreditAmount@H323GatekeeperCall@@UBA?AVPString@@XZ @29058 NONAME
     ?GetCallCreditAmount@H323RegisteredEndPoint@@UBA?AVPString@@XZ @29059 NONAME
@@ -30332,11 +30351,13 @@ EXPORTS
     ?GetCallReference@H323Connection@@QBAIXZ @29081 NONAME
     ?GetCallReference@H323GatekeeperCall@@QBAIXZ @29082 NONAME
     ?GetCallReference@Q931@@QBAIXZ @29083 NONAME
+    ?GetCallSetUp@OpalMessagePtr@@QBAPAUOpalParamSetUpCall@@XZ @45178 NONAME
     ?GetCallStartTick@IAX2Processor@@QAAABVPTimeInterval@@XZ @29084 NONAME
     ?GetCallState@Q931@@QBA?AW4CallStates@1@PAI@Z @29085 NONAME
     ?GetCallToken@H323Connection@@QBAABVPString@@XZ @29086 NONAME
     ?GetCallToken@IAX2Connection@@QAA?AVPString@@XZ @29087 NONAME
     ?GetCallToken@IAX2Processor@@QAA?AVPString@@XZ @29088 NONAME
+    ?GetCallToken@OpalMessagePtr@@QBAPBDXZ @45179 NONAME
     ?GetCallTransferInvokeId@H323Connection@@QAAHXZ @29089 NONAME
     ?GetCallTransferT1@H323EndPoint@@QBAABVPTimeInterval@@XZ @29090 NONAME
     ?GetCallTransferT2@H323EndPoint@@QBAABVPTimeInterval@@XZ @29091 NONAME
@@ -30836,6 +30857,7 @@ EXPORTS
     ?GetClass@StringMap@H323GatekeeperServer@@UBAPBDI@Z @29553 NONAME
     ?GetClass@Thread@OpalMediaPatch@@UBAPBDI@Z @29557 NONAME
     ?GetClass@X224@@UBAPBDI@Z @29558 NONAME
+    ?GetClearCall@OpalMessagePtr@@QBAPAUOpalParamCallCleared@@XZ @45180 NONAME
     ?GetClientDataPtr@H224_Frame@@QBAPAEXZ @29559 NONAME
     ?GetClientDataSize@H224_Frame@@QBAHXZ @39838 NONAME
     ?GetClientID@H224_Frame@@QBAEXZ @29561 NONAME
@@ -30849,6 +30871,7 @@ EXPORTS
     ?GetColsPerPgroup@Opal_RFC4175YCbCr420_to_YUV420P@@UBAHXZ @29568 NONAME
     ?GetColsPerPgroup@Opal_RGB24_to_RFC4175RGB@@UBAHXZ @29569 NONAME
     ?GetColsPerPgroup@Opal_YUV420P_to_RFC4175YCbCr420@@UBAHXZ @29570 NONAME
+    ?GetCommandError@OpalMessagePtr@@QBAPBDXZ @45181 NONAME
     ?GetCommonMediaFormats@OpalManager@@UBA?AVOpalMediaFormatList@@_N0@Z @43814 NONAME
     ?GetCompoundSize@RTP_ControlFrame@@QBAHXZ @29571 NONAME
     ?GetConferenceIdentifier@H323Connection@@QBAABVPGloballyUniqueID@@XZ @29572 NONAME
@@ -31789,6 +31812,7 @@ EXPORTS
     ?GetGatekeeperRequestTimeout@H323EndPoint@@QBAABVPTimeInterval@@XZ @39883 NONAME
     ?GetGatekeeperTimeToLive@H323EndPoint@@QBAABVPTimeInterval@@XZ @30570 NONAME
     ?GetGatekeeperUsername@H323EndPoint@@UBAABVPString@@XZ @30571 NONAME
+    ?GetGeneralParams@OpalMessagePtr@@QBAPAUOpalParamGeneral@@XZ @45182 NONAME
     ?GetGkAccessTokenOID@H323Connection@@QBA?BVPString@@XZ @30572 NONAME
     ?GetGkAccessTokenOID@H323EndPoint@@QBAABVPString@@XZ @30573 NONAME
     ?GetGUID@OpalMixerNode@@QBAABVPGloballyUniqueID@@XZ @43847 NONAME
@@ -31816,6 +31840,7 @@ EXPORTS
     ?GetIE@Q931@@QBA?AVPBYTEArray@@W4InformationElementCodes@1@H@Z @30587 NONAME
     ?GetIeAt@IAX2FullFrameProtocol@@QAAPAVIAX2Ie@@H@Z @30588 NONAME
     ?GetIeAt@IAX2IeList@@QBAPAVIAX2Ie@@H@Z @30589 NONAME
+    ?GetIncomingCall@OpalMessagePtr@@QBAPAUOpalStatusIncomingCall@@XZ @45183 NONAME
     ?GetInfo@OpalPluginMediaFormat@@QBAPAVOpalPluginMediaFormatInternal@@XZ @30590 NONAME
     ?GetInfoResponseRate@H323GatekeeperServer@@QBAIXZ @30591 NONAME
     ?GetInformationFieldPtr@Q922_Frame@@QBAPAEXZ @30592 NONAME
@@ -31949,6 +31974,7 @@ EXPORTS
     ?GetLIDConnectionWithLock@OpalLineEndPoint@@QAA?AV?$PSafePtr@VOpalLineConnection@@VPSafePtrBase@@@@ABVPString@@W4PSafetyMode@@@Z @43859 NONAME
     ?GetLine@OpalLineEndPoint@@QAAPAVOpalLine@@ABVPString@@_N1@Z @37322 NONAME
     ?GetLine@OpalLineMediaStream@@QAAAAVOpalLine@@XZ @30710 NONAME
+    ?GetLineAppearance@OpalMessagePtr@@QBAPAUOpalStatusLineAppearance@@XZ @45184 NONAME
     ?GetLineCount@OpalPluginLID@@UBAIXZ @30711 NONAME
     ?GetLineNumber@OpalLine@@QBAIXZ @30712 NONAME
     ?GetList@OpalMediaType@@SA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ @39896 NONAME
@@ -31985,6 +32011,7 @@ EXPORTS
     ?GetLocalVideoSource@OpalH281Handler@@QAAAAVH281VideoSource@@W4VideoSource@1@@Z @30734 NONAME
     ?GetLogicalChannel@H323Connection@@QBAPAVH323Channel@@I_N@Z @30735 NONAME
     ?GetLogicalChannelTimeout@H323EndPoint@@QBAABVPTimeInterval@@XZ @30736 NONAME
+    ?GetLongArrayElements@JNIEnv_@@QAAPA_JPAV_jlongArray@@PAE@Z @45185 NONAME
     ?GetLostPackets@ReceiverReport@RTP_ControlFrame@@QBAIXZ @30737 NONAME
     ?GetLowOrderAddressOctet@Q922_Frame@@QBAEXZ @30738 NONAME
     ?GetMainType@H323AudioCapability@@UBA?AW4MainTypes@H323Capability@@XZ @30739 NONAME
@@ -31992,6 +32019,7 @@ EXPORTS
     ?GetMainType@H323GenericControlCapability@@UBA?AW4MainTypes@H323Capability@@XZ @43869 NONAME
     ?GetMainType@H323VideoCapability@@UBA?AW4MainTypes@H323Capability@@XZ @30741 NONAME
     ?GetMainType@H323_UserInputCapability@@UBA?AW4MainTypes@H323Capability@@XZ @30742 NONAME
+    ?GetManager@OpalCall@@QBAAAVOpalManager@@XZ @45186 NONAME
     ?GetManager@OpalEndPoint@@QBAAAVOpalManager@@XZ @30744 NONAME
     ?GetManager@OpalMSRPMediaSession@@QAAAAVOpalMSRPManager@@XZ @43870 NONAME
     ?GetManufacturerClientID@H224_Frame@@QBAEXZ @39902 NONAME
@@ -32057,6 +32085,7 @@ EXPORTS
     ?GetMediaStream@OpalConnection@@QBA?AV?$PSafePtr@VOpalMediaStream@@VPSafePtrBase@@@@ABVOpalMediaType@@_NV2@@Z @43882 NONAME
     ?GetMediaStream@OpalConnection@@QBA?AV?$PSafePtr@VOpalMediaStream@@VPSafePtrBase@@@@ABVPString@@_N@Z @43883 NONAME
     ?GetMediaStream@OpalConnection@@QBA?AV?$PSafePtr@VOpalMediaStream@@VPSafePtrBase@@@@I_N@Z @43884 NONAME
+    ?GetMediaStream@OpalMessagePtr@@QBAPAUOpalStatusMediaStream@@XZ @45187 NONAME
     ?GetMediaTransportAddress@H323Channel@@UBA_NAAVOpalTransportAddress@@0@Z @30792 NONAME
     ?GetMediaTransportAddress@H323_ExternalRTPChannel@@UBA_NAAVOpalTransportAddress@@0@Z @30793 NONAME
     ?GetMediaTransportAddresses@OpalConnection@@QAAAAV?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@XZ @30794 NONAME
@@ -32064,9 +32093,11 @@ EXPORTS
     ?GetMediaType@SDPMediaDescription@@UBA?AVOpalMediaType@@XZ @37341 NONAME
     ?GetMediaTypeFromSDP@OpalMediaType@@SA?AV1@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@0@Z @39910 NONAME
     ?GetMerge@OpalMediaOption@@QBA?AW4MergeType@1@XZ @30796 NONAME
+    ?GetMessage@OpalContext@@QAA_NAAVOpalMessagePtr@@I@Z @45188 NONAME
+    ?GetMessage@OpalManager_C@@QAAPAUOpalMessage@@I@Z @45189 NONAME
     ?GetMessageType@Q931@@QBA?AW4MsgTypes@1@XZ @30797 NONAME
     ?GetMessageTypeName@Q931@@QBA?AVPString@@XZ @30798 NONAME
-    ?GetMessageW@OpalManager_C@@QAAPAUOpalMessage@@I@Z @30799 NONAME
+    ?GetMessageWaiting@OpalMessagePtr@@QBAPAUOpalStatusMessageWaiting@@XZ @45190 NONAME
     ?GetMethod@SIPAuthenticator@@UAA?AVPString@@XZ @43885 NONAME
     ?GetMethod@SIPMessageHandler@@UAA?AW4Methods@SIP_PDU@@XZ @30800 NONAME
     ?GetMethod@SIPNotifyHandler@@UAA?AW4Methods@SIP_PDU@@XZ @39911 NONAME
@@ -32277,6 +32308,7 @@ EXPORTS
     ?GetProgressIndicator@Q931@@QBA_NAAIPAI1@Z @30955 NONAME
     ?GetProto@OpalTransportAddress@@QBA?AVPCaselessString@@XZ @39928 NONAME
     ?GetProtocolList@H323PeerElementDescriptor@@SAIABVH501_ArrayOf_SupportedProtocols@@@Z @30956 NONAME
+    ?GetProtocolParams@OpalMessagePtr@@QBAPAUOpalParamProtocol@@XZ @45191 NONAME
     ?GetProtocolVersion@H323RegisteredEndPoint@@QBAIXZ @30957 NONAME
     ?GetProtoPrefix@OpalListenerTCP@@MBAPBDXZ @30958 NONAME
     ?GetProtoPrefix@OpalListenerUDP@@MBAPBDXZ @30959 NONAME
@@ -32308,6 +32340,7 @@ EXPORTS
     ?GetReceiveHandler@OpalEchoCanceler@@QBAABV?$PNotifierTemplate@H@@XZ @43918 NONAME
     ?GetReceiveHandler@OpalRFC2833Proto@@QBAABV?$PNotifierTemplate@H@@XZ @43919 NONAME
     ?GetReceiveHandler@OpalSilenceDetector@@QBAABV?$PNotifierTemplate@H@@XZ @43920 NONAME
+    ?GetRecording@OpalMessagePtr@@QBAPAUOpalParamRecording@@XZ @45192 NONAME
     ?GetRecordRoute@SIPMIMEInfo@@QBA?AVPStringList@@_N@Z @39931 NONAME
     ?GetRecordVolume@OpalLine@@UAA_NAAI@Z @30986 NONAME
     ?GetRecordVolume@OpalLineInterfaceDevice@@UAA_NIAAI@Z @30987 NONAME
@@ -32327,7 +32360,9 @@ EXPORTS
     ?GetRegisteredPartyName@SIPEndPoint@@UAA?AVSIPURL@@ABV2@ABVOpalTransport@@@Z @39932 NONAME
     ?GetRegisteredProxy@SIPEndPoint@@UAA?AVSIPURL@@ABV2@@Z @43921 NONAME
     ?GetRegistrarTimeToLive@SIPEndPoint@@QBAABVPTimeInterval@@XZ @31002 NONAME
+    ?GetRegistrationInfo@OpalMessagePtr@@QBAPAUOpalParamRegistration@@XZ @45193 NONAME
     ?GetRegistrationsCount@IAX2EndPoint@@QAAHXZ @31003 NONAME
+    ?GetRegistrationStatus@OpalMessagePtr@@QBAPAUOpalStatusRegistration@@XZ @45194 NONAME
     ?GetRemoteAddress@H323_ExternalRTPChannel@@QBA_NAAVAddress@PIPSocket@@AAG@Z @31005 NONAME
     ?GetRemoteAddress@OpalTransportIP@@UBA?AVOpalTransportAddress@@XZ @31006 NONAME
     ?GetRemoteAddress@RTP_UDP@@QBA?AVAddress@PIPSocket@@XZ @31007 NONAME
@@ -32453,6 +32488,7 @@ EXPORTS
     ?GetSessionID@RTP_Session@@QBAIXZ @31099 NONAME
     ?GetSessionManager@SIPInvite@@QAAAAVOpalRTPSessionManager@@XZ @43932 NONAME
     ?GetSessionVars@PVXMLSession@@QAAAAVPStringToString@@XZ @43933 NONAME
+    ?GetSetUserData@OpalMessagePtr@@QBAPAUOpalParamSetUserData@@XZ @45195 NONAME
     ?GetSignalAddress@H323RegisteredEndPoint@@QBA?AVH323TransportAddress@@H@Z @31102 NONAME
     ?GetSignalAddressCount@H323RegisteredEndPoint@@QBAHXZ @31103 NONAME
     ?GetSignalAddresses@H323RegisteredEndPoint@@QBAABVH323TransportAddressArray@@XZ @31104 NONAME
@@ -32501,6 +32537,7 @@ EXPORTS
     ?GetStatusCode@SIP_PDU@@QBA?AW4StatusCodes@1@XZ @31135 NONAME
     ?GetStatusCodeDescription@SIP_PDU@@SAPBDH@Z @31136 NONAME
     ?GetStringOptions@OpalConnection@@QBAABVStringOptions@1@XZ @39951 NONAME
+    ?GetStringUTFChars@JNIEnv_@@QAAPBDPAV_jstring@@PAE@Z @45196 NONAME
     ?GetSTUNClient@OpalManager@@QBAPAVPSTUNClient@@XZ @37412 NONAME
     ?GetSTUNServer@OpalManager@@QBAABVPString@@XZ @31140 NONAME
     ?GetSubClass@IAX2FullFrame@@QBAHXZ @31141 NONAME
@@ -32594,6 +32631,7 @@ EXPORTS
     ?GetTxCapability@OpalRFC2833Proto@@QBA?AVPString@@XZ @39964 NONAME
     ?GetTxFramesInPacket@H323AudioCapability@@UBAIXZ @31213 NONAME
     ?GetTxFramesInPacket@H323Capability@@UBAIXZ @31214 NONAME
+    ?GetType@OpalMessagePtr@@QBA?AW4OpalMessageType@@XZ @45197 NONAME
     ?GetUDPPortBase@OpalManager@@QBAGXZ @31215 NONAME
     ?GetUDPPortMax@OpalManager@@QBAGXZ @31216 NONAME
     ?GetUnReadBytes@IAX2Frame@@QAAHXZ @31217 NONAME
@@ -32606,6 +32644,7 @@ EXPORTS
     ?GetUserData@RTP_Session@@QBAPAVRTP_UserData@@XZ @31222 NONAME
     ?GetUserIdentifier@XCAPClient@@QBAABVPString@@XZ @43953 NONAME
     ?GetUserInput@OpalConnection@@UAA?AVPString@@I@Z @31223 NONAME
+    ?GetUserInput@OpalMessagePtr@@QBAPAUOpalStatusUserInput@@XZ @45198 NONAME
     ?GetUserName@IAX2CallProcessor@@QBA?AVPString@@XZ @31224 NONAME
     ?GetUserName@IAX2RegProcessor@@QBA?AVPString@@XZ @31225 NONAME
     ?GetUsername@SIPHandler@@QBAABVPString@@XZ @39965 NONAME
@@ -32861,6 +32900,7 @@ EXPORTS
     ?Initialise@IAX2EndPoint@@QAA_NXZ @31420 NONAME
     ?Initialise@IAX2FrameList@@QAAXXZ @31421 NONAME
     ?Initialise@IAX2SoundList@@QAAXXZ @31422 NONAME
+    ?Initialise@OpalContext@@QAAIPBDI@Z @45199 NONAME
     ?Initialise@OpalManager_C@@QAA_NABVPCaselessString@@@Z @37462 NONAME
     ?Initialise@OpalRFC4175Decoder@@IAA_NXZ @31424 NONAME
     ?InitialiseHeader@IAX2Frame@@UAAXPAVIAX2Processor@@@Z @31425 NONAME
@@ -33525,6 +33565,7 @@ EXPORTS
     ?IsHandlingSpecialPackets@IAX2Processor@@IAA_NXZ @31981 NONAME
     ?IsHangupFrame@IAX2FullFrame@@QAA_NXZ @31982 NONAME
     ?IsHold@SDPSessionDescription@@QBA_NXZ @37515 NONAME
+    ?IsInitialised@OpalContext@@QBA_NXZ @45200 NONAME
     ?IsInProgress@SIPTransaction@@QBA_NXZ @31983 NONAME
     ?IsLagRpFrame@IAX2FullFrame@@QAA_NXZ @31984 NONAME
     ?IsLagRqFrame@IAX2FullFrame@@QAA_NXZ @31985 NONAME
@@ -33955,6 +33996,7 @@ EXPORTS
     ?NewIncomingConnection@SIPEndPoint@@UAA_NPAVOpalTransport@@@Z @32291 NONAME
     ?NewIncomingControlChannel@H323Connection@@MAAXAAVPThread@@H@Z @32292 NONAME
     ?NewOutgoingControlChannel@H323Connection@@MAAXAAVPThread@@H@Z @32293 NONAME
+    ?NewStringUTF@JNIEnv_@@QAAPAV_jstring@@PBD@Z @45201 NONAME
     ?Next@iterator_base@?$PList@VEntry@OpalJitterBuffer@@@@IAAXXZ @44197 NONAME
     ?Next@iterator_base@?$PList@VFilter@OpalMediaPatch@@@@IAAXXZ @32294 NONAME
     ?Next@iterator_base@?$PList@VFilter@RTP_Session@@@@IAAXXZ @40066 NONAME
@@ -35383,6 +35425,7 @@ EXPORTS
     ?ReadData@IAX2IeUInt@@QAAIXZ @33491 NONAME
     ?ReadData@OpalFileMediaStream@@UAA_NPAEHAAH@Z @33492 NONAME
     ?ReadData@OpalJitterBuffer@@UAA_NAAVRTP_DataFrame@@@Z @37711 NONAME
+    ?ReadData@OpalJitterBufferThread@@UAA_NAAVRTP_DataFrame@@@Z @45202 NONAME
     ?ReadData@OpalLineMediaStream@@UAA_NPAEHAAH@Z @33494 NONAME
     ?ReadData@OpalLocalMediaStream@@UAA_NPAEHAAH@Z @37712 NONAME
     ?ReadData@OpalMediaStream@@UAA_NPAEHAAH@Z @33495 NONAME
@@ -35493,9 +35536,11 @@ EXPORTS
     ?Release@IAX2CallProcessor@@UAAXUCallEndReason@OpalConnection@@@Z @44436 NONAME
     ?Release@IAX2Connection@@UAAXUCallEndReason@OpalConnection@@@Z @44437 NONAME
     ?Release@OpalConnection@@UAAXUCallEndReason@1@@Z @44438 NONAME
+    ?ReleaseLongArrayElements@JNIEnv_@@QAAXPAV_jlongArray@@PA_JJ@Z @45203 NONAME
     ?ReleaseSession@H323Connection@@UAAXI@Z @33577 NONAME
     ?ReleaseSession@OpalRTPConnection@@UAAXI_N@Z @37735 NONAME
     ?ReleaseSession@OpalRTPSessionManager@@QAAXI_N@Z @37736 NONAME
+    ?ReleaseStringUTFChars@JNIEnv_@@QAAXPAV_jstring@@PBD@Z @45204 NONAME
     ?RemoteAddress@IAX2Remote@@QAA?AVAddress@PIPSocket@@XZ @33580 NONAME
     ?RemoteHoldConnection@IAX2Connection@@QAAXXZ @33581 NONAME
     ?RemoteIsNAT@OpalRTPConnection@@UBA_NXZ @37737 NONAME
@@ -35640,7 +35685,6 @@ EXPORTS
     ?resize@?$vector@IV?$allocator@I@std@@@std@@QAAXII@Z @33689 NONAME
     ?resize@?$vector@_NV?$allocator@_N@std@@@std@@QAAXI_N@Z @33690 NONAME
     ?Restart@H245NegMasterSlaveDetermination@@IAA_NXZ @33691 NONAME
-    ?Resume@OpalJitterBufferThread@@UAAXXZ @44468 NONAME
     ?Retrieve@OpalCall@@QAA_NXZ @37762 NONAME
     ?RetrieveCall@H323Connection@@QAA_NXZ @37763 NONAME
     ?RetrieveCall@H4504Handler@@QAA_NXZ @37764 NONAME
@@ -35705,7 +35749,8 @@ EXPORTS
     ?SendInviteResponse@SIPConnection@@UAA_NW4StatusCodes@SIP_PDU@@PBD1PBVSDPSessionDescription@@@Z @33749 NONAME
     ?SendInvokeReject@H450xDispatcher@@QAAXHH@Z @33750 NONAME
     ?SendInvokeReject@H450xHandler@@QAAXH@Z @33751 NONAME
-    ?SendMessageW@OpalManager_C@@QAAPAUOpalMessage@@PBU2@@Z @33752 NONAME
+    ?SendMessage@OpalContext@@QAA_NABVOpalMessagePtr@@AAV2@@Z @45205 NONAME
+    ?SendMessage@OpalManager_C@@QAAPAUOpalMessage@@PBU2@@Z @45206 NONAME
     ?SendMoreDigits@H323Connection@@UAAXABVPString@@@Z @33753 NONAME
     ?SendNotify@SIPHandler@@UAA_NPBVPObject@@@Z @40184 NONAME
     ?SendNotify@SIPNotifyHandler@@UAA_NPBVPObject@@@Z @40185 NONAME
@@ -35747,6 +35792,7 @@ EXPORTS
     ?SendUpdateDescriptor@H323PeerElement@@IAA?AW4Error@1@AAVH501PDU@@ABVH323TransportAddress@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @33779 NONAME
     ?SendUpdateDescriptorByAddr@H323PeerElement@@QAA?AW4Error@1@ABVH323TransportAddress@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @33780 NONAME
     ?SendUpdateDescriptorByID@H323PeerElement@@QAA?AW4Error@1@ABVPGloballyUniqueID@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @33781 NONAME
+    ?SendUserInput@OpalContext@@QAA_NPBD0I@Z @45207 NONAME
     ?SendUserInputIndication@H323Connection@@UAA_NABVH245_UserInputIndication@@@Z @33782 NONAME
     ?SendUserInputIndicationQ931@H323Connection@@UAA_NABVPString@@@Z @33783 NONAME
     ?SendUserInputIndicationString@H323Connection@@UAA_NABVPString@@@Z @33784 NONAME
@@ -35890,6 +35936,7 @@ EXPORTS
     ?SetCallTerminating@IAX2CallProcessor@@IAAX_N@Z @33884 NONAME
     ?SetCallToken@IAX2Connection@@QAAXVPString@@@Z @33885 NONAME
     ?SetCallToken@IAX2Processor@@QAAXABVPString@@@Z @33886 NONAME
+    ?SetCallToken@OpalMessagePtr@@QAAXPBD@Z @45208 NONAME
     ?SetCanDoubleResolutionStillImage@H281VideoSource@@QAAX_N@Z @33887 NONAME
     ?SetCanFocus@H281VideoSource@@QAAX_N@Z @33888 NONAME
     ?SetCanMotionVideo@H281VideoSource@@QAAX_N@Z @33889 NONAME
@@ -36302,8 +36349,10 @@ EXPORTS
     ?SetTxFramesInPacket@H323Capability@@UAAXI@Z @34234 NONAME
     ?SetTxFramesInPacket@H323_GSM0610Capability@@UAAXI@Z @40237 NONAME
     ?SetTxStatisticsInterval@RTP_Session@@QAAXI@Z @34235 NONAME
+    ?SetType@OpalMessagePtr@@QAAXW4OpalMessageType@@@Z @45209 NONAME
     ?SetUDPPorts@OpalManager@@QAAXII@Z @34236 NONAME
     ?SetUnsupported@SIPMIMEInfo@@QAAXABVPString@@@Z @34237 NONAME
+    ?SetUpCall@OpalContext@@QAA_NAAVOpalMessagePtr@@PBD11@Z @45210 NONAME
     ?SetUpCall@OpalManager@@UAA?AV?$PSafePtr@VOpalCall@@VPSafePtrBase@@@@ABVPString@@0PAXIPAVStringOptions@OpalConnection@@@Z @44578 NONAME
     ?SetUpCall@OpalManager@@UAA_NABVPString@@0AAV2@PAXIPAVStringOptions@OpalConnection@@@Z @34238 NONAME
     ?SetUpCallSignalAddresses@H323Transactor@@IAA_NAAVH225_ArrayOf_TransportAddress@@@Z @34239 NONAME
@@ -36363,6 +36412,7 @@ EXPORTS
     ?SetZoomDirection@H281_Frame@@QAAXW4ZoomDirection@1@@Z @34292 NONAME
     ?ShouldClearCallOnRoundTripFail@H323EndPoint@@QBA_NXZ @34293 NONAME
     ?ShutDown@H323EndPoint@@UAAXXZ @37836 NONAME
+    ?ShutDown@OpalContext@@QAAXXZ @45211 NONAME
     ?ShutDown@OpalEndPoint@@UAAXXZ @37837 NONAME
     ?ShutDown@OpalMixerEndPoint@@UAAXXZ @44581 NONAME
     ?ShutDown@OpalMixerNode@@QAAXXZ @44582 NONAME
@@ -36453,6 +36503,7 @@ EXPORTS
     ?StartRoundTripDelay@H323Connection@@QAAXXZ @34352 NONAME
     ?StartSourceDescription@RTP_ControlFrame@@QAAXK@Z @34353 NONAME
     ?StartStatusCheckTimer@IAX2CallProcessor@@QAAXH@Z @37850 NONAME
+    ?StartThread@OpalJitterBufferThread@@IAAXXZ @45212 NONAME
     ?StartThread@OpalListener@@IAA_NABV?$PNotifierTemplate@H@@W4ThreadMode@1@@Z @44613 NONAME
     ?StartThread@OpalPresentityWithCommandThread@@QAAXXZ @44614 NONAME
     ?StartTonePlayerThread@OpalPluginLID@@IAA_NH@Z @37851 NONAME
@@ -36462,8 +36513,6 @@ EXPORTS
     ?states@?1??Parse@VFUXML@@QAA_NABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z@4QBUstatedef@QDXML@@B @34360 NONAME
     ?Stop@H245NegMasterSlaveDetermination@@QAAXXZ @34361 NONAME
     ?Stop@H245NegTerminalCapabilitySet@@QAAX_N@Z @34362 NONAME
-    ?Stop@OpalJitterBufferThread@@UAAXXZ @44617 NONAME
-    ?Stop@RTP_JitterBuffer@@UAAXXZ @44618 NONAME
     ?StopAction@OpalH281Handler@@QAAXXZ @34363 NONAME
     ?StopActionLocally@OpalH281Handler@@MAAXAAVPTimer@@H@Z @34364 NONAME
     ?StopAudio@OpalLineInterfaceDevice@@UAA_NI@Z @34365 NONAME
@@ -36557,6 +36606,7 @@ EXPORTS
     ?Terminate@IAX2Receiver@@UAAXXZ @34444 NONAME
     ?Terminate@IAX2Transmit@@UAAXXZ @34445 NONAME
     ?ThreadMain@OpalPresentityWithCommandThread@@IAAXXZ @44629 NONAME
+    ?ThrowNew@JNIEnv_@@QAAJPAV_jclass@@PBD@Z @45213 NONAME
     ?TickleMonitor@H323Gatekeeper@@MAAXAAVPTimer@@H@Z @34447 NONAME
     ?TickleMonitor@H323PeerElement@@MAAXAAVPTimer@@H@Z @34448 NONAME
     ?TimeToLiveKey@OpalPresentity@@SAABVPString@@XZ @44630 NONAME
@@ -36688,6 +36738,7 @@ EXPORTS
     ?WaitForPDU@RTP_Encoding@@UAAHAAVPUDPSocket@@0ABVPTimeInterval@@@Z @37877 NONAME
     ?WaitForPDU@RTP_UDP@@UAAHAAVPUDPSocket@@0ABVPTimeInterval@@@Z @37878 NONAME
     ?WaitForPDU@T38PseudoRTP_Handler@@UAAHAAVPUDPSocket@@0ABVPTimeInterval@@@Z @37879 NONAME
+    ?WaitForThreadTermination@OpalJitterBufferThread@@IAAXXZ @45214 NONAME
     ?WaitForTone@OpalLine@@UAA_NW4CallProgressTones@OpalLineInterfaceDevice@@I@Z @34553 NONAME
     ?WaitForTone@OpalLineInterfaceDevice@@UAA_NIW4CallProgressTones@1@I@Z @34554 NONAME
     ?WaitForTone@OpalPluginLID@@UAA_NIW4CallProgressTones@OpalLineInterfaceDevice@@I@Z @34555 NONAME
@@ -37654,315 +37705,354 @@ EXPORTS
     ?_Xlen@?$vector@_NV?$allocator@_N@std@@@std@@IBAXXZ @35009 NONAME
     alaw2linear @35010 NONAME
     alaw2ulaw @35011 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalMessage @38114 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalMessage_1m_1param @38115 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamCallCleared @38116 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamGeneral @38117 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamProtocol @38118 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamRecording @40449 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamRegistration @38119 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamSetUpCall @38120 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalParamSetUserData @38121 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalProductDescription @38122 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusCallCleared @38123 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusIncomingCall @38124 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusLineAppearance @40450 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusMediaStream @38125 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusMessageWaiting @38126 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusRegistration @38127 NONAME
-    Java_org_opalvoip_exampleJNI_delete_1OpalStatusUserInput @38128 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalMessage @38129 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalMessage_1m_1param @38130 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamCallCleared @38131 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamGeneral @38132 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamProtocol @38133 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamRecording @40451 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamRegistration @38134 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamSetUpCall @38135 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalParamSetUserData @38136 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalProductDescription @38137 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusCallCleared @38138 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusIncomingCall @38139 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusLineAppearance @40452 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusMediaStream @38140 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusMessageWaiting @38141 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusRegistration @38142 NONAME
-    Java_org_opalvoip_exampleJNI_new_1OpalStatusUserInput @38143 NONAME
-    Java_org_opalvoip_exampleJNI_OpalCallEndedWithQ931Code_1get @38144 NONAME
-    Java_org_opalvoip_exampleJNI_OpalFreeMessage @38145 NONAME
-    Java_org_opalvoip_exampleJNI_OpalGetMessage @38146 NONAME
-    Java_org_opalvoip_exampleJNI_OpalInitialise @38147 NONAME
-    Java_org_opalvoip_exampleJNI_OpalLineIdle_1get @45134 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1get @38148 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1get @38149 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callCleared_1set @38150 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1get @38151 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callSetUp_1set @38152 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1get @38153 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1callToken_1set @38154 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1get @38155 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1clearCall_1set @38156 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1get @38157 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1commandError_1set @38158 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1general_1get @38159 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1general_1set @38160 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1get @38161 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1incomingCall_1set @38162 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1lineAppearance_1get @40453 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1lineAppearance_1set @40454 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1get @38163 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1mediaStream_1set @38164 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1get @38165 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1messageWaiting_1set @38166 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1get @38167 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1protocol_1set @38168 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1recording_1get @40455 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1recording_1set @40456 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1get @38169 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationInfo_1set @38170 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1get @38171 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1registrationStatus_1set @38172 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1setUserData_1get @38173 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1setUserData_1set @38174 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1get @38175 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1param_1m_1userInput_1set @38176 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1type_1get @38177 NONAME
-    Java_org_opalvoip_exampleJNI_OpalMessage_1m_1type_1set @38178 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1callToken_1get @38179 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1callToken_1set @38180 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1reason_1get @38181 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamCallCleared_1m_1reason_1set @38182 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1get @38183 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBuffers_1set @38184 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBufferTime_1get @45135 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioBufferTime_1set @45136 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1get @38185 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioPlayerDevice_1set @38186 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1get @38187 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1audioRecordDevice_1set @38188 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1get @38189 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoRxMedia_1set @38190 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1get @38191 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1autoTxMedia_1set @38192 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1get @38193 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1echoCancellation_1set @38194 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1manualAlerting_1get @45137 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1manualAlerting_1set @45138 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1get @38195 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1maxAudioJitter_1set @38196 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1get @38197 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaDataHeader_1set @38198 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaMask_1get @38199 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaMask_1set @38200 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOptions_1get @40457 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOptions_1set @40458 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1get @38201 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaOrder_1set @38202 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1get @38203 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaReadData_1set @38204 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaTiming_1get @45139 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaTiming_1set @45140 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1get @38205 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1mediaWriteData_1set @38206 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1get @38207 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1messageAvailable_1set @38208 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1get @38209 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1minAudioJitter_1set @38210 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1natRouter_1get @38211 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1natRouter_1set @38212 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1get @38213 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1set @38214 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1get @38215 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortBase_1set @38216 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1get @38217 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpPortMax_1set @38218 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1get @38219 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1rtpTypeOfService_1set @38220 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1get @38221 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1signalDeadband_1set @38222 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1get @38223 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1set @38224 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1get @38225 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDeadband_1set @38226 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1get @38227 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceDetectMode_1set @38228 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1get @38229 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1silenceThreshold_1set @38230 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1stunServer_1get @38231 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1stunServer_1set @38232 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1get @38233 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortBase_1set @38234 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1get @38235 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1tcpPortMax_1set @38236 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1get @38237 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortBase_1set @38238 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1get @38239 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1udpPortMax_1set @38240 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1get @38241 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoInputDevice_1set @38242 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1get @38243 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoOutputDevice_1set @38244 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1get @38245 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamGeneral_1m_1videoPreviewDevice_1set @38246 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1displayName_1get @38247 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1displayName_1set @38248 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1get @38249 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1interfaceAddresses_1set @38250 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1prefix_1get @38251 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1prefix_1set @38252 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1product_1get @38253 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1product_1set @38254 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1userName_1get @38255 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamProtocol_1m_1userName_1set @38256 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1audioFormat_1get @45141 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1audioFormat_1set @45142 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1callToken_1get @40459 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1callToken_1set @40460 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1channels_1get @40461 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1channels_1set @40462 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1file_1get @40463 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1file_1set @40464 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoFormat_1get @45143 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoFormat_1set @45144 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoHeight_1get @45145 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoHeight_1set @45146 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoMixing_1get @45147 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoMixing_1set @45148 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoRate_1get @45149 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoRate_1set @45150 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoWidth_1get @45151 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRecording_1m_1videoWidth_1set @45152 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1adminEntity_1get @38257 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1adminEntity_1set @38258 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1authUserName_1get @38259 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1authUserName_1set @38260 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1eventPackage_1get @40465 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1eventPackage_1set @40466 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1hostName_1get @38261 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1hostName_1set @38262 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1identifier_1get @38263 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1identifier_1set @38264 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1password_1get @38267 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1password_1set @38268 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1protocol_1get @38269 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1protocol_1set @38270 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1restoreTime_1get @38271 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1restoreTime_1set @38272 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1timeToLive_1get @38273 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamRegistration_1m_1timeToLive_1set @38274 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1alertingType_1get @40467 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1alertingType_1set @40468 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1callToken_1get @38275 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1callToken_1set @38276 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyA_1get @38277 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyA_1set @38278 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyB_1get @38279 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1partyB_1set @38280 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1protocolCallId_1get @45153 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUpCall_1m_1protocolCallId_1set @45154 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUserData_1m_1callToken_1get @38281 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUserData_1m_1callToken_1set @38282 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUserData_1m_1userData_1get @38283 NONAME
-    Java_org_opalvoip_exampleJNI_OpalParamSetUserData_1m_1userData_1set @38284 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1manufacturerCode_1get @38285 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1manufacturerCode_1set @38286 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1name_1get @38287 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1name_1set @38288 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1t35CountryCode_1get @38289 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1t35CountryCode_1set @38290 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1t35Extension_1get @38291 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1t35Extension_1set @38292 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1vendor_1get @38293 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1vendor_1set @38294 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1version_1get @38295 NONAME
-    Java_org_opalvoip_exampleJNI_OpalProductDescription_1m_1version_1set @38296 NONAME
-    Java_org_opalvoip_exampleJNI_OpalSendMessage @38297 NONAME
-    Java_org_opalvoip_exampleJNI_OpalShutDown @38298 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1callToken_1get @38299 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1callToken_1set @38300 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1reason_1get @38301 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusCallCleared_1m_1reason_1set @38302 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1alertingType_1get @40469 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1alertingType_1set @40470 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1get @38303 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledAddress_1set @38304 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1get @38305 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1set @38306 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1get @38307 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1callToken_1set @38308 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1get @38309 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1localAddress_1set @38310 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1product_1get @38311 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1product_1set @38312 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1protocolCallId_1get @45155 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1protocolCallId_1set @45156 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1get @38313 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteAddress_1set @38314 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1get @38315 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1set @38316 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1get @38317 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1set @38318 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1appearance_1get @40471 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1appearance_1set @40472 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1callId_1get @40473 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1callId_1set @40474 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1line_1get @40475 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1line_1set @40476 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1partyA_1get @40477 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1partyA_1set @40478 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1partyB_1get @40479 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1partyB_1set @40480 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1state_1get @40481 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusLineAppearance_1m_1state_1set @40482 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1callToken_1get @38319 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1callToken_1set @38320 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1format_1get @38321 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1format_1set @38322 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1identifier_1get @38323 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1identifier_1set @38324 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1state_1get @38325 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1state_1set @38326 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1type_1get @38327 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMediaStream_1m_1type_1set @38328 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1get @38329 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1extraInfo_1set @38330 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1party_1get @38331 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1party_1set @38332 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1type_1get @38333 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusMessageWaiting_1m_1type_1set @38334 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1error_1get @38335 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1error_1set @38336 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1product_1get @38337 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1product_1set @38338 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1protocol_1get @38339 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1protocol_1set @38340 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1serverName_1get @38341 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1serverName_1set @38342 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1status_1get @38343 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusRegistration_1m_1status_1set @38344 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1callToken_1get @38345 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1callToken_1set @38346 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1duration_1get @38347 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1duration_1set @38348 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1userInput_1get @38349 NONAME
-    Java_org_opalvoip_exampleJNI_OpalStatusUserInput_1m_1userInput_1set @38350 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1C_1API_1VERSION_1get @38351 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1FREE_1MESSAGE_1FUNCTION_1get @38352 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1GET_1MESSAGE_1FUNCTION_1get @38353 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1INITIALISE_1FUNCTION_1get @38354 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1LINE_1APPEARANCE_1EVENT_1PACKAGE_1get @40483 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1MWI_1EVENT_1PACKAGE_1get @40484 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1ALL_1get @38355 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1H323_1get @38356 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1IAX2_1get @38357 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1IVR_1get @38358 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1LOCAL_1get @38359 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1PCSS_1get @38360 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1POTS_1get @38361 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1PSTN_1get @38362 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1PREFIX_1SIP_1get @38363 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1SEND_1MESSAGE_1FUNCTION_1get @38364 NONAME
-    Java_org_opalvoip_exampleJNI_OPAL_1SHUTDOWN_1FUNCTION_1get @38365 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalContext @45215 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalMessage @45216 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalMessagePtr @45217 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalMessage_1m_1param @45218 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamCallCleared @45219 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamGeneral @45220 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamProtocol @45221 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamRecording @45222 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamRegistration @45223 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamSetUpCall @45224 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalParamSetUserData @45225 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalProductDescription @45226 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusCallCleared @45227 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusIncomingCall @45228 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusLineAppearance @45229 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusMediaStream @45230 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusMessageWaiting @45231 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusRegistration @45232 NONAME
+    Java_org_opalvoip_OPALJNI_delete_1OpalStatusUserInput @45233 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalContext @45234 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalMessage @45235 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalMessagePtr_1_1SWIG_10 @45236 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalMessagePtr_1_1SWIG_11 @45237 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalMessage_1m_1param @45238 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamCallCleared @45239 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamGeneral @45240 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamProtocol @45241 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamRecording @45242 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamRegistration @45243 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamSetUpCall @45244 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalParamSetUserData @45245 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalProductDescription @45246 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusCallCleared @45247 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusIncomingCall @45248 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusLineAppearance @45249 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusMediaStream @45250 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusMessageWaiting @45251 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusRegistration @45252 NONAME
+    Java_org_opalvoip_OPALJNI_new_1OpalStatusUserInput @45253 NONAME
+    Java_org_opalvoip_OPALJNI_OpalCallEndedWithQ931Code_1get @45254 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1AnswerCall @45255 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1ClearCall_1_1SWIG_10 @45256 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1ClearCall_1_1SWIG_11 @45257 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1GetMessage_1_1SWIG_10 @45258 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1GetMessage_1_1SWIG_11 @45259 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1Initialise_1_1SWIG_10 @45260 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1Initialise_1_1SWIG_11 @45261 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1IsInitialised @45262 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SendMessage @45263 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SendUserInput_1_1SWIG_10 @45264 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SendUserInput_1_1SWIG_11 @45265 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SetUpCall_1_1SWIG_10 @45266 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SetUpCall_1_1SWIG_11 @45267 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1SetUpCall_1_1SWIG_12 @45268 NONAME
+    Java_org_opalvoip_OPALJNI_OpalContext_1ShutDown @45269 NONAME
+    Java_org_opalvoip_OPALJNI_OpalFreeMessage @45270 NONAME
+    Java_org_opalvoip_OPALJNI_OpalGetMessage @45271 NONAME
+    Java_org_opalvoip_OPALJNI_OpalInitialise @45272 NONAME
+    Java_org_opalvoip_OPALJNI_OpalLineIdle_1get @45273 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetCallCleared @45274 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetCallSetUp @45275 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetCallToken @45276 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetClearCall @45277 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetCommandError @45278 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetGeneralParams @45279 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetIncomingCall @45280 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetLineAppearance @45281 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetMediaStream @45282 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetMessageWaiting @45283 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetProtocolParams @45284 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetRecording @45285 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetRegistrationInfo @45286 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetRegistrationStatus @45287 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetSetUserData @45288 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetType @45289 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1GetUserInput @45290 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1SetCallToken @45291 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessagePtr_1SetType @45292 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1get @45293 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callCleared_1get @45294 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callCleared_1set @45295 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callSetUp_1get @45296 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callSetUp_1set @45297 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callToken_1get @45298 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1callToken_1set @45299 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1clearCall_1get @45300 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1clearCall_1set @45301 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1commandError_1get @45302 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1commandError_1set @45303 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1general_1get @45304 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1general_1set @45305 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1incomingCall_1get @45306 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1incomingCall_1set @45307 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1lineAppearance_1get @45308 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1lineAppearance_1set @45309 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1mediaStream_1get @45310 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1mediaStream_1set @45311 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1messageWaiting_1get @45312 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1messageWaiting_1set @45313 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1protocol_1get @45314 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1protocol_1set @45315 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1recording_1get @45316 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1recording_1set @45317 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1registrationInfo_1get @45318 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1registrationInfo_1set @45319 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1registrationStatus_1get @45320 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1registrationStatus_1set @45321 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1setUserData_1get @45322 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1setUserData_1set @45323 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1userInput_1get @45324 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1param_1m_1userInput_1set @45325 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1type_1get @45326 NONAME
+    Java_org_opalvoip_OPALJNI_OpalMessage_1m_1type_1set @45327 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamCallCleared_1m_1callToken_1get @45328 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamCallCleared_1m_1callToken_1set @45329 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamCallCleared_1m_1reason_1get @45330 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamCallCleared_1m_1reason_1set @45331 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioBuffers_1get @45332 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioBuffers_1set @45333 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioBufferTime_1get @45334 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioBufferTime_1set @45335 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioPlayerDevice_1get @45336 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioPlayerDevice_1set @45337 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioRecordDevice_1get @45338 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1audioRecordDevice_1set @45339 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1autoRxMedia_1get @45340 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1autoRxMedia_1set @45341 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1autoTxMedia_1get @45342 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1autoTxMedia_1set @45343 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1echoCancellation_1get @45344 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1echoCancellation_1set @45345 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1manualAlerting_1get @45346 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1manualAlerting_1set @45347 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1maxAudioJitter_1get @45348 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1maxAudioJitter_1set @45349 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaDataHeader_1get @45350 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaDataHeader_1set @45351 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaMask_1get @45352 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaMask_1set @45353 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaOptions_1get @45354 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaOptions_1set @45355 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaOrder_1get @45356 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaOrder_1set @45357 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaReadData_1get @45358 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaReadData_1set @45359 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaTiming_1get @45360 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaTiming_1set @45361 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaWriteData_1get @45362 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1mediaWriteData_1set @45363 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1messageAvailable_1get @45364 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1messageAvailable_1set @45365 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1minAudioJitter_1get @45366 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1minAudioJitter_1set @45367 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRouter_1get @45368 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRouter_1set @45369 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1get @45370 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpMaxPayloadSize_1set @45371 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpPortBase_1get @45372 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpPortBase_1set @45373 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpPortMax_1get @45374 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpPortMax_1set @45375 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpTypeOfService_1get @45376 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1rtpTypeOfService_1set @45377 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1signalDeadband_1get @45378 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1signalDeadband_1set @45379 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1get @45380 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceAdaptPeriod_1set @45381 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceDeadband_1get @45382 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceDeadband_1set @45383 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceDetectMode_1get @45384 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceDetectMode_1set @45385 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceThreshold_1get @45386 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1silenceThreshold_1set @45387 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunServer_1get @45388 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunServer_1set @45389 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1tcpPortBase_1get @45390 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1tcpPortBase_1set @45391 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1tcpPortMax_1get @45392 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1tcpPortMax_1set @45393 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1udpPortBase_1get @45394 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1udpPortBase_1set @45395 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1udpPortMax_1get @45396 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1udpPortMax_1set @45397 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoInputDevice_1get @45398 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoInputDevice_1set @45399 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoOutputDevice_1get @45400 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoOutputDevice_1set @45401 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoPreviewDevice_1get @45402 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1videoPreviewDevice_1set @45403 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1displayName_1get @45404 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1displayName_1set @45405 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1interfaceAddresses_1get @45406 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1interfaceAddresses_1set @45407 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1prefix_1get @45408 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1prefix_1set @45409 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1product_1get @45410 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1product_1set @45411 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1userName_1get @45412 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1userName_1set @45413 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1audioFormat_1get @45414 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1audioFormat_1set @45415 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1callToken_1get @45416 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1callToken_1set @45417 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1channels_1get @45418 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1channels_1set @45419 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1file_1get @45420 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1file_1set @45421 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoFormat_1get @45422 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoFormat_1set @45423 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoHeight_1get @45424 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoHeight_1set @45425 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoMixing_1get @45426 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoMixing_1set @45427 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoRate_1get @45428 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoRate_1set @45429 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoWidth_1get @45430 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRecording_1m_1videoWidth_1set @45431 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1adminEntity_1get @45432 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1adminEntity_1set @45433 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1authUserName_1get @45434 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1authUserName_1set @45435 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1eventPackage_1get @45436 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1eventPackage_1set @45437 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1hostName_1get @45438 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1hostName_1set @45439 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1identifier_1get @45440 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1identifier_1set @45441 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1password_1get @45442 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1password_1set @45443 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1protocol_1get @45444 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1protocol_1set @45445 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1restoreTime_1get @45446 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1restoreTime_1set @45447 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1timeToLive_1get @45448 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamRegistration_1m_1timeToLive_1set @45449 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1alertingType_1get @45450 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1alertingType_1set @45451 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1callToken_1get @45452 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1callToken_1set @45453 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1partyA_1get @45454 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1partyA_1set @45455 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1partyB_1get @45456 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1partyB_1set @45457 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1protocolCallId_1get @45458 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUpCall_1m_1protocolCallId_1set @45459 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUserData_1m_1callToken_1get @45460 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUserData_1m_1callToken_1set @45461 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUserData_1m_1userData_1get @45462 NONAME
+    Java_org_opalvoip_OPALJNI_OpalParamSetUserData_1m_1userData_1set @45463 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1manufacturerCode_1get @45464 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1manufacturerCode_1set @45465 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1name_1get @45466 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1name_1set @45467 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1t35CountryCode_1get @45468 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1t35CountryCode_1set @45469 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1t35Extension_1get @45470 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1t35Extension_1set @45471 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1vendor_1get @45472 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1vendor_1set @45473 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1version_1get @45474 NONAME
+    Java_org_opalvoip_OPALJNI_OpalProductDescription_1m_1version_1set @45475 NONAME
+    Java_org_opalvoip_OPALJNI_OpalSendMessage @45476 NONAME
+    Java_org_opalvoip_OPALJNI_OpalShutDown @45477 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusCallCleared_1m_1callToken_1get @45478 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusCallCleared_1m_1callToken_1set @45479 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusCallCleared_1m_1reason_1get @45480 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusCallCleared_1m_1reason_1set @45481 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1alertingType_1get @45482 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1alertingType_1set @45483 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1calledAddress_1get @45484 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1calledAddress_1set @45485 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1get @45486 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1calledPartyNumber_1set @45487 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1callToken_1get @45488 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1callToken_1set @45489 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1localAddress_1get @45490 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1localAddress_1set @45491 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1product_1get @45492 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1product_1set @45493 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1protocolCallId_1get @45494 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1protocolCallId_1set @45495 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remoteAddress_1get @45496 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remoteAddress_1set @45497 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1get @45498 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remoteDisplayName_1set @45499 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1get @45500 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusIncomingCall_1m_1remotePartyNumber_1set @45501 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1appearance_1get @45502 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1appearance_1set @45503 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1callId_1get @45504 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1callId_1set @45505 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1line_1get @45506 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1line_1set @45507 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1partyA_1get @45508 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1partyA_1set @45509 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1partyB_1get @45510 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1partyB_1set @45511 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1state_1get @45512 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusLineAppearance_1m_1state_1set @45513 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1callToken_1get @45514 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1callToken_1set @45515 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1format_1get @45516 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1format_1set @45517 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1identifier_1get @45518 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1identifier_1set @45519 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1state_1get @45520 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1state_1set @45521 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1type_1get @45522 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1type_1set @45523 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1extraInfo_1get @45524 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1extraInfo_1set @45525 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1party_1get @45526 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1party_1set @45527 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1type_1get @45528 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusMessageWaiting_1m_1type_1set @45529 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1error_1get @45530 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1error_1set @45531 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1product_1get @45532 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1product_1set @45533 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1protocol_1get @45534 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1protocol_1set @45535 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1serverName_1get @45536 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1serverName_1set @45537 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1status_1get @45538 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusRegistration_1m_1status_1set @45539 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1callToken_1get @45540 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1callToken_1set @45541 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1duration_1get @45542 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1duration_1set @45543 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1userInput_1get @45544 NONAME
+    Java_org_opalvoip_OPALJNI_OpalStatusUserInput_1m_1userInput_1set @45545 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1C_1API_1VERSION_1get @45546 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1FREE_1MESSAGE_1FUNCTION_1get @45547 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1GET_1MESSAGE_1FUNCTION_1get @45548 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1INITIALISE_1FUNCTION_1get @45549 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1LINE_1APPEARANCE_1EVENT_1PACKAGE_1get @45550 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1MWI_1EVENT_1PACKAGE_1get @45551 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1ALL_1get @45552 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1H323_1get @45553 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1IAX2_1get @45554 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1IVR_1get @45555 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1LOCAL_1get @45556 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1PCSS_1get @45557 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1POTS_1get @45558 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1PSTN_1get @45559 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1PREFIX_1SIP_1get @45560 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1SEND_1MESSAGE_1FUNCTION_1get @45561 NONAME
+    Java_org_opalvoip_OPALJNI_OPAL_1SHUTDOWN_1FUNCTION_1get @45562 NONAME
     linear2alaw @35012 NONAME
     linear2ulaw @35013 NONAME
     ulaw2alaw @35015 NONAME
