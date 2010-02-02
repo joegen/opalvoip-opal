@@ -59,6 +59,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , nonInviteTimeout(0, 16)          // 16 seconds
   , pduCleanUpTimeout(0, 5)          // 5 seconds
   , inviteTimeout(0, 32)             // 32 seconds
+  , m_progressTimeout(0, 0, 3)       // 3 minutes
   , ackTimeout(0, 32)                // 32 seconds
   , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
