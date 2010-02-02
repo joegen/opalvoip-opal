@@ -757,6 +757,11 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) { inviteTimeout = t; }
     const PTimeInterval & GetInviteTimeout() const { return inviteTimeout; }
 
+    void SetProgressTimeout(
+      const PTimeInterval & t
+    ) { m_progressTimeout = t; }
+    const PTimeInterval & GetProgressTimeout() const { return m_progressTimeout; }
+
     void SetAckTimeout(
       const PTimeInterval & t
     ) { ackTimeout = t; }
@@ -919,6 +924,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval nonInviteTimeout;  // T3
     PTimeInterval pduCleanUpTimeout; // T4
     PTimeInterval inviteTimeout;
+    PTimeInterval m_progressTimeout;
     PTimeInterval ackTimeout;
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
