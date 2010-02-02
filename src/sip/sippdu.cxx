@@ -2648,7 +2648,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       if (expiry > 0)
         m_completionTimer.SetInterval(0, expiry);
       else if (m_method == Method_INVITE)
-        m_completionTimer = m_endpoint.GetInviteTimeout();
+        m_completionTimer = m_endpoint.GetProgressTimeout();
       else
         m_completionTimer = m_endpoint.GetNonInviteTimeout();
     }
