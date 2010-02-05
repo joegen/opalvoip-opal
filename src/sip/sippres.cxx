@@ -405,26 +405,28 @@ void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe
 
 void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
-  PString id       = watcher->GetAttribute("id");
-  PString status   = watcher->GetAttribute("status");
-  PURL otherAOR    = watcher->GetData().Trim();
+  PString id     = watcher->GetAttribute("id");
+  PString status = watcher->GetAttribute("status");
+
+  AuthorisationRequest authreq;
+  authreq.m_presentity = watcher->GetData().Trim();
 
   StringMap::iterator existingAOR = m_watcherAorById.find(id);
 
   // save pending subscription status from this user
   if (status == "pending") {
     if (existingAOR != m_watcherAorById.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << otherAOR << "' for access to presence information");
+      PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << authreq.m_presentity << "' for access to presence information");
     } 
     else {
-      m_watcherAorById[id] = otherAOR;
-      PTRACE(3, "SIPPres\t'" << otherAOR << "' has requested access to presence information of '" << m_aor << '\'');
-      OnAuthorisationRequest(otherAOR);
+      m_watcherAorById[id] = authreq.m_presentity;
+      PTRACE(3, "SIPPres\t'" << authreq.m_presentity << "' has requested access to presence information of '" << m_aor << '\'');
+      OnAuthorisationRequest(authreq);
     }
   }
   else {
     PTRACE(3, "SIPPres\t'" << m_aor << "' has received event '" << watcher->GetAttribute("event")
-           << "', status '" << status << "', for '" << otherAOR << '\'');
+           << "', status '" << status << "', for '" << authreq.m_presentity << '\'');
   }
 }
 

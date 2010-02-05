@@ -265,7 +265,7 @@ void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
   else if (!m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else
-    m_presentities[args[0]].SubscribeToPresence(args[1]);
+    m_presentities[args[0]].SubscribeToPresence(args[1], true, "This is test presentity");
 }
 
 
@@ -390,9 +390,11 @@ void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const PURL & aor)
+void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const OpalPresentity::AuthorisationRequest & request)
 {
-  cout << aor << " requesting access to presence for " << presentity.GetAOR() << endl;
+  cout << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
+  if (!request.m_note.IsEmpty())
+    cout << "  \"" << request.m_note << '"' << endl;
 }
 
 
