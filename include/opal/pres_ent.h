@@ -212,7 +212,8 @@ class OpalPresentity : public PSafeObject
       */
     virtual bool SubscribeToPresence(
       const PURL & presentity,      ///< Other presentity to monitor
-      bool subscribe = true         ///< true if to subscribe, else unsubscribe
+      bool subscribe = true,        ///< true if to subscribe, else unsubscribe
+      const PString & note = PString::Empty() ///< Optional extra note attached to subscription request
     );
 
     /** Unsubscribe to presence state of another presentity.
@@ -292,6 +293,12 @@ class OpalPresentity : public PSafeObject
 
   /**@name Indications (callbacks) */
   //@{
+    struct AuthorisationRequest
+    {
+      PURL    m_presentity; ///< Other presentity requesting our presence
+      PString m_note;       ///< Optional extra note attached to request
+    };
+
     /** Callback when another presentity requests access to our presence.
         It is expected that the handler will call SetPresenceAuthorisation
         with whatever policy is appropriate.
@@ -300,12 +307,12 @@ class OpalPresentity : public PSafeObject
         otherwise will authorise the request.
       */
     virtual void OnAuthorisationRequest(
-      const PURL & presentity    ///< Other presentity requesting our presence
+      const AuthorisationRequest & request  ///< Authorisation request information
     );
 
-    typedef PNotifierTemplate<const PURL &> AuthorisationRequestNotifier;
-    #define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const PURL &)
-    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const PURL &)
+    typedef PNotifierTemplate<const AuthorisationRequest &> AuthorisationRequestNotifier;
+#define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalPresentity::AuthorisationRequest &)
+    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalPresentity::AuthorisationRequest &)
 
     /// Set the notifier for the OnAuthorisationRequest() function.
     void SetAuthorisationRequestNotifier(
@@ -538,7 +545,8 @@ class OpalSubscribeToPresenceCommand : public OpalPresentityCommand {
   public:
     OpalSubscribeToPresenceCommand(bool subscribe = true) : m_subscribe(subscribe) { }
 
-    bool m_subscribe;   ///< Flag to indicate subscribing/unsubscribing
+    bool    m_subscribe;  ///< Flag to indicate subscribing/unsubscribing
+    PString m_note;       ///< Optional extra note attached to subscription request
 };
 
 
@@ -553,6 +561,7 @@ class OpalAuthorisationRequestCommand : public OpalPresentityCommand {
     OpalAuthorisationRequestCommand() : m_authorisation(OpalPresentity::AuthorisationPermitted) { }
 
     OpalPresentity::Authorisation m_authorisation;  ///< Authorisation mode to indicate to remote
+    PString m_note;                                 ///< Optional extra note attached to subscription request
 };
 
 
