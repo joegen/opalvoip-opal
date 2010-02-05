@@ -255,6 +255,24 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
 }
 
 
+bool OpalMediaOption::ValidateMerge(const OpalMediaOption & option) const
+{
+  switch (m_merge) {
+    case EqualMerge :
+      if (CompareValue(option) != EqualTo) {
+        PTRACE(2, "MediaFormat\tValidation of media option \"" << m_name << "\" failed, required to be equal.");
+        return false;
+	  }
+    case NotEqualMerge :
+      if (CompareValue(option) == EqualTo) {
+        PTRACE(2, "MediaFormat\tValidation of media option \"" << m_name << "\" failed, required to be not equal.");
+        return false;
+      }
+  }
+  return true;
+}
+
+
 PString OpalMediaOption::AsString() const
 {
   PStringStream strm;
@@ -819,6 +837,13 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 }
 
 
+bool OpalMediaFormat::ValidateMerge(const OpalMediaFormat & mediaFormat) const
+{
+  PWaitAndSignal m(_mutex);
+  return m_info != NULL && mediaFormat.m_info != NULL && m_info->ValidateMerge(*mediaFormat.m_info);
+}
+
+
 OpalMediaFormatList OpalMediaFormat::GetMatchingRegisteredMediaFormats(RTP_DataFrame::PayloadTypes rtpPayloadType,
                                                                        const unsigned clockRate,
                                                                        const char * rtpEncodingName,
@@ -980,6 +1005,29 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
     {
       PAssert(option->GetName() == opt.GetName(), "find returned bad name");
       if (!opt.Merge(*option))
+        return false;
+    }
+  }
+
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::ValidateMerge(const OpalMediaFormatInternal & mediaFormat) const
+{
+  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m2(mediaFormat.media_format_mutex);
+
+  for (PINDEX i = 0; i < options.GetSize(); i++) {
+    OpalMediaOption & opt = options[i];
+    PString name = opt.GetName();
+    OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
+    if (option == NULL) {
+      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tValidate: unmatched option " << opt.GetName());
+    }
+    else {
+      PAssert(option->GetName() == opt.GetName(), "find returned bad name");
+      if (!opt.ValidateMerge(*option))
         return false;
     }
   }

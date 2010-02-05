@@ -263,6 +263,11 @@ class OpalMediaOption : public PObject
     virtual bool Merge(
       const OpalMediaOption & option
     );
+
+    virtual bool ValidateMerge(
+      const OpalMediaOption & option
+    ) const;
+
     virtual Comparison CompareValue(
       const OpalMediaOption & option
     ) const = 0;
@@ -586,6 +591,9 @@ class OpalMediaFormatInternal : public PObject
     virtual bool ToNormalisedOptions();
     virtual bool ToCustomisedOptions();
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
+
+    virtual bool ValidateMerge(const OpalMediaFormatInternal & mediaFormat) const;
+
     virtual bool IsValidForProtocol(const PString & protocol) const;
 
   protected:
@@ -766,6 +774,11 @@ class OpalMediaFormat : public PContainer
     bool Merge(
       const OpalMediaFormat & mediaFormat
     );
+    /**Return true if the given mediaFormat will successfully merge.
+      */
+    bool ValidateMerge(
+      const OpalMediaFormat & mediaFormat
+    ) const;
 
     /**Get the name of the format
       */
