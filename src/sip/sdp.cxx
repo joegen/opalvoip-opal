@@ -277,7 +277,8 @@ OpalMediaFormatList SDPMediaFormat::GetMediaFormats() const
   for (OpalMediaFormatList::iterator iterFormat = masterFormats.begin(); iterFormat != masterFormats.end(); ++iterFormat) {
     OpalMediaFormat adjustedFormat = *iterFormat;
     InitialiseMediaFormat(adjustedFormat);
-    if (adjustedFormat.Merge(*iterFormat)) {
+    // skip formats whose fmtp don't match options
+    if (iterFormat->ValidateMerge(adjustedFormat)) {
       PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
       adjustedFormats += adjustedFormat;
     }
