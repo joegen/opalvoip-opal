@@ -164,7 +164,7 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
 }
 
 
-bool OpalPresentity::SubscribeToPresence(const PURL & presentity, bool subscribe)
+bool OpalPresentity::SubscribeToPresence(const PURL & presentity, bool subscribe, const PString & note)
 {
   OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
   if (cmd == NULL)
@@ -172,6 +172,7 @@ bool OpalPresentity::SubscribeToPresence(const PURL & presentity, bool subscribe
 
   cmd->m_presentity = presentity;
   cmd->m_subscribe  = subscribe;
+  cmd->m_note       = note;
   SendCommand(cmd);
   return true;
 }
@@ -209,14 +210,14 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 }
 
 
-void OpalPresentity::OnAuthorisationRequest(const PURL & presentity)
+void OpalPresentity::OnAuthorisationRequest(const AuthorisationRequest & request)
 {
   PWaitAndSignal mutex(m_notificationMutex);
 
   if (m_onAuthorisationRequestNotifier.IsNULL())
-    SetPresenceAuthorisation(presentity, AuthorisationPermitted);
+    SetPresenceAuthorisation(request.m_presentity, AuthorisationPermitted);
   else
-    m_onAuthorisationRequestNotifier(*this, presentity);
+    m_onAuthorisationRequestNotifier(*this, request);
 }
 
 
