@@ -17,6 +17,12 @@
 		<Platform
 			Name="Windows Mobile 6 Professional SDK (ARMV4I)"
 		/>
+		<Platform
+			Name="Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+		/>
+		<Platform
+			Name="Windows Mobile 6 Standard SDK (ARMV4I)"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -55,7 +61,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				PreprocessorDefinitions="NDEBUG;WIN32;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -114,6 +120,310 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5ppc\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\NoTrace/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="1"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opaln.lib ptlibn.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6pro\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\NoTrace/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="1"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opaln.lib ptlibn.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5sp\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\NoTrace/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="1"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opaln.lib ptlibn.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
@@ -147,7 +457,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="NDEBUG;PTRACING"
+				PreprocessorDefinitions="NDEBUG;WIN32;PTRACING=1"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -206,6 +516,310 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5ppc\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opal.lib ptlib.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6pro\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opal.lib ptlib.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5sp\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opal.lib ptlib.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
@@ -238,7 +852,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;PTRACING"
+				PreprocessorDefinitions="_DEBUG;WIN32;PTRACING=1"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
@@ -300,390 +914,8 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm5\$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\NoTrace/simple.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				ExecutionBucket="7"
-				Optimization="1"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,_AFXDLL"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opaln.lib ptlibn.lib"
-				OutputFile="$(OutDir)/simpleOPAL.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="9"
-				TargetMachine="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCCodeSignTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-			<DeploymentTool
-				ForceDirty="-1"
-				RemoteDirectory=""
-				RegisterOutput="0"
-				AdditionalFiles=""
-			/>
-			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
-			Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
-			IntermediateDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\NoTrace/simple.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				ExecutionBucket="7"
-				Optimization="1"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,_AFXDLL"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opaln.lib ptlibn.lib"
-				OutputFile="$(OutDir)/simpleOPAL.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="9"
-				TargetMachine="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCCodeSignTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-			<DeploymentTool
-				ForceDirty="-1"
-				RemoteDirectory=""
-				RegisterOutput="0"
-				AdditionalFiles=""
-			/>
-			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm5\$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)"
-			ConfigurationType="1"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/simple.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				ExecutionBucket="7"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;PTRACING=1"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,_AFXDLL"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opal.lib ptlib.lib"
-				OutputFile="$(OutDir)/simpleOPAL.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="9"
-				TargetMachine="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCCodeSignTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-			<DeploymentTool
-				ForceDirty="-1"
-				RemoteDirectory=""
-				RegisterOutput="0"
-				AdditionalFiles=""
-			/>
-			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
-			IntermediateDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/simple.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				ExecutionBucket="7"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,_AFXDLL"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opal.lib ptlib.lib"
-				OutputFile="$(OutDir)/simpleOPAL.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="9"
-				TargetMachine="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCCodeSignTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-			<DeploymentTool
-				ForceDirty="-1"
-				RemoteDirectory=""
-				RegisterOutput="0"
-				AdditionalFiles=""
-			/>
-			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm5\$(ConfigurationName)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5ppc\$(ConfigurationName)"
 			IntermediateDirectory="$(OutDir)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -717,9 +949,9 @@
 				ExecutionBucket="7"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC;PTRACING=1"
+				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
 				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
+				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -751,6 +983,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="0"
 			/>
 			<Tool
@@ -761,6 +995,9 @@
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCCodeSignTool"
@@ -779,12 +1016,13 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
-			OutputDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
-			IntermediateDirectory="..\..\bin\$(ProjectName)\wm6\$(ConfigurationName)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6pro\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -812,9 +1050,402 @@
 				ExecutionBucket="7"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC;PTRACING=1"
+				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
 				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opald.lib ptlibd.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm5sp\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				RuntimeLibrary="3"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opald.lib ptlibd.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6std\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\NoTrace/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="1"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opaln.lib ptlibn.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6std\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				TreatWChar_tAsBuiltInType="false"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG,_AFXDLL"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opal.lib ptlib.lib"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="9"
+				TargetMachine="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCCodeSignTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DeploymentTool
+				ForceDirty="-1"
+				RemoteDirectory=""
+				RegisterOutput="0"
+				AdditionalFiles=""
+			/>
+			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+			OutputDirectory="..\..\bin\$(ProjectName)\wm6std\$(ConfigurationName)"
+			IntermediateDirectory="$(OutDir)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/simple.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;$(PLATFORMDEFINES);$(ARCHFAM);$(_ARCHFAM_);PTRACING=1"
+				RuntimeLibrary="3"
+				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -898,25 +1529,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -931,6 +1543,24 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="1"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="1"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
@@ -953,6 +1583,25 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						BasicRuntimeChecks="3"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -963,6 +1612,42 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="1"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -985,27 +1670,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions=""
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -1021,6 +1685,26 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="1"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="1"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
 						PreprocessorDefinitions=""
 						UsePrecompiledHeader="1"
 					/>
@@ -1046,6 +1730,27 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						BasicRuntimeChecks="3"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -1057,6 +1762,46 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="1"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

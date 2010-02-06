@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="opalcodecinfo"
 	ProjectGUID="{7FF55F1C-87EB-4087-8814-FD494BE49170}"
 	TargetFrameworkVersion="131072"
@@ -48,14 +48,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="NDEBUG;PTRACING"
+				PreprocessorDefinitions="NDEBUG;WIN32;PTRACING=1"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				WarningLevel="4"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -105,7 +103,6 @@
 			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -133,13 +130,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;PTRACING"
+				PreprocessorDefinitions="_DEBUG;WIN32;PTRACING=1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				WarningLevel="4"
-				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -190,7 +185,6 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
-			RelativePathToProject="..\ptlib\src\ptlib\msos\Console_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
@@ -198,7 +192,6 @@
 			CopyLocalDependencies="false"
 			UseInBuild="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\src\win32\opal_lib_2008.vcproj"
 		/>
 	</References>
 	<Files>
