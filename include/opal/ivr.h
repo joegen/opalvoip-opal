@@ -47,6 +47,42 @@ class OpalIVRConnection;
 
 
 /**Interactive Voice Response endpoint.
+   This endpoint type will create an connection that executes a script,
+   interacting with the corresponding connection in the call, playing messages
+   and waiting for input. The other connection is typically a network such
+   as H.323 or SIP but due to the orthoganlity of OPAL could be any connection
+   type.
+
+   The script, set via the OpalIVREndPoint::SetDefaultVXML() function, or
+   presented after the "ivr:" in the URI string used to make the call, may be
+   any of the following:
+
+      VXML script, in which case it MUST start with "<?xml" or "<vxml".
+
+      A file path with the extension .vxml, the VSM script is read from that
+      file.
+
+      A file URI for a .vxml file as above.
+
+      A file URI for a .WAV file, the WAV file is played and the connection is
+      released.
+
+      Or a series of simple separated by ';'. The commands are:
+
+          repeat=n      Repeat next WAV file or Speak command  n times.
+          delay=n       Delay after repeats n milliseconds.
+          voice=name    Set Text To Speech voice to name
+          tone=t        Emit DTMF tone t
+          silence=n     Emit silence for n milliseconds
+          speak=text    Speak the text using the Text To Speech system.
+          speak=$var    Speak the internal variable using the Text To Speech system.
+          file:///x.wav File URI for WAV file to play.
+
+      Variables may be one of:
+          Time
+          Originator-Address
+          Remote-Address
+          Source-IP-Address
  */
 class OpalIVREndPoint : public OpalLocalEndPoint
 {
