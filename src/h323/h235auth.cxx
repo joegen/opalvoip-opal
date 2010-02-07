@@ -334,16 +334,6 @@ const char * H235AuthSimpleMD5::GetName() const
 }
 
 
-static PWCharArray GetUCS2plusNULL(const PString & str)
-{
-  PWCharArray ucs2 = str.AsUCS2();
-  PINDEX len = ucs2.GetSize();
-  if (len > 0 && ucs2[len-1] != 0)
-    ucs2.SetSize(len+1);
-  return ucs2;
-}
-
-
 H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
 {
   if (!IsActive())
@@ -361,10 +351,10 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
   clearToken.m_tokenOID = "0.0";
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID = GetUCS2plusNULL(localId);
+  clearToken.m_generalID.SetValueRaw(localId.AsUCS2()); // Use SetValueRaw to make sure trailing NULL is included
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
-  clearToken.m_password = GetUCS2plusNULL(password);
+  clearToken.m_password.SetValueRaw(password.AsUCS2());
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = (int)PTime().GetTimeInSeconds();
@@ -421,10 +411,10 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
   clearToken.m_tokenOID = "0.0";
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID = GetUCS2plusNULL(alias);
+  clearToken.m_generalID.SetValueRaw(alias.AsUCS2()); // Use SetValueRaw to make sure trailing NULL is included
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
-  clearToken.m_password = GetUCS2plusNULL(password);
+  clearToken.m_password.SetValueRaw(password.AsUCS2());
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken.m_timeStamp = cryptoEPPwdHash.m_timeStamp;
@@ -520,7 +510,7 @@ H235_ClearToken * H235AuthCAT::CreateClearToken()
   clearToken->m_tokenOID = OID_CAT;
 
   clearToken->IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken->m_generalID = GetUCS2plusNULL(localId);
+  clearToken->m_generalID.SetValueRaw(localId.AsUCS2()); // Use SetValueRaw to make sure trailing NULL is included
 
   clearToken->IncludeOptionalField(H235_ClearToken::e_timeStamp);
   clearToken->m_timeStamp = (int)PTime().GetTimeInSeconds();
