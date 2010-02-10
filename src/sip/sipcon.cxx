@@ -1237,6 +1237,8 @@ bool SIPConnection::WriteINVITE()
 
   SIPURL contact = invite->GetMIME().GetContact();
   if (!number.IsEmpty())
+    contact.SetUserName(number);
+  if (!name.IsEmpty())
     contact.SetDisplayName(name);
   if (!domain.IsEmpty())
     contact.SetHostName(domain);
