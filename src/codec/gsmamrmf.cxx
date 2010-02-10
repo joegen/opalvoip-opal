@@ -108,9 +108,9 @@ class H323_GSMAMRCapability : public H323GenericAudioCapability
 #endif // OPAL_H323
 
 
-const OpalMediaFormat & GetOpalGSMAMR()
+const OpalAudioFormat & GetOpalGSMAMR()
 {
-  static OpalMediaFormat const GSMAMR_Format(new OpalGSMAMRFormat);
+  static OpalAudioFormat const GSMAMR_Format(new OpalGSMAMRFormat);
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<H323_GSMAMRCapability> GSMAMR_Factory(OPAL_GSMAMR, true);
