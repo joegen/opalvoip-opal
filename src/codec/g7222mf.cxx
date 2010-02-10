@@ -100,9 +100,9 @@ class H323_G7222Capability : public H323GenericAudioCapability
 
 
 
-const OpalMediaFormat & GetOpalG7222()
+const OpalAudioFormat & GetOpalG7222()
 {
-  static OpalMediaFormat const G7222_Format(new OpalG7222Format);
+  static OpalAudioFormat const G7222_Format(new OpalG7222Format);
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<H323_G7222Capability> G7222_Factory(OPAL_G7222, true);
