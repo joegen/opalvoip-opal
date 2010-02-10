@@ -259,17 +259,21 @@ bool OpalMediaOption::ValidateMerge(const OpalMediaOption & option) const
 {
   switch (m_merge) {
     case EqualMerge :
-      if (CompareValue(option) != EqualTo) {
-        PTRACE(2, "MediaFormat\tValidation of media option \"" << m_name << "\" failed, required to be equal.");
-        return false;
-	  }
+      if (CompareValue(option) == EqualTo)
+        return true;
+      break;
+
     case NotEqualMerge :
-      if (CompareValue(option) == EqualTo) {
-        PTRACE(2, "MediaFormat\tValidation of media option \"" << m_name << "\" failed, required to be not equal.");
-        return false;
-      }
+      if (CompareValue(option) != EqualTo)
+        return true;
+      break;
+
+    default :
+      return true;
   }
-  return true;
+
+  PTRACE(2, "MediaFormat\tValidation of merge for media option \"" << m_name << "\" failed.");
+  return false;
 }
 
 
