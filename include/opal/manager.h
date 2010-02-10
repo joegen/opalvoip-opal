@@ -313,6 +313,10 @@ class OpalManager : public PObject
       PSafetyMode mode = PSafeReference   ///< Safety mode for presentity
     );
 
+    /**Get all presentities.
+      */
+    virtual PStringList GetPresentities() const;
+
     /**Remove a presentity.
       */
     virtual bool RemovePresentity(
