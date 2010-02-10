@@ -1767,6 +1767,17 @@ PSafePtr<OpalPresentity> OpalManager::GetPresentity(const PString & presentity, 
 }
 
 
+PStringList OpalManager::GetPresentities() const
+{
+  PStringList presentities;
+
+  for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity)
+    presentities += presentity->GetAOR().AsString();
+
+  return presentities;
+}
+
+
 bool OpalManager::RemovePresentity(const PString & presentity)
 {
   return m_presentities.RemoveAt(presentity);
