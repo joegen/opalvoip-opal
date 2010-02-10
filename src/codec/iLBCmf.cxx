@@ -138,9 +138,9 @@ class H323_iLBCCapability : public H323GenericAudioCapability
 #endif // OPAL_H323
 
 
-const OpalMediaFormat & GetOpaliLBC()
+const OpalAudioFormat & GetOpaliLBC()
 {
-  static OpalMediaFormat const iLBC_Format(new OpaliLBCFormat);
+  static OpalAudioFormat const iLBC_Format(new OpaliLBCFormat);
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);

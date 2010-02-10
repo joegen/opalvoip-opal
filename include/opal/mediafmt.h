@@ -1142,6 +1142,9 @@ class OpalAudioFormat : public OpalMediaFormat
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
   public:
     OpalAudioFormat(
+      OpalMediaFormatInternal * info = NULL
+    ) : OpalMediaFormat(info) { }
+    OpalAudioFormat(
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,///<  RTP encoding name
@@ -1183,6 +1186,9 @@ class OpalVideoFormat : public OpalMediaFormat
 {
     PCLASSINFO(OpalVideoFormat, OpalMediaFormat);
   public:
+    OpalVideoFormat(
+      OpalMediaFormatInternal * info = NULL
+    ) : OpalMediaFormat(info) { }
     OpalVideoFormat(
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
@@ -1284,7 +1290,7 @@ extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
 extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
 extern const OpalAudioFormat & GetOpalG722();
 extern const OpalAudioFormat & GetOpalG7221();
-extern const OpalMediaFormat & GetOpalG7222();
+extern const OpalAudioFormat & GetOpalG7222();
 extern const OpalAudioFormat & GetOpalG726_40K();
 extern const OpalAudioFormat & GetOpalG726_32K();
 extern const OpalAudioFormat & GetOpalG726_24K();
@@ -1299,8 +1305,8 @@ extern const OpalAudioFormat & GetOpalG7231_5k3();
 extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
-extern const OpalMediaFormat & GetOpalGSMAMR();
-extern const OpalMediaFormat & GetOpaliLBC();
+extern const OpalAudioFormat & GetOpalGSMAMR();
+extern const OpalAudioFormat & GetOpaliLBC();
 
 extern const OpalMediaFormat & GetOpalRFC2833();
 
