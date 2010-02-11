@@ -55,6 +55,8 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 //
 //#define FMTP_BEFORE_RTPMAP 1
 
+#define SDP_MIN_PTIME 10
+
 
 /////////////////////////////////////////////////////////
 //
@@ -316,6 +318,19 @@ void SDPMediaFormat::InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const
     if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
       option.FromString(option.GetFMTPDefault());
   }
+  // Set the frame size options from media's ptime & maxptime attributes
+  if (m_parent.GetPTime() >= SDP_MIN_PTIME && mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
+    unsigned frames = (m_parent.GetPTime() * mediaFormat.GetTimeUnits()) / mediaFormat.GetFrameTime();
+    if (frames < 1)
+      frames = 1;
+    mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), frames);
+  }
+  if (m_parent.GetMaxPTime() >= SDP_MIN_PTIME && mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
+    unsigned frames = (m_parent.GetMaxPTime() * mediaFormat.GetTimeUnits()) / mediaFormat.GetFrameTime();
+    if (frames < 1)
+      frames = 1;
+    mediaFormat.SetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), frames);
+  }
 
   // If format has an explicit FMTP option then we only use that, no high level parsing
   if (mediaFormat.SetOptionString("FMTP", m_fmtp))
@@ -426,19 +441,6 @@ bool SDPMediaFormat::PostDecode(unsigned bandwidth)
 }
 
 
-void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
-{
-  if (mediaFormat.HasOption(optionName)) {
-    unsigned newCount = (ptime*mediaFormat.GetTimeUnits())/mediaFormat.GetFrameTime();
-    if (newCount < 1)
-      newCount = 1;
-    mediaFormat.SetOptionInteger(optionName, newCount);
-    PTRACE(4, "SDP\tMedia format \"" << mediaFormat << "\" option \"" << optionName
-           << "\" set to " << newCount << " packets from " << ptime << " milliseconds");
-  }
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 unsigned & SDPBandwidth::operator[](const PString & type)
@@ -490,6 +492,8 @@ void SDPBandwidth::SetMin(const PString & type, unsigned value)
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
   : transportAddress(address)
   , mediaType(type)
+  , ptime(0)
+  , maxptime(0)
 {
   direction = Undefined;
   port      = 0;
@@ -714,19 +718,6 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
   }
 
   return const_cast<SDPMediaFormat *>(&*format);
-}
-
-
-void SDPMediaDescription::SetPacketTime(const PString & optionName, const PString & value)
-{
-  unsigned newTime = value.AsUnsigned();
-  if (newTime < 10) {
-    PTRACE(2, "SDP\tMalformed (max)ptime attribute value " << value);
-    return;
-  }
-
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
-   format->SetPacketTime(optionName, newTime);
 }
 
 
@@ -1029,12 +1020,22 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
   if (attr *= "ptime") {
-    SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
+    unsigned newTime = value.AsUnsigned();
+    if (newTime < SDP_MIN_PTIME) {
+      PTRACE(2, "SDP\tMalformed ptime attribute value " << value);
+      return;
+    }
+    ptime = newTime;
     return;
   }
 
   if (attr *= "maxptime") {
-    SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
+    unsigned newTime = value.AsUnsigned();
+    if (newTime < SDP_MIN_PTIME) {
+      PTRACE(2, "SDP\tMalformed maxptime attribute value " << value);
+      return;
+    }
+    maxptime = newTime;
     return;
   }
 
