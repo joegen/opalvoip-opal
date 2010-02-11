@@ -91,8 +91,6 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v) { parameters = v; }
 
-    void SetPacketTime(const PString & optionName, unsigned ptime);
-
     const OpalMediaFormat & GetMediaFormat() const;
     OpalMediaFormat & GetWritableMediaFormat();
 
@@ -189,9 +187,11 @@ class SDPMediaDescription : public PObject
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
+    unsigned GetPTime () const { return ptime; }
+    unsigned GetMaxPTime () const { return maxptime; }
+
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
-    virtual void SetPacketTime(const PString & optionName, const PString & value);
 
     OpalTransportAddress transportAddress;
     Direction direction;
@@ -201,6 +201,8 @@ class SDPMediaDescription : public PObject
 
     SDPMediaFormatList formats;
     SDPBandwidth       bandwidth;
+    unsigned           ptime;
+    unsigned           maxptime;
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
