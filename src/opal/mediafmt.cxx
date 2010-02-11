@@ -57,17 +57,17 @@
                                     encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock); \
     return name; \
   }
-
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  0, 256,  8000);
-AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     32,16,  240,  0, 256, 16000);
-AUDIO_FORMAT(PCM16_32KHZ,    MaxPayloadType, "",     64,32,  240,  0, 256, 32000);
-AUDIO_FORMAT(PCM16_48KHZ,    MaxPayloadType, "",     96,48,  240,  0, 256, 48000);
-AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  32,16,  240, 30, 256, 16000);
-AUDIO_FORMAT(L16_MONO_32KHZ, L16_Mono,       "L16",  64,32,  240, 30, 256, 32000);
-AUDIO_FORMAT(L16_MONO_48KHZ, L16_Mono,       "L16",  96,48,  240, 30, 256, 48000);
-AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 20, 256,  8000);
-AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 20, 256,  8000);
+//           name            rtpPayloadType  encodingName frameSize frameTime rxFrames txFrames maxFrames clock
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",          16,        8,       240,      0,      256,       8000);
+AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",          32,       16,       240,      0,      256,      16000);
+AUDIO_FORMAT(PCM16_32KHZ,    MaxPayloadType, "",          64,       32,       240,      0,      256,      32000);
+AUDIO_FORMAT(PCM16_48KHZ,    MaxPayloadType, "",          96,       48,       240,      0,      256,      48000);
+AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",       16,        8,       240,     30,      256,       8000);
+AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",       32,       16,       240,     30,      256,      16000);
+AUDIO_FORMAT(L16_MONO_32KHZ, L16_Mono,       "L16",       64,       32,       240,     30,      256,      32000);
+AUDIO_FORMAT(L16_MONO_48KHZ, L16_Mono,       "L16",       96,       48,       240,     30,      256,      48000);
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",       8,        8,       240,     20,      256,       8000);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",       8,        8,       240,     20,      256,       8000);
 
 
 class OpalStereoAudioFormat : public OpalAudioFormat
@@ -1448,7 +1448,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
   if (rxFrames > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::NoMerge,  rxFrames, 1, maxFrames));
   if (txFrames > 0)
-    AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
+    AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::AlwaysMerge, txFrames, 1, maxFrames));
 
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  1, 1, 5));
