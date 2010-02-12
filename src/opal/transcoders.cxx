@@ -254,6 +254,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat);
     if (!srcFormat.Merge(srcCapability))
       return false;
+    srcFormat.SetPayloadType(srcCapability.GetPayloadType());
   }
 
   masterFormat = masterFormats.FindFormat(dstCapability);
@@ -266,6 +267,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
     if (!dstFormat.Merge(dstCapability))
       return false;
+    dstFormat.SetPayloadType(dstCapability.GetPayloadType());
   }
 
   if (!srcFormat.Merge(dstFormat))
