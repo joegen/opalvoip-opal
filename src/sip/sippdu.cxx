@@ -1399,11 +1399,11 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
     newField << '=' << newValue;
 
   PINDEX start, val, end;
-  PString str;
-  if (!LocateFieldParameter(fieldValue, paramName, start, val, end)) 
-    str = fieldValue + ";" + newField;
+  PString str = fieldValue;
+  if (LocateFieldParameter(fieldValue, paramName, start, val, end))
+    str.Splice(newField, start, end-start);
   else
-    str = fieldValue.Left(start) + newField + fieldValue.Mid(end+1);
+    str += ';' + newField;
   return str;
 }
 
