@@ -3848,7 +3848,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
     tstringstream details;
-    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat;
+    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
     m_allCodecs->Append(details.str(), &*mm);

@@ -293,13 +293,13 @@ class IMDialog : public wxDialog
 
     void SendCurrentText();
 
+    OpalMediaFormat m_mediaFormat;
     MyManager * m_manager;
     PURL m_remoteAddress;
 
     wxString m_them;
     PString m_us;
     PString m_remoteAddrStr;
-    OpalMediaFormat m_mediaFormat;
 
     wxTextCtrl * m_enteredText;
     wxTextCtrl * m_textArea;
