@@ -858,10 +858,15 @@ OpalMediaFormatList OpalMediaFormat::GetMatchingRegisteredMediaFormats(RTP_DataF
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
 
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
-  for (OpalMediaFormatList::const_iterator format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol);
-       format != registeredFormats.end();
-       format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol, ++format))
+  OpalMediaFormatList::const_iterator format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol);
+  while (format != registeredFormats.end()) {
     matches += *format;
+
+    if (++format == registeredFormats.end())
+      break;
+
+    format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol, format);
+  }
 
   return matches;
 }
