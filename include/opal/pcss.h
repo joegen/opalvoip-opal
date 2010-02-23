@@ -199,7 +199,8 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
        connection.
       */
     virtual PBoolean RejectIncomingConnection(
-      const PString & connectionToken ///<  Token of connection to accept call
+      const PString & connectionToken,       ///<  Token of connection to accept call
+      const OpalConnection::CallEndReason & reason = OpalConnection::EndedByAnswerDenied ///<  Reason for rejecting the call
     );
 
     /**Call back to indicate that remote is ringing.

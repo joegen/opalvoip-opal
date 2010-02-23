@@ -309,9 +309,9 @@ PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
-PBoolean OpalPCSSEndPoint::RejectIncomingConnection(const PString & token)
+PBoolean OpalPCSSEndPoint::RejectIncomingConnection(const PString & token, const OpalConnection::CallEndReason & reason)
 {
-  return RejectIncomingCall(token);
+  return RejectIncomingCall(token, reason);
 }
 
 
