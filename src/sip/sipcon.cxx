@@ -2015,8 +2015,10 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   if (mime.GetSubscriptionState().Find("terminated") == P_MAX_INDEX)
     return; // The REFER is not over yet, ignore
 
-  referTransaction->WaitForCompletion();
-  referTransaction.SetNULL();
+  if (referTransaction != NULL) {
+    referTransaction->WaitForCompletion();
+    referTransaction.SetNULL();
+  }
 
   // The REFER is over, see if successful
   if (code >= 300) {
