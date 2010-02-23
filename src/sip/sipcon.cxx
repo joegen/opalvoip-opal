@@ -1212,11 +1212,11 @@ bool SIPConnection::WriteINVITE()
   // only allow override of calling party number if the local party
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
-  PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER));
+  PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME)));
   if (!number.IsEmpty())
     myAddress.SetUserName(number);
 
-  PString name(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME));
+  PString name(m_connStringOptions(OPAL_OPT_CALLING_DISPLAY_NAME));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
 
