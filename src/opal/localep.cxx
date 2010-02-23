@@ -123,13 +123,13 @@ bool OpalLocalEndPoint::AcceptIncomingCall(const PString & token)
 }
 
 
-bool OpalLocalEndPoint::RejectIncomingCall(const PString & token)
+bool OpalLocalEndPoint::RejectIncomingCall(const PString & token, const OpalConnection::CallEndReason & reason)
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL)
     return false;
 
-  connection->Release(OpalConnection::EndedByAnswerDenied);
+  connection->Release(reason);
   return true;
 }
 

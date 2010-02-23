@@ -1139,6 +1139,13 @@ void MyManager::Main(PArgList & args)
           cout << "Could not reject connection " << pcssEP->incomingConnectionToken << endl;
         break;
 
+      case 'b' :
+        if ( pcssEP != NULL &&
+            !pcssEP->incomingConnectionToken &&
+            !pcssEP->RejectIncomingConnection(pcssEP->incomingConnectionToken, OpalConnection::EndedByLocalBusy))
+          cout << "Could not reject connection " << pcssEP->incomingConnectionToken << endl;
+        break;
+
 #if OPAL_PTLIB_CONFIG_FILE
       case 'l' :
         ListSpeedDials();
@@ -1498,7 +1505,7 @@ PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
     PTime now;
     cout << "\nCall on " << now.AsString("w h:mma")
          << " from " << connection.GetRemotePartyName()
-         << ", answer (Y/N)? " << flush;
+         << ", answer (Yes/No/Busy)? " << flush;
   }
 
   return PTrue;

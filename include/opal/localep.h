@@ -179,7 +179,8 @@ class OpalLocalEndPoint : public OpalEndPoint
        connection.
       */
     virtual bool RejectIncomingCall(
-      const PString & token ///<  Token of connection to accept call
+      const PString & token,                 ///<  Token of connection to accept call
+      const OpalConnection::CallEndReason & reason = OpalConnection::EndedByAnswerDenied ///<  Reason for rejecting the call
     );
 
     /**Call back to indicate that the remote user has indicated something.
