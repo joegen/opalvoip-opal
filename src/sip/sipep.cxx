@@ -712,8 +712,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
     if (handler->GetRealm().IsEmpty())
       noAuthYet = true;
     handler->OnReceivedResponse(transaction, response);
-    if (noAuthYet && (response.GetStatusCode() == SIP_PDU::Failure_UnAuthorised || response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired))
-      activeSIPHandlers.Append(handler);
+    //if (noAuthYet && (response.GetStatusCode() == SIP_PDU::Failure_UnAuthorised || response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired))
+    //  activeSIPHandlers.Append(handler);
   }
   else
     PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
