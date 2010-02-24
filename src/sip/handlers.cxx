@@ -263,8 +263,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     return true;
   }
 
-  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-  expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
+  RetryLater(offlineExpire);
   return true;
 }
 
@@ -426,10 +425,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
-
-  unsigned retryAfter = response.GetMIME().GetInteger("Retry-After", offlineExpire);
-  PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << retryAfter << " seconds.");
-  expireTimer.SetInterval(0, retryAfter); // Have another go in a little bit
+  RetryLater(response.GetMIME().GetInteger("Retry-After", offlineExpire));
 }
 
 
@@ -461,30 +457,30 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
     return;
   }
 
-  // Try to find authentication parameters for the given realm,
-  // if not, use the proxy authentication parameters (if any)
-  PString authRealm = m_realm;
-  PString username  = m_username;
-  PString password  = m_password;
-  if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), authRealm, username, password)) {
-    PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
-  }
-  else if (username.IsEmpty()) {
-    const SIPURL & proxy = endpoint.GetProxy();
-    if (!proxy.IsEmpty()) {
+  // If either username or password blank, try and fine values from other
+  // handlers which might be logged into the realm, or the proxy, if one.
+  PString username = m_username;
+  PString password = m_password;
+  if (username.IsEmpty() || password.IsEmpty()) {
+    // Try to find authentication parameters for the given realm,
+    // if not, use the proxy authentication parameters (if any)
+    if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), username, password)) {
+      PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
+    }
+    else if (username.IsEmpty()) {
+      const SIPURL & proxy = endpoint.GetProxy();
+      if (proxy.IsEmpty()) {
+        delete newAuth;
+        PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
+        OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
+        if (!transaction.IsCanceled())
+          RetryLater(offlineExpire);
+        return;
+      }
+
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
       username = proxy.GetUserName();
       password = proxy.GetPassword();
-    }
-    else {
-      delete newAuth;
-      PTRACE(1, "SIP\tAuthentication not possible yet.");
-      OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
-      if (expire > 0 && !transaction.IsCanceled()) {
-        PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-        expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-      }
-      return;
     }
   }
 
@@ -499,12 +495,20 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
     return;
   }
 
+  PTRACE(4, "SIP\tUpdating authentication credentials.");
+
   // switch authentication schemes
   delete authentication;
   authentication = newAuth;
-  m_realm    = newAuth->GetAuthRealm();
   m_username = username;
   m_password = password;
+
+  // If we changed realm (or hadn't got one yet) update the handler database
+  if (m_realm != newAuth->GetAuthRealm()) {
+    m_realm = newAuth->GetAuthRealm();
+    PTRACE(3, "SIP\tAuth realm set to " << m_realm);
+    endpoint.UpdateHandlerIndexes(this);
+  }
 
   // Restart the transaction with new authentication handler
   SendRequest(GetState());
@@ -542,12 +546,19 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
   if (transactions.Remove(&transaction)) {
     OnFailed(transaction.GetStatusCode());
-
-    if (expire > 0 && !transaction.IsCanceled()) {
-      PTRACE(4, "SIP\tRetrying " << GetMethod() << " in " << offlineExpire << " seconds.");
-      expireTimer.SetInterval(0, offlineExpire); // Keep trying to get it back
-    }
+    if (!transaction.IsCanceled())
+      RetryLater(offlineExpire);
   }
+}
+
+
+void SIPHandler::RetryLater(unsigned after)
+{
+  if (after == 0 || expire == 0)
+    return;
+
+  PTRACE(3, "SIP\tRetrying " << GetMethod() << " after " << after << " seconds.");
+  expireTimer.SetInterval(0, after); // Keep trying to get it back
 }
 
 
@@ -1826,16 +1837,16 @@ static PString MakeUrlKey(const PURL & aor, SIP_PDU::Methods method, const PStri
   * called when a handler is added
   */
 
-void SIPHandlersList::Append(SIPHandler * obj)
+void SIPHandlersList::Append(SIPHandler * newHandler)
 {
-  if (obj == NULL)
+  if (newHandler == NULL)
     return;
 
   PWaitAndSignal m(m_extraMutex);
 
-  PSafePtr<SIPHandler> handler = m_handlersList.FindWithLock(*obj, PSafeReference);
+  PSafePtr<SIPHandler> handler = m_handlersList.FindWithLock(*newHandler, PSafeReference);
   if (handler == NULL)
-    handler = m_handlersList.Append(obj, PSafeReference);
+    handler = m_handlersList.Append(newHandler, PSafeReference);
 
   // add entry to call to handler map
   handler->m_byCallID = m_byCallID.insert(IndexMap::value_type(handler->GetCallID(), handler));
@@ -1844,10 +1855,21 @@ void SIPHandlersList::Append(SIPHandler * obj)
   handler->m_byAorAndPackage = m_byAorAndPackage.insert(IndexMap::value_type(MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage()), handler));
 
   // add entry to username/realm map
-  if (!handler->GetUsername().IsEmpty())
-    handler->m_byAuthIdAndRealm = m_byAuthIdAndRealm.insert(IndexMap::value_type(handler->GetUsername() + '\n' + handler->GetRealm(), handler));
+  PString realm = handler->GetRealm();
+  if (realm.IsEmpty())
+    return;
 
-  handler->m_byAorUserAndRealm = m_byAorUserAndRealm.insert(IndexMap::value_type(handler->GetAddressOfRecord().GetUserName() + '\n' + handler->GetRealm(), handler));
+  PString username = handler->GetUsername();
+  if (!username.IsEmpty()) {
+    handler->m_byAuthIdAndRealm = m_byAuthIdAndRealm.insert(IndexMap::value_type(username + '\n' + realm, handler));
+    PTRACE_IF(4, !handler->m_byAuthIdAndRealm.second, "Duplicate handler for authId=\"" << username << "\", realm=\"" << realm << '"');
+  }
+
+  username = handler->GetAddressOfRecord().GetUserName();
+  if (!username.IsEmpty()) {
+    handler->m_byAorUserAndRealm = m_byAorUserAndRealm.insert(IndexMap::value_type(username + '\n' + realm, handler));
+    PTRACE_IF(4, !handler->m_byAuthIdAndRealm.second, "Duplicate handler for AOR user=\"" << username << "\", realm=\"" << realm << '"');
+  }
 }
 
 
@@ -1859,21 +1881,42 @@ void SIPHandlersList::Remove(SIPHandler * handler)
   if (handler == NULL)
     return;
 
-  PWaitAndSignal m(m_extraMutex);
+  m_extraMutex.Wait();
 
-  if (m_handlersList.Remove(handler)) {
-    if (handler->m_byAorUserAndRealm.second)
-      m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm.first);
+  if (m_handlersList.Remove(handler))
+    RemoveIndexes(handler);
 
-    if (handler->m_byAuthIdAndRealm.second)
-      m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm.first);
+  m_extraMutex.Signal();
+}
 
-    if (handler->m_byAorAndPackage.second)
-      m_byAorAndPackage.erase(handler->m_byAorAndPackage.first);
 
-    if (handler->m_byCallID.second)
-      m_byCallID.erase(handler->m_byCallID.first);
-  }
+void SIPHandlersList::Update(SIPHandler * handler)
+{
+  if (handler == NULL)
+    return;
+
+  m_extraMutex.Wait();
+
+  RemoveIndexes(handler);
+  Append(handler);
+
+  m_extraMutex.Signal();
+}
+
+
+void SIPHandlersList::RemoveIndexes(SIPHandler * handler)
+{
+  if (handler->m_byAorUserAndRealm.second)
+    m_byAorUserAndRealm.erase(handler->m_byAorUserAndRealm.first);
+
+  if (handler->m_byAuthIdAndRealm.second)
+    m_byAuthIdAndRealm.erase(handler->m_byAuthIdAndRealm.first);
+
+  if (handler->m_byAorAndPackage.second)
+    m_byAorAndPackage.erase(handler->m_byAorAndPackage.first);
+
+  if (handler->m_byCallID.second)
+    m_byCallID.erase(handler->m_byCallID.first);
 }
 
 
@@ -1926,7 +1969,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_
 /**
  * Find the SIPHandler object with the specified authRealm
  */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
   PSafePtr<SIPHandler> ptr;
 
@@ -1937,21 +1980,9 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm (const PString &
       return ptr;
     }
 
-      // look for a match to exact user name and empty realm
-    if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n', mode)) != NULL) {
-      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" without realm");
-      return ptr;
-    }
-
     // look for a match to exact user name and realm
     if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
       PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
-      return ptr;
-    }
-
-      // look for a match to exact user name and empty realm
-    if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n', mode)) != NULL) {
-      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" without realm");
       return ptr;
     }
   }
