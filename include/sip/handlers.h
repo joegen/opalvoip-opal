@@ -138,6 +138,7 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
+  void RetryLater(unsigned after);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
   bool WriteSIPHandler(OpalTransport & transport);
@@ -364,6 +365,10 @@ class SIPHandlersList
       */
     void Remove(SIPHandler * handler);
 
+    /** Update indexes for handler in the list
+      */
+    void Update(SIPHandler * handler);
+
     /** Clean up lists of handler.
       */
     bool DeleteObjectsToBeRemoved()
@@ -413,6 +418,8 @@ class SIPHandlersList
     PSafePtr <SIPHandler> FindSIPHandlerByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
 
   protected:
+    void RemoveIndexes(SIPHandler * handler);
+
     PMutex m_extraMutex;
     PSafeList<SIPHandler> m_handlersList;
 
