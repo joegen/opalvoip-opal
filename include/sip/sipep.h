@@ -795,7 +795,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Return the SIPAuthentication for a specific realm.
      */
-    PBoolean GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password); 
+    bool GetAuthentication(const PString & authRealm, PString & user, PString & password); 
     
     /**Return the registered proxy URL for the given host.
      */
@@ -909,6 +909,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 #if OPAL_HAS_SIPIM
     virtual OpalSIPIMManager & GetSIPIMManager() { return m_sipIMManager; }
 #endif
+
+    void UpdateHandlerIndexes(SIPHandler * handler) { activeSIPHandlers.Update(handler); }
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);

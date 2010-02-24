@@ -1412,17 +1412,17 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 }
 
 
-PBoolean SIPEndPoint::GetAuthentication(const PString & authRealm, PString & realm, PString & user, PString & password) 
+bool SIPEndPoint::GetAuthentication(const PString & realm, PString & user, PString & password) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(authRealm, user, PSafeReadOnly);
-  if (handler == NULL || handler->GetPassword ().IsEmpty ())
-    return PFalse;
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, user, PSafeReadOnly);
+  if (handler == NULL || handler->GetPassword().IsEmpty())
+    return false;
 
-  realm    = handler->GetRealm();
+  // really just after password, but username MAY change too.
   user     = handler->GetUsername();
   password = handler->GetPassword();
 
-  return PTrue;
+  return true;
 }
 
 
