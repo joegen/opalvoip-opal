@@ -47,7 +47,7 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
       const char * mediaType, ///< name of the media type (audio, video etc)
       const char * sdpType    ///< name of the SDP type 
     )
-      : OpalMediaTypeDefinition(mediaType, sdpType, 0, OpalMediaType::ReceiveTransmit)
+      : OpalMediaTypeDefinition(mediaType, sdpType, 0, OpalMediaType::DontOffer)
     { }
 
     PString GetRTPEncoding() const { return PString::Empty(); }
