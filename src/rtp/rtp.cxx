@@ -52,13 +52,10 @@
 
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
-#ifndef _WIN32_WCE
-#define RTP_DATA_RX_BUFFER_SIZE 65536
-#else
-#define RTP_DATA_RX_BUFFER_SIZE 8192
-#endif
-#define RTP_DATA_TX_BUFFER_SIZE 8192
-#define RTP_CTRL_BUFFER_SIZE 4096
+#define RTP_VIDEO_RX_BUFFER_SIZE 0x100000 // 1Mb
+#define RTP_AUDIO_RX_BUFFER_SIZE 0x4000   // 16kb
+#define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
+#define RTP_CTRL_BUFFER_SIZE     0x1000   // 4kb
 
 
 PFACTORY_CREATE(PFactory<RTP_Encoding>, RTP_Encoding, "rtp/avp", false);
@@ -1511,20 +1508,33 @@ void RTP_Session::AddFilter(const PNotifier & filter)
 static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
 {
   int sz = 0;
-  if (sock.GetOption(buftype, sz)) {
+  if (!sock.GetOption(buftype, sz)) {
+    PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
+    return;
+  }
+
+  // Already big enough
+  if (sz >= bufsz)
+    return;
+
+  for (; bufsz >= 1024; bufsz /= 2) {
+    // Set to new size
+    if (!sock.SetOption(buftype, bufsz)) {
+      PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed: " << sock.GetErrorText());
+      continue;
+    }
+
+    // As some stacks lie about setting the buffer size, we double check.
+    if (!sock.GetOption(buftype, sz)) {
+      PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
+      return;
+    }
+
     if (sz >= bufsz)
       return;
-  }
-  else {
-    PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
-  }
 
-  if (!sock.SetOption(buftype, bufsz)) {
-    PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ") failed: " << sock.GetErrorText());
+    PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
   }
-
-  PTRACE_IF(1, !sock.GetOption(buftype, sz) && sz < bufsz,
-            "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
 }
 
 
@@ -1684,7 +1694,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
     }
 
     // Increase internal buffer size on media UDP sockets
-    SetMinBufferSize(*dataSocket,    SO_RCVBUF, RTP_DATA_RX_BUFFER_SIZE);
+    SetMinBufferSize(*dataSocket,    SO_RCVBUF, isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
     SetMinBufferSize(*dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
     SetMinBufferSize(*controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
     SetMinBufferSize(*controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
