@@ -514,21 +514,22 @@ unsigned OpalRTPSessionManager::GetNextSessionID()
 
 void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMediaType & mediaType)
 {
+  if (rtpSession == NULL)
+    return;
+
   PWaitAndSignal m(m_mutex);
   
-  if (rtpSession != NULL) {
-    unsigned sessionID = rtpSession->GetSessionID();
-    OpalMediaSession * session = sessions.GetAt(sessionID);
-    if (session == NULL) {
-      sessions.Insert(POrdinalKey(sessionID), new OpalRTPMediaSession(connection, mediaType, sessionID, rtpSession));
-      PTRACE(3, "RTP\tCreating new session " << *rtpSession);
-    }
-    else {
-      OpalRTPMediaSession * s = dynamic_cast<OpalRTPMediaSession *>(session);
-      PAssert(s != NULL,             "RTP session type does not match");
-      PAssert(s->rtpSession == NULL, "Cannot add already existing session");
+  unsigned sessionID = rtpSession->GetSessionID();
+  OpalMediaSession * session = sessions.GetAt(sessionID);
+  if (session == NULL) {
+    sessions.Insert(POrdinalKey(sessionID), new OpalRTPMediaSession(connection, mediaType, sessionID, rtpSession));
+    PTRACE(3, "RTP\tCreating new session " << *rtpSession);
+  }
+  else {
+    OpalRTPMediaSession * s = dynamic_cast<OpalRTPMediaSession *>(session);
+    if (PAssert(s != NULL,             "RTP session type does not match") &&
+        PAssert(s->rtpSession == NULL, "Cannot add already existing session"))
       s->rtpSession = rtpSession;
-    }
   }
 }
 
