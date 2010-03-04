@@ -204,6 +204,7 @@ public:
   Result GET_MANUFACTURER(char * szBuffer)
   {
     capi20_get_manufacturer(0, (unsigned char *)szBuffer);
+    return 0;
   }
 
   Result GET_VERSION(UInt *pCAPIMajor, UInt *pCAPIMinor, UInt *pManufacturerMajor, UInt *pManufacturerMinor)
