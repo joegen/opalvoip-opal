@@ -49,7 +49,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#if P_EXPAT
+#if P_EXPAT && OPAL_SIP
 
 #include <sip/sippres.h>
 #include <ptclib/pdns.h>
@@ -1219,4 +1219,4 @@ void XCAPClient::NodeSelector::AddToURL(PURL & uri) const
 }
 
 
-#endif // P_EXPAT
+#endif // P_EXPAT && OPAL_SIP

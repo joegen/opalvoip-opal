@@ -37,6 +37,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_H323
+
 #include <ptlib/pfactory.h>
 
 
@@ -304,8 +306,9 @@ class H235AuthProcedure1 : public H235Authenticator
 
 PFACTORY_LOAD(H235AuthProcedure1);
 
-#endif
+#endif // OPAL_PTLIB_SSL
 
+#endif // OPAL_H323
 
 #endif //OPAL_H323_H235AUTH_H
 
