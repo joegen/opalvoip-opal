@@ -861,6 +861,10 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   }
 
   if (mediaType == OpalMediaType::Audio()) {
+    SDPAudioMediaDescription * audioMedia = dynamic_cast<SDPAudioMediaDescription *>(localMedia);
+    if (audioMedia != NULL)
+      audioMedia->SetOfferPTime(m_connStringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME));
+
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
     SetNxECapabilities(rfc2833Handler, localFormatList, m_remoteFormatList, OpalRFC2833, localMedia, gatewayInfo.rfc2833);
