@@ -57,6 +57,9 @@
 class OpalCall;
 class SIPEndPoint;
 
+
+#define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
+
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
 

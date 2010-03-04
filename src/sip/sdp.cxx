@@ -959,6 +959,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
 SDPAudioMediaDescription::SDPAudioMediaDescription(const OpalTransportAddress & address)
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Audio())
+  , m_offerPTime(false)
 {
 }
 
@@ -976,27 +977,46 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
     return false;
 
   /* The ptime parameter is a recommendation to the remote that we want them
-     to send that number of milliseconds on audio in each RTP packet. OPAL
-     does not have an equivalent parameter anywhere, so we do not provide it
-     on outgoing SDP. We do try to honour it on incoing SDP, however.
+     to send that number of milliseconds of audio in each RTP packet. The 
+     maxptime parameter specifies the absolute maximum packet size that can
+     be handled. There purpose is to limit the size of the packets sent by the
+     remote to prevent buffer overflows at this end.
+     
+     OPAL does not have a parameter equivalent to ptime. This code uses the 
+     TxFramesPerPacketOption. We go through all of the codecs offered and 
+     calculate the largest of them. The value can be controlled by 
+     manipulating the registered formats set or the set of formats given to 
+     AddMediaFormat. It would make most sense here if they were all the same.
 
      The maxptime parameter can be represented by the RxFramesPerPacketOption,
      so we go through all the codecs offered and calculate a maxptime based on
-     the smallest maximum rx packets of the codecs. Allowance must be made for
-     maxptime to be at least big enough for 1 frame per packet for the largest
-     frame size of those codecs.
-     
-     In practice this generally means if we mix GSM and G.723.1 then the
-     maxptime cannot be smaller than 30ms even if GSM wants one frame per
-     packet. That should still work as teh remote cannot send 2fpp as it would
-     exceed the 30ms.
+     the smallest maximum rx packets of the codecs.
 
+     Allowance must be made for either value to be at least big enough for 1 
+     frame per packet for the largest frame size of those codecs. In practice 
+     this generally means if we mix GSM and G.723.1 then the value cannot be 
+     smaller than 30ms even if GSM wants one frame per packet. That should 
+     still work as the remote cannot send 2fpp as it would exceed the 30ms.
      However, certain combinations cannot be represented, e.g. if you want 2fpp
      of G.729 (20ms) and 1fpp of G.723.1 (30ms) then the G.729 codec COULD
      receive 3fpp. This is really a failing in SIP/SDP and the techniques for
      woking around the limitation are for too complicated to be worth doing for
      what should be rare cases.
     */
+
+  if (m_offerPTime) {
+    unsigned ptime = 0;
+    for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+      const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
+      if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
+        unsigned ptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption()) * mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits();
+        if (ptime < ptime1)
+          ptime = ptime1;
+      }
+    }
+    if (ptime > 0)
+      str << "a=ptime:" << ptime << "\r\n";
+  }
 
   unsigned largestFrameTime = 0;
   unsigned maxptime = UINT_MAX;

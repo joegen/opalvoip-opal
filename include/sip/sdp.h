@@ -237,6 +237,12 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     virtual PString GetSDPMediaType() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
     void SetAttribute(const PString & attr, const PString & value);
+
+  	bool GetOfferPTime() const { return m_offerPTime; }
+	  void SetOfferPTime(bool value) { m_offerPTime = value; }
+
+  protected:
+    bool m_offerPTime;
 };
 
 /////////////////////////////////////////////////////////
