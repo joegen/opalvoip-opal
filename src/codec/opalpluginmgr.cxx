@@ -713,7 +713,7 @@ PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaForm
 
 PBoolean OpalPluginFramedAudioTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
-  return OpalPluginTranscoder::ExecuteCommand(command);
+  return OpalPluginTranscoder::ExecuteCommand(command) || OpalFramedTranscoder::ExecuteCommand(command);
 }
 
 
@@ -794,7 +794,7 @@ PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFo
 
 PBoolean OpalPluginStreamedAudioTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
-  return OpalPluginTranscoder::ExecuteCommand(command);
+  return OpalPluginTranscoder::ExecuteCommand(command) || OpalStreamedTranscoder::ExecuteCommand(command);
 }
 
 
@@ -816,7 +816,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastVideoFastUpdate(PTimer::Tick())
+  , m_lastVideoFastUpdate(0)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -839,7 +839,7 @@ PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & i
 
 PBoolean OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
-  return OpalPluginTranscoder::ExecuteCommand(command);
+  return OpalPluginTranscoder::ExecuteCommand(command) || OpalVideoTranscoder::ExecuteCommand(command);
 }
 
 
@@ -868,6 +868,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
   unsigned flags;
 
+  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-frame forced from video codec");
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, outputDataSize+1024);
@@ -877,7 +878,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = outputDataSize;
-    flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
+    flags = forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
     if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
       delete dst;
@@ -1131,7 +1132,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     virtual PBoolean ExecuteCommand(const OpalMediaCommand & command)
     {
-      return OpalPluginTranscoder::ExecuteCommand(command);
+      return OpalPluginTranscoder::ExecuteCommand(command) || OpalFaxTranscoder::ExecuteCommand(command);
     }
 
     virtual bool AcceptComfortNoise() const
