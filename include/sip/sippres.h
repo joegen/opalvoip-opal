@@ -35,7 +35,7 @@
 #include <opal/buildopts.h>
 #include <sip/sipep.h>
 
-#if P_EXPAT
+#if P_EXPAT && OPAL_SIP
 
 #include <opal/pres_ent.h>
 #include <ptclib/pxml.h>
@@ -324,6 +324,6 @@ class SIPOMA_Presentity : public SIPXCAP_Presentity
 };
 
 
-#endif // P_EXPAT
+#endif // P_EXPAT && OPAL_SIP
 
 #endif // OPAL_SIP_SIPPRES_H
