@@ -97,7 +97,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , inDataSize(10*1024)
   , outDataSize(10*1024)
   , videoEncoderMaxOutputSize(10*1024)
-  , forceIFrame(true)
+  , forceIFrame(false)
   , lastFrameWasIFrame(false)
   , m_totalFrames(0)
   , m_keyFrames(0)
@@ -147,6 +147,7 @@ PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    PTRACE_IF(3, !forceIFrame, "Media\tI-frame forced in video stream");
     forceIFrame = true; // Reset when I-Frame is sent
     return PTrue;
   }
