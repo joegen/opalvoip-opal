@@ -42,10 +42,11 @@
 #include <sip/sdp.h>
 #endif
 
-#if OPAL_SIP
 
 const char T140[] = "t140";
 
+
+#if OPAL_SIP
 
 /////////////////////////////////////////////////////////
 //

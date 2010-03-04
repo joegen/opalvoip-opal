@@ -92,7 +92,15 @@ PString SDPFaxMediaDescription::GetSDPMediaType() const
 
 SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
 {
-  return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
+  const OpalMediaFormat mediaFormat(RTP_DataFrame::DynamicBase, 0, portString, "sip");
+  if (mediaFormat.IsEmpty()) {
+    PTRACE(2, "SDPFax\tCould not find media format for " << portString);
+    return NULL;
+  }
+
+  PTRACE(3, "SDPFax\tUsing RTP payload " << mediaFormat.GetPayloadType() << " for " << portString);
+
+  return new SDPMediaFormat(*this, mediaFormat);
 }
 
 
