@@ -54,26 +54,28 @@ class PlayRTP : public PProcess
     WORD m_srcPort;
     WORD m_dstPort;
     bool m_singleStep;
-    int m_info;
+    int  m_info;
+    bool m_extendedInfo;
+    bool m_noDelay;
+    bool m_writeEventLog;
+
+    PFile     m_payloadFile;
+    PTextFile m_eventLog;
+    PYUVFile  m_yuvFile;
+    PFilePath m_encodedFileName;
+    PString   m_extraText;
+    int       m_extraHeight;
 
     OpalTranscoder     * m_transcoder;
     PSoundChannel      * m_player;
     PVideoOutputDevice * m_display;
 
-    unsigned m_frameCount;
-    bool m_extendedInfo;
-    bool m_vfu;
-    bool m_videoError;
-    PFilePath m_yuvFileName;
-    PFilePath m_finalVideoFn;
-    PYUVFile m_yuvFile;
-    bool m_noDelay;
-    bool m_writeYUV;
-    bool m_writeNonYUV;
-    bool m_writeEventLog;
-    PTextFile m_eventLog;
-    PString m_extraText;
-    int m_extraHeight;
+    unsigned m_fragmentationCount;
+    unsigned m_packetCount;
+
+    bool     m_vfu;
+    bool     m_videoError;
+    unsigned m_videoFrames;
 };
 
 

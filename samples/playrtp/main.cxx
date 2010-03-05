@@ -117,28 +117,26 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
   }
 
   // try and identify media by inspection
-  if (rtp.GetPayloadSize() > 10) {
-    const BYTE * data = rtp.GetPayloadPtr();
+  const BYTE * data = rtp.GetPayloadPtr();
 
-    // second byte = 0x42 - H.264
-    if (data[1] == 0x42) {
-      type = OpalMediaType::Video();
-      OpalMediaFormatList::const_iterator r = formats.FindFormat("*h.264*");
-      if (r != formats.end())
-        format = r->GetName();
-    }
-
-    // 0x00 0x00 0x1b - MPEG4
-    else if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
-      type = OpalMediaType::Video();
-      OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
-      if (r != formats.end())
-        format = r->GetName();
-    }
-
-    else
-      cout << hex << (int)data[0] << " " << (int)data[1] << " " << (int)data[2] << dec << endl;
+  // xxx00111 01000010 xxxx0000 - H.264
+  if (rtp.GetPayloadSize() > 6 && (data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0) {
+    type = OpalMediaType::Video();
+    OpalMediaFormatList::const_iterator r = formats.FindFormat("*h.264*");
+    if (r != formats.end())
+      format = r->GetName();
   }
+
+  // 0x00 0x00 0x1b - MPEG4
+  else if (rtp.GetPayloadSize() > 6 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
+    type = OpalMediaType::Video();
+    OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
+    if (r != formats.end())
+      format = r->GetName();
+  }
+
+  else
+    cout << hex << (int)data[0] << ' ' << (int)data[1] << ' ' << (int)data[2] << dec << endl;
 
   return false;
 }
@@ -213,9 +211,10 @@ void PlayRTP::Main()
              "V-video-driver:"
              "v-video-device:"
              "p-singlestep."
+             "P-payload-file:"
              "i-info."
              "f-find."
-             "Y:"
+             "Y-video-file:"
              "E:"
              "T:"
              "X."
@@ -251,6 +250,7 @@ void PlayRTP::Main()
               "  -p or --singlestep       : Single step through input data.\n"
               "  -i or --info             : Display per-frame information.\n"
               "  -f or --find             : find and display list of RTP sessions.\n"
+              "  -P or --payload-file fn  : write RTP payload to file\n"
               "  -Y file                  : write decoded video to file\n"
               "  -E file                  : write event log to file\n"
               "  -T title                 : put text in extra video information\n"
@@ -431,23 +431,28 @@ void PlayRTP::Main()
   m_singleStep = args.HasOption('p');
   m_info       = args.GetOptionCount('i');
 
-  m_writeYUV = false;
-  m_writeNonYUV = false;
-  if (args.HasOption('Y')) {
-    m_writeYUV = true;
-    m_yuvFileName = args.GetOptionString('Y');
-    if (m_yuvFileName.GetType() *= ".yuv") 
-      m_extraText = m_yuvFileName.GetFileName();
-    else {
-      m_yuvFileName  = args.GetOptionString('Y') + ".yuv";
-      if (PFile::Exists(m_yuvFileName) && !PFile::Remove(m_yuvFileName, true)) {
-        cerr << "error: cannot delete '" << m_yuvFileName << "'" << endl;
-        return;
-      }
-      m_finalVideoFn = args.GetOptionString('Y');
-      m_extraText = m_finalVideoFn.GetFileName();
-      m_writeNonYUV = true;
+  if (args.HasOption('P')) {
+    if (!m_payloadFile.Open(args.GetOptionString('P'), PFile::ReadWrite)) {
+      cerr << "Cannot create \"" << m_payloadFile.GetFilePath() << '\"' << endl;
+      return;
     }
+    cout << "Dumping RTP payload to \"" << m_payloadFile.GetFilePath() << '\"' << endl;
+  }
+
+  if (args.HasOption('Y')) {
+    PFilePath yuvFileName = args.GetOptionString('Y');
+    m_extraText = yuvFileName.GetFileName();
+
+    if (yuvFileName.GetType() != ".yuv") {
+      m_encodedFileName = yuvFileName;
+      yuvFileName += ".yuv";
+    }
+
+    if (!m_yuvFile.Open(yuvFileName, PFile::ReadWrite)) {
+      cerr << "Cannot create '" << yuvFileName << "'" << endl;
+      return;
+    }
+    cout << "Writing video to \"" << yuvFileName << '\"' << endl;
   }
 
   if (m_extendedInfo) {
@@ -583,7 +588,7 @@ void PlayRTP::Find(const PFilePath & filename)
     REVERSE(pcap_hdr.network);
   }
 
-  cout << "Playing PCAP v" << pcap_hdr.version_major << '.' << pcap_hdr.version_minor << " file \"" << filename << '"' << endl;
+  cout << "Analysing PCAP v" << pcap_hdr.version_major << '.' << pcap_hdr.version_minor << " file \"" << filename << '"' << endl;
 
   PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
   PBYTEArray fragments;
@@ -885,13 +890,17 @@ void PlayRTP::Play(const PFilePath & filename)
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
   DWORD lastTimeStamp = 0;
 
-  m_frameCount = 0;
+  m_fragmentationCount = 0;
+  m_packetCount = 0;
 
   RTP_DataFrame extendedData;
   m_videoError = false;
+  m_videoFrames = 0;
 
   bool isAudio = false;
   bool needInfoHeader = true;
+
+  PTimeInterval playStartTick = PTimer::Tick();
 
   while (!pcap.IsEndOfFile()) {
     if (!pcap.Read(&pcaprec_hdr, sizeof(pcaprec_hdr))) {
@@ -1032,6 +1041,12 @@ void PlayRTP::Play(const PFilePath & filename)
 
     const OpalMediaFormat & inputFmt = m_transcoder->GetInputFormat();
 
+    if (inputFmt == "H.264") {
+      static BYTE const StartCode[4] = { 0, 0, 0, 1 };
+      m_payloadFile.Write(StartCode, sizeof(StartCode));
+    }
+    m_payloadFile.Write(rtp.GetPayloadPtr(), rtp.GetPayloadSize());
+
     if (!m_noDelay) {
       if (rtp.GetTimestamp() != lastTimeStamp) {
         unsigned msecs = (rtp.GetTimestamp() - lastTimeStamp)/inputFmt.GetTimeUnits();
@@ -1043,12 +1058,15 @@ void PlayRTP::Play(const PFilePath & filename)
       }
     }
 
+    if (fragmentsSize > 0)
+      ++m_fragmentationCount;
+
     if (m_info > 0) {
       if (needInfoHeader) {
         needInfoHeader = false;
         if (m_info > 0) {
           if (m_info > 1)
-            cout << "Frame,RealTime,CaptureTime,";
+            cout << "Packet,RealTime,CaptureTime,";
           cout << "SSRC,SequenceNumber,TimeStamp";
           if (m_info > 1) {
             cout << ",Marker,PayloadType,payloadSize";
@@ -1064,7 +1082,7 @@ void PlayRTP::Play(const PFilePath & filename)
       }
 
       if (m_info > 1)
-        cout << m_frameCount << ','
+        cout << m_packetCount << ','
              << PTimer::Tick().GetMilliSeconds() << ','
              << pcaprec_hdr.ts_sec << '.' << setfill('0') << setw(6) << pcaprec_hdr.ts_usec << setfill(' ') << ',';
       cout << "0x" << hex << rtp.GetSyncSource() << dec << ',' << rtp.GetSequenceNumber() << ',' << rtp.GetTimestamp();
@@ -1086,47 +1104,45 @@ void PlayRTP::Play(const PFilePath & filename)
       if (m_singleStep) 
         cout << "no frame" << endl;
     }
-    else for (PINDEX i = 0; i < output.GetSize(); i++) {
-      if (m_singleStep)
+    else {
+      if (m_singleStep) {
         cout << output.GetSize() << " packets" << endl;
-      const RTP_DataFrame & data = output[i];
-      if (isAudio) {
-        m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
-        if (m_info > 1)
-          cout << ',' << data.GetPayloadSize();
+        char ch;
+        cin >> ch;
+        if (ch == 'c')
+          m_singleStep = false;
       }
-      else {
-        OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
-        const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
-        if (frame->width > 1000 || frame->height > 1000) {
-        } 
+
+      for (PINDEX i = 0; i < output.GetSize(); i++) {
+        const RTP_DataFrame & data = output[i];
+        if (isAudio) {
+          m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
+          if (m_info > 1)
+            cout << ',' << data.GetPayloadSize();
+        }
         else {
+          ++m_videoFrames;
+
+          OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
+          const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
           if (video->WasLastFrameIFrame()) {
-            m_eventLog << "Frame " << m_frameCount << ": I-frame received";
+            m_eventLog << "Frame " << m_videoFrames << ": I-frame received";
             if (m_videoError)
               m_eventLog << " - decode error cleared";
             m_eventLog << endl;
             m_videoError = false;
           }
 
-          if (m_writeYUV) {
-            if (!m_yuvFile.IsOpen()) {
-              if (!m_yuvFile.Open(m_yuvFileName, PFile::ReadWrite)) {
-                cerr << "Cannot create '" << m_yuvFileName << "'" << endl;
-              }
-              m_yuvFile.SetFrameSize(frame->width, frame->height + (m_extendedInfo ? m_extraHeight : 0));
-            }
-          }
+          m_yuvFile.SetFrameSize(frame->width, frame->height + (m_extendedInfo ? m_extraHeight : 0));
+
           if (!m_extendedInfo) {
             m_display->SetFrameSize(frame->width, frame->height);
             m_display->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
                                     OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
-            if (m_writeYUV) 
-              m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(frame));
+            m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(frame));
           }
-          else
-          {
+          else {
             int extendedHeight = frame->height + m_extraHeight;
             extendedData.SetSize(data.GetHeaderSize() + sizeof(OpalVideoTranscoder::FrameHeader) + (frame->width * extendedHeight * 3 / 2));
             memcpy(extendedData.GetPointer(), (const BYTE *)data, data.GetHeaderSize());
@@ -1145,7 +1161,7 @@ void PlayRTP::Play(const PFilePath & filename)
             DrawText(4, 4, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), text);
 
             sprintf(text, "TC:%06u  %c %c %c", 
-                           m_frameCount, 
+                           m_videoFrames, 
                            m_vfu ? 'V' : ' ', 
                            video->WasLastFrameIFrame() ? 'I' : ' ', 
                            m_videoError ? 'E' : ' ');
@@ -1163,15 +1179,14 @@ void PlayRTP::Play(const PFilePath & filename)
                                     extendedFrame->width, extendedFrame->height,
                                     OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), data.GetMarker());
 
-            if (m_writeYUV) 
-              m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame));
+            m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame));
           }
-        }
-        //if (m_vfu)
-        //  m_singleStep = true;
+          //if (m_vfu)
+          //  m_singleStep = true;
 
-        if (m_info > 1)
-          cout << ',' << frame->width << ',' << frame->height;
+          if (m_info > 1)
+            cout << ',' << frame->width << ',' << frame->height;
+        }
       }
     }
 
@@ -1189,32 +1204,43 @@ void PlayRTP::Play(const PFilePath & filename)
       cout << '\n';
     }
 
-    if (m_singleStep) {
-      cout.flush();
-      char ch;
-      cin >> ch;
-      if (ch == 'c')
-        m_singleStep = false;
-    }
+    ++m_packetCount;
 
-    ++m_frameCount;
-
-    if (m_frameCount % 250 == 0)
-      m_eventLog << "Frame " << m_frameCount << ": frames still processing" << endl;
+    if (m_packetCount % 250 == 0)
+      m_eventLog << "Packet " << m_packetCount << ": still processing" << endl;
   }
 
-  m_eventLog << "Frame " << m_frameCount << ": last frame" << endl;
+  m_eventLog << "Packet " << m_packetCount << ": completed" << endl;
 
   delete m_transcoder;
   m_transcoder = NULL;
 
-  if (m_writeYUV || m_writeNonYUV) 
-    cout << "Written " << m_frameCount << " frames at " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << endl;
 
-  if (m_writeNonYUV) {
+  // Output final stats.
+  cout << (m_yuvFile.IsOpen() ? "Written " : "Played ") << m_packetCount << " packets";
+
+  if (m_videoFrames > 0) {
+    cout << ", " << m_videoFrames << " frames at "
+         << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight();
+    if (!m_yuvFile.IsOpen()) {
+      PTimeInterval playTime = PTimer::Tick() - playStartTick;
+      cout << ", " << playTime << " seconds, "
+           << fixed << setprecision(1)
+           << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps";
+    }
+  }
+
+  if (m_fragmentationCount > 0)
+    cout << ", " << m_fragmentationCount << " fragments";
+
+  cout << endl;
+
+
+  if (!m_encodedFileName.IsEmpty()) {
     PStringStream args; 
-    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << " -i '" << m_yuvFileName << "' '" << m_finalVideoFn << "'";
-    cout << "Executing command '" << args << "'" << endl;
+    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << 'x' << m_yuvFile.GetFrameHeight()
+         << " -i '" << m_yuvFile.GetFilePath() << "' '" << m_encodedFileName << '\'';
+    cout << "Executing command \"" << args << '\"' << endl;
     PPipeChannel cmd;
     if (!cmd.Open(args, PPipeChannel::ReadWriteStd, true)) 
       cout << "failed";
@@ -1228,7 +1254,7 @@ void PlayRTP::Play(const PFilePath & filename)
 void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    m_eventLog << "Frame " << m_frameCount << ": decoding error (VFU sent)";
+    m_eventLog << "Packet " << m_packetCount << ", frame " << m_videoFrames << ": decoding error (VFU sent)";
       
     OpalVideoUpdatePicture2 * vfu2 = dynamic_cast<OpalVideoUpdatePicture2 *>(&command);
     if (vfu2 != NULL) {
