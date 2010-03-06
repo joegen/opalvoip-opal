@@ -440,7 +440,8 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI());
-    return referTransaction->Start();
+    m_referInProgress = referTransaction->Start();
+    return m_referInProgress;
   }
 
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
@@ -454,7 +455,8 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
       referTransaction->GetMIME().SetAt("Supported", "replaces");
-      return referTransaction->Start();
+      m_referInProgress = referTransaction->Start();
+      return m_referInProgress;
     }
   }
 
@@ -2041,7 +2043,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 
   PStringToString info;
-  if (mime.GetSubscriptionState(info) == "terminated")
+  if (mime.GetSubscriptionState(info) != "terminated")
     return; // The REFER is not over yet, ignore
 
   m_referInProgress = false;
