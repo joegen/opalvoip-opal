@@ -339,6 +339,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     PBoolean outputIsRTP, inputIsRTP;
     bool acceptEmptyPayload;
     bool acceptOtherPayloads;
+    unsigned m_inClockRate;
+    unsigned m_outClockRate;
 };
 
 
