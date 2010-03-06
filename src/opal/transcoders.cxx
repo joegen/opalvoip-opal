@@ -80,6 +80,8 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   outputIsRTP = inputIsRTP = PFalse;
   acceptEmptyPayload = false;
   acceptOtherPayloads = false;
+  m_inClockRate = inputMediaFormat.GetClockRate();
+  m_outClockRate = outputMediaFormat.GetClockRate();
 }
 
 
@@ -92,6 +94,7 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
       inputMediaFormat = input;
     else if (!inputMediaFormat.Merge(input))
       return false;
+    m_inClockRate = inputMediaFormat.GetClockRate();
   }
 
   if (output.IsValid()) {
@@ -99,6 +102,7 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
       outputMediaFormat = output;
     else if (!outputMediaFormat.Merge(output))
       return false;
+    m_outClockRate = outputMediaFormat.GetClockRate();
   }
 
   return true;
@@ -141,10 +145,8 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // set the output timestamp and marker bit
   unsigned timestamp = input.GetTimestamp();
-  unsigned inClockRate = inputMediaFormat.GetClockRate();
-  unsigned outClockRate = outputMediaFormat.GetClockRate();
-  if (inClockRate != outClockRate)
-    timestamp = (unsigned)((PUInt64)timestamp*outClockRate/inClockRate);
+  if (m_inClockRate != m_outClockRate)
+    timestamp = (unsigned)((PUInt64)timestamp*m_outClockRate/m_inClockRate);
   output.front().SetTimestamp(timestamp);
   output.front().SetMarker(input.GetMarker());
 
