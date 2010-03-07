@@ -809,6 +809,14 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
 {
   callID = m_dialog.GetCallID();
+
+  if (m_parameters.m_contentType.IsEmpty()) {
+    SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
+    if (packageHandler != NULL) {
+      m_parameters.m_contentType = packageHandler->GetContentType();
+      delete packageHandler;
+    }
+  }
 }
 
 
@@ -1009,15 +1017,17 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   }
 
   // check the ContentType
-  PCaselessString requestContentType = requestMIME.GetContentType();
-  if (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX &&
-        !(m_parameters.m_eventList && requestContentType == "multipart/related")) {
-    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
-           << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
-    response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-    response.GetMIME().SetAt("Accept", m_parameters.m_contentType);
-    response.SetInfo("Unsupported Content-Type");
-    return request.SendResponse(*m_transport, response, &endpoint);
+  if (!m_parameters.m_contentType.IsEmpty()) {
+    PCaselessString requestContentType = requestMIME.GetContentType();
+    if (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX &&
+          !(m_parameters.m_eventList && requestContentType == "multipart/related")) {
+      PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
+             << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
+      response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+      response.GetMIME().SetAt("Accept", m_parameters.m_contentType);
+      response.SetInfo("Unsupported Content-Type");
+      return request.SendResponse(*m_transport, response, &endpoint);
+    }
   }
 
   // Check if we know how to deal with this event
