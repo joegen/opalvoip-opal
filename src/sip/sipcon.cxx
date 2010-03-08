@@ -2324,16 +2324,20 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
 
-  // see if the contact address provided in the response changes the transport type
-  OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
-  if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
-    PTRACE(2, "SIP\tINVITE response changed transport for call");
+  /* See if the contact address provided in the response changes the transport
+     type. Do this only if no Record-Route header is set. Otherwise we will
+     continue to send SIP Messages to the proxy. */
+  if (response.GetMIME().GetRecordRoute(false).IsEmpty()) {  
+    OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
+    if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
+      PTRACE(2, "SIP\tINVITE response changed transport for call");
 
-    OpalTransport * newTransport = endpoint.CreateTransport(newContactAddress);
-    if (newTransport != NULL) {
-      if (deleteTransport)
-        delete transport;
-      transport = newTransport;
+      OpalTransport * newTransport = endpoint.CreateTransport(newContactAddress);
+      if (newTransport != NULL) {
+        if (deleteTransport)
+          delete transport;
+        transport = newTransport;
+      }
     }
   }
 
