@@ -968,10 +968,12 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
       if (allowAnySyncSource) {
         PTRACE(2, "RTP\tSession " << sessionID << ", SSRC changed from " << hex << frame.GetSyncSource() << " to " << syncSourceIn << dec);
         syncSourceIn = frame.GetSyncSource();
+        allowSequenceChange = true;
       } 
       else if (allowOneSyncSourceChange) {
         PTRACE(2, "RTP\tSession " << sessionID << ", allowed one SSRC change from SSRC=" << hex << syncSourceIn << " to =" << dec << frame.GetSyncSource() << dec);
         syncSourceIn = frame.GetSyncSource();
+        allowSequenceChange = true;
         allowOneSyncSourceChange = false;
       }
       else {
