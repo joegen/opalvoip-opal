@@ -1781,8 +1781,8 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   PIPSocket::Address remoteIp;
   WORD remotePort;
   if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
-    PString rport = SIPMIMEInfo::ExtractFieldParameter(viaFront, "rport");
-    if (rport.IsEmpty()) {
+    PINDEX start, val, end;
+    if (LocateFieldParameter(viaFront, "rport", start, val, end)) {
       // fill in empty rport and received for RFC 3581
       viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "rport", remotePort);
       viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", remoteIp);
