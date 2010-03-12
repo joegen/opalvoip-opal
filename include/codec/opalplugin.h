@@ -124,11 +124,11 @@ enum PluginCodec_Flags {
   PluginCodec_MediaTypeFax           = 0x0003,
 
   PluginCodec_InputTypeMask          = 0x0010,
-  PluginCodec_InputTypeRaw           = 0x0000,
+  PluginCodec_InputTypeRaw           = 0x0000, // Note video is always RTP
   PluginCodec_InputTypeRTP           = 0x0010,
 
   PluginCodec_OutputTypeMask         = 0x0020,
-  PluginCodec_OutputTypeRaw          = 0x0000,
+  PluginCodec_OutputTypeRaw          = 0x0000, // Note video is always RTP
   PluginCodec_OutputTypeRTP          = 0x0020,
 
   PluginCodec_RTPTypeMask            = 0x0040,
@@ -551,9 +551,13 @@ enum {
 #define PLUGINCODEC_MEDIA_PACKETIZATIONS "Media Packetizations"
 
 #define H261_ANNEX_D "Annex D - Still Image Transmit"
+#define H263_ANNEX_D "Annex D - Unrestricted Motion Vector"
 #define H263_ANNEX_F "Annex F - Advanced Prediction"
 #define H263_ANNEX_I "Annex I - Advanced INTRA Coding"
 #define H263_ANNEX_J "Annex J - Deblocking Filter"
+#define H263_ANNEX_K "Annex K - Slice Structure"
+#define H263_ANNEX_N "Annex N - Reference Picture Selection"
+#define H263_ANNEX_S "Annex S - Alternative INTER VLC"
 #define H263_ANNEX_T "Annex T - Modified Quantization"
 
 #ifndef STRINGIZE
