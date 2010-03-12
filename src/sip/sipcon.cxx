@@ -631,26 +631,32 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   bool sdpOK = false;
 
   // get the remote media formats, if any
-  SDPSessionDescription * sdp;
-  if (isAnswerSDP && originalInvite != NULL && (sdp = originalInvite->GetSDP()) != NULL) {
-    const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
+  if (isAnswerSDP && originalInvite != NULL) {
+    SDPSessionDescription * sdp = originalInvite->GetSDP();
+    if (sdp != NULL) {
+      const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
+      if (!mediaDescriptions.IsEmpty()) {
+        /* Shut down any media that is in a session not mentioned in a re-INVITE.
+           While the SIP/SDP specification says this shouldn't happen, it does
+           anyway so we need to deal. */
+        for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+          if (stream->GetSessionID() > (unsigned)mediaDescriptions.GetSize())
+            stream->Close();
+        }
 
-    /* Shut down any media that is in a session not mentioned in a re-INVITE.
-       While the SIP/SDP specification says this shouldn't happen, it does
-       anyway so we need to deal. */
-    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-      if (stream->GetSessionID() > (unsigned)mediaDescriptions.GetSize())
-        stream->Close();
+        for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
+          sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
+
+        // If all was OK, but we have no media streams, then remote started us up in HOLD.
+        if (sdpOK && mediaStreams.IsEmpty())
+          m_holdFromRemote = true;
+
+        return sdpOK;
+      }
     }
-
-    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) 
-      sdpOK |= AnswerSDPMediaDescription(*sdp, i+1, sdpOut);
-
-    // If all was OK, but we have no media streams, then remote started us up in HOLD.
-    if (sdpOK && mediaStreams.IsEmpty())
-      m_holdFromRemote = true;
   }
-  else if (m_needReINVITE && !mediaStreams.IsEmpty()) {
+
+  if (m_needReINVITE && !mediaStreams.IsEmpty()) {
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
       std::vector<bool>::size_type session = stream->GetSessionID();
@@ -660,28 +666,27 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
         sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut, true);
       }
     }
+
+    return sdpOK;
   }
 
-  else {
+  // construct offer as per RFC 3261, para 14.2
+  // Use |= to avoid McCarthy boolean || from not calling video/fax
 
-    // construct offer as per RFC 3261, para 14.2
-    // Use |= to avoid McCarthy boolean || from not calling video/fax
-
-    // always offer audio first
-    sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut, m_needReINVITE);
+  // always offer audio first
+  sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut, m_needReINVITE);
 
 #if OPAL_VIDEO
-    // always offer video second (if enabled)
-    sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut, m_needReINVITE);
+  // always offer video second (if enabled)
+  sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut, m_needReINVITE);
 #endif
 
-    // offer other formats
-    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
-    for (OpalMediaTypeFactory::KeyList_T::iterator r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
-      OpalMediaType mediaType = *r;
-      if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio())
-        sdpOK |= OfferSDPMediaDescription(mediaType, 0, rtpSessions, sdpOut, m_needReINVITE);
-    }
+  // offer other formats
+  OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
+  for (OpalMediaTypeFactory::KeyList_T::iterator r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
+    OpalMediaType mediaType = *r;
+    if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio())
+      sdpOK |= OfferSDPMediaDescription(mediaType, 0, rtpSessions, sdpOut, m_needReINVITE);
   }
 
   return sdpOK;
