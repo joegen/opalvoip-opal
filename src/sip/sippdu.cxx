@@ -1401,7 +1401,7 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
   PINDEX start, val, end;
   PString str = fieldValue;
   if (LocateFieldParameter(fieldValue, paramName, start, val, end))
-    str.Splice(newField, start, end-start);
+    str.Splice(newField, start, end-start+1);
   else
     str += ';' + newField;
   return str;
