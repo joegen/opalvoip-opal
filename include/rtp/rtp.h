@@ -110,6 +110,8 @@ class RTP_DataFrame : public PBYTEArray
       MP2T,         // MPEG2 transport system
       H263,         // H.263
 
+      T38 = 38,     // T.38 (internal)
+
       LastKnownPayloadType,
 
       DynamicBase = 96,
