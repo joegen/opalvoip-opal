@@ -255,7 +255,9 @@ static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType]
   "H261",
   "MPV",
   "MP2T",
-  "H263"
+  "H263",
+  NULL, NULL, NULL,
+  "T38"
 };
 
 ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
