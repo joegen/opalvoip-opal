@@ -60,6 +60,8 @@ extern "C" {
 #include <map>
 
 
+#define   T38_PAYLOAD_CODE          38
+
 #define   BITS_PER_SECOND           14400
 #define   MICROSECONDS_PER_FRAME    20000
 #define   SAMPLES_PER_FRAME         160
@@ -894,7 +896,7 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
     {
       WaitAndSignal mutex(m_mutex);
 
-      PTRACE(LOG_LEVEL_DEBUG, m_tag << " T38_PCM::Terminate");
+      PTRACE(4, m_tag << " T38_PCM::Terminate");
       return Open();
     }
 
@@ -1036,7 +1038,7 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
     {
       WaitAndSignal mutex(m_mutex);
 
-      PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_T38::Terminate");
+      PTRACE(4, m_tag << " TIFF_T38::Terminate");
 
       if (!Open())
         return false;
@@ -1181,7 +1183,7 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
     {
       WaitAndSignal mutex(m_mutex);
 
-      PTRACE(LOG_LEVEL_DEBUG, m_tag << " TIFF_PCM::Terminate");
+      PTRACE(4, m_tag << " TIFF_PCM::Terminate");
 
       if (!Open())
         return false;
@@ -1555,7 +1557,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_MediaTypeFax |          // audio codec
     PluginCodec_InputTypeRaw |          // raw input data
     PluginCodec_OutputTypeRTP |         // RTP output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
     "PCM to T.38 Codec",                // text decription
     L16Format,                          // source format
@@ -1570,7 +1572,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     BYTES_PER_FRAME,                    // bytes per frame
     PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
+    T38_PAYLOAD_CODE,                   // internal RTP payload code
     T38sdp,                             // RTP payload name
 
     Create,                             // create codec function
@@ -1591,7 +1593,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_MediaTypeFax |          // audio codec
     PluginCodec_InputTypeRTP |          // RTP input data
     PluginCodec_OutputTypeRaw |         // raw output data
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+    PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
     "T.38 to PCM Codec",                // text decription
     T38Format,                          // source format
@@ -1606,7 +1608,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     BYTES_PER_FRAME,                    // bytes per frame
     PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
-    0,                                  // dynamic payload
+    T38_PAYLOAD_CODE,                   // internal RTP payload code
     T38sdp,                             // RTP payload name
 
     Create,                             // create codec function

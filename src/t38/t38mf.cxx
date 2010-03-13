@@ -55,7 +55,7 @@ const OpalMediaFormat & GetOpalT38()
       T38MediaFormat()
         : OpalMediaFormat(OPAL_T38,
                           "fax",
-                          RTP_DataFrame::DynamicBase,
+                          RTP_DataFrame::T38,
                           "t38",
                           false, // No jitter for data
                           1440, // 100's bits/sec
