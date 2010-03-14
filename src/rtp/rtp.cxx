@@ -1558,11 +1558,14 @@ RTP_UDP::RTP_UDP(const Params & params)
   appliedQOS        = false;
   localHasNAT       = false;
   badTransmitCounter = 0;
+
+  timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle));
 }
 
 
 RTP_UDP::~RTP_UDP()
 {
+  timerWriteDataIdle.Stop();
   Close(true);
   Close(false);
 
@@ -2043,7 +2046,13 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
 
 bool RTP_UDP::WriteDataPDU(RTP_DataFrame & frame)
 {
-  return EncodingLock(*this)->WriteDataPDU(frame);
+  if (!EncodingLock(*this)->WriteDataPDU(frame))
+      return false;
+
+  PWaitAndSignal mutex(dataMutex);
+  EncodingLock(*this)->SetWriteDataIdleTimer(timerWriteDataIdle);
+
+  return true;
 }
 
 
@@ -2131,6 +2140,37 @@ PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
   }
 
   return WriteDataPDU(frame);
+}
+
+
+void RTP_UDP::OnWriteDataIdle(PTimer &, INT)
+{
+  {
+    PWaitAndSignal mutex(dataMutex);
+    if (shutdownWrite) {
+      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
+      return;
+    }
+  }
+
+  // Trying to send a PDU before we are set up!
+  if (!remoteAddress.IsValid() || remoteDataPort == 0)
+    return;
+
+  EncodingLock(*this)->OnWriteDataIdle();
+
+  PWaitAndSignal mutex(dataMutex);
+  EncodingLock(*this)->SetWriteDataIdleTimer(timerWriteDataIdle);
+}
+
+
+void RTP_UDP::SetEncoding(const PString & newEncoding)
+{
+  dataMutex.Wait();
+  timerWriteDataIdle.Stop(false);
+  dataMutex.Signal();
+
+  RTP_Session::SetEncoding(newEncoding);
 }
 
 

@@ -1114,13 +1114,15 @@ class RTP_UDP : public RTP_Session
       PINDEX frameSize,
       PBoolean fromDataChannel
     );
-    
+
     virtual bool WriteDataPDU(RTP_DataFrame & frame);
     virtual bool WriteDataOrControlPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
       bool toDataChannel
     );
+
+    virtual void SetEncoding(const PString & newEncoding);
 
 
   protected:
@@ -1145,6 +1147,9 @@ class RTP_UDP : public RTP_Session
     bool first;
     int  badTransmitCounter;
     PTime badTransmitStart;
+
+    PTimer timerWriteDataIdle;
+    PDECLARE_NOTIFIER(PTimer,  RTP_UDP, OnWriteDataIdle);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1156,11 +1161,14 @@ class RTP_Encoding
   public:
     RTP_Encoding();
     virtual ~RTP_Encoding();
+    virtual void ApplyStringOptions(const PStringToString & /*stringOptions*/) {}
     virtual void OnStart(RTP_Session & _rtpSession);
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
     virtual PBoolean WriteData(RTP_DataFrame & frame, bool oob);
     virtual PBoolean WriteDataPDU(RTP_DataFrame & frame);
+    virtual void OnWriteDataIdle() {}
+    virtual void SetWriteDataIdleTimer(PTimer &) {}
     virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
