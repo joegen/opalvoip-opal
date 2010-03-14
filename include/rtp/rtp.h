@@ -1156,6 +1156,7 @@ class RTP_Encoding
   public:
     RTP_Encoding();
     virtual ~RTP_Encoding();
+    virtual void ApplyStringOptions(const PStringToString & /*stringOptions*/) {}
     virtual void OnStart(RTP_Session & _rtpSession);
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
