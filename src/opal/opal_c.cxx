@@ -1530,7 +1530,7 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
 
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-  if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
+  if (pcssEP != NULL && pcssEP->AcceptIncomingCall(command.m_param.m_callToken))
     return;
 #endif
 #endif
