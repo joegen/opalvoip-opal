@@ -94,17 +94,14 @@ class SDPMediaFormat : public PObject
     const OpalMediaFormat & GetMediaFormat() const;
     OpalMediaFormat & GetWritableMediaFormat();
 
-	/**Return all registered media formats that match information 
-	 */
-    OpalMediaFormatList GetMediaFormats() const;
-
     bool PreEncode();
     bool PostDecode(unsigned bandwidth);
 
   protected:
     void InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const;
+    void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
-    OpalMediaFormat mediaFormat;
+    OpalMediaFormat m_mediaFormat;
 
     SDPMediaDescription & m_parent;
     RTP_DataFrame::PayloadTypes payloadType;
