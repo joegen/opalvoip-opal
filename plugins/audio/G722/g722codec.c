@@ -34,7 +34,7 @@
 #include "VoIPCodecs/g722.h"
 
 
-#define INCLUDE_SDP_16000_VERSION 0
+#define INCLUDE_SDP_16kHz_VERSION 0
 
 /* Due to a spec error, clock rate is 8kHz even though this is 16kHz codec,
    see RFC3551/4.5.2. So some of these values have to be lied about so that
@@ -52,7 +52,7 @@ static const char L16Desc[]  = "PCM-16-16kHz"; // Cannot use "L16" as usual, for
 static const char g722[]     = "G.722-64k";
 static const char sdpG722[]  = "G722";
 
-#if INCLUDE_SDP_16000_VERSION
+#if INCLUDE_SDP_16kHz_VERSION
 static const char g722_16[]  = "G.722-16kHz";
 #endif
 
@@ -147,7 +147,7 @@ static struct PluginCodec_information licenseInfo = {
 
 static struct PluginCodec_Definition g722CodecDefn[] =
 {
-#if INCLUDE_SDP_16000_VERSION
+#if INCLUDE_SDP_16kHz_VERSION
   // Include a version for SIP/SDP that indicates the more logical, though
   // incorrect by RFC3551/4.5.2, 16000Hz version of G.722. We use dynamic
   // payload types to avoid conflict with the compliant 8000Hz version.
@@ -156,7 +156,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_MediaTypeAudioStreamed |  // audio codec
+    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
@@ -191,7 +192,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_MediaTypeAudioStreamed |  // audio codec
+    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
@@ -228,7 +230,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_MediaTypeAudioStreamed |  // audio codec
+    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
@@ -263,7 +266,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudio |          // audio codec
+    PluginCodec_MediaTypeAudioStreamed |  // audio codec
+    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
