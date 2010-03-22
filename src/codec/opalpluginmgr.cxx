@@ -1132,7 +1132,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     virtual PBoolean ExecuteCommand(const OpalMediaCommand & command)
     {
-      return OpalPluginTranscoder::ExecuteCommand(command) || OpalFaxTranscoder::ExecuteCommand(command);
+      return OpalPluginTranscoder::ExecuteCommand(command) || OpalTranscoder::ExecuteCommand(command);
     }
 
     virtual bool AcceptComfortNoise() const
