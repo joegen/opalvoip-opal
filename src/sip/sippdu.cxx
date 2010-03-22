@@ -2344,8 +2344,15 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     m_routeSet = mime.GetRecordRoute(pdu.GetMethod() == SIP_PDU::NumMethods);
   }
 
-  // Update request URI
-  if (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2) {
+  /* Update request URI
+     Do this only if no Route and no Record-Route header is set.
+     Otherwise we will send SIP Messages to the proxy.
+     Problems found if Contact contains transport=tcp.
+     OPAL tries to switch to tcp even if there is an upp proxy between.
+     TCP/UDP Problems conversions of a proxy are not solved with this work around.
+     See RFC 5658 for a description of these problems.
+  */
+  if (m_routeSet.IsEmpty() && (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2)) {
     PString contact = mime.GetContact();
     if (!contact.IsEmpty()) {
       m_requestURI.Parse(contact);
