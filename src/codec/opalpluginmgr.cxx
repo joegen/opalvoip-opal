@@ -1366,11 +1366,11 @@ static bool IsEncoder(const PluginCodec_Definition & encoder)
   return ((encoder.h323CapabilityType != PluginCodec_H323Codec_undefined) && (
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudio) && 
-            (strcmp(encoder.sourceFormat, "L16") == 0)
+            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
          ) ||
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed) && 
-            (strcmp(encoder.sourceFormat, "L16") == 0)
+            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
          ) ||
          (
            videoSupported &&
@@ -1380,7 +1380,7 @@ static bool IsEncoder(const PluginCodec_Definition & encoder)
          (
            faxSupported &&
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeFax) && 
-           (strcmp(encoder.sourceFormat, "L16") == 0)
+            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
         )
        ));
 }
