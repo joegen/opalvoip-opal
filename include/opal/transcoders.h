@@ -361,9 +361,7 @@ class OpalFramedTranscoder : public OpalTranscoder
       */
     OpalFramedTranscoder(
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat, ///<  Output media format
-      PINDEX inputBytesPerFrame,  ///<  Number of bytes in an input frame
-      PINDEX outputBytesPerFrame  ///<  Number of bytes in an output frame
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
   //@}
 
@@ -427,9 +425,11 @@ class OpalFramedTranscoder : public OpalTranscoder
   //@}
 
   protected:
-    PINDEX     inputBytesPerFrame;
-    PINDEX     outputBytesPerFrame;
-    PINDEX     maxOutputDataSize;
+    void CalculateSizes();
+
+    PINDEX inputBytesPerFrame;
+    PINDEX outputBytesPerFrame;
+    PINDEX maxOutputDataSize;
 };
 
 
@@ -524,7 +524,7 @@ class OpalEmptyFramedAudioTranscoder : public OpalFramedTranscoder
   PCLASSINFO(OpalEmptyFramedAudioTranscoder, OpalFramedTranscoder);
   public:
     OpalEmptyFramedAudioTranscoder(const char * inFormat, const char * outFormat)
-      : OpalFramedTranscoder(inFormat, outFormat, 100, 100)
+      : OpalFramedTranscoder(inFormat, outFormat)
     {  }
 
     PBoolean ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
