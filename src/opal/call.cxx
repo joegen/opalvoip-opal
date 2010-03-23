@@ -517,7 +517,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     }
 
     // Get other media directions format so we give preference to symmetric codecs
-    OpalMediaStreamPtr otherDirection = otherConnection->GetMediaStream(sessionID, true);
+    OpalMediaStreamPtr otherDirection = sessionID != 0 ? otherConnection->GetMediaStream(sessionID, true)
+                                                       : otherConnection->GetMediaStream(mediaType, true);
     if (otherDirection != NULL) {
       PString priorityFormat = otherDirection->GetMediaFormat().GetName();
       sourceMediaFormats.Reorder(priorityFormat);
