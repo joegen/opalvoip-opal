@@ -368,6 +368,26 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
   return PAssertNULL(mediaSession)->CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
+
+void OpalRTPConnection::AdjustMediaFormats(bool local,
+                          OpalMediaFormatList & mediaFormats,
+                               OpalConnection * otherConnection) const
+{
+  OpalConnection::AdjustMediaFormats(local, mediaFormats, otherConnection);
+
+  if (otherConnection != NULL && otherConnection != this)
+    return;
+
+  OpalMediaFormatList::iterator fmt = mediaFormats.begin();
+  while (fmt != mediaFormats.end()) {
+    if (fmt->IsTransportable())
+      ++fmt;
+    else
+      mediaFormats -= *fmt++;
+  }
+}
+
+
 void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
