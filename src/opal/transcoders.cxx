@@ -269,7 +269,11 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
     if (!dstFormat.Merge(dstCapability))
       return false;
-    dstFormat.SetPayloadType(dstCapability.GetPayloadType());
+    if (dstFormat.GetPayloadType() != dstCapability.GetPayloadType()) {
+      PTRACE(4, "Opal\tChanging payload type from " << dstFormat.GetPayloadType()
+             << " to " << dstCapability.GetPayloadType() << " in " << srcFormat);
+      dstFormat.SetPayloadType(dstCapability.GetPayloadType());
+    }
   }
 
   if (!srcFormat.Merge(dstFormat))
@@ -415,22 +419,10 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFormat,
-                                           const OpalMediaFormat & outputMediaFormat,
-                                           PINDEX inputBytes, PINDEX outputBytes)
+                                           const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
-  PINDEX framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
-  inputBytesPerFrame = inputBytes*framesPerPacket;
-  outputBytesPerFrame = outputBytes*framesPerPacket;
-
-  PINDEX inMaxTimePerFrame  = inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
-                              inputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
-  PINDEX outMaxTimePerFrame = outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
-                              outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
-
-  PINDEX maxPacketTime = PMAX(inMaxTimePerFrame, outMaxTimePerFrame);
-
-  maxOutputDataSize = outputBytesPerFrame * (maxPacketTime / outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption()));
+  CalculateSizes();
 }
 
 
@@ -445,7 +437,15 @@ bool OpalFramedTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, con
   if (!OpalTranscoder::UpdateMediaFormats(input, output))
     return false;
 
-  unsigned framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  CalculateSizes();
+  return true;
+}
+
+
+void OpalFramedTranscoder::CalculateSizes()
+{
+  unsigned framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(),
+                              inputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
   unsigned inFrameSize = inputMediaFormat.GetFrameSize();
   unsigned outFrameSize = outputMediaFormat.GetFrameSize();
   unsigned inFrameTime = inputMediaFormat.GetFrameTime();
@@ -462,8 +462,6 @@ bool OpalFramedTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, con
   PINDEX maxPacketTime = PMAX(inMaxTimePerFrame, outMaxTimePerFrame);
 
   maxOutputDataSize = outputBytesPerFrame * (maxPacketTime / outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption()));
-
-  return true;
 }
 
 
@@ -605,7 +603,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
   PINDEX i, bit, mask;
 
   PINDEX samples = input.GetPayloadSize()*8/inputBitsPerSample;
-  PINDEX outputSize = samples*outputBitsPerSample/8;
+  PINDEX outputSize = (samples * outputBitsPerSample + 7) / 8;
   output.SetPayloadSize(outputSize);
 
   // The conversion algorithm for 5,3 & 2 bits per sample needs an extra
