@@ -692,9 +692,7 @@ static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate)
 
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
   : OpalFramedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
-                         GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate),
-                         isEncoder ? codecDefn->parm.audio.samplesPerFrame*2 : codecDefn->parm.audio.bytesPerFrame,
-                         isEncoder ? codecDefn->parm.audio.bytesPerFrame     : codecDefn->parm.audio.samplesPerFrame*2)
+                         GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate))
   , OpalPluginTranscoder(codecDefn, isEncoder)
 { 
   inputIsRTP          = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
