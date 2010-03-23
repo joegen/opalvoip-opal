@@ -456,6 +456,7 @@ class SIPConnection : public OpalRTPConnection
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
+    bool SetTransport(OpalTransport * transport);
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     SIPDialogContext & GetDialog() { return m_dialog; }
@@ -534,8 +535,6 @@ class SIPConnection : public OpalRTPConnection
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE();
-
-    OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
 
     void UpdateRemoteAddresses();
 
