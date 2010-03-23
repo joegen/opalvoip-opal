@@ -228,13 +228,15 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
     case EqualMerge :
       if (CompareValue(option) == EqualTo)
         return true;
-      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, required to be equal.");
+      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, "
+                "required to be equal: \"" << *this << "\"!=\"" << option << '"');
       return false;
 
     case NotEqualMerge :
       if (CompareValue(option) != EqualTo)
         return true;
-      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, required to be not equal.");
+      PTRACE(2, "MediaFormat\tMerge of media option \"" << m_name << "\" failed, "
+                "required to be not equal: \"" << *this << "\"==\"" << option << '"');
       return false;
 
     case AlwaysMerge :
