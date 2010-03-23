@@ -304,13 +304,27 @@ SIPConnection::~SIPConnection()
   delete m_authentication;
   delete originalInvite;
 
-  if (transport != NULL)
-    transport->CloseWait();
-
-  if (deleteTransport)
-    delete transport;
-
   PTRACE(4, "SIP\tDeleted connection.");
+}
+
+
+bool SIPConnection::SetTransport(OpalTransport * trans)
+{
+  if (deleteTransport && transport != NULL) {
+    transport->CloseWait();
+    delete transport;
+  }
+
+  transport = trans;
+  deleteTransport = true;
+
+  if (trans != NULL)
+    return true;
+
+  if (GetPhase() < ReleasingPhase)
+    Release(EndedByUnreachable);
+
+  return false;
 }
 
 
@@ -320,7 +334,7 @@ void SIPConnection::OnReleased()
   
   // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
   // thread
-  if (GetPhase() >= ReleasedPhase){
+  if (GetPhase() >= ReleasedPhase) {
     PTRACE(2, "SIP\tOnReleased: already released");
     return;
   };
@@ -424,6 +438,8 @@ void SIPConnection::OnReleased()
   SetPhase(ReleasedPhase);
 
   OpalRTPConnection::OnReleased();
+
+  SetTransport(NULL);
 }
 
 
@@ -1293,13 +1309,8 @@ PBoolean SIPConnection::SetUpConnection()
 
   originating = PTrue;
 
-  if (deleteTransport)
-    delete transport;
-  transport = endpoint.CreateTransport(transportAddress, m_connStringOptions(OPAL_OPT_INTERFACE));
-  if (transport == NULL) {
-    Release(EndedByUnreachable);
-    return PFalse;
-  }
+  if (!SetTransport(endpoint.CreateTransport(transportAddress, m_connStringOptions(OPAL_OPT_INTERFACE))))
+    return false;
 
   ++m_sdpVersion;
 
@@ -2336,13 +2347,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
     if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
       PTRACE(2, "SIP\tINVITE response changed transport for call");
-
-      OpalTransport * newTransport = endpoint.CreateTransport(newContactAddress);
-      if (newTransport != NULL) {
-        if (deleteTransport)
-          delete transport;
-        transport = newTransport;
-      }
+      if (!SetTransport(endpoint.CreateTransport(newContactAddress)))
+        return;
     }
   }
 
