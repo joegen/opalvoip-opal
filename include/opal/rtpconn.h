@@ -321,6 +321,7 @@ class OpalRTPConnection : public OpalConnection
     );
   //@}
 
+  /**@name NAT Management */
   //@{
     /** Return PTrue if the remote appears to be behind a NAT firewall
     */
@@ -376,7 +377,10 @@ class OpalRTPConnection : public OpalConnection
       RTP_DataFrame::PayloadTypes rfc2833; ///<  Payload type for RFC2833
       RTP_DataFrame::PayloadTypes ciscoNSE; ///<  Payload type for RFC2833
     };
+  //@}
 
+  /**@name Overrides from OpalConnection */
+  //@{
     /**Get information on the media channel for the connection.
        The default behaviour checked the mediaTransportAddresses dictionary
        for the session ID and returns information based on that. It also uses
@@ -416,18 +420,49 @@ class OpalRTPConnection : public OpalConnection
       PBoolean isSource                        ///<  Is a source stream
     );
 
-    /**Overrides from OpalConnection
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
+
+       This function may also be executed to adjust the media format list for
+       other connections in the call. If this happens then the "otherConnection"
+       parameter will be non-NULL.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
+    virtual void AdjustMediaFormats(
+      bool local,                          ///<  Media formats a local ones to be presented to remote
+      OpalMediaFormatList & mediaFormats,  ///<  Media formats to use
+      OpalConnection * otherConnection     ///<  Other connection we are adjusting media for
+    ) const;
 
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams. This is usually called twice per media patch,
+       once for the source stream and once for the sink stream.
+
+       Note this is not called within the context of the patch thread and is
+       called before that thread has started.
+      */
+    virtual void OnPatchMediaStream(
+      PBoolean isSource,        ///< Is source/sink call
+      OpalMediaPatch & patch    ///<  New patch
+    );
+
+    /** Notifier function for OpalVideoUpdatePicture.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
     void OnMediaCommand(OpalMediaCommand & command, INT extra);
-
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
+  //@}
 
     virtual void SessionFailing(RTP_Session & session);
 
   protected:
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
+
     OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
 #if OPAL_T38_CAPABILITY
