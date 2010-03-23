@@ -160,15 +160,29 @@ PString SIPEndPoint::GetDefaultTransport() const
 
 PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
-  PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread started.");
+  if (transport->IsReliable()) {
+    PTRACE(2, "SIP\tListening thread started.");
 
-  transport->SetBufferSize(SIP_PDU::MaxSize);
+    do {
+      HandlePDU(*transport);
+    } while (transport->IsOpen() && !transport->bad() && !transport->eof());
 
-  do {
-    HandlePDU(*transport);
-  } while (transport->IsOpen() && transport->IsReliable() && !transport->bad() && !transport->eof());
+    // Need to make sure all connections are not referencing this transport
+    // before we return and it gets deleted.
+    for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection) {
+      PSafePtr<SIPConnection> sipConnection = PSafePtrCast<OpalConnection, SIPConnection>(connection);
+      if (&sipConnection->GetTransport() == transport && sipConnection->LockReadWrite()) {
+        sipConnection->SetTransport(NULL);
+        sipConnection->UnlockReadWrite();
+      }
+    }
 
-  PTRACE_IF(2, transport->IsReliable(), "SIP\tListening thread finished.");
+    PTRACE(2, "SIP\tListening thread finished.");
+  }
+  else {
+    transport->SetBufferSize(SIP_PDU::MaxSize);
+    HandlePDU(*transport); // Always just one PDU
+  }
 
   return PTrue;
 }
