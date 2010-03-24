@@ -830,26 +830,6 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 }
 
 
-void SDPMediaDescription::RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFormat)
-{
-  OpalMediaFormat mediaFormat = sdpMediaFormat.GetMediaFormat();
-  const char * encodingName = mediaFormat.GetEncodingName();
-  unsigned clockRate = mediaFormat.GetClockRate();
-
-  if (!mediaFormat.IsValidForProtocol("sip") || encodingName == NULL || *encodingName == '\0')
-    return;
-
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ) {
-    if ((format->GetEncodingName() *= encodingName) && (format->GetClockRate() == clockRate)) {
-      PTRACE(3, "SDP\tRemoving format=" << encodingName << ", " << format->GetPayloadType());
-      formats.erase(format++);
-    }
-    else
-      ++format;
-  }
-}
-
-
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip")) {
@@ -858,13 +838,26 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   }
 
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
 
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-    if (format->GetPayloadType() == payloadType ||
-        ((format->GetEncodingName() *= mediaFormat.GetEncodingName()) && format->GetClockRate() == clockRate)
-        ) {
-      PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is already included");
+    const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
+    if (mediaFormat == sdpMediaFormat) {
+      PTRACE(2, "SDP\tSDP not including " << mediaFormat << " as already included");
+      return;
+    }
+
+    if (format->GetPayloadType() == payloadType) {
+      PTRACE(2, "SDP\tSDP not including " << mediaFormat << " as it is has duplicate payload type " << payloadType);
+      return;
+    }
+
+    if (format->GetEncodingName() == encodingName &&
+        format->GetClockRate() == clockRate &&
+        mediaFormat.ValidateMerge(sdpMediaFormat)) {
+      PTRACE(2, "SDP\tSDP not including " << mediaFormat
+             << " as an equivalent (" << sdpMediaFormat << ") is already included");
       return;
     }
   }
@@ -875,6 +868,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 
   AddSDPMediaFormat(sdpFormat);
 }
+
 
 void SDPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & /*mediaFormat*/)
 {
