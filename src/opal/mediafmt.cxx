@@ -721,7 +721,7 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
 
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -738,14 +738,14 @@ OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 
 OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   return operator=(PString(wildcard));
 }
 
 
 OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
@@ -761,7 +761,7 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 
 void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
 
   m_info = (OpalMediaFormatInternal *)c->m_info->Clone();
   m_info->options.MakeUnique();
@@ -770,28 +770,28 @@ void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
 
 void OpalMediaFormat::CopyContents(const OpalMediaFormat & c)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   m_info = c.m_info;
 }
 
 
 void OpalMediaFormat::DestroyContents()
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   delete m_info;
 }
 
 
 PObject * OpalMediaFormat::Clone() const
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   return new OpalMediaFormat(*this);
 }
 
 
 PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   PAssert(PIsDescendant(&obj, OpalMediaFormat), PInvalidCast);
   const OpalMediaFormat & other = (const OpalMediaFormat &)obj;
   if (m_info == NULL)
@@ -804,7 +804,7 @@ PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 
 void OpalMediaFormat::PrintOn(ostream & strm) const
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   if (m_info != NULL)
     strm << *m_info;
 }
@@ -812,7 +812,7 @@ void OpalMediaFormat::PrintOn(ostream & strm) const
 
 void OpalMediaFormat::ReadFrom(istream & strm)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   char fmt[100];
   strm >> fmt;
   operator=(fmt);
@@ -821,7 +821,7 @@ void OpalMediaFormat::ReadFrom(istream & strm)
 
 bool OpalMediaFormat::ToNormalisedOptions()
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   MakeUnique();
   return m_info != NULL && m_info->ToNormalisedOptions();
 }
@@ -829,15 +829,38 @@ bool OpalMediaFormat::ToNormalisedOptions()
 
 bool OpalMediaFormat::ToCustomisedOptions()
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   MakeUnique();
   return m_info != NULL && m_info->ToCustomisedOptions();
 }
 
 
+bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
+{
+  if (!mediaFormat.IsValid())
+    return true;
+
+  PWaitAndSignal m(m_mutex);
+  MakeUnique();
+
+  if (*this != mediaFormat)
+    return Merge(mediaFormat);
+
+  if (!IsValid() || !Merge(mediaFormat))
+    *this = mediaFormat; //Must have different EqualMerge options, just copy it
+  else if (GetPayloadType() != mediaFormat.GetPayloadType()) {
+    PTRACE(4, "MediaFormat\tChanging payload type from " << GetPayloadType()
+           << " to " << mediaFormat.GetPayloadType() << " in " << *this);
+    SetPayloadType(mediaFormat.GetPayloadType());
+  }
+
+  return true;
+}
+
+
 bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   MakeUnique();
   return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info);
 }
@@ -845,7 +868,7 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 
 bool OpalMediaFormat::ValidateMerge(const OpalMediaFormat & mediaFormat) const
 {
-  PWaitAndSignal m(_mutex);
+  PWaitAndSignal m(m_mutex);
   return m_info != NULL && mediaFormat.m_info != NULL && m_info->ValidateMerge(*mediaFormat.m_info);
 }
 
