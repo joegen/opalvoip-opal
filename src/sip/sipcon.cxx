@@ -427,7 +427,7 @@ void SIPConnection::OnReleased()
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
     PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
-    transaction->WaitForCompletion();
+    transaction->WaitForTermination();
     m_pendingTransactions.Remove(transaction);
   }
 
