@@ -114,13 +114,10 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
   if (mediaPatch != NULL && !fromPatch)
     return mediaPatch->UpdateMediaFormat(newMediaFormat);
 
-  if (mediaFormat != newMediaFormat)
-    return mediaFormat.Merge(newMediaFormat);
-
-  mediaFormat = newMediaFormat;
+  if (!mediaFormat.Update(newMediaFormat))
+    return false;
 
   PTRACE(4, "Media\tMedia format updated on " << *this);
-
   return true;
 }
 

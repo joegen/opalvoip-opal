@@ -89,23 +89,13 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 {
   PWaitAndSignal mutex(updateMutex);
 
-  if (input.IsValid()) {
-    if (inputMediaFormat == input)
-      inputMediaFormat = input;
-    else if (!inputMediaFormat.Merge(input))
-      return false;
-    m_inClockRate = inputMediaFormat.GetClockRate();
-  }
+  bool ok = inputMediaFormat.Update(input);
+  ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
 
-  if (output.IsValid()) {
-    if (outputMediaFormat == output)
-      outputMediaFormat = output;
-    else if (!outputMediaFormat.Merge(output))
-      return false;
-    m_outClockRate = outputMediaFormat.GetClockRate();
-  }
+  m_inClockRate = inputMediaFormat.GetClockRate();
+  m_outClockRate = outputMediaFormat.GetClockRate();
 
-  return true;
+  return ok;
 }
 
 
@@ -266,13 +256,8 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   else {
     dstFormat = *masterFormat;
     PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
-    if (!dstFormat.Merge(dstCapability))
+    if (!dstFormat.Update(dstCapability))
       return false;
-    if (dstFormat.GetPayloadType() != dstCapability.GetPayloadType()) {
-      PTRACE(4, "Opal\tChanging payload type from " << dstFormat.GetPayloadType()
-             << " to " << dstCapability.GetPayloadType() << " in " << srcFormat);
-      dstFormat.SetPayloadType(dstCapability.GetPayloadType());
-    }
   }
 
   if (!srcFormat.Merge(dstFormat))
