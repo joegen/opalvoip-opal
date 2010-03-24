@@ -86,22 +86,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
 bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
-
-  if (input.IsValid()) {
-    if (inputMediaFormat == input)
-      inputMediaFormat = input;
-    else if (!inputMediaFormat.Merge(input))
-      return false;
-  }
-
-  if (output.IsValid()) {
-    if (outputMediaFormat == output)
-      outputMediaFormat = output;
-    else if (!outputMediaFormat.Merge(output))
-      return false;
-  }
-
-  return true;
+  return inputMediaFormat.Update(input) && outputMediaFormat.Update(output);
 }
 
 
@@ -264,13 +249,8 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   else {
     dstFormat = *masterFormat;
     PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
-    if (!dstFormat.Merge(dstCapability))
+    if (!dstFormat.Update(dstCapability))
       return false;
-    if (dstFormat.GetPayloadType() != dstCapability.GetPayloadType()) {
-      PTRACE(4, "Opal\tChanging payload type from " << dstFormat.GetPayloadType()
-             << " to " << dstCapability.GetPayloadType() << " in " << srcFormat);
-      dstFormat.SetPayloadType(dstCapability.GetPayloadType());
-    }
   }
 
   if (!srcFormat.Merge(dstFormat))
