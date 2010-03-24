@@ -1011,6 +1011,9 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
 
+  if (sendStream != NULL)
+    sendStream->UpdateMediaFormat(*sdpFormats.FindFormat(sendStream->GetMediaFormat()));
+
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
       recvStream == NULL &&
       ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
@@ -1023,6 +1026,9 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
     recvStream->UpdateMediaFormat(adjustedMediaFormat);
   }
+
+  if (recvStream != NULL)
+    recvStream->UpdateMediaFormat(*sdpFormats.FindFormat(recvStream->GetMediaFormat()));
 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
   localMedia->SetDirection(newDirection);
@@ -2489,11 +2495,17 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
     }
   }
 
-  // Then open the streams if the direction allows
-  if (recvStream == NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+  // Then open the streams if the direction allows and if needed
+  // If already open then update to new parameters/payload type
+
+  if (recvStream != NULL)
+    recvStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(recvStream->GetMediaFormat()));
+  else if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
     ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
 
-  if (sendStream == NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
+  if (sendStream != NULL)
+    sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()));
+  else if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
