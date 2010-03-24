@@ -2543,15 +2543,15 @@ PBoolean SIPTransaction::Start()
 }
 
 
-void SIPTransaction::WaitForCompletion()
+void SIPTransaction::WaitForTermination()
 {
-  if (m_state >= Completed)
+  if (IsTerminated())
     return;
 
   if (m_state == NotStarted)
     Start();
 
-  m_completed.Wait();
+  m_terminated.Wait();
 }
 
 
@@ -2677,10 +2677,8 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     PTRACE(4, "SIP\tIgnoring duplicate response to " << GetMethod() << " transaction id=" << GetTransactionID());
   }
 
-  if (response.GetStatusCode() >= 200) {
+  if (response.GetStatusCode() >= 200)
     m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
-    m_completed.Signal();
-  }
 
   return true;
 }
@@ -2763,6 +2761,9 @@ void SIPTransaction::OnTimeout(PTimer &, INT)
 
 void SIPTransaction::SetTerminated(States newState)
 {
+  if (!PAssert(newState >= Terminated_Success, PInvalidParameter))
+    return;
+
 #if PTRACING
   static const char * const StateNames[NumStates] = {
     "NotStarted",
@@ -2792,9 +2793,7 @@ void SIPTransaction::SetTerminated(States newState)
               << " but already terminated ( " << StateNames[m_state] << ')');
     return;
   }
-  
-  States oldState = m_state;
-  
+
   m_state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for "
          << GetMethod() << " transaction id=" << GetTransactionID());
@@ -2825,8 +2824,7 @@ void SIPTransaction::SetTerminated(States newState)
       m_connection->OnTransactionFailed(*this);
   }
 
-  if (oldState != Completed)
-    m_completed.Signal();
+  m_terminated.Signal();
 }
 
 
@@ -2965,6 +2963,9 @@ SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & s
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
+  if (IsTerminated())
+    return false;
+
   if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
     if (IsInProgress())
       m_connection->OnReceivedResponseToINVITE(*this, response);
