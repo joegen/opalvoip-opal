@@ -140,7 +140,7 @@ void SIPEndPoint::ShutDown()
   // Clean up transactions still in progress, waiting for them to complete.
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
-    transaction->WaitForCompletion();
+    transaction->WaitForTermination();
     transactions.RemoveAt(transaction->GetTransactionID());
   }
 
@@ -494,7 +494,7 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
   PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this, *transport);
   byeTransaction->InitialiseHeaders(context);
-  byeTransaction->WaitForCompletion();
+  byeTransaction->WaitForTermination();
   return !byeTransaction->IsFailed();
 }
 
