@@ -80,7 +80,7 @@ class SDPMediaFormat : public PObject
 
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
 
-    PString GetEncodingName() const         { return encodingName; }
+    const PCaselessString & GetEncodingName() const { return encodingName; }
     void SetEncodingName(const PString & v) { encodingName = v; }
 
     void SetFMTP(const PString & _fmtp); 
@@ -106,7 +106,7 @@ class SDPMediaFormat : public PObject
     SDPMediaDescription & m_parent;
     RTP_DataFrame::PayloadTypes payloadType;
     unsigned clockRate;
-    PString encodingName;
+    PCaselessString encodingName;
     PString parameters;
     PString m_fmtp;
 };
@@ -174,8 +174,6 @@ class SDPMediaDescription : public PObject
     virtual void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
 
     virtual const SDPBandwidth & GetBandwidth() const { return bandwidth; }
-
-    virtual void RemoveSDPMediaFormat(const SDPMediaFormat & sdpMediaFormat);
 
     virtual void CreateSDPMediaFormats(const PStringArray & tokens);
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString) = 0;
