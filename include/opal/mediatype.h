@@ -325,6 +325,8 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 #endif
 };
 
+PFACTORY_LOAD(T38PseudoRTP_Handler);
+
 #endif // OPAL_T38_CAPABILITY
 
 
