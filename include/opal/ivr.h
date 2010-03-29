@@ -231,6 +231,16 @@ class OpalIVRConnection : public OpalLocalConnection
      */
     void OnEstablished();
 
+    /**Initiate the transfer of an existing call (connection) to a new remote 
+       party.
+
+       If remoteParty is a valid call token, then the remote party is transferred
+       to that party (consultation transfer) and both calls are cleared.
+     */
+    virtual bool TransferConnection(
+      const PString & remoteParty   ///<  Remote party to transfer the existing call to
+    );
+    
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.
