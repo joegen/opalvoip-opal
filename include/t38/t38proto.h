@@ -276,6 +276,7 @@ class OpalFaxConnection : public OpalConnection
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSendCNGCED);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
+    PDECLARE_NOTIFIER(PThread, OpalFaxConnection, ReleaseConnection);
 
 
     OpalFaxEndPoint & m_endpoint;
