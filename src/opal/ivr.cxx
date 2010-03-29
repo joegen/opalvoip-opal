@@ -181,6 +181,27 @@ void OpalIVRConnection::OnEstablished()
 }
 
 
+bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
+{
+  // First strip of the prefix if present
+  PINDEX prefixLength = 0;
+  if (remoteParty.Find(GetPrefixName()+":") == 0)
+    prefixLength = GetPrefixName().GetLength()+1;
+
+  PString vxml = remoteParty.Mid(prefixLength);
+  if (vxml == "*")
+    vxml = endpoint.GetDefaultVXML();
+  if (vxml.IsEmpty())
+    return false;
+
+  if (vxmlSession.IsPlaying())
+    vxmlSession.Close();
+
+  vxmlToLoad = vxml;
+  return StartVXML();
+}
+
+
 PBoolean OpalIVRConnection::StartVXML()
 {
   if (vxmlSession.IsPlaying()) {
