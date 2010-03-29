@@ -450,7 +450,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 };
 
 
-static PFactory<RTP_Encoding>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
+PFACTORY_CREATE(PFactory<RTP_Encoding>, T38PseudoRTP_Handler, "udptl", false);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -555,7 +555,6 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
 void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
-  connection.Release(failed ? OpalConnection::EndedByCapabilityExchange : OpalConnection::EndedByLocalUser);
 }
 
 
@@ -611,7 +610,9 @@ OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
-  formats += m_tiffFileFormat;
+  if (!m_filename.IsEmpty())
+    formats += m_tiffFileFormat;
+
   formats += OpalPCM16;
 
   if (!m_disableT38) {
@@ -752,8 +753,8 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
-      synchronousOnRelease = false; // Get deadlock if OnRelease() from patch thread.
       OnFaxCompleted(false);
+      PThread::Create(PCREATE_NOTIFIER(ReleaseConnection));
     }
   }
 
@@ -790,6 +791,9 @@ void OpalFaxConnection::AcceptIncoming()
 void OpalFaxConnection::OnFaxCompleted(bool failed)
 {
   m_endpoint.OnFaxCompleted(*this, failed);
+
+  // Prevent to reuse filename
+  m_filename.MakeEmpty();
 }
 
 
@@ -869,8 +873,19 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
 {
   if (LockReadWrite()) {
     m_awaitingSwitchToT38 = false;
-    if (!SwitchFaxMediaStreams(true))
+    if (!SwitchFaxMediaStreams(true)) {
       OnFaxCompleted(true);
+      Release(OpalConnection::EndedByCapabilityExchange);
+    }
+    UnlockReadWrite();
+  }
+}
+
+
+void OpalFaxConnection::ReleaseConnection(PThread &, INT)
+{
+  if (LockReadWrite()) {
+    Release(OpalConnection::EndedByLocalUser);
     UnlockReadWrite();
   }
 }
