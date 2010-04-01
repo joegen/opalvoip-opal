@@ -103,18 +103,18 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
     void AddNewDstFrame();
     void FinishOutputFrame();
 
-    DWORD extendedSequenceNumber;
-    PINDEX maximumPacketSize;
-    unsigned frameHeight;
-    unsigned frameWidth;
+    DWORD m_extendedSequenceNumber;
+    PINDEX m_maximumPacketSize;
+    unsigned m_frameHeight;
+    unsigned m_frameWidth;
 
     DWORD srcTimestamp;
 
-    RTP_DataFrameList * dstFrames;
-    std::vector<PINDEX> dstScanlineCounts;
-    PINDEX dstScanLineCount;
-    PINDEX dstPacketSize;
-    ScanLineHeader * dstScanLineTable;
+    RTP_DataFrameList * m_dstFrames;
+    std::vector<PINDEX> m_dstScanlineCounts;
+    PINDEX m_dstScanLineCount;
+    PINDEX m_dstPacketSize;
+    ScanLineHeader * m_dstScanLineTable;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -138,13 +138,14 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     PBoolean Initialise();
     virtual PBoolean DecodeFrames(RTP_DataFrameList & output) = 0;
 
-    RTP_DataFrameList inputFrames;
-    std::vector<PINDEX> scanlineCounts;
-    PINDEX frameWidth, frameHeight;
+    RTP_DataFrameList m_inputFrames;
+    std::vector<PINDEX> m_scanlineCounts;
+    PINDEX m_frameWidth, m_frameHeight;
 
-    PBoolean  first;
-    DWORD lastSequenceNumber;
-    DWORD lastTimeStamp;
+    bool  m_first;
+    bool  m_missingPackets;
+    DWORD m_lastSequenceNumber;
+    DWORD m_lastTimeStamp;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -182,9 +183,9 @@ class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
     void EndEncoding();
 
   protected:
-    BYTE * srcYPlane;
-    BYTE * srcCbPlane;
-    BYTE * srcCrPlane;
+    BYTE * m_srcYPlane;
+    BYTE * m_srcCbPlane;
+    BYTE * m_srcCrPlane;
 };
 
 /**This class defines a transcoder implementation class that converts RFC4175 to RGB24
@@ -220,7 +221,7 @@ class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
     void EndEncoding();
 
   protected:
-    BYTE * rgbBase;
+    BYTE * m_rgbBase;
 };
 
 
