@@ -228,8 +228,14 @@ PBoolean OpalLocalConnection::SetUpConnection()
       return false;
     }
   }
+  else if (ownerCall.IsEstablished()) {
+    PTRACE(3, "LocalCon\tTransfer of connection in call " << ownerCall);
+    OnApplyStringOptions();
+    OnConnectedInternal();
+    AutoStartMediaStreams();
+  }
   else {
-    PTRACE(3, "LocalCon\tSetUpConnection(" << remotePartyName << ')');
+    PTRACE(3, "LocalCon\tIncoming call from " << remotePartyName);
 
     OnApplyStringOptions();
 
