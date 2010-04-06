@@ -149,6 +149,8 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     PINDEX  m_maxHeight;
     DWORD   m_lastSequenceNumber;
     DWORD   m_lastTimeStamp;
+    DWORD   m_timeStampOfFrame;
+    DWORD   m_firstSequenceOfFrame;
 };
 
 /////////////////////////////////////////////////////////////////////////////
