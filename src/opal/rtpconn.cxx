@@ -93,13 +93,22 @@ OpalRTPConnection::~OpalRTPConnection()
 
 unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bool isSource)
 {
-  if (GetMediaStream(mediaType, isSource) == NULL) {
-    OpalMediaStreamPtr mediaStream = GetMediaStream(mediaType, !isSource);
-    if (mediaStream != NULL)
-      return mediaStream->GetSessionID();
-  }
+  unsigned nextSessionId = m_rtpSessions.GetNextSessionID();
 
-  return m_rtpSessions.GetNextSessionID();
+  if (GetMediaStream(mediaType, isSource) != NULL)
+    return nextSessionId;
+
+  OpalMediaStreamPtr mediaStream = GetMediaStream(mediaType, !isSource);
+  if (mediaStream != NULL)
+    return mediaStream->GetSessionID();
+
+  unsigned defaultSessionId = mediaType.GetDefinition()->GetDefaultSessionId();
+  if (defaultSessionId >= nextSessionId ||
+      GetMediaStream(defaultSessionId,  isSource) != NULL ||
+      GetMediaStream(defaultSessionId, !isSource) != NULL)
+    return nextSessionId;
+
+  return defaultSessionId;
 }
 
 
