@@ -92,7 +92,7 @@ public:
   /**Return whether this client has extra capabilities.
      Default returns FALSE.
     */
-  virtual PBoolean HasExtraCapabilities() const { return PFalse; }
+  virtual PBoolean HasExtraCapabilities() const { return false; }
 
   /**Called if the CME client received an Extra Capabilities PDU for this client.
      Default does nothing.
@@ -233,8 +233,8 @@ public:
   virtual PBoolean Close();
   virtual PBoolean ReadPacket(RTP_DataFrame & packet);
   virtual PBoolean WritePacket(RTP_DataFrame & packet);
-  virtual PBoolean IsSynchronous() const { return PFalse; }
-  virtual PBoolean RequiresPatchThread() const { return isSource ? PFalse : PTrue; }
+  virtual PBoolean IsSynchronous() const { return false; }
+  virtual PBoolean RequiresPatchThread() const { return isSource ? false : true; }
   
 private:
     OpalH224Handler & h224Handler;

@@ -92,18 +92,18 @@ class OpalFaxEndPoint : public OpalEndPoint
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
       unsigned int options = 0,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions = NULL
+      OpalConnection::StringOptions * stringOptions = NULL  ///< Options to pass to connection
     );
 
     /**Create a connection for the fax endpoint.
       */
     virtual OpalFaxConnection * CreateConnection(
       OpalCall & call,          ///< Owner of connection
-      void * userData,
-      OpalConnection::StringOptions * stringOptions,
+      void * userData,          ///<  Arbitrary data to pass to connection
+      OpalConnection::StringOptions * stringOptions, ///< Options to pass to connection
       const PString & filename, ///< filename to send/receive
-      bool receiving,
-      bool disableT38
+      bool receiving,           ///< Flag for receiving/sending fax
+      bool disableT38           ///< Flag to disable use of T.38
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -183,7 +183,7 @@ class OpalFaxConnection : public OpalConnection
       const PString & filename,        ///< TIFF file name to send/receive
       bool receiving,                  ///< True if receiving a fax
       bool disableT38,                 ///< True if want to force G.711
-      OpalConnection::StringOptions * stringOptions = NULL
+      OpalConnection::StringOptions * stringOptions = NULL  ///< Options to pass to connection
     );
 
     /**Destroy endpoint.

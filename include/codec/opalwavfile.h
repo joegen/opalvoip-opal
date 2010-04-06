@@ -62,14 +62,14 @@ class OpalWAVFile : public PWAVFile
 
        If a WAV file is being created, the type parameter can be used
        to create a PCM Wave file or a G.723.1 Wave file by using
-       #WaveType enum#
+       <code>WaveType</code> enum
 
-       The #PChannel::IsOpen()# function may be used after object
+       The <code>PChannel::IsOpen()</code> function may be used after object
        construction to determine if the file was successfully opened.
      */
     OpalWAVFile(
       OpenMode mode,            ///<  Mode in which to open the file.
-      int opts = ModeDefault,   ///<  #OpenOptions enum# for open operation.
+      int opts = ModeDefault,   ///<  <code>OpenOptions</code> enum for open operation.
       unsigned format = fmt_PCM ///<  Type of WAV File to create
     );
 
@@ -77,16 +77,16 @@ class OpalWAVFile : public PWAVFile
        the specified mode and with the specified options.
        If a WAV file is being created, the type parameter can be used
        to create a PCM Wave file or a G.723.1 Wave file by using
-       #WaveType enum#
+       <code>WaveType</code> enum.
 
-       The #PChannel::IsOpen()# function may be used after object
+       The <code>PChannel::IsOpen()</code> function may be used after object
        construction to determine if the file was successfully opened.
      */
     OpalWAVFile(
       const PFilePath & name,     ///<  Name of file to open.
       OpenMode mode = ReadWrite,  ///<  Mode in which to open the file.
-      int opts = ModeDefault,     ///<  #OpenOptions enum# for open operation.
-      unsigned format = fmt_PCM ///<  Type of WAV File to create
+      int opts = ModeDefault,     ///<  <code>OpenOptions</code> enum for open operation.
+      unsigned format = fmt_PCM   ///<  Type of WAV File to create
     );
 
 

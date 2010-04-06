@@ -87,12 +87,12 @@ class OpalLineEndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -105,7 +105,7 @@ class OpalLineEndPoint : public OpalEndPoint
       const PString & party,    ///< Remote party to call
       void * userData = NULL,   ///< Arbitrary data to pass to connection
       unsigned int options = 0,  ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions  = NULL
+      OpalConnection::StringOptions * stringOptions  = NULL ///< Options to pass to connection
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -138,7 +138,7 @@ class OpalLineEndPoint : public OpalEndPoint
       */
     PSafePtr<OpalLineConnection> GetLIDConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite   ///< Lock mode
     ) { return PSafePtrCast<OpalConnection, OpalLineConnection>(GetConnectionWithLock(token, mode)); }
 
     /**Add a line to the endpoint.
@@ -146,7 +146,7 @@ class OpalLineEndPoint : public OpalEndPoint
        should not be deleted directly. Use the RemoveLine() function to
        delete the line.
 
-       Returns PTrue if the lines device was open and the line was added.
+       Returns true if the lines device was open and the line was added.
       */
     PBoolean AddLine(
       OpalLine * line
@@ -186,7 +186,7 @@ class OpalLineEndPoint : public OpalEndPoint
 
        Note the device should already be open or no lines are added.
 
-       Returns PTrue if at least one line was added.
+       Returns true if at least one line was added.
       */
     virtual PBoolean AddLinesFromDevice(
       OpalLineInterfaceDevice & device  ///<  Device to add lines
@@ -202,7 +202,7 @@ class OpalLineEndPoint : public OpalEndPoint
     /**Add a line interface devices to the endpoint by name.
        This calls AddDeviceName() for each entry in the array.
 
-       Returns PTrue if at least one line from one device was added.
+       Returns true if at least one line from one device was added.
       */
     PBoolean AddDeviceNames(
       const PStringArray & descriptors  ///<  Device descritptions to add
@@ -214,7 +214,7 @@ class OpalLineEndPoint : public OpalEndPoint
        as would be returned from the OpalLineInterfaceDevice::GetAllDevices()
        function.
 
-       Returns PTrue if at least one line was added or the descriptor was
+       Returns true if at least one line was added or the descriptor was
        already present.
       */
     PBoolean AddDeviceName(
@@ -236,7 +236,7 @@ class OpalLineEndPoint : public OpalEndPoint
 
        Note the device should already be open or no lines are added.
 
-       Returns PTrue if at least one line was added.
+       Returns true if at least one line was added.
       */
     virtual PBoolean AddDevice(
       OpalLineInterfaceDevice * device    ///<  Device to add
@@ -256,7 +256,7 @@ class OpalLineEndPoint : public OpalEndPoint
     /**Get the line by name.
        The lineName parameter may be "*" to matche the first line.
 
-       If the enableAudio flag is PTrue then the EnableAudio() function is
+       If the enableAudio flag is true then the EnableAudio() function is
        called on the line and it is returns only if successful. This
        effectively locks the line for exclusive use of the caller.
       */
@@ -498,12 +498,13 @@ class OpalLineConnection : public OpalConnection
       */
     void SetPromptTone(OpalLineInterfaceDevice::CallProgressTones tone) { m_promptTone = tone; }
 
-    /** delay in msec to wait between the dial tone detection and dialing the dtmf 
-      * @param uiDial the dial delay to set
+    /** Delay in msec to wait between the dial tone detection and dialing the dtmf 
      */
-    void setDialDelay(unsigned int uiDialDelay) { m_dialParams.m_dialStartDelay = uiDialDelay;}
-    
-    /** delay in msec to wait between the dial tone detection and dialing the dtmf 
+    void setDialDelay(
+      unsigned int uiDialDelay  ///< Dialing delay
+    ) { m_dialParams.m_dialStartDelay = uiDialDelay;}
+
+    /** Delay in msec to wait between the dial tone detection and dialing the dtmf 
      * @return uiDialDelay the dial delay to get
      */
     unsigned int getDialDelay() const { return m_dialParams.m_dialStartDelay; }
@@ -534,7 +535,7 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Construct a new media stream for Line Interface Devices.
       */
     OpalLineMediaStream(
-      OpalLineConnection & conn,
+      OpalLineConnection & conn,            ///< Owner connection
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       PBoolean isSource,                       ///<  Is a source stream
@@ -607,7 +608,7 @@ class OpalLineMediaStream : public OpalMediaStream
     );
 
     /**Indicate if the media stream is synchronous.
-       Returns PTrue for LID streams.
+       Returns true for LID streams.
       */
     virtual PBoolean IsSynchronous() const;
 

@@ -186,7 +186,7 @@ class IAX2Processor : public PThread
   void Main();
   
   /**Test to see if it is a status query type IAX2 frame (eg lagrq) and handle it. If the frame
-     is a status query, and it is handled, return PTrue */
+     is a status query, and it is handled, return true */
   PBoolean IsStatusQueryEthernetFrame(IAX2Frame *frame);
   
   /**Set the flag to indicate if we are handling specialPackets (those
@@ -309,8 +309,8 @@ class IAX2Processor : public PThread
   virtual void ProcessIaxCmdPong(IAX2FullFrameProtocol *src); 
   
   /**remove one frame on the incoming ethernet frame list. If there
-     may be more to process, return PTrue. If there are no more to
-     process, return PFalse. */
+     may be more to process, return true. If there are no more to
+     process, return false. */
   PBoolean ProcessOneIncomingEthernetFrame();
   
   /**Count of the number of control frames sent */
@@ -334,8 +334,8 @@ class IAX2Processor : public PThread
      (Ie) in the data section. This processor is used to do things that are
      common to registration and call handling.
 
-  This method will eat/delete the supplied frame. Return PTrue on success,
-  PFalse on failure.*/
+  This method will eat/delete the supplied frame. Return true on success,
+  false on failure.*/
   virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Transmit IAX2Frame to remote endpoint, and then increment send

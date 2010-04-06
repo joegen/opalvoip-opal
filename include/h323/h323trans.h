@@ -184,7 +184,7 @@ class H323Transactor : public PObject
     virtual PBoolean WriteTo(
       H323TransactionPDU & pdu,
       const H323TransportAddressArray & addresses,
-      PBoolean callback = PTrue
+      PBoolean callback = true
     );
   //@}
 
@@ -436,7 +436,7 @@ class H323TransactionServer : public PObject
        If the array is empty then the string "*" is assumed which will listen
        on the standard UDP port on INADDR_ANY.
 
-       Returns PTrue if at least one interface was successfully started.
+       Returns true if at least one interface was successfully started.
       */
     PBoolean AddListeners(
       const H323TransportAddressArray & ifaces ///<  Interfaces to listen on.
@@ -452,7 +452,7 @@ class H323TransactionServer : public PObject
     /**Add a gatekeeper listener to this gatekeeper server given the transport.
        Note that the transport is then owned by the listener and will be
        deleted automatically when the listener is destroyed. Note also the
-       transport is deleted if this function returns PFalse and no listener was
+       transport is deleted if this function returns false and no listener was
        created.
       */
     PBoolean AddListener(
@@ -462,7 +462,7 @@ class H323TransactionServer : public PObject
     /**Add a gatekeeper listener to this gatekeeper server.
        Note that the gatekeeper listener is then owned by the gatekeeper
        server and will be deleted automatically when the listener is removed.
-       Note also the listener is deleted if this function returns PFalse and
+       Note also the listener is deleted if this function returns false and
        the listener was not used.
       */
     PBoolean AddListener(

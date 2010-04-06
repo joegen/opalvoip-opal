@@ -390,7 +390,7 @@ class IAX2Connection : public OpalConnection
      function when an application wishes to redirct an unwanted incoming
      call.
      
-     The return value is PTrue if the call is to be forwarded, PFalse
+     The return value is true if the call is to be forwarded, false
      otherwise. Note that if the call is forwarded the current connection is
      cleared with teh ended call code of EndedByCallForwarded.
   */
@@ -405,7 +405,7 @@ class IAX2Connection : public OpalConnection
   
   /**Test to see if it is a status query type iax frame (eg lagrq) and
      handle it. If the frame is a status query, and it is handled,
-     return PTrue */
+     return true */
   //static PBoolean IsStatusQueryEthernetFrame(IAX2Frame *frame);
     
   /**Return reference to the endpoint class */

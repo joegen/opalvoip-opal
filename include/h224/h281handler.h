@@ -113,7 +113,7 @@ public:
   
   /**Overriding default OpalH224Client methods */
   virtual BYTE GetClientID() const { return OpalH224Client::H281ClientID; }
-  virtual PBoolean HasExtraCapabilities() const { return PTrue; }
+  virtual PBoolean HasExtraCapabilities() const { return true; }
   
   /**Process incoming frames. Overrides from OpalH224Client */
   virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);

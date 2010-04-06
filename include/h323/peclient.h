@@ -314,9 +314,9 @@ class H323PeerElement : public H323_AnnexG
 
     /**Send a service request
      */
-    PBoolean SetOnlyServiceRelationship(const PString & peer, PBoolean keepTrying = PTrue);
-    PBoolean AddServiceRelationship(const H323TransportAddress & peer, PBoolean keepTrying = PTrue);
-    PBoolean AddServiceRelationship(const H323TransportAddress & peer, OpalGloballyUniqueID & serviceID, PBoolean keepTrying = PTrue);
+    PBoolean SetOnlyServiceRelationship(const PString & peer, PBoolean keepTrying = true);
+    PBoolean AddServiceRelationship(const H323TransportAddress & peer, PBoolean keepTrying = true);
+    PBoolean AddServiceRelationship(const H323TransportAddress & peer, OpalGloballyUniqueID & serviceID, PBoolean keepTrying = true);
     PBoolean RemoveServiceRelationship(const OpalGloballyUniqueID & serviceID, int reason = H501_ServiceReleaseReason::e_terminated);
     PBoolean RemoveServiceRelationship(const H323TransportAddress & peer, int reason = H501_ServiceReleaseReason::e_terminated);
     PBoolean RemoveAllServiceRelationships();
@@ -338,7 +338,7 @@ class H323PeerElement : public H323_AnnexG
       const PStringArray & aliases, 
       const H323TransportAddressArray & transportAddrs, 
       unsigned options = H323PeerElementDescriptor::Protocol_H323, 
-      PBoolean now = PFalse
+      PBoolean now = false
     );
 
     PBoolean AddDescriptor(
@@ -346,7 +346,7 @@ class H323PeerElement : public H323_AnnexG
       const H225_ArrayOf_AliasAddress & aliases, 
       const H323TransportAddressArray & transportAddrs, 
       unsigned options = H323PeerElementDescriptor::Protocol_H323, 
-      PBoolean now = PFalse
+      PBoolean now = false
     );
 
     PBoolean AddDescriptor(
@@ -354,7 +354,7 @@ class H323PeerElement : public H323_AnnexG
       const H225_ArrayOf_AliasAddress & aliases, 
       const H225_ArrayOf_AliasAddress & transportAddr, 
       unsigned options = H323PeerElementDescriptor::Protocol_H323, 
-      PBoolean now = PFalse
+      PBoolean now = false
     );
 
     PBoolean AddDescriptor(
@@ -363,7 +363,7 @@ class H323PeerElement : public H323_AnnexG
       const H225_ArrayOf_AliasAddress & alias, 
       const H225_ArrayOf_AliasAddress & transportAddresses,
       unsigned options = H323PeerElementDescriptor::Protocol_H323,
-      PBoolean now = PFalse
+      PBoolean now = false
     );
 
     PBoolean AddDescriptor(
@@ -371,14 +371,14 @@ class H323PeerElement : public H323_AnnexG
       const POrdinalKey & creator,
       const H501_ArrayOf_AddressTemplate & addressTemplates,
       const PTime & updateTime,
-      PBoolean now = PFalse
+      PBoolean now = false
     );
 
     /**Remove a descriptor from the local table
      */
-    PBoolean DeleteDescriptor(const PString & alias, PBoolean now = PFalse);
-    PBoolean DeleteDescriptor(const H225_AliasAddress & alias, PBoolean now = PFalse);
-    PBoolean DeleteDescriptor(const OpalGloballyUniqueID & descriptorID, PBoolean now = PFalse);
+    PBoolean DeleteDescriptor(const PString & alias, PBoolean now = false);
+    PBoolean DeleteDescriptor(const H225_AliasAddress & alias, PBoolean now = false);
+    PBoolean DeleteDescriptor(const OpalGloballyUniqueID & descriptorID, PBoolean now = false);
 
     /** Request access to an alias
     */
@@ -464,7 +464,7 @@ class H323PeerElement : public H323_AnnexG
     class AliasKey : public H225_AliasAddress
     {
       public:
-        AliasKey(const H225_AliasAddress & _alias, const OpalGloballyUniqueID & _id, PINDEX _pos, PBoolean _wild = PFalse)
+        AliasKey(const H225_AliasAddress & _alias, const OpalGloballyUniqueID & _id, PINDEX _pos, PBoolean _wild = false)
           : H225_AliasAddress(_alias), id(_id), pos(_pos), wild(_wild)
         { }
 
@@ -487,7 +487,7 @@ class H323PeerElement : public H323_AnnexG
 
     virtual H323PeerElementDescriptor          * CreateDescriptor(const OpalGloballyUniqueID & descriptorID);
     virtual H323PeerElementServiceRelationship * CreateServiceRelationship();
-    virtual AliasKey                           * CreateAliasKey(const H225_AliasAddress & alias, const OpalGloballyUniqueID & id, PINDEX pos, PBoolean wild = PFalse);
+    virtual AliasKey                           * CreateAliasKey(const H225_AliasAddress & alias, const OpalGloballyUniqueID & id, PINDEX pos, PBoolean wild = false);
 
     void RemoveDescriptorInformation(const H501_ArrayOf_AddressTemplate & addressTemplates);
 

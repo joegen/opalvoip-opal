@@ -140,7 +140,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        The '*' character indicates substrings, for example: "G.711*" would
        match "G.711-uLaw-64k" and "G.711-ALaw-64k".
 
-       The '@' character indicates a type of media format, so say "@video
+       The '@' character indicates a type of media format, so say "\@video"
        would find the first video codec.
 
        The '!' character indicates a negative test. That is the first entry
@@ -151,7 +151,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       */
     const_iterator FindFormat(
       const PString & wildcard,    ///<  Wildcard string name.
-      const_iterator start = const_iterator()
+      const_iterator start = const_iterator() ///< Starting position iterator for search
     ) const;
 
     /**Determine if a format matching the payload type is in the list.
@@ -176,7 +176,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        The '*' character indicates substrings, for example: "G.711*" would
        match "G.711-uLaw-64k" and "G.711-ALaw-64k".
 
-       The '@' character indicates a type of media format, so say "@video
+       The '@' character indicates a type of media format, so say "\@video"
        would find the first video codec.
 
        The '!' character indicates a negative test. That is the first entry
@@ -201,7 +201,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        The '*' character indicates substrings, for example: "G.711*" would
        match "G.711-uLaw-64k" and "G.711-ALaw-64k".
 
-       The '@' character indicates a type of media format, so say "@video
+       The '@' character indicates a type of media format, so say "\@video"
        would sort by video codec.
 
         The '!' character is not supported.
@@ -222,7 +222,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
     virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
     virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
-    virtual PBoolean SetAt(PINDEX, PObject *) { return PFalse; }
+    virtual PBoolean SetAt(PINDEX, PObject *) { return false; }
 };
 
 
@@ -585,7 +585,7 @@ class OpalMediaFormatInternal : public PObject
     virtual bool GetOptionOctets(const PString & name, PBYTEArray & octets) const;
     virtual bool SetOptionOctets(const PString & name, const PBYTEArray & octets);
     virtual bool SetOptionOctets(const PString & name, const BYTE * data, PINDEX length);
-    virtual bool AddOption(OpalMediaOption * option, PBoolean overwrite = PFalse);
+    virtual bool AddOption(OpalMediaOption * option, PBoolean overwrite = false);
     virtual OpalMediaOption * FindOption(const PString & name) const;
 
     virtual bool ToNormalisedOptions();
@@ -774,7 +774,7 @@ class OpalMediaFormat : public PContainer
        object has a tx number of frames of 3, but the parameter has a value
        of 1, then the current object will be set to 1.
 
-       Returns PFalse if the media formats are incompatible and cannot be
+       Returns false if the media formats are incompatible and cannot be
        merged.
       */
     bool Merge(
@@ -790,13 +790,13 @@ class OpalMediaFormat : public PContainer
       */
     PString GetName() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? "" : m_info->formatName; }
 
-    /**Return PTrue if media format info is valid. This may be used if the
+    /**Return true if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
        in the registered media formats database.
       */
     PBoolean IsValid() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->IsValid(); }
 
-    /**Return PTrue if media format info may be sent via RTP. Some formats are internal
+    /**Return true if media format info may be sent via RTP. Some formats are internal
        use only and are never transported "over the wire".
       */
     PBoolean IsTransportable() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->IsTransportable(); }
@@ -820,7 +820,7 @@ class OpalMediaFormat : public PContainer
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), PFalse); }
+    bool NeedsJitterBuffer() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), false); }
     static const PString & NeedsJitterOption();
 
     /**Get the average bandwidth used in bits/second.
@@ -905,7 +905,7 @@ class OpalMediaFormat : public PContainer
       */
     bool GetOptionBoolean(
       const PString & name,   ///<  Option name
-      bool dflt = PFalse       ///<  Default value if option not present
+      bool dflt = false       ///<  Default value if option not present
     ) const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->GetOptionBoolean(name, dflt); }
 
     /**Set the option value of the specified name as a boolean.
@@ -998,7 +998,7 @@ class OpalMediaFormat : public PContainer
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionString(name, value); }
 
     /**Get the option value of the specified name as an octet array.
-       Returns PFalse if not present.
+       Returns false if not present.
       */
     bool GetOptionOctets(
       const PString & name, ///<  Option name
@@ -1050,7 +1050,7 @@ class OpalMediaFormat : public PContainer
       */
     bool AddOption(
       OpalMediaOption * option,
-      PBoolean overwrite = PFalse
+      PBoolean overwrite = false
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->AddOption(option, overwrite); }
 
     /**
@@ -1066,7 +1066,7 @@ class OpalMediaFormat : public PContainer
       const PString & name
     ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? NULL : m_info->FindOption(name); }
 
-    /** Returns PTrue if the media format is valid for the protocol specified
+    /** Returns true if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
         The default implementation returns true unless the protocol is H.323
         and the rtpEncodingName is NULL
@@ -1112,7 +1112,7 @@ class OpalMediaFormat : public PContainer
 #endif
 
   private:
-    PBoolean SetSize(PINDEX) { return PTrue; }
+    PBoolean SetSize(PINDEX) { return true; }
 
   protected:
     void Construct(OpalMediaFormatInternal * info);

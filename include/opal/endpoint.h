@@ -145,7 +145,7 @@ class OpalEndPoint : public PObject
     );
 
     /**Stop a listener given the transport address.
-       Returns PTrue if a listener was on that interface, and was stopped.
+       Returns true if a listener was on that interface, and was stopped.
       */
     PBoolean StopListener(
         const OpalTransportAddress & iface ///<  Address of interface we may be listening on.
@@ -161,7 +161,7 @@ class OpalEndPoint : public PObject
     /**Return a list of the transport addresses for all listeners on this endpoint
       */
     OpalTransportAddressArray GetInterfaceAddresses(
-      PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
+      PBoolean excludeLocalHost = true,       ///<  Flag to exclude 127.0.0.1
       const OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
     );
@@ -174,11 +174,11 @@ class OpalEndPoint : public PObject
 
     /**Handle new incoming connection from listener.
 
-       A return value of PTrue indicates that the transport object should be
-       deleted by the caller. PFalse indicates that something else (eg the
+       A return value of true indicates that the transport object should be
+       deleted by the caller. false indicates that something else (eg the
        connection) has taken over responsibility for deleting the transport.
 
-       The default behaviour just returns PTrue.
+       The default behaviour just returns true.
       */
     virtual PBoolean NewIncomingConnection(
       OpalTransport * transport  ///<  Transport connection came in on
@@ -203,12 +203,12 @@ class OpalEndPoint : public PObject
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -220,8 +220,8 @@ class OpalEndPoint : public PObject
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
-      unsigned int options = 0,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions = NULL
+      unsigned int options = 0,     ///<  Options bit mask to pass to conneciton
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     ) = 0;
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
@@ -233,7 +233,7 @@ class OpalEndPoint : public PObject
        This function is used for an application to control the answering of
        incoming calls.
 
-       If PTrue is returned then the connection continues. If PFalse then the
+       If true is returned then the connection continues. If false then the
        connection is aborted.
 
        Note this function should not block for any length of time. If the
@@ -253,7 +253,7 @@ class OpalEndPoint : public PObject
     virtual PBoolean OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
-      OpalConnection::StringOptions * stringOptions
+      OpalConnection::StringOptions * stringOptions  ///< Options to pass to connection
     );
 
     /**Call back for remote party is now responsible for completing the call.
@@ -279,7 +279,7 @@ class OpalEndPoint : public PObject
        remote endpoint is "ringing". Generally some time after the
        MakeConnection() function was called, this is function is called.
 
-       If PFalse is returned the connection is aborted.
+       If false is returned the connection is aborted.
 
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically
@@ -418,7 +418,7 @@ class OpalEndPoint : public PObject
       */
     virtual void ClearAllCalls(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
-      PBoolean wait = PTrue   ///<  Flag for wait for calls to e cleared.
+      PBoolean wait = true   ///<  Flag for wait for calls to e cleared.
     );
 
     /**Find a connection that uses the specified token.
@@ -427,7 +427,7 @@ class OpalEndPoint : public PObject
       */
     PSafePtr<OpalConnection> GetConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite ///< Locking mode
     ) { return connectionsActive.FindWithLock(token, mode); }
 
     /**Find a connection that uses the specified token.
@@ -439,7 +439,7 @@ class OpalEndPoint : public PObject
     template <class ConnClass>
     PSafePtr<ConnClass> GetConnectionWithLockAs(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite ///< Locking mode
     )
     {
       PSafePtr<ConnClass> connection = PSafePtrCast<OpalConnection, ConnClass>(GetConnectionWithLock(token, mode));
@@ -593,7 +593,7 @@ class OpalEndPoint : public PObject
     );
 
     /** Execute garbage collection for endpoint.
-        Returns PTrue if all garbage has been collected.
+        Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
     virtual PBoolean GarbageCollection();

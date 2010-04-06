@@ -134,7 +134,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        have a one to one input to output frames ratio, so the ConvertFrames()
        function is used instead.
 
-       Returns PFalse if the conversion fails.
+       Returns false if the conversion fails.
       */
     virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data

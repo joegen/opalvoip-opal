@@ -86,7 +86,7 @@ class H323ServiceControlSession : public PObject
     /**Handle a received PDU.
        Update in the internal state from the received PDU.
 
-       Returns PFalse is PDU is not sutiable for the class type.
+       Returns false is PDU is not sutiable for the class type.
 
        Default behaviour is pure.
       */
@@ -97,7 +97,7 @@ class H323ServiceControlSession : public PObject
     /**Handle a sent PDU.
        Set the PDU fields from in the internal state.
 
-       Returns PFalse is PDU cannot be created.
+       Returns false is PDU cannot be created.
 
        Default behaviour is pure.
       */
@@ -152,7 +152,7 @@ class H323HTTPServiceControl : public H323ServiceControlSession
     /**Determine of the session is valid.
        That is has all of the data it needs to correctly encode a PDU.
 
-       Default behaviour returns PTrue if url is not an empty string.
+       Default behaviour returns true if url is not an empty string.
       */
     virtual PBoolean IsValid() const;
 
@@ -310,7 +310,7 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
     /**Determine of the session is valid.
        That is has all of the data it needs to correctly encode a PDU.
 
-       Default behaviour returns PTrue if amount or duration is set.
+       Default behaviour returns true if amount or duration is set.
       */
     virtual PBoolean IsValid() const;
 

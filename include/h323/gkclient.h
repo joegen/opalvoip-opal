@@ -85,7 +85,7 @@ class H323Gatekeeper : public H225_RAS
     virtual PBoolean WriteTo(
       H323TransactionPDU & pdu,
       const H323TransportAddressArray & addresses,
-      PBoolean callback = PTrue
+      PBoolean callback = true
     );
   //@}
 
@@ -144,8 +144,8 @@ class H323Gatekeeper : public H225_RAS
     /**Register with gatekeeper.
      */
     PBoolean RegistrationRequest(
-      PBoolean autoReregister = PTrue,  ///<  Automatic register on unregister
-      PBoolean didGkDiscovery = PFalse  ///<  discovery procedure was done right before
+      PBoolean autoReregister = true,  ///<  Automatic register on unregister
+      PBoolean didGkDiscovery = false  ///<  discovery procedure was done right before
     );
 
     /**Unregister with gatekeeper.
@@ -171,7 +171,7 @@ class H323Gatekeeper : public H225_RAS
     struct AdmissionResponse {
       AdmissionResponse();
 
-      unsigned rejectReason;                      /// Reject reason if returns PFalse
+      unsigned rejectReason;                      /// Reject reason if returns false
 
       PBoolean gatekeeperRouted;                      /// Flag for call is through gk
       PINDEX endpointCount;                       /// Number of endpoints that can be returned
@@ -187,7 +187,7 @@ class H323Gatekeeper : public H225_RAS
     PBoolean AdmissionRequest(
       H323Connection & connection,      ///<  Connection we wish to change.
       AdmissionResponse & response,     ///<  Response parameters to ARQ
-      PBoolean ignorePreGrantedARQ = PFalse  ///<  Flag to force ARQ to be sent
+      PBoolean ignorePreGrantedARQ = false  ///<  Flag to force ARQ to be sent
     );
 
     /**Disengage request to gatekeeper.
@@ -327,7 +327,7 @@ class H323Gatekeeper : public H225_RAS
       unsigned unregisteredTag
     );
     
-    virtual H323Transport * CreateTransport(PIPSocket::Address bindng = PIPSocket::GetDefaultIpAny(), WORD port = 0, PBoolean reuseAddr = PFalse);
+    virtual H323Transport * CreateTransport(PIPSocket::Address bindng = PIPSocket::GetDefaultIpAny(), WORD port = 0, PBoolean reuseAddr = false);
     
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);

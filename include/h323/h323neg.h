@@ -126,8 +126,8 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
   public:
     H245NegTerminalCapabilitySet(H323EndPoint & endpoint, H323Connection & connection);
 
-    PBoolean Start(PBoolean renegotiate, PBoolean empty = PFalse);
-    void Stop(PBoolean dec = PFalse);
+    PBoolean Start(PBoolean renegotiate, PBoolean empty = false);
+    void Stop(PBoolean dec = false);
     PBoolean HandleIncoming(const H245_TerminalCapabilitySet & pdu);
     PBoolean HandleAck(const H245_TerminalCapabilitySetAck & pdu);
     PBoolean HandleReject(const H245_TerminalCapabilitySetReject & pdu);

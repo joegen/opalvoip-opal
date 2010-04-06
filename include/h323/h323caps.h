@@ -254,11 +254,11 @@ class H323Capability : public PObject
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored.
        
          The default behaviour sets the capabilityDirection member variable
-         from the PDU and then returns PTrue. Note that this means it is very
+         from the PDU and then returns true. Note that this means it is very
          important to call the ancestor function when overriding.
      */
     virtual PBoolean OnReceivedPDU(
@@ -288,7 +288,7 @@ class H323Capability : public PObject
        application to determine if this capability should be used in TCS or
        OLC pdus.
 
-       The default behaviour returns PTrue.
+       The default behaviour returns true.
       */
     virtual PBoolean IsUsable(
       const H323Connection & connection
@@ -428,7 +428,7 @@ class H323NonStandardCapabilityInfo
 
     /**This function validates and uses the non-standard data field.
 
-       The default behaviour returns PTrue if data is equal to fixedData.
+       The default behaviour returns true if data is equal to fixedData.
       */
     virtual PBoolean OnReceivedPDU(
       const PBYTEArray & data  ///<  Data field in PDU received
@@ -682,7 +682,7 @@ class H323AudioCapability : public H323RealTimeCapability
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored.
        
        The default behaviour calls the OnReceivedPDU() that takes a
@@ -1041,9 +1041,9 @@ class H323VideoCapability : public H323RealTimeCapability
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored. The default behaviour simply
-       returns PTrue.
+       returns true.
      */
     virtual PBoolean OnReceivedPDU(
       const H245_Capability & pdu  ///<  PDU to get information from
@@ -1430,9 +1430,9 @@ class H323GenericControlCapability : public H323Capability,
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored. The default behaviour simply
-       returns PTrue.
+       returns true.
      */
     virtual PBoolean OnReceivedPDU(
       const H245_Capability & pdu  ///<  PDU to get information from
@@ -1674,9 +1674,9 @@ class H323DataCapability : public H323Capability
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored. The default behaviour simply
-       returns PTrue.
+       returns true.
      */
     virtual PBoolean OnReceivedPDU(
       const H245_Capability & pdu  ///<  PDU to get information from
@@ -2008,9 +2008,9 @@ class H323_UserInputCapability : public H323Capability
        descendent was created. This completes reading fields from the PDU
        into the classes members.
 
-       If the function returns PFalse then the received PDU codec description
+       If the function returns false then the received PDU codec description
        is not supported, so will be ignored. The default behaviour simply
-       returns PTrue.
+       returns true.
      */
     virtual PBoolean OnReceivedPDU(
       const H245_Capability & pdu  ///<  PDU to get information from
@@ -2033,7 +2033,7 @@ class H323_UserInputCapability : public H323Capability
        application to determine if this capability should be used in TCS or
        OLC pdus.
 
-       The default behaviour will check for early versions and return PFalse
+       The default behaviour will check for early versions and return false
        for RFC2833 mode.
       */
     virtual PBoolean IsUsable(
@@ -2176,7 +2176,7 @@ class H323Capabilities : public PObject
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
       const PString & name,    ///<  New capabilities name, if using "known" one.
-      PBoolean exact = PFalse       ///<  Capability name must be exact match
+      PBoolean exact = false       ///<  Capability name must be exact match
     );
 
     // this function is retained for backwards compatibility
@@ -2185,7 +2185,7 @@ class H323Capabilities : public PObject
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
       const PString & name,    ///<  New capabilities name, if using "known" one.
-      PBoolean exact = PFalse       ///<  Capability name must be exact match
+      PBoolean exact = false       ///<  Capability name must be exact match
     )
     { return AddAllCapabilities(descriptorNum, simultaneous, name, exact); }
 
@@ -2268,7 +2268,7 @@ class H323Capabilities : public PObject
       const PString & formatName, ///<  Wildcard format name to search for
       H323Capability::CapabilityDirection direction = H323Capability::e_Unknown,
             ///<  Optional direction to include into search criteria
-      PBoolean exact = PFalse       ///<  Capability name must be exact match
+      PBoolean exact = false       ///<  Capability name must be exact match
     ) const;
 
     /**Find the first capability in the table of the specified direction.

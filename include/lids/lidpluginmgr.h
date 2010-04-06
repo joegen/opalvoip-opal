@@ -131,13 +131,13 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean IsLinePresent(
       unsigned line,      ///<  Number of line
-      PBoolean force = PFalse  ///<  Force test, do not optimise
+      PBoolean force = false  ///<  Force test, do not optimise
     );
 
 
     /**Determine if line is currently off hook.
        This function implies that the state is debounced and that a return
-       value of PTrue indicates that the phone is really off hook. That is
+       value of true indicates that the phone is really off hook. That is
        hook flashes and winks are masked out.
       */
     virtual PBoolean IsLineOffHook(
@@ -151,7 +151,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean SetLineOffHook(
       unsigned line,        ///<  Number of line
-      PBoolean newState = PTrue  ///<  New state to set
+      PBoolean newState = true  ///<  New state to set
     );
 
     /**Set the hook state off then straight back on again.
@@ -162,14 +162,14 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       unsigned flashTime = 200    ///<  Time for hook flash in milliseconds
     );
 
-    /**Return PTrue if a hook flash has been detected
+    /**Return true if a hook flash has been detected
       */
     virtual PBoolean HasHookFlash(unsigned line);
 
 
     /**Determine if line is ringing.
        This function implies that the state is "debounced" and that a return
-       value of PTrue indicates that the phone is still ringing and it is not
+       value of true indicates that the phone is still ringing and it is not
        simply a pause in the ring cadence.
 
        If cadence is not NULL then it is set with the bit pattern for the
@@ -238,7 +238,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean IsLineDisconnected(
       unsigned line,   ///<  Number of line
-      PBoolean checkForWink = PTrue
+      PBoolean checkForWink = true   ///< Check for remote hang up signal
     );
 
 
@@ -362,7 +362,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean EnableAudio(
       unsigned line,      ///<  Number of line
-      PBoolean enable = PTrue
+      PBoolean enable = true   ///< Flag for enable/disable audio on line
     );
 
     /**Determine if audio for the line is enabled.
@@ -456,7 +456,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
     virtual PBoolean GetCallerID(
       unsigned line,      ///<  Number of line
       PString & idString, ///<  ID string returned
-      PBoolean full = PFalse   ///<  Get full information in idString
+      PBoolean full = false   ///<  Get full information in idString
     );
 
     /**Set Caller ID information.
@@ -489,7 +489,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean SendVisualMessageWaitingIndicator(
       unsigned line,            ///<  Number of line
-      PBoolean on
+      PBoolean on               ///< Flag for VMWI on/off
     );
 
 
@@ -592,7 +592,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
 
-       If the requireTones flag is PTrue the call is aborted of the call
+       If the requireTones flag is true the call is aborted of the call
        progress tones are not detected. Otherwise the call proceeds with short
        delays while it tries to detect the call progress tones.
 

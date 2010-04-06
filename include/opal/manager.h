@@ -153,7 +153,7 @@ class OpalManager : public PObject
       const PString & partyB,       ///<  The B party of call
       void * userData = NULL,       ///<  user data passed to Call and Connection
       unsigned options = 0,         ///<  options passed to connection
-      OpalConnection::StringOptions * stringOptions = NULL   ///<  complex string options passed to call
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
     virtual PBoolean SetUpCall(
       const PString & partyA,       ///<  The A party of call
@@ -161,7 +161,7 @@ class OpalManager : public PObject
       PString & token,              ///<  Token for call
       void * userData = NULL,       ///<  user data passed to Call and Connection
       unsigned options = 0,         ///<  options passed to connection
-      OpalConnection::StringOptions * stringOptions = NULL   ///<  complex string options passed to call
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
 
     /**A call back function whenever a call is completed.
@@ -177,9 +177,9 @@ class OpalManager : public PObject
     );
 
     /**Determine if a call is active.
-       Return PTrue if there is an active call with the specified token. Note
+       Return true if there is an active call with the specified token. Note
        that the call could clear any time (even milliseconds) after this
-       function returns PTrue.
+       function returns true.
       */
     virtual PBoolean HasCall(
       const PString & token  ///<  Token for identifying call
@@ -191,10 +191,10 @@ class OpalManager : public PObject
 
 
     /**Determine if a call is established.
-       Return PTrue if there is an active call with the specified token and
+       Return true if there is an active call with the specified token and
        that call has at least two parties with media flowing between them.
        Note that the call could clear any time (even milliseconds) after this
-       function returns PTrue.
+       function returns true.
       */
     virtual PBoolean IsCallEstablished(
       const PString & token  ///<  Token for identifying call
@@ -210,7 +210,7 @@ class OpalManager : public PObject
       */
     PSafePtr<OpalCall> FindCallWithLock(
       const PString & token,  ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite ///< Lock mode
     ) { return activeCalls.FindWithLock(token, mode); }
 
     /**Clear a call.
@@ -245,7 +245,7 @@ class OpalManager : public PObject
       */
     virtual void ClearAllCalls(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
-      PBoolean wait = PTrue   ///<  Flag to wait for calls to e cleared.
+      PBoolean wait = true   ///<  Flag to wait for calls to e cleared.
     );
 
     /**A call back function whenever a call is cleared.
@@ -387,7 +387,7 @@ class OpalManager : public PObject
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the associated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -400,7 +400,7 @@ class OpalManager : public PObject
       const PString & party,             ///<  Party to call
       void * userData = NULL,            ///<  user data to pass to connections
       unsigned int options = 0,          ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions = NULL
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
 
     /**Call back for a new connection has been constructed.
@@ -416,7 +416,7 @@ class OpalManager : public PObject
        This function is used for an application to control the answering of
        incoming calls.
 
-       If PTrue is returned then the connection continues. If PFalse then the
+       If true is returned then the connection continues. If false then the
        connection is aborted.
 
        Note this function should not block for any length of time. If the
@@ -441,7 +441,7 @@ class OpalManager : public PObject
     virtual PBoolean OnIncomingConnection(
       OpalConnection & connection,   ///<  Connection that is calling
       unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
-      OpalConnection::StringOptions * stringOptions
+      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
 
     /**Route a connection to another connection from an endpoint.
@@ -456,7 +456,7 @@ class OpalManager : public PObject
       const PString & b_party,      ///< Destination indicated by source
       OpalCall & call,              ///< Call for new connection
       unsigned options,             ///< Options for new connection (can't use default as overrides will fail)
-      OpalConnection::StringOptions * stringOptions
+      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
 
     /**Call back for remote party is now responsible for completing the call.
@@ -483,7 +483,7 @@ class OpalManager : public PObject
        remote endpoint is "ringing". This function is generally called
        some time after the MakeConnection() function was called.
 
-       If PFalse is returned the connection is aborted.
+       If false is returned the connection is aborted.
 
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically
@@ -564,7 +564,7 @@ class OpalManager : public PObject
        The default behaviour calls OnReleased() on the connection's
        associated OpalCall object. This indicates to the call that the
        connection has been released so it can release the last remaining
-       connection and then returns PTrue.
+       connection and then returns true.
       */
     virtual void OnReleased(
       OpalConnection & connection   ///<  Connection that was established
@@ -773,7 +773,7 @@ class OpalManager : public PObject
       */
     virtual OpalMediaPatch * CreateMediaPatch(
       OpalMediaStream & source,         ///<  Source media stream
-      PBoolean requiresPatchThread = PTrue
+      PBoolean requiresPatchThread = true  ///< The patch requires a thread
     );
 
     /**Destroy a OpalMediaPatch instance.
@@ -915,7 +915,7 @@ class OpalManager : public PObject
 
        will produce the same result as the single entry "pots:26=h323:10.0.1.1".
 
-       If the "destination" parameter is of the form @filename, then the file
+       If the "destination" parameter is of the form \@filename, then the file
        is read with each line consisting of a pattern=destination route
        specification. 
        
@@ -965,7 +965,7 @@ class OpalManager : public PObject
                  then the substitution is made so a legal URL can result.
 
          <dn>    Copy all valid consecutive E.164 digits from the "b_party" so
-                 pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
+                 pots:0061298765\@vpb:1/2 becomes sip:0061298765@carrier.com
 
          <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
                  pots:00612198765 becomes sip:61298765@carrier.com
@@ -974,8 +974,8 @@ class OpalManager : public PObject
 
          <dn2ip> Translate digits separated by '*' characters to an IP
                  address. e.g. 10*0*1*1 becomes 10.0.1.1, also
-                 1234*10*0*1*1 becomes 1234@10.0.1.1 and
-                 1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.
+                 1234*10*0*1*1 becomes 1234\@10.0.1.1 and
+                 1234*10*0*1*1*1722 becomes 1234\@10.0.1.1:1722.
 
 
        Returns true if an entry was added.
@@ -988,7 +988,7 @@ class OpalManager : public PObject
        This removes the current routeTable and calls AddRouteEntry for every
        string in the array.
 
-       Returns PTrue if at least one entry was added.
+       Returns true if at least one entry was added.
       */
     PBoolean SetRouteTable(
       const PStringArray & specs  ///<  Array of specification strings.
@@ -1008,15 +1008,15 @@ class OpalManager : public PObject
 
     /**Route the source address to a destination using the route table.
        The source parameter may be something like pots:vpb:1/2 or
-       sip:fred@nurk.com.
+       sip:fred\@nurk.com.
 
        The destination parameter is a partial URL, it does not include the
-       protocol, but may be of the form user@host, or simply digits.
+       protocol, but may be of the form user\@host, or simply digits.
       */
     virtual PString ApplyRouteTable(
-      const PString & source,      /// Source address, including endpoint protocol
-      const PString & destination, /// Destination address read from source protocol
-      PINDEX & entry
+      const PString & source,      ///< Source address, including endpoint protocol
+      const PString & destination, ///< Destination address read from source protocol
+      PINDEX & entry               ///< Index into table to start search
     );
   //@}
 
@@ -1365,7 +1365,7 @@ class OpalManager : public PObject
 
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
-       then the function will return PFalse and not change the device.
+       then the function will return false and not change the device.
 
        This defaults to the value of the PVideoInputDevice::GetInputDeviceNames()
        function.
@@ -1381,7 +1381,7 @@ class OpalManager : public PObject
 
     /**Set the parameters for the video device to be used to preview input.
        If the name is not suitable for use with the PVideoOutputDevice class
-       then the function will return PFalse and not change the device.
+       then the function will return false and not change the device.
 
        This defaults to the value of the PVideoInputDevice::GetOutputDeviceNames()
        function.
@@ -1397,7 +1397,7 @@ class OpalManager : public PObject
 
     /**Set the parameters for the video device to be used for output.
        If the name is not suitable for use with the PVideoOutputDevice class
-       then the function will return PFalse and not change the device.
+       then the function will return false and not change the device.
 
        This defaults to the value of the PVideoInputDevice::GetOutputDeviceNames()
        function.

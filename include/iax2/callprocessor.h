@@ -106,7 +106,7 @@ class IAX2CallProcessor : public IAX2Processor
   */
   virtual PBoolean SetUpConnection();
 
-  /**Return PTrue if the remote info in the frame matches the remote info in
+  /**Return true if the remote info in the frame matches the remote info in
      this connection */
   PBoolean Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
   
@@ -118,7 +118,7 @@ class IAX2CallProcessor : public IAX2Processor
      in/out packets) to be printed*/
   void ReportStatistics();  
 
-  /**Return PTrue if the arg matches the source call number for this connection */
+  /**Return true if the arg matches the source call number for this connection */
   PBoolean MatchingLocalCallNumber(PINDEX compare) { return (compare == remote.SourceCallNumber()); }  
   
   /**Get the bit pattern of the selected codec */
@@ -293,7 +293,7 @@ class IAX2CallProcessor : public IAX2Processor
      The data in the array is already compressed. */
   void SendSoundMessage(PBYTEArray *sound);
   
-  /**Sends a transfer message ONLY if doTransfer is PTrue*/
+  /**Sends a transfer message ONLY if doTransfer is true*/
   void SendTransferMessage();
   
   /**Send a message to put the remote connection on hold*/
@@ -527,35 +527,35 @@ class IAX2CallProcessor : public IAX2Processor
   unsigned short callStatus;
   
   /** Mark call status as having sent a iaxcmdRinging packet */
-  void SetCallSentRinging(PBoolean newValue = PTrue) 
+  void SetCallSentRinging(PBoolean newValue = true) 
     { if (newValue) callStatus |= callSentRinging; else callStatus &= ~callSentRinging; }
   
   /** Mark call status as having received a new packet */
-  void SetCallNewed(PBoolean newValue = PTrue) 
+  void SetCallNewed(PBoolean newValue = true) 
     { if (newValue) callStatus |= callNewed; else callStatus &= ~callNewed; }
   
   /** Mark call status Registered (argument determines flag status) */
-  void SetCallRegistered(PBoolean newValue = PTrue) 
+  void SetCallRegistered(PBoolean newValue = true) 
     { if (newValue) callStatus |= callRegistered; else callStatus &= ~callRegistered; }
   
   /** Mark call status Authorised (argument determines flag status) */
-  void SetCallAuthorised(PBoolean newValue = PTrue) 
+  void SetCallAuthorised(PBoolean newValue = true) 
     { if (newValue) callStatus |= callAuthorised; else callStatus &= ~callAuthorised; }
   
   /** Mark call status Accepted (argument determines flag status) */
-  void SetCallAccepted(PBoolean newValue = PTrue) 
+  void SetCallAccepted(PBoolean newValue = true) 
     { if (newValue) callStatus |= callAccepted; else callStatus &= ~callAccepted; }
   
   /** Mark call status Ringing (argument determines flag status) */
-  void SetCallRinging(PBoolean newValue = PTrue) 
+  void SetCallRinging(PBoolean newValue = true) 
     { if (newValue) callStatus |= callRinging; else callStatus &= ~callRinging; }
   
   /** Mark call status Answered (argument determines flag status) */
-  void SetCallAnswered(PBoolean newValue = PTrue) 
+  void SetCallAnswered(PBoolean newValue = true) 
     { if (newValue) callStatus |= callAnswered; else callStatus &= ~callAnswered; }
 
   /** Mark call status as terminated (is processing IAX2 hangup packets etc)*/
-  void SetCallTerminating(PBoolean newValue = PTrue) 
+  void SetCallTerminating(PBoolean newValue = true) 
     { if (newValue) callStatus |= callTerminating; else callStatus &= ~callTerminating; }
   
   /** See if any of the flag bits are on, which indicate this call is actually active */
