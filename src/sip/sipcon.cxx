@@ -1109,7 +1109,18 @@ void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  m_remoteFormatList = sdp != NULL ? sdp->GetMediaFormats() : GetLocalMediaFormats();
+  if (sdp == NULL)
+    m_remoteFormatList = GetLocalMediaFormats();
+  else {
+    m_remoteFormatList = sdp->GetMediaFormats();
+#if OPAL_T38_CAPABILITY
+    /* We default to having T.38 included as most UAs do not actually
+       tell you that they support it or not. For the re-INVITE mechanism
+       to work correctly, the rest ofthe system has to assume that the
+       UA is capable of it, even it it isn't. */
+    m_remoteFormatList += OpalT38;
+#endif
+  }
 
   m_remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
