@@ -1175,7 +1175,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
 bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 {
-  return OpalConnection::CloseMediaStream(stream) && SendReINVITE(PTRACE_PARAM("close channel"));
+  // Use non-McCarthy boolean
+  return OpalConnection::CloseMediaStream(stream) & SendReINVITE(PTRACE_PARAM("close channel"));
 }
 
 
