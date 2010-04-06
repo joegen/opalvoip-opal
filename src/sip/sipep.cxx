@@ -853,7 +853,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   SIPConnection *connection = CreateConnection(*call,
                                                SIPURL::GenerateTag(),
                                                NULL,
-                                               request->GetURI(),
+                                               PString::Empty(),
                                                newTransport,
                                                request);
   if (!AddConnection(connection)) {
