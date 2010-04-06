@@ -2352,7 +2352,18 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
      TCP/UDP Problems conversions of a proxy are not solved with this work around.
      See RFC 5658 for a description of these problems.
   */
-  if (m_routeSet.IsEmpty() && (pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2)) {
+  if (  m_requestURI.IsEmpty()
+        ||
+        (
+          m_routeSet.IsEmpty()
+          &&
+          (
+            pdu.GetMethod() != SIP_PDU::NumMethods
+            ||
+            pdu.GetStatusCode()/100 == 2
+          )
+        )
+      ) {
     PString contact = mime.GetContact();
     if (!contact.IsEmpty()) {
       m_requestURI.Parse(contact);
