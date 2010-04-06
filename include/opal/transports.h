@@ -73,9 +73,9 @@ class OpalTransportAddress : public PCaselessString
       const char * proto = NULL  ///<  Default is "tcp"
     );
     OpalTransportAddress(
-      const PIPSocket::Address & ip,
-      WORD port,
-      const char * proto = NULL ///<  Default is "tcp"
+      const PIPSocket::Address & ip,  ///<  IP address for transport
+      WORD port,                      ///<  Default port number
+      const char * proto = NULL       ///<  Default is "tcp"
     );
   //@}
 
@@ -87,7 +87,7 @@ class OpalTransportAddress : public PCaselessString
        is the value 65535.
       */
     PBoolean IsEquivalent(
-      const OpalTransportAddress & address,
+      const OpalTransportAddress & address,   ///< Address to compare
       bool wildcards = false   ///< Allow wildcards
     ) const;
 
@@ -102,12 +102,12 @@ class OpalTransportAddress : public PCaselessString
     PCaselessString GetProto() const { return Left(Find('$')); }
 
     /**Extract the ip address from transport address.
-       Returns PFalse, if the address is not an IP transport address.
+       Returns false, if the address is not an IP transport address.
       */
     PBoolean GetIpAddress(PIPSocket::Address & ip) const;
 
     /**Extract the ip address and port number from transport address.
-       Returns PFalse, if the address is not an IP transport address.
+       Returns false, if the address is not an IP transport address.
       */
     PBoolean GetIpAndPort(PIPSocket::Address & ip, WORD & port) const;
     PBoolean GetIpAndPort(PIPSocketAddressAndPort & ipPort) const;
@@ -292,9 +292,9 @@ class OpalListener : public PObject
         OpalTransport instance created by the listener. If this is NULL then
         it indicates an error occurred during the accept.
 
-        If singleThread is PFalse the acceptHandler function is called in the
+        If singleThread is false the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If PTrue, then the acceptHandler function is called from
+        connections. If true, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
@@ -382,7 +382,7 @@ class OpalListenerIP : public OpalListener
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      PBoolean exclusive = PTrue
+      PBoolean exclusive = true               ///< Exclusive listening mode, no other process can accept on the port
     );
     OpalListenerIP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -430,7 +430,7 @@ class OpalListenerTCP : public OpalListenerIP
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      PBoolean exclusive = PTrue
+      PBoolean exclusive = true               ///< Exclusive listening mode, no other process can accept on the port
     );
     OpalListenerTCP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -454,9 +454,9 @@ class OpalListenerTCP : public OpalListenerIP
         new connection is created. The INT parameter to the acceptHandler is
         a pointer to the new OpalTransport instance created by the listener.
 
-        If singleThread is PFalse the acceptHandler function is called in the
+        If singleThread is false the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If PTrue, then the acceptHandler function is called from
+        connections. If true, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
@@ -512,7 +512,7 @@ class OpalListenerUDP : public OpalListenerIP
       OpalEndPoint & endpoint,  ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,            ///<  TCP port to listen for connections
-      PBoolean exclusive = PTrue
+      PBoolean exclusive = true  ///< Exclusive listening mode, no other process can accept on the port
     );
     OpalListenerUDP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -536,9 +536,9 @@ class OpalListenerUDP : public OpalListenerIP
         new connection is created. The INT parameter to the acceptHandler is
         a pointer to the new OpalTransport instance created by the listener.
 
-        If singleThread is PFalse the acceptHandler function is called in the
+        If singleThread is false the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If PTrue, then the acceptHandler function is called from
+        connections. If true, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
@@ -868,7 +868,7 @@ class OpalTransportTCP : public OpalTransportIP
       OpalEndPoint & endpoint,    ///<  Endpoint object
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
       WORD port = 0,              ///<  Local port to bind to
-      PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
+      PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
     );
     OpalTransportTCP(
       OpalEndPoint & endpoint,    ///<  Endpoint object
@@ -924,10 +924,10 @@ class OpalTransportTCP : public OpalTransportIP
        open channels. It may be used by descendent channels to do any
        handshaking required by the protocol that channel embodies.
 
-       The default behaviour is to simply return PTrue.
+       The default behaviour is to simply return true.
 
        @return
-       Returns PTrue if the protocol handshaking is successful.
+       Returns true if the protocol handshaking is successful.
      */
     virtual PBoolean OnOpen();
 
@@ -1204,7 +1204,7 @@ class OpalListenerTCPS : public OpalListenerTCP
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      PBoolean exclusive = PTrue
+      PBoolean exclusive = true               ///< Exclusive listening mode, no other process can accept on the port
     );
     OpalListenerTCPS(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -1233,7 +1233,7 @@ class OpalTransportTCPS : public OpalTransportTCP
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
         WORD port = 0,              ///<  Local port to bind to
-        PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
+        PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
       );
       OpalTransportTCPS(
         OpalEndPoint & endpoint,    ///<  Endpoint object

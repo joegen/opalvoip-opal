@@ -424,7 +424,7 @@ class H323GatekeeperCall : public PSafeObject
     );
 
     /**Handle a disengage DRQ PDU.
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
       */
     virtual H323GatekeeperRequest::Response OnDisengage(
       H323GatekeeperDRQ & request
@@ -457,12 +457,12 @@ class H323GatekeeperCall : public PSafeObject
     /**Function called to do heartbeat check of the call.
        Monitor the state of the call and make sure everything is OK.
 
-       A return value of PFalse indicates the call is to be closed for some
+       A return value of false indicates the call is to be closed for some
        reason.
 
        Default behaviour checks the time since the last received IRR and if
        it has been too long does an IRQ to see if the call (and endpoint!) is
-       still there and running. If the IRQ fails, PFalse is returned.
+       still there and running. If the IRQ fails, false is returned.
       */
     virtual PBoolean OnHeartbeat();
 
@@ -650,7 +650,7 @@ class H323RegisteredEndPoint : public PSafeObject
        The default behaviour extract information from the RRQ and sets
        internal variables to that data.
 
-       If returns PTrue then a RCF is sent otherwise an RRJ is sent.
+       If returns true then a RCF is sent otherwise an RRJ is sent.
       */
     virtual H323GatekeeperRequest::Response OnRegistration(
       H323GatekeeperRRQ & request
@@ -663,7 +663,7 @@ class H323RegisteredEndPoint : public PSafeObject
        The default behaviour extract information from the RRQ and sets
        internal variables to that data.
 
-       If returns PTrue then a RCF is sent otherwise an RRJ is sent.
+       If returns true then a RCF is sent otherwise an RRJ is sent.
       */
     virtual H323GatekeeperRequest::Response OnFullRegistration(
       H323GatekeeperRRQ & request
@@ -675,7 +675,7 @@ class H323RegisteredEndPoint : public PSafeObject
        The default behaviour extract information from the RRQ and sets
        internal variables to that data.
 
-       If returns PTrue then a RCF is sent otherwise an RRJ is sent.
+       If returns true then a RCF is sent otherwise an RRJ is sent.
       */
     virtual H323GatekeeperRequest::Response OnSecureRegistration(
       H323GatekeeperRRQ & request
@@ -706,12 +706,12 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Function called to do time to live check of the call.
        Monitor the state of the endpoint and make sure everything is OK.
 
-       A return value of PFalse indicates the endpoint has expired and is to be
+       A return value of false indicates the endpoint has expired and is to be
        unregistered and removed.
 
        Default behaviour checks the time since the last received RRQ and if
        it has been too long does an IRQ to see if the endpoint is
-       still there and running. If the IRQ fails, PFalse is returned.
+       still there and running. If the IRQ fails, false is returned.
       */
     virtual PBoolean OnTimeToLive();
 
@@ -732,7 +732,7 @@ class H323RegisteredEndPoint : public PSafeObject
        This function is only called if the client indicates that it can use
        the information provided.
 
-       The default behaviour return PTrue indicating that calls will debit the
+       The default behaviour return true indicating that calls will debit the
        account.
       */
     virtual PBoolean GetCallCreditMode() const;
@@ -892,7 +892,7 @@ class H323RegisteredEndPoint : public PSafeObject
       * This allows the gatekeeper to alter the descriptor information before
       * it is sent.
       *
-      * If returns PFalse then the desriptor is not sent
+      * If returns false then the desriptor is not sent
       */
       virtual PBoolean OnSendDescriptorForEndpoint(
         H225_ArrayOf_AliasAddress & aliases,          ///<  aliases for the enndpoint
@@ -1144,7 +1144,7 @@ class H323GatekeeperServer : public H323TransactionServer
        and if not creates a new endpoint. It then calls the OnRegistration()
        on that new endpoint instance.
 
-       If returns PTrue then a RCF is sent otherwise an RRJ is sent.
+       If returns true then a RCF is sent otherwise an RRJ is sent.
       */
     virtual H323GatekeeperRequest::Response OnRegistration(
       H323GatekeeperRRQ & request
@@ -1391,15 +1391,15 @@ class H323GatekeeperServer : public H323TransactionServer
        It is expected that a user would override this function to implement
        application specified look up algorithms.
 
-       The default behaviour checks the isGatekeeperRouted and if PTrue simply
+       The default behaviour checks the isGatekeeperRouted and if true simply
        returns the gatekeepers associated endpoints (not registered endpoint,
        but real H323EndPoint) listening address.
 
-       If isGatekeeperRouted is PFalse then it looks up the registered
+       If isGatekeeperRouted is false then it looks up the registered
        endpoints by alias and uses the saved signal address in the database.
 
        If the alias is not registered then the address parameter is not
-       changed and the function returns PTrue if it is a valid address, PFalse
+       changed and the function returns true if it is a valid address, false
        if it was empty.
       */
     virtual PBoolean TranslateAliasAddressToSignalAddress(
@@ -1417,7 +1417,7 @@ class H323GatekeeperServer : public H323TransactionServer
        It is expected that a user would override this function to implement
        application specified security policy algorithms.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
       */
     virtual PBoolean CheckSignalAddressPolicy(
       const H323RegisteredEndPoint & ep,
@@ -1434,7 +1434,7 @@ class H323GatekeeperServer : public H323TransactionServer
 
        The default behaviour checks the canOnlyAnswerRegisteredEP or
        canOnlyCallRegisteredEP meber variables depending on if it is an
-       incoming call and if that is PTrue only allows the call to proceed
+       incoming call and if that is true only allows the call to proceed
        if the alias is also registered with the gatekeeper.
       */
     virtual PBoolean CheckAliasAddressPolicy(
@@ -1452,7 +1452,7 @@ class H323GatekeeperServer : public H323TransactionServer
 
        The default behaviour checks the canOnlyAnswerRegisteredEP or
        canOnlyCallRegisteredEP meber variables depending on if it is an
-       incoming call and if that is PTrue only allows the call to proceed
+       incoming call and if that is true only allows the call to proceed
        if the alias is also registered with the gatekeeper.
       */
     virtual PBoolean CheckAliasStringPolicy(
@@ -1478,10 +1478,10 @@ class H323GatekeeperServer : public H323TransactionServer
        This allows an individual ARQ to override the authentical credentials
        used in H.235 based RAS for this particular connection.
 
-       A return value of PFalse indicates to use the default credentials of the
-       endpoint, while PTrue indicates that new credentials are to be used.
+       A return value of false indicates to use the default credentials of the
+       endpoint, while true indicates that new credentials are to be used.
 
-       The default behavour does nothing and returns PFalse.
+       The default behavour does nothing and returns false.
       */
     virtual PBoolean GetAdmissionRequestAuthentication(
       H323GatekeeperARQ & info,           ///<  ARQ being constructed
@@ -1489,7 +1489,7 @@ class H323GatekeeperServer : public H323TransactionServer
     );
 
     /**Get password for user if H.235 security active.
-       Returns PTrue if user is found and password returned. Note the password
+       Returns true if user is found and password returned. Note the password
        may be empty in which case the user was found but explicitly ddoes not
        require security, possibly overriding the requireH235 flag.
       */
@@ -1528,14 +1528,14 @@ class H323GatekeeperServer : public H323TransactionServer
     );
 
     /**Create a new Peer Element and establish a service relationship.
-       If append is PFalse, the existing peer element is automatically deleted
-       and recreated. If append is PTrue then a new service relationship is
+       If append is false, the existing peer element is automatically deleted
+       and recreated. If append is true then a new service relationship is
        added to the existing peer element.
       */
     PBoolean OpenPeerElement(
       const H323TransportAddress & remotePeer,
-      PBoolean append = PFalse,
-      PBoolean keepTrying = PTrue
+      PBoolean append = false,
+      PBoolean keepTrying = true
     );
   //@}
 #endif
@@ -1547,13 +1547,13 @@ class H323GatekeeperServer : public H323TransactionServer
     const PString & GetGatekeeperIdentifier() const { return gatekeeperIdentifier; }
 
     /**Set the identifier name for this gatekeeper.
-       If adjustListeners is PTrue then all gatekeeper listeners that are
+       If adjustListeners is true then all gatekeeper listeners that are
        attached to this gatekeeper server have their identifier names changed
        as well.
       */
     void SetGatekeeperIdentifier(
       const PString & id,
-      PBoolean adjustListeners = PTrue
+      PBoolean adjustListeners = true
     );
 
     /**Get the total bandwidth available in 100's of bits per second.
@@ -1642,7 +1642,7 @@ class H323GatekeeperServer : public H323TransactionServer
       H225_EndpointType & /*terminalType*/,               ///<  terminal type
       H225_ArrayOf_AliasAddress & /*transportAddresses*/  ///<  transport addresses
     )
-    { return PTrue; } 
+    { return true; } 
 
     virtual PBoolean AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
     { return canHaveDuplicateAlias; }

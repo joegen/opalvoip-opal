@@ -149,17 +149,17 @@ class Q931 : public PObject
     };
 
     void SetBearerCapabilities(
-      InformationTransferCapability capability,
+      InformationTransferCapability capability, ///< Bearer cability enum
       unsigned transferRate,        ///<  Number of 64k B channels
       unsigned codingStandard = 0,  ///<  0 = ITU-T standardized coding
       unsigned userInfoLayer1 = 5   ///<  5 = Recommendations H.221 and H.242
     );
 
     PBoolean GetBearerCapabilities(
-      InformationTransferCapability & capability,
-      unsigned & transferRate,        ///<  Number of 64k B channels
-      unsigned * codingStandard = NULL,
-      unsigned * userInfoLayer1 = NULL
+      InformationTransferCapability & capability, ///< Bearer cability enum
+      unsigned & transferRate,          ///<  Number of 64k B channels
+      unsigned * codingStandard = NULL, ///<  0 = ITU-T standardized coding
+      unsigned * userInfoLayer1 = NULL  ///<  5 = Recommendations H.221 and H.242
     );
 
     enum CauseValues {
@@ -204,7 +204,7 @@ class Q931 : public PObject
     friend ostream & operator<<(ostream & strm, CauseValues cause);
 
     void SetCause(
-      CauseValues value,
+      CauseValues value,      ///<  Cause code
       unsigned standard = 0,  ///<  0 = ITU-T standardized coding
       unsigned location = 0   ///<  0 = User
     );
@@ -233,7 +233,7 @@ class Q931 : public PObject
       CallState_ErrorInIE             = 0x100
     };
     void SetCallState(
-      CallStates value,
+      CallStates value,      ///< Call state code
       unsigned standard = 0  ///<  0 = ITU-T standardized coding
     );
     CallStates GetCallState(

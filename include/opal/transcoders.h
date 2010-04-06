@@ -80,11 +80,11 @@ class OpalMediaFormatPair : public PObject
        usually overridden by descendent classes to yield the ranking according
        to the semantics of the object.
        
-       The default function is to use the #CompareObjectMemoryDirect()#
+       The default function is to use the <code>CompareObjectMemoryDirect()</code>
        function to do a byte wise memory comparison of the two objects.
 
        @return
-       #LessThan#, #EqualTo# or #GreaterThan#
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
@@ -172,7 +172,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
 
-       The default behaviour simply returns PFalse.
+       The default behaviour simply returns false.
       */
     virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
@@ -196,7 +196,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        The default behaviour makes sure the output list has only one element
        in it and calls the Convert() function.
 
-       Returns PFalse if the conversion fails.
+       Returns false if the conversion fails.
       */
     virtual PBoolean ConvertFrames(
       const RTP_DataFrame & input,  ///<  Input data
@@ -207,7 +207,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       Returns PFalse if the conversion fails.
+       Returns false if the conversion fails.
       */
     virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
@@ -472,7 +472,7 @@ class OpalStreamedTranscoder : public OpalTranscoder
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       Returns PFalse if the conversion fails.
+       Returns false if the conversion fails.
       */
     virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
@@ -528,7 +528,7 @@ class OpalEmptyFramedAudioTranscoder : public OpalFramedTranscoder
     {  }
 
     PBoolean ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
-    { return PFalse; }
+    { return false; }
 };
 
 #define OPAL_DECLARE_EMPTY_TRANSCODER(fmt) \

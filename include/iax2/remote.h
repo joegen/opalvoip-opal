@@ -309,7 +309,7 @@ class IAX2SequenceNumbers
   /**Pretty print in and out sequence numbers  to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
 
-  /**Report PTrue if this sequnece info is the very first packet
+  /**Report true if this sequnece info is the very first packet
      received from a remote node, where we have initiated the call */
   PBoolean IsFirstReply() { return (inSeqNo == 1) && (outSeqNo == 0); }
 
@@ -350,7 +350,7 @@ class IAX2Encryption : public PObject
   IAX2Encryption();
 
   /**Set the flag that indicates this communication session is all encrypted.. */
-  void SetEncryptionOn (PBoolean newState = PTrue);
+  void SetEncryptionOn (PBoolean newState = true);
 
   /**Set the password/key used in encryption process */
   void SetEncryptionKey(PString & newKey);

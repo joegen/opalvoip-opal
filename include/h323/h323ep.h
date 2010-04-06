@@ -128,12 +128,12 @@ class H323EndPoint : public OpalRTPEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -383,7 +383,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean IsRegisteredWithGatekeeper() const;
 
     /**Unregister and delete the gatekeeper we are registered with.
-       The return value indicates PFalse if there was an error during the
+       The return value indicates false if there was an error during the
        unregistration. However the gatekeeper is still removed and its
        instance deleted regardless of this error.
      */
@@ -553,9 +553,9 @@ class H323EndPoint : public OpalRTPEndPoint
        the OnReceivedSignalSetup() function before it sends the Call
        Proceeding PDU. It gives an opportunity for an application to alter
        the request before transmission to the other endpoint. If this function
-       returns PFalse then the Call Proceeding PDU is not sent at all.
+       returns false then the Call Proceeding PDU is not sent at all.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
        @param connection the connection associated to the call proceeding
        @param callProceedingPDU the call processding to modify
        @return if false, do no send the connect pdu  
@@ -569,9 +569,9 @@ class H323EndPoint : public OpalRTPEndPoint
        the H323Connection::SetConnected function before it sends the connect  PDU. 
        It gives an opportunity for an application to alter
        the request before transmission to the other endpoint. If this function
-       returns PFalse then the connect PDU is not sent at all.
+       returns false then the connect PDU is not sent at all.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
        @param connection the connection associated to the connect
        @param connectPDU the connect to modify
        @return if false, do no send the connect pdu  
@@ -587,10 +587,10 @@ class H323EndPoint : public OpalRTPEndPoint
        application to alter the reply before transmission to the other
        endpoint.
 
-       If PFalse is returned the connection is aborted and a Release Complete
+       If false is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
      */
     virtual PBoolean OnIncomingCall(
       H323Connection & connection,    ///<  Connection that was established
@@ -599,10 +599,10 @@ class H323EndPoint : public OpalRTPEndPoint
     );
 
     /**Called when an outgoing call connects
-       If PFalse is returned the connection is aborted and a Release Complete
+       If false is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
       */
     virtual PBoolean OnOutgoingCall(
       H323Connection & conn, 
@@ -611,7 +611,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Handle a connection transfer.
        This gives the application an opportunity to abort the transfer.
-       The default behaviour just returns PTrue.
+       The default behaviour just returns true.
       */
     virtual PBoolean OnCallTransferInitiate(
       H323Connection & connection,    ///<  Connection to transfer
@@ -620,7 +620,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Handle a transfer via consultation.
        This gives the transferred-to user an opportunity to abort the transfer.
-       The default behaviour just returns PTrue.
+       The default behaviour just returns true.
       */
     virtual PBoolean OnCallTransferIdentify(
       H323Connection & connection    ///<  Connection to transfer
@@ -658,10 +658,10 @@ class H323EndPoint : public OpalRTPEndPoint
        receives the optional Alerting PDU from the remote endpoint. That is
        when the remote "phone" is "ringing".
 
-       If PFalse is returned the connection is aborted and a Release Complete
+       If false is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
      */
     virtual PBoolean OnAlerting(
       H323Connection & connection,    ///<  Connection that was established
@@ -671,7 +671,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /** A call back function when the alerting is about to be sent, 
         can be used by the application to alter the alerting Pdu
-        @return if PFalse, then the alerting is not sent
+        @return if false, then the alerting is not sent
      */
     virtual PBoolean OnSendAlerting(
       H323Connection & connection,  ///< onnection that was established
@@ -690,9 +690,9 @@ class H323EndPoint : public OpalRTPEndPoint
     /**A call back function when a connection indicates it is to be forwarded.
        An H323 application may handle this call back so it can make
        complicated decisions on if the call forward ius to take place. If it
-       decides to do so it must call MakeCall() and return PTrue.
+       decides to do so it must call MakeCall() and return true.
 
-       The default behaviour simply returns PFalse and that the automatic
+       The default behaviour simply returns false and that the automatic
        call forwarding should take place. See ForwardConnection()
       */
     virtual PBoolean OnConnectionForwarded(
@@ -702,7 +702,7 @@ class H323EndPoint : public OpalRTPEndPoint
     );
 
     /**Forward the call using the same token as the specified connection.
-       Return PTrue if the call is being redirected.
+       Return true if the call is being redirected.
 
        The default behaviour will replace the current call in the endpoints
        call list using the same token as the call being redirected. Not that
@@ -749,7 +749,7 @@ class H323EndPoint : public OpalRTPEndPoint
   //@{
     /**Call back for opening a logical channel.
 
-       The default behaviour simply returns PTrue.
+       The default behaviour simply returns true.
       */
     virtual PBoolean OnStartLogicalChannel(
       H323Connection & connection,    ///<  Connection for the channel
@@ -808,7 +808,7 @@ class H323EndPoint : public OpalRTPEndPoint
        An application may override this to display call credit information
        on registration, or when a call is started.
 
-       The canDisplayAmountString member variable must also be set to PTrue
+       The canDisplayAmountString member variable must also be set to true
        for this to operate.
 
        The default behaviour does nothing.
@@ -840,7 +840,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "invite"
       
-        The default behaviour is to return PFalse, which will close the connection
+        The default behaviour is to return false, which will close the connection
      */
     virtual PBoolean OnConferenceInvite(
       const H323SignalPDU & setupPDU
@@ -849,7 +849,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "callIndependentSupplementaryService"
       
-        The default behaviour is to return PFalse, which will close the connection
+        The default behaviour is to return false, which will close the connection
      */
     virtual PBoolean OnCallIndependentSupplementaryService(
       const H323SignalPDU & setupPDU
@@ -858,7 +858,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "capability_negotiation"
       
-        The default behaviour is to return PFalse, which will close the connection
+        The default behaviour is to return false, which will close the connection
      */
     virtual PBoolean OnNegotiateConferenceCapabilities(
       const H323SignalPDU & setupPDU
@@ -969,13 +969,13 @@ class H323EndPoint : public OpalRTPEndPoint
     ) { disableH245inSetup = mode; } 
 
     /** find out if h245 is disabled or enabled 
-      * @return PTrue if h245 is disabled 
+      * @return true if h245 is disabled 
       */
     PBoolean IsH245Disabled() const
     { return m_bH245Disabled; }
 
     /**Disable/Enable H.245, used at least for h450.7 calls
-     * @param  bH245Disabled PTrue if h245 has to be disabled 
+     * @param  bH245Disabled true if h245 has to be disabled 
      */
     void DisableH245(PBoolean bH245Disabled) { m_bH245Disabled = bH245Disabled; } 
     

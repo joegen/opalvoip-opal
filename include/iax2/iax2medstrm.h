@@ -99,7 +99,7 @@ class OpalIAX2MediaStream : public OpalMediaStream
        Goes to the IAX2Connection class, and removes a packet from the connection. The connection class turned the media 
        packet into a RTP_DataFrame class, and jitter buffered it.
 
-    @return PTrue on successful read of a packet, PFalse on faulty read.*/
+    @return true on successful read of a packet, false on faulty read.*/
     virtual PBoolean ReadPacket(
       RTP_DataFrame & packet ///< Data buffer to read to
     );

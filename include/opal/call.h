@@ -192,7 +192,7 @@ class OpalCall : public PSafeObject
        remote endpoint is "ringing". Generally some time after the
        MakeConnection() function was called, this is function is called.
 
-       If PFalse is returned the connection is aborted.
+       If false is returned the connection is aborted.
 
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically

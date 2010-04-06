@@ -138,12 +138,12 @@ class SIPEndPoint : public OpalRTPEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -182,7 +182,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /** Execute garbage collection for endpoint.
-        Returns PTrue if all garbage has been collected.
+        Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
     virtual PBoolean GarbageCollection();
@@ -215,7 +215,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
     
     /**Forward the connection using the same token as the specified connection.
-       Return PTrue if the connection is being redirected.
+       Return true if the connection is being redirected.
       */
     virtual PBoolean ForwardConnection(
       SIPConnection & connection,     ///<  Connection to be forwarded
@@ -347,8 +347,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     PSafePtr<SIPConnection> GetSIPConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite,
-      SIP_PDU::StatusCodes * errorCode = NULL
+      PSafetyMode mode = PSafeReadWrite,  ///< Lock mode
+      SIP_PDU::StatusCodes * errorCode = NULL ///< Error code if lock fails
     );
 
     virtual PBoolean IsAcceptedAddress(const SIPURL & toAddr);
@@ -628,7 +628,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     virtual void OnSubscriptionStatus(
-      SIPSubscribeHandler & handler, /// event subscription paramaters
+      SIPSubscribeHandler & handler, ///< Event subscription paramaters
       const SIPURL & uri,            ///< Target URI for the subscription.
       bool wasSubscribing,           ///< Indication the subscribing or unsubscribing
       bool reSubscribing,            ///< If subscribing then indication was refeshing subscription

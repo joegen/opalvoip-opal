@@ -61,7 +61,7 @@ class RTP_IMFrame : public RTP_DataFrame
     RTP_IMFrame();
     RTP_IMFrame(const PString & contentType);
     RTP_IMFrame(const PString & contentType, const T140String & content);
-    RTP_IMFrame(const BYTE * data, PINDEX len, PBoolean dynamic = PTrue);
+    RTP_IMFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
 
     void SetContentType(const PString & contentType);
     PString GetContentType() const;

@@ -129,7 +129,7 @@ class OpalBaseMixer
        If false is returned then the push thread is exited.
       */
     virtual bool OnMixed(
-      RTP_DataFrame * & mixed   ///, Poitner to mixed media.
+      RTP_DataFrame * & mixed   ///< Pointer to mixed media.
     );
 
     /**Start the push thread.
@@ -437,7 +437,7 @@ class OpalMixerNodeManager : public PObject
     virtual void ShutDown();
 
     /** Execute garbage collection of nodes.
-        Returns PTrue if all garbage has been collected.
+        Returns true if all garbage has been collected.
         Default behaviour deletes the objects that have been
 		removed from the m_nodesByUID list.
       */
@@ -598,12 +598,12 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       OpalCall & call,           ///<  Owner of connection
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
-      unsigned int options = 0,  ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions  = NULL
+      unsigned options = 0,      ///< Option bit mask to pass to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
 
     /** Execute garbage collection for endpoint.
-        Returns PTrue if all garbage has been collected.
+        Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
     virtual PBoolean GarbageCollection();
@@ -619,7 +619,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       */
     PSafePtr<OpalMixerConnection> GetMixerConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite ///< Lock mode
     ) { return GetConnectionWithLockAs<OpalMixerConnection>(token, mode); }
 
     /**Create a connection for the PCSS endpoint.
@@ -629,8 +629,8 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       PSafePtr<OpalMixerNode> node, ///<  Node the connection is in
       OpalCall & call,              ///<  Owner of connection
       void * userData,              ///<  Arbitrary data to pass to connection
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions
+      unsigned options,             ///< Option bit mask to pass to connection
+      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
   //@}
 
@@ -742,8 +742,8 @@ class OpalMixerConnection : public OpalLocalConnection
       OpalCall & call,              ///<  Owner calll for connection
       OpalMixerEndPoint & endpoint, ///<  Owner endpoint for connection
       void * userData,              ///<  Arbitrary data to pass to connection
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions
+      unsigned options = 0,         ///< Option bit map to be passed to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to be passed to connection
     );
 
     /**Destroy connection.
@@ -878,7 +878,7 @@ class OpalMixerMediaStream : public OpalMediaStream
     );
 
     /**Indicate if the media stream is synchronous.
-       Returns PTrue for LID streams.
+       Returns true for LID streams.
       */
     virtual PBoolean IsSynchronous() const;
 

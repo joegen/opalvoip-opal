@@ -169,7 +169,7 @@ class IAX2RegProcessor : public IAX2Processor
   @return true if the frame is out of order, which deletes the supplied frame
   @return false, and does not destroy the supplied frame*/
   virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *)
-       { return PFalse; };
+       { return false; };
 
   
   /**A class that generates random values used for varying 

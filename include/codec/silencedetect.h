@@ -113,8 +113,8 @@ class OpalSilenceDetector : public PObject
 
     /**Get silence detection status
 
-       The inTalkBurst value is PTrue if packet transmission is enabled and
-       PFalse if it is being suppressed due to silence.
+       The inTalkBurst value is true if packet transmission is enabled and
+       false if it is being suppressed due to silence.
 
        The currentThreshold value is the value from 0 to 32767 which is used
        as the threshold value for 16 bit PCM data.

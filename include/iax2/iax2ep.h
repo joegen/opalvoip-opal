@@ -143,12 +143,12 @@ class IAX2EndPoint : public OpalEndPoint
      
      The proto field is optional when passed to a specific endpoint. If it
      is present, however, it must agree with the endpoints protocol name or
-     PFalse is returned.
+     false is returned.
      
      This function usually returns almost immediately with the connection
      continuing to occur in a new background thread.
      
-     If PFalse is returned then the connection could not be established. For
+     If false is returned then the connection could not be established. For
      example if a PSTN endpoint is used and the assiciated line is engaged
      then it may return immediately. Returning a non-NULL value does not
      mean that the connection will succeed, only that an attempt is being
@@ -247,8 +247,8 @@ class IAX2EndPoint : public OpalEndPoint
   
     /**Handle new incoming connection from listener.
        
-    A return value of PTrue indicates that the transport object should be
-    deleted by the caller. PFalse indicates that something else (eg the
+    A return value of true indicates that the transport object should be
+    deleted by the caller. false indicates that something else (eg the
     connection) has taken over responsibility for deleting the transport.
     
     Well, that is true of Opal. In iax2, we do all the work of creating a new
@@ -444,10 +444,10 @@ class IAX2EndPoint : public OpalEndPoint
     
   /**For the supplied IAX2Frame, pass it to a connection in the
      connectionsActive structure.  If no matching connection is found, return
-     PFalse;
+     false;
      
      If a matching connections is found, give the frame to the
-     connection (for the connection to process) and return PTrue;
+     connection (for the connection to process) and return true;
   */
   PBoolean ProcessInMatchingConnection(IAX2Frame *f);  
     
@@ -456,7 +456,7 @@ class IAX2EndPoint : public OpalEndPoint
      If any do, then we add a new translation entry in tokenTable;
      
      If a matching connection is found in connectionsActive, create a
-     new translation entry and return PTrue. The connection, after
+     new translation entry and return true. The connection, after
      processing the frame, will then delete the frame. */
   PBoolean AddNewTranslationEntry(IAX2Frame *f);
   

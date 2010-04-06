@@ -214,11 +214,11 @@ class H323SignalPDU : public H225_H323_UserInformation
        incoming connection.
       */
     PString GetDestinationAlias(
-      PBoolean firstAliasOnly = PFalse   ///<  Only return the first possible alias
+      PBoolean firstAliasOnly = false   ///<  Only return the first possible alias
     ) const;
 
     /**Get the source endpoints identification as a phone number.
-       This returns PFalse if the remote never provided any alias or Q.931
+       This returns false if the remote never provided any alias or Q.931
        field that indicated a valid e.164 telephone number.
       */
     PBoolean GetSourceE164(
@@ -226,7 +226,7 @@ class H323SignalPDU : public H225_H323_UserInformation
     ) const;
 
     /**Get the destiation  phone number.
-       This returns PFalse if the remote never provided any alias or Q.931
+       This returns false if the remote never provided any alias or Q.931
        field that indicated a valid e.164 telephone number.
       */
     PBoolean GetDestinationE164(

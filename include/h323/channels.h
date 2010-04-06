@@ -72,7 +72,7 @@ class H323ChannelNumber : public PObject
   PCLASSINFO(H323ChannelNumber, PObject);
 
   public:
-    H323ChannelNumber() { number = 0; fromRemote = PFalse; }
+    H323ChannelNumber() { number = 0; fromRemote = false; }
     H323ChannelNumber(unsigned number, PBoolean fromRemote);
 
     virtual PObject * Clone() const;
@@ -163,7 +163,7 @@ class H323Channel : public PObject
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
 
-       The default behaviour returns PFalse.
+       The default behaviour returns false.
      */
     virtual PBoolean GetMediaTransportAddress(
       OpalTransportAddress & data,        ///<  Data channel address
@@ -172,7 +172,7 @@ class H323Channel : public PObject
 
     /**Set the initial bandwidth for the channel.
        This calculates the initial bandwidth required by the channel and
-       returns PTrue if the connection can support this bandwidth.
+       returns true if the connection can support this bandwidth.
 
        The default behaviour gets the bandwidth requirement from the codec
        object created by the channel.
@@ -199,7 +199,7 @@ class H323Channel : public PObject
 
     /**Get the media stream associated with this logical channel.
 
-       If the argument is set to PTrue, the mediaStream is about to be deleted
+       If the argument is set to true, the mediaStream is about to be deleted
        so all internal references to the mediaStream must be removed.
 
        The default behaviour returns NULL.
@@ -227,7 +227,7 @@ class H323Channel : public PObject
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
 
-       The default behaviour just returns PTrue.
+       The default behaviour just returns true.
      */
     virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
@@ -238,7 +238,7 @@ class H323Channel : public PObject
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
 
-       The default behaviour just returns PTrue.
+       The default behaviour just returns true.
      */
     virtual PBoolean OnReceivedAckPDU(
       const H245_OpenLogicalChannelAck & pdu  ///<  Acknowledgement PDU
@@ -389,7 +389,7 @@ class H323UnidirectionalChannel : public H323Channel
 
     /**Set the initial bandwidth for the channel.
        This calculates the initial bandwidth required by the channel and
-       returns PTrue if the connection can support this bandwidth.
+       returns true if the connection can support this bandwidth.
 
        The default behaviour gets the bandwidth requirement from the codec
        object created by the channel.
@@ -720,7 +720,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
 
-       The default behaviour returns PFalse.
+       The default behaviour returns false.
      */
     virtual PBoolean GetMediaTransportAddress(
       OpalTransportAddress & data,        ///<  Data channel address
@@ -890,16 +890,16 @@ class H323DataChannel : public H323UnidirectionalChannel
        This is called on receipt of an OpenLogicalChannel request.
 
        The default behaviour creates a compatible listener using the
-       connections control channel as a basis and returns PTrue if successful.
+       connections control channel as a basis and returns true if successful.
       */
     virtual PBoolean CreateListener();
 
     /**Create the H323Transport class to be used.
        This is called on receipt of an OpenLogicalChannelAck response. It
-       should not return PTrue unless the transport member variable is set.
+       should not return true unless the transport member variable is set.
 
        The default behaviour uses the connection signalling channel to create
-       the transport and returns PTrue if successful.
+       the transport and returns true if successful.
       */
     virtual PBoolean CreateTransport();
   //@}

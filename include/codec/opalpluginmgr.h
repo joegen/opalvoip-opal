@@ -246,10 +246,10 @@ class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public Opa
     OpalPluginAudioFormatInternal(
       const PluginCodec_Definition * codecDefn,
       const char * fmtName,
-      const char * rtpEncodingName, /// rtp encoding name
-      unsigned frameTime,           /// Time for frame in RTP units (if applicable)
-      unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
-      time_t timeStamp              /// timestamp (for versioning)
+      const char * rtpEncodingName,
+      unsigned frameTime,
+      unsigned timeUnits,
+      time_t timeStamp
     );
     virtual PObject * Clone() const;
     virtual bool IsValidForProtocol(const PString & protocol) const;

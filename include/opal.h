@@ -681,7 +681,7 @@ typedef struct OpalParamProtocol {
                                            where they maybe set. */
   const char * m_userName;            /**< User name to identify the endpoint. This is usually the protocol
                                            specific name and may interact with the OpalCmdRegistration
-                                           command. e.g. "robertj or 61295552148 */
+                                           command. e.g. "robertj" or 61295552148 */
   const char * m_displayName;         /**< Display name to be used. This is the human readable form of the
                                            users name, e.g. "Robert Jongbloed". */
   OpalProductDescription m_product;   /**< Product description data */
