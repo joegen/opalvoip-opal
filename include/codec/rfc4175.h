@@ -75,9 +75,9 @@ class OpalRFC4175Transcoder : public OpalVideoTranscoder
     PINDEX RFC4175HeaderSize(PINDEX lines);
 
     struct ScanLineHeader {
-      PUInt16b length;
-      PUInt16b y;       // has field flag in top bit
-      PUInt16b offset;  // has last line flag in top bit
+      PUInt16b m_length;
+      PUInt16b m_y;       // has field flag in top bit
+      PUInt16b m_offset;  // has last line flag in top bit
     };
 };
 
@@ -92,7 +92,7 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
       const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
 
-    PBoolean ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
+    bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
     virtual void StartEncoding(const RTP_DataFrame & input);
@@ -108,7 +108,7 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
     unsigned m_frameHeight;
     unsigned m_frameWidth;
 
-    DWORD srcTimestamp;
+    DWORD m_srcTimestamp;
 
     RTP_DataFrameList * m_dstFrames;
     std::vector<PINDEX> m_dstScanlineCounts;
@@ -132,20 +132,23 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     virtual PINDEX PixelsToBytes(PINDEX pixels) const = 0;
     virtual PINDEX BytesToPixels(PINDEX pixels) const = 0;
 
-    PBoolean ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
+    bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
-    PBoolean Initialise();
-    virtual PBoolean DecodeFrames(RTP_DataFrameList & output) = 0;
+    bool Initialise();
+    void DecodeFramesAndSetFrameSize(RTP_DataFrameList & output);
+    virtual bool DecodeFrames(RTP_DataFrameList & output) = 0;
 
     RTP_DataFrameList m_inputFrames;
     std::vector<PINDEX> m_scanlineCounts;
     PINDEX m_frameWidth, m_frameHeight;
 
-    bool  m_first;
-    bool  m_missingPackets;
-    DWORD m_lastSequenceNumber;
-    DWORD m_lastTimeStamp;
+    bool    m_first;
+    bool    m_missingPackets;
+    PINDEX  m_maxWidth;
+    PINDEX  m_maxHeight;
+    DWORD   m_lastSequenceNumber;
+    DWORD   m_lastTimeStamp;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -164,7 +167,7 @@ class Opal_RFC4175YCbCr420_to_YUV420P : public OpalRFC4175Decoder
     PINDEX PixelsToBytes(PINDEX pixels) const { return pixels*12/8; }
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes*8/12; }
 
-    PBoolean DecodeFrames(RTP_DataFrameList & output);
+    bool DecodeFrames(RTP_DataFrameList & output);
 };
 
 class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
@@ -202,7 +205,7 @@ class Opal_RFC4175RGB_to_RGB24 : public OpalRFC4175Decoder
     PINDEX PixelsToBytes(PINDEX pixels) const { return pixels * 3; }
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes / 3; }
 
-    PBoolean DecodeFrames(RTP_DataFrameList & output);
+    bool DecodeFrames(RTP_DataFrameList & output);
 };
 
 class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
