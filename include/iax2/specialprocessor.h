@@ -94,7 +94,7 @@ class IAX2SpecialProcessor : public IAX2Processor
      @return false always, as the special packet handler never gets
      frame ordered correctly - there will always be skipped frames. */
   virtual PBoolean IncomingMessageOutOfOrder(IAX2FullFrame *) 
-  { return PFalse; }
+  { return false; }
 
 
 };

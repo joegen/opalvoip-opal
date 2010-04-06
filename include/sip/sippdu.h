@@ -87,7 +87,9 @@ class SIPURL : public PURL
     );
 
     /** If name does not start with 'sip' then construct URI in the form
-          sip:name@host:port;transport=transport
+        <pre><code>
+          sip:name\@host:port;transport=transport
+        </code></pre>
         where host comes from address,
         port is listenerPort or port from address if that was 0
         transport is udp unless address specified tcp
@@ -109,7 +111,7 @@ class SIPURL : public PURL
        in RFC3261 Section 19.1.4.
 
      @return
-       #LessThan#, #EqualTo# or #GreaterThan#
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
@@ -123,7 +125,7 @@ class SIPURL : public PURL
 
     /** Returns display name only
       */
-    PString GetDisplayName(PBoolean useDefault = PTrue) const;
+    PString GetDisplayName(PBoolean useDefault = true) const;
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
@@ -180,7 +182,8 @@ class SIPURL : public PURL
     void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
 
     /** Parses name-addr, like:
-        "displayname"<scheme:user:password@host:port;transport=type>;tag=value
+        <pre>
+        "displayname"<scheme:user:password\@host:port;transport=type>;tag=value
         into:
         displayname (quotes around name are optional, all before '<' is used)
         scheme
@@ -193,7 +196,7 @@ class SIPURL : public PURL
         paramVars
         queryVars
         fragment
-
+        </pre>
         Note that tag parameter outside of <> will be lost,
         but tag in URL without <> will be kept until Sanitise()
      */
@@ -594,7 +597,7 @@ class SIP_PDU : public PSafeObject
 
     /**Add and populate Route header following the given routeSet.
       If first route is strict, exchange with URI.
-      Returns PTrue if routeSet.
+      Returns true if routeSet.
       */
     bool SetRoute(const PStringList & routeSet);
     bool SetRoute(const SIPURL & proxy);

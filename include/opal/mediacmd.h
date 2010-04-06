@@ -58,11 +58,11 @@ class OpalMediaCommand : public PObject
        usually overridden by descendent classes to yield the ranking according
        to the semantics of the object.
        
-       The default function is to use the #CompareObjectMemoryDirect()#
+       The default function is to use the <code>CompareObjectMemoryDirect()</code>
        function to do a byte wise memory comparison of the two objects.
 
        @return
-       #LessThan#, #EqualTo# or #GreaterThan#
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(

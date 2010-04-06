@@ -88,12 +88,12 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -105,8 +105,8 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       OpalCall & call,           ///<  Owner of connection
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
-      unsigned int options = 0,  ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions  = NULL
+      unsigned options = 0,                    ///< Option bit map to be passed to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to be passed to connection
     );
   //@}
 
@@ -137,7 +137,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       */
     virtual bool OnUserInput(
       const OpalLocalConnection & connection, ///<  Connection having event
-      const PString & indication
+      const PString & indication              ///<  Received user input indications
     );
   //@}
 
@@ -151,8 +151,8 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       const PString & playDevice, ///<  Sound channel play device
       const PString & recordDevice, ///<  Sound channel record device
       void * userData,    ///<  Arbitrary data to pass to connection
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions
+      unsigned options,                    ///< Option bit map to be passed to connection
+      OpalConnection::StringOptions * stringOptions ///< Options to be passed to connection
     );
 
     /**Create an PSoundChannel based media stream.
@@ -174,11 +174,11 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       */
     PSafePtr<OpalPCSSConnection> GetPCSSConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite ///< Lock mode
     ) { return GetConnectionWithLockAs<OpalPCSSConnection>(token, mode); }
 
     /**Call back to indicate that remote is ringing.
-       If PFalse is returned the call is aborted.
+       If false is returned the call is aborted.
 
        The default implementation is pure.
       */
@@ -187,7 +187,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     ) = 0;
 
     /**Accept the incoming connection.
-       Returns PFalse if the connection token does not correspond to a valid
+       Returns false if the connection token does not correspond to a valid
        connection.
       */
     virtual PBoolean AcceptIncomingConnection(
@@ -195,7 +195,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     );
 
     /**Reject the incoming connection.
-       Returns PFalse if the connection token does not correspond to a valid
+       Returns false if the connection token does not correspond to a valid
        connection.
       */
     virtual PBoolean RejectIncomingConnection(
@@ -204,7 +204,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     );
 
     /**Call back to indicate that remote is ringing.
-       If PFalse is returned the call is aborted.
+       If false is returned the call is aborted.
 
        The default implementation is pure.
       */
@@ -213,13 +213,13 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     ) = 0;
 
     /**Call back to indicate that the remote user has indicated something.
-       If PFalse is returned the call is aborted.
+       If false is returned the call is aborted.
 
        The default implementation does nothing.
       */
     virtual PBoolean OnShowUserInput(
       const OpalPCSSConnection & connection, ///<  Connection having event
-      const PString & indication
+      const PString & indication             ///<  Received user input indications
     );
   //@}
 
@@ -227,7 +227,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
   //@{
     /**Set the name for the sound channel to be used for output.
        If the name is not suitable for use with the PSoundChannel class then
-       the function will return PFalse and not change the device.
+       the function will return false and not change the device.
 
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
@@ -242,7 +242,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
     /**Set the name for the sound channel to be used for input.
        If the name is not suitable for use with the PSoundChannel class then
-       the function will return PFalse and not change the device.
+       the function will return false and not change the device.
 
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
@@ -310,8 +310,8 @@ class OpalPCSSConnection : public OpalLocalConnection
       OpalPCSSEndPoint & endpoint,  ///<  Owner endpoint for connection
       const PString & playDevice,   ///<  Sound channel play device
       const PString & recordDevice,  ///<  Sound channel record device
-      unsigned options = 0,
-      OpalConnection::StringOptions * stringOptions = NULL
+      unsigned options = 0,                    ///< Option bit map to be passed to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to be passed to connection
     );
 
     /**Destroy endpoint.

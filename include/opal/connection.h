@@ -167,10 +167,10 @@ The different phases are.
   \li OpalConnection::AlertingPhase - the OpalConnection instance is aware the phone is ringing.
 
   \li OpalConnection::ConnectedPhase - both endpoints have accepted the call, there may or may
-                            not be agreement on media atthis time. Note that in many systems
+                            not be agreement on media at this time. Note that in many systems
                             this constitutes the start of charging for a call.
 
-  \li OpalConnection::EstablishedPhase - we are "connected, there is agreement on the media
+  \li OpalConnection::EstablishedPhase - we are "connected", there is agreement on the media
                             type, network ports, media can flow. This is the condition that
                             contitutes a call being "ready to use".
 
@@ -344,7 +344,7 @@ class OpalConnection : public PSafeObject
       */
     enum CallEndReasonCodes {
       EndedByLocalUser,            /// Local endpoint application cleared call
-      EndedByNoAccept,             /// Local endpoint did not accept call OnIncomingCall()=PFalse
+      EndedByNoAccept,             /// Local endpoint did not accept call OnIncomingCall()=false
       EndedByAnswerDenied,         /// Local endpoint declined to answer call
       EndedByRemoteUser,           /// Remote endpoint application cleared call
       EndedByRefusal,              /// Remote endpoint refused call
@@ -493,8 +493,8 @@ class OpalConnection : public PSafeObject
       OpalCall & call,                         ///<  Owner calll for connection
       OpalEndPoint & endpoint,                 ///<  Owner endpoint for connection
       const PString & token,                   ///<  Token to identify the connection
-      unsigned options = 0,                    ///<  Connection options
-      OpalConnection::StringOptions * stringOptions = NULL     ///< more complex options
+      unsigned options = 0,                    ///< Option bit map to be passed to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///< Options to be passed to connection
     );  
 
     /**Destroy connection.
@@ -599,10 +599,10 @@ class OpalConnection : public PSafeObject
       CallEndReason reason = EndedByLocalUser ///<  Reason for call clearing
     );
 
-    /**Clear a current connection, synchronously
+    /**Clear a current connection, synchronously.
       */
     virtual void ClearCallSynchronous(
-      PSyncPoint * sync,
+      PSyncPoint * sync,                       ///<  Synchronisation object to signal
       CallEndReason reason = EndedByLocalUser  ///<  Reason for call clearing
     );
 
@@ -659,7 +659,7 @@ class OpalConnection : public PSafeObject
        This function is used for an application to control the answering of
        incoming calls.
 
-       If PTrue is returned then the connection continues. If PFalse then the
+       If true is returned then the connection continues. If false then the
        connection is aborted.
 
        Note this function should not block for any length of time. If the
@@ -863,7 +863,7 @@ class OpalConnection : public PSafeObject
        function when an application wishes to redirct an unwanted incoming
        call.
 
-       The return value is PTrue if the call is to be forwarded, PFalse
+       The return value is true if the call is to be forwarded, false
        otherwise. Note that if the call is forwarded the current connection is
        cleared with teh ended call code of EndedByCallForwarded.
       */
@@ -1122,7 +1122,7 @@ class OpalConnection : public PSafeObject
 
     /**See if the media can bypass the local host.
 
-       The default behaviour returns PFalse indicating that media bypass is not
+       The default behaviour returns false indicating that media bypass is not
        possible.
      */
     virtual PBoolean IsMediaBypassPossible(
@@ -1171,12 +1171,12 @@ class OpalConnection : public PSafeObject
     unsigned GetBandwidthAvailable() const { return bandwidthAvailable; }
 
     /**Set the available bandwidth in 100's of bits/sec.
-       Note if the force parameter is PTrue this function will close down
+       Note if the force parameter is true this function will close down
        active media streams to meet the new bandwidth requirement.
       */
     virtual PBoolean SetBandwidthAvailable(
       unsigned newBandwidth,    ///<  New bandwidth limit
-      PBoolean force = PFalse        ///<  Force bandwidth limit
+      PBoolean force = false        ///<  Force bandwidth limit
     );
 
     /**Get the bandwidth currently used.
@@ -1189,8 +1189,8 @@ class OpalConnection : public PSafeObject
        This is an internal function used by the OpalMediaStream bandwidth
        management code.
 
-       If there is insufficient bandwidth available, PFalse is returned. If
-       sufficient bandwidth is available, then PTrue is returned and the amount
+       If there is insufficient bandwidth available, false is returned. If
+       sufficient bandwidth is available, then true is returned and the amount
        of available bandwidth is reduced by the specified amount.
       */
     virtual PBoolean SetBandwidthUsed(
@@ -1322,7 +1322,7 @@ class OpalConnection : public PSafeObject
   //@}
 
     /** Execute garbage collection for endpoint.
-        Returns PTrue if all garbage has been collected.
+        Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
     virtual bool GarbageCollection();

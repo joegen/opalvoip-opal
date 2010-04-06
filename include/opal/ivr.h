@@ -84,12 +84,12 @@ class OpalIVREndPoint : public OpalLocalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       PFalse is returned.
+       false is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If PFalse is returned then the connection could not be established. For
+       If false is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -289,7 +289,7 @@ class OpalIVRConnection : public OpalLocalConnection
 
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
 
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, PBoolean autoDelete = PFalse)
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, PBoolean autoDelete = false)
     { return vxmlSession.SetTextToSpeech(_tts, autoDelete); }
 
     PTextToSpeech * SetTextToSpeech(const PString & ttsName)
@@ -337,7 +337,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
     virtual PBoolean Open();
 
     /**Indicate if the media stream is synchronous.
-       Returns PFalse for IVR streams.
+       Returns false for IVR streams.
       */
     virtual PBoolean IsSynchronous() const;
   //@}

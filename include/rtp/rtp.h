@@ -71,7 +71,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
-    RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic = PTrue);
+    RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
 
     enum {
       ProtocolVersion = 2,
@@ -435,7 +435,7 @@ class RTP_Session : public PObject
     );
 
     /**Delete a session.
-       This deletes the userData field if autoDeleteUserData is PTrue.
+       This deletes the userData field if autoDeleteUserData is true.
      */
     ~RTP_Session();
   //@}
@@ -469,7 +469,7 @@ class RTP_Session : public PObject
 
     /**Modifies the QOS specifications for this RTP session*/
     virtual PBoolean ModifyQOS(RTP_QOS * )
-    { return PFalse; }
+    { return false; }
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
@@ -487,7 +487,7 @@ class RTP_Session : public PObject
       */
     virtual PBoolean ReadData(
       RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
+      PBoolean loop               ///<  If true, loop as long as data is available, if false, only process once
     ) = 0;
 
     /**Write a data frame from the RTP channel.
@@ -648,7 +648,7 @@ class RTP_Session : public PObject
       */
     void SetUserData(
       RTP_UserData * data,            ///<  New user data to be used
-      PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
+      PBoolean autoDeleteUserData = true  ///<  Delete optional data with session.
     );
 
     /**Get the source output identifier.
@@ -902,7 +902,7 @@ class RTP_Session : public PObject
 
     PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
-    PBoolean      oobTimeStampBaseEstablished; // PTrue if timeStampOffs has been established by media
+    PBoolean      oobTimeStampBaseEstablished; // true if timeStampOffs has been established by media
     DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
     PTimeInterval oobTimeStampBase;            // base time for oob timestamp
 

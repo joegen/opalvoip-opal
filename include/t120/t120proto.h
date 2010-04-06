@@ -87,7 +87,7 @@ class OpalT120Protocol : public PObject
 
     /**Handle incoming T.120 connection.
 
-       If returns PFalse, then the reading loop should be terminated.
+       If returns false, then the reading loop should be terminated.
       */
     virtual PBoolean HandleConnect(
       const MCS_ConnectMCSPDU & pdu
@@ -95,7 +95,7 @@ class OpalT120Protocol : public PObject
 
     /**Handle incoming T.120 packet.
 
-       If returns PFalse, then the reading loop should be terminated.
+       If returns false, then the reading loop should be terminated.
       */
     virtual PBoolean HandleDomain(
       const MCS_DomainMCSPDU & pdu

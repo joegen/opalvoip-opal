@@ -8,15 +8,9 @@
         applications that wish to use the SIP and H.323 protocols for
         multi-media communications over packet based networks.
 
-
-
-
-Last updated 24 December, 2009
-
-Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved 
-
-Portions Copyright (C) 2004 Post Increment, All Rights Reserved
-Portions Copyright (C) 2009 Vox Lucida Pty. Ltd., All Rights Reserved
+Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved.<BR>
+Portions Copyright (C) 2004 Post Increment, All rights reserved.<BR>
+Portions Copyright (C) 2009 Vox Lucida Pty. Ltd., All rights reserved.
 
 The documentation has been separated out into smaller pages, which can be
 accessed through the "Related Pages" link at the top of every web page, or
@@ -42,13 +36,9 @@ perspective, that may aid the reader.
 \subsection history History
 
 \li 28 February 2005 -  Converted from Doc++ to Doxygen format by Derek Smithies
-
 \li 10 May 2005     - Added some comments to explain data flow in a RTP classes
-
 \li 12 May 2005     - Changed main page to list only the Opal classes.
-
 \li 11 March 2006   - Add link to description of the IAX2 code.
-
 \li 20 March 2008 - Add documentation on the different phases of a call, which
                      are driven by the OpalConnection class.
 */
@@ -220,7 +210,7 @@ understood these terms, the inline documentation will make more sense.
       PSTN line would expect a simple phone number. As it is a text string,
       the address maximises portability and useability for user
       interfaces. For example, a call to a number using a PSTN endpoint would
-      <code>pstn:555-1234</code> or <code>pstn:555-1234@line1</code> where
+      <code>pstn:555-1234</code> or <code>pstn:555-1234\@line1</code> where
       <code>line1</code> is the name of a specific instance of a PSTN endpoint. Another
       example would be <code>h323:phone.quicknet.net</code> or
       <code>h323:derhart@gk.quicknet.net</code> where the second form

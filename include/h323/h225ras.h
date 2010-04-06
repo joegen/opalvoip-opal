@@ -287,7 +287,7 @@ class H225_RAS : public H323Transactor
     virtual PBoolean OnReceiveRequestInProgress(const H323RasPDU &, const H225_RequestInProgress &);
     virtual PBoolean OnReceiveRequestInProgress(const H225_RequestInProgress &);
 	
-	virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const { return PFalse; }
+	virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const { return false; }
 	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const {}
 
 

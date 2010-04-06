@@ -189,7 +189,7 @@ class OpalRTPSessionManager : public PObject
      */
     void ReleaseSession(
       unsigned sessionID,    ///<  Session ID to release.
-      PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
+      PBoolean clearAll = false  ///<  Clear all sessions with that ID
     );
 
     /**Get a session for the specified ID.
@@ -288,7 +288,7 @@ class OpalRTPConnection : public OpalConnection
      */
     virtual void ReleaseSession(
       unsigned sessionID,    ///<  RTP session number
-      PBoolean clearAll = PFalse  ///<  Clear all sessions
+      PBoolean clearAll = false  ///<  Clear all sessions
     );
 
     /**Create and open a new RTP session.
@@ -323,7 +323,7 @@ class OpalRTPConnection : public OpalConnection
 
   /**@name NAT Management */
   //@{
-    /** Return PTrue if the remote appears to be behind a NAT firewall
+    /** Return true if the remote appears to be behind a NAT firewall
     */
     virtual PBoolean RemoteIsNAT() const
     { return remoteIsNAT; }
@@ -396,7 +396,7 @@ class OpalRTPConnection : public OpalConnection
 
     /**See if the media can bypass the local host.
 
-       The default behaviour returns PTrue if the session is audio or video.
+       The default behaviour returns true if the session is audio or video.
      */
     virtual PBoolean IsMediaBypassPossible(
       unsigned sessionID                  ///<  Session ID for media channel

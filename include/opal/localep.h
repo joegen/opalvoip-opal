@@ -113,7 +113,7 @@ class OpalLocalEndPoint : public OpalEndPoint
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
       unsigned int options = 0,  ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions  = NULL
+      OpalConnection::StringOptions * stringOptions  = NULL ///< Options to pass to connection
     );
   //@}
 
@@ -127,7 +127,7 @@ class OpalLocalEndPoint : public OpalEndPoint
       */
     PSafePtr<OpalLocalConnection> GetLocalConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
-      PSafetyMode mode = PSafeReadWrite
+      PSafetyMode mode = PSafeReadWrite   ///< Lock mode
     ) { return GetConnectionWithLockAs<OpalLocalConnection>(token, mode); }
 
     /**Create a connection for the PCSS endpoint.
@@ -136,8 +136,8 @@ class OpalLocalEndPoint : public OpalEndPoint
     virtual OpalLocalConnection * CreateConnection(
       OpalCall & call,    ///<  Owner of connection
       void * userData,    ///<  Arbitrary data to pass to connection
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions
+      unsigned options,   ///< Option bit mask to pass to connection
+      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
 
     /**Call back to indicate that remote is ringing.
@@ -190,7 +190,7 @@ class OpalLocalEndPoint : public OpalEndPoint
       */
     virtual bool OnUserInput(
       const OpalLocalConnection & connection, ///<  Connection having event
-      const PString & indication
+      const PString & indication    ///< User input received
     );
 
     /**Call back to get media data for transmission.
@@ -285,9 +285,9 @@ class OpalLocalConnection : public OpalConnection
       OpalCall & call,              ///<  Owner call for connection
       OpalLocalEndPoint & endpoint, ///<  Owner endpoint for connection
       void * userData,              ///<  Arbitrary data to pass to connection
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions,
-      char tokenPrefix = 'L'
+      unsigned options,             ///< Option bit mask to pass to connection
+      OpalConnection::StringOptions * stringOptions, ///< Options to pass to connection
+      char tokenPrefix = 'L'        ///< Prefix for token generation
     );
 
     /**Destroy connection.
@@ -468,7 +468,7 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
     );
 
     /**Indicate if the media stream is synchronous.
-       Returns PTrue for LID streams.
+       Returns true for LID streams.
       */
     virtual PBoolean IsSynchronous() const;
   //@}

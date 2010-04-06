@@ -69,15 +69,15 @@ class SafeStrings :  public PObject
   
   /**Add a new string to the list, in a thread safe fashion. */
   void AppendString(const PString & newString,        /*!<String to add to the list.    */
-		    PBoolean splitString = PFalse   /*!<If True, the string is added to the list, character by character.    */
+		    PBoolean splitString = false   /*!<If True, the string is added to the list, character by character.    */
 		    );
   
   /**Add a new string to the list, in a thread safe fashion. */
   void AppendString(const char *newString,     /*!<String to add to the list.    */
-		    PBoolean splitString = PFalse   /*!<If True, the string is added to the list, character by character.    */
+		    PBoolean splitString = false   /*!<If True, the string is added to the list, character by character.    */
 		    ) { PString s(newString); AppendString(s, splitString); }
   
-  /**Remove the last string from this list, in a thread safe fashion. Return PTrue if succesfull*/
+  /**Remove the last string from this list, in a thread safe fashion. Return true if succesfull*/
   PBoolean GetNextString(PString & nextString /*!< resultant string.    */
 		     );
   

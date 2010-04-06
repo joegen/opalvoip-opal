@@ -498,9 +498,9 @@ class H4502Handler : public H450xHandler
      */
     const PString& getTransferringCallToken() const { return transferringCallToken; }
 
-    /**Set the 'consultationTransfer' member to PTrue (indicating a successful transfer)
+    /**Set the 'consultationTransfer' member to true (indicating a successful transfer)
      */
-    void SetConsultationTransferSuccess() { consultationTransfer = PTrue; }
+    void SetConsultationTransferSuccess() { consultationTransfer = true; }
 
     /**Was the transfer through consultation successful.
      */

@@ -125,9 +125,9 @@ class H235Authenticator : public PObject
     virtual PBoolean IsActive() const;
 
     void Enable(
-      PBoolean enab = PTrue
+      PBoolean enab = true
     ) { enabled = enab; }
-    void Disable() { enabled = PFalse; }
+    void Disable() { enabled = false; }
 
     const PString & GetRemoteId() const { return remoteId; }
     void SetRemoteId(const PString & id) { remoteId = id; }

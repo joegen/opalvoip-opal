@@ -215,7 +215,7 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      PBoolean withMedia
+      PBoolean withMedia            ///<  Flag to alert with/without media
     );
 
     /**Indicate to remote endpoint we are connected.
@@ -268,7 +268,7 @@ class SIPConnection : public OpalRTPConnection
        function when an application wishes to redirect an unwanted incoming
        call.
 
-       The return value is PTrue if the call is to be forwarded, PFalse 
+       The return value is true if the call is to be forwarded, false 
        otherwise. Note that if the call is forwarded, the current connection
        is cleared with the ended call code set to EndedByCallForwarded.
       */
@@ -404,7 +404,7 @@ class SIPConnection : public OpalRTPConnection
     virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
-       Returns: PTrue if handled, if PFalse is returned connection is released.
+       Returns: true if handled, if false is returned connection is released.
       */
     virtual PBoolean OnReceivedAuthenticationRequired(
       SIPTransaction & transaction,
@@ -466,7 +466,7 @@ class SIPConnection : public OpalRTPConnection
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
 
-       Return PFalse if default reponse of Failure_UnsupportedMediaType is to be returned
+       Return false if default reponse of Failure_UnsupportedMediaType is to be returned
 
       */
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);

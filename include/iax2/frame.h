@@ -132,7 +132,7 @@ class IAX2Frame :  public PObject
   PINDEX   GetUnReadBytes() { return data.GetSize() - currentReadIndex; }
   
   /**Cause the header bytes for this particular frame type to be written to the internal array */
-  virtual PBoolean WriteHeader() { return PFalse; }
+  virtual PBoolean WriteHeader() { return false; }
   
   /**Send this packet on the specified socket to the remote host. This method is only
      called by the transmiter.*/
@@ -160,7 +160,7 @@ class IAX2Frame :  public PObject
   DWORD  GetTimeStamp() { return timeStamp; }
   
   /** Report flag stating that this call must be active when this frame is transmitted*/
-  virtual PBoolean CallMustBeActive() { return PTrue; }     
+  virtual PBoolean CallMustBeActive() { return true; }     
   
   /**Specify the type of this frame. */
   enum IAX2FrameType {
@@ -214,7 +214,7 @@ class IAX2Frame :  public PObject
 
   /**Use the supplied encryptionKey, and data in storage, to decrypt this frame.
    
-  Return False if the decryption fails, PTrue if the decryption works.*/
+  Return False if the decryption fails, true if the decryption works.*/
   PBoolean DecryptContents(IAX2Encryption & encryption);
 
   /**Specification of the location (address, call number etc) of the
@@ -424,9 +424,9 @@ class IAX2FullFrame : public IAX2Frame
 
   /**True if this is a full frame - always returns true as this is a
      full frame. */
-  virtual PBoolean IsFullFrame() { return PTrue; }  
+  virtual PBoolean IsFullFrame() { return true; }  
   
-  /**Report PTrue if this is a hangup frame. We need this information
+  /**Report true if this is a hangup frame. We need this information
      for processing incoming frames, before fully dissection of the
      frame has completed */
   PBoolean IsHangupFrame();
@@ -489,7 +489,7 @@ class IAX2FullFrame : public IAX2Frame
   void ModifyFrameTimeStamp(PINDEX newTimeStamp);
 
   /**Mark this frame as having (or not having) information elements*/
-  virtual PBoolean InformationElementsPresent() { return PFalse; }  
+  virtual PBoolean InformationElementsPresent() { return false; }  
   
   /**Get flag to see if this frame is ready to be sent (or resent). In
      other words, has the timer expired?*/
