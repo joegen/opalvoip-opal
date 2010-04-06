@@ -157,9 +157,9 @@ void OpalRFC4175Encoder::StartEncoding(const RTP_DataFrame &)
 {
 }
 
-PBoolean OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & _outputFrames)
+PBoolean OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & outputFrames)
 {
-  _outputFrames.RemoveAll();
+  outputFrames.RemoveAll();
 
   PAssert(sizeof(ScanLineHeader) == 6, "ScanLineHeader is not packed");
 
@@ -185,12 +185,12 @@ PBoolean OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_Data
     return PFalse;
   }
 
-  srcTimestamp = input.GetTimestamp();
+  m_srcTimestamp = input.GetTimestamp();
 
   StartEncoding(input);
 
   // save pointer to output data
-  m_dstFrames = &_outputFrames;
+  m_dstFrames = &outputFrames;
   m_dstScanlineCounts.resize(0);
 
   // encode the full frame
@@ -239,9 +239,9 @@ void OpalRFC4175Encoder::EncodeScanLineSegment(PINDEX y, PINDEX offs, PINDEX wid
     }
 
     // populate the scan line table
-    m_dstScanLineTable->length = (WORD)octetsToAdd;
-    m_dstScanLineTable->y      = (WORD)y;
-    m_dstScanLineTable->offset = (WORD)x | 0x8000;
+    m_dstScanLineTable->m_length = (WORD)octetsToAdd;
+    m_dstScanLineTable->m_y      = (WORD)y;
+    m_dstScanLineTable->m_offset = (WORD)x | 0x8000;
 
     // adjust pointer to scan line table and number of scan lines
     ++m_dstScanLineTable;
@@ -281,10 +281,10 @@ void OpalRFC4175Encoder::FinishOutputFrame()
 
     // set the end of scan line table bit
     --m_dstScanLineTable;
-    m_dstScanLineTable->offset = ((WORD)m_dstScanLineTable->offset) & 0x7FFF;
+    m_dstScanLineTable->m_offset = ((WORD)m_dstScanLineTable->m_offset) & 0x7FFF;
 
     // set the timestamp and payload type
-    dst.SetTimestamp(srcTimestamp);
+    dst.SetTimestamp(m_srcTimestamp);
     dst.SetPayloadType(outputMediaFormat.GetPayloadType());
 
     // set and increment the sequence number
@@ -308,7 +308,11 @@ OpalRFC4175Decoder::OpalRFC4175Decoder(
 ) : OpalRFC4175Transcoder(inputMediaFormat, outputMediaFormat)
 {
   m_inputFrames.AllowDeleteObjects();
-  m_first = true;
+  m_first            = true;
+  m_missingPackets   = false;
+  m_maxWidth         = 0;
+  m_maxHeight        = 0;
+
   Initialise();
 }
 
@@ -352,14 +356,15 @@ PBoolean OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_Data
     m_lastSequenceNumber = receivedSeqNo;
     m_lastTimeStamp      = input.GetTimestamp();
     m_first              = false;
-    m_missingPackets   = false;
+    m_missingPackets     = false;
   } 
   else {
     // if timestamp changed, we lost the marker bit on the previous input frame
     // so, flush the output and change to the new timestamp
     if ((input.GetTimestamp() != m_lastTimeStamp) && (m_inputFrames.GetSize() > 0)) {
       PTRACE(2, "RFC4175\tDetected change of timestamp - marker bit lost");
-      DecodeFrames(output);
+      m_missingPackets = true;
+      DecodeFramesAndSetFrameSize(output);
     }
     m_lastTimeStamp = input.GetTimestamp();
 
@@ -386,13 +391,13 @@ PBoolean OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_Data
     while (!lastLine && RFC4175HeaderSize(lineCount+1) < input.GetPayloadSize()) {
 
       // scan line length (in pgroups units)
-      PINDEX lineLength = scanLinePtr->length / GetPgroupSize();
+      PINDEX lineLength = scanLinePtr->m_length / GetPgroupSize();
 
       // line number 
-      WORD lineNumber = scanLinePtr->y & 0x7fff; 
+      WORD lineNumber = scanLinePtr->m_y & 0x7fff; 
 
       // pixel offset of scanline start
-      WORD offset = scanLinePtr->offset;
+      WORD offset = scanLinePtr->m_offset;
 
       // detect if last scanline in table
       if (offset & 0x8000)
@@ -400,15 +405,13 @@ PBoolean OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_Data
       else
         lastLine = true;
 
-      // update frame width and height if the frame was complete or if it is the first frame we have seen
-      if (!m_missingPackets || (m_frameWidth == 0 && m_frameHeight == 0)) {
-        PINDEX right = offset + lineLength * GetColsPerPgroup();
-        PINDEX bottom = lineNumber + GetRowsPerPgroup();
-        if (right > m_frameWidth)
-          m_frameWidth = right;
-        if (bottom > m_frameHeight)
-          m_frameHeight = bottom;
-      }
+      // update frame width and height seen so far
+      PINDEX right = offset + lineLength * GetColsPerPgroup();
+      if (right > m_maxWidth)
+        m_maxWidth = right;
+      PINDEX bottom = lineNumber + GetRowsPerPgroup();
+      if (bottom > m_maxHeight)
+        m_maxHeight = bottom;
 
       // count lines
       ++lineCount;
@@ -426,9 +429,25 @@ PBoolean OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_Data
 
   // if marker set, decode the frames
   if (input.GetMarker()) 
-    DecodeFrames(output);
+    DecodeFramesAndSetFrameSize(output);
 
   return PTrue;
+}
+
+
+void OpalRFC4175Decoder::DecodeFramesAndSetFrameSize(RTP_DataFrameList & output)
+{
+  // update frame width and height if the frame was complete or if it is the first frame we have seen
+  if (!m_missingPackets || ((m_frameWidth == 0) && (m_frameHeight == 0))) {
+    m_frameWidth  = m_maxWidth;
+    m_frameHeight = m_maxHeight;
+  }
+
+  DecodeFrames(output);
+
+  m_missingPackets   = false;
+  m_maxWidth         = 0;
+  m_maxHeight        = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -454,9 +473,9 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
     for (PINDEX i = 0; i < m_dstScanlineCounts[f]; ++i) {
       ScanLineHeader & hdr = hdrs[i];
 
-      PINDEX x     = hdr.offset & 0x7fff;
-      PINDEX y     = hdr.y & 0x7fff;
-      unsigned len = (hdr.length / GetPgroupSize()) * GetColsPerPgroup();
+      PINDEX x     = hdr.m_offset & 0x7fff;
+      PINDEX y     = hdr.m_y & 0x7fff;
+      unsigned len = (hdr.m_length / GetPgroupSize()) * GetColsPerPgroup();
 
       register BYTE * yPlane0  = m_srcYPlane  + (m_frameWidth * y + x);
       register BYTE * yPlane1  = yPlane0    + m_frameWidth;
@@ -491,7 +510,7 @@ PBoolean Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & outpu
     return PFalse;
   }
 
-  //if (m_frameHeight != 144 || m_frameWidth != 176) {
+  //if (frameHeight != 144 || m_frameWidth != 176) {
   //  int s = m_inputFrames.GetSize();
   //  PTRACE(4, "not right frame " << s);
   //}
@@ -528,13 +547,13 @@ PBoolean Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & outpu
     for (l = 0; l < m_scanlineCounts[f]; ++l) {
 
       // scan line length (in pixels units)
-      PINDEX width = (tablePtr->length / GetPgroupSize()) * GetColsPerPgroup();
+      PINDEX width = (tablePtr->m_length / GetPgroupSize()) * GetColsPerPgroup();
 
       // line number 
-      WORD y = tablePtr->y & 0x7fff; 
+      WORD y = tablePtr->m_y & 0x7fff; 
 
       // pixel offset of scanline start
-      WORD x = tablePtr->offset & 0x7fff;
+      WORD x = tablePtr->m_offset & 0x7fff;
 
       ++tablePtr;
 
@@ -591,11 +610,10 @@ void Opal_RGB24_to_RFC4175RGB::EndEncoding()
     for (PINDEX i = 0; i < m_dstScanlineCounts[f]; ++i) {
       ScanLineHeader & hdr = hdrs[i];
 
-      memcpy(scanLineDataPtr, inPtr, (int)hdr.length); 
-	  scanLineDataPtr+= hdr.length;
-      inPtr	+= hdr.length; 
-
-	}
+      memcpy(scanLineDataPtr, inPtr, (int)hdr.m_length); 
+      scanLineDataPtr+= hdr.m_length;
+      inPtr += hdr.m_length; 
+    }
   } 
 
   // set marker bit on last frame
@@ -642,13 +660,13 @@ PBoolean Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
     for (l = 0; l < m_scanlineCounts[f]; ++l) {
 
       // scan line length
-      PINDEX width = (tablePtr->length / GetPgroupSize()) * GetColsPerPgroup();
+      PINDEX width = (tablePtr->m_length / GetPgroupSize()) * GetColsPerPgroup();
 
       // line number 
-      WORD y = tablePtr->y & 0x7fff; 
+      WORD y = tablePtr->m_y & 0x7fff; 
 
       // pixel offset of scanline start
-      WORD x = tablePtr->offset & 0x7fff;
+      WORD x = tablePtr->m_offset & 0x7fff;
 
       ++tablePtr;
 
