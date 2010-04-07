@@ -423,8 +423,8 @@ bool SDPMediaFormat::PreEncode()
 
 bool SDPMediaFormat::PostDecode(unsigned bandwidth)
 {
-  // Use GetMediaFormat() to force creation of member
-  OpalMediaFormat mediaFormat = GetMediaFormat();
+  // Use GetWritableMediaFormat() to force creation of member
+  OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
   if (mediaFormat.IsEmpty())
     return false;
 
