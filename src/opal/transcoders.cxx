@@ -243,7 +243,8 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   }
   else {
     srcFormat = *masterFormat;
-    PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat);
+    PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat
+                        << "Merging with capability\n" << setw(-1) << srcCapability);
     if (!srcFormat.Merge(srcCapability))
       return false;
   }
@@ -255,7 +256,8 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   }
   else {
     dstFormat = *masterFormat;
-    PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat);
+    PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat
+                             << "Merging with capability\n" << setw(-1) << dstCapability);
     if (!dstFormat.Update(dstCapability))
       return false;
   }
