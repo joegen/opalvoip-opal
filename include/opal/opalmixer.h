@@ -1107,7 +1107,7 @@ class OpalMixerNode : public PSafeObject
 
       virtual bool OnMixed(RTP_DataFrame * & output);
 
-      PDictionary<OpalMediaFormat, OpalTranscoder> m_transcoders;
+      PDictionary<PString, OpalTranscoder> m_transcoders;
     };
     VideoMixer m_videoMixer;
 #endif // OPAL_VIDEO
