@@ -365,7 +365,7 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // get extended sequence number
   DWORD receivedSeqNo = input.GetSequenceNumber() | ((*(PUInt16b *)input.GetPayloadPtr()) << 16);
-  WORD  timestamp     = input.GetTimestamp();
+  DWORD  timestamp    = input.GetTimestamp();
 
   // special handling for first packet ever received
   if (m_first) {
