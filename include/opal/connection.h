@@ -71,6 +71,7 @@ class PURL;
 #define OPAL_OPT_CALLING_PARTY_NAME   "Calling-Party-Name"    ///< String option to set outgoing local name
 #define OPAL_OPT_CALLING_PARTY_DOMAIN "Calling-Party-Domain"  ///< String option to set outgoing local host/address/domain
 #define OPAL_OPT_CALLING_DISPLAY_NAME "Calling-Display-Name"  ///< String option to set outgoing display name
+#define OPAL_OPT_REDIRECTING_PARTY    "Redirecting-Party"     ///< String option to set redirecting/refferred-by party
 #define OPAL_OPT_PRESENTATION_BLOCK   "Presentation-Block"    ///< String option to block outgoing calling number presentation
 #define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
 #define OPAL_OPT_INTERFACE            "Interface"             ///< String option to set the interface used for outgoing call
@@ -1440,6 +1441,16 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetRemotePartyURL() const;
 
+    /**Get the redirecting party.
+       This is the party that caused an incoming call to arrive at this endpoint.
+      */
+    const PString & GetRedirectingParty() const { return m_redirectingParty; }
+
+    /**Set the redirecting party.
+       This is the party that caused an incoming call to arrive at this endpoint.
+      */
+    void SetRedirectingParty(const PString & party) { m_redirectingParty = party; }
+
     // Deprecated - backward compatibility only
     const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
 
@@ -1672,6 +1683,7 @@ class OpalConnection : public PSafeObject
     OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
     PString              remotePartyAddress;
+    PString              m_redirectingParty;
     CallEndReason        callEndReason;
     bool                 synchronousOnRelease;
     PString              m_calledPartyNumber;

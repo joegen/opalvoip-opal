@@ -1016,6 +1016,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     }
   }
 
+  setupPDU->GetQ931().GetRedirectingNumber(m_redirectingParty);
+
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
   if (setup.m_sourceAddress.GetSize() > 0)

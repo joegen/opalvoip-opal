@@ -1286,6 +1286,10 @@ bool SIPConnection::WriteINVITE()
     contact.SetHostName(domain);
   invite->GetMIME().SetContact(contact);
 
+  SIPURL redir(m_connStringOptions(OPAL_OPT_REDIRECTING_PARTY));
+  if (!redir.IsEmpty())
+    invite->GetMIME().SetReferredBy(redir.AsQuotedString());
+
   invite->GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
   // It may happen that constructing the INVITE causes the connection
@@ -1868,6 +1872,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     m_calledPartyNumber = m_calledPartyName;
     m_calledPartyName = request.GetURI().GetDisplayName(false);
   }
+
+  m_redirectingParty = mime.GetReferredBy();
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;

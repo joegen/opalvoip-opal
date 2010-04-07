@@ -785,6 +785,10 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
       q931pdu.SetCalledPartyNumber(destAlias);
   }
 
+  PString redir(connection.GetStringOptions()(OPAL_OPT_REDIRECTING_PARTY));
+  if (!redir.IsEmpty())
+    q931pdu.SetRedirectingNumber(redir);
+
   endpoint.SetEndpointTypeInfo(setup.m_sourceInfo);
   
 #if OPAL_H460
