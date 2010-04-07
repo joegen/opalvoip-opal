@@ -1447,8 +1447,11 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
             stream->Close();
             continue;
           }
+          PTRACE(3, "MixerNode\tCreated transcoder to "
+                 << mediaFormat << " for stream id " << stream->GetID());
           m_transcoders.SetAt(mediaFormat, transcoder);
         }
+
         if (!transcoder->ConvertFrames(*output, cachedVideo[mediaFormat])) {
           PTRACE(2, "MixerNode\tCould not convert video to "
                  << mediaFormat << " for stream id " << stream->GetID());
