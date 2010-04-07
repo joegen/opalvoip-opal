@@ -400,7 +400,7 @@ void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const OpalPr
 
 void TestPresEnt::PresenceChange(OpalPresentity & presentity, const OpalPresenceInfo & info)
 {
-  cout << "Presentity " << info.m_target;
+  cout << "Presentity " << presentity.GetAOR();
   if (info.m_entity != info.m_target)
     cout << " received presence change from " << info.m_entity;
   else
