@@ -61,6 +61,12 @@ class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
       unsigned int bandwidth
     );
 
+    virtual PObject * Clone() const
+    {
+      PWaitAndSignal m(media_format_mutex);
+      return new RFC4175VideoFormatInternal(*this);
+    }
+
     virtual bool ToNormalisedOptions()
     { 
       int v;
