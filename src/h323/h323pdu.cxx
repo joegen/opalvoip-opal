@@ -785,7 +785,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
       q931pdu.SetCalledPartyNumber(destAlias);
   }
 
-  PString redir(connection.GetStringOptions()(OPAL_OPT_REDIRECTING_PARTY));
+  PString redir(connection.GetStringOptions()(OPAL_OPT_REDIRECTING_PARTY, connection.GetRedirectingParty()));
   if (!redir.IsEmpty())
     q931pdu.SetRedirectingNumber(redir);
 
