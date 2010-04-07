@@ -199,10 +199,12 @@ PString SDPMediaFormat::GetFMTP() const
     return fmtp;
 
   PStringStream strm;
+  PStringSet used;
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
     const PString & name = option.GetFMTPName();
-    if (!name.IsEmpty()) {
+    if (!name.IsEmpty() && !used.Contains(name)) {
+      used.Include(name);
       PString value = option.AsString();
       if (value.IsEmpty() && value != option.GetFMTPDefault())
         strm << name;

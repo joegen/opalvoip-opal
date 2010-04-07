@@ -50,78 +50,93 @@
 
 #define   REASONABLE_UDP_PACKET_SIZE  800
 
-class RFC4175VideoFormat : public OpalVideoFormat
+class RFC4175VideoFormatInternal : public OpalVideoFormatInternal
 {
-  PCLASSINFO(RFC4175VideoFormat, OpalVideoFormat);
+  PCLASSINFO(RFC4175VideoFormatInternal, OpalVideoFormatInternal);
   public:
-    RFC4175VideoFormat(
+    RFC4175VideoFormatInternal(
       const char * fullName,    ///<  Full name of media format
       const char * samplingName,
       unsigned int bandwidth
     );
+
+    virtual bool ToNormalisedOptions()
+    { 
+      int v;
+      if ((v = GetOptionInteger(OpalVideoFormat::FrameWidthOption(), -1)) > 0) {
+        SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), v);
+        SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), v);
+      }
+      if ((v = GetOptionInteger(OpalVideoFormat::FrameHeightOption(), -1)) > 0) {
+        SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), v);
+        SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), v);
+      }
+      return true;
+    }
 };
 
 const OpalVideoFormat & GetOpalRFC4175_YCbCr420()
 {
-  static const RFC4175VideoFormat RFC4175_YCbCr420(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE);
+  static OpalVideoFormat RFC4175_YCbCr420(new RFC4175VideoFormatInternal(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC4175_YCbCr420;
 }
 
 
 const OpalVideoFormat & GetOpalRFC4175_RGB()
 {
-  static const RFC4175VideoFormat RFC4175_RGB(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE);
+  static OpalVideoFormat RFC4175_RGB(new RFC4175VideoFormatInternal(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE));
   return RFC4175_RGB;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-RFC4175VideoFormat::RFC4175VideoFormat(
+RFC4175VideoFormatInternal::RFC4175VideoFormatInternal(
       const char * fullName,    ///<  Full name of media format
       const char * samplingName,
       unsigned int bandwidth)
- : OpalVideoFormat(fullName, 
-                   RTP_DataFrame::DynamicBase,
-                   "raw",
-                   FRAME_WIDTH, FRAME_HEIGHT,
-                   FRAME_RATE,
-                   bandwidth)
+ : OpalVideoFormatInternal(fullName, 
+                           RTP_DataFrame::DynamicBase,
+                           "raw",
+                           FRAME_WIDTH, FRAME_HEIGHT,
+                           FRAME_RATE,
+                           bandwidth,
+                           0)
 {
   OpalMediaOption * option;
 
 #if OPAL_SIP
   // add mandatory fields
-  option = FindOption(ClockRateOption());
+  option = FindOption(OpalVideoFormat::ClockRateOption());
   if (option != NULL)
     option->SetFMTPName("rate");
 
-  option = FindOption(FrameWidthOption());
+  option = FindOption(OpalVideoFormat::FrameWidthOption());
   if (option != NULL)
     option->SetFMTPName("width");
 
-  option = FindOption(FrameHeightOption());
+  option = FindOption(OpalVideoFormat::FrameHeightOption());
   if (option != NULL)
     option->SetFMTPName("height");
 #endif // OPAL_SIP
 
-  option = new OpalMediaOptionString("rfc4175_sampling", true, samplingName);
+  option = new OpalMediaOptionString("rfc4175_sampling", PTrue, samplingName);
 #if OPAL_SIP
   option->SetFMTPName("sampling");
 #endif // OPAL_SIP
-  AddOption(option, true);
+  AddOption(option, PTrue);
 
-  option = new OpalMediaOptionInteger("rfc4175_depth", true, OpalMediaOption::NoMerge, 8);
+  option = new OpalMediaOptionInteger("rfc4175_depth", PTrue, OpalMediaOption::NoMerge, 8);
 #if OPAL_SIP
   option->SetFMTPName("depth");
 #endif // OPAL_SIP
-  AddOption(option, true);
+  AddOption(option, PTrue);
 
-  option = new OpalMediaOptionString("rfc4175_colorimetry", true, "BT601-5");
+  option = new OpalMediaOptionString("rfc4175_colorimetry", PTrue, "BT601-5");
 #if OPAL_SIP
   option->SetFMTPName("colorimetry");
 #endif // OPAL_SIP
-  AddOption(option, true);
+  AddOption(option, PTrue);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -157,7 +172,7 @@ void OpalRFC4175Encoder::StartEncoding(const RTP_DataFrame &)
 {
 }
 
-bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & outputFrames)
+PBoolean OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & outputFrames)
 {
   outputFrames.RemoveAll();
 
@@ -166,13 +181,13 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // make sure the incoming frame is big enough for a frame header
   if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader))) {
     PTRACE(1,"RFC4175\tPayload of grabbed frame too small for frame header");
-    return false;
+    return PFalse;
   }
 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)input.GetPayloadPtr();
   if (header->x != 0 && header->y != 0) {
     PTRACE(1,"RFC4175\tVideo grab of partial frame unsupported");
-    return false;
+    return PFalse;
   }
 
   // get information from frame header
@@ -182,7 +197,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // make sure the incoming frame is big enough for the specified frame size
   if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight))) {
     PTRACE(1,"RFC4175\tPayload of grabbed frame too small for full frame");
-    return false;
+    return PFalse;
   }
 
   m_srcTimestamp = input.GetTimestamp();
@@ -199,9 +214,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // grab the actual data
   EndEncoding();
 
-  PTRACE(1,"RFC4175\tFrame encoded to " << outputFrames.GetSize() << " packets from seq = " << outputFrames[0].GetSequenceNumber());
-
-  return true;
+  return PTrue;
 }
 
 void OpalRFC4175Encoder::EncodeFullFrame()
@@ -324,7 +337,7 @@ OpalRFC4175Decoder::~OpalRFC4175Decoder()
 }
 
 
-bool OpalRFC4175Decoder::Initialise()
+PBoolean OpalRFC4175Decoder::Initialise()
 {
   m_frameWidth  = 0;
   m_frameHeight = 0;
@@ -332,11 +345,11 @@ bool OpalRFC4175Decoder::Initialise()
   m_inputFrames.RemoveAll();
   m_scanlineCounts.resize(0);
 
-  return true;
+  return PTrue;
 }
 
 
-bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
+PBoolean OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
   output.RemoveAll();
 
@@ -345,94 +358,95 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // do quick sanity check on packet
   if (input.GetPayloadSize() < 2) {
     PTRACE(1,"RFC4175\tinput frame too small for header");
-    return false;
+    return PFalse;
   }
 
   // get extended sequence number
   DWORD receivedSeqNo = input.GetSequenceNumber() | ((*(PUInt16b *)input.GetPayloadPtr()) << 16);
-  WORD  timestamp     = input.GetTimestamp();
 
-  // special handling for first packet ever received
+  PBoolean ok = PTrue;
+
+  // special handling for first packet
   if (m_first) {
-    m_lastSequenceNumber   = receivedSeqNo;
-    m_firstSequenceOfFrame = receivedSeqNo;
-    m_timeStampOfFrame     = timestamp;
-    m_first                = false;
-    m_missingPackets       = false;
+    m_lastSequenceNumber = receivedSeqNo;
+    m_lastTimeStamp      = input.GetTimestamp();
+    m_first              = false;
+    m_missingPackets     = false;
   } 
   else {
-    // if timestamp changed, then we missed the marker bit
-    // don't allow timestamp to go backwards
-    // flush output and change to the new timestamp
-    // and reset the sequence number to ignore packets for previous frames
-    if (timestamp != m_timeStampOfFrame) {
-      if (m_inputFrames.GetSize() > 0) {
-        if ((m_timeStampOfFrame > timestamp) && ((m_timeStampOfFrame - timestamp) < 1024)) {
-          PTRACE(2, "RFC4175\tIgnoring packet with earlier timestamp");
-          return true;
-        }
-        PTRACE(2, "RFC4175\tDetected lost marker bit");
-        m_missingPackets = true;
-        DecodeFramesAndSetFrameSize(output);
-      }
-      m_firstSequenceOfFrame = receivedSeqNo;
-      m_timeStampOfFrame     = timestamp;
-    }
-
-    // flag for missing packets
-    if (receivedSeqNo != ++m_lastSequenceNumber) {
+    // if timestamp changed, we lost the marker bit on the previous input frame
+    // so, flush the output and change to the new timestamp
+    if ((input.GetTimestamp() != m_lastTimeStamp) && (m_inputFrames.GetSize() > 0)) {
+      PTRACE(2, "RFC4175\tDetected change of timestamp - marker bit lost");
       m_missingPackets = true;
-      PTRACE(2, "RFC4175\t" << "Out of order packet (" << receivedSeqNo << " instead of " << m_lastSequenceNumber << ")");
-      m_lastSequenceNumber = receivedSeqNo;
+      DecodeFramesAndSetFrameSize(output);
+    }
+    m_lastTimeStamp = input.GetTimestamp();
+
+    // if packet is out of sequence, determine if to ignore packet or accept it and update sequence number
+    ++m_lastSequenceNumber;
+    if (m_lastSequenceNumber != receivedSeqNo) {
+      m_missingPackets = true;
+      ok = receivedSeqNo > m_lastSequenceNumber;
+      if (!ok && ((m_lastSequenceNumber - receivedSeqNo) > 0xfffffc00)) {
+        ok = true;
+        m_lastSequenceNumber = receivedSeqNo;
+      }
+      PTRACE(2, "RFC4175\t" << (ok ? "Accepting" : "Ignoring") << " out of order packet");
     }
   }
 
   // make a pass through the scan line table and update the overall frame width and height
   PINDEX lineCount = 0;
-  ScanLineHeader * scanLinePtr = (ScanLineHeader *)(input.GetPayloadPtr() + 2);
+  if (ok) {
 
-  bool lastLine = false;
-  while (!lastLine && RFC4175HeaderSize(lineCount+1) < input.GetPayloadSize()) {
+    ScanLineHeader * scanLinePtr = (ScanLineHeader *)(input.GetPayloadPtr() + 2);
 
-    // scan line length (in pgroups units)
-    PINDEX lineLength = scanLinePtr->m_length / GetPgroupSize();
+    PBoolean lastLine = false;
+    while (!lastLine && RFC4175HeaderSize(lineCount+1) < input.GetPayloadSize()) {
 
-    // line number 
-    WORD lineNumber = scanLinePtr->m_y & 0x7fff; 
+      // scan line length (in pgroups units)
+      PINDEX lineLength = scanLinePtr->m_length / GetPgroupSize();
 
-    // pixel offset of scanline start
-    WORD offset = scanLinePtr->m_offset;
+      // line number 
+      WORD lineNumber = scanLinePtr->m_y & 0x7fff; 
 
-    // detect if last scanline in table
-    if (offset & 0x8000)
-      offset &= 0x7fff;
-    else
-      lastLine = true;
+      // pixel offset of scanline start
+      WORD offset = scanLinePtr->m_offset;
 
-    // update frame width and height seen so far
-    PINDEX right = offset + lineLength * GetColsPerPgroup();
-    if (right > m_maxWidth)
-      m_maxWidth = right;
-    PINDEX bottom = lineNumber + GetRowsPerPgroup();
-    if (bottom > m_maxHeight)
-      m_maxHeight = bottom;
+      // detect if last scanline in table
+      if (offset & 0x8000)
+        offset &= 0x7fff;
+      else
+        lastLine = true;
 
-    // count lines
-    ++lineCount;
+      // update frame width and height seen so far
+      PINDEX right = offset + lineLength * GetColsPerPgroup();
+      if (right > m_maxWidth)
+        m_maxWidth = right;
+      PINDEX bottom = lineNumber + GetRowsPerPgroup();
+      if (bottom > m_maxHeight)
+        m_maxHeight = bottom;
 
-    // update scan line pointer
-    ++scanLinePtr;
+      // count lines
+      ++lineCount;
+
+      // update scan line pointer
+      ++scanLinePtr;
+    }
   }
 
   // add the frame to the input frame list, if OK
-  m_inputFrames.Append(input.Clone());
-  m_scanlineCounts.push_back(lineCount);
+  if (ok) {
+    m_inputFrames.Append(input.Clone());
+    m_scanlineCounts.push_back(lineCount);
+  }
 
   // if marker set, decode the frames
   if (input.GetMarker()) 
     DecodeFramesAndSetFrameSize(output);
 
-  return true;
+  return PTrue;
 }
 
 
@@ -498,17 +512,17 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
   // set marker bit on last frame
   if (m_dstFrames->GetSize() != 0) {
     RTP_DataFrame & dst = m_dstFrames->back();
-    dst.SetMarker(true);
+    dst.SetMarker(PTrue);
   }
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
+PBoolean Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
 {
   if (m_inputFrames.GetSize() == 0) {
     PTRACE(4, "RFC4175\tNo input frames to decode");
-    return false;
+    return PFalse;
   }
 
   //if (frameHeight != 144 || m_frameWidth != 176) {
@@ -521,7 +535,7 @@ bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
   // allocate destination frame
   output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight)));
   RTP_DataFrame & outputFrame = output.back();
-  outputFrame.SetMarker(true);
+  outputFrame.SetMarker(PTrue);
   outputFrame.SetPayloadType(outputMediaFormat.GetPayloadType());
 
   // get pointer to header and payload
@@ -584,7 +598,7 @@ bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
   // reinitialise the buffers
   Initialise();
 
-  return true;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -626,11 +640,11 @@ void Opal_RGB24_to_RFC4175RGB::EndEncoding()
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
+PBoolean Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
 {
   if (m_inputFrames.GetSize() == 0) {
     PTRACE(4, "RFC4175\tNo input frames to decode");
-    return false;
+    return PFalse;
   }
 
   PTRACE(4, "RFC4175\tDecoding output from " << m_inputFrames.GetSize() << " input frames");
@@ -638,7 +652,7 @@ bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
   // allocate destination frame
   output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight)));
   RTP_DataFrame & outputFrame = output.back();
-  outputFrame.SetMarker(true);
+  outputFrame.SetMarker(PTrue);
 
   // get pointer to header and payload
   PluginCodec_Video_FrameHeader * hdr = (PluginCodec_Video_FrameHeader *)outputFrame.GetPayloadPtr();
@@ -680,7 +694,7 @@ bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
   // reinitialise the buffers
   Initialise();
 
-  return true;
+  return PTrue;
 }
 
 #endif // OPAL_RFC4175
