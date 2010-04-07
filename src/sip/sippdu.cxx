@@ -493,11 +493,11 @@ void SIPURL::Sanitise(UsageContext context)
     const char * name;
     unsigned     contexts;
   } const SanitaryFields[] = {
-    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI) },
-    { "maddr",                     (1<<ToURI)|(1<<FromURI) },
-    { "ttl",                       (1<<ToURI)|(1<<FromURI)|(1<<RouteURI)|                (1<<RegisterURI) },
-    { "transport",                 (1<<ToURI)|(1<<FromURI) },
-    { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|              (1<<RegisterURI) },
+    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)                  },
+    { "maddr",                     (1<<ToURI)|(1<<FromURI)                                                                 },
+    { "ttl",                       (1<<ToURI)|(1<<FromURI)                |(1<<RouteURI)|(1<<RegisterURI)                  },
+    { "transport",                 (1<<ToURI)|(1<<FromURI)                                                                 },
+    { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|              (1<<RegisterURI)                  },
     { "tag",       (1<<RequestURI)|                        (1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
   };
 
@@ -529,8 +529,32 @@ void SIPURL::Sanitise(UsageContext context)
 
     case ToURI :
     case FromURI :
+      if (GetPortSupplied()) {
+        // Port not allowed for To or From, RFC3261, 19.1.1
+        portSupplied = false;
+        port = scheme == "sips" ? 5061 : 5060;
+      }
+      break;
+
+    case ContactURI :
+      /* Strict application of RFC3261, 19.1.1 does not require this, but
+         there are some interop problems with registrars where the ports
+         presence/absence is not handled correctly. There is a distinction
+         between absence and presence with the default value, that is
+         "sip:fred" is not the same as "sip:fred:5060". Some registrars
+         remove the default port if present, others insert it. Sheesh!
+
+         Safest thing to do is always assume an explicit port number for
+         REGISTER contact field and never send an empty port. This should be
+         generally OK, though not perfect. It prevents using an SRV record
+         as the contact, but as the thing doing the registering is nearly
+         always the thing listening on a port, it is the 99.9% solution.
+
+         Note INVITE contact field is the RouteURI enum, not ContactURI so
+         the port may be defaulted there.
+       */
       if (!GetPortSupplied())
-        port = (scheme *= "sips") ? 5061 : 5060;
+        SetPort(scheme == "sips" ? 5061 : 5060);
       break;
 
     case RegisterURI :
@@ -782,14 +806,6 @@ bool SIPMIMEInfo::GetContacts(std::set<SIPURL> & contacts) const
 void SIPMIMEInfo::SetContact(const PString & v)
 {
   SetAt("Contact",  v);
-}
-
-
-void SIPMIMEInfo::SetContact(const SIPURL & url)
-{
-  SIPURL cleaned = url;
-  cleaned.Sanitise(SIPURL::ContactURI);
-  SetContact(cleaned.AsQuotedString());
 }
 
 
