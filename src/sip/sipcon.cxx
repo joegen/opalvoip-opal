@@ -1286,7 +1286,7 @@ bool SIPConnection::WriteINVITE()
     contact.SetHostName(domain);
   invite->GetMIME().SetContact(contact);
 
-  SIPURL redir(m_connStringOptions(OPAL_OPT_REDIRECTING_PARTY));
+  SIPURL redir(m_connStringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
   if (!redir.IsEmpty())
     invite->GetMIME().SetReferredBy(redir.AsQuotedString());
 
