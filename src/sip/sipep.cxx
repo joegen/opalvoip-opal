@@ -1015,9 +1015,6 @@ PBoolean SIPEndPoint::Unregister(const PString & token)
     return handler->ActivateState(SIPHandler::Unsubscribing);
 
   PTRACE(1, "SIP\tCould not find active REGISTER for " << token);
-
-  PTRACE(1, "SIP\tactiveSIPHandlers.size() = " activeSIPHandlers.
-
   return false;
 }
 
