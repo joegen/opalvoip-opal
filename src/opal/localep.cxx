@@ -231,8 +231,8 @@ PBoolean OpalLocalConnection::SetUpConnection()
   else if (ownerCall.IsEstablished()) {
     PTRACE(3, "LocalCon\tTransfer of connection in call " << ownerCall);
     OnApplyStringOptions();
-    OnConnectedInternal();
     AutoStartMediaStreams();
+    OnConnectedInternal();
   }
   else {
     PTRACE(3, "LocalCon\tIncoming call from " << remotePartyName);
@@ -263,11 +263,9 @@ PBoolean OpalLocalConnection::SetConnected()
 {
   PTRACE(3, "LocalCon\tSetConnected()");
 
-  if (!OpalConnection::SetConnected())
-    return false;
-
   AutoStartMediaStreams(); // if no media streams, try and start them
-  return true;
+
+  return OpalConnection::SetConnected();
 }
 
 OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
@@ -317,8 +315,8 @@ void OpalLocalConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
     AlertingIncoming();
-    OnConnectedInternal();
     AutoStartMediaStreams();
+    OnConnectedInternal();
     UnlockReadWrite();
   }
 }
