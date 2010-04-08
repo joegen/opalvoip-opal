@@ -93,6 +93,9 @@ SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   transactions.DisallowDeleteObjects();
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
+  if (m_proxy.IsEmpty())
+    m_proxy = ep.GetProxy();
+
   PTRACE(4, "SIP\tConstructed handler for " << params.m_addressOfRecord);
 }
 
@@ -288,9 +291,6 @@ OpalTransport * SIPHandler::GetTransport()
     }
   }
 
-  if (m_proxy.IsEmpty())
-    m_proxy = endpoint.GetProxy();
-
   SIPURL url;
   if (!m_proxy.IsEmpty())
     url = m_proxy;
@@ -468,8 +468,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
       PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
     }
     else if (username.IsEmpty()) {
-      const SIPURL & proxy = endpoint.GetProxy();
-      if (proxy.IsEmpty()) {
+      if (m_proxy.IsEmpty()) {
         delete newAuth;
         PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
         OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
@@ -479,8 +478,8 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
       }
 
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
-      username = proxy.GetUserName();
-      password = proxy.GetPassword();
+      username = m_proxy.GetUserName();
+      password = m_proxy.GetPassword();
     }
   }
 
@@ -631,6 +630,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   SIPURL local = params.m_localAddress.IsEmpty() ? params.m_addressOfRecord : params.m_localAddress;
   local.SetTag();
   m_parameters.m_localAddress = local.AsQuotedString();
+  m_parameters.m_proxyAddress = m_proxy.AsString();
 }
 
 
@@ -809,6 +809,8 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
 {
   callID = m_dialog.GetCallID();
+
+  m_parameters.m_proxyAddress = m_proxy.AsString();
 
   if (m_parameters.m_contentType.IsEmpty()) {
     SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
@@ -1533,6 +1535,7 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
   : SIPHandler(endpoint, params)
   , m_parameters(params)
 {
+  m_parameters.m_proxyAddress = m_proxy.AsString();
   body = b;
 }
 
@@ -1727,6 +1730,7 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   : SIPHandler(endpoint, params)
   , m_parameters(params)
 {
+  m_parameters.m_proxyAddress = m_proxy.AsString();
   body   = b;
   SetState(Subscribed);
 }
