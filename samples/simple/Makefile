@@ -54,7 +54,7 @@ endif
 # Get required flags from library
 
 CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal) -I../../include
-LDFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal) -L ../../lib*
+LDFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
 
 
 # This part is we like to be tidy and put all the build products
