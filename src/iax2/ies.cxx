@@ -425,6 +425,7 @@ void IAX2IeSockaddrIn::PrintOn(ostream & str) const
 void IAX2IeSockaddrIn::WriteBinary(BYTE *data)
 {
   sockaddr_in a;
+  memset(&a, 0, sizeof(sockaddr_in));
   a.sin_addr = (in_addr)dataValue;
   a.sin_port = (unsigned short)portNumber;
   
