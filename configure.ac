@@ -168,7 +168,7 @@ AC_CANONICAL_TARGET()
 MACHTYPE=
 case "$target_cpu" in
    x86 | i686 | i586 | i486 | i386 )
-		   AC_PREPROC_IFELSE(
+		   AC_COMPILE_IFELSE(
 		    [[int t = __amd64__;]],
 		    [[MACHTYPE=x86_64]],
 		    [[MACHTYPE=x86]]
