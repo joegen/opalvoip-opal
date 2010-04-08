@@ -4788,7 +4788,39 @@ test -n "$target_alias" &&
 
 MACHTYPE=
 case "$target_cpu" in
-   x86 | i686 | i586 | i486 | i386 )                    MACHTYPE=x86;        ;;
+   x86 | i686 | i586 | i486 | i386 )
+		   cat >conftest.$ac_ext <<_ACEOF
+int t = __amd64__;
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  MACHTYPE=x86_64
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	MACHTYPE=x86
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext;
+		   ;;
    x86_64)	                                        MACHTYPE=x86_64;     ;;
    alpha | alphaev56 | alphaev6 | alphaev67 | alphaev7) MACHTYPE=alpha;      ;;
    hppa )                                               MACHTYPE=hppa;       ;;
