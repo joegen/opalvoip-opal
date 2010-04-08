@@ -688,8 +688,8 @@ void OpalLineConnection::Monitor()
         StartIncoming(); // We are A-party
       else {
         // If we are in alerting state then we are B-Party
-        OnConnectedInternal();
         AutoStartMediaStreams();
+        OnConnectedInternal();
       }
     }
   }
@@ -823,8 +823,8 @@ PBoolean OpalLineConnection::SetUpConnection()
     }
 
     PTRACE(3, "LID Con\tNo remote party indicated, going off hook without dialing.");
-    OnConnectedInternal();
     AutoStartMediaStreams();
+    OnConnectedInternal();
     return true;
   }
 
