@@ -61,6 +61,8 @@ class OpalMediaPatch : public PObject
 {
     PCLASSINFO(OpalMediaPatch, PObject);
   public:
+    typedef PNotifierTemplate<RTP_DataFrame *, const OpalMediaPatch> FilterNotifier;
+
   /**@name Construction */
   //@{
     /**Create a new patch.
@@ -143,14 +145,14 @@ class OpalMediaPatch : public PObject
        filter function notifier.
       */
     void AddFilter(
-      const PNotifier & filter,
+      const FilterNotifier & filter,
       const OpalMediaFormat & stage = OpalMediaFormat()
     );
 
     /**Remove a filter from the media pipeline.
       */
     PBoolean RemoveFilter(
-      const PNotifier & filter,
+      const FilterNotifier & filter,
       const OpalMediaFormat & stage = OpalMediaFormat()
     );
 
@@ -274,14 +276,14 @@ class OpalMediaPatch : public PObject
     };
     PList<Sink> sinks;
 
-    class Filter : public PObject {
-        PCLASSINFO(Filter, PObject);
+    class PatchFilter : public PObject {
+      PCLASSINFO(PatchFilter, PObject);
       public:
-        Filter(const PNotifier & n, const OpalMediaFormat & s) : notifier(n), stage(s) { }
-        PNotifier notifier;
+        PatchFilter(const FilterNotifier & n, const OpalMediaFormat & s) : notifier(n), stage(s) { }
+        FilterNotifier notifier;
         OpalMediaFormat stage;
     };
-    PList<Filter> filters;
+    PList<PatchFilter> filters;
 
 #if OPAL_VIDEO
     bool             m_videoDecoder;
