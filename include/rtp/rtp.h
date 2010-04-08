@@ -409,7 +409,6 @@ class RTP_Session : public PObject
   PCLASSINFO(RTP_Session, PObject);
 
   public:
-    typedef PNotifierTemplate<RTP_Session *, RTP_DataFrame> FilterNotifier;
   /**@name Construction */
   //@{
     struct Params {
@@ -861,7 +860,7 @@ class RTP_Session : public PObject
     bool HasFailed() const
     { return failed; }
 
-    void AddFilter(const FilterNotifier & filter);
+    void AddFilter(const PNotifier & filter);
 
   protected:
     virtual void SendBYE();
@@ -949,15 +948,15 @@ class RTP_Session : public PObject
 
     PBoolean closeOnBye;
     PBoolean byeSent;
-    bool failed;      ///<  set to true if session has received too many ICMP destination unreachable
+    bool                failed;      ///<  set to true if session has received too many ICMP destination unreachable
 
-    class RTPFilter : public PObject {
-        PCLASSINFO(RTPFilter, PObject);
+    class Filter : public PObject {
+        PCLASSINFO(Filter, PObject);
       public:
-        RTPFilter(const FilterNotifier & n) : notifier(n) { }
-        FilterNotifier notifier;
+        Filter(const PNotifier & n) : notifier(n) { }
+        PNotifier notifier;
     };
-    PList<RTPFilter> filters;
+    PList<Filter> filters;
 };
 
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
