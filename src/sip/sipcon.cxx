@@ -1146,6 +1146,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
                           otherStream->IsOpen() &&
                           otherStream->GetMediaFormat() != mediaFormat;
   if (makesymmetrical) {
+    m_symmetricOpenStream = true;
     // We must make sure reverse stream is closed before opening the
     // new forward one or can really confuse the RTP stack, especially
     // if switching to udptl in fax mode
@@ -1156,6 +1157,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
     else
       otherStream->Close();
+    m_symmetricOpenStream = false;
   }
 
   OpalMediaStreamPtr oldStream = GetMediaStream(sessionID, isSource);
@@ -1188,7 +1190,7 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 {
   bool closed = OpalConnection::CloseMediaStream(stream);
 
-  if (!m_handlingINVITE)
+  if (!m_symmetricOpenStream && !m_handlingINVITE)
     closed = SendReINVITE(PTRACE_PARAM("close channel")) && closed;
 
   return closed;
@@ -3057,6 +3059,7 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
   if (encodingStream) {
     OpalVideoUpdatePicture updatePictureCommand;
     encodingStream->ExecuteCommand(updatePictureCommand);
+    PTRACE(3, "SIP\tI-frame requestedin video stream via RTCP");
   }
 }
 
