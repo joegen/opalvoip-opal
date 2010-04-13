@@ -341,7 +341,9 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        unsigned sessionID,
                                                        PBoolean isSource)
 {
-  return new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
+  return mediaFormat.GetMediaType() != OpalMediaType::Audio()
+            ? OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
+            : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
 }
 
 
