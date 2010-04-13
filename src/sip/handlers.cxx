@@ -115,6 +115,14 @@ SIPHandler::~SIPHandler()
 }
 
 
+PObject::Comparison SIPHandler::Compare(const PObject & obj) const
+{
+  PAssert(PIsDescendant(&obj, SIPHandler), PInvalidCast);
+  const SIPHandler * other = dynamic_cast<const SIPHandler *>(&obj);
+  return other != NULL ? callID.Compare(other.callID) : PGreaterThan;
+}
+
+
 bool SIPHandler::ShutDown()
 {
   PSafeLockReadWrite mutex(*this);
