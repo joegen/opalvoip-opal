@@ -64,6 +64,8 @@ protected:
 public:
   ~SIPHandler();
 
+  virtual Comparison Compare(const PObject & other) const;
+
   virtual bool ShutDown();
 
   enum State {
