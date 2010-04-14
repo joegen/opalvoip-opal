@@ -319,14 +319,20 @@ class OpalCall : public PSafeObject
     }
 
     /**Put call on hold.
+       This function places the remote user of the network connection in the
+       call on hold.
       */
     bool Hold();
 
     /**Retrieve call from hold.
+       This function retrieves the remote user of the network connection in
+       the call from hold.
       */
     bool Retrieve();
 
     /**Indicate if call is in hold.
+       This function determines if the remote user of the network connection
+       in the call is currently on hold.
       */
     bool IsOnHold() const;
 

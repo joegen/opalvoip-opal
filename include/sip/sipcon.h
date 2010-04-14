@@ -187,20 +187,23 @@ class SIPConnection : public OpalRTPConnection
     );
 
     /**Put the current connection on hold, suspending all media streams.
-     */
-    virtual bool HoldConnection();
+       The \p fromRemote parameter indicates if we a putting the remote on
+       hold (false) or it is a request for the remote to put us on hold (true).
 
-    /**Retrieve the current connection from hold, activating all media 
-     * streams.
+       The /p placeOnHold parameter indicates of teh command/request is for
+       going on hold or retrieving from hold.
      */
-    virtual bool RetrieveConnection();
+    virtual bool Hold(
+      bool fromRemote,  ///< Flag for if remote has us on hold, or we have them
+      bool placeOnHold  ///< Flag for setting on or off hold
+    );
 
     /**Return true if the current connection is on hold.
-       The bool parameter indicates if we are testing if the remote system
-       has us on hold, or we have them on hold.
+       The \p fromRemote parameter indicates if we are testing if the remote
+       system has us on hold, or we have them on hold.
      */
-    virtual bool IsConnectionOnHold(
-      bool fromRemote  ///< Test if remote has us on hold, or we have them
+    virtual bool IsOnHold(
+      bool fromRemote  ///< Flag for if remote has us on hold, or we have them
     );
 
     /**Indicate to remote endpoint an alert is in progress.
@@ -242,6 +245,13 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual bool CloseMediaStream(
       OpalMediaStream & stream  ///< Stream to close
+    );
+
+    /**Pause media streams for connection.
+      */
+    virtual void OnPauseMediaStream(
+      OpalMediaStream & strm,     ///< Media stream paused/un-paused
+      bool paused                 ///< Flag for pausing/un-pausing
     );
 
     /**Clean up the termination of the connection.
@@ -500,23 +510,22 @@ class SIPConnection : public OpalRTPConnection
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
-    virtual bool OfferSDPMediaDescription(
+    virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut,
-      bool isReINVITE
+      SDPSessionDescription & sdpOut
     );
-    virtual bool AnswerSDPMediaDescription(
+    virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
       unsigned sessionIndex,
       SDPSessionDescription & sdpOut
     );
 
-    virtual void OnReceivedSDP(
+    virtual void OnReceivedAnswerSDP(
       SIP_PDU & pdu
     );
-    virtual bool OnReceivedSDPMediaDescription(
+    virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
       unsigned sessionId
     );

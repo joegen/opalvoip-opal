@@ -78,10 +78,19 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
     SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & fromURL);
 
     PCaselessString GetSDPTransportType() const
-    { return "sip"; }
+    {
+      return "sip";
+    }
+
+    virtual SDPMediaDescription * CreateEmpty() const
+    {
+      return new SDPSIPIMMediaDescription(OpalTransportAddress());
+    }
 
     virtual PString GetSDPMediaType() const 
-    { return "message"; }
+    {
+      return "message";
+    }
 
     virtual PString GetSDPPortList() const;
 
@@ -148,7 +157,7 @@ PString SDPSIPIMMediaDescription::GetSDPPortList() const
   transportAddress.GetIpAndPort(addr, port);
 
   PStringStream str;
-  str << " " << fromURL << "@" << addr << ":" << port;
+  str << ' ' << fromURL << '@' << addr << ':' << port;
 
   return str;
 }

@@ -350,19 +350,13 @@ PBoolean OpalConnection::OnSetUpConnection()
 }
 
 
-bool OpalConnection::HoldConnection()
+bool OpalConnection::Hold(bool /*fromRemote*/, bool /*placeOnHold*/)
 {
   return false;
 }
 
 
-bool OpalConnection::RetrieveConnection()
-{
-  return false;
-}
-
-
-PBoolean OpalConnection::IsConnectionOnHold(bool /*fromRemote*/)
+PBoolean OpalConnection::IsOnHold(bool /*fromRemote*/)
 {
   return false;
 }
@@ -776,10 +770,15 @@ void OpalConnection::CloseMediaStreams()
 }
 
 
-void OpalConnection::PauseMediaStreams(PBoolean paused)
+void OpalConnection::PauseMediaStreams(bool paused)
 {
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->SetPaused(paused);
+}
+
+
+void OpalConnection::OnPauseMediaStream(OpalMediaStream & /*strm*/, bool /*paused*/)
+{
 }
 
 

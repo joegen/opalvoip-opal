@@ -85,6 +85,12 @@ PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
   return "udptl";
 }
 
+SDPMediaDescription * SDPFaxMediaDescription::CreateEmpty() const
+{
+  return new SDPFaxMediaDescription(OpalTransportAddress());
+}
+
+
 PString SDPFaxMediaDescription::GetSDPMediaType() const 
 { 
   return "image"; 

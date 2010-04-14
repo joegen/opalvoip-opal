@@ -412,44 +412,38 @@ unsigned int IAX2Connection::ChooseCodec()
   return 0;
 }
 
-PBoolean IAX2Connection::IsConnectionOnHold(bool fromRemote)
+PBoolean IAX2Connection::IsOnHold(bool fromRemote)
 {
   return fromRemote ? remote_hold : local_hold;
 }
 
-bool IAX2Connection::HoldConnection()
+bool IAX2Connection::Hold(bool fromRemote, bool placeOnHold)
 {
-  if (local_hold)
+  if (IsOnHold(fromRemote))
     return true;
-    
-  local_hold = PTrue;
-  PauseMediaStreams(PTrue);
-  endpoint.OnHold(*this);
-  
-  iax2Processor.SendHold();
+
+  if (fromRemote)
+    return false;
+
+  local_hold = placeOnHold;
+  PauseMediaStreams(placeOnHold);
+  OnHold(fromRemote, placeOnHold);
+
+  if (placeOnHold)
+    iax2Processor.SendHold();
+  else
+    iax2Processor.SendHoldRelease();
   return true;
 }
 
-bool IAX2Connection::RetrieveConnection()
-{
-  if (!local_hold)
-    return true;
-  
-  local_hold = PFalse;
-  PauseMediaStreams(PFalse);  
-  endpoint.OnHold(*this);
-  
-  iax2Processor.SendHoldRelease();
-  return true;
-}
 
 void IAX2Connection::RemoteHoldConnection()
 {
   if (remote_hold)
     return;
     
-  remote_hold = PTrue;
-  endpoint.OnHold(*this);
+  remote_hold = true;
+  OnHold(true, true);
 }
 
 void IAX2Connection::RemoteRetrieveConnection()
@@ -457,8 +451,8 @@ void IAX2Connection::RemoteRetrieveConnection()
   if (!remote_hold)
     return;
     
-  remote_hold = PFalse;    
-  endpoint.OnHold(*this);
+  remote_hold = false;    
+  endpoint.OnHold(*this, true, false);
 }
 
 bool IAX2Connection::TransferConnection(const PString & remoteParty)
