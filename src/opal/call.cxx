@@ -301,7 +301,7 @@ bool OpalCall::Hold()
 
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite)) {
-    if (connection->HoldConnection())
+    if (connection->IsNetworkConnection() && connection->Hold(false, true))
       ok = true;
   }
 
@@ -317,7 +317,7 @@ bool OpalCall::Retrieve()
 
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite)) {
-    if (connection->RetrieveConnection())
+    if (connection->IsNetworkConnection() && connection->Hold(false, false))
       ok = true;
   }
 
@@ -329,7 +329,7 @@ bool OpalCall::IsOnHold() const
 {
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadOnly)) {
-    if (connection->IsConnectionOnHold(false) || connection->IsConnectionOnHold(true))
+    if (connection->IsNetworkConnection() && connection->IsOnHold(false))
       return true;
   }
 
@@ -456,7 +456,13 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sinkStream = patch->GetSink();
     if (sourceStream->GetMediaFormat() == preselectedFormat ||
         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
-      PTRACE(3, "Call\tOpenSourceMediaStreams (already opened)" << traceText);
+      if (sourceStream->IsPaused()) {
+        sourceStream->SetPaused(false);
+        PTRACE(3, "Call\tOpenSourceMediaStreams (un-pausing)" << traceText);
+      }
+      else {
+        PTRACE(3, "Call\tOpenSourceMediaStreams (already opened)" << traceText);
+      }
       return true;
     }
     if (sinkStream == NULL && sourceStream->IsOpen()) {

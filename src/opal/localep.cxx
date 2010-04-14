@@ -263,7 +263,8 @@ PBoolean OpalLocalConnection::SetConnected()
 {
   PTRACE(3, "LocalCon\tSetConnected()");
 
-  AutoStartMediaStreams(); // if no media streams, try and start them
+  if (mediaStreams.IsEmpty())
+    AutoStartMediaStreams(); // if no media streams, try and start them
 
   return OpalConnection::SetConnected();
 }

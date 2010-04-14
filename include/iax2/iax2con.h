@@ -342,19 +342,25 @@ class IAX2Connection : public OpalConnection
       value defined by FullFrameVoice::AudioSc */
   unsigned int ChooseCodec();
   
-    /**Return true if the current connection is on hold.
-       The bool parameter indicates if we are testing if the remote system
-       has us on hold, or we have them on hold.
+    /**Put the current connection on hold, suspending all media streams.
+       The \p fromRemote parameter indicates if we a putting the remote on
+       hold (false) or it is a request for the remote to put us on hold (true).
+
+       The /p placeOnHold parameter indicates of teh command/request is for
+       going on hold or retrieving from hold.
      */
-    virtual bool IsConnectionOnHold(
-      bool fromRemote  ///< Test if remote has us on hold, or we have them
+    virtual bool Hold(
+      bool fromRemote,  ///< Flag for if remote has us on hold, or we have them
+      bool placeOnHold  ///< Flag for setting on or off hold
     );
-  
-  /**Take the current connection off hold*/
-  virtual bool RetrieveConnection();
-  
-  /**Put the current connection on hold, suspending all media streams.*/
-  virtual bool HoldConnection();
+
+    /**Return true if the current connection is on hold.
+       The \p fromRemote parameter indicates if we are testing if the remote
+       system has us on hold, or we have them on hold.
+     */
+    virtual bool IsOnHold(
+      bool fromRemote  ///< Flag for if remote has us on hold, or we have them
+    );
   
   /**Signal that the remote side has put the connection on hold*/
   void RemoteHoldConnection();

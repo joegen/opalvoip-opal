@@ -907,6 +907,9 @@ SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat(const PString &
 
 PString SDPRTPAVPMediaDescription::GetSDPPortList() const
 {
+  if (formats.IsEmpty())
+    return "127"; // Have to have SOMETHING
+
   PStringStream str;
 
   SDPMediaFormatList::const_iterator format;
@@ -963,6 +966,12 @@ SDPAudioMediaDescription::SDPAudioMediaDescription(const OpalTransportAddress & 
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Audio())
   , m_offerPTime(false)
 {
+}
+
+
+SDPMediaDescription * SDPAudioMediaDescription::CreateEmpty() const
+{
+  return new SDPAudioMediaDescription(OpalTransportAddress());
 }
 
 
@@ -1081,6 +1090,12 @@ SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & 
 }
 
 
+SDPMediaDescription * SDPVideoMediaDescription::CreateEmpty() const
+{
+  return new SDPVideoMediaDescription(OpalTransportAddress());
+}
+
+
 PString SDPVideoMediaDescription::GetSDPMediaType() const 
 { 
   return "video"; 
@@ -1183,6 +1198,12 @@ PCaselessString SDPApplicationMediaDescription::GetSDPTransportType() const
 }
 
 
+SDPMediaDescription * SDPApplicationMediaDescription::CreateEmpty() const
+{
+  return new SDPApplicationMediaDescription(OpalTransportAddress());
+}
+
+
 PString SDPApplicationMediaDescription::GetSDPMediaType() const 
 { 
   return "application"; 
@@ -1197,6 +1218,9 @@ SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PStr
 
 PString SDPApplicationMediaDescription::GetSDPPortList() const
 {
+  if (formats.IsEmpty())
+    return "na"; // Have to have SOMETHING
+
   PStringStream str;
 
   // output encoding names for non RTP
