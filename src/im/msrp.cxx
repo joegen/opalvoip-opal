@@ -82,13 +82,24 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & url);
 
     PCaselessString GetSDPTransportType() const
-    { return "tcp/msrp"; }
+    {
+      return "tcp/msrp";
+    }
+
+    virtual SDPMediaDescription * CreateEmpty() const
+    {
+      return new SDPMSRPMediaDescription(OpalTransportAddress());
+    }
 
     virtual PString GetSDPMediaType() const 
-    { return "message"; }
+    {
+      return "message";
+    }
 
     virtual PString GetSDPPortList() const
-    { return " *"; }
+    {
+      return " *";
+    }
 
     virtual void CreateSDPMediaFormats(const PStringArray &);
     virtual bool PrintOn(ostream & str, const PString & connectString) const;

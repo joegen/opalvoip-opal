@@ -59,10 +59,18 @@ class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
   public:
     SDPT140MediaDescription(const OpalTransportAddress & address)
       : SDPRTPAVPMediaDescription(address, T140)
-    { }
+    {
+    }
+
+    virtual SDPMediaDescription * CreateEmpty() const
+    {
+      return new SDPT140MediaDescription(OpalTransportAddress());
+    }
 
     virtual PString GetSDPMediaType() const
-    {  return "text";  }
+    {
+      return "text";
+    }
 };
 
 #endif

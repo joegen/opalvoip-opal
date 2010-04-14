@@ -3185,39 +3185,32 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 }
 
 
-bool H323Connection::HoldConnection()
+bool H323Connection::Hold(bool fromRemote, bool placeOnHold)
 {
+  if (fromRemote) {
 #if OPAL_H450
-  if (!HoldCall(true))
+    if (!HoldCall(false))
+      return false;
+#endif
+    PTRACE(2, "H323\tCannot place/retrieve call from remote hold");
+    return false;
+  }
+
+#if OPAL_H450
+  if (!(placeOnHold ? HoldCall(true) : RetrieveCall()))
     return false;
 #endif
 
-  if (!SendCapabilitySet(true))
+  if (!SendCapabilitySet(placeOnHold))
     return false;
 
   // Signal the manager that there is a hold
-  OnHold(false, true);
+  OnHold(false, placeOnHold);
   return true;
 }
 
 
-bool H323Connection::RetrieveConnection()
-{
-#if OPAL_H450
-  if (!RetrieveCall())
-    return false;
-#endif
-
-  if (!SendCapabilitySet(false))
-    return false;
-
-  // Signal the manager that there is a hold
-  OnHold(false, false);
-  return true;
-}
-
-
-PBoolean H323Connection::IsConnectionOnHold(bool fromRemote) 
+PBoolean H323Connection::IsOnHold(bool fromRemote) 
 {
 #if OPAL_H450
   // Yes this looks around the wrong way, it isn't!

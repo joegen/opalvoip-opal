@@ -68,23 +68,25 @@ class SDPH224MediaDescription : public SDPRTPAVPMediaDescription
 {
   PCLASSINFO(SDPH224MediaDescription, SDPRTPAVPMediaDescription);
   public:
-    SDPH224MediaDescription(const OpalTransportAddress & address);
-    virtual PString GetSDPMediaType() const;
+    SDPH224MediaDescription(const OpalTransportAddress & address)
+      : SDPRTPAVPMediaDescription(address, OpalH224MediaType::MediaType())
+    {
+    }
+
+    virtual SDPMediaDescription * CreateEmpty() const
+    {
+      return new SDPH224MediaDescription(OpalTransportAddress());
+    }
+
+    virtual PString GetSDPMediaType() const
+    {
+      return "application";
+    }
 };
 
 SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
 {
   return new SDPH224MediaDescription(localAddress);
-}
-
-SDPH224MediaDescription::SDPH224MediaDescription(const OpalTransportAddress & address)
-  : SDPRTPAVPMediaDescription(address, OpalH224MediaType::MediaType())
-{
-}
-
-PString SDPH224MediaDescription::GetSDPMediaType() const
-{
-  return "application";
 }
 
 #endif

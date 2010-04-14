@@ -430,10 +430,15 @@ void OpalMediaStream::EnableJitterBuffer() const
 }
 
 
-void OpalMediaStream::SetPaused(bool p)
+void OpalMediaStream::SetPaused(bool pause)
 {
-  PTRACE_IF(3, paused != p, "Media\t" << (p ? "Paused" : "Resumed") << " stream " << *this);
-  paused = p;
+  if (paused == pause)
+    return;
+
+  PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
+  paused = pause;
+
+  connection.OnPauseMediaStream(*this, pause);
 }
 
 
@@ -675,8 +680,6 @@ void OpalRTPMediaStream::SetPaused(bool pause)
   if (paused == pause)
     return;
 
-  OpalMediaStream::SetPaused(pause);
-
   // If coming out of pause, reopen the RTP session, even though it is probably
   // still open, to make sure any pending error/statistic conditions are reset.
   if (!paused)
@@ -688,6 +691,8 @@ void OpalRTPMediaStream::SetPaused(bool pause)
     else
       EnableJitterBuffer();
   }
+
+  OpalMediaStream::SetPaused(pause);
 }
 
 

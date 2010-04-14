@@ -111,7 +111,7 @@ class SDPMediaFormat : public PObject
     PString m_fmtp;
 };
 
-PLIST(SDPMediaFormatList, SDPMediaFormat);
+typedef PList<SDPMediaFormat> SDPMediaFormatList;
 
 /////////////////////////////////////////////////////////
 
@@ -141,6 +141,8 @@ class SDPMediaDescription : public PObject
     virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
     virtual bool PostDecode();
+
+    virtual SDPMediaDescription * CreateEmpty() const = 0;
 
     // return the string used within SDP to identify this media type
     virtual PString GetSDPMediaType() const = 0;
@@ -229,12 +231,13 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
   PCLASSINFO(SDPAudioMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPAudioMediaDescription(const OpalTransportAddress & address);
+    virtual SDPMediaDescription * CreateEmpty() const;
     virtual PString GetSDPMediaType() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
     void SetAttribute(const PString & attr, const PString & value);
 
-  	bool GetOfferPTime() const { return m_offerPTime; }
-	  void SetOfferPTime(bool value) { m_offerPTime = value; }
+    bool GetOfferPTime() const { return m_offerPTime; }
+    void SetOfferPTime(bool value) { m_offerPTime = value; }
 
   protected:
     bool m_offerPTime;
@@ -250,6 +253,7 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
   PCLASSINFO(SDPVideoMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
+    virtual SDPMediaDescription * CreateEmpty() const;
     virtual PString GetSDPMediaType() const;
     virtual bool PreEncode();
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
@@ -268,6 +272,7 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
     SDPApplicationMediaDescription(const OpalTransportAddress & address);
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual SDPMediaDescription * CreateEmpty() const;
     virtual PString GetSDPMediaType() const;
     virtual PString GetSDPPortList() const;
 };
@@ -308,7 +313,7 @@ class SDPSessionDescription : public PObject
     void SetDefaultConnectAddress(
       const OpalTransportAddress & address
     );
-	
+  
     time_t GetOwnerSessionId() const { return ownerSessionId; }
     void SetOwnerSessionId(time_t value) { ownerSessionId = value; }
 
@@ -342,7 +347,7 @@ class SDPSessionDescription : public PObject
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
 
-    SDPBandwidth bandwidth;	
+    SDPBandwidth bandwidth;  
 };
 
 /////////////////////////////////////////////////////////
