@@ -705,7 +705,8 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const PluginCod
 
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalFramedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
+  return OpalFramedTranscoder::UpdateMediaFormats(input, output) &&
+         UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
 
 
@@ -786,7 +787,8 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(const Plugi
 
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalStreamedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
+  return OpalStreamedTranscoder::UpdateMediaFormats(input, output) &&
+         UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
 
 
@@ -831,7 +833,8 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 
 PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalVideoTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
+  return OpalVideoTranscoder::UpdateMediaFormats(input, output) &&
+         UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
 
 
@@ -1125,7 +1128,8 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     PBoolean UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
     {
-      return OpalTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(input) && UpdateOptions(output);
+      return OpalTranscoder::UpdateMediaFormats(input, output) &&
+             UpdateOptions(inputMediaFormat) && UpdateOptions(outputMediaFormat);
     }
 
     virtual PBoolean ExecuteCommand(const OpalMediaCommand & command)
