@@ -1006,8 +1006,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
-
-  if (sendStream != NULL)
+  else if (sendStream != NULL)
     sendStream->UpdateMediaFormat(*sdpFormats.FindFormat(sendStream->GetMediaFormat()));
 
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
@@ -1015,6 +1014,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
+  else if (recvStream != NULL)
+    recvStream->UpdateMediaFormat(*sdpFormats.FindFormat(recvStream->GetMediaFormat()));
 
   if (newDirection == SDPMediaDescription::SendRecv && recvStream->GetMediaFormat().GetPayloadType() != sendStream->GetMediaFormat().GetPayloadType()) {
     // If we are sendrecv we will receive the same payload type as we transmit.
@@ -1022,9 +1023,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
     recvStream->UpdateMediaFormat(adjustedMediaFormat);
   }
-
-  if (recvStream != NULL)
-    recvStream->UpdateMediaFormat(*sdpFormats.FindFormat(recvStream->GetMediaFormat()));
 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
   localMedia->SetDirection(newDirection);
