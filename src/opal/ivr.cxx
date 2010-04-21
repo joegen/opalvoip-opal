@@ -131,10 +131,17 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
   inUseFlag.Signal();
 }
 
+
 PBoolean OpalIVREndPoint::StartVXML()
 {
-  return PFalse;
+  return false;
 }
+
+
+void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & /*connection*/)
+{
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -147,13 +154,13 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I'),
     endpoint(ep),
-    vxmlToLoad(vxml),
-    vxmlMediaFormats(ep.GetMediaFormats()),
+    m_vxmlToLoad(vxml),
+    m_vxmlMediaFormats(ep.GetMediaFormats()),
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
+    m_vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -170,14 +177,16 @@ OpalIVRConnection::~OpalIVRConnection()
 
 PString OpalIVRConnection::GetLocalPartyURL() const
 {
-  return GetPrefixName() + ':' + vxmlToLoad.Left(vxmlToLoad.FindOneOf("\r\n"));
+  return GetPrefixName() + ':' + m_vxmlToLoad.Left(m_vxmlToLoad.FindOneOf("\r\n"));
 }
 
 
 void OpalIVRConnection::OnEstablished()
 {
   OpalConnection::OnEstablished();
-  StartVXML();
+
+  if (!m_vxmlSession.IsLoaded())
+    StartVXML();
 }
 
 
@@ -194,22 +203,14 @@ bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
   if (vxml.IsEmpty())
     return false;
 
-  if (vxmlSession.IsPlaying())
-    vxmlSession.Close();
-
-  vxmlToLoad = vxml;
+  m_vxmlToLoad = vxml;
   return StartVXML();
 }
 
 
 PBoolean OpalIVRConnection::StartVXML()
 {
-  if (vxmlSession.IsPlaying()) {
-    PTRACE(4, "IVR\tStartVXML, already playing");
-    return true;
-  }
-
-  PStringToString & vars = vxmlSession.GetSessionVars();
+  PStringToString & vars = m_vxmlSession.GetSessionVars();
 
   PString originator = m_connStringOptions(OPAL_OPT_ORIGINATOR_ADDRESS);
   if (originator.IsEmpty())
@@ -221,27 +222,27 @@ PBoolean OpalIVRConnection::StartVXML()
 
   vars.SetAt("Time", PTime().AsString());
 
-  if (vxmlToLoad.IsEmpty()) 
-    vxmlToLoad = endpoint.GetDefaultVXML();
+  if (m_vxmlToLoad.IsEmpty()) 
+    m_vxmlToLoad = endpoint.GetDefaultVXML();
 
-  if (vxmlToLoad.IsEmpty())
+  if (m_vxmlToLoad.IsEmpty())
     return endpoint.StartVXML();
 
-  PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
+  PCaselessString vxmlHead = m_vxmlToLoad.LeftTrim().Left(5);
   if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
-    PTRACE(4, "IVR\tStartVXML:\n" << vxmlToLoad);
-    return vxmlSession.LoadVXML(vxmlToLoad);
+    PTRACE(4, "IVR\tStartVXML:\n" << m_vxmlToLoad);
+    return m_vxmlSession.LoadVXML(m_vxmlToLoad);
   }
 
-  PURL vxmlURL(vxmlToLoad, NULL);
+  PURL vxmlURL(m_vxmlToLoad, NULL);
   if (vxmlURL.IsEmpty()) {
-    PFilePath vxmlFile = vxmlToLoad;
+    PFilePath vxmlFile = m_vxmlToLoad;
     if (vxmlFile.GetType() *= ".vxml")
-      return vxmlSession.LoadFile(vxmlFile);
+      return m_vxmlSession.LoadFile(vxmlFile);
   }
   else {
     if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
-      return vxmlSession.LoadURL(vxmlURL);
+      return m_vxmlSession.LoadURL(vxmlURL);
   }
 
   ////////////////////////////////
@@ -251,7 +252,7 @@ PBoolean OpalIVRConnection::StartVXML()
   PString voice;
 
   PINDEX i;
-  PStringArray tokens = vxmlToLoad.Tokenise(';', PFalse);
+  PStringArray tokens = m_vxmlToLoad.Tokenise(';', false);
   for (i = 0; i < tokens.GetSize(); ++i) {
     PString str(tokens[i]);
 
@@ -272,7 +273,7 @@ PBoolean OpalIVRConnection::StartVXML()
         fn = fn.GetDirectory() + voice + PDIR_SEPARATOR + fn.GetFileName();
 
       PTRACE(3, "IVR\tPlaying file " << fn << ' ' << repeat << " times, " << delay << "ms");
-      vxmlSession.PlayFile(fn, repeat, delay);
+      m_vxmlSession.PlayFile(fn, repeat, delay);
       continue;
     }
 
@@ -295,7 +296,7 @@ PBoolean OpalIVRConnection::StartVXML()
     else if (key *= "voice") {
       if (!val.IsEmpty()) {
         voice = val;
-        PTextToSpeech * tts = vxmlSession.GetTextToSpeech();
+        PTextToSpeech * tts = m_vxmlSession.GetTextToSpeech();
         if (tts != NULL)
           tts->SetVoice(voice);
       }
@@ -303,37 +304,43 @@ PBoolean OpalIVRConnection::StartVXML()
 
     else if (key *= "tone") {
       PTRACE(3, "IVR\tPlaying tone " << val);
-      vxmlSession.PlayTone(val, repeat, delay);
+      m_vxmlSession.PlayTone(val, repeat, delay);
    }
 
     else if (key *= "speak") {
       if (!val.IsEmpty() && (val[0] == '$'))
-        val = vars(val.Mid(1));
+        val = m_vxmlSession.GetVar(val.Mid(1));
       PTRACE(3, "IVR\tSpeaking text '" << val << "'");
-      vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
+      m_vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
     }
 
     else if (key *= "silence") {
       unsigned msecs;
       if (val.IsEmpty() && (val[0] == '$'))
-        msecs = vars(val.Mid(1)).AsUnsigned();
+        msecs = m_vxmlSession.GetVar(val.Mid(1)).AsUnsigned();
       else
         msecs = val.AsUnsigned();
       PTRACE(3, "IVR\tSpeaking silence for " << msecs << " msecs");
-      vxmlSession.PlaySilence(msecs);
+      m_vxmlSession.PlaySilence(msecs);
     }
   }
 
-  vxmlSession.PlayStop();
-  vxmlSession.Trigger();
+  m_vxmlSession.PlayStop();
+  m_vxmlSession.Trigger();
 
-  return PTrue;
+  return true;
+}
+
+
+void OpalIVRConnection::OnEndDialog()
+{
+  endpoint.OnEndDialog(*this);
 }
 
 
 OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 {
-  return vxmlMediaFormats;
+  return m_vxmlMediaFormats;
 }
 
 
@@ -343,7 +350,7 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
 {
   return mediaFormat.GetMediaType() != OpalMediaType::Audio()
             ? OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
-            : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
+            : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, m_vxmlSession);
 }
 
 
@@ -352,9 +359,9 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
   PTRACE(3, "IVR\tSendUserInputString(" << value << ')');
 
   for (PINDEX i = 0; i < value.GetLength(); i++)
-    vxmlSession.OnUserInput(value[i]);
+    m_vxmlSession.OnUserInput(value[i]);
 
-  return PTrue;
+  return true;
 }
 
 void OpalIVRConnection::OnStopMediaPatch(OpalMediaPatch & patch)
@@ -386,7 +393,7 @@ PBoolean OpalIVRMediaStream::Open()
 {
   PTRACE(3, "IVR\tOpen");
   if (isOpen)
-    return PTrue;
+    return true;
 
   if (vxmlSession.IsOpen()) {
     PVXMLChannel * vxmlChannel = vxmlSession.GetAndLockVXMLChannel();
@@ -394,7 +401,7 @@ PBoolean OpalIVRMediaStream::Open()
     
     if (vxmlChannel == NULL) {
       PTRACE(1, "IVR\tVXML engine not really open");
-      return PFalse;
+      return false;
     }
 
     vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
@@ -402,7 +409,7 @@ PBoolean OpalIVRMediaStream::Open()
     
     if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
       PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << mediaFormat << " <-> " << vxmlChannelMediaFormat);
-      return PFalse;
+      return false;
     }
 
     return OpalMediaStream::Open();
@@ -412,7 +419,7 @@ PBoolean OpalIVRMediaStream::Open()
     return OpalMediaStream::Open();
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
-  return PFalse;
+  return false;
 }
 
 PBoolean OpalIVRMediaStream::IsSynchronous() const
