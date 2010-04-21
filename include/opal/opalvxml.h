@@ -49,18 +49,21 @@ class OpalConnection;
 #if OPAL_PTLIB_VXML
 
 class PTextToSpeech;
+class OpalIVRConnection;
+
 
 class OpalVXMLSession : public PVXMLSession 
 {
   PCLASSINFO(OpalVXMLSession, PVXMLSession);
   public:
     OpalVXMLSession(
-      OpalConnection * _conn,
+      OpalIVRConnection * conn,
       PTextToSpeech * tts = NULL,
       PBoolean autoDelete = false
     );
 
     virtual PBoolean Close();
+    virtual void OnEndDialog();
     virtual void OnEndSession();
     virtual void OnTransfer(const PString & destination, bool bridged);
 
@@ -72,7 +75,7 @@ class OpalVXMLSession : public PVXMLSession
     );
 
   protected:
-    OpalConnection * conn;
+    OpalIVRConnection * m_connection;
 };
 
 #endif

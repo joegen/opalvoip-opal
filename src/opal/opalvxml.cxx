@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/opalvxml.h>
+#include <opal/ivr.h>
 
 #include <opal/call.h>
 #include <codec/opalwavfile.h>
@@ -46,9 +46,9 @@
 
 #if OPAL_PTLIB_VXML
 
-OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, PBoolean autoDelete)
+OpalVXMLSession::OpalVXMLSession(OpalIVRConnection * conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
-    conn(_conn)
+    m_connection(conn)
 {
   if (tts == NULL) {
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
@@ -68,23 +68,30 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, PB
 PBoolean OpalVXMLSession::Close()
 {
   if (!IsOpen())
-    return PTrue;
+    return true;
 
   PBoolean ok = PVXMLSession::Close();
-  conn->Release();
+  m_connection->Release();
   return ok;
+}
+
+
+void OpalVXMLSession::OnEndDialog()
+{
+  m_connection->OnEndDialog();
+  PVXMLSession::OnEndDialog();
 }
 
 
 void OpalVXMLSession::OnEndSession()
 {
-  conn->Release();
+  m_connection->Release();
 }
 
 
 void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
 {
-  conn->GetCall().Transfer(destination, bridged ? &*conn->GetOtherPartyConnection() : &*conn);
+  m_connection->GetCall().Transfer(destination, bridged ? &*m_connection->GetOtherPartyConnection() : &*m_connection);
 }
 
 
