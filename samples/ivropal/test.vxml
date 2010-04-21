@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<vxml version="1.0">
+  <form id="PlayFile">
+    <audio src="file:../callgen/ogm.wav"/>
+    <break time="30s"/>
+    <audio src="file:../callgen/ogm.wav"/>
+  </form>
+</vxml>

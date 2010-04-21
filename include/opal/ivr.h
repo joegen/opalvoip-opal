@@ -164,6 +164,17 @@ class OpalIVREndPoint : public OpalLocalEndPoint
       */
     virtual PBoolean StartVXML();
 
+    /** Called when VXML ends.
+        Gives an opputunity for an application to do somthing when script ends,
+        start a new script for instance.
+
+        Default action does nothing, session will end and connection will be
+        released.
+      */
+    virtual void OnEndDialog(
+      OpalIVRConnection & connection  ///< Connection with ending dialog
+    );
+
     /** Set/get the default text to speech engine used by the IVR  
       */
     void SetDefaultTextToSpeech(const PString & tts)
@@ -282,28 +293,26 @@ class OpalIVRConnection : public OpalLocalConnection
     );
   //@}
 
-    /** Called when a call needs to start the outgoing VXML.
-        This can be used to do different behaviour
+    /** Called when VXML ends.
+        Default action calls equivalent function in OpalIVREndPoint.
       */
-    virtual PBoolean StartVXML();
+    virtual void OnEndDialog();
 
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
 
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, PBoolean autoDelete = false)
-    { return vxmlSession.SetTextToSpeech(_tts, autoDelete); }
+    const PString & GetVXML() const { return m_vxmlToLoad; }
 
-    PTextToSpeech * SetTextToSpeech(const PString & ttsName)
-    { return vxmlSession.SetTextToSpeech(ttsName); }
-
-    PTextToSpeech * GetTextToSpeech()
-    { return vxmlSession.GetTextToSpeech(); }
-
+    PTextToSpeech * GetTextToSpeech() const { return m_vxmlSession.GetTextToSpeech(); }
+    PTextToSpeech * SetTextToSpeech(const PString & ttsName) { return m_vxmlSession.SetTextToSpeech(ttsName); }
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false) { return m_vxmlSession.SetTextToSpeech(tts, autoDelete); }
 
   protected:
+    virtual PBoolean StartVXML();
+
     OpalIVREndPoint   & endpoint;
-    PString             vxmlToLoad;
-    OpalMediaFormatList vxmlMediaFormats;
-    OpalVXMLSession     vxmlSession;
+    PString             m_vxmlToLoad;
+    OpalMediaFormatList m_vxmlMediaFormats;
+    OpalVXMLSession     m_vxmlSession;
 };
 
 

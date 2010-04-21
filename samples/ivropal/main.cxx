@@ -30,6 +30,8 @@
 #include "main.h"
 
 // Debug: -ttttodebugstream file:../callgen/ogm.wav sip:10.0.1.12
+//        -ttttodebugstream "repeat=10;file:../callgen/ogm.wav"
+//        -ttttodebugstream file:test.vxml
 
 
 PCREATE_PROCESS(IvrOPAL);
