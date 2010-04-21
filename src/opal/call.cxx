@@ -479,7 +479,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
   // Create the sinks and patch if needed
   bool startedOne = false;
-  OpalMediaPatch * patch = NULL;
   OpalMediaFormat sourceFormat, sinkFormat;
 
   // Reorder destinations so we give preference to symmetric codecs
@@ -583,13 +582,19 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     sinkStream = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
     if (sinkStream != NULL) {
       startedOne = true;
+      if (!sourceStream.SetSafetyMode(PSafeReadOnly))
+        return false;
+
+      OpalMediaPatch * patch = sourceStream->GetPatch();
       if (patch == NULL) {
         patch = manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
                                                         sourceStream->RequiresPatchThread(sinkStream));
         if (patch == NULL)
           return false;
       }
+
       patch->AddSink(sinkStream);
+      sourceStream.SetSafetyMode(PSafeReference);
     }
   }
 
@@ -599,10 +604,18 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     return false;
   }
 
-  if (patch != NULL) {
-    // if a patch was created, make sure the callback is called, just once per connection
-    while (EnumerateConnections(otherConnection, PSafeReadWrite))
-      otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
+  // if a patch was created, make sure the callback is called, just once per
+  // connection. Note must lock connection before stream or we can deadlock.
+  while (EnumerateConnections(otherConnection, PSafeReadWrite)) {
+    if (!sourceStream.SetSafetyMode(PSafeReadOnly))
+      return false;
+
+    OpalMediaPatch * patch = sourceStream->GetPatch();
+    if (patch == NULL)
+      return false;
+
+    otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
+    sourceStream.SetSafetyMode(PSafeReference);
   }
 
   return true;
