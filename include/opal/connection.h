@@ -970,18 +970,14 @@ class OpalConnection : public PSafeObject
       bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Request close of a media stream by session.
-       Note that this is usually asymchronous, the OnClosedMediaStream() function is
-       called when the stream is really closed.
+    /**Close of a media stream by session.
       */
     virtual bool CloseMediaStream(
       unsigned sessionId,  ///<  Session ID to search for.
       bool source          ///<  Indicates the direction of stream.
     );
 
-    /**Request close of a specific media stream.
-       Note that this is usually asymchronous, the OnClosedMediaStream() function is
-       called when the stream is really closed.
+    /**Close of a specific media stream.
       */
     virtual bool CloseMediaStream(
       OpalMediaStream & stream  ///< Stream to close
@@ -1096,7 +1092,7 @@ class OpalConnection : public PSafeObject
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
-    
+
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
        patch between two streams. This is usually called twice per media patch,
@@ -1724,7 +1720,7 @@ class OpalConnection : public PSafeObject
     bool         m_detectInBandDTMF;
     unsigned     m_dtmfScaleMultiplier;
     unsigned     m_dtmfScaleDivisor;
-    PNotifier    m_dtmfNotifier;
+    PNotifier    m_dtmfDetectNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
 
     bool         m_sendInBandDTMF;
@@ -1732,6 +1728,7 @@ class OpalConnection : public PSafeObject
     PDTMFEncoder m_inBandDTMF;
     PINDEX       m_emittedInBandDTMF;
     PMutex       m_inBandMutex;
+    PNotifier    m_dtmfSendNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
 

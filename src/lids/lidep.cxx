@@ -593,14 +593,19 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
   if (!OpalConnection::OnOpenMediaStream(mediaStream))
     return false;
 
-  if (mediaStream.IsSource()) {
-    OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL)
-      patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
-  }
+  if (mediaStream.IsSource())
+    mediaStream.AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
 
   line.StopTone(); // In case a RoutingTone or RingTone is going
   return true;
+}
+
+
+void OpalLineConnection::OnClosedMediaStream(const OpalMediaStream & mediaStream)
+{
+  mediaStream.RemoveFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
+
+  OpalConnection::OnClosedMediaStream(mediaStream);
 }
 
 
