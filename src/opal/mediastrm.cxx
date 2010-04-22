@@ -106,13 +106,15 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 
 PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool fromPatch)
 {
+  // If we are source, then update the sink side, and vice versa
+  if (!fromPatch) {
+    PSafeLockReadOnly safeLock(*this);
+    return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
+  }
+
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
-
-  // If we are source, then update the sink side, and vice versa
-  if (mediaPatch != NULL && !fromPatch)
-    return mediaPatch->UpdateMediaFormat(newMediaFormat);
 
   if (!mediaFormat.Update(newMediaFormat))
     return false;
@@ -191,9 +193,11 @@ PBoolean OpalMediaStream::Close()
 
   isOpen = false;
 
-  if (mediaPatch == NULL)
-    UnlockReadWrite();
-  else {
+  UnlockReadWrite();
+
+  connection.OnClosedMediaStream(*this);
+
+  if (mediaPatch != NULL && LockReadWrite()) {
     PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
     OpalMediaPatch * patch = mediaPatch;
     mediaPatch = NULL;
@@ -209,10 +213,6 @@ PBoolean OpalMediaStream::Close()
     }
   }
 
-  if (connection.CloseMediaStream(*this))
-    return true;
-
-  connection.OnClosedMediaStream(*this);
   connection.RemoveMediaStream(*this);
   return true;
 }
@@ -480,18 +480,18 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 }
 
 
-void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+void OpalMediaStream::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadWrite safeLock(*this);
+  PSafeLockReadOnly safeLock(*this);
   if (safeLock.IsLocked() && mediaPatch != NULL)
-    mediaPatch->AddFilter(Filter, Stage);
+    mediaPatch->AddFilter(filter, stage);
 }
 
 
-PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadWrite safeLock(*this);
-  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(Filter, Stage);
+  PSafeLockReadOnly safeLock(*this);
+  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(filter, stage);
 }
 
 
