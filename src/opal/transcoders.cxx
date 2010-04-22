@@ -258,7 +258,12 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     dstFormat = *masterFormat;
     PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat
                              << "Merging with capability\n" << setw(-1) << dstCapability);
-    if (!dstFormat.Update(dstCapability))
+
+    OpalMediaFormat tmpCapability = dstCapability;
+    if (!tmpCapability.Merge(dstFormat))
+      return false;
+
+    if (!dstFormat.Update(tmpCapability))
       return false;
   }
 
