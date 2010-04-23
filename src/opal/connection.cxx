@@ -340,9 +340,8 @@ OpalConnection::~OpalConnection()
 
 #if P_LUA
   m_lua.CallLuaFunction("OnDestroy");
-#endif
-
   UnbindFromInstance(m_lua, "call");
+#endif
 
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
@@ -1510,14 +1509,18 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 
 void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
+#if P_LUA
   m_lua.CallLuaFunction("OnStartMediaPatch");
+#endif
   GetEndPoint().GetManager().OnStartMediaPatch(*this, patch);
 }
 
 
 void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
+#if P_LUA
   m_lua.CallLuaFunction("OnStopMediaPatch");
+#endif
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
 
