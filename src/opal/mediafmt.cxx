@@ -115,7 +115,7 @@ const OpalMediaFormat & GetOpalRFC2833()
                         true,   // Needs jitter
                         32*(1000/50), // bits/sec  (32 bits every 50ms)
                         4,      // bytes/frame
-                        150*8,  // 150 millisecond
+                        10*8,   // 10 millisecond
                         OpalMediaFormat::AudioClockRate)
     {
       AddOption(new OpalMediaOptionString("FMTP", false, "0-16,32,36"));
@@ -135,7 +135,7 @@ const OpalMediaFormat & GetOpalCiscoNSE()
                         true,   // Needs jitter
                         32*(1000/50), // bits/sec  (32 bits every 50ms)
                         4,      // bytes/frame
-                        150*8,  // 150 millisecond
+                        10*8,   // 10 millisecond
                         OpalMediaFormat::AudioClockRate)
     {
       AddOption(new OpalMediaOptionString("FMTP", false, "192,193"));
