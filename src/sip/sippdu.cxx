@@ -1846,22 +1846,26 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
       PString proto = viaList.front();
       PString viaPort = defaultPort;
 
-      PINDEX j = 0;
+      PINDEX bracket = viaAddress.FindLast(']');
+      if (bracket == P_MAX_INDEX)
+        bracket = 0;
+
+      PINDEX pos = 0;
       // get the address specified in the Via
-      if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
-        viaAddress = viaAddress.Mid(j+1);
-      if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
-        viaAddress = viaAddress.Left(j);
-      if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
-        viaPort = viaAddress.Mid(j+1);
-        viaAddress = viaAddress.Left(j);
+      if ((pos = viaAddress.FindLast (' ')) != P_MAX_INDEX)
+        viaAddress = viaAddress.Mid(pos+1);
+      if ((pos = viaAddress.Find (';')) != P_MAX_INDEX)
+        viaAddress = viaAddress.Left(pos);
+      if ((pos = viaAddress.Find (':')) != P_MAX_INDEX && (pos > bracket)) {
+        viaPort = viaAddress.Mid(pos+1);
+        viaAddress = viaAddress.Left(pos);
       }
 
       // get the protocol type from Via header
-      if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
-        proto = proto.Left(j);
-      if ((j = proto.FindLast('/')) != P_MAX_INDEX)
-        proto = proto.Mid(j+1);
+      if ((pos = proto.FindLast (' ')) != P_MAX_INDEX)
+        proto = proto.Left(pos);
+      if ((pos = proto.FindLast('/')) != P_MAX_INDEX)
+        proto = proto.Mid(pos+1);
 
       // maddr is present, no support for multicast yet
       PString param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "maddr");
