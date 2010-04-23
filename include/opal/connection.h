@@ -818,6 +818,39 @@ class OpalConnection : public PSafeObject
       */
     virtual void OnEstablished();
 
+    /**A call back function to monitor the progress of a transfer.
+       When a transfer operation is initiated, the Transfer() function will
+       generally return immediately and the transfer may take some time. This
+       call back can give indication to the application of the progress of
+       the transfer.
+
+       For example in SIP, the Transfer() function will have sent a REFER
+       request to the remote party. The remote party sends us NOTIFY requests
+       about the progress of the REFER request.
+
+       An application can now make a decision during the transfer operation
+       to short circuit the sequence, or let it continue. It can also
+       determine if the transfer did not go through, and it should "take back"
+       the call.
+
+       A return value of false will immediately disconnect the current call.
+
+       The exact format of the \p info parameter is dependent on the protocol
+       being used. It will always have a value info["result"] which will be
+       "success" or "failed". Other variables are protocol dependent.
+
+       For SIP, there is an additional info["state"] containing the NOTIFY
+       subscription state and an info["code"] entry containing the 3 digit
+       code returned in the NOTIFY body.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+       The default action of that function is to return false, thereby
+       releasing the connection if the info["result"] == "success".
+     */
+    virtual bool OnTransferNotify(
+      const PStringToString & info ///< State of the transfer
+    );
+
     /**Release the current connection.
        This removes the connection from the current call. The call may
        continue if there are other connections still active on it. If this was
@@ -1535,6 +1568,14 @@ class OpalConnection : public PSafeObject
       */
     virtual bool SetAlertingType(const PString & info);
 
+    /**Get call information of an incoming call.
+       This is protocol dependent information provided about the call. The
+       details are outside the scope of this help.
+
+       For SIP this corresponds to the string contained in the "Call-Info"
+       header field of the INVITE.
+      */
+    virtual PString GetCallInfo() const;
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms

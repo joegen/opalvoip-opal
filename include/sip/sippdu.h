@@ -375,6 +375,8 @@ class SIPMIMEInfo : public PMIMEInfo
     void GetAlertInfo(PString & info, int & appearance);
     void SetAlertInfo(const PString & info, int appearance);
 
+    PString GetCallInfo() const;
+
     PString GetAllowEvents() const;
     void SetAllowEvents(const PString & v);
 

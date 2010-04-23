@@ -1364,6 +1364,12 @@ void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
 }
 
 
+PString SIPMIMEInfo::GetCallInfo() const
+{
+  return GetString("Call-Info");
+}
+
+
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end)
 {
   PINDEX semicolon = (PINDEX)-1;
