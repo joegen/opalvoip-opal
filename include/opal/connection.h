@@ -55,6 +55,10 @@
 #include <im/im.h>
 #endif
 
+#if P_LUA
+#include <ptclib/lua.h>
+#endif
+
 class OpalEndPoint;
 class OpalCall;
 class OpalSilenceDetector;
@@ -1817,6 +1821,18 @@ class OpalConnection : public PSafeObject
       e_SwitchingToFaxMediaStreams,
       e_SwitchingFromFaxMediaStreams
     } m_faxMediaStreamsSwitchState;
+#endif
+
+#if P_LUA
+  protected:
+    PLua m_lua;
+    bool m_luaScriptLoaded;
+
+  public:
+    PLUA_BINDING_START(OpalConnection)
+      PLUA_BINDING2(LuaSetOption, "SetOption")
+    PLUA_BINDING_END()
+    PLUA_DECLARE_FUNCTION(LuaSetOption);
 #endif
 
   private:

@@ -261,6 +261,9 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_FAX
   , m_faxMediaStreamsSwitchState(e_NotSwitchingFaxMediaStreams)
 #endif
+#if P_LUA
+  , m_luaScriptLoaded(false)
+#endif
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -311,6 +314,16 @@ OpalConnection::OpalConnection(OpalCall & call,
   m_rfc4103Context[0].SetMediaFormat(OpalT140);
   m_rfc4103Context[1].SetMediaFormat(OpalT140);
 #endif
+
+#if P_LUA
+  BindToInstance(m_lua, "connection");
+  m_lua.SetFunction("PTRACE", PLua::TraceFunction);
+  m_lua.SetValue("token",  callToken);
+
+  PString str = GetPrefixName();
+  m_lua.SetValue("prefix", str);
+  m_lua.CallLuaFunction("OnConstruct");
+#endif
 }
 
 OpalConnection::~OpalConnection()
@@ -324,6 +337,12 @@ OpalConnection::~OpalConnection()
 #if OPAL_T120DATA
   delete t120handler;
 #endif
+
+#if P_LUA
+  m_lua.CallLuaFunction("OnDestroy");
+#endif
+
+  UnbindFromInstance(m_lua, "call");
 
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
@@ -1457,6 +1476,21 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     if (!str.IsEmpty())
       SetAlertingType(str);
 
+#if P_LUA
+    if (!m_luaScriptLoaded) {
+      str = stringOptions("script");
+      bool ok = true;
+      if (!str.IsEmpty()) 
+        ok = m_lua.LoadString(str);
+      else {
+        str = stringOptions("scriptfile");
+        if (!str.IsEmpty()) 
+          m_lua.LoadFile(str);
+      }
+    }
+    m_lua.CallLuaFunction("OnSetOptions");
+#endif
+
     UnlockReadWrite();
   }
 }
@@ -1476,12 +1510,14 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 
 void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
+  m_lua.CallLuaFunction("OnStartMediaPatch");
   GetEndPoint().GetManager().OnStartMediaPatch(*this, patch);
 }
 
 
 void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
+  m_lua.CallLuaFunction("OnStopMediaPatch");
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
 
@@ -1664,5 +1700,13 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
   }
 }
 
+#if P_LUA
+
+int OpalConnection::LuaSetOption(lua_State * /*lua*/)
+{
+  return 0;
+}
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
