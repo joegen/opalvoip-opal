@@ -522,8 +522,7 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
-    virtual bool OnSendSDP(
-      bool isAnswerSDP,
+    virtual bool OnSendOfferSDP(
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
@@ -532,6 +531,11 @@ class SIPConnection : public OpalRTPConnection
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
+    );
+    virtual bool OnSendAnswerSDP(
+      OpalRTPSessionManager & rtpSessions,
+      SDPSessionDescription & sdpOut,
+      bool reInvite
     );
     virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
