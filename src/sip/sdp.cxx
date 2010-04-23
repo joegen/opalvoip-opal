@@ -1559,6 +1559,14 @@ OpalMediaFormatList SDPSessionDescription::GetMediaFormats() const
 #endif
   }
 
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  formatList += OpalT38;
+#endif
+
   return formatList;
 }
 
