@@ -470,6 +470,12 @@ PBoolean OpalEndPoint::OnForwarded(OpalConnection & connection,
 }
 
 
+bool OpalEndPoint::OnTransferNotify(OpalConnection & connection, const PStringToString & info)
+{
+  return manager.OnTransferNotify(connection, info);
+}
+
+
 void OpalEndPoint::ConnectionDict::DeleteObject(PObject * object) const
 {
   OpalConnection * connection = PDownCast(OpalConnection, object);

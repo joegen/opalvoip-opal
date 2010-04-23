@@ -598,6 +598,12 @@ void OpalConnection::OnEstablished()
 }
 
 
+bool OpalConnection::OnTransferNotify(const PStringToString & info)
+{
+  return endpoint.OnTransferNotify(*this, info);
+}
+
+
 void OpalConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
 {
   if (otherConnection != NULL && otherConnection != this)
@@ -1352,6 +1358,12 @@ PString OpalConnection::GetAlertingType() const
 bool OpalConnection::SetAlertingType(const PString & /*info*/)
 {
   return false;
+}
+
+
+PString OpalConnection::GetCallInfo() const
+{
+  return PString::Empty();
 }
 
 

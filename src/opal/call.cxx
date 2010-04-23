@@ -339,7 +339,10 @@ bool OpalCall::IsOnHold() const
 
 bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 {
-  PCaselessString prefix = newAddress.Left(newAddress.Find(':'));
+  PCaselessString prefix;
+  PINDEX colon = newAddress.Find(':');
+  if (colon != P_MAX_INDEX)
+    prefix = newAddress.Left(colon);
 
   if (connection == NULL) {
     for (PSafePtr<OpalConnection> conn = GetConnection(0); conn != NULL; ++conn) {
@@ -354,7 +357,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (prefix == "*")
     return connection->TransferConnection(connection->GetPrefixName() + newAddress.Mid(1));
 
-  if (prefix == connection->GetPrefixName() || manager.HasCall(newAddress))
+  if (prefix.IsEmpty() || prefix == connection->GetPrefixName() || manager.HasCall(newAddress))
     return connection->TransferConnection(newAddress);
 
   PTRACE(3, "Call\tTransferring " << *connection << " to \"" << newAddress << '"');
