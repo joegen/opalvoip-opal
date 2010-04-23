@@ -1066,7 +1066,7 @@ PBoolean SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdp
     if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId)) {
       sendStream = GetMediaStream(rtpSessionId, false);
 
-      if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) == 0)
+      if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
         newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
                                                                      : SDPMediaDescription::SendOnly;
     }
