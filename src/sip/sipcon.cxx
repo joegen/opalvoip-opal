@@ -453,9 +453,20 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   PTRACE(3, "SIP\tTransferring " << *this << " to " << remoteParty);
 
-  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
+  PURL url(remoteParty, "sip");
+  StringOptions extra;
+  extra.ExtractFromURL(url);
+
+  // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
+  // If we want to get NOTIFYs we have to clear the old connection on the progress message
+  // where the connection is transfered. See OnTransferNotify().
+  const char * referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB,
+            m_connStringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true)) ? "true" : "false";
+
+  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
   if (call == NULL) {
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI());
+    referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we are doing NOTIFYs or not
     m_referInProgress = referTransaction->Start();
     return m_referInProgress;
   }
@@ -469,7 +480,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation)
               << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation);
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
-      referTransaction->GetMIME().SetAt("Refer-Sub", "false"); // Use RFC4488 to indicate we are NOT doing NOTIFYs
+      referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or NOT
       referTransaction->GetMIME().SetAt("Supported", "replaces");
       m_referInProgress = referTransaction->Start();
       return m_referInProgress;
@@ -1462,6 +1473,12 @@ bool SIPConnection::SetAlertingType(const PString & info)
 }
 
 
+PString SIPConnection::GetCallInfo() const
+{
+  return originalInvite != NULL ? originalInvite->GetMIME().GetCallInfo() : PString::Empty();
+}
+
+
 bool SIPConnection::Hold(bool fromRemote, bool placeOnHold)
 {
   if (transport == NULL)
@@ -2102,6 +2119,15 @@ void SIPConnection::OnAllowedEventNotify(const PString & /* eventStr */)
 
 void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 {
+  /* Transfering a Call
+     We have sent a REFER to the UA in this connection.
+     Now we get Progress Indication of that REFER Request by NOTIFY Requests.
+     Handle the response coded of "message/sipfrag" as follows:
+
+     Use code >= 180  &&  code < 300 to Release this dialog.
+     Use Subscription State = terminated to Release this dialog.
+  */
+
   const SIPMIMEInfo & mime = request.GetMIME();
 
   SIPSubscribe::EventPackage package(mime.GetEvent());
@@ -2143,22 +2169,23 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 
   PStringToString info;
-  if (mime.GetSubscriptionState(info) != "terminated")
-    return; // The REFER is not over yet, ignore
+  mime.GetSubscriptionState(info);
+  info.SetAt("state", info[PString::Empty()]);
+  info.SetAt("code", psprintf("%u", code));
+  info.SetAt("result", info["state"] != "terminated" || code < 200
+               ? "progress" : (code < 300 ? "success" : "failed"));
+
+  if (OnTransferNotify(info))
+    return;
 
   m_referInProgress = false;
 
-  // The REFER is over, see if successful
-  if (code >= 300) {
-    PTRACE(2, "SIP\tNOTIFY indicated REFER did not proceed, taking call back");
-    return;
-  }
-
   // Release the connection
-  if (GetPhase() < ReleasingPhase) {
-    releaseMethod = ReleaseWithBYE;
-    Release(OpalConnection::EndedByCallForwarded);
-  }
+  if (GetPhase() >= ReleasingPhase)
+    return;
+
+  releaseMethod = ReleaseWithBYE;
+  Release(OpalConnection::EndedByCallForwarded);
 }
 
 

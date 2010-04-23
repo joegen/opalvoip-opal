@@ -58,7 +58,15 @@ class OpalCall;
 class SIPEndPoint;
 
 
+/**OpalConnection::StringOption key to a boolean indicating the SDP ptime
+   parameter should be included in audio session streams. Default false.
+  */
 #define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
+
+/**OpalConnection::StringOption key to a boolean indicating the the state
+   of the "Refer-Sub" header in the REFER request. Default true.
+  */
+#define OPAL_OPT_REFER_SUB       "Refer-Sub"
 
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
@@ -175,6 +183,15 @@ class SIPConnection : public OpalRTPConnection
        Default behaviour returns false.
       */
     virtual bool SetAlertingType(const PString & info);
+
+    /**Get call information of an incoming call.
+       This is protocol dependent information provided about the call. The
+       details are outside the scope of this help.
+
+       For SIP this corresponds to the string contained in the "Call-Info"
+       header field of the INVITE.
+      */
+    virtual PString GetCallInfo() const;
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.

@@ -591,7 +591,31 @@ class OpalManager : public PObject
       OpalConnection & connection,  ///<  Connection that was held
       const PString & remoteParty         ///<  The new remote party
     );
+
+    /**A call back function to monitor the progress of a transfer.
+       When a transfer operation is initiated, the Transfer() function will
+       generally return immediately and the transfer may take some time. This
+       call back can give indicateion to the application of the progress of
+       the transfer.
+
+       The exact format of the \p info parameter is dependent on the protocol
+       being used. It will always have a value info["result"] which will be
+       "success" or "failed". Other variables are protocol dependent.
+
+       For SIP, there is an additional info["state"] containing the NOTIFY
+       subscription state and an info["code"] entry containing the 3 digit
+       code returned in the NOTIFY body.
+
+       A return value of false will immediately disconnect the current call.
+
+       The default behaviour returns false if info["result"] == "success".
+      */
+    virtual bool OnTransferNotify(
+      OpalConnection & connection,  ///< Connection being transferred.
+      const PStringToString & info  ///< Information on the transfer
+    );
   //@}
+
 
   /**@name Media Streams management */
   //@{
