@@ -523,7 +523,8 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
       return PFalse;
 
-    if (consumed == 0 && created == 0)
+    // If did not consume any data, codec must think it is rubbish, skip rest of packet.
+    if (consumed == 0)
       break;
 
     outputPtr   += created;
