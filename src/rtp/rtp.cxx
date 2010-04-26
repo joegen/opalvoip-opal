@@ -65,8 +65,10 @@ PFACTORY_CREATE(PFactory<RTP_Encoding>, RTP_Encoding, "rtp/avp", false);
 
 RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
   : PBYTEArray(std::max(bufferSz, MinHeaderSize+payloadSz))
+  , m_headerSize(MinHeaderSize)
+  , m_payloadSize(payloadSz)
+  , m_paddingSize(0)
 {
-  payloadSize = payloadSz;
   theArray[0] = '\x80'; // Default to version 2
   theArray[1] = '\x7f'; // Default to MaxPayloadType
 }
@@ -74,9 +76,57 @@ RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
 
 RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic)
   : PBYTEArray(data, len, dynamic)
+  , m_headerSize(MinHeaderSize)
+  , m_payloadSize(0)
+  , m_paddingSize(0)
 {
-  payloadSize = len - GetHeaderSize();
+  SetPacketSize(len);
 }
+
+
+bool RTP_DataFrame::SetPacketSize(PINDEX sz)
+{
+  if (sz < RTP_DataFrame::MinHeaderSize) {
+    m_payloadSize = m_paddingSize = 0;
+    return false;
+  }
+
+  m_headerSize = MinHeaderSize + 4*GetContribSrcCount();
+
+  if (GetExtension())
+    m_headerSize += (GetExtensionSizeDWORDs()+1)*4;
+
+  if (sz < m_headerSize) {
+    m_payloadSize = m_paddingSize = 0;
+    return false;
+  }
+
+  if (!GetPadding()) {
+    m_payloadSize = sz - m_headerSize;
+    return true;
+  }
+
+  /* We do this as some systems send crap at the end of the packet, giving
+     incorrect results for the padding size. So we do a sanity check that
+     the indicating padding size is not larger than the payload itself. Not
+     100% accurate, but you do whatever you can.
+   */
+  PINDEX pos = sz;
+  do {
+    if (pos-- <= m_headerSize) {
+      PTRACE(1, "RTP\tInvalid RTP packet, padding indicated but not enough data.");
+      m_payloadSize = m_paddingSize = 0;
+      return false;
+    }
+
+    m_paddingSize = theArray[pos] & 0xff;
+  } while (m_paddingSize > (pos-m_headerSize));
+
+  m_payloadSize = pos - m_headerSize - 1;
+
+  return true;
+}
+
 
 void RTP_DataFrame::SetExtension(PBoolean ext)
 {
@@ -120,22 +170,13 @@ void RTP_DataFrame::SetContribSource(PINDEX idx, DWORD src)
     BYTE * oldPayload = GetPayloadPtr();
     theArray[0] &= 0xf0;
     theArray[0] |= idx+1;
-    SetSize(GetHeaderSize()+payloadSize);
-    memmove(GetPayloadPtr(), oldPayload, payloadSize);
+    m_headerSize += 4;
+    PINDEX sz = m_payloadSize + m_paddingSize;
+    SetMinSize(m_headerSize+sz);
+    memmove(GetPayloadPtr(), oldPayload, sz);
   }
 
   ((PUInt32b *)&theArray[MinHeaderSize])[idx] = src;
-}
-
-
-PINDEX RTP_DataFrame::GetHeaderSize() const
-{
-  PINDEX sz = MinHeaderSize + 4*GetContribSrcCount();
-
-  if (GetExtension())
-    sz += 4 + GetExtensionSizeDWORDs()*4;
-
-  return sz;
 }
 
 
@@ -171,7 +212,8 @@ PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
 
 PBoolean RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
 {
-  if (!SetMinSize(MinHeaderSize + 4*GetContribSrcCount() + 4+4*sz + payloadSize))
+  m_headerSize = MinHeaderSize + 4*GetContribSrcCount() + (sz+1)*4;
+  if (!SetMinSize(m_headerSize+m_payloadSize+m_paddingSize))
     return false;
 
   SetExtension(true);
@@ -189,10 +231,17 @@ BYTE * RTP_DataFrame::GetExtensionPtr() const
 }
 
 
-PBoolean RTP_DataFrame::SetPayloadSize(PINDEX sz)
+bool RTP_DataFrame::SetPayloadSize(PINDEX sz)
 {
-  payloadSize = sz;
-  return SetMinSize(GetHeaderSize()+payloadSize);
+  m_payloadSize = sz;
+  return SetMinSize(m_headerSize+m_payloadSize+m_paddingSize);
+}
+
+
+bool RTP_DataFrame::SetPaddingSize(PINDEX sz)
+{
+  m_paddingSize = sz;
+  return SetMinSize(m_headerSize+m_payloadSize+m_paddingSize);
 }
 
 
@@ -219,12 +268,6 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
   strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }
 
-unsigned RTP_DataFrame::GetPaddingSize() const
-{
-  if (!GetPadding())
-    return 0;
-  return theArray[payloadSize-1];
-}
 
 #if PTRACING
 static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType] = {
@@ -2038,14 +2081,12 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
 
   // Check received PDU is big enough
   PINDEX pduSize = dataSocket->GetLastReadCount();
-  if (pduSize < RTP_DataFrame::MinHeaderSize || pduSize < frame.GetHeaderSize()) {
-    PTRACE(2, "RTP_UDP\tSession " << sessionID
-           << ", Received data packet too small: " << pduSize << " bytes");
-    return e_IgnorePacket;
-  }
+  if (frame.SetPacketSize(pduSize))
+    return e_ProcessPacket;
 
-  frame.SetPayloadSize(pduSize - frame.GetHeaderSize());
-  return e_ProcessPacket;
+  PTRACE(2, "RTP_UDP\tSession " << sessionID
+         << ", Received data packet too small: " << pduSize << " bytes");
+  return e_IgnorePacket;
 }
 
 
