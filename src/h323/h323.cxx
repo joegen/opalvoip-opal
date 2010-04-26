@@ -1736,7 +1736,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
     return;
 
-  if (response != AnswerCallDeferred && fastStartState != FastStartDisabled && fastStartChannels.IsEmpty()) {
+  if (fastStartState != FastStartDisabled && fastStartChannels.IsEmpty()) {
     // See if remote endpoint wants to start fast
     H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
     if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
@@ -1761,8 +1761,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
       PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
 
       // If we are incapable of ANY of the fast start channels, don't do fast start
-      if (!fastStartChannels.IsEmpty())
-        fastStartState = FastStartResponse;
+      fastStartState = fastStartChannels.IsEmpty() ? FastStartDisabled : FastStartResponse;
     }
   }
 
