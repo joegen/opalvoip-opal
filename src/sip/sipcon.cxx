@@ -2169,10 +2169,10 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 
   PStringToString info;
-  mime.GetSubscriptionState(info);
-  info.SetAt("state", info[PString::Empty()]);
+  PCaselessString state = mime.GetSubscriptionState(info);
+  info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", info["state"] != "terminated" || code < 200
+  info.SetAt("result", state != "terminated" || code < 200
                ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info))
