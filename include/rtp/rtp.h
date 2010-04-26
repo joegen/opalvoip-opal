@@ -129,8 +129,10 @@ class RTP_DataFrame : public PBYTEArray
 
     bool GetPadding() const { return (theArray[0]&0x20) != 0; }
     void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
+    BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
 
-    unsigned GetPaddingSize() const;
+    unsigned GetPaddingSize() const { return m_paddingSize; }
+    bool     SetPaddingSize(PINDEX sz);
 
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
     void         SetPayloadType(PayloadTypes t);
@@ -148,7 +150,7 @@ class RTP_DataFrame : public PBYTEArray
     DWORD  GetContribSource(PINDEX idx) const;
     void   SetContribSource(PINDEX idx, DWORD src);
 
-    PINDEX GetHeaderSize() const;
+    PINDEX GetHeaderSize() const { return m_headerSize; }
 
     int GetExtensionType() const; // -1 is no extension
     void   SetExtensionType(int type);
@@ -156,14 +158,20 @@ class RTP_DataFrame : public PBYTEArray
     bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
     BYTE * GetExtensionPtr() const;
 
-    PINDEX GetPayloadSize() const { return payloadSize - GetPaddingSize(); }
-    PBoolean   SetPayloadSize(PINDEX sz);
-    BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
+    PINDEX GetPayloadSize() const { return m_payloadSize; }
+    bool   SetPayloadSize(PINDEX sz);
+    BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
 
     virtual void PrintOn(ostream & strm) const;
 
+    // Note this sets the whole packet length, and calculates the various
+    // sub-section sizes: header payload and padding.
+    bool SetPacketSize(PINDEX sz);
+
   protected:
-    PINDEX payloadSize;
+    PINDEX m_headerSize;
+    PINDEX m_payloadSize;
+    PINDEX m_paddingSize;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);
