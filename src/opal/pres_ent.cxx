@@ -246,95 +246,102 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
 }
 
 
-bool OpalPresentity::GetBuddyList(BuddyList &)
+OpalPresentity::BuddyStatus OpalPresentity::GetBuddyListEx(BuddyList &)
 {
-  return false;
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::SetBuddyList(const BuddyList &)
+OpalPresentity::BuddyStatus OpalPresentity::SetBuddyListEx(const BuddyList &)
 {
-  return false;
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::DeleteBuddyList()
+OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyListEx()
 {
-  return false;
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::GetBuddy(BuddyInfo & buddy)
+OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 {
   if (buddy.m_presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (it->m_presentity == buddy.m_presentity) {
       buddy = *it;
-      return true;
+      return BuddyStatus_OK;
     }
   }
 
-  return false;
+  return BuddyStatus_SpecifiedBuddyNotFound;
 }
 
 
-bool OpalPresentity::SetBuddy(const BuddyInfo & buddy)
+OpalPresentity::BuddyStatus OpalPresentity::SetBuddyEx(const BuddyInfo & buddy)
 {
   if (buddy.m_presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   buddies.push_back(buddy);
-  return SetBuddyList(buddies);
+  return SetBuddyListEx(buddies);
 }
 
 
-bool OpalPresentity::DeleteBuddy(const PURL & presentity)
+OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentity)
 {
   if (presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (it->m_presentity == presentity) {
       buddies.erase(it);
-      return SetBuddyList(buddies);
+      return SetBuddyListEx(buddies);
     }
   }
 
-  return false;
+  return BuddyStatus_SpecifiedBuddyNotFound;
 }
 
 
-bool OpalPresentity::SubscribeBuddyList(bool subscribe)
+OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & successfulCount, bool subscribe)
 {
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
+  successfulCount = 0;
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (!SubscribeToPresence(it->m_presentity, subscribe))
-      return false;
+      return BuddyStatus_ListSubscribeFailed;
+    ++successfulCount;
   }
 
-  return true;
+  return BuddyStatus_OK;
 }
 
-bool OpalPresentity::UnsubscribeBuddyList()
+OpalPresentity::BuddyStatus OpalPresentity::UnsubscribeBuddyListEx()
 {
-  return SubscribeBuddyList(false);
+  PINDEX successfulCount;
+  return SubscribeBuddyListEx(successfulCount, false);
 }
 
 
