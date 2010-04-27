@@ -151,6 +151,11 @@ OpalPresentity::OpalPresentity()
 {
 }
 
+OpalPresentity::~OpalPresentity()
+{
+  m_manager->RemovePresentity(m_aor);
+}
+
 
 OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url, const PString & scheme)
 {
@@ -206,6 +211,21 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 
   cmd->m_state = state;
   cmd->m_note = note;
+  SendCommand(cmd);
+  return true;
+}
+
+
+bool OpalPresentity::SendMessageTo(const PURL & to, const PString & type, const PString & body, const PString & messageId)
+{
+  OpalSendMessageToCommand * cmd = CreateCommand<OpalSendMessageToCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_to        = to;
+  cmd->m_type      = type;
+  cmd->m_body      = body;
+  cmd->m_messageId = messageId;
   SendCommand(cmd);
   return true;
 }
@@ -387,8 +407,10 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
 
   for (unsigned ancestor = 0; *(className = GetClass(ancestor)) != '\0'; ++ancestor) {
     OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(className+partialKey);
-    if (cmd != NULL)
+    if (cmd != NULL) {
+      PTRACE(3, "Opal\tCreating presentity command '" << className+partialKey << "'");
       return cmd;
+    }
   }
 
   PAssertAlways(PUnimplementedFunction);
@@ -402,6 +424,37 @@ PString OpalPresentity::GetID() const
   strm << "id" << (unsigned)m_idNumber;
   return strm;
 }
+
+
+void OpalPresentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand &)
+{
+}
+
+void OpalPresentity::Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand &)
+{
+}
+
+void OpalPresentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand &)
+{
+}
+
+void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd)
+{
+  OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
+  if (endpoint == NULL) {
+    PTRACE(1, "Opal\tCannot find endpoint for '" << m_aor.GetScheme() << "'");
+    return;
+  }
+
+  PString conversationId(cmd.m_messageId);
+  endpoint->Message(cmd.m_to, cmd.m_type, cmd.m_body, m_aor, conversationId);
+}
+
+
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     OpalPresentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  OpalPresentity, Internal_SubscribeToPresence);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, OpalPresentity, Internal_AuthorisationRequest);
+OPAL_DEFINE_COMMAND(OpalSendMessageToCommand,        OpalPresentity, Internal_SendMessageToCommand);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -497,6 +550,5 @@ void OpalPresentityWithCommandThread::ThreadMain()
     m_commandQueueSync.Wait(1000);
   }
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
