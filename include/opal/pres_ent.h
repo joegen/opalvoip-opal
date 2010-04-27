@@ -373,6 +373,7 @@ class OpalPresentity : public PSafeObject
       BuddyStatus_ListMayBeIncomplete,
       BuddyStatus_BadBuddySpecification,
       BuddyStatus_ListSubscribeFailed,
+      BuddyStatus_AccountNotLoggedIn
     };
 
     /**Get complete buddy list.
@@ -472,6 +473,8 @@ class OpalPresentity : public PSafeObject
 
     PMutex m_notificationMutex;
     PAtomicInteger::IntegerType m_idNumber;
+
+    bool m_temporarilyUnavailable;
 };
 
 
@@ -515,12 +518,21 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     );
   //@}
 
-  /**@name Overrides from OpalPresentity */
+  /**@name new functions */
   //@{
     /**Start the background thread to handle commands.
        This is typically called from the concrete classes Open() function.
+
+       If the argument is true (the default) then the thread starts processing
+       queue entries ASAP.
+
+       If the argument is false, the thread is still created and still runs, 
+       but it does not process queue entries. This allows for presenties that
+       may need to allow commands to be paused, for example during initialisation
       */
-    void StartThread();
+    void StartThread(
+      bool startQueue = true
+    );
 
     /**Stop the background thread to handle commands.
        This is typically called from the concrete classes Close() function.
@@ -528,6 +540,13 @@ class OpalPresentityWithCommandThread : public OpalPresentity
        before the object is destroyed.
       */
     void StopThread();
+
+    /**Start/resume processing of queue commands
+      */
+    void StartQueue(
+      bool startQueue = true
+    );
+    
   //@}
 
   protected:
@@ -540,6 +559,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     PSyncPoint     m_commandQueueSync;
 
     bool      m_threadRunning;
+    bool      m_queueRunning;
     PThread * m_thread;
 };
 

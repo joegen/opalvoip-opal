@@ -147,6 +147,7 @@ static PAtomicInteger::IntegerType g_idNumber = 1;
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
   , m_idNumber(g_idNumber++)
+  , m_temporarilyUnavailable(false)
 {
 }
 
@@ -224,7 +225,6 @@ void OpalPresentity::OnAuthorisationRequest(const AuthorisationRequest & request
 void OpalPresentity::SetAuthorisationRequestNotifier(const AuthorisationRequestNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-
   m_onAuthorisationRequestNotifier = notifier;
 }
 
@@ -248,18 +248,27 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
 
 OpalPresentity::BuddyStatus OpalPresentity::GetBuddyListEx(BuddyList &)
 {
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
 OpalPresentity::BuddyStatus OpalPresentity::SetBuddyListEx(const BuddyList &)
 {
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
 OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyListEx()
 {
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   return BuddyStatus_ListFeatureNotImplemented;
 }
 
@@ -268,6 +277,9 @@ OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 {
   if (buddy.m_presentity.IsEmpty())
     return BuddyStatus_BadBuddySpecification;
+
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
 
   BuddyList buddies;
   BuddyStatus status = GetBuddyListEx(buddies);
@@ -286,7 +298,10 @@ OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 
 
 OpalPresentity::BuddyStatus OpalPresentity::SetBuddyEx(const BuddyInfo & buddy)
-{
+{  
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   if (buddy.m_presentity.IsEmpty())
     return BuddyStatus_BadBuddySpecification;
 
@@ -304,6 +319,9 @@ OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentit
 {
   if (presentity.IsEmpty())
     return BuddyStatus_BadBuddySpecification;
+
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
 
   BuddyList buddies;
   BuddyStatus status = GetBuddyListEx(buddies);
@@ -323,6 +341,9 @@ OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentit
 
 OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & successfulCount, bool subscribe)
 {
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   BuddyList buddies;
   BuddyStatus status = GetBuddyListEx(buddies);
   if (status != BuddyStatus_OK)
@@ -340,6 +361,9 @@ OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & succes
 
 OpalPresentity::BuddyStatus OpalPresentity::UnsubscribeBuddyListEx()
 {
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   PINDEX successfulCount;
   return SubscribeBuddyListEx(successfulCount, false);
 }
@@ -384,6 +408,7 @@ PString OpalPresentity::GetID() const
 
 OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
   : m_threadRunning(false)
+  , m_queueRunning(false)
   , m_thread(NULL)
 {
 }
@@ -398,16 +423,24 @@ OpalPresentityWithCommandThread::~OpalPresentityWithCommandThread()
 }
 
 
-void OpalPresentityWithCommandThread::StartThread()
+void OpalPresentityWithCommandThread::StartThread(bool startQueue)
 {
   if (m_threadRunning)
     return;
 
   // start handler thread
   m_threadRunning = true;
+  m_queueRunning  = startQueue;
   m_thread = new PThreadObj<OpalPresentityWithCommandThread>(*this, &OpalPresentityWithCommandThread::ThreadMain);
 }
 
+void OpalPresentityWithCommandThread::StartQueue(bool startQueue)
+{
+  if (m_threadRunning) {
+    m_queueRunning = startQueue;
+    m_commandQueueSync.Signal();
+  }
+}
 
 void OpalPresentityWithCommandThread::StopThread()
 {
@@ -444,19 +477,21 @@ bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
 void OpalPresentityWithCommandThread::ThreadMain()
 {
   while (m_threadRunning) {
-    OpalPresentityCommand * cmd = NULL;
+    if (m_queueRunning) {
+      OpalPresentityCommand * cmd = NULL;
 
-    {
-      PWaitAndSignal mutex(m_commandQueueMutex);
-      if (!m_commandQueue.empty()) {
-        cmd = m_commandQueue.front();
-        m_commandQueue.pop();
+      {
+        PWaitAndSignal mutex(m_commandQueueMutex);
+        if (!m_commandQueue.empty()) {
+          cmd = m_commandQueue.front();
+          m_commandQueue.pop();
+        }
       }
-    }
-
-    if (cmd != NULL) {
-      cmd->Process(*this);
-      delete cmd;
+  
+      if (cmd != NULL) {
+        cmd->Process(*this);
+        delete cmd;
+      }
     }
 
     m_commandQueueSync.Wait(1000);
