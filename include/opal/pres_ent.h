@@ -364,57 +364,97 @@ class OpalPresentity : public PSafeObject
 
     typedef std::list<BuddyInfo> BuddyList;
 
+    enum BuddyStatus {
+      BuddyStatus_GenericFailure             = -1,
+      BuddyStatus_OK                         = 0,
+      BuddyStatus_SpecifiedBuddyNotFound,
+      BuddyStatus_ListFeatureNotImplemented,
+      BuddyStatus_ListTemporarilyUnavailable,
+      BuddyStatus_ListMayBeIncomplete,
+      BuddyStatus_BadBuddySpecification,
+      BuddyStatus_ListSubscribeFailed,
+    };
+
     /**Get complete buddy list.
       */
-    virtual bool GetBuddyList(
+    virtual BuddyStatus GetBuddyListEx(
       BuddyList & buddies   ///< List of buddies
     );
+    virtual bool GetBuddyList(
+      BuddyList & buddies   ///< List of buddies
+    )
+    { return GetBuddyListEx(buddies) == BuddyStatus_OK; }
 
     /**Set complete buddy list.
       */
-    virtual bool SetBuddyList(
+    virtual BuddyStatus SetBuddyListEx(
       const BuddyList & buddies   ///< List of buddies
     );
+    virtual bool SetBuddyList(
+      const BuddyList & buddies   ///< List of buddies
+    )
+    { return SetBuddyListEx(buddies) == BuddyStatus_OK; }
+
 
     /**Delete the buddy list.
       */
-    virtual bool DeleteBuddyList();
+    virtual BuddyStatus DeleteBuddyListEx();
+    virtual bool DeleteBuddyList() { return DeleteBuddyListEx() == BuddyStatus_OK; }
 
     /**Get a specific buddy from the buddy list.
        Note the buddy.m_presentity field must be preset to the URI to search
        the buddy list for.
       */
-    virtual bool GetBuddy(
+    virtual BuddyStatus GetBuddyEx(
       BuddyInfo & buddy
     );
+    virtual bool GetBuddy(
+      BuddyInfo & buddy
+    )
+    { return GetBuddyEx(buddy) == BuddyStatus_OK; }
 
     /**Set/Add a buddy to the buddy list.
       */
-    virtual bool SetBuddy(
+    virtual BuddyStatus SetBuddyEx(
       const BuddyInfo & buddy
     );
+    virtual bool SetBuddy(
+      const BuddyInfo & buddy
+    )
+    { return SetBuddyEx(buddy) == BuddyStatus_OK; }
 
     /**Delete a buddy to the buddy list.
       */
-    virtual bool DeleteBuddy(
+    virtual BuddyStatus DeleteBuddyEx(
       const PURL & presentity
     );
+    virtual bool DeleteBuddy(
+      const PURL & presentity
+    )
+    { return DeleteBuddyEx(presentity) == BuddyStatus_OK; }
 
     /**Subscribe to buddy list.
        Send a subscription for the presence of every presentity in the current
        buddy list. This might cause multiple calls to SubscribeToPresence() or
        if the underlying protocol allows a single call for all.
       */
-    virtual bool SubscribeBuddyList(
+    virtual BuddyStatus SubscribeBuddyListEx(
+      PINDEX & successfulCount,
       bool subscribe = true
     );
+    virtual bool SubscribeBuddyList(
+      bool subscribe = true
+    )
+    { PINDEX successfulCount; return SubscribeBuddyListEx(successfulCount, subscribe) == BuddyStatus_OK; }
 
     /**Unsubscribe to buddy list.
        Send an unsubscription for the presence of every presentity in the current
        buddy list. This might cause multiple calls to UnsubscribeFromPresence() or
        if the underlying protocol allows a single call for all.
       */
-    virtual bool UnsubscribeBuddyList();
+    virtual BuddyStatus UnsubscribeBuddyListEx();
+    virtual bool UnsubscribeBuddyList()
+    { return UnsubscribeBuddyListEx() == BuddyStatus_OK; }
 
     virtual PString GetID() const;
   //@}
