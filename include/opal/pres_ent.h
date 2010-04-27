@@ -110,8 +110,12 @@ class OpalPresenceInfo
 
 ostream & operator<<(ostream & strm, OpalPresenceInfo::State state);
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class OpalSetLocalPresenceCommand;
+class OpalSubscribeToPresenceCommand;
+class OpalAuthorisationRequestCommand;
+class OpalSendMessageToCommand;
 
 /**Representation of a presence identity.
    This class contains an abstraction of the functionality for "presence"
@@ -133,6 +137,8 @@ class OpalPresentity : public PSafeObject
     OpalPresentity();
 
   public:
+    ~OpalPresentity();
+
     /**Create a concrete class based on the scheme of the URL provided.
       */
     static OpalPresentity * Create(
@@ -459,6 +465,19 @@ class OpalPresentity : public PSafeObject
 
     virtual PString GetID() const;
   //@}
+  
+  
+    virtual bool SendMessageTo(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      const PString & messageId
+    );
+
+    void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
+    void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
+    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
+    void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
@@ -563,7 +582,6 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     PThread * m_thread;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**Abstract class for all OpelPresentity commands.
@@ -634,6 +652,23 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
   public:
     OpalSetLocalPresenceCommand(State state = NoPresence) : OpalPresenceInfo(state) { }
 };
+
+
+/** Command for sending an IM 
+  */
+class OpalSendMessageToCommand : public OpalPresentityCommand
+{
+  public:
+    OpalSendMessageToCommand()
+    { }
+
+    PURL m_to;
+    PString m_type;
+    PString m_body;
+    PString m_messageId;
+};
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
