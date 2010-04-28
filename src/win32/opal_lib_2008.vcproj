@@ -8206,6 +8206,10 @@
 				Name="LID Sources"
 				>
 				<File
+					RelativePath="..\lids\capi_ep.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\lids\lid.cxx"
 					>
 					<FileConfiguration
@@ -10804,6 +10808,18 @@
 				</File>
 				<File
 					RelativePath="..\..\include\lids\lidpluginmgr.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\lids\capi_ep.h"
+					>
+				</File>
+				<File
+					RelativePath="..\lids\capi_linux.h"
+					>
+				</File>
+				<File
+					RelativePath="..\lids\capi_win32.h"
 					>
 				</File>
 			</Filter>

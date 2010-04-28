@@ -57,6 +57,7 @@
 #include <opal/transcoders.h>
 #include <opal/ivr.h>
 #include <lids/lidep.h>
+#include <lids/capi_ep.h>
 #include <ptclib/pstun.h>
 #include <codec/vidcodec.h>
 #include <ptclib/pwavfile.h>
@@ -567,6 +568,9 @@ MyManager::MyManager()
 #if OPAL_SIP
   , sipEP(NULL)
 #endif
+#if OPAL_CAPI
+  , capiEP(NULL)
+#endif
 #if OPAL_IVR
   , ivrEP(NULL)
 #endif
@@ -725,6 +729,10 @@ bool MyManager::Initialise()
 
 #if OPAL_SIP
   sipEP = new MySIPEndPoint(*this);
+#endif
+
+#if OPAL_CAPI
+  capiEP = new OpalCapiEndPoint(*this);
 #endif
 
 #if OPAL_IVR
@@ -1117,6 +1125,10 @@ bool MyManager::Initialise()
   }
 #endif // OPAL_SIP
 
+
+#if OPAL_IVR
+  capiEP->OpenControllers();
+#endif
 
   ////////////////////////////////////////
   // Routing fields
