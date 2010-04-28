@@ -222,7 +222,7 @@ bool OpalPresentity::SendMessageTo(const OpalIM & message)
   if (cmd == NULL)
     return false;
 
-  *cmd = message;
+  cmd->m_message = message;
   SendCommand(cmd);
   return true;
 }
@@ -461,7 +461,12 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
     return;
   }
 
-  OpalIM msg(cmd);
+  // need writable message object
+  OpalIM msg(cmd.m_message);
+
+  if (msg.m_from.IsEmpty())
+    msg.m_from = m_aor;
+
   endpoint->Message(msg);
 }
 

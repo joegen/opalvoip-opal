@@ -35,6 +35,9 @@
 #include <opal/buildopts.h>
 
 #include <ptclib/url.h>
+#include <opal/transports.h>
+
+
 
 class OpalIM : public PObject
 {
@@ -45,6 +48,9 @@ class OpalIM : public PObject
     PString m_mimeType;
     PString m_body;
     PString m_conversationId;
+
+    OpalTransportAddress m_fromAddr;
+    OpalTransportAddress m_toAddr;
 };
 
 #if OPAL_HAS_IM
