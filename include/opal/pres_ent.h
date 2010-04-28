@@ -39,6 +39,8 @@
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
 
+#include <im/im.h>
+
 #include <list>
 #include <queue>
 
@@ -468,10 +470,24 @@ class OpalPresentity : public PSafeObject
   
   
     virtual bool SendMessageTo(
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      const PString & messageId
+      const OpalIM & message
+    );
+
+    /** Callback when presentity receives a message
+
+        Default implementation calls m_onReceivedMessageNotifier.
+      */
+    virtual int OnReceivedMessage(
+      const OpalIM & message ///< incoming message
+    );
+
+    typedef PNotifierTemplate<const OpalIM &> ReceivedMessageNotifier;
+    #define PDECLARE_ReceivedMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalIM &)
+    #define PCREATE_ReceivedMessageNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalIM &)
+
+    /// Set the notifier for the OnPresenceChange() function.
+    void SetReceivedMessageNotifier(
+      const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
     );
 
     void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
@@ -489,6 +505,7 @@ class OpalPresentity : public PSafeObject
 
     AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;
     PresenceChangeNotifier       m_onPresenceChangeNotifier;
+    ReceivedMessageNotifier      m_onReceivedMessageNotifier;
 
     PMutex m_notificationMutex;
     PAtomicInteger::IntegerType m_idNumber;
@@ -656,20 +673,12 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
 
 /** Command for sending an IM 
   */
-class OpalSendMessageToCommand : public OpalPresentityCommand
+class OpalSendMessageToCommand : public OpalPresentityCommand, public OpalIM
 {
   public:
-    OpalSendMessageToCommand()
-    { }
-
-    PURL m_to;
-    PString m_type;
-    PString m_body;
-    PString m_messageId;
+    OpalSendMessageToCommand() { }
+    OpalSendMessageToCommand(const OpalIM & msg) : OpalIM(msg) { }
 };
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
