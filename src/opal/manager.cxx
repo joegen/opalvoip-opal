@@ -1794,36 +1794,53 @@ bool OpalManager::RemovePresentity(const PString & presentity)
 
 PBoolean OpalManager::Message(const PString & to, const PString & body)
 {
-  PURL url(to);
-
-  for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
-    if (url.GetScheme() *= it->GetPrefixName())
-      return it->Message(to, body);
-  }
-
-  return false;
+  OpalIM message;
+  message.m_to   = to;
+  message.m_body = body;
+  return Message(message);
 }
 
 
 PBoolean OpalManager::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
 {
+  OpalIM message;
+  message.m_to             = to;
+  message.m_mimeType       = type;
+  message.m_body           = body;
+  message.m_from           = from;
+  message.m_conversationId = conversationId;
+
+  bool stat = Message(message);
+
+  from           = message.m_from;
+  conversationId = message.m_conversationId;
+
+  return stat;
+}
+
+
+PBoolean OpalManager::Message(OpalIM & message)
+{
+  PString scheme(message.m_to.GetScheme());
   for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
-    if (to.GetScheme() *= it->GetPrefixName())
-      return it->Message(to, type, body, from, conversationId);
+    if (scheme *= it->GetPrefixName())
+      return it->Message(message);
   }
 
   return false;
 }
 
-void OpalManager::OnMessageReceived(
-  const PURL & /*from*/, 
-  const PString & /*fromName*/,
-  const PURL & /*to*/, 
-  const PString & /*type*/,
-  const PString & /*body*/,
-  const PString & /*conversationId*/
-)
+
+int OpalManager::OnMessageReceived(const OpalIM & message)
 {
+  // find a presentity to give the message to
+  for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity) {
+    if (message.m_to == presentity->GetAOR()) {
+      return presentity->OnReceivedMessage(message);
+    }
+  }
+
+  return 0;
 }
 
 #if OPAL_HAS_IM
@@ -1849,14 +1866,16 @@ bool OpalManager::TransmitExternalIM(OpalConnection & conn, const OpalMediaForma
   PString str;
   frame.GetContent(t140);
   t140.AsString(str);
-  OnMessageReceived(remotePartyURL, 
-                    remotePartyName, 
-                    localPartyURL, 
-                    frame.GetContentType(),
-                    str,
-                    id);
 
-  return true;
+  OpalIM message;
+  message.m_to             = localPartyURL;
+  message.m_from           = remotePartyURL;
+  message.m_fromName       = remotePartyName;
+  message.m_mimeType       = frame.GetContentType();
+  message.m_body           = str;
+  message.m_conversationId = id;
+
+  return OnMessageReceived(message) == 0;
 }
 
 #endif
