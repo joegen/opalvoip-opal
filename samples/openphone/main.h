@@ -61,6 +61,7 @@
 class MyManager;
 
 class OpalLineEndPoint;
+class OpalCapiEndPoint;
 class OpalIVREndPoint;
 class OpalFaxEndPoint;
 
@@ -1046,6 +1047,10 @@ class MyManager : public wxFrame, public OpalManager
 
     bool SubscribePresence(wxString & uri);
     void OnPresenceInfoReceived(const SIPPresenceInfo & info);
+#endif
+
+#if OPAL_CAPI
+    OpalCapiEndPoint  * capiEP;
 #endif
 
 #if OPAL_IVR

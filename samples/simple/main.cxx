@@ -34,6 +34,10 @@
 #include <iax2/iax2.h>
 #endif
 
+#if OPAL_CAPI
+#include <lids/capi_ep.h>
+#endif
+
 #if OPAL_SIP
 #include <sip/sip.h>
 #endif
@@ -164,7 +168,10 @@ void SimpleOpalProcess::Main()
              "x-vxml:"
 #endif
 #if OPAL_IAX2
-	     "X-no-iax2."
+             "X-no-iax2."
+#endif
+#if OPAL_CAPI
+             "-no-capi."
 #endif
           , PFalse);
 
@@ -293,6 +300,9 @@ void SimpleOpalProcess::Main()
 #if OPAL_IAX2
             "  -X --no-iax2            : Remove support for iax2\n"
 #endif
+#if OPAL_CAPI
+            "     --no-capi            : Remove support for CAPI ISDN\n"
+#endif
             "  -h --help               : This help message.\n"
             "\n"
             "\n"
@@ -386,6 +396,9 @@ MyManager::MyManager()
 #endif
 #if OPAL_IAX2
   iax2EP = NULL;
+#endif
+#if OPAL_CAPI
+  capiEP = NULL;
 #endif
 #if OPAL_IVR
   ivrEP  = NULL;
@@ -625,6 +638,20 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 #endif
 
+#if OPAL_CAPI
+  ///////////////////////////////////////
+  // Create CAPI handler
+
+  if (!args.HasOption("no-capi")) {
+    capiEP = new OpalCapiEndPoint(*this);
+    
+    if (!capiEP->OpenControllers()) {
+      cerr << "CAPI Endpoint is not initialised correctly" << endl;
+      return false;
+    }
+  }
+#endif
+
 #if OPAL_SIP
 
   ///////////////////////////////////////
@@ -791,8 +818,15 @@ PBoolean MyManager::Initialise(PArgList & args)
                                                                                                                                             
 #if OPAL_IAX2
   if (pcssEP != NULL) {
-    AddRouteEntry("iax2:.*  = pc:");
+    AddRouteEntry("iax2:.* = pc:");
     AddRouteEntry("pc:.*   = iax2:<da>");
+  }
+#endif
+
+#if OPAL_CAPI
+  if (capiEP != NULL) {
+    AddRouteEntry("isdn:.* = pc:");
+    AddRouteEntry("pc:.*   = isdn:<da>");
   }
 #endif
 
