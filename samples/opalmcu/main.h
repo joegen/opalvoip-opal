@@ -29,6 +29,16 @@
 #ifndef _OPAL_MCU_MAIN_H
 #define _OPAL_MCU_MAIN_H
 
+#if OPAL_HAS_MIXER
+#else
+#error Cannot compile MCU test program without OPAL_HAS_MIXER set!
+#endif
+
+#if OPAL_IVR
+#else
+#error Cannot compile MCU test program without OPAL_IVR set!
+#endif
+
 
 class MyManager;
 class MyMixerEndPoint;

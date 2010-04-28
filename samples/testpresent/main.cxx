@@ -31,6 +31,16 @@
 #include <ptclib/cli.h>
 #include <sip/sippres.h>
 
+#if P_EXPAT
+#else
+#error Cannot compile Presentity test program without XML support!
+#endif
+
+#if OPAL_SIP
+#else
+#error Cannot compile Presentity test program without SIP support!
+#endif
+
 
 //////////////////////////////////////////////////////////////
 
