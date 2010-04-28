@@ -29,6 +29,10 @@
 #ifndef _IvrOPAL_MAIN_H
 #define _IvrOPAL_MAIN_H
 
+#if OPAL_IVR
+#else
+#error Cannot compile IVR test program without OPAL_IVR set!
+#endif
 
 class MyManager : public OpalManager
 {
