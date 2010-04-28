@@ -673,11 +673,12 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
 
 /** Command for sending an IM 
   */
-class OpalSendMessageToCommand : public OpalPresentityCommand, public OpalIM
+class OpalSendMessageToCommand : public OpalPresentityCommand
 {
   public:
     OpalSendMessageToCommand() { }
-    OpalSendMessageToCommand(const OpalIM & msg) : OpalIM(msg) { }
+
+    OpalIM m_message;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
