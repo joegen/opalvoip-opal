@@ -662,12 +662,15 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Send SIP message
      */
-    virtual bool Message(
+    virtual PBoolean Message(
       const PURL & to, 
       const PString & type,
       const PString & body,
-      PURL & from,
+      PURL & from, 
       PString & conversationId
+    );
+    virtual PBoolean Message(
+      OpalIM & message
     );
 
     /**Callback called when a message sent by the endpoint didn't reach

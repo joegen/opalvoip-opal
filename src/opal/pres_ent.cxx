@@ -216,18 +216,33 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 }
 
 
-bool OpalPresentity::SendMessageTo(const PURL & to, const PString & type, const PString & body, const PString & messageId)
+bool OpalPresentity::SendMessageTo(const OpalIM & message)
 {
   OpalSendMessageToCommand * cmd = CreateCommand<OpalSendMessageToCommand>();
   if (cmd == NULL)
     return false;
 
-  cmd->m_to        = to;
-  cmd->m_type      = type;
-  cmd->m_body      = body;
-  cmd->m_messageId = messageId;
+  *cmd = message;
   SendCommand(cmd);
   return true;
+}
+
+
+int OpalPresentity::OnReceivedMessage(const OpalIM & message)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  if (!m_onReceivedMessageNotifier.IsNULL())
+    m_onReceivedMessageNotifier(*this, message);
+
+  return 0;
+}
+
+
+void OpalPresentity::SetReceivedMessageNotifier(const ReceivedMessageNotifier & notifier)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+  m_onReceivedMessageNotifier = notifier;
 }
 
 
@@ -446,8 +461,8 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
     return;
   }
 
-  PString conversationId(cmd.m_messageId);
-  endpoint->Message(cmd.m_to, cmd.m_type, cmd.m_body, m_aor, conversationId);
+  OpalIM msg(cmd);
+  endpoint->Message(msg);
 }
 
 

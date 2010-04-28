@@ -1244,31 +1244,49 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 
 PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
 {
-  if (conversationId.IsEmpty()) 
-    conversationId = SIPTransaction::GenerateCallID();
+  OpalIM message;
+  message.m_to             = to;
+  message.m_mimeType       = type;
+  message.m_body           = body;
+  message.m_from           = from;
+  message.m_conversationId = conversationId;
 
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReadWrite);
+  bool stat = Message(message);
+
+  from           = message.m_from;
+  conversationId = message.m_conversationId;
+
+  return stat;
+}
+
+
+PBoolean SIPEndPoint::Message(OpalIM & message)
+{
+  if (message.m_conversationId.IsEmpty()) 
+    message.m_conversationId = SIPTransaction::GenerateCallID();
+
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(message.m_to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReadWrite);
 
   if (handler != NULL) {
-    handler->SetBody(body);
+    handler->SetBody(message.m_body);
   }
   else {
     SIPMessage::Params params;
-    params.m_localAddress    = from.AsString();
+    params.m_localAddress    = message.m_from.AsString();
     params.m_addressOfRecord = params.m_localAddress;
-    params.m_remoteAddress   = to.AsString();
-    params.m_id              = conversationId;
-    params.m_contentType     = type;
+    params.m_remoteAddress   = message.m_to.AsString();
+    params.m_id              = message.m_conversationId;
+    params.m_contentType     = message.m_mimeType;
 
-    handler = new SIPMessageHandler(*this, params, body);
+    handler = new SIPMessageHandler(*this, params, message.m_body);
     activeSIPHandlers.Append(handler);
   }
 
   if (!handler->ActivateState(SIPHandler::Subscribing))
     return false;
 
-  from           = ((SIPMessageHandler *)&*handler)->m_localAddress;
-  conversationId = ((SIPMessageHandler *)&*handler)->m_id;
+  message.m_from           = ((SIPMessageHandler *)&*handler)->m_localAddress;
+  message.m_conversationId = ((SIPMessageHandler *)&*handler)->m_id;
 
   return true;
 }
