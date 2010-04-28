@@ -236,16 +236,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
   , m_sendInBandDTMF(true)
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
   , m_installedInBandDTMF(false)
   , m_emittedInBandDTMF(0)
 #endif
   , m_dtmfSendNotifier(PCREATE_NOTIFIER(OnSendInBandDTMF))
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
 #if OPAL_HAS_MIXER
   , m_recordAudioNotifier(PCREATE_NOTIFIER(OnRecordAudio))
 #if OPAL_VIDEO
