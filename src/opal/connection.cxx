@@ -1441,7 +1441,7 @@ void OpalConnection::OnApplyStringOptions()
 
 void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
 {
-  PTRACE(4, "OpalCon\tApplying string options:\n" << stringOptions);
+  PTRACE_IF(4, !stringOptions.IsEmpty(), "OpalCon\tApplying string options:\n" << stringOptions);
 
   if (LockReadWrite()) {
     PCaselessString str;
