@@ -120,6 +120,7 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_LID
+#undef  OPAL_CAPI
 #undef  OPAL_T120DATA
 
 #if P_VXML

@@ -45,6 +45,8 @@ class SIPEndPoint;
 class H323EndPoint;
 class H323SEndPoint;
 class IAX2EndPoint;
+class OpalCapiEndPoint;
+
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
@@ -107,6 +109,9 @@ class MyManager : public OpalManager
 #endif
 #if OPAL_IAX2
     IAX2EndPoint     * iax2EP;
+#endif
+#if OPAL_CAPI
+    OpalCapiEndPoint * capiEP;
 #endif
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
