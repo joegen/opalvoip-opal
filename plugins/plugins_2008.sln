@@ -97,12 +97,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG728 Audio Codec", "aud
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common ISDN API LID", "LID\CAPI\CAPI_2008.vcproj", "{73808A58-6491-4948-8441-90C8F35B7F59}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\..\ptlib\src\ptlib\msos\Console_2008.vcproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
