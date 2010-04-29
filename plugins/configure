@@ -639,7 +639,6 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 SPANDSP_LIBS
 HAVE_SPANDSP
-HAVE_CAPI
 HAVE_VPB
 HAVE_IXJ
 HAVE_H264
@@ -775,7 +774,6 @@ enable_celt
 enable_h264
 enable_ixj
 enable_vpb
-enable_capi
 enable_spandsp
 '
       ac_precious_vars='build_alias
@@ -1447,7 +1445,6 @@ Optional Features:
   --enable-h264           enable H.264 support
   --enable-ixj            enable xJack cards
   --enable-vpb            enable voicetronix vpb
-  --enable-capi           enable CAPI
   --enable-spandsp        enable spanDSP-based fax support
 
 Optional Packages:
@@ -7185,7 +7182,6 @@ esac
 
 
 HAVE_VPB=yes
-HAVE_CAPI=yes
 HAVE_IXJ=no
 HAVE_H264=yes
 HAVE_CELT=yes
@@ -7197,11 +7193,9 @@ LIBAVCODEC_STACKALIGN_HACK=no
 
 case "$target_os" in
         darwin*) HAVE_VPB=no
-                 HAVE_CAPI=no
                  ;;
         cygwin*|mingw**)
 	         HAVE_VPB=no
-                 HAVE_CAPI=no
                  X264_LINK_STATIC=yes
                  ;;
 esac
@@ -11538,170 +11532,6 @@ _ACEOF
           fi
 
 
-# Check whether --enable-capi was given.
-if test "${enable_capi+set}" = set; then
-  enableval=$enable_capi; HAVE_CAPI=$enableval
-fi
-
-
-if test "x$HAVE_CAPI" = "xyes" ; then
-
-for ac_header in capi20.h
-do
-as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
-fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-else
-  # Is the header compilable?
-{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
-$as_echo_n "checking $ac_header usability... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <$ac_header>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_header_compiler=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-$as_echo "$ac_header_compiler" >&6; }
-
-# Is the header present?
-{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
-$as_echo_n "checking $ac_header presence... " >&6; }
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <$ac_header>
-_ACEOF
-if { (ac_try="$ac_cpp conftest.$ac_ext"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null && {
-	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       }; then
-  ac_header_preproc=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-
-rm -f conftest.err conftest.$ac_ext
-{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-$as_echo "$ac_header_preproc" >&6; }
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
-$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
-$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
-$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
-$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
-$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
-$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
-    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
-$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
-
-    ;;
-esac
-{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
-$as_echo_n "checking for $ac_header... " >&6; }
-if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
-  $as_echo_n "(cached) " >&6
-else
-  eval "$as_ac_Header=\$ac_header_preproc"
-fi
-ac_res=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-
-fi
-as_val=`eval 'as_val=${'$as_ac_Header'}
-		 $as_echo "$as_val"'`
-   if test "x$as_val" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
- HAVE_CAPI=yes
-else
-  HAVE_CAPI=no
-fi
-
-done
-
-fi
-
-
-          { $as_echo "$as_me:$LINENO: checking CAPI" >&5
-$as_echo_n "checking CAPI... " >&6; }
-          { $as_echo "$as_me:$LINENO: result: $HAVE_CAPI" >&5
-$as_echo "$HAVE_CAPI" >&6; }
-
-
 
 
 # Check whether --enable-spandsp was given.
@@ -12091,10 +11921,6 @@ if test -d LID/IxJ ; then
 fi
 if test -d LID/VPB ; then
   ac_config_files="$ac_config_files LID/VPB/Makefile"
-
-fi
-if test -d LID/CAPI ; then
-  ac_config_files="$ac_config_files LID/CAPI/Makefile"
 
 fi
 if test -d fax/fax_spandsp ; then
@@ -12736,7 +12562,6 @@ do
     "video/THEORA/Makefile") CONFIG_FILES="$CONFIG_FILES video/THEORA/Makefile" ;;
     "LID/IxJ/Makefile") CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
     "LID/VPB/Makefile") CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
-    "LID/CAPI/Makefile") CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
     "fax/fax_spandsp/Makefile") CONFIG_FILES="$CONFIG_FILES fax/fax_spandsp/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "audio/Speex/libspeex/speex_config_types.h") CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
@@ -13861,7 +13686,6 @@ do
     "video/THEORA/Makefile") CONFIG_FILES="$CONFIG_FILES video/THEORA/Makefile" ;;
     "LID/IxJ/Makefile") CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
     "LID/VPB/Makefile") CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
-    "LID/CAPI/Makefile") CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
     "fax/fax_spandsp/Makefile") CONFIG_FILES="$CONFIG_FILES fax/fax_spandsp/Makefile" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "audio/Speex/libspeex/speex_config_types.h") CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
@@ -14578,7 +14402,6 @@ echo "                     SpanDSP FAX  :  $HAVE_SPANDSP"
 
 echo ""
 
-echo "                            CAPI  :  $HAVE_CAPI"
 echo "           Quicknet xJACK support :  $HAVE_IXJ"
 echo "         Voicetronics VPB support :  $HAVE_VPB"
 

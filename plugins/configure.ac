@@ -107,7 +107,6 @@ dnl Defaults
 dnl ########################################################################
 
 HAVE_VPB=yes
-HAVE_CAPI=yes
 HAVE_IXJ=no
 HAVE_H264=yes
 HAVE_CELT=yes
@@ -119,11 +118,9 @@ LIBAVCODEC_STACKALIGN_HACK=no
 
 case "$target_os" in
         darwin*) HAVE_VPB=no 
-                 HAVE_CAPI=no 
                  ;;
         cygwin*|mingw**)
 	         HAVE_VPB=no 
-                 HAVE_CAPI=no 
                  X264_LINK_STATIC=yes
                  ;;
 esac
@@ -415,19 +412,6 @@ dnl     VoiceTronics VPB card
 dnl     ########################
 OPAL_SIMPLE_OPTION([vpb],[HAVE_VPB], [enable voicetronix vpb])
 
-dnl     ########################
-dnl     CAPI
-dnl     ########################
-AC_ARG_ENABLE([capi],
-              [AC_HELP_STRING([--enable-capi],[enable CAPI])],
-              [HAVE_CAPI=$enableval])
-
-if test "x$HAVE_CAPI" = "xyes" ; then
-  AC_CHECK_HEADERS([capi20.h], [HAVE_CAPI=yes], [HAVE_CAPI=no])
-fi
-
-OPAL_MSG_CHECK([CAPI], [$HAVE_CAPI])
-AC_SUBST(HAVE_CAPI)
 
 dnl ########################################################################
 dnl FAX Devices
@@ -522,9 +506,6 @@ fi
 if test -d LID/VPB ; then
   AC_CONFIG_FILES(LID/VPB/Makefile)
 fi
-if test -d LID/CAPI ; then
-  AC_CONFIG_FILES(LID/CAPI/Makefile)
-fi
 if test -d fax/fax_spandsp ; then
   AC_CONFIG_FILES(fax/fax_spandsp/Makefile)
 fi
@@ -606,7 +587,6 @@ echo "                     SpanDSP FAX  :  $HAVE_SPANDSP"
 
 echo ""
 
-echo "                            CAPI  :  $HAVE_CAPI"
 echo "           Quicknet xJACK support :  $HAVE_IXJ"
 echo "         Voicetronics VPB support :  $HAVE_VPB"
 

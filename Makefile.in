@@ -329,9 +329,19 @@ SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
 endif
 
 ##################
+# CAPI
+
+ifeq ($(OPAL_CAPI), yes)
+
+SOURCES += $(OPAL_SRCDIR)/lids/capi_ep.cxx
+
+endif
+
+##################
 # SRTP
 
 ifeq ($(OPAL_SRTP), yes)
+
 SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
 
 endif
