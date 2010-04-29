@@ -414,6 +414,26 @@ AC_SUBST(OPAL_SRTP)
 
 
 dnl ########################################################################
+
+dnl MSWIN_DISPLAY capi,CAPI (isdn) Line Interface Device
+dnl MSWIN_DEFINE  capi,OPAL_CAPI
+OPAL_SIMPLE_OPTION([capi],[OPAL_CAPI], [whether to enable CAPI (isdn) support])
+
+AC_ARG_ENABLE([capi],
+              [AC_HELP_STRING([--enable-capi],[enable CAPI])],
+              [OPAL_CAPI=$enableval])
+
+if test "x$OPAL_CAPI" = "xyes" ; then
+  AC_CHECK_HEADERS([capi20.h], [OPAL_CAPI=yes], [OPAL_CAPI=no])
+  if test "x$OPAL_CAPI" = "xyes" ; then
+    OPAL_ADD_CFLAGS_LIBS([], [-lcapi20])
+  fi
+fi
+
+AC_SUBST(OPAL_CAPI)
+
+
+dnl ########################################################################
 dnl We should use SWIG if it is there
 AC_PATH_PROG(SWIG, swig)
 
@@ -570,10 +590,6 @@ dnl OPAL_SIMPLE_OPTION([t120],[OPAL_T120DATA], [whether to enable T.120], [OPAL_
 dnl MSWIN_DISPLAY lids,Line Interface Device
 dnl MSWIN_DEFINE  lids,OPAL_LID
 OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [whether to enable LID support])
-
-dnl MSWIN_DISPLAY capi,CAPI (isdn) Line Interface Device
-dnl MSWIN_DEFINE  capi,OPAL_CAPI
-OPAL_SIMPLE_OPTION([capi],[OPAL_CAPI], [whether to enable CAPI (isdn) support])
 
 dnl MSWIN_DISPLAY ivr,IVR support
 dnl MSWIN_DEFINE  ivr,OPAL_IVR

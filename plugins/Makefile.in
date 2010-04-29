@@ -53,11 +53,6 @@ ifeq ($(HAVE_VPB),yes)
 SUBDIRS += LID/VPB
 endif
 
-HAVE_CAPI=@HAVE_CAPI@
-ifeq ($(HAVE_CAPI),yes)
-SUBDIRS += LID/CAPI
-endif
-
 HAVE_SPANDSP=@HAVE_SPANDSP@
 ifeq ($(HAVE_SPANDSP),yes)
 ifneq (,$(wildcard fax/fax_spandsp))

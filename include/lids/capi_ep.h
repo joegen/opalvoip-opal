@@ -387,7 +387,7 @@ class OpalCapiMediaStream : public OpalMediaStream
     PSyncPoint           m_written;
     PAdaptiveDelay       m_delay;
 
-  friend OpalCapiConnection;
+  friend class OpalCapiConnection;
 };
 
 
