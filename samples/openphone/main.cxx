@@ -2621,10 +2621,8 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 void MyManager::OnVFU(wxCommandEvent& /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
-  if (connection != NULL)  {
-    OpalVideoUpdatePicture cmd;
-    connection->OnMediaCommand(cmd, 0);
-  }
+  if (connection != NULL)
+    connection->SendVideoUpdatePicture();
 }
 
 
