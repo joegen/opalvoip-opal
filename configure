@@ -1490,7 +1490,6 @@ Optional Features:
                           echo cancellation rather than system version
   --enable-zrtp           enable ZRTP protocol support
   --enable-srtp           enable SRTP protocol support
-  --enable-capi           whether to enable CAPI (isdn) support
   --enable-capi           enable CAPI
   --enable-java           enable Java JNI support
   --enable-ruby           enable Ruby support
@@ -9777,49 +9776,6 @@ fi
 
 
 
-          if test "x$OPAL_CAPI" = "x"; then
-            { { $as_echo "$as_me:$LINENO: error: No default specified for OPAL_CAPI, please correct configure.ac" >&5
-$as_echo "$as_me: error: No default specified for OPAL_CAPI, please correct configure.ac" >&2;}
-   { (exit 1); exit 1; }; }
-	  fi
-          # Check whether --enable-capi was given.
-if test "${enable_capi+set}" = set; then
-  enableval=$enable_capi; OPAL_CAPI=$enableval
-fi
-
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:$LINENO: capi support disabled due to disabled dependency " >&5
-$as_echo "$as_me: capi support disabled due to disabled dependency " >&6;}
-	      OPAL_CAPI=no
-	    fi
-	  fi
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:$LINENO: capi support disabled due to disabled dependency " >&5
-$as_echo "$as_me: capi support disabled due to disabled dependency " >&6;}
-	      OPAL_CAPI=no
-	    fi
-	  fi
-
-
-          { $as_echo "$as_me:$LINENO: checking whether to enable CAPI (isdn) support" >&5
-$as_echo_n "checking whether to enable CAPI (isdn) support... " >&6; }
-          { $as_echo "$as_me:$LINENO: result: $OPAL_CAPI" >&5
-$as_echo "$OPAL_CAPI" >&6; }
-
-
-          if test "x$OPAL_CAPI" = "xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define OPAL_CAPI 1
-_ACEOF
-
-          fi
-
-
 # Check whether --enable-capi was given.
 if test "${enable_capi+set}" = set; then
   enableval=$enable_capi; OPAL_CAPI=$enableval
@@ -9976,6 +9932,10 @@ fi
 done
 
   if test "x$OPAL_CAPI" = "xyes" ; then
+    cat >>confdefs.h <<\_ACEOF
+#define OPAL_CAPI 1
+_ACEOF
+
 
           CFLAGS="$CFLAGS "
           CXXFLAGS="$CXXFLAGS "
@@ -12346,8 +12306,7 @@ $debug ||
 if test -n "$CONFIG_FILES"; then
 
 
-ac_cr='
-'
+ac_cr=''
 ac_cs_awk_cr=`$AWK 'BEGIN { print "a\rb" }' </dev/null 2>/dev/null`
 if test "$ac_cs_awk_cr" = "a${ac_cr}b"; then
   ac_cs_awk_cr='\\r'
