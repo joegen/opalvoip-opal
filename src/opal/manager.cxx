@@ -1831,16 +1831,15 @@ PBoolean OpalManager::Message(OpalIM & message)
 }
 
 
-int OpalManager::OnMessageReceived(const OpalIM & message)
+void OpalManager::OnMessageReceived(const OpalIM & message)
 {
   // find a presentity to give the message to
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity) {
     if (message.m_to == presentity->GetAOR()) {
-      return presentity->OnReceivedMessage(message);
+      presentity->OnReceivedMessage(message);
+      break;
     }
   }
-
-  return 0;
 }
 
 #if OPAL_HAS_IM
@@ -1874,8 +1873,9 @@ bool OpalManager::TransmitExternalIM(OpalConnection & conn, const OpalMediaForma
   message.m_mimeType       = frame.GetContentType();
   message.m_body           = str;
   message.m_conversationId = id;
+  OnMessageReceived(message);
 
-  return OnMessageReceived(message) == 0;
+  return true;
 }
 
 #endif

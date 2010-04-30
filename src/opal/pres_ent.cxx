@@ -228,14 +228,12 @@ bool OpalPresentity::SendMessageTo(const OpalIM & message)
 }
 
 
-int OpalPresentity::OnReceivedMessage(const OpalIM & message)
+void OpalPresentity::OnReceivedMessage(const OpalIM & message)
 {
   PWaitAndSignal mutex(m_notificationMutex);
 
   if (!m_onReceivedMessageNotifier.IsNULL())
     m_onReceivedMessageNotifier(*this, message);
-
-  return 0;
 }
 
 

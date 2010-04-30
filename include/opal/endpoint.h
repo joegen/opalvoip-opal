@@ -740,20 +740,6 @@ class OpalEndPoint : public PObject
       OpalIM & Message
     );
 
-    /**Called when text message received
-     */
-    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(
-      const PURL &, 
-      const PString &,
-      const PURL &, 
-      const PString &,
-      const PString &,
-      const PString &
-    ));
-    virtual int OnMessageReceived(
-      const OpalIM & message
-    );
-
 #if OPAL_HAS_IM
     /** Called when text message to be sent to remote end of a connection
       */
@@ -794,6 +780,7 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
 };
 
 
