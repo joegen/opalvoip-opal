@@ -342,15 +342,7 @@ class OpalManager : public PObject
 
     /**Called when text message received
      */
-    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(
-      const PURL &, 
-      const PString &,
-      const PURL &, 
-      const PString &,
-      const PString &,
-      const PString &
-    ));
-    virtual int OnMessageReceived(
+    virtual void OnMessageReceived(
       const OpalIM & message
     );
 
@@ -1596,6 +1588,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
 };
 
 

@@ -644,11 +644,6 @@ PBoolean OpalEndPoint::Message(OpalIM & /*Message*/)
 }
 
 
-int OpalEndPoint::OnMessageReceived(const OpalIM & message)
-{
-  return manager.OnMessageReceived(message);
-}
-
 #if OPAL_HAS_IM
 
 bool OpalEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
