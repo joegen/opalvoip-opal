@@ -417,7 +417,6 @@ dnl ########################################################################
 
 dnl MSWIN_DISPLAY capi,CAPI (isdn) Line Interface Device
 dnl MSWIN_DEFINE  capi,OPAL_CAPI
-OPAL_SIMPLE_OPTION([capi],[OPAL_CAPI], [whether to enable CAPI (isdn) support])
 
 AC_ARG_ENABLE([capi],
               [AC_HELP_STRING([--enable-capi],[enable CAPI])],
@@ -426,6 +425,7 @@ AC_ARG_ENABLE([capi],
 if test "x$OPAL_CAPI" = "xyes" ; then
   AC_CHECK_HEADERS([capi20.h], [OPAL_CAPI=yes], [OPAL_CAPI=no])
   if test "x$OPAL_CAPI" = "xyes" ; then
+    AC_DEFINE([OPAL_CAPI], [1])
     OPAL_ADD_CFLAGS_LIBS([], [-lcapi20])
   fi
 fi
