@@ -740,15 +740,11 @@ class OpalEndPoint : public PObject
       OpalIM & Message
     );
 
-#if OPAL_HAS_IM
-    /** Called when text message to be sent to remote end of a connection
-      */
-    virtual bool TransmitExternalIM(
-      OpalConnection & conn, 
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & frame
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const OpalIM & message
     );
-#endif
 
   protected:
     OpalManager   & manager;

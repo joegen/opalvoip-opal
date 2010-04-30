@@ -1842,43 +1842,6 @@ void OpalManager::OnMessageReceived(const OpalIM & message)
   }
 }
 
-#if OPAL_HAS_IM
-
-bool OpalManager::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & /*format*/, RTP_IMFrame & frame)
-{
-  PURL remotePartyURL, localPartyURL;
-  PString remotePartyName;
-
-  // get information about sender
-  PSafePtr<OpalConnection> otherParty = conn.GetOtherPartyConnectionAs<OpalConnection>();
-  if (otherParty != NULL) {
-    remotePartyURL  = otherParty->GetRemotePartyCallbackURL();
-    remotePartyName = otherParty->GetRemotePartyName();
-    localPartyURL   = otherParty->GetLocalPartyURL();
-  }
-
-  // get ID
-  PString id = conn.GetToken(); //format.GetOptionString("Path", GetIdentifier());
-
-  // pass information up the chain
-  T140String t140;
-  PString str;
-  frame.GetContent(t140);
-  t140.AsString(str);
-
-  OpalIM message;
-  message.m_to             = localPartyURL;
-  message.m_from           = remotePartyURL;
-  message.m_fromName       = remotePartyName;
-  message.m_mimeType       = frame.GetContentType();
-  message.m_body           = str;
-  message.m_conversationId = id;
-  OnMessageReceived(message);
-
-  return true;
-}
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
