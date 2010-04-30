@@ -3089,19 +3089,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
     request.SendResponse(*transport, response);
   }
   else {
-    PTRACE(3, "SIP\tPictureFastUpdate received");
-    if (LockReadWrite()) {
-      OpalMediaStreamPtr encodingStream = GetMediaStream(OpalMediaType::Video(), false);
-      if (encodingStream == NULL){
-        PTRACE(3, "SIP\tNo video stream to update");
-      } else {
-        OpalVideoUpdatePicture updatePictureCommand;
-        encodingStream->ExecuteCommand(updatePictureCommand);
-        PTRACE(3, "SIP\tI-frame requested in video stream");
-      }
-      UnlockReadWrite();
-    }
-
+    SendVideoUpdatePicture();
     request.SendResponse(*transport, SIP_PDU::Successful_OK);
   }
 
@@ -3128,24 +3116,14 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
   connection.OnRTPStatistics(session);
 }
 
+
 #if OPAL_VIDEO
+
 void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 {
-  // We got an intra frame request control packet, alert the encoder.
-  // We're going to grab the call, find the other connection, then grab the
-  // encoding stream
-  PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
-  if (otherConnection == NULL)
-    return; // No other connection.  Bail.
-
-  // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  OpalMediaStreamPtr encodingStream = otherConnection->GetMediaStream(session.GetSessionID(), PTrue);
-  if (encodingStream) {
-    OpalVideoUpdatePicture updatePictureCommand;
-    encodingStream->ExecuteCommand(updatePictureCommand);
-    PTRACE(3, "SIP\tI-frame requestedin video stream via RTCP");
-  }
+  connection.SendVideoUpdatePicture(session.GetSessionID());
 }
+
 
 void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
@@ -3153,10 +3131,12 @@ void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) con
 
 #endif // OPAL_VIDEO
 
+
 void SIP_RTP_Session::SessionFailing(RTP_Session & session)
 {
   ((SIPConnection &)connection).SessionFailing(session);
 }
+
 
 void SIPConnection::OnSessionTimeout(PTimer &, INT)
 {
@@ -3164,6 +3144,7 @@ void SIPConnection::OnSessionTimeout(PTimer &, INT)
   //invite->Start();  
   //sessionTimer = 10000;
 }
+
 
 PString SIPConnection::GetLocalPartyURL() const
 {
