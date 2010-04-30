@@ -477,7 +477,7 @@ class OpalPresentity : public PSafeObject
 
         Default implementation calls m_onReceivedMessageNotifier.
       */
-    virtual int OnReceivedMessage(
+    virtual void OnReceivedMessage(
       const OpalIM & message ///< incoming message
     );
 
