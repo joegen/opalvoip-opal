@@ -815,19 +815,14 @@ void IAX2IncomingEthernetFrames::Main()
 {
   SetThreadName("Distribute to Cons");
   while (keepGoing) {
-    activate.Wait();
+    if (!endpoint->EthernetFramesToBeProcessed())
+      activate.Wait();
     endpoint->ProcessReceivedEthernetFrames();
   }
 
   PTRACE(3, "Distribute\tEnd of thread - Do no more work now");
   return;
 }
-
-void IAX2IncomingEthernetFrames::ProcessList()
-{
-  activate.Signal(); 
-}
-
 
 #endif // OPAL_IAX2
 

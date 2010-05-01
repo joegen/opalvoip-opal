@@ -80,7 +80,7 @@ public:
 
   /**Activate this thread to process all frames in the lists
    */
-  void ProcessList();
+  void ProcessList() { activate.Signal(); }
 
   /**Cause this thread to die immediately */
   void Terminate();
@@ -396,6 +396,11 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**Report if this iax2 endpoint class is correctly initialised */
   PBoolean InitialisedOK() { return (transmitter != NULL) && (receiver != NULL); }
+
+  /**Report if there are frames (from the ethernet) waiting to be
+     processed */
+  PBoolean EthernetFramesToBeProcessed() 
+  { return packetsReadFromEthernet.GetSize() > 0; }
   //@}
   
  protected:
@@ -407,7 +412,7 @@ class IAX2EndPoint : public OpalEndPoint
      list. */
   IAX2IncomingEthernetFrames incomingFrameHandler;
 
-  /**List of iax packets which has been read from the ethernet, and
+  /**List of iax2 packets which has been read from the ethernet, and
      is to be sent to the matching IAX2Connection */
   IAX2FrameList   packetsReadFromEthernet;
   
