@@ -101,6 +101,9 @@ void IAX2Transmit::Main()
 {
   SetThreadName("IAX2Transmit");
   while(keepGoing) {
+    if (!keepGoing)
+      break;
+
     activate.Wait();
     
     if (!keepGoing)
