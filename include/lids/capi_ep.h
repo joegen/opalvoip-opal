@@ -321,7 +321,7 @@ class OpalCapiConnection : public OpalConnection
     PSyncPoint m_disconnected;
 
   friend class OpalCapiEndPoint;
-  friend class OpalCapiEndPoint::IdToConnMap;
+  friend struct OpalCapiEndPoint::IdToConnMap;
   friend class OpalCapiMediaStream;
 };
 

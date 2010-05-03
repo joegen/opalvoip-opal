@@ -28,6 +28,7 @@
  * $Date$
  */
 
+#include <tchar.h>
 
 // All thes defines must be compatible with the Linux /usr/include/linux/isdn/capicmd.h file
 
