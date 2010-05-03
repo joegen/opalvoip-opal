@@ -107,7 +107,7 @@ private:
 
   bool CheckFn(WORD ordinal, FARPROC & proc)
   {
-    return m_hDLL != NULL && (proc || (proc = GetProcAddress(m_hDLL, (LPCSTR)ordinal)) != NULL);
+    return m_hDLL != NULL && (proc || (proc = GetProcAddress(m_hDLL, (LPCTSTR)ordinal)) != NULL);
   }
 
 public:
@@ -118,7 +118,7 @@ public:
   OpalCapiFunctions()
   {
     memset(this, 0, sizeof(*this));
-    m_hDLL = LoadLibrary("CAPI2032.DLL");
+    m_hDLL = LoadLibrary(_T("CAPI2032.DLL"));
   }
 
   ~OpalCapiFunctions()
