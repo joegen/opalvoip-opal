@@ -552,7 +552,7 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
 }
 
 
-void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
+void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & PTRACE_PARAM(connection), bool PTRACE_PARAM(failed))
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
 }
