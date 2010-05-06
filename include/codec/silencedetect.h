@@ -107,7 +107,7 @@ class OpalSilenceDetector : public PObject
       const int clockRate     ///< Sampling clock rate for the preprocessor
     );
 
-    /**Get the cyrrent sampling clock rate.
+    /**Get the current sampling clock rate.
       */
     int GetClockRate() const { return clockRate; }
 
