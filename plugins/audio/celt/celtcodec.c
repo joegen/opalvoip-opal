@@ -52,7 +52,11 @@ static int init_mode(CELTContext *celt, const struct PluginCodec_Definition * co
 {
   int error = 0;
 
+#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
   celt->mode = celt_mode_create(codec->sampleRate, 1, codec->parm.audio.samplesPerFrame, &error);
+#else
+  celt->mode = celt_mode_create(codec->sampleRate, codec->parm.audio.samplesPerFrame, &error);
+#endif
   if (celt->mode == NULL) {
     return FALSE;
   }
@@ -73,8 +77,12 @@ static void * celt_create_encoder(const struct PluginCodec_Definition * codec)
     free(celt);
     return NULL;
   }
- 	
+
+#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
   celt->encoder_state = celt_encoder_create(celt->mode);
+#else
+  celt->encoder_state = celt_encoder_create(celt->mode, 1, NULL);
+#endif
   if (celt->encoder_state == NULL ) {
     celt_mode_destroy(celt->mode);
     free(celt);
@@ -96,7 +104,11 @@ static void * celt_create_decoder(const struct PluginCodec_Definition * codec)
     return NULL;
   }
 
+#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
   celt->decoder_state = celt_decoder_create(celt->mode);
+#else
+  celt->decoder_state = celt_decoder_create(celt->mode, 1, NULL);
+#endif
   if (celt->decoder_state == NULL ) {
     celt_mode_destroy(celt->mode);
     free(celt);
@@ -125,11 +137,11 @@ static void celt_destroy_decoder(const struct PluginCodec_Definition * codec, vo
 }
 
 
-static int celt_codec_encoder(const struct PluginCodec_Definition * codec, 
+static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
                                                             void * context,
-                                                      const void * fromPtr, 
+                                                      const void * fromPtr,
                                                         unsigned * fromLen,
-                                                            void * toPtr,         
+                                                            void * toPtr,
                                                         unsigned * toLen,
                                                     unsigned int * flag)
 {
@@ -142,10 +154,12 @@ static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
   if (*toLen < celt->bytes_per_packet)
     return FALSE;
 
-#ifdef HAVE_CELT_0_5_0_OR_LATER
+#ifdef HAVE_CELT_0_4_OR_SOONER
+  byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, (char *)toPtr, celt->bytes_per_packet);
+#elif HAVE_CELT_0_5_0_OR_0_6_0
   byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, NULL, (char *)toPtr, celt->bytes_per_packet);
 #else
-  byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, (char *)toPtr, celt->bytes_per_packet);
+  byteCount = celt_encode(celt->encoder_state, (void *)fromPtr, NULL, (unsigned char *)toPtr, celt->bytes_per_packet);
 #endif
   if (byteCount < 0) {
 	return 0;
@@ -157,11 +171,11 @@ static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
 }
 
 
-static int celt_codec_decoder(const struct PluginCodec_Definition * codec, 
+static int celt_codec_decoder(const struct PluginCodec_Definition * codec,
                                                             void * context,
-                                                      const void * fromPtr, 
+                                                      const void * fromPtr,
                                                         unsigned * fromLen,
-                                                            void * toPtr,         
+                                                            void * toPtr,
                                                         unsigned * toLen,
                                                     unsigned int * flag)
 {
@@ -173,9 +187,12 @@ static int celt_codec_decoder(const struct PluginCodec_Definition * codec,
   if (*fromLen == 0)
     return FALSE;
 
-  if (celt_decode(celt->decoder_state, (char *)fromPtr, *fromLen, (short *)toPtr) < 0) {
+#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+  if (celt_decode(celt->decoder_state, (char *)fromPtr, *fromLen, (short *)toPtr) < 0)
+#else
+  if (celt_decode(celt->decoder_state, (unsigned char *)fromPtr, *fromLen, (short *)toPtr) < 0)
+#endif
     return 0;
-  }
 
   *toLen = codec->parm.audio.samplesPerFrame*sizeof(short);
 
@@ -190,7 +207,11 @@ static int valid_for_sip(
       void * parm, 
       unsigned * parmLen)
 {
+#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+#else
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(unsigned char *))
+#endif
     return 0;
 
   return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
