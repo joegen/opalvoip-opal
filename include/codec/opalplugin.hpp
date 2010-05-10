@@ -34,12 +34,13 @@
 
 #include "opalplugin.h"
 
-#include <map>
-#include <string>
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <limits.h>
+
+#include <map>
+#include <string>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -95,13 +96,13 @@ class PluginCodec_MediaFormat
   protected:
     OptionsTable m_options;
 
-  public:
+  protected:
     PluginCodec_MediaFormat(OptionsTable options)
       : m_options(options)
     {
     }
 
-
+  public:
     virtual ~PluginCodec_MediaFormat()
     {
     }
