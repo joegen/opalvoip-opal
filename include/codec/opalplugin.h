@@ -36,6 +36,14 @@
 extern "C" {
 #endif
 
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#endif
+
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 #include <time.h>
 
 #ifdef _MSC_VER
@@ -48,6 +56,8 @@ extern "C" {
 #  else
 #    define PLUGIN_CODEC_DLL_API __declspec(dllimport)
 #  endif
+
+#define strcasecmp stricmp
 
 #else
 
