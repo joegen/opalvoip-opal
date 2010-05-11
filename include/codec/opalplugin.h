@@ -57,7 +57,9 @@ extern "C" {
 #    define PLUGIN_CODEC_DLL_API __declspec(dllimport)
 #  endif
 
+#ifndef strcasecmp
 #define strcasecmp stricmp
+#endif
 
 #else
 
