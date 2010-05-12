@@ -1264,7 +1264,38 @@ INCLUDE_FILE_PATTERNS  =
 # instead of the = operator.
 
 PREDEFINED             = DOCPLUSLUS \
-                         DOC_PLUS_PLUS
+                         DOC_PLUS_PLUS \
+                         OPAL_VIDEO \
+                         OPAL_IAX2 \
+                         OPAL_SIP \
+                         OPAL_H323 \
+                         OPAL_LID \
+                         OPAL_T120DATA \
+                         OPAL_IVR \
+                         OPAL_H239 \
+                         OPAL_H501 \
+                         OPAL_H450 \
+                         OPAL_H460 \
+                         OPAL_STATISTICS \
+                         GCC_HAS_CLZ \
+                         OPAL_HAS_MIXER \
+                         OPAL_HAS_PCSS \
+                         OPAL_G711PLC \
+                         OPAL_RFC4175 \
+                         OPAL_FAX \
+                         OPAL_HAS_MSRP \
+                         OPAL_HAS_SIPIM \
+                         OPAL_HAS_RFC4103 \
+                         OPAL_HAS_IM \
+                         OPAL_HAS_H224 \
+                         OPAL_HAS_H281 \
+                         OPAL_SYSTEM_SPEEX \
+                         OPAL_HAVE_SPEEX_SPEEX_H \
+                         OPAL_SPEEX_FLOAT_NOISE \
+                         HAS_LIBZRTP \
+                         HAS_LIBSRTP \
+                         OPAL_JAVA \
+                         OPAL_RUBY \
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
