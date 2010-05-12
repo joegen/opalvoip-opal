@@ -1006,16 +1006,22 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly;
-  else if (sendStream != NULL)
-    sendStream->UpdateMediaFormat(*sdpFormats.FindFormat(sendStream->GetMediaFormat()));
+  else if (sendStream != NULL) {
+    OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(sendStream->GetMediaFormat());
+    if (fmt != sdpFormats.end())
+      sendStream->UpdateMediaFormat(*fmt);
+  }
 
   if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0 &&
       recvStream == NULL &&
       ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
       (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
-  else if (recvStream != NULL)
-    recvStream->UpdateMediaFormat(*sdpFormats.FindFormat(recvStream->GetMediaFormat()));
+  else if (recvStream != NULL) {
+    OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(recvStream->GetMediaFormat());
+    if (fmt != sdpFormats.end())
+      recvStream->UpdateMediaFormat(*fmt);
+  }
 
   if (newDirection == SDPMediaDescription::SendRecv && recvStream->GetMediaFormat().GetPayloadType() != sendStream->GetMediaFormat().GetPayloadType()) {
     // If we are sendrecv we will receive the same payload type as we transmit.
@@ -2501,13 +2507,19 @@ bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, u
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
 
-  if (recvStream != NULL)
-    recvStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(recvStream->GetMediaFormat()));
+  if (recvStream != NULL) {
+    OpalMediaFormatList::const_iterator fmt = m_answerFormatList.FindFormat(recvStream->GetMediaFormat());
+    if (fmt != m_answerFormatList.end())
+      recvStream->UpdateMediaFormat(*fmt);
+  }
   else if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
     ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
 
-  if (sendStream != NULL)
-    sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()));
+  if (sendStream != NULL) {
+    OpalMediaFormatList::const_iterator fmt = m_answerFormatList.FindFormat(sendStream->GetMediaFormat());
+    if (fmt != m_answerFormatList.end())
+      sendStream->UpdateMediaFormat(*fmt);
+  }
   else if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
