@@ -1147,7 +1147,16 @@ class OpalConnection : public PSafeObject
       PVideoOutputDevice * & device,        ///<  Created device
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
-#endif 
+
+    /** Send a Video Update Picture request to media stream.
+      */
+    virtual bool SendVideoUpdatePicture(
+      unsigned sessionID = 0, ///< Session for media stream, 0 is use first Video stream
+      int firstGOB = -1,      ///< First Group Of Blocks for update, -1 is use MB
+      int firstMB = -1,       ///< First Macro Block for update, -1 is use GOB
+      int numBlocks = 0       ///< First Group Of Blocks for update, 0 is all
+    ) const;
+#endif
 
     /**Set the volume (gain) for the audio media channel to the specified percentage.
       */
