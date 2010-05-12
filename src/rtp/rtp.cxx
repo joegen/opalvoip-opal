@@ -1349,6 +1349,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 
 #if OPAL_VIDEO
      case RTP_ControlFrame::e_IntraFrameRequest :
+      PTRACE(4, "RTP\tSession " << sessionID << ", received RFC 2032 FIR");
       if(userData != NULL)
         userData->OnRxIntraFrameRequest(*this);
       break;
