@@ -1515,7 +1515,10 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
     }
   }
 
-  connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
+  if (connection->GetPhase() < OpalConnection::ConnectedPhase)
+    connection->ForwardCall(command.m_param.m_callSetUp.m_partyB);
+  else
+    connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
 }
 
 
