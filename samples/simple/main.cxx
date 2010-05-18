@@ -665,7 +665,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
     PString str = args.GetOptionString("sip-ui");
     if (str *= "rfc2833")
-      sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsSeparateRFC2833);
+      sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
     else if (str *= "info-tone")
       sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
     else if (str *= "info-string")
