@@ -149,7 +149,7 @@ ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
     "SendUserInputAsString",
     "SendUserInputAsTone",
     "SendUserInputAsRFC2833",
-    "SendUserInputAsSeparateRFC2833",
+    "SendUserInputInBand",
     "SendUserInputAsProtocolDefault"
   };
 
@@ -296,7 +296,7 @@ OpalConnection::OpalConnection(OpalCall & call,
       sendUserInputMode = SendUserInputAsTone;
       break;
     case SendDTMFAsRFC2833:
-      sendUserInputMode = SendUserInputAsInlineRFC2833;
+      sendUserInputMode = SendUserInputAsRFC2833;
       break;
     case SendDTMFAsDefault:
     default:
@@ -1462,6 +1462,20 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     PCaselessString str;
 
     m_connStringOptions = stringOptions;
+
+    str = stringOptions(OPAL_OPT_USER_INPUT_MODE);
+    if (str == "RFC2833")
+      SetSendUserInputMode(SendUserInputAsRFC2833);
+    else if (str == "String")
+      SetSendUserInputMode(SendUserInputAsString);
+    else if (str == "Tone")
+      SetSendUserInputMode(SendUserInputAsTone);
+    else if (str == "Q.931")
+      SetSendUserInputMode(SendUserInputAsQ931);
+    else if (str == "InBand") {
+      SetSendUserInputMode(SendUserInputInBand);
+      m_sendInBandDTMF = true;
+    }
 
 #if OPAL_PTLIB_DTMF
     m_sendInBandDTMF   = stringOptions.GetBoolean(OPAL_OPT_ENABLE_INBAND_DTMF, m_sendInBandDTMF);

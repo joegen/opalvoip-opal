@@ -148,8 +148,6 @@ class IAX2Connection : public OpalConnection
       CallEndReason reason = EndedByLocalUser /// Reason for call clearing
       );
 
-  OpalConnection::SendUserInputModes GetRealSendUserInputMode() const;
-
   /**Provided as a link between the iax endpoint and the iax processor */
   void SendDtmf(const PString & dtmf);
 

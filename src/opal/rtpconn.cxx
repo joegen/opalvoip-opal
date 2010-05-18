@@ -309,14 +309,17 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
 
 PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (
+  if (GetRealSendUserInputMode() == SendUserInputAsRFC2833) {
+    if (
 #if OPAL_T38_CAPABILITY
-      ciscoNSEHandler->SendToneAsync(tone, duration) ||
+        ciscoNSEHandler->SendToneAsync(tone, duration) ||
 #endif
-       rfc2833Handler->SendToneAsync(tone, duration))
-    return true;
+         rfc2833Handler->SendToneAsync(tone, duration))
+      return true;
 
-  PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
+    PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
+  }
+
   return OpalConnection::SendUserInputTone(tone, duration);
 }
 
