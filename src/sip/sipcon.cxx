@@ -2874,14 +2874,18 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {
   switch (sendUserInputMode) {
-    case SendUserInputAsString:
-    case SendUserInputAsTone:
-      return sendUserInputMode;
-    default:
-      break;
+    case SendUserInputAsTone :
+      return SendUserInputAsTone;
+
+    case SendUserInputAsProtocolDefault :
+    case SendUserInputAsRFC2833 :
+      if (m_remoteFormatList.HasFormat(OpalRFC2833))
+        return SendUserInputAsRFC2833;
+      // Drop into INFO string mode
   }
 
-  return SendUserInputAsInlineRFC2833;
+  // Eveything else is INFO string mode, lowest common denominator
+  return SendUserInputAsString;
 }
 
 
@@ -2894,37 +2898,29 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
   PTRACE(3, "SIP\tSendUserInputTone('" << tone << "', " << duration << "), using mode " << mode);
 
-  switch (mode) {
-    case SendUserInputAsTone:
-    case SendUserInputAsString:
-      {
-        PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
-        SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
-        if (mode == SendUserInputAsTone) {
-          mimeInfo.SetContentType(ApplicationDTMFRelayKey);
-          PStringStream strm;
-          strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
-          infoTransaction->SetEntityBody(strm);
-        }
-        else {
-          mimeInfo.SetContentType(ApplicationDTMFKey);
-          infoTransaction->SetEntityBody(tone);
-        }
+  if (mode == SendUserInputAsRFC2833)
+    return OpalRTPConnection::SendUserInputTone(tone, duration);
 
-        // cannot wait for completion as this keeps the SIPConnection locks, thus preventing the response from being processed
-        //infoTransaction->WaitForCompletion();
-        //return !infoTransaction->IsFailed();
-        return infoTransaction->Start();
-      }
-
-    // anything else - send as RFC 2833
-    case SendUserInputAsProtocolDefault:
-    default:
-      break;
+  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
+  SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
+  if (mode == SendUserInputAsTone) {
+    mimeInfo.SetContentType(ApplicationDTMFRelayKey);
+    PStringStream strm;
+    strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
+    infoTransaction->SetEntityBody(strm);
+  }
+  else {
+    mimeInfo.SetContentType(ApplicationDTMFKey);
+    infoTransaction->SetEntityBody(tone);
   }
 
-  return OpalRTPConnection::SendUserInputTone(tone, duration);
+  if (infoTransaction->Start())
+    return true;
+
+  PTRACE(2, "SIP\tCould not send tone '" << tone << "' via INFO.");
+  return OpalConnection::SendUserInputTone(tone, duration);
 }
+
 
 #if OPAL_HAS_IM
 
