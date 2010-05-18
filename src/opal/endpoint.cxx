@@ -56,19 +56,18 @@
 OpalEndPoint::OpalEndPoint(OpalManager & mgr,
                            const PCaselessString & prefix,
                            unsigned attributes)
-  : manager(mgr),
-    prefixName(prefix),
-    attributeBits(attributes),
-    productInfo(mgr.GetProductInfo()),
-    defaultLocalPartyName(manager.GetDefaultUserName()),
-    defaultDisplayName(manager.GetDefaultDisplayName())
+  : manager(mgr)
+  , prefixName(prefix)
+  , attributeBits(attributes)
+  , defaultSignalPort(0)
+  , m_maxSizeUDP(4096)
+  , productInfo(mgr.GetProductInfo())
+  , defaultLocalPartyName(manager.GetDefaultUserName())
+  , defaultDisplayName(manager.GetDefaultDisplayName())
+  , initialBandwidth(BANDWITH_DEFAULT_INITIAL)
+  , defaultSendUserInputMode(OpalConnection::SendUserInputAsProtocolDefault)
 {
   manager.AttachEndPoint(this);
-
-  defaultSignalPort = 0;
-
-  initialBandwidth = BANDWITH_DEFAULT_INITIAL;
-  defaultSendUserInputMode = OpalConnection::SendUserInputAsProtocolDefault;
 
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
@@ -167,18 +166,22 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
 PBoolean OpalEndPoint::StartListener(OpalListener * listener)
 {
   if (listener == NULL)
-    return PFalse;
+    return false;
+
+  OpalListenerUDP * udpListener = dynamic_cast<OpalListenerUDP *>(listener);
+  if (udpListener != NULL)
+    udpListener->SetBufferSize(m_maxSizeUDP);
 
   // as the listener is not open, this will have the effect of immediately
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
   if (!listener->Open(PCREATE_NOTIFIER(ListenerCallback))) {
     delete listener;
-    return PFalse;
+    return false;
   }
 
   listeners.Append(listener);
-  return PTrue;
+  return true;
 }
 
 PString OpalEndPoint::GetDefaultTransport() const

@@ -308,17 +308,20 @@ SIPConnection::~SIPConnection()
 }
 
 
-bool SIPConnection::SetTransport(OpalTransport * trans)
+bool SIPConnection::SetTransport(const SIPURL & destination)
 {
   if (deleteTransport && transport != NULL) {
     transport->CloseWait();
     delete transport;
   }
 
-  transport = trans;
+  if (destination.IsEmpty())
+    transport = NULL;
+  else
+    transport = endpoint.CreateTransport(destination, m_connStringOptions(OPAL_OPT_INTERFACE));
   deleteTransport = true;
 
-  if (trans != NULL)
+  if (transport != NULL)
     return true;
 
   if (GetPhase() < ReleasingPhase)
@@ -439,7 +442,7 @@ void SIPConnection::OnReleased()
 
   OpalRTPConnection::OnReleased();
 
-  SetTransport(NULL);
+  SetTransport(PString::Empty());
 }
 
 
@@ -1417,7 +1420,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   originating = PTrue;
 
-  if (!SetTransport(endpoint.CreateTransport(transportAddress, m_connStringOptions(OPAL_OPT_INTERFACE))))
+  if (!SetTransport(transportAddress))
     return false;
 
   ++m_sdpVersion;
@@ -1808,6 +1811,23 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       if (OnReceivedAuthenticationRequired(transaction, response))
         handled = true;
       break;
+
+    case SIP_PDU::Failure_MessageTooLarge :
+    {
+      SIPURL newTransportAddress(transport->GetRemoteAddress());
+      newTransportAddress.SetParamVar("transport", "tcp");
+      if (!SetTransport(newTransportAddress))
+        break;
+
+      SIPInvite * newInvite = new SIPInvite(*this, ((SIPInvite &)transaction).GetSessionManager());
+      if (!newInvite->Start()) {
+        PTRACE(2, "SIP\tCould not restart INVITE for switch to TCP");
+        break;
+      }
+
+      forkedInvitations.Append(newInvite);
+      return;
+    }
 
     case SIP_PDU::Failure_RequestPending :
       SendReINVITE(PTRACE_PARAM("retry after getting 491 Request Pending"));
@@ -2458,7 +2478,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
     if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
       PTRACE(2, "SIP\tINVITE response changed transport for call");
-      if (!SetTransport(endpoint.CreateTransport(newContactAddress)))
+      if (!SetTransport(newContactAddress))
         return;
     }
   }

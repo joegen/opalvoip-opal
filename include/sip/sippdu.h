@@ -549,12 +549,8 @@ class SIP_PDU : public PSafeObject
       MaxStatusCode                       = 699
     };
 
-	static const char * GetStatusCodeDescription(int code);
+    static const char * GetStatusCodeDescription(int code);
     friend ostream & operator<<(ostream & strm, StatusCodes status);
-
-    enum {
-      MaxSize = 65535
-    };
 
     SIP_PDU(
       Methods method = SIP_PDU::NumMethods
@@ -619,7 +615,7 @@ class SIP_PDU : public PSafeObject
 
     /**Read PDU from the specified transport.
       */
-    PBoolean Read(
+    SIP_PDU::StatusCodes Read(
       OpalTransport & transport
     );
 
