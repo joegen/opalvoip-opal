@@ -751,6 +751,7 @@ class OpalEndPoint : public PObject
     PCaselessString prefixName;
     unsigned        attributeBits;
     WORD            defaultSignalPort;
+    PINDEX          m_maxSizeUDP;
     OpalProductInfo productInfo;
     PString         defaultLocalPartyName;
     PString         defaultDisplayName;

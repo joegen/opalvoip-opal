@@ -483,7 +483,7 @@ class SIPConnection : public OpalRTPConnection
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
-    bool SetTransport(OpalTransport * transport);
+    bool SetTransport(const SIPURL & destination);
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     SIPDialogContext & GetDialog() { return m_dialog; }

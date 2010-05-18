@@ -150,7 +150,7 @@ void SIPEndPoint::ShutDown()
 
 
 PString SIPEndPoint::GetDefaultTransport() const 
-{  
+{
   return "udp$,tcp$"
 #if OPAL_PTLIB_SSL
          ",tcps$:5061"
@@ -180,7 +180,7 @@ PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
     PTRACE(2, "SIP\tListening thread finished.");
   }
   else {
-    transport->SetBufferSize(SIP_PDU::MaxSize);
+    transport->SetBufferSize(m_maxSizeUDP);
     HandlePDU(*transport); // Always just one PDU
   }
 
@@ -282,7 +282,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
 
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
-  transport->SetBufferSize(SIP_PDU::MaxSize);
+  transport->SetBufferSize(m_maxSizeUDP);
   if (!transport->Connect()) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     transport->CloseWait();
@@ -308,16 +308,19 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
   SIP_PDU * pdu = new SIP_PDU;
 
   PTRACE(4, "SIP\tWaiting for PDU on " << transport);
-  if (pdu->Read(transport)) {
+  SIP_PDU::StatusCodes status = pdu->Read(transport);
+  if (status == SIP_PDU::Successful_OK) {
     if (OnReceivedPDU(transport, pdu)) 
       return;
   }
   else {
-    PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
-              "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
-    if (transport.good()) {
-      PTRACE(2, "SIP\tMalformed request received on " << transport);
-      pdu->SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
+    if (status < SIP_PDU::Successful_OK) {
+      PTRACE(1, "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
+    }
+    else {
+      PTRACE_IF(2, status == SIP_PDU::Failure_BadRequest,
+                "SIP\tMalformed request received on " << transport);
+      pdu->SendResponse(transport, status, this);
     }
   }
 
@@ -412,6 +415,7 @@ PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 {
   return PTrue;
 }
+
 
 
 SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
@@ -645,10 +649,13 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
         return false;
       break;
 
-    case SIP_PDU::Method_ACK :
     case SIP_PDU::Method_BYE :
-      // If we receive an ACK or BYE outside of the context of a connection, ignore it.
+      // If we receive a BYE outside of the context of a connection, tell them.
       pdu->SendResponse(transport, SIP_PDU::Failure_TransactionDoesNotExist, this);
+      return false;
+
+      // If we receive an ACK outside of the context of a connection, ignore it.
+    case SIP_PDU::Method_ACK :
       return false;
 
     default :
