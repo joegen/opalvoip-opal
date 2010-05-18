@@ -583,11 +583,21 @@ class OpalListenerUDP : public OpalListenerIP
     ) const;
   //@}
 
+  /**@name Member access */
+  //@{
+    /**Set the size of UDP packet reads.
+      */
+    void SetBufferSize(
+      PINDEX size
+    ) { m_bufferSize = size; }
+  //@}
+
 
   protected:
     virtual const char * GetProtoPrefix() const;
 
     PMonitoredSocketsPtr listenerBundle;
+    PINDEX               m_bufferSize;
 };
 
 
@@ -739,6 +749,10 @@ class OpalTransport : public PIndirectChannel
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
+
+       If false is returned but there is data returned in the \p packet
+       that indicates that the available buffer space was too small, e.g. an
+       EMSGSIZE error was returned by recvfrom.
       */
     virtual PBoolean ReadPDU(
       PBYTEArray & packet   ///<  Packet read from transport
@@ -899,6 +913,10 @@ class OpalTransportTCP : public OpalTransportIP
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
+
+       If false is returned but there is data returned in the \p packet
+       that indicates that the available buffer space was too small, e.g. an
+       EMSGSIZE error was returned by recvfrom.
       */
     virtual PBoolean ReadPDU(
       PBYTEArray & pdu  ///<  PDU read from transport
@@ -956,11 +974,8 @@ class OpalTransportUDP : public OpalTransportIP
      */
     OpalTransportUDP(
       OpalEndPoint & endpoint,              ///<  Endpoint object
-      const PBYTEArray & preReadPacket,     ///<  Packet already read by OpalListenerUDP
       const PMonitoredSocketsPtr & sockets, ///<  Bundle of sockets from OpalListenerUDP
-      const PString & iface,                ///<  Local interface to use
-      PIPSocket::Address remoteAddress,     ///<  Remote address received PDU on
-      WORD remotePort                       ///<  Remote port received PDU on
+      const PString & iface                 ///<  Local interface to use
     );
 
     /// Destroy the UDP channel
@@ -1064,6 +1079,10 @@ class OpalTransportUDP : public OpalTransportIP
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
+
+       If false is returned but there is data returned in the \p packet
+       that indicates that the available buffer space was too small, e.g. an
+       EMSGSIZE error was returned by recvfrom.
       */
     virtual PBoolean ReadPDU(
       PBYTEArray & packet   ///<  Packet read from transport
@@ -1092,6 +1111,12 @@ class OpalTransportUDP : public OpalTransportIP
       WriteConnectCallback function,  ///<  Function for writing data
       void * userData                 ///<  User data to pass to write function
     );
+
+    /**Set the size of UDP packet reads.
+      */
+    void SetBufferSize(
+      PINDEX size
+    ) { m_bufferSize = size; }
   //@}
 
   protected:
@@ -1100,7 +1125,11 @@ class OpalTransportUDP : public OpalTransportIP
     virtual const char * GetProtoPrefix() const;
 
     OpalManager & manager;
-    PBYTEArray    preReadPacket;
+    PINDEX        m_bufferSize;
+    PBYTEArray    m_preReadPacket;
+    bool          m_preReadOK;
+
+  friend class OpalListenerUDP;
 };
 
 

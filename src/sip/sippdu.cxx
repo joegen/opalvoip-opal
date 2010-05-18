@@ -1938,15 +1938,16 @@ void SIP_PDU::PrintOn(ostream & strm) const
 }
 
 
-PBoolean SIP_PDU::Read(OpalTransport & transport)
+SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
 {
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to read PDU from closed transport " << transport);
-    return PFalse;
+    return SIP_PDU::Local_TransportError;
   }
 
   PStringStream datagram;
   PBYTEArray pdu;
+  bool truncated = false;
 
   istream * stream;
   if (transport.IsReliable())
@@ -1954,8 +1955,11 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   else {
     stream = &datagram;
 
-    if (!transport.ReadPDU(pdu))
-      return false;
+    if (!transport.ReadPDU(pdu)) {
+      if (pdu.IsEmpty())
+        return SIP_PDU::Local_TransportError;
+      truncated = true;
+    }
 
     datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
   }
@@ -1970,7 +1974,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
       PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
                 << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
     }
-    return PFalse;
+    return SIP_PDU::Failure_BadRequest;
   }
 
   if (cmd.Left(4) *= "SIP/") {
@@ -1978,7 +1982,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
       PTRACE(2, "SIP\tBad Status-Line \"" << cmd << "\" received on " << transport);
-      return PFalse;
+      return SIP_PDU::Failure_BadRequest;
     }
 
     m_versionMajor = cmd.Mid(4).AsUnsigned();
@@ -1992,7 +1996,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     PStringArray cmds = cmd.Tokenise( ' ', PFalse);
     if (cmds.GetSize() < 3) {
       PTRACE(2, "SIP\tBad Request-Line \"" << cmd << "\" received on " << transport);
-      return PFalse;
+      return SIP_PDU::Failure_BadRequest;
     }
 
     int i = 0;
@@ -2000,7 +2004,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
       i++;
       if (i >= NumMethods) {
         PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
-        return PFalse;
+        return SIP_PDU::Failure_BadRequest;
       }
     }
     m_method = (Methods)i;
@@ -2013,7 +2017,7 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
   if (m_versionMajor < 2) {
     PTRACE(2, "SIP\tInvalid version (" << m_versionMajor << ") received on " << transport);
-    return PFalse;
+    return SIP_PDU::Failure_BadRequest;
   }
 
   // Getthe MIME fields
@@ -2021,9 +2025,8 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   if (!stream->good() || m_mime.IsEmpty()) {
     PTRACE(2, "SIP\tInvalid MIME received on " << transport);
     transport.clear(); // Clear flags so BadRequest response is sent by caller
-    return PFalse;
+    return SIP_PDU::Failure_BadRequest;
   }
-
 
   // get the SDP content body
   // if a content length is specified, read that length
@@ -2044,27 +2047,32 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
     contentLengthPresent = false;
   }
 
-  if (contentLengthPresent) {
-    if (contentLength > 0)
-      stream->read(m_entityBody.GetPointer(contentLength+1), contentLength);
-  }
-  else {
-    contentLength = 0;
-    int c;
-    while ((c = stream->get()) != EOF) {
-      m_entityBody.SetMinSize((++contentLength/1000+1)*1000);
-      m_entityBody += (char)c;
+  // Don't worry about body if was truncated packet
+  if (!truncated) {
+    if (contentLengthPresent) {
+      if (contentLength > 0)
+        stream->read(m_entityBody.GetPointer(contentLength+1), contentLength);
     }
-  }
+    else {
+      contentLength = 0;
+      int c;
+      while ((c = stream->get()) != EOF) {
+        m_entityBody.SetMinSize((++contentLength/1000+1)*1000);
+        m_entityBody += (char)c;
+      }
+    }
 
-  ////////////////
-  m_entityBody[contentLength] = '\0';
+    m_entityBody[contentLength] = '\0';
+  }
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
     ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
 
-    trace << "SIP\tPDU ";
+    trace << "SIP\t";
+    if (truncated)
+      trace << "Truncated (EMSGSIZE) ";
+    trace << "PDU ";
 
     if (!PTrace::CanTrace(4)) {
       if (m_method != NumMethods)
@@ -2080,12 +2088,14 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
     if (PTrace::CanTrace(4))
       trace << '\n' << cmd << '\n' << m_mime << m_entityBody;
+    if (truncated && contentLength > 0)
+      trace << "... truncated";
 
     trace << PTrace::End;
   }
 #endif
 
-  return true;
+  return truncated ? SIP_PDU::Failure_MessageTooLarge : SIP_PDU::Successful_OK;
 }
 
 

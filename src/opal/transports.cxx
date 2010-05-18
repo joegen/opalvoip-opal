@@ -722,8 +722,9 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
 OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
-  : OpalListenerIP(endpoint, binding, option),
-    listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetNatMethod()))
+  : OpalListenerIP(endpoint, binding, option)
+  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetNatMethod()))
+  , m_bufferSize(32768)
 {
 }
 
@@ -773,21 +774,31 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   WORD remotePort;
   PString iface;
   PINDEX readCount;
-  static const PINDEX SixtyFourK = 0x10000;
-  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(SixtyFourK), SixtyFourK, remoteAddr, remotePort, iface, readCount, timeout)) {
+  bool preReadOK;
+  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(m_bufferSize), m_bufferSize, remoteAddr, remotePort, iface, readCount, timeout)) {
     case PChannel::NoError :
       pdu.SetSize(readCount);
-      return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+      preReadOK = true;
+      break;
+
+    case PChannel::BufferTooSmall :
+      preReadOK = false;
+      break;
 
     case PChannel::Interrupted :
       PTRACE(4, "Listen\tInterfaces changed");
-      break;
+      return NULL;
 
     default :
       PTRACE(1, "Listen\tUDP read error.");
+      return NULL;
   }
 
-  return NULL;
+  OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, iface);
+  transport->m_preReadPacket = pdu;
+  transport->m_preReadOK = preReadOK;
+  transport->SetRemoteAddress(OpalTransportAddress(remoteAddr, remotePort, "udp"));
+  return transport;
 }
 
 
@@ -805,7 +816,7 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
   if (localAddress.GetIpAddress(addr))
     iface = addr.AsString(true);
 
-  return new OpalTransportUDP(endpoint, PBYTEArray(), listenerBundle, iface, PIPSocket::GetDefaultIpAny(), 0);
+  return new OpalTransportUDP(endpoint, listenerBundle, iface);
 }
 
 
@@ -1207,6 +1218,8 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    bool preOpen)
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
+  , m_preReadOK(false)
+  , m_bufferSize(8192)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
   if (preOpen)
@@ -1216,20 +1229,14 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 
 
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
-                                   const PBYTEArray & packet,
                                    const PMonitoredSocketsPtr & listener,
-                                   const PString & iface,
-                                   PIPSocket::Address remAddr,
-                                   WORD remPort)
+                                   const PString & iface)
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
   , manager(ep.GetManager())
-  , preReadPacket(packet)
+  , m_preReadOK(true)
+  , m_bufferSize(8192)
 {
-  remoteAddress = remAddr;
-  remotePort = remPort;
-
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, PTrue);
-  socket->SetRemote(remAddr, remPort);
   socket->SetInterface(iface);
   socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
   Open(socket);
@@ -1405,28 +1412,28 @@ PString OpalTransportUDP::GetLastReceivedInterface() const
 
 PBoolean OpalTransportUDP::Read(void * buffer, PINDEX length)
 {
-  if (preReadPacket.IsEmpty())
+  if (m_preReadPacket.IsEmpty())
     return OpalTransportIP::Read(buffer, length);
 
-  lastReadCount = PMIN(length, preReadPacket.GetSize());
-  memcpy(buffer, preReadPacket, lastReadCount);
-  preReadPacket.SetSize(0);
+  lastReadCount = PMIN(length, m_preReadPacket.GetSize());
+  memcpy(buffer, m_preReadPacket, lastReadCount);
+  m_preReadPacket.SetSize(0);
 
-  return PTrue;
+  return m_preReadOK;
 }
 
 
 PBoolean OpalTransportUDP::ReadPDU(PBYTEArray & packet)
 {
-  if (preReadPacket.GetSize() > 0) {
-    packet = preReadPacket;
-    preReadPacket.SetSize(0);
-    return PTrue;
+  if (m_preReadPacket.GetSize() > 0) {
+    packet = m_preReadPacket;
+    m_preReadPacket.SetSize(0);
+    return m_preReadOK;
   }
 
-  if (!Read(packet.GetPointer(10000), 10000)) {
+  if (!Read(packet.GetPointer(m_bufferSize), m_bufferSize)) {
     packet.SetSize(0);
-    return PFalse;
+    return false;
   }
 
   packet.SetSize(GetLastReadCount());
