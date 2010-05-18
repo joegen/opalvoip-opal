@@ -258,18 +258,6 @@ PBoolean IAX2Connection::SendUserInputString(const PString & value)
   return OpalConnection::SendUserInputString(value);
 }
 
-OpalConnection::SendUserInputModes IAX2Connection::GetRealSendUserInputMode() const
-{
-  switch (sendUserInputMode) {
-    case SendUserInputAsString:
-    case SendUserInputAsTone:
-      return sendUserInputMode;
-    default:
-      break;
-  }
-
-  return SendUserInputAsTone;
-}
   
 PBoolean IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
 { 

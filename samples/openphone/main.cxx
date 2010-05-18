@@ -221,6 +221,7 @@ DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
+DEF_FIELD(SIPUserInputMode);
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -1089,6 +1090,9 @@ bool MyManager::Initialise()
 
   if (config->Read(LineAppearanceCodeKey, &value1))
     sipEP->SetDefaultAppearanceCode(value1);
+
+  if (config->Read(SIPUserInputModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
+    sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)value1);
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
@@ -3925,7 +3929,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_Aliases->Append(PwxString(aliases[i]));
 
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
-  if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
+  if (m_DTMFSendMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_DTMFSendMode = OpalConnection::SendUserInputAsString;
 #if OPAL_450
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
@@ -3953,6 +3957,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SIPProxyUsername, m_manager.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, m_manager.sipEP->GetProxy().GetPassword());
   INIT_FIELD(LineAppearanceCode, m_manager.sipEP->GetDefaultAppearanceCode());
+  INIT_FIELD(SIPUserInputMode, m_manager.sipEP->GetSendUserInputMode());
+  if (m_SIPUserInputMode >= OpalConnection::SendUserInputAsProtocolDefault)
+    m_SIPUserInputMode = OpalConnection::SendUserInputAsRFC2833;
+  m_SIPUserInputMode--; // No SendUserInputAsQ931 mode, so decrement
 
   m_SelectedRegistration = INT_MAX;
 
@@ -4318,6 +4326,8 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
   config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
   SAVE_FIELD(LineAppearanceCode, m_manager.sipEP->SetDefaultAppearanceCode);
+  m_manager.sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)(m_SIPUserInputMode+1));
+  config->Write(SIPUserInputModeKey, m_SIPUserInputMode+1);
 
   RegistrationList newRegistrations;
 
@@ -4338,7 +4348,6 @@ bool OptionsDialog::TransferDataFromWindow()
       group.sprintf(wxT("%s/%04u"), RegistrarGroup, registrationIndex++);
       config->SetPath(group);
       iterReg->Write(*config);
-
     }
 
     m_manager.ReplaceRegistrations(newRegistrations);

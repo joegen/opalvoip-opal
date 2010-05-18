@@ -79,10 +79,12 @@ class PURL;
 #define OPAL_OPT_PRESENTATION_BLOCK   "Presentation-Block"    ///< String option to block outgoing calling number presentation
 #define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
 #define OPAL_OPT_INTERFACE            "Interface"             ///< String option to set the interface used for outgoing call
+#define OPAL_OPT_USER_INPUT_MODE      "User-Input-Mode"       ///< String option to set User Input indication mode:
+                                                              ///< "RFC2833", "String", "Tone", "Q.931" or "InBand"
 #define OPAL_OPT_ENABLE_INBAND_DTMF   "EnableInbandDTMF"      ///< String option to enable in band DTMF detection
 #define OPAL_OPT_ENABLE_INBAND_DTMF   "EnableInbandDTMF"      ///< String option to enable in band DTMF detection/send
 #define OPAL_OPT_DETECT_INBAND_DTMF   "DetectInBandDTMF"      ///< String option to enable in band DTMF detection
-#define OPAL_OPT_SEND_INBAND_DTMF     "SendInBandDTMF"        ///< String option to enable in band DTMF send
+#define OPAL_OPT_SEND_INBAND_DTMF     "SendInBandDTMF"        ///< String option to enable in band DTMF send as fall back for other UI modes
 #define OPAL_OPT_DTMF_MULT            "dtmfmult"
 #define OPAL_OPT_DTMF_DIV             "dtmfdiv"
 #define OPAL_OPT_DISABLE_JITTER       "Disable-Jitter"        ///< String option to disable jitter buffer if "true"
@@ -1260,10 +1262,12 @@ class OpalConnection : public PSafeObject
       SendUserInputAsQ931,
       SendUserInputAsString,
       SendUserInputAsTone,
-      SendUserInputAsInlineRFC2833,
-      SendUserInputAsSeparateRFC2833,  // Not implemented
+      SendUserInputAsRFC2833,
+      SendUserInputInBand,
       SendUserInputAsProtocolDefault,
-      NumSendUserInputModes
+      NumSendUserInputModes,
+
+      SendUserInputAsInlineRFC2833 = SendUserInputAsRFC2833  // For backward compatibility
     };
 #if PTRACING
     friend ostream & operator<<(ostream & o, SendUserInputModes m);
