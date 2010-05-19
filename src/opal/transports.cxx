@@ -1218,8 +1218,8 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    bool preOpen)
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
-  , m_preReadOK(false)
   , m_bufferSize(8192)
+  , m_preReadOK(false)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
   if (preOpen)
@@ -1233,8 +1233,8 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const PString & iface)
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
   , manager(ep.GetManager())
-  , m_preReadOK(true)
   , m_bufferSize(8192)
+  , m_preReadOK(true)
 {
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, PTrue);
   socket->SetInterface(iface);
