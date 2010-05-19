@@ -2882,10 +2882,11 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
       if (m_remoteFormatList.HasFormat(OpalRFC2833))
         return SendUserInputAsRFC2833;
       // Drop into INFO string mode
-  }
 
-  // Eveything else is INFO string mode, lowest common denominator
-  return SendUserInputAsString;
+    default :
+      // Eveything else is INFO string mode, lowest common denominator
+      return SendUserInputAsString;
+  }
 }
 
 
