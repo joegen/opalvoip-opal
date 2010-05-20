@@ -358,6 +358,8 @@ class OpalMediaStream : public PSafeObject
   //@}
 
   protected:
+    void IncrementTimestamp(PINDEX size);
+
     OpalConnection & connection;
     unsigned         sessionID;
     PString          identifier;
@@ -372,6 +374,10 @@ class OpalMediaStream : public PSafeObject
 
     OpalMediaPatch * mediaPatch;
     PNotifier        commandNotifier;
+
+    RTP_DataFrame::PayloadTypes m_payloadType;
+    unsigned                    m_frameTime;
+    PINDEX                      m_frameSize;
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnPatchStart());
