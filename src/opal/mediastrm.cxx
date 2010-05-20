@@ -73,6 +73,9 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , marker(true)
   , mismatchedPayloadTypes(0)
   , mediaPatch(NULL)
+  , m_payloadType(mediaFormat.GetPayloadType())
+  , m_frameTime(mediaFormat.GetFrameTime())
+  , m_frameSize(mediaFormat.GetFrameSize())
 {
   connection.SafeReference();
   PTRACE(5, "Media\tCreated " << (isSource ? "Source" : "Sink") << ' ' << this);
@@ -118,6 +121,9 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
     return false;
 
   PTRACE(4, "Media\tMedia format updated on " << *this);
+  m_payloadType = mediaFormat.GetPayloadType();
+  m_frameTime = mediaFormat.GetFrameTime();
+  m_frameSize = mediaFormat.GetFrameSize();
   return true;
 }
 
@@ -229,16 +235,9 @@ PBoolean OpalMediaStream::WritePackets(RTP_DataFrameList & packets)
 }
 
 
-inline static unsigned CalculateTimestamp(PINDEX size, const OpalMediaFormat & mediaFormat)
+void OpalMediaStream::IncrementTimestamp(PINDEX size)
 {
-  unsigned frameTime = mediaFormat.GetFrameTime();
-  PINDEX frameSize = mediaFormat.GetFrameSize();
-
-  if (frameSize == 0)
-    return frameTime;
-
-  unsigned frames = (size + frameSize - 1) / frameSize;
-  return frames*frameTime;
+  timestamp += m_frameTime * (m_frameSize != 0 ? ((size + m_frameSize - 1) / m_frameSize) : 1);
 }
 
 
@@ -262,9 +261,9 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   // If the ReadData() function did not change the timestamp then use the default
   // method or fixed frame times and sizes.
   if (oldTimestamp == timestamp)
-    timestamp += CalculateTimestamp(lastReadCount, mediaFormat);
+    IncrementTimestamp(lastReadCount);
 
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  packet.SetPayloadType(m_payloadType);
   packet.SetPayloadSize(lastReadCount);
   packet.SetTimestamp(oldTimestamp); // Beginning of frame
   packet.SetMarker(marker);
@@ -288,10 +287,10 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   timestamp = packet.GetTimestamp();
 
   int size = packet.GetPayloadSize();
-  if (size > 0 && mediaFormat.IsTransportable()) {
-    if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
+  if (size > 0 && m_payloadType < RTP_DataFrame::MaxPayloadType) {
+    if (packet.GetPayloadType() == m_payloadType) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
-                "H323RTP\tPayload type matched again " << mediaFormat.GetPayloadType());
+                "H323RTP\tPayload type matched again " << m_payloadType);
       mismatchedPayloadTypes = 0;
     }
     else {
@@ -299,7 +298,7 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
       if (mismatchedPayloadTypes < MAX_PAYLOAD_TYPE_MISMATCHES) {
         PTRACE(2, "Media\tRTP data with mismatched payload type,"
                   " is " << packet.GetPayloadType() << 
-                  " expected " << mediaFormat.GetPayloadType() <<
+                  " expected " << m_payloadType <<
                   ", ignoring packet.");
         size = 0;
       }
@@ -307,14 +306,14 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
         PTRACE_IF(2, mismatchedPayloadTypes == MAX_PAYLOAD_TYPE_MISMATCHES,
                   "Media\tRTP data with consecutive mismatched payload types,"
                   " is " << packet.GetPayloadType() << 
-                  " expected " << mediaFormat.GetPayloadType() <<
+                  " expected " << m_payloadType <<
                   ", ignoring payload type from now on.");
       }
     }
   }
 
   if (size == 0) {
-    timestamp += CalculateTimestamp(1, mediaFormat);
+    IncrementTimestamp(1);
     packet.SetTimestamp(timestamp);
     PINDEX dummy;
     return WriteData(NULL, 0, dummy);
@@ -335,7 +334,7 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
     // If the Write() function did not change the timestamp then use the default
     // method of fixed frame times and sizes.
     if (oldTimestamp == timestamp)
-      timestamp += CalculateTimestamp(size, mediaFormat);
+      IncrementTimestamp(size);
 
     size -= written;
     ptr += written;
@@ -382,7 +381,7 @@ PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
   written = length;
   RTP_DataFrame packet(length);
   memcpy(packet.GetPayloadPtr(), buffer, length);
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  packet.SetPayloadType(m_payloadType);
   packet.SetTimestamp(timestamp);
   packet.SetMarker(marker);
   return WritePacket(packet);
@@ -722,7 +721,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (paused || packet.GetPayloadSize() == 0)
     return true;
 
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  packet.SetPayloadType(m_payloadType);
   return rtpSession.WriteData(packet);
 }
 
@@ -1316,10 +1315,10 @@ OpalUDPMediaStream::~OpalUDPMediaStream()
 }
 
 
-PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
+PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  Packet.SetPayloadType(mediaFormat.GetPayloadType());
-  Packet.SetPayloadSize(0);
+  packet.SetPayloadType(m_payloadType);
+  packet.SetPayloadSize(0);
 
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
@@ -1334,8 +1333,8 @@ PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
   }
 
   if (rawData.GetSize() > 0) {
-    Packet.SetPayloadSize(rawData.GetSize());
-    memcpy(Packet.GetPayloadPtr(), rawData.GetPointer(), rawData.GetSize());
+    packet.SetPayloadSize(rawData.GetSize());
+    memcpy(packet.GetPayloadPtr(), rawData.GetPointer(), rawData.GetSize());
   }
 
   return true;
