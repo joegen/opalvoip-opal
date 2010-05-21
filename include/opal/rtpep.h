@@ -37,6 +37,10 @@
 
 #include <opal/endpoint.h>
 
+
+/**Base class for endpoint types that use RTP for media transport.
+   Currently used by H323EndPoint and SIPEndPoint
+  */
 class OpalRTPEndPoint : public OpalEndPoint
 {
   PCLASSINFO(OpalRTPEndPoint, OpalEndPoint);

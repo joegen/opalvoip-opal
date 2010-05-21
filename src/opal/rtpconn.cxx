@@ -117,10 +117,24 @@ RTP_Session * OpalRTPConnection::GetSession(unsigned sessionID) const
   return m_rtpSessions.GetSession(sessionID);
 }
 
+
 OpalMediaSession * OpalRTPConnection::GetMediaSession(unsigned sessionID) const
 {
   return m_rtpSessions.GetMediaSession(sessionID);
 }
+
+
+RTP_UDP * OpalRTPConnection::FindSessionByLocalPort(WORD port) const
+{
+  for (list<OpalRTPSessionManager *>::const_iterator it = m_allSessions.begin(); it != m_allSessions.end(); ++it) {
+    RTP_UDP * rtp = (*it)->FindSessionByLocalPort(port);
+    if (rtp != NULL)
+      return rtp;
+  }
+
+  return NULL;
+}
+
 
 RTP_Session * OpalRTPConnection::UseSession(const OpalTransport & transport, unsigned sessionID, const OpalMediaType & mediaType, RTP_QOS * rtpqos)
 {
@@ -507,15 +521,25 @@ OpalMediaStream * OpalRTPMediaSession::CreateMediaStream(const OpalMediaFormat &
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRTPSessionManager::OpalRTPSessionManager(OpalConnection & conn)
-  : connection(conn)
+OpalRTPSessionManager::OpalRTPSessionManager(OpalRTPConnection & connection)
+  : m_connection(connection)
 {
+  m_connection.m_allSessions.push_back(this);
+}
+
+
+OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & other)
+  : m_connection(other.m_connection)
+  , sessions(other.sessions)
+{
+  m_connection.m_allSessions.push_back(this);
 }
 
 
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
-  PWaitAndSignal m(m_mutex);
+  PWaitAndSignal mutex(m_mutex);
+
   if (sessions.IsUnique()) {
     while (sessions.GetSize() > 0) {
       PINDEX id = sessions.GetKeyAt(0);
@@ -524,6 +548,8 @@ OpalRTPSessionManager::~OpalRTPSessionManager()
       sessions.RemoveAt(id);
     }
   }
+
+  m_connection.m_allSessions.remove(this);
 }
 
 
@@ -551,7 +577,7 @@ void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMedia
   unsigned sessionID = rtpSession->GetSessionID();
   OpalMediaSession * session = sessions.GetAt(sessionID);
   if (session == NULL) {
-    sessions.Insert(POrdinalKey(sessionID), new OpalRTPMediaSession(connection, mediaType, sessionID, rtpSession));
+    sessions.Insert(POrdinalKey(sessionID), new OpalRTPMediaSession(m_connection, mediaType, sessionID, rtpSession));
     PTRACE(3, "RTP\tCreating new session " << *rtpSession);
   }
   else {
@@ -566,7 +592,7 @@ void OpalRTPSessionManager::AddSession(RTP_Session * rtpSession, const OpalMedia
 void OpalRTPSessionManager::AddMediaSession(OpalMediaSession * mediaSession, const OpalMediaType & /*mediaType*/)
 {
   PWaitAndSignal m(m_mutex);
-  
+
   PAssert(sessions.GetAt(mediaSession->sessionId) == NULL, "Cannot add already existing session");
   sessions.Insert(POrdinalKey(mediaSession->sessionId), mediaSession);
 }
@@ -608,6 +634,23 @@ RTP_Session * OpalRTPSessionManager::GetSession(unsigned sessionID) const
 
   PTRACE(3, "RTP\tFound existing RTP session " << sessionID);
   return ((OpalRTPMediaSession *)session)->rtpSession;
+}
+
+
+RTP_UDP * OpalRTPSessionManager::FindSessionByLocalPort(WORD port) const
+{
+  PWaitAndSignal m(m_mutex);
+
+  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
+    const OpalMediaSession & session = sessions.GetDataAt(i);
+    if (session.IsActive() && session.IsRTP()) {
+      RTP_UDP * rtp = dynamic_cast<RTP_UDP * >(dynamic_cast<const OpalRTPMediaSession &>(session).rtpSession);
+      if (rtp != NULL && (rtp->GetLocalDataPort() == port || rtp->GetLocalControlPort() == port))
+        return rtp;
+    }
+  }
+
+  return NULL;
 }
 
 
