@@ -837,7 +837,6 @@ class MyManager : public wxFrame, public OpalManager
     void RejectCall();
     void HangUpCall();
     void SendUserInput(char tone);
-    void OnRinging(const OpalPCSSConnection & connection);
 
     PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
     PSafePtr<OpalConnection> GetConnection(bool user, PSafetyMode mode);
@@ -854,6 +853,13 @@ class MyManager : public wxFrame, public OpalManager
     void SwitchToFax();
 
     MyPCSSEndPoint & GetPCSSEP() { return *pcssEP; }
+
+    void PostEvent(
+      const wxEventType & type,
+      unsigned id,
+      const PString & str = PString::Empty(),
+      const void * data = NULL
+    );
 
   private:
     // OpalManager overrides
@@ -962,7 +968,12 @@ class MyManager : public wxFrame, public OpalManager
     void OnRightClick(wxListEvent& event);
 
     void OnMyPresence(wxCommandEvent& event);
-    void OnStartMessage(wxCommandEvent& event);
+    void OnStartInstantMessage(wxCommandEvent& event);
+
+    void OnEvtRinging(wxCommandEvent & theEvent);
+    void OnEvtEstablished(wxCommandEvent & theEvent);
+    void OnEvtOnHold(wxCommandEvent & theEvent);
+    void OnEvtCleared(wxCommandEvent & theEvent);
 
     bool CanDoFax() const;
     bool CanDoIM() const;
@@ -1103,20 +1114,6 @@ class MyManager : public wxFrame, public OpalManager
     PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
     void StopRingSound();
     void UpdateAudioDevices();
-
-    enum CallState {
-      IdleState,
-      CallingState,
-      RingingState,
-      AnsweringState,
-      InCallState,
-      ClearingCallState
-    } m_callState;
-    friend ostream & operator<<(ostream & strm, CallState state);
-    void SetState(
-      CallState newState,
-      const PString & token
-    );
 
     PString            m_incomingToken;
     PSafePtr<OpalCall> m_activeCall;
