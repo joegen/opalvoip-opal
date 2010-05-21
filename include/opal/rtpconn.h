@@ -71,7 +71,7 @@ class OpalRTPEndPoint;
   */
 class OpalMediaSession : public PObject
 {
-  PCLASSINFO(OpalMediaSession, PObject);
+    PCLASSINFO(OpalMediaSession, PObject);
   public:
     OpalMediaSession(OpalConnection & conn, const OpalMediaType & _mediaType, unsigned sessionId);
     OpalMediaSession(const OpalMediaSession & _obj);
@@ -106,6 +106,7 @@ class OpalMediaSession : public PObject
     OpalMediaType mediaType;     // media type for session
     unsigned sessionId;          // unique session ID
 };
+
 
 /** Class for carrying RTP session information
   */
@@ -152,15 +153,23 @@ class OpalRTPMediaSession : public OpalMediaSession
  */
 class OpalRTPSessionManager : public PObject
 {
-  PCLASSINFO(OpalRTPSessionManager , PObject);
-
+    PCLASSINFO(OpalRTPSessionManager , PObject);
   public:
   /**@name Construction */
   //@{
     /**Construct new session manager database.
       */
-    OpalRTPSessionManager(OpalConnection & conn);
+    OpalRTPSessionManager(
+      OpalRTPConnection & connection ///< Owner connection for RTP sessions
+    );
+
+    /// Destroy sessions, unlinking from connection
     ~OpalRTPSessionManager();
+
+    ///Copy constructor - maintain list in OpalRTPConnection
+    OpalRTPSessionManager(const OpalRTPSessionManager & other);
+
+    /// Assignment of RTP session managers.
     void operator=(const OpalRTPSessionManager & other) { sessions = other.sessions; }
   //@}
 
@@ -201,6 +210,13 @@ class OpalRTPSessionManager : public PObject
       unsigned sessionID
     ) const;
 
+    /**Find an RTP session for the specified local port.
+       If there is no session, NULL is returned.
+      */
+    virtual RTP_UDP * FindSessionByLocalPort(
+      WORD port    ///< Local port number
+    ) const;
+
     /**Change the sessionID for an existing session.
        This will adjust the RTP session and media streams.
 
@@ -217,21 +233,23 @@ class OpalRTPSessionManager : public PObject
     virtual bool AllSessionsFailing();
 
   protected:
-    OpalConnection & connection;
+    OpalRTPConnection & m_connection;
     PMutex m_mutex;
 
     PDICTIONARY(SessionDict, POrdinalKey, OpalMediaSession);
     SessionDict sessions;
 };
 
+
 typedef OpalRTPSessionManager RTP_SessionManager;
+
 
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
  */
 class OpalRTPConnection : public OpalConnection
 {
-  PCLASSINFO(OpalRTPConnection, OpalConnection);
+    PCLASSINFO(OpalRTPConnection, OpalConnection);
   public:
   /**@name Construction */
   //@{
@@ -267,6 +285,13 @@ class OpalRTPConnection : public OpalConnection
     ) const;
     virtual OpalMediaSession * GetMediaSession(
       unsigned sessionID    ///<  RTP session number
+    ) const;
+
+    /**Find an RTP session for the specified local port.
+       If there is no session, NULL is returned.
+      */
+    virtual RTP_UDP * FindSessionByLocalPort(
+      WORD port    ///< Local port number
     ) const;
 
     /**Use an RTP session for the specified ID.
@@ -463,6 +488,8 @@ class OpalRTPConnection : public OpalConnection
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
+    list<OpalRTPSessionManager *> m_allSessions; // Note this must be before m_rtpSessions
+
     OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
 #if OPAL_T38_CAPABILITY
@@ -477,6 +504,8 @@ class OpalRTPConnection : public OpalConnection
     PMutex zrtpConnInfoMutex;
     OpalZRTPConnectionInfo * zrtpConnInfo;
 #endif
+
+  friend class OpalRTPSessionManager;
 };
 
 

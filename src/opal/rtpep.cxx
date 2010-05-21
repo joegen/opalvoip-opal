@@ -35,6 +35,8 @@
 #include <opal/buildopts.h>
 
 #include <opal/rtpep.h>
+#include <opal/rtpconn.h>
+
 
 OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all endpoints.
                        const PCaselessString & prefix,      ///<  Prefix for URL style address strings
@@ -120,13 +122,39 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   if (rtp == NULL)
     return false;
 
-  m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetLocalDataPort(), stream.GetConnection()));
-  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
-  if (it == m_connectionsByRtpLocalPort.end())
+  if (!PIPSocket::IsLocalHost(rtp->GetRemoteAddress())) {
+    PTRACE(5, "RTPEp\tRemote RTP address " << rtp->GetRemoteAddress() << " not local.");
     return false;
+  }
 
-  if (it->second.m_previousResult < 0)
+  if (m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetLocalDataPort(), stream.GetConnection())).second) {
+    PTRACE(4, "RTPEp\tRemembering local RTP port " << rtp->GetLocalDataPort() << " on connection " << stream.GetConnection());
+  }
+
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+  if (it == m_connectionsByRtpLocalPort.end()) {
+    PTRACE(5, "RTPEp\tRemote RTP port " << rtp->GetRemoteDataPort() << " not peviously remembered, searching.");
+    // Not already cached so search all RTP connections for if it is there
+    PWaitAndSignal mutex(connectionsActive.GetMutex());
+    for (PINDEX index = 0; index < connectionsActive.GetSize(); ++index) {
+      PSafePtr<OpalRTPConnection> connection = PSafePtrCast<OpalConnection, OpalRTPConnection>(connectionsActive.GetAt(index, PSafeReadOnly));
+      if (connection != NULL && connection->FindSessionByLocalPort(rtp->GetRemoteDataPort()) != NULL) {
+        PTRACE(4, "RTPEp\tRemembering remote RTP port " << rtp->GetRemoteDataPort() << " on connection " << *connection);
+        it = m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetRemoteDataPort(), *connection)).first;
+        break;
+      }
+    }
+    if (it == m_connectionsByRtpLocalPort.end()) {
+      PTRACE(4, "RTPEp\tRemote RTP port " << rtp->GetRemoteDataPort() << " not this process.");
+      return false;
+    }
+  }
+
+  if (it->second.m_previousResult < 0) {
     it->second.m_previousResult = OnLocalRTP(stream.GetConnection(), it->second.m_connection, rtp->GetSessionID(), true);
+    PTRACE(3, "RTPEp\tLocal RTP ports " << rtp->GetRemoteDataPort() << " and " << it->first
+           << " flagged as " << (it->second.m_previousResult != 0 ? "bypassed" : "normal"));
+  }
 
   return it->second.m_previousResult != 0;
 }
