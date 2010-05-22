@@ -127,9 +127,11 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     return false;
   }
 
-  if (m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetLocalDataPort(), stream.GetConnection())).second) {
-    PTRACE(4, "RTPEp\tRemembering local RTP port " << rtp->GetLocalDataPort() << " on connection " << stream.GetConnection());
-  }
+  std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
+            m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(rtp->GetLocalDataPort(), stream.GetConnection()));
+  PTRACE_IF(4, insertResult.second,
+            "RTPEp\tRemembering local RTP port " << rtp->GetLocalDataPort()
+            << " on connection " << stream.GetConnection());
 
   LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
   if (it == m_connectionsByRtpLocalPort.end()) {
@@ -152,6 +154,9 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 
   if (it->second.m_previousResult < 0) {
     it->second.m_previousResult = OnLocalRTP(stream.GetConnection(), it->second.m_connection, rtp->GetSessionID(), true);
+    if (insertResult.second)
+      insertResult.first->second.m_previousResult = it->second.m_previousResult;
+
     PTRACE(3, "RTPEp\tLocal RTP ports " << rtp->GetRemoteDataPort() << " and " << it->first
            << " flagged as " << (it->second.m_previousResult != 0 ? "bypassed" : "normal"));
   }
