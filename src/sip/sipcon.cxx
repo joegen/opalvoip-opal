@@ -142,6 +142,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     { OpalConnection::EndedByNoEndPoint        , SIP_PDU::Failure_NotFound               }, // TODO - SGW - add for endpoints not running on a ip from H323 side.
     { OpalConnection::EndedByUnreachable       , SIP_PDU::Failure_Forbidden              }, // TODO - SGW - add for avoid sip calls to SGW IP.
     { OpalConnection::EndedByNoBandwidth       , SIP_PDU::GlobalFailure_NotAcceptable    }, // TODO - SGW - added to reject call when no bandwidth 
+    { OpalConnection::EndedByInvalidConferenceID,SIP_PDU::Failure_TransactionDoesNotExist}
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(ReasonToSIPCode); i++) {
@@ -366,7 +367,10 @@ void SIPConnection::OnReleased()
       // EndedByCallForwarded is a special case because it needs extra paramater
       SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
 
-      // Wait for ACK from remote before destroying object
+      /* Wait for ACK from remote before destroying object. Note that we either
+         get the ACK, or OnAckTimeout() fires and sets this flag anyway. We are
+         outside of a connection mutex lock at this point, so no deadlock
+         should occur. Really should be a PSyncPoint. */
       while (!ackReceived)
         PThread::Sleep(100);
 
@@ -2021,38 +2025,78 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SetRemoteMediaFormats(originalInvite->GetSDP());
 
-  // Replaces header has already been validated in SIPEndPoint::OnReceivedINVITE
-  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(mime("Replaces"), PSafeReadOnly);
-  if (replacedConnection != NULL) {
-    PTRACE(3, "SIP\tConnection " << *replacedConnection << " replaced by " << *this);
+  // See if we have a replaces header, if not is normal call
+  PString replaces = mime("Replaces");
+  if (replaces.IsEmpty()) {
+    // indicate the other is to start ringing (but look out for clear calls)
+    if (!OnIncomingConnection(0, NULL)) {
+      PTRACE(1, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
+      Release();
+      return;
+    }
 
-    // Do OnRelease for other connection synchronously or there is
-    // confusion with media streams still open
-    replacedConnection->synchronousOnRelease = true;
-    replacedConnection->Release(OpalConnection::EndedByCallForwarded);
+    PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
-    SetConnected();
-    return;
-  }
+    OnApplyStringOptions();
 
-  // indicate the other is to start ringing (but look out for clear calls)
-  if (!OnIncomingConnection(0, NULL)) {
-    PTRACE(1, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
-    Release();
-    return;
-  }
+    if (ownerCall.OnSetUp(*this)) {
+      AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
+      return;
+    }
 
-  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
-
-  OnApplyStringOptions();
-
-  if (!ownerCall.OnSetUp(*this)) {
     PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
 
-  AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
+  // Replaces header string has already been validated in SIPEndPoint::OnReceivedINVITE
+  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(replaces, PSafeReadOnly);
+  if (replacedConnection == NULL) {
+    /* Allow for a race condition where between when SIPEndPoint::OnReceivedINVITE()
+       is executed and here, the call to be replaced was released. */
+    Release(EndedByInvalidConferenceID);
+    return;
+  }
+
+  if (replacedConnection->GetPhase() < ConnectedPhase) {
+    if (!replacedConnection->IsOriginating()) {
+      PTRACE(3, "SIP\tEarly connection " << *replacedConnection << " cannot be replaced by " << *this);
+      Release(EndedByInvalidConferenceID);
+      return;
+    }
+  }
+  else {
+    if (replaces.Find(";early-only") != P_MAX_INDEX) {
+      PTRACE(3, "SIP\tReplaces has early-only on early connection " << *this);
+      Release(EndedByLocalBusy);
+      return;
+    }
+  }
+
+  PTRACE(3, "SIP\tEstablished connection " << *replacedConnection << " replaced by " << *this);
+
+  // Do OnRelease for other connection synchronously or there is
+  // confusion with media streams still open
+  replacedConnection->synchronousOnRelease = true;
+  replacedConnection->Release(OpalConnection::EndedByCallForwarded);
+
+  // Check if we are the target of an attended transfer, indicated by a referred-by header
+  PString referredBy = mime.GetReferredBy();
+  if (!referredBy.IsEmpty()) {
+    /* Indicate to application we are party C in a consultation transfer.
+       The calls are A->B (first call), B->C (consultation call) => A->C
+       (final call after the transfer) */
+    PStringToString info;
+    PCaselessString state = mime.GetSubscriptionState(info);
+    info.SetAt("party", "C");
+    info.SetAt("Referred-By", referredBy);
+    OnTransferNotify(info);
+  }
+
+  /* According to RFC 3891 we now send a 200 OK in both the earl and confirmed
+     dialog cases. OnReleased() is responsible for if the replaced connection is
+     sent a BYE or a CANCEL. */
+  SetConnected();
 }
 
 
@@ -2190,6 +2234,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
+  info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
   info.SetAt("result", state != "terminated" || code < 200
