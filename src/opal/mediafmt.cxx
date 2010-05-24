@@ -759,32 +759,49 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 }
 
 
-void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
+PBoolean OpalMediaFormat::MakeUnique()
 {
-  PWaitAndSignal m(m_mutex);
+  PWaitAndSignal m1(m_mutex);
+  if (m_info == NULL)
+    return true;
 
-  m_info = (OpalMediaFormatInternal *)c->m_info->Clone();
+  PWaitAndSignal m2(m_info->media_format_mutex);
+
+  if (PContainer::MakeUnique())
+    return true;
+
+  m_info = (OpalMediaFormatInternal *)m_info->Clone();
   m_info->options.MakeUnique();
+  return false;
 }
 
 
-void OpalMediaFormat::CopyContents(const OpalMediaFormat & c)
+void OpalMediaFormat::AssignContents(const PContainer & c)
 {
-  PWaitAndSignal m(m_mutex);
-  m_info = c.m_info;
+  m_mutex.Wait();
+
+  PContainer::AssignContents(c);
+  m_info = ((const OpalMediaFormat &)c).m_info;
+
+  m_mutex.Signal();
 }
 
 
 void OpalMediaFormat::DestroyContents()
 {
-  PWaitAndSignal m(m_mutex);
-  delete m_info;
+  m_mutex.Wait();
+
+  if (m_info != NULL) {
+    m_info->media_format_mutex.Wait();
+    delete m_info;
+  }
+
+  m_mutex.Signal();
 }
 
 
 PObject * OpalMediaFormat::Clone() const
 {
-  PWaitAndSignal m(m_mutex);
   return new OpalMediaFormat(*this);
 }
 
