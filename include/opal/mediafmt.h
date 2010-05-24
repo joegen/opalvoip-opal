@@ -626,7 +626,15 @@ class OpalMediaFormatInternal : public PObject
   */
 class OpalMediaFormat : public PContainer
 {
-  PCONTAINERINFO(OpalMediaFormat, PContainer);
+    PCLASSINFO(OpalMediaFormat, PContainer)
+  public:
+    OpalMediaFormat(const OpalMediaFormat & c) : PContainer(c), m_info(c.m_info) { }
+    OpalMediaFormat & operator=(const OpalMediaFormat & c)     { AssignContents(c); return *this; }
+    virtual ~OpalMediaFormat()                                 { Destruct(); }
+    virtual PBoolean MakeUnique();
+  protected:
+    virtual void DestroyContents();
+    virtual void AssignContents(const PContainer & c);
 
   public:
     /**Default constructor creates a PCM-16 media format.
