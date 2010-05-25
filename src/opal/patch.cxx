@@ -514,6 +514,7 @@ void OpalMediaPatch::Main()
   RTP_DataFrame sourceFrame(0);
 
   while (source.IsOpen()) {
+    sourceFrame.MakeUnique();
     sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
 
     // We do the following to make sure that the buffer size is large enough,
