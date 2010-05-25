@@ -162,6 +162,7 @@ class RTP_DataFrame : public PBYTEArray
     bool   SetPayloadSize(PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
 
+    virtual PObject * Clone() const { return new RTP_DataFrame(*this); }
     virtual void PrintOn(ostream & strm) const;
 
     // Note this sets the whole packet length, and calculates the various
