@@ -965,7 +965,8 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
       if (PAssert(incomingMedia != NULL, "SDP Media description list changed")) {
         SDPMediaDescription * outgoingMedia = incomingMedia->CreateEmpty();
         if (PAssert(outgoingMedia != NULL, "SDP Media description clone failed")) {
-          outgoingMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
+          if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
+            outgoingMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
           sdpOut.AddMediaDescription(outgoingMedia);
         }
       }
