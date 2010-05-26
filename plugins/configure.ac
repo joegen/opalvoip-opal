@@ -455,6 +455,12 @@ dnl ########################################################################
 if test -d audio/G722 ; then
   AC_CONFIG_FILES(audio/G722/Makefile)
 fi
+if test -d audio/G.722.1 ; then
+  AC_CONFIG_FILES(audio/G.722.1/Makefile)
+fi
+if test -d audio/G.722.2 ; then
+  AC_CONFIG_FILES(audio/G.722.2/Makefile)
+fi
 if test -d audio/GSM0610 ; then
   AC_CONFIG_FILES(audio/GSM0610/Makefile)
 fi
