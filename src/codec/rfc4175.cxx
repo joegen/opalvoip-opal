@@ -220,7 +220,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // grab the actual data
   EndEncoding();
 
-  PTRACE(1,"RFC4175\tFrame encoded to " << outputFrames.GetSize() << " packets from seq = " << outputFrames[0].GetSequenceNumber());
+  PTRACE(6,"RFC4175\tFrame encoded to " << outputFrames.GetSize() << " packets from seq = " << outputFrames[0].GetSequenceNumber());
 
   return true;
 }
@@ -365,7 +365,7 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // do quick sanity check on packet
   if (input.GetPayloadSize() < 2) {
-    PTRACE(1,"RFC4175\tinput frame too small for header");
+    PTRACE(1,"RFC4175\tInput frame too small for header");
     return false;
   }
 
@@ -403,7 +403,7 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
     // flag for missing packets
     if (receivedSeqNo != ++m_lastSequenceNumber) {
       m_missingPackets = true;
-      PTRACE(2, "RFC4175\t" << "Out of order packet (" << receivedSeqNo << " instead of " << m_lastSequenceNumber << ")");
+      PTRACE(2, "RFC4175\tOut of order packet (" << receivedSeqNo << " instead of " << m_lastSequenceNumber << ")");
       m_lastSequenceNumber = receivedSeqNo;
     }
   }
@@ -486,7 +486,7 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
 {
   FinishOutputFrame();
 
-  PTRACE(4, "RFC4175\tEncoded YUV420P input frame to " << m_dstFrames->GetSize() << " RFC4175 output frames in YCbCr420 format");
+  PTRACE(6, "RFC4175\tEncoded YUV420P input frame to " << m_dstFrames->GetSize() << " RFC4175 output frames in YCbCr420 format");
 
   PINDEX f= 0;
   for (RTP_DataFrameList::iterator output = m_dstFrames->begin(); output != m_dstFrames->end(); ++output,++f) {
@@ -528,16 +528,11 @@ void Opal_YUV420P_to_RFC4175YCbCr420::EndEncoding()
 bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
 {
   if (m_inputFrames.GetSize() == 0) {
-    PTRACE(4, "RFC4175\tNo input frames to decode");
+    PTRACE(2, "RFC4175\tNo input frames to decode");
     return false;
   }
 
-  //if (frameHeight != 144 || m_frameWidth != 176) {
-  //  int s = m_inputFrames.GetSize();
-  //  PTRACE(4, "not right frame " << s);
-  //}
-
-  PTRACE(4, "RFC4175\tDecoding output from " << m_inputFrames.GetSize() << " input frames");
+  PTRACE(6, "RFC4175\tDecoding output from " << m_inputFrames.GetSize() << " input frames");
 
   // allocate destination frame
   output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight)));
@@ -620,7 +615,7 @@ void Opal_RGB24_to_RFC4175RGB::EndEncoding()
 {
  FinishOutputFrame();
 
-  PTRACE(4, "RFC4175\tEncoded RGB24 input frame to " << m_dstFrames->GetSize() << " RFC4175 output frames in RGB format");
+  PTRACE(6, "RFC4175\tEncoded RGB24 input frame to " << m_dstFrames->GetSize() << " RFC4175 output frames in RGB format");
 
   BYTE* inPtr = m_rgbBase;
 
@@ -650,11 +645,11 @@ void Opal_RGB24_to_RFC4175RGB::EndEncoding()
 bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
 {
   if (m_inputFrames.GetSize() == 0) {
-    PTRACE(4, "RFC4175\tNo input frames to decode");
+    PTRACE(2, "RFC4175\tNo input frames to decode");
     return false;
   }
 
-  PTRACE(4, "RFC4175\tDecoding output from " << m_inputFrames.GetSize() << " input frames");
+  PTRACE(6, "RFC4175\tDecoding output from " << m_inputFrames.GetSize() << " input frames");
 
   // allocate destination frame
   output.Append(new RTP_DataFrame(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(m_frameWidth*m_frameHeight)));
