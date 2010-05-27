@@ -147,7 +147,7 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     bool    m_missingPackets;
     PINDEX  m_maxWidth;
     PINDEX  m_maxHeight;
-    DWORD   m_lastSequenceNumber;
+    DWORD   m_nextSequenceNumber;
     DWORD   m_lastTimeStamp;
     DWORD   m_timeStampOfFrame;
     DWORD   m_firstSequenceOfFrame;
