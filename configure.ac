@@ -602,7 +602,7 @@ OPAL_SIMPLE_OPTION([rfc4175],[OPAL_RFC4175], [whether to enable RFC4175 support]
 
 dnl MSWIN_DISPLAY rfc2435,RFC2435 JPEG Video support (experimental)
 dnl MSWIN_DEFINE  rfc2435,OPAL_RFC2435
-OPAL_SIMPLE_OPTION([rfc2435],[OPAL_RFC2435], [whether to enable RFC2435 support], [OPAL_VIDEO])
+OPAL_SIMPLE_OPTION([rfc2435],[OPAL_RFC2435], [whether to enable RFC2435 support (experimental)], [OPAL_VIDEO])
 
 dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
 dnl MSWIN_DEFINE  aec,OPAL_AEC
