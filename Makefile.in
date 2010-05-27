@@ -428,6 +428,10 @@ ifeq ($(OPAL_RFC4175), yes)
 SOURCES += $(OPAL_SRCDIR)/codec/rfc4175.cxx
 endif
 
+ifeq ($(OPAL_RFC2435), yes)
+SOURCES += $(OPAL_SRCDIR)/codec/rfc2435.cxx
+endif
+
 ifeq ($(OPAL_G711PLC), yes)
 SOURCES += $(OPAL_SRCDIR)/codec/g711a1_plc.cxx
 endif
