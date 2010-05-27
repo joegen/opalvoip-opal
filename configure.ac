@@ -83,6 +83,7 @@ OPAL_STATISTICS=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
 OPAL_RFC4175=yes
+OPAL_RFC2435=no
 OPAL_G711PLC=yes
 OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
@@ -158,7 +159,7 @@ AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugi
 AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
 
 
-OPAL_SIMPLE_OPTION([shared],[OPAL_SHARED_LIB], [wether to build a shared library])
+OPAL_SIMPLE_OPTION([shared],[OPAL_SHARED_LIB], [whether to build a shared library])
 
 dnl ########################################################################
 dnl Architecture dependent stuff
@@ -598,6 +599,10 @@ OPAL_SIMPLE_OPTION([ivr],[OPAL_IVR], [whether to enable IVR support], [OPAL_PTLI
 dnl MSWIN_DISPLAY rfc4175,RFC4175 Raw Video support
 dnl MSWIN_DEFINE  rfc4175,OPAL_RFC4175
 OPAL_SIMPLE_OPTION([rfc4175],[OPAL_RFC4175], [whether to enable RFC4175 support], [OPAL_VIDEO])
+
+dnl MSWIN_DISPLAY rfc2435,RFC2435 JPEG Video support (experimental)
+dnl MSWIN_DEFINE  rfc2435,OPAL_RFC2435
+OPAL_SIMPLE_OPTION([rfc2435],[OPAL_RFC2435], [whether to enable RFC2435 support], [OPAL_VIDEO])
 
 dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
 dnl MSWIN_DEFINE  aec,OPAL_AEC
