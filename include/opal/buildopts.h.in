@@ -200,6 +200,9 @@
 #if OPAL_VIDEO
   // Uncompressed video over RTP
   #undef  OPAL_RFC4175 
+
+  // JPEG over RTP
+  #undef  OPAL_RFC2435
 #endif
 
 
