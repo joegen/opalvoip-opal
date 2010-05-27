@@ -61,6 +61,8 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "</vxml>\n")
 {
   defaultMediaFormats += OpalPCM16;
+  defaultMediaFormats += OpalPCM16_48KHZ;
+  defaultMediaFormats += OpalPCM16S_48KHZ;
   defaultMediaFormats += OpalRFC2833;
 #if OPAL_T38_CAPABILITY
   defaultMediaFormats += OpalCiscoNSE;

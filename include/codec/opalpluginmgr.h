@@ -81,6 +81,8 @@ class OpalPluginCodecHandler : public PObject
   public:
     OpalPluginCodecHandler();
 
+    static int GetChannelCount(const PluginCodec_Definition * codeDefn);
+
     virtual OpalMediaFormatInternal * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
                                             const PluginCodec_Definition * codecDefn,
                                                               const char * fmtName,
@@ -356,7 +358,7 @@ class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalP
 
 //////////////////////////////////////////////////////
 //
-//  this is the base class for codecs accesible via the abstract factory functions
+//  this is the base class for codecs accessible via the abstract factory functions
 //
 
 /**Class for codcs which is accessible via the abstract factory functions.
