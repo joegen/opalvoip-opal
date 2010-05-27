@@ -375,7 +375,6 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // special handling for first packet ever received
   if (m_first) {
-    m_lastSequenceNumber   = receivedSeqNo;
     m_firstSequenceOfFrame = receivedSeqNo;
     m_timeStampOfFrame     = timestamp;
     m_first                = false;
@@ -396,21 +395,22 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
         m_missingPackets = true;
         DecodeFramesAndSetFrameSize(output);
       }
-      m_firstSequenceOfFrame = m_lastSequenceNumber = receivedSeqNo;
+      m_firstSequenceOfFrame = receivedSeqNo;
       m_timeStampOfFrame     = timestamp;
     }
 
-    else if (receivedSeqNo < ++m_lastSequenceNumber) {
+    else if (receivedSeqNo < m_nextSequenceNumber) {
       m_missingPackets = true;
-      PTRACE(2, "RFC4175\tOut of order packet (got " << receivedSeqNo << " expecting " << m_lastSequenceNumber << ")");
+      PTRACE(2, "RFC4175\tOut of order packet (got " << receivedSeqNo << " expecting " << m_nextSequenceNumber << ")");
     }
 
-    else if (receivedSeqNo > ++m_lastSequenceNumber) {
+    else if (receivedSeqNo > m_nextSequenceNumber) {
       m_missingPackets = true;
-      PTRACE(2, "RFC4175\tMissing " << (receivedSeqNo - m_lastSequenceNumber) << " packets");
-      m_lastSequenceNumber = receivedSeqNo;
+      PTRACE(2, "RFC4175\tMissing " << (receivedSeqNo - m_nextSequenceNumber) << " packets");
     }
   }
+
+  m_nextSequenceNumber = receivedSeqNo + 1;
 
   // make a pass through the scan line table and update the overall frame width and height
   PINDEX lineCount = 0;
