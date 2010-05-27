@@ -532,7 +532,8 @@ OpalRTPSessionManager::OpalRTPSessionManager(OpalRTPConnection & connection)
 
 
 OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & other)
-  : m_connection(other.m_connection)
+  : PObject(*this)
+  , m_connection(other.m_connection)
   , sessions(other.sessions)
 {
   m_connection.m_allSessions.push_back(this);
