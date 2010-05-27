@@ -396,14 +396,18 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
         m_missingPackets = true;
         DecodeFramesAndSetFrameSize(output);
       }
-      m_firstSequenceOfFrame = receivedSeqNo;
+      m_firstSequenceOfFrame = m_lastSequenceNumber = receivedSeqNo;
       m_timeStampOfFrame     = timestamp;
     }
 
-    // flag for missing packets
-    if (receivedSeqNo != ++m_lastSequenceNumber) {
+    else if (receivedSeqNo < ++m_lastSequenceNumber) {
       m_missingPackets = true;
-      PTRACE(2, "RFC4175\tOut of order packet (" << receivedSeqNo << " instead of " << m_lastSequenceNumber << ")");
+      PTRACE(2, "RFC4175\tOut of order packet (got " << receivedSeqNo << " expecting " << m_lastSequenceNumber << ")");
+    }
+
+    else if (receivedSeqNo > ++m_lastSequenceNumber) {
+      m_missingPackets = true;
+      PTRACE(2, "RFC4175\tMissing " << (receivedSeqNo - m_lastSequenceNumber) << " packets");
       m_lastSequenceNumber = receivedSeqNo;
     }
   }
@@ -461,6 +465,8 @@ void OpalRFC4175Decoder::DecodeFramesAndSetFrameSize(RTP_DataFrameList & output)
 {
   // update frame width and height if the frame was complete or if it is the first frame we have seen
   if (!m_missingPackets || ((m_frameWidth == 0) && (m_frameHeight == 0))) {
+    PTRACE(4, "RFC4175\tChanged received frame size from "
+           << m_frameWidth << 'x' << m_frameHeight << " to " << m_maxWidth << 'x' << m_maxHeight);
     m_frameWidth  = m_maxWidth;
     m_frameHeight = m_maxHeight;
   }
