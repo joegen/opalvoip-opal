@@ -70,7 +70,6 @@ class PlayRTP : public PProcess
     PSoundChannel      * m_player;
     PVideoOutputDevice * m_display;
 
-    unsigned m_fragmentationCount;
     unsigned m_packetCount;
 
     bool     m_vfu;
