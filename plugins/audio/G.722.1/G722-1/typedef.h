@@ -19,7 +19,7 @@
 
 #include <limits.h>
 
-#if defined(__BORLANDC__) || defined(__WATCOMC__) || defined(_MSC_VER) || defined(__ZTC__) || defined(__CYGWIN__)
+#if defined(__BORLANDC__) || defined(__WATCOMC__) || defined(_MSC_VER) || defined(__ZTC__) || defined(__CYGWIN__) || defined(__MINGW32__)
 //typedef signed char Word8;
 typedef short Word16;
 typedef long Word32;
