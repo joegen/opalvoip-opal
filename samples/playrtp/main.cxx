@@ -300,7 +300,7 @@ struct DiscoveredRTPInfo {
 
   PIPSocketAddressAndPort m_addr[2];
   RTP_DataFrame::PayloadTypes m_payload[2];
-  BOOL m_found[2];
+  bool m_found[2];
 
   DWORD m_ssrc[2];
   WORD  m_seq[2];
