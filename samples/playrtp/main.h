@@ -58,9 +58,6 @@ class PlayRTP : public PProcess
     bool m_extendedInfo;
     bool m_noDelay;
     bool m_writeEventLog;
-    bool m_extendedInfo;
-    bool m_noDelay;
-    bool m_writeEventLog;
 
     PFile     m_payloadFile;
     PTextFile m_eventLog;
