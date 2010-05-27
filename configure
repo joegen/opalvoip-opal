@@ -660,6 +660,7 @@ OPAL_HAS_MIXER
 OPAL_STATISTICS
 OPAL_G711PLC
 OPAL_AEC
+OPAL_RFC2435
 OPAL_RFC4175
 OPAL_IVR
 OPAL_LID
@@ -832,6 +833,7 @@ enable_h501
 enable_lid
 enable_ivr
 enable_rfc4175
+enable_rfc2435
 enable_aec
 enable_g711plc
 enable_statistics
@@ -1483,7 +1485,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-shared         wether to build a shared library
+  --enable-shared         whether to build a shared library
   --enable-debug          Enable debug build
   --enable-versioncheck   enable ptlib versioncheck
   --enable-localspeexdsp  Force use local version of Speex DSP library for
@@ -1512,6 +1514,7 @@ Optional Features:
   --enable-lid            whether to enable LID support
   --enable-ivr            whether to enable IVR support
   --enable-rfc4175        whether to enable RFC4175 support
+  --enable-rfc2435        whether to enable RFC2435 support (experimental)
   --enable-aec            whether to enable accoustic echo cancellation
                           support
   --enable-g711plc        whether to enable Packet Loss Concealment for G.711
@@ -4529,6 +4532,7 @@ OPAL_STATISTICS=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
 OPAL_RFC4175=yes
+OPAL_RFC2435=no
 OPAL_G711PLC=yes
 OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
@@ -4647,8 +4651,8 @@ $as_echo "$as_me: shared support disabled due to disabled dependency " >&6;}
 	  fi
 
 
-          { $as_echo "$as_me:$LINENO: checking wether to build a shared library" >&5
-$as_echo_n "checking wether to build a shared library... " >&6; }
+          { $as_echo "$as_me:$LINENO: checking whether to build a shared library" >&5
+$as_echo_n "checking whether to build a shared library... " >&6; }
           { $as_echo "$as_me:$LINENO: result: $OPAL_SHARED_LIB" >&5
 $as_echo "$OPAL_SHARED_LIB" >&6; }
 
@@ -11291,6 +11295,50 @@ $as_echo "$OPAL_RFC4175" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define OPAL_RFC4175 1
+_ACEOF
+
+          fi
+
+
+
+          if test "x$OPAL_RFC2435" = "x"; then
+            { { $as_echo "$as_me:$LINENO: error: No default specified for OPAL_RFC2435, please correct configure.ac" >&5
+$as_echo "$as_me: error: No default specified for OPAL_RFC2435, please correct configure.ac" >&2;}
+   { (exit 1); exit 1; }; }
+	  fi
+          # Check whether --enable-rfc2435 was given.
+if test "${enable_rfc2435+set}" = set; then
+  enableval=$enable_rfc2435; OPAL_RFC2435=$enableval
+fi
+
+
+          if test "xOPAL_VIDEO" != "x"; then
+            if test "x$OPAL_VIDEO" != "xyes"; then
+              { $as_echo "$as_me:$LINENO: rfc2435 support disabled due to disabled dependency OPAL_VIDEO" >&5
+$as_echo "$as_me: rfc2435 support disabled due to disabled dependency OPAL_VIDEO" >&6;}
+	      OPAL_RFC2435=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:$LINENO: rfc2435 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: rfc2435 support disabled due to disabled dependency " >&6;}
+	      OPAL_RFC2435=no
+	    fi
+	  fi
+
+
+          { $as_echo "$as_me:$LINENO: checking whether to enable RFC2435 support (experimental)" >&5
+$as_echo_n "checking whether to enable RFC2435 support (experimental)... " >&6; }
+          { $as_echo "$as_me:$LINENO: result: $OPAL_RFC2435" >&5
+$as_echo "$OPAL_RFC2435" >&6; }
+
+
+          if test "x$OPAL_RFC2435" = "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define OPAL_RFC2435 1
 _ACEOF
 
           fi
