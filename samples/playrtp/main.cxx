@@ -34,9 +34,259 @@
 #include <ptlib/vconvert.h>
 #include <ptlib/pipechan.h>
 
+
 PCREATE_PROCESS(PlayRTP);
 
+
 const int g_extraHeight = 35;
+
+
+///////////////////////////////////////////////////////////////////////
+
+
+struct pcap_hdr_s { 
+  DWORD magic_number;   /* magic number */
+  WORD  version_major;  /* major version number */
+  WORD  version_minor;  /* minor version number */
+  DWORD thiszone;       /* GMT to local correction */
+  DWORD sigfigs;        /* accuracy of timestamps */
+  DWORD snaplen;        /* max length of captured packets, in octets */
+  DWORD network;        /* data link type */
+} pcap_hdr;
+
+struct pcaprec_hdr_s { 
+    DWORD ts_sec;         /* timestamp seconds */
+    DWORD ts_usec;        /* timestamp microseconds */
+    DWORD incl_len;       /* number of octets of packet saved in file */
+    DWORD orig_len;       /* actual length of packet */
+} pcaprec_hdr;
+
+
+template <typename T> const T & Get(const PBYTEArray & p, PINDEX off)
+{
+  return *(const T *)(((const BYTE *)p)+off);
+}
+
+
+void Reverse(char * ptr, size_t sz)
+{
+  char * top = ptr+sz-1;
+  while (ptr < top) {
+    char t = *ptr;
+    *ptr = *top;
+    *top = t;
+    ptr++;
+    top--;
+  }
+}
+
+#define REVERSE(p) Reverse((char *)p, sizeof(p))
+
+
+///////////////////////////////////////////////////////////////////////
+
+class PCAPFile
+{
+  private:
+    PFile      m_file;
+    pcap_hdr_s m_fileHeader;
+    bool       m_otherEndian;
+    PBYTEArray m_rawPacket;
+
+    PIPSocket::Address m_srcIP;
+    PIPSocket::Address m_dstIP;
+
+    PBYTEArray m_fragments;
+    bool       m_fragmentated;
+
+    WORD m_srcPort;
+    WORD m_dstPort;
+
+  public:
+    friend ostream & operator<<(ostream & strm, const PCAPFile & pcap)
+    {
+      return strm << "PCAP v" << pcap.m_fileHeader.version_major << '.' << pcap.m_fileHeader.version_minor
+                  << " file \"" << pcap.m_file.GetFilePath() << '"';
+    }
+
+
+    bool Open(const PFilePath & filename)
+    {
+      if (!m_file.Open(filename, PFile::ReadOnly)) {
+        cout << "Could not open file \"" << filename << '"' << endl;
+        return false;
+      }
+
+      if (!m_file.Read(&m_fileHeader, sizeof(m_fileHeader))) {
+        cout << "Could not read header from \"" << filename << '"' << endl;
+        return false;
+      }
+
+      if (m_fileHeader.magic_number == 0xa1b2c3d4)
+        m_otherEndian = false;
+      else if (m_fileHeader.magic_number == 0xd4c3b2a1)
+        m_otherEndian = true;
+      else {
+        cout << "File \"" << filename << "\" is not a PCAP file, bad magic number." << endl;
+        return false;
+      }
+
+      if (m_otherEndian) {
+        REVERSE(m_fileHeader.version_major);
+        REVERSE(m_fileHeader.version_minor);
+        REVERSE(m_fileHeader.thiszone);
+        REVERSE(m_fileHeader.sigfigs);
+        REVERSE(m_fileHeader.snaplen);
+        REVERSE(m_fileHeader.network);
+      }
+
+      if (GetNetworkLayerHeaderSize() == 0) {
+        cout << "Unsupported Data Link Layer " << m_fileHeader.network << " in file \"" << filename << '"' << endl;
+        return false;
+      }
+
+      return true;
+    }
+
+
+    bool IsEndOfFile() const
+    {
+      return m_file.IsEndOfFile();
+    }
+
+
+    PINDEX GetNetworkLayerHeaderSize()
+    {
+      switch (m_fileHeader.network) {
+        case 1 : // DLT_EN10MB - Ethernet (10Mb)
+          return 14;
+
+        case 113 : // DLT_LINUX_SLL - Linux cooked sockets
+          return 16;
+      }
+
+      return 0;
+    }
+
+    bool ReadRawPacket(PBYTEArray & payload)
+    {
+      m_fragmentated = false;
+
+      pcaprec_hdr_s recordHeader;
+      if (!m_file.Read(&recordHeader, sizeof(recordHeader))) {
+        cout << "Truncated file \"" << m_file.GetFilePath() << '"' << endl;
+        return false;
+      }
+
+      if (m_otherEndian) {
+        REVERSE(recordHeader.ts_sec);
+        REVERSE(recordHeader.ts_usec);
+        REVERSE(recordHeader.incl_len);
+        REVERSE(recordHeader.orig_len);
+      }
+
+      if (!m_file.Read(m_rawPacket.GetPointer(recordHeader.incl_len), recordHeader.incl_len)) {
+        cout << "Truncated file \"" << m_file.GetFilePath() << '"' << endl;
+        return false;
+      }
+
+      payload.Attach(m_rawPacket, recordHeader.incl_len);
+      return true;
+    }
+
+
+    int GetDataLink(PBYTEArray & payload)
+    {
+      PBYTEArray dataLink;
+      if (!ReadRawPacket(dataLink))
+        return false;
+
+      PINDEX headerLength = GetNetworkLayerHeaderSize();
+      payload.Attach(&dataLink[headerLength], dataLink.GetSize()-headerLength);
+      return Get<PUInt16b>(dataLink, headerLength-2); // Next protocol layer
+    }
+
+
+    int GetIP(PBYTEArray & payload)
+    {
+      PBYTEArray ip;
+      if (GetDataLink(ip) != 0x800) // IPv4
+        return -1;
+
+      PINDEX headerLength = (ip[0]&0xf)*4; // low 4 bits in DWORDS, is this in bytes
+      payload.Attach(&ip[headerLength], ip.GetSize()-headerLength);
+
+      m_srcIP = PIPSocket::Address(4, ip+12);
+      m_dstIP = PIPSocket::Address(4, ip+16);
+
+      // Check for fragmentation
+      bool isFragment = (ip[6] & 0x20) != 0;
+      int fragmentOffset = (((ip[6]&0x1f)<<8)+ip[7])*8;
+      PINDEX fragmentsSize = m_fragments.GetSize();
+      if (isFragment || fragmentsSize > 0) {
+        if (fragmentsSize != fragmentOffset) {
+          cout << "Missing IP fragment in \"" << m_file.GetFilePath() << '"' << endl;
+          m_fragments.SetSize(0);
+          return -1;
+        }
+
+        m_fragments.Concatenate(payload);
+
+        if (isFragment)
+          return -1;
+
+        payload = m_fragments;
+        m_fragments.SetSize(0);
+        m_fragmentated = true;
+      }
+
+      return ip[9]; // Next protocol layer
+    }
+
+
+    const PIPSocket::Address & GetSrcIP() const { return m_srcIP; }
+    const PIPSocket::Address & GetDstIP() const { return m_dstIP; }
+    unsigned IsFragmentated() const { return m_fragmentated; }
+
+
+
+    int GetUDP(PBYTEArray & payload)
+    {
+      PBYTEArray udp;
+      if (GetIP(udp) != 0x11)
+        return -1;
+
+      if (udp.GetSize() < 8)
+        return -1;
+
+      m_srcPort = Get<PUInt16b>(udp, 0);
+      m_dstPort = Get<PUInt16b>(udp, 2);
+
+      int payloadLength = udp.GetSize() - 8;
+      payload.Attach(&udp[8], payloadLength);
+      return payloadLength;
+    }
+
+    WORD GetSrcPort() const { return m_srcPort; }
+    WORD GetDstPort() const { return m_dstPort; }
+
+
+    int GetRTP(RTP_DataFrame & rtp)
+    {
+      int packetLength = GetUDP(rtp);
+      if (packetLength < 0)
+        return -1;
+
+      if (!rtp.SetPacketSize(packetLength))
+        return -1;
+
+      if (rtp.GetVersion() != 2)
+        return -1;
+
+      return rtp.GetPayloadType();
+    }
+};
+
 
 struct DiscoveredRTPInfo {
   DiscoveredRTPInfo()
@@ -50,7 +300,7 @@ struct DiscoveredRTPInfo {
 
   PIPSocketAddressAndPort m_addr[2];
   RTP_DataFrame::PayloadTypes m_payload[2];
-  BOOL m_found[2];
+  bool m_found[2];
 
   DWORD m_ssrc[2];
   WORD  m_seq[2];
@@ -71,19 +321,6 @@ struct DiscoveredRTPInfo {
 typedef std::map<std::string, DiscoveredRTPInfo> DiscoveredRTPMap;
 DiscoveredRTPMap discoveredRTPMap;
 
-void Reverse(char * ptr, size_t sz)
-{
-  char * top = ptr+sz-1;
-  while (ptr < top) {
-    char t = *ptr;
-    *ptr = *top;
-    *top = t;
-    ptr++;
-    top--;
-  }
-}
-
-#define REVERSE(p) Reverse((char *)p, sizeof(p))
 
 bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & format)
 {
@@ -117,11 +354,10 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
   }
 
   // try and identify media by inspection
-  if (rtp.GetPayloadSize() > 10) {
     const BYTE * data = rtp.GetPayloadPtr();
 
-    // second byte = 0x42 - H.264
-    if (data[1] == 0x42) {
+  // xxx00111 01000010 xxxx0000 - H.264
+  if (rtp.GetPayloadSize() > 6 && (data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0) {
       type = OpalMediaType::Video();
       OpalMediaFormatList::const_iterator r = formats.FindFormat("*h.264*");
       if (r != formats.end())
@@ -129,7 +365,7 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
     }
 
     // 0x00 0x00 0x1b - MPEG4
-    else if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
+  else if (rtp.GetPayloadSize() > 6 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
       type = OpalMediaType::Video();
       OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
       if (r != formats.end())
@@ -137,8 +373,10 @@ bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & form
     }
 
     else
-      cout << hex << (int)data[0] << " " << (int)data[1] << " " << (int)data[2] << dec << endl;
-  }
+    cout << hex << (int)data[0] << ' ' << (int)data[1] << ' ' << (int)data[2] << dec << endl;
+
+  else
+    cout << hex << (int)data[0] << ' ' << (int)data[1] << ' ' << (int)data[2] << dec << endl;
 
   return false;
 }
@@ -178,6 +416,7 @@ void DisplaySessions(bool show = true)
   }
 }
 
+
 PlayRTP::PlayRTP()
   : PProcess("OPAL Audio/Video Codec Tester", "PlayRTP", 1, 0, ReleaseCode, 0)
   , m_srcIP(PIPSocket::GetDefaultIpAny())
@@ -213,9 +452,10 @@ void PlayRTP::Main()
              "V-video-driver:"
              "v-video-device:"
              "p-singlestep."
+             "P-payload-file:"
              "i-info."
              "f-find."
-             "Y:"
+             "Y-video-file:"
              "E:"
              "T:"
              "X."
@@ -251,6 +491,7 @@ void PlayRTP::Main()
               "  -p or --singlestep       : Single step through input data.\n"
               "  -i or --info             : Display per-frame information.\n"
               "  -f or --find             : find and display list of RTP sessions.\n"
+              "  -P or --payload-file fn  : write RTP payload to file\n"
               "  -Y file                  : write decoded video to file\n"
               "  -E file                  : write event log to file\n"
               "  -T title                 : put text in extra video information\n"
@@ -431,23 +672,34 @@ void PlayRTP::Main()
   m_singleStep = args.HasOption('p');
   m_info       = args.GetOptionCount('i');
 
-  m_writeYUV = false;
-  m_writeNonYUV = false;
+  if (args.HasOption('P')) {
+    if (!m_payloadFile.Open(args.GetOptionString('P'), PFile::ReadWrite)) {
+      cerr << "Cannot create \"" << m_payloadFile.GetFilePath() << '\"' << endl;
+      return;
+    }
+    cout << "Dumping RTP payload to \"" << m_payloadFile.GetFilePath() << '\"' << endl;
+  }
+
   if (args.HasOption('Y')) {
-    m_writeYUV = true;
-    m_yuvFileName = args.GetOptionString('Y');
-    if (m_yuvFileName.GetType() *= ".yuv") 
-      m_extraText = m_yuvFileName.GetFileName();
-    else {
-      m_yuvFileName  = args.GetOptionString('Y') + ".yuv";
-      if (PFile::Exists(m_yuvFileName) && !PFile::Remove(m_yuvFileName, true)) {
-        cerr << "error: cannot delete '" << m_yuvFileName << "'" << endl;
+    PFilePath yuvFileName = args.GetOptionString('Y');
+    m_extraText = yuvFileName.GetFileName();
+
+    if (yuvFileName.GetType() != ".yuv") {
+      m_encodedFileName = yuvFileName;
+      yuvFileName += ".yuv";
+    }
+
+    if (!m_yuvFile.Open(yuvFileName, PFile::ReadWrite)) {
+      cerr << "Cannot create '" << yuvFileName << "'" << endl;
         return;
       }
-      m_finalVideoFn = args.GetOptionString('Y');
-      m_extraText = m_finalVideoFn.GetFileName();
-      m_writeNonYUV = true;
+    cout << "Writing video to \"" << yuvFileName << '\"' << endl;
+
+    if (!m_yuvFile.Open(yuvFileName, PFile::ReadWrite)) {
+      cerr << "Cannot create '" << yuvFileName << "'" << endl;
+      return;
     }
+    cout << "Writing video to \"" << yuvFileName << '\"' << endl;
   }
 
   if (m_extendedInfo) {
@@ -533,188 +785,40 @@ void PlayRTP::Main()
 }
 
 
-struct pcap_hdr_s { 
-  DWORD magic_number;   /* magic number */
-  WORD  version_major;  /* major version number */
-  WORD  version_minor;  /* minor version number */
-  DWORD thiszone;       /* GMT to local correction */
-  DWORD sigfigs;        /* accuracy of timestamps */
-  DWORD snaplen;        /* max length of captured packets, in octets */
-  DWORD network;        /* data link type */
-} pcap_hdr;
-
-struct pcaprec_hdr_s { 
-    DWORD ts_sec;         /* timestamp seconds */
-    DWORD ts_usec;        /* timestamp microseconds */
-    DWORD incl_len;       /* number of octets of packet saved in file */
-    DWORD orig_len;       /* actual length of packet */
-} pcaprec_hdr;
-
-
 void PlayRTP::Find(const PFilePath & filename)
 {
-  PFile pcap;
-  if (!pcap.Open(filename, PFile::ReadOnly)) {
-    cout << "Could not open file \"" << filename << '"' << endl;
+  PCAPFile pcap;
+
+  if (!pcap.Open(filename))
     return;
-  }
 
-  if (!pcap.Read(&pcap_hdr, sizeof(pcap_hdr))) {
-    cout << "Could not read header from \"" << filename << '"' << endl;
-    return;
-  }
-
-  bool fileOtherEndian;
-  if (pcap_hdr.magic_number == 0xa1b2c3d4)
-    fileOtherEndian = false;
-  else if (pcap_hdr.magic_number == 0xd4c3b2a1)
-    fileOtherEndian = true;
-  else {
-    cout << "File \"" << filename << "\" is not a PCAP file, bad magic number." << endl;
-    return;
-  }
-
-  if (fileOtherEndian) {
-    REVERSE(pcap_hdr.version_major);
-    REVERSE(pcap_hdr.version_minor);
-    REVERSE(pcap_hdr.thiszone);
-    REVERSE(pcap_hdr.sigfigs);
-    REVERSE(pcap_hdr.snaplen);
-    REVERSE(pcap_hdr.network);
-  }
-
-  cout << "Playing PCAP v" << pcap_hdr.version_major << '.' << pcap_hdr.version_minor << " file \"" << filename << '"' << endl;
-
-  PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
-  PBYTEArray fragments;
+  cout << "Analysing " << pcap << endl;
 
   while (!pcap.IsEndOfFile()) {
-
-    if (!pcap.Read(&pcaprec_hdr, sizeof(pcaprec_hdr))) {
-      cout << "Truncated file \"" << filename << '"' << endl;
-      return;
-    }
-
-    if (fileOtherEndian) {
-      REVERSE(pcaprec_hdr.ts_sec);
-      REVERSE(pcaprec_hdr.ts_usec);
-      REVERSE(pcaprec_hdr.incl_len);
-      REVERSE(pcaprec_hdr.orig_len);
-    }
-
-    if (!pcap.Read(packetData.GetPointer(pcaprec_hdr.incl_len), pcaprec_hdr.incl_len)) {
-      cout << "Truncated file \"" << filename << '"' << endl;
-      return;
-    }
-
-    const BYTE * packet = packetData;
-    switch (pcap_hdr.network) {
-      case 1 :
-        if (*(PUInt16b *)(packet+12) != 0x800)
-          continue; // Not IP, next packet
-
-        packet += 14; // Skip Data Link Layer Header
-        break;
-
-      default :
-        cout << "Unsupported Data Link Layer in file \"" << filename << '"' << endl;
-        return;
-    }
-
-    // Check for fragmentation bit
-    packet += 6;
-    bool isFragment = (*packet & 0x20) != 0;
-    int fragmentOffset = (((packet[0]&0x1f)<<8)+packet[1])*8;
-
-    // Skip first bit of IP header
-    packet += 3;
-    if (*packet != 0x11)
-      continue; // Not UDP
-
-    PIPSocketAddressAndPort rtpSrc;
-    PIPSocketAddressAndPort rtpDst;
-
-    packet += 3;
-    rtpSrc.SetAddress(PIPSocket::Address(4, packet));
-    //if (!m_srcIP.IsAny() && m_srcIP != PIPSocket::Address(4, packet))
-    //  continue; // Not specified source IP address
-
-    packet += 4;
-    rtpDst.SetAddress(PIPSocket::Address(4, packet));
-    //if (!m_dstIP.IsAny() && m_dstIP != PIPSocket::Address(4, packet))
-    //  continue; // Not specified destination IP address
-
-    // On to the UDP header
-    packet += 4;
-
-    // As we are past IP header, handle fragmentation now
-    PINDEX fragmentsSize = fragments.GetSize();
-    if (isFragment || fragmentsSize > 0) {
-      if (fragmentsSize != fragmentOffset) {
-        cout << "Missing IP fragment in \"" << filename << '"' << endl;
-        fragments.SetSize(0);
-        continue;
-      }
-
-      fragments.Concatenate(PBYTEArray(packet, pcaprec_hdr.incl_len - (packet - packetData), false));
-
-      if (isFragment)
-        continue;
-
-      packetData = fragments;
-      pcaprec_hdr.incl_len = packetData.GetSize();
-      fragments.SetSize(0);
-      packet = packetData;
-    }
-
-    // Check UDP ports
-    //if (m_srcPort != 0 && m_srcPort != *(PUInt16b *)packet)
-    //  continue;
-    rtpSrc.SetPort(*(PUInt16b *)packet);
-
-    packet += 2;
-    //if (m_dstPort != 0 && m_dstPort != *(PUInt16b *)packet)
-    //  continue;
-    rtpDst.SetPort(*(PUInt16b *)packet);
-
-    // On to (probably) RTP header
-    packet += 6;
-
-    // see if this is an RTP packet
-    int rtpLen = pcaprec_hdr.incl_len - (packet - packetData);
-
-    // must be at least this long
-    if (rtpLen < RTP_DataFrame::MinHeaderSize)
-      continue;
-
-    // must have version number 2
-    RTP_DataFrame rtp(packet, rtpLen, FALSE);
-    if (rtp.GetVersion() != 2)
+    RTP_DataFrame rtp;
+    if (pcap.GetRTP(rtp) < 0)
       continue;
 
     // determine if reverse or forward session
-    bool reverse;
-    if (rtpSrc.GetAddress() != rtpDst.GetAddress())
-      reverse = rtpSrc.GetAddress() > rtpDst.GetAddress();
-    else
-      reverse = rtpSrc.GetPort() > rtpDst.GetPort();
+    bool dir = pcap.GetSrcIP() >  pcap.GetDstIP() ||
+              (pcap.GetSrcIP() == pcap.GetDstIP() && pcap.GetSrcPort() > pcap.GetDstPort()) ? 1 : 0;
 
-    PString key;
-    if (reverse)
-      key = rtpDst.AsString() + "|" + rtpSrc.AsString();
+    ostringstream keyStrm;
+    if (dir == 0)
+      keyStrm << pcap.GetSrcIP() << ':' << pcap.GetSrcPort() << '|' << pcap.GetDstIP() << ':' << pcap.GetDstPort();
     else
-      key = rtpSrc.AsString() + "|" + rtpDst.AsString();
-
-    std::string k(key);
+      keyStrm << pcap.GetDstIP() << ':' << pcap.GetDstPort() << '|' << pcap.GetSrcIP() << ':' << pcap.GetSrcPort();
+    string key = keyStrm.str();
 
     // see if we have identified this potential session before
     DiscoveredRTPMap::iterator r;
-    if ((r = discoveredRTPMap.find(k)) == discoveredRTPMap.end()) {
+    if ((r = discoveredRTPMap.find(key)) == discoveredRTPMap.end()) {
       DiscoveredRTPInfo info;
-      int dir = reverse ? 1 : 0;
-      info.m_found  [dir]  = true;
-      info.m_addr[dir]     = rtpSrc;
-      info.m_addr[1 - dir] = rtpDst;
+      info.m_addr[dir].SetAddress(pcap.GetSrcIP());
+      info.m_addr[dir].SetPort(pcap.GetSrcPort());
+      info.m_addr[1 - dir].SetAddress(pcap.GetDstIP());
+      info.m_addr[1 - dir].SetPort(pcap.GetDstPort());
+
       info.m_payload[dir]  = rtp.GetPayloadType();
       info.m_seq[dir]      = rtp.GetSequenceNumber();
       info.m_ts[dir]       = rtp.GetTimestamp();
@@ -723,29 +827,15 @@ void PlayRTP::Find(const PFilePath & filename)
       info.m_seq[dir]      = rtp.GetSequenceNumber();
       info.m_ts[dir]       = rtp.GetTimestamp();
 
+      info.m_found[dir]    = true;
+
       info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
 
-      discoveredRTPMap.insert(DiscoveredRTPMap::value_type(k, info));
+      discoveredRTPMap.insert(DiscoveredRTPMap::value_type(key, info));
     }
     else {
       DiscoveredRTPInfo & info = r->second;
-      int dir = reverse ? 1 : 0;
-      if (!info.m_found[dir]) {
-        info.m_found  [dir]  = true;
-        info.m_addr[dir]     = rtpSrc;
-        info.m_addr[1 - dir] = rtpDst;
-        info.m_payload[dir]  = rtp.GetPayloadType();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
-
-        info.m_ssrc[dir]     = rtp.GetSyncSource();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
-
-        info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
-      }
-      else
-      {
+      if (info.m_found[dir]) {
         WORD seq = rtp.GetSequenceNumber();
         DWORD ts = rtp.GetTimestamp();
         DWORD ssrc = rtp.GetSyncSource();
@@ -757,6 +847,24 @@ void PlayRTP::Find(const PFilePath & filename)
         if ((info.m_ts[dir]+1) < ts)
           ++info.m_ts_matches[dir];
         info.m_ts[dir] = ts;
+      }
+      else {
+        info.m_addr[dir].SetAddress(pcap.GetSrcIP());
+        info.m_addr[dir].SetPort(pcap.GetSrcPort());
+        info.m_addr[1 - dir].SetAddress(pcap.GetDstIP());
+        info.m_addr[1 - dir].SetPort(pcap.GetDstPort());
+
+        info.m_payload[dir]  = rtp.GetPayloadType();
+        info.m_seq[dir]      = rtp.GetSequenceNumber();
+        info.m_ts[dir]       = rtp.GetTimestamp();
+
+        info.m_ssrc[dir]     = rtp.GetSyncSource();
+        info.m_seq[dir]      = rtp.GetSequenceNumber();
+        info.m_ts[dir]       = rtp.GetTimestamp();
+
+        info.m_found[dir]    = true;
+
+        info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
       }
     }
   }
@@ -844,142 +952,54 @@ static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frame
 
 #endif
 
+
 void PlayRTP::Play(const PFilePath & filename)
 {
-  PFile pcap;
-  if (!pcap.Open(filename, PFile::ReadOnly)) {
-    cout << "Could not open file \"" << filename << '"' << endl;
+  PCAPFile pcap;
+  if (!pcap.Open(filename))
     return;
-  }
 
-  if (!pcap.Read(&pcap_hdr, sizeof(pcap_hdr))) {
-    cout << "Could not read header from \"" << filename << '"' << endl;
-    return;
-  }
-
-  bool fileOtherEndian;
-  if (pcap_hdr.magic_number == 0xa1b2c3d4)
-    fileOtherEndian = false;
-  else if (pcap_hdr.magic_number == 0xd4c3b2a1)
-    fileOtherEndian = true;
-  else {
-    cout << "File \"" << filename << "\" is not a PCAP file, bad magic number." << endl;
-    return;
-  }
-
-  if (fileOtherEndian) {
-    REVERSE(pcap_hdr.version_major);
-    REVERSE(pcap_hdr.version_minor);
-    REVERSE(pcap_hdr.thiszone);
-    REVERSE(pcap_hdr.sigfigs);
-    REVERSE(pcap_hdr.snaplen);
-    REVERSE(pcap_hdr.network);
-  }
-
-  cout << "Playing PCAP v" << pcap_hdr.version_major << '.' << pcap_hdr.version_minor << " file \"" << filename << '"' << endl;
-
-  PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
-  PBYTEArray fragments;
+  cout << "Playing " << pcap << endl;
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
   DWORD lastTimeStamp = 0;
 
-  m_frameCount = 0;
+  unsigned fragmentationCount = 0;
+  unsigned nextSequenceNumber = 0;
+  m_packetCount = 0;
 
   RTP_DataFrame extendedData;
   m_videoError = false;
+  m_videoFrames = 0;
 
   bool isAudio = false;
   bool needInfoHeader = true;
 
+  PTimeInterval playStartTick = PTimer::Tick();
+
   while (!pcap.IsEndOfFile()) {
-    if (!pcap.Read(&pcaprec_hdr, sizeof(pcaprec_hdr))) {
-      cout << "Truncated file \"" << filename << '"' << endl;
-      return;
-    }
+    RTP_DataFrame rtp;
+    if (pcap.GetRTP(rtp) < 0)
+      continue;
 
-    if (fileOtherEndian) {
-      REVERSE(pcaprec_hdr.ts_sec);
-      REVERSE(pcaprec_hdr.ts_usec);
-      REVERSE(pcaprec_hdr.incl_len);
-      REVERSE(pcaprec_hdr.orig_len);
-    }
-
-    if (!pcap.Read(packetData.GetPointer(pcaprec_hdr.incl_len), pcaprec_hdr.incl_len)) {
-      cout << "Truncated file \"" << filename << '"' << endl;
-      return;
-    }
-
-    const BYTE * packet = packetData;
-    switch (pcap_hdr.network) {
-      case 1 :
-        if (*(PUInt16b *)(packet+12) != 0x800)
-          continue; // Not IP, next packet
-
-        packet += 14; // Skip Data Link Layer Header
-        break;
-
-      default :
-        cout << "Unsupported Data Link Layer in file \"" << filename << '"' << endl;
-        return;
-    }
-
-    // Check for fragmentation bit
-    packet += 6;
-    bool isFragment = (*packet & 0x20) != 0;
-    int fragmentOffset = (((packet[0]&0x1f)<<8)+packet[1])*8;
-
-    // Skip first bit of IP header
-    packet += 3;
-    if (*packet != 0x11)
-      continue; // Not UDP
-
-    packet += 3;
-    if (!m_srcIP.IsAny() && m_srcIP != PIPSocket::Address(4, packet))
+    if (!m_srcIP.IsAny() && m_srcIP != pcap.GetSrcIP())
       continue; // Not specified source IP address
 
-    packet += 4;
-    if (!m_dstIP.IsAny() && m_dstIP != PIPSocket::Address(4, packet))
+    if (!m_dstIP.IsAny() && m_dstIP != pcap.GetDstIP())
       continue; // Not specified destination IP address
 
-    // On to the UDP header
-    packet += 4;
-
-    // As we are past IP header, handle fragmentation now
-    PINDEX fragmentsSize = fragments.GetSize();
-    if (isFragment || fragmentsSize > 0) {
-      if (fragmentsSize != fragmentOffset) {
-        cout << "Missing IP fragment in \"" << filename << '"' << endl;
-        fragments.SetSize(0);
-        continue;
-      }
-
-      fragments.Concatenate(PBYTEArray(packet, pcaprec_hdr.incl_len - (packet - packetData), false));
-
-      if (isFragment)
-        continue;
-
-      packetData = fragments;
-      pcaprec_hdr.incl_len = packetData.GetSize();
-      fragments.SetSize(0);
-      packet = packetData;
-    }
-
     // Check UDP ports
-    if (m_srcPort != 0 && m_srcPort != *(PUInt16b *)packet)
+    if (m_srcPort != 0 && m_srcPort != pcap.GetSrcPort())
       continue;
 
-    packet += 2;
-    if (m_dstPort != 0 && m_dstPort != *(PUInt16b *)packet)
+    if (m_dstPort != 0 && m_dstPort != pcap.GetDstPort())
       continue;
 
-    // On to (probably) RTP header
-    packet += 6;
-    RTP_DataFrame rtp(packet, pcaprec_hdr.incl_len - (packet - packetData), FALSE);
-
-    if (rtp.GetVersion() != 2)
-      continue;
+    unsigned thisSequenceNumber = rtp.GetSequenceNumber();
+    if (nextSequenceNumber != 0 && thisSequenceNumber != nextSequenceNumber)
+      cout << "Received SN=" << thisSequenceNumber << ", expected SN=" << nextSequenceNumber << endl;
+    nextSequenceNumber = thisSequenceNumber+1;
 
     if (rtpStreamPayloadType != rtp.GetPayloadType()) {
       if (rtpStreamPayloadType != RTP_DataFrame::IllegalPayloadType) {
@@ -1032,6 +1052,12 @@ void PlayRTP::Play(const PFilePath & filename)
 
     const OpalMediaFormat & inputFmt = m_transcoder->GetInputFormat();
 
+    if (inputFmt == "H.264") {
+      static BYTE const StartCode[4] = { 0, 0, 0, 1 };
+      m_payloadFile.Write(StartCode, sizeof(StartCode));
+    }
+    m_payloadFile.Write(rtp.GetPayloadPtr(), rtp.GetPayloadSize());
+
     if (!m_noDelay) {
       if (rtp.GetTimestamp() != lastTimeStamp) {
         unsigned msecs = (rtp.GetTimestamp() - lastTimeStamp)/inputFmt.GetTimeUnits();
@@ -1043,12 +1069,15 @@ void PlayRTP::Play(const PFilePath & filename)
       }
     }
 
+    if (pcap.IsFragmentated())
+      ++fragmentationCount;
+
     if (m_info > 0) {
       if (needInfoHeader) {
         needInfoHeader = false;
         if (m_info > 0) {
           if (m_info > 1)
-            cout << "Frame,RealTime,CaptureTime,";
+            cout << "Packet,RealTime,CaptureTime,";
           cout << "SSRC,SequenceNumber,TimeStamp";
           if (m_info > 1) {
             cout << ",Marker,PayloadType,payloadSize";
@@ -1064,7 +1093,7 @@ void PlayRTP::Play(const PFilePath & filename)
       }
 
       if (m_info > 1)
-        cout << m_frameCount << ','
+        cout << m_packetCount << ','
              << PTimer::Tick().GetMilliSeconds() << ','
              << pcaprec_hdr.ts_sec << '.' << setfill('0') << setw(6) << pcaprec_hdr.ts_usec << setfill(' ') << ',';
       cout << "0x" << hex << rtp.GetSyncSource() << dec << ',' << rtp.GetSequenceNumber() << ',' << rtp.GetTimestamp();
@@ -1086,9 +1115,16 @@ void PlayRTP::Play(const PFilePath & filename)
       if (m_singleStep) 
         cout << "no frame" << endl;
     }
-    else for (PINDEX i = 0; i < output.GetSize(); i++) {
-      if (m_singleStep)
+    else {
+      if (m_singleStep) {
         cout << output.GetSize() << " packets" << endl;
+        char ch;
+        cin >> ch;
+        if (ch == 'c')
+          m_singleStep = false;
+      }
+
+      for (PINDEX i = 0; i < output.GetSize(); i++) {
       const RTP_DataFrame & data = output[i];
       if (isAudio) {
         m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
@@ -1096,37 +1132,32 @@ void PlayRTP::Play(const PFilePath & filename)
           cout << ',' << data.GetPayloadSize();
       }
       else {
+          ++m_videoFrames;
+
         OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
         const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
-        if (frame->width > 1000 || frame->height > 1000) {
-        } 
-        else {
+          ++m_videoFrames;
+
+          OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
+          const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
           if (video->WasLastFrameIFrame()) {
-            m_eventLog << "Frame " << m_frameCount << ": I-frame received";
+            m_eventLog << "Frame " << m_videoFrames << ": I-frame received";
             if (m_videoError)
               m_eventLog << " - decode error cleared";
             m_eventLog << endl;
             m_videoError = false;
           }
 
-          if (m_writeYUV) {
-            if (!m_yuvFile.IsOpen()) {
-              if (!m_yuvFile.Open(m_yuvFileName, PFile::ReadWrite)) {
-                cerr << "Cannot create '" << m_yuvFileName << "'" << endl;
-              }
               m_yuvFile.SetFrameSize(frame->width, frame->height + (m_extendedInfo ? m_extraHeight : 0));
-            }
-          }
+
           if (!m_extendedInfo) {
             m_display->SetFrameSize(frame->width, frame->height);
             m_display->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
                                     OPAL_VIDEO_FRAME_DATA_PTR(frame), data.GetMarker());
-            if (m_writeYUV) 
               m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(frame));
           }
-          else
-          {
+          else {
             int extendedHeight = frame->height + m_extraHeight;
             extendedData.SetSize(data.GetHeaderSize() + sizeof(OpalVideoTranscoder::FrameHeader) + (frame->width * extendedHeight * 3 / 2));
             memcpy(extendedData.GetPointer(), (const BYTE *)data, data.GetHeaderSize());
@@ -1145,7 +1176,7 @@ void PlayRTP::Play(const PFilePath & filename)
             DrawText(4, 4, extendedFrame->width, extendedFrame->height, OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), text);
 
             sprintf(text, "TC:%06u  %c %c %c", 
-                           m_frameCount, 
+                           m_videoFrames, 
                            m_vfu ? 'V' : ' ', 
                            video->WasLastFrameIFrame() ? 'I' : ' ', 
                            m_videoError ? 'E' : ' ');
@@ -1163,16 +1194,10 @@ void PlayRTP::Play(const PFilePath & filename)
                                     extendedFrame->width, extendedFrame->height,
                                     OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame), data.GetMarker());
 
-            if (m_writeYUV) 
               m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame));
           }
-        }
-        //if (m_vfu)
-        //  m_singleStep = true;
-
-        if (m_info > 1)
-          cout << ',' << frame->width << ',' << frame->height;
       }
+    }
     }
 
     if (m_info > 0) {
@@ -1189,32 +1214,43 @@ void PlayRTP::Play(const PFilePath & filename)
       cout << '\n';
     }
 
-    if (m_singleStep) {
-      cout.flush();
-      char ch;
-      cin >> ch;
-      if (ch == 'c')
-        m_singleStep = false;
-    }
+    ++m_packetCount;
 
-    ++m_frameCount;
-
-    if (m_frameCount % 250 == 0)
-      m_eventLog << "Frame " << m_frameCount << ": frames still processing" << endl;
+    if (m_packetCount % 250 == 0)
+      m_eventLog << "Packet " << m_packetCount << ": still processing" << endl;
   }
 
-  m_eventLog << "Frame " << m_frameCount << ": last frame" << endl;
+  m_eventLog << "Packet " << m_packetCount << ": completed" << endl;
 
   delete m_transcoder;
   m_transcoder = NULL;
 
-  if (m_writeYUV || m_writeNonYUV) 
-    cout << "Written " << m_frameCount << " frames at " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << endl;
 
-  if (m_writeNonYUV) {
+  // Output final stats.
+  cout << (m_yuvFile.IsOpen() ? "Written " : "Played ") << m_packetCount << " packets";
+
+  if (m_videoFrames > 0) {
+    cout << ", " << m_videoFrames << " frames at "
+         << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight();
+    if (!m_yuvFile.IsOpen()) {
+      PTimeInterval playTime = PTimer::Tick() - playStartTick;
+      cout << ", " << playTime << " seconds, "
+           << fixed << setprecision(1)
+           << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps";
+    }
+  }
+
+  if (fragmentationCount > 0)
+    cout << ", " << fragmentationCount << " fragments";
+
+  cout << endl;
+
+
+  if (!m_encodedFileName.IsEmpty()) {
     PStringStream args; 
-    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << " -i '" << m_yuvFileName << "' '" << m_finalVideoFn << "'";
-    cout << "Executing command '" << args << "'" << endl;
+    args << "ffmpeg -r 10 -y -s " << m_yuvFile.GetFrameWidth() << 'x' << m_yuvFile.GetFrameHeight()
+         << " -i '" << m_yuvFile.GetFilePath() << "' '" << m_encodedFileName << '\'';
+    cout << "Executing command \"" << args << '\"' << endl;
     PPipeChannel cmd;
     if (!cmd.Open(args, PPipeChannel::ReadWriteStd, true)) 
       cout << "failed";
@@ -1228,14 +1264,14 @@ void PlayRTP::Play(const PFilePath & filename)
 void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    m_eventLog << "Frame " << m_frameCount << ": decoding error (VFU sent)";
+    m_eventLog << "Packet " << m_packetCount << ", frame " << m_videoFrames << ": decoding error (VFU sent)";
       
     OpalVideoUpdatePicture2 * vfu2 = dynamic_cast<OpalVideoUpdatePicture2 *>(&command);
     if (vfu2 != NULL) {
       m_eventLog << " for seq " << vfu2->GetSequenceNumber() << ", ts " << vfu2->GetSequenceNumber();
     }
     m_eventLog << endl;
-    cout << "Decoder error in received stream." << endl;
+    cout << "Decoder error in received stream: frame " << m_videoFrames << endl;
     m_videoError = m_vfu = true;
   }
 }
