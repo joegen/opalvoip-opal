@@ -637,6 +637,8 @@ SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
 
 void SIPMIMEInfo::PrintOn(ostream & strm) const
 {
+  const char * eol = strm.fill() == '\r' ? "\r\n" : "\n";
+
   for (PINDEX i = 0; i < GetSize(); i++) {
     PCaselessString name = GetKeyAt(i);
     PString value = GetDataAt(i);
@@ -651,15 +653,15 @@ void SIPMIMEInfo::PrintOn(ostream & strm) const
     }
 
     if (value.FindOneOf("\r\n") == P_MAX_INDEX)
-      strm << name << ": " << value << "\r\n";
+      strm << name << ": " << value << eol;
     else {
       PStringArray vals = value.Lines();
       for (PINDEX j = 0; j < vals.GetSize(); j++)
-        strm << name << ": " << vals[j] << "\r\n";
+        strm << name << ": " << vals[j] << eol;
     }
   }
 
-  strm << "\r\n";
+  strm << eol;
 }
 
 
@@ -2086,8 +2088,13 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
           << ",local=" << transport.GetLocalAddress()
           << ",if=" << transport.GetLastReceivedInterface();
 
-    if (PTrace::CanTrace(4))
-      trace << '\n' << cmd << '\n' << m_mime << m_entityBody;
+    if (PTrace::CanTrace(4)) {
+      trace << '\n' << cmd << '\n' << setfill('\n') << m_mime << setfill(' ');
+      for (const char * ptr = m_entityBody; *ptr != '\0'; ++ptr) {
+        if (*ptr != '\r')
+          trace << *ptr;
+      }
+    }
     if (truncated && contentLength > 0)
       trace << "... truncated";
 
@@ -2155,8 +2162,13 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
              "local=" << transport.GetLocalAddress() << ","
              "if=" << transport.GetInterface();
 
-    if (PTrace::CanTrace(4))
-      trace << '\n' << strPDU;
+    if (PTrace::CanTrace(4)) {
+      trace << '\n';
+      for (const char * ptr = strPDU; *ptr != '\0'; ++ptr) {
+        if (*ptr != '\r')
+          trace << *ptr;
+      }
+    }
 
     trace << PTrace::End;
   }
@@ -2194,7 +2206,7 @@ PString SIP_PDU::Build()
     str << ' ' << (unsigned)m_statusCode << ' ' << m_info;
   }
 
-  str << "\r\n" << m_mime << m_entityBody;
+  str << "\r\n" << setfill('\r') << m_mime << m_entityBody;
   return str;
 }
 
