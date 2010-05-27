@@ -45,6 +45,7 @@
 #include <codec/g711codec.h>
 #include <codec/vidcodec.h>
 #include <codec/rfc4175.h>
+#include <codec/rfc2435.h>
 #include <codec/opalpluginmgr.h>
 
 #if OPAL_HAS_H224
@@ -84,6 +85,11 @@ OPAL_REGISTER_G711();
 // Same deal for RC4175 video
 #if OPAL_RFC4175
 OPAL_REGISTER_RFC4175();
+#endif
+
+// Same deal for RC2435 video
+#if OPAL_RFC2435
+OPAL_REGISTER_RFC2435_JPEG();
 #endif
 
 
@@ -723,6 +729,7 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
   if (pcmAudio) {
     // Sound cards can only do 16 bit PCM, but at various sample rates
     // The following will be in order of preference, so lets do wideband first
+    formats += OpalPCM16S_48KHZ;
     formats += OpalPCM16_48KHZ;
     formats += OpalPCM16_32KHZ;
     formats += OpalPCM16_16KHZ;

@@ -88,18 +88,31 @@ public:
   }
 };
 
+const OpalAudioFormat & GetOpalPCM16S_48KHZ()
+{
+  static OpalStereoAudioFormat stereo48k(OPAL_PCM16S_48KHZ,		// name of the media format
+					RTP_DataFrame::L16_Stereo,	// RTP payload code
+					"",				// encoding name
+					192,				// frame size in bytes
+					48,				// frame time (1 ms in clock units)
+					240,				// recommended rx frames/packet
+					0,				// recommended tx frames/packet
+					256,				// max tx frame size
+					48000);				// clock rate
+  return stereo48k;
+};
 
 const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
 {
-  static OpalStereoAudioFormat stereo48k("Linear-16-Stereo-48kHz",    // name of the meda format
-                                         RTP_DataFrame::DynamicBase,  // RTP payload code
-                                         "L16",                       // encoding name
-                                         16,                          // frame size in bytes
-                                         48,                          // frame time (1 ms in clock units)
-                                         20,                          // recommended rx frames/packet
-                                         20,                          // recommended tx frames/packet
-                                         50,                          // max tx frame size
-                                         48000);                      // clock rate
+  static OpalStereoAudioFormat stereo48k(OPAL_L16_STEREO_48KHZ,       // name of the media format
+					RTP_DataFrame::L16_Stereo,   // RTP payload code
+					"L16S",                      // encoding name
+					192,                          // frame size in bytes
+					48,                          // frame time (1 ms in clock units)
+					240,                          // recommended rx frames/packet
+					30,                          // recommended tx frames/packet
+					256,                          // max tx frame size
+					48000);                      // clock rate
   return stereo48k;
 };
 
@@ -963,12 +976,13 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  PINDEX   fs,
                                                  unsigned ft,
                                                  unsigned cr,
-                                                 time_t ts)
+                                                 time_t   ts)
   : formatName(fullName), mediaType(_mediaType), forceIsTransportable(false)
 {
   codecVersionTime = ts;
-  rtpPayloadType = pt;
-  rtpEncodingName = en;
+  rtpPayloadType   = pt;
+  rtpEncodingName  = en;
+  m_channels       = 1;    // this is the default - it's up to descendant classes to change it
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
@@ -1498,7 +1512,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::AlwaysMerge, txFrames, 1, maxFrames));
 
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  1, 1, 5));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  m_channels, 1, 5));
 }
 
 

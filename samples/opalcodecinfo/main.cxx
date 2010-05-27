@@ -172,7 +172,8 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
     cout << "  Samples/frame:       " << defn.parm.audio.samplesPerFrame << endl
          << "  Bytes/frame:         " << defn.parm.audio.bytesPerFrame << endl
          << "  Frames/packet:       " << defn.parm.audio.recommendedFramesPerPacket << endl
-         << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl;
+         << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl
+         << "  Channels:            " << defn.parm.audio.channels << endl;
   }
   else {
     cout << "  Frame width (max):   " << defn.parm.video.maxFrameWidth << endl
