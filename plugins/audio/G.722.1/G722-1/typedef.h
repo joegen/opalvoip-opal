@@ -31,7 +31,7 @@ typedef short Word16;
 typedef long Word32;
 typedef int Flag;
 
-#elif defined(__unix__) || defined(__unix)
+#elif defined(__unix__) || defined(__unix) || defined(__APPLE__)
 //typedef signed char Word8;
 typedef short Word16;
 typedef int Word32;
