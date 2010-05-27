@@ -605,6 +605,7 @@ class OpalMediaFormatInternal : public PObject
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
+    int                          m_channels;
 
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
@@ -863,6 +864,11 @@ class OpalMediaFormat : public PContainer
       */
     unsigned GetClockRate() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
+
+    /**Get the number of audio channels for this format.
+      */
+    unsigned GetChannels() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ChannelsOption(), 1); }
+    static const PString & ChannelsOption();
 
     /**Get the name of the OpalMediaOption indicating the protocol the format is being used on.
       */
@@ -1258,10 +1264,12 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
 #define OPAL_PCM16_32KHZ    "PCM-16-32kHz"
 #define OPAL_PCM16_48KHZ    "PCM-16-48kHz"
+#define OPAL_PCM16S_48KHZ   "PCM-16S-48kHz"
 #define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
 #define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
 #define OPAL_L16_MONO_32KHZ "Linear-16-Mono-32kHz"
 #define OPAL_L16_MONO_48KHZ "Linear-16-Mono-48kHz"
+#define OPAL_L16_STEREO_48KHZ "Linear-16-Stereo-48kHz"
 #define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
 #define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
 #define OPAL_G722           "G.722"
@@ -1297,6 +1305,7 @@ extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_48KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_48KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_32KHZ();
@@ -1336,6 +1345,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
 #define OpalPCM16_32KHZ    GetOpalPCM16_32KHZ()
 #define OpalPCM16_48KHZ    GetOpalPCM16_48KHZ()
+#define OpalPCM16S_48KHZ   GetOpalPCM16S_48KHZ()
 #define OpalL16_MONO_8KHZ  GetOpalL16_MONO_8KHZ()
 #define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
 #define OpalL16_MONO_32KHZ GetOpalL16_MONO_32KHZ()

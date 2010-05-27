@@ -173,6 +173,9 @@ enum PluginCodec_Flags {
 
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
+
+  PluginCodec_ChannelsPos            = 16,
+  PluginCodec_ChannelsMask           = 0x003f0000
 };
 
 enum PluginCodec_CoderFlags {
@@ -280,6 +283,7 @@ struct PluginCodec_Option {
 // Normalised option names
 #define PLUGINCODEC_OPTION_NEEDS_JITTER               "Needs Jitter"
 #define PLUGINCODEC_OPTION_CLOCK_RATE                 "Clock Rate"
+#define PLUGINCODEC_OPTION_CHANNELS                   "Channels"
 #define PLUGINCODEC_OPTION_FRAME_TIME                 "Frame Time"
 #define PLUGINCODEC_OPTION_MAX_FRAME_SIZE             "Max Frame Size"
 #define PLUGINCODEC_OPTION_MAX_BIT_RATE               "Max Bit Rate"

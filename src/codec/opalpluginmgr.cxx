@@ -549,6 +549,8 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
   // Override calculated value if we have an explicit bit rate
   if (codecDefn->bitsPerSec > 0)
     SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), codecDefn->bitsPerSec);
+
+  m_channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
 }
 
 
@@ -671,11 +673,13 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 // Plugin framed audio codec classes
 //
 
-static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate)
+static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate, unsigned channels)
 {
-  if (strcmp(fmtName, "L16") != 0)
+  if (strcmp(fmtName, "L16") != 0 && strcmp(fmtName, "L16S") != 0)
     return fmtName;
 
+  if (channels == 2 && sampleRate == 48000)
+    return OpalPCM16S_48KHZ;
   switch (sampleRate) {
     default :
     case 8000 :
@@ -691,8 +695,8 @@ static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate)
 
 
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
-  : OpalFramedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
-                         GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate))
+  : OpalFramedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)),
+                         GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)))
   , OpalPluginTranscoder(codecDefn, isEncoder)
 { 
   inputIsRTP          = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
@@ -772,8 +776,8 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 
 OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codecDefn,
                                                                      bool isEncoder)
-  : OpalStreamedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
-                           GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate),
+  : OpalStreamedTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)),
+                           GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)),
                            16, 16)
   , OpalPluginTranscoder(codecDefn, isEncoder)
 {
@@ -1091,8 +1095,8 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
   public:
     OpalFaxTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
-      : OpalTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate),
-                       GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate))
+      : OpalTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)),
+                       GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)))
       , OpalPluginTranscoder(codecDefn, isEncoder)
       , getCodecStatistics(codecDefn, PLUGINCODEC_CONTROL_GET_STATISTICS)
     { 
@@ -1368,11 +1372,11 @@ static bool IsEncoder(const PluginCodec_Definition & encoder)
   return ((encoder.h323CapabilityType != PluginCodec_H323Codec_undefined) && (
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudio) && 
-            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
+            (strncmp(encoder.sourceFormat, "L16", 3) == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
          ) ||
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed) && 
-            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
+            (strncmp(encoder.sourceFormat, "L16", 3) == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
          ) ||
          (
            videoSupported &&
@@ -1382,7 +1386,7 @@ static bool IsEncoder(const PluginCodec_Definition & encoder)
          (
            faxSupported &&
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeFax) && 
-            (strcmp(encoder.sourceFormat, "L16") == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
+            (strncmp(encoder.sourceFormat, "L16", 3) == 0 || strncmp(encoder.sourceFormat, "PCM-16", 6) == 0)
         )
        ));
 }
@@ -1416,7 +1420,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
                                             const char * fmtName)
 {
   // Create (if needed) the media format
-  OpalMediaFormat existingFormat = GetRawPCM(fmtName, codecDefn->sampleRate);
+  OpalMediaFormat existingFormat = GetRawPCM(fmtName, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
 
   // deal with codec having no info, or timestamp in future
   time_t timeStamp;
@@ -1487,18 +1491,22 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
   // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
   // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
   // consuming dozens of dynamic RTP types
+  int channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
   if ((codecDefn->flags & PluginCodec_RTPTypeShared) != 0 && (codecDefn->sdpFormat != NULL)) {
     OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
     for (OpalMediaFormatList::iterator iterFmt = list.begin(); iterFmt != list.end(); ++iterFmt) {
       OpalPluginMediaFormat * opalFmt = dynamic_cast<OpalPluginMediaFormat *>(&*iterFmt);
       if (opalFmt != NULL) {
         OpalPluginMediaFormatInternal * fmt = opalFmt->GetInfo();
-        if (fmt != NULL &&
-            fmt->codecDef->sdpFormat != NULL &&
-            codecDefn->sampleRate == fmt->codecDef->sampleRate &&
-            strcasecmp(codecDefn->sdpFormat, fmt->codecDef->sdpFormat) == 0) {
-          mediaFormat->SetPayloadType(opalFmt->GetPayloadType());
-          break;
+        if (fmt != NULL) {
+          int fmtChannels = OpalPluginCodecHandler::GetChannelCount(fmt->codecDef);
+          if (fmt->codecDef->sdpFormat != NULL &&
+              codecDefn->sampleRate == fmt->codecDef->sampleRate &&
+              channels == fmtChannels &&
+              strcasecmp(codecDefn->sdpFormat, fmt->codecDef->sdpFormat) == 0) {
+            mediaFormat->SetPayloadType(opalFmt->GetPayloadType());
+            break;
+          }
         }
       }
     }
@@ -1519,6 +1527,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   GetOpalPCM16_16KHZ();
   GetOpalPCM16_32KHZ();
   GetOpalPCM16_48KHZ();
+  GetOpalPCM16S_48KHZ();
 #if OPAL_VIDEO
   GetOpalYUV420P();
 #endif
@@ -1534,8 +1543,8 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
       continue;
 
     // Create transcoder factories for the codecs
-    OpalMediaFormat src = GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate);
-    OpalMediaFormat dst = GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate);
+    OpalMediaFormat src = GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
+    OpalMediaFormat dst = GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
     bool isEncoder = IsEncoder(*codecDefn);
     switch (codecDefn->flags & PluginCodec_MediaTypeMask) {
   #if OPAL_VIDEO
@@ -1575,6 +1584,14 @@ void OpalPluginCodecManager::UnregisterCodecPlugins(unsigned int, const PluginCo
 
 OpalPluginCodecHandler::OpalPluginCodecHandler()
 {
+}
+
+
+int OpalPluginCodecHandler::GetChannelCount(const PluginCodec_Definition * codecDefn)
+{
+  if (codecDefn == NULL)
+    return 0;
+  return ((codecDefn->flags & PluginCodec_ChannelsMask) >> PluginCodec_ChannelsPos) + 1;
 }
 
 
