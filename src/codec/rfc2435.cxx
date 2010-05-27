@@ -82,9 +82,9 @@ class RFC2435VideoFormatInternal : public OpalVideoFormatInternal
     }
 };
 
-const OpalVideoFormat & GetOpalRFC2435()
+const OpalVideoFormat & GetOpalRFC2435_JPEG()
 {
-  static OpalVideoFormat RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC4175, "RFC2435", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
+  static OpalVideoFormat RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC4175_JPEG, "RFC2435_JPEG", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC2435;
 }
 
@@ -142,28 +142,9 @@ RFC2435VideoFormatInternal::RFC2435VideoFormatInternal(
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2435Transcoder::OpalRFC2435Transcoder(      
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-)
- : OpalVideoTranscoder(inputMediaFormat, outputMediaFormat)
+OpalRFC2435Encoder::OpalRFC2435Encoder()
+  : OpalVideoTranscoder(OpalYUV420P, OpalRFC2345_JPEG)
 {
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-OpalRFC2435Encoder::OpalRFC2435Encoder(      
-  const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-  const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-) : OpalRFC2435Transcoder(inputMediaFormat, outputMediaFormat)
-{
-#ifdef _DEBUG
-  m_extendedSequenceNumber = 0;
-#else
-  m_extendedSequenceNumber = PRandom::Number();
-#endif
-
-  m_maximumPacketSize      = REASONABLE_UDP_PACKET_SIZE;
 }
 
 bool OpalRFC2435Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & outputFrames)
@@ -175,23 +156,15 @@ bool OpalRFC2435Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2435Decoder::OpalRFC2435Decoder(      
-  const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-  const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-) : OpalRFC2435Transcoder(inputMediaFormat, outputMediaFormat)
+OpalRFC2435Decoder::OpalRFC2435Decoder()
+  : OpalVideoTranscoder(OpalRFC2345_JPEG, OpalYUV420P)
 {
 }
 
 
-OpalRFC2435Decoder::~OpalRFC2435Decoder()
-{
-}
-
-
-bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
+bool OpalRFC2435Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
   output.RemoveAll();
- 
   return false;
 }
 

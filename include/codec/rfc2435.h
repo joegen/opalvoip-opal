@@ -1,6 +1,4 @@
 /*
- * rfc2435.h
- *
  * RFC2435 JPEG transport for uncompressed video
  *
  * Open Phone Abstraction Library
@@ -48,58 +46,38 @@
 #include <codec/vidcodec.h>
 
 
-#define OPAL_RFC2435_YCbCr420  "RFC2435"
-extern const OpalVideoFormat & GetOpalRFC2435();
-#define OpalRFC2435            GetOpalRFC2435();
+#define OPAL_RFC2435_JPEG      "RFC2435_JPEG"
+extern const OpalVideoFormat & GetOpalRFC2435_JPEG();
+#define OpalRFC2435_JPEG       GetOpalRFC2435_JPEG()
+
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC2435Transcoder : public OpalVideoTranscoder
+class OpalRFC2435Encoder : public OpalVideoTranscoder
 {
-  PCLASSINFO(OpalRFC2435Transcoder, OpalVideoTranscoder);
+  PCLASSINFO(OpalRFC2435Encoder, OpalVideoTranscoder);
   public:
-    OpalRFC2435Transcoder(      
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-    );
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class OpalRFC2435Encoder : public OpalRFC2435Transcoder
-{
-  PCLASSINFO(OpalRFC2435Encoder, OpalRFC2435Transcoder);
-  public:
-    OpalRFC2435Encoder(      
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-    );
+    OpalRFC2435Encoder();
 
     bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 };
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC2435Decoder : public OpalRFC2435Transcoder
+class OpalRFC2435Decoder : public OpalVideoTranscoder
 {
-  PCLASSINFO(OpalRFC2435Decoder, OpalRFC2435Transcoder);
+  PCLASSINFO(OpalRFC2435Decoder, OpalVideoTranscoder);
   public:
-    OpalRFC2435Decoder(      
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-    );
-    ~OpalRFC2435Decoder();
+    OpalRFC2435Decoder();
 
     bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 };
 
 /////////////////////////////////////////////////////////////////////////////
 
-
-#define OPAL_REGISTER_RFC2435() \
-  OPAL_REGISTER_TRANSCODER(Opal_RFC2435_to_YUV420P, OpalRFC2435, OpalYUV420P); \
-  OPAL_REGISTER_TRANSCODER(Opal_YUV420P_to_RFC2435, OpalYUV420P, OpalRFC2435);
-
+#define OPAL_REGISTER_RFC2435_JPEG() \
+  OPAL_REGISTER_TRANSCODER(OpalRFC2435Decoder, OpalRFC2435_JPEG, OpalYUV420P); \
+  OPAL_REGISTER_TRANSCODER(OpalRFC2435Encoder, OpalYUV420P, OpalRFC2435_JPEG);
 
 /////////////////////////////////////////////////////////////////////////////
 
