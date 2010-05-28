@@ -103,6 +103,7 @@ void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanc
 
 RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 {
+  PWaitAndSignal mutex(updateMutex);
   return (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
 }
 
@@ -116,6 +117,8 @@ void OpalTranscoder::GetStatistics(OpalMediaStatistics & /*statistics*/) const
 
 PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
+  PWaitAndSignal mutex(updateMutex);
+
   // make sure there is at least one output frame available
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame(0, maxOutputSize));
@@ -457,6 +460,8 @@ PINDEX OpalFramedTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 
 PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
+  // Note updateMutex should already be locked at this point.
+
   if (inputIsRTP || outputIsRTP) {
 
     const BYTE * inputPtr;
