@@ -705,6 +705,7 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const PluginCod
 
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalFramedTranscoder::UpdateMediaFormats(input, output) &&
          UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
@@ -712,6 +713,7 @@ PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaForm
 
 PBoolean OpalPluginFramedAudioTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalPluginTranscoder::ExecuteCommand(command) || OpalFramedTranscoder::ExecuteCommand(command);
 }
 
@@ -721,6 +723,8 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    BYTE * output,
                                                    PINDEX & created)
 {
+  // Note updateMutex should already be locked at this point.
+
   unsigned int fromLen = consumed;
   unsigned int toLen   = created;
   unsigned flags = 0;
@@ -787,6 +791,7 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(const Plugi
 
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalStreamedTranscoder::UpdateMediaFormats(input, output) &&
          UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
@@ -794,12 +799,15 @@ PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFo
 
 PBoolean OpalPluginStreamedAudioTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalPluginTranscoder::ExecuteCommand(command) || OpalStreamedTranscoder::ExecuteCommand(command);
 }
 
 
 int OpalPluginStreamedAudioTranscoder::ConvertOne(int from) const
 {
+  // Note updateMutex should already be locked at this point.
+
   unsigned int fromLen = sizeof(from);
   int to;
   unsigned toLen = sizeof(to);
@@ -833,6 +841,7 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 
 PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalVideoTranscoder::UpdateMediaFormats(input, output) &&
          UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
 }
@@ -840,12 +849,14 @@ PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & i
 
 PBoolean OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  PWaitAndSignal mutex(updateMutex);
   return OpalPluginTranscoder::ExecuteCommand(command) || OpalVideoTranscoder::ExecuteCommand(command);
 }
 
 
 PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
+  PWaitAndSignal mutex(updateMutex);
   return isEncoder ? EncodeFrames(src, dstList) : DecodeFrames(src, dstList);
 }
 
@@ -1128,12 +1139,14 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     PBoolean UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
     {
+      PWaitAndSignal mutex(updateMutex);
       return OpalTranscoder::UpdateMediaFormats(input, output) &&
              UpdateOptions(inputMediaFormat) && UpdateOptions(outputMediaFormat);
     }
 
     virtual PBoolean ExecuteCommand(const OpalMediaCommand & command)
     {
+      PWaitAndSignal mutex(updateMutex);
       return OpalPluginTranscoder::ExecuteCommand(command) || OpalTranscoder::ExecuteCommand(command);
     }
 
@@ -1144,6 +1157,8 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     virtual PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
     {
+      PWaitAndSignal mutex(updateMutex);
+
       dstList.RemoveAll();
 
       // get the size of the output buffer
