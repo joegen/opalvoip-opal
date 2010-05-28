@@ -84,7 +84,7 @@ class RFC2435VideoFormatInternal : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalRFC2435_JPEG()
 {
-  static OpalVideoFormat RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC4175_JPEG, "RFC2435_JPEG", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
+  static OpalVideoFormat RFC2435(new RFC2435VideoFormatInternal(OPAL_RFC2435_JPEG, "RFC2435_JPEG", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE));
   return RFC2435;
 }
 
@@ -143,7 +143,7 @@ RFC2435VideoFormatInternal::RFC2435VideoFormatInternal(
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRFC2435Encoder::OpalRFC2435Encoder()
-  : OpalVideoTranscoder(OpalYUV420P, OpalRFC2345_JPEG)
+  : OpalVideoTranscoder(OpalYUV420P, OpalRFC2435_JPEG)
 {
 }
 
@@ -157,7 +157,7 @@ bool OpalRFC2435Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRFC2435Decoder::OpalRFC2435Decoder()
-  : OpalVideoTranscoder(OpalRFC2345_JPEG, OpalYUV420P)
+  : OpalVideoTranscoder(OpalRFC2435_JPEG, OpalYUV420P)
 {
 }
 
