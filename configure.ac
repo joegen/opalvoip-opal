@@ -461,15 +461,16 @@ fi
 AC_SUBST(OPAL_JAVA)
 
 
-dnl     ########################
-dnl     Ruby Support
-dnl     ########################
-dnl MSWIN_DISPLAY     ruby,Ruby interface
-dnl MSWIN_CHECK_FILE  ruby,ruby.h,OPAL_RUBY=1
-dnl MSWIN_DIR_SYMBOL  ruby,RUBY_DIR
-dnl MSWIN_CHECK_DIR   ruby,c:\Program Files\Ruby\include\*
-dnl MSWIN_CHECK_DIR   ruby,c:\Ruby\include\*
-dnl MSWIN_CHECK_DIR   ruby,c:\tools\Ruby\include\*
+dnl ########################
+dnl Ruby Support
+dnl ########################
+dnl MSWIN_DISPLAY    ruby,Ruby interface
+dnl MSWIN_DEFAULT    ruby,Disabled
+dnl MSWIN_CHECK_FILE ruby,ruby.h,OPAL_RUBY=1
+dnl MSWIN_DIR_SYMBOL ruby,RUBY_DIR
+dnl MSWIN_CHECK_DIR  ruby,c:\Program Files\Ruby\include\*
+dnl MSWIN_CHECK_DIR  ruby,c:\Ruby\include\*
+dnl MSWIN_CHECK_DIR  ruby,c:\tools\Ruby\include\*
 
 AC_ARG_ENABLE([ruby],
               [AC_HELP_STRING([--enable-ruby],[enable Ruby support])],
@@ -510,119 +511,120 @@ dnl ########################################################################
 dnl Check for optional features
 dnl ########################################################################
 
-dnl MSWIN_DISPLAY video,Video
-dnl MSWIN_DEFINE  video,OPAL_VIDEO
-OPAL_SIMPLE_OPTION([video],[OPAL_VIDEO], [whether to enable video codec support], [OPAL_PTLIB_VIDEO])
+dnl MSWIN_DISPLAY  video,Video
+dnl MSWIN_DEFINE   video,OPAL_VIDEO
+OPAL_SIMPLE_OPTION(video,OPAL_VIDEO, [whether to enable video codec support], [OPAL_PTLIB_VIDEO])
 
-dnl MSWIN_DISPLAY sip,SIP support
-dnl MSWIN_DEFINE  sip,OPAL_SIP
-OPAL_SIMPLE_OPTION([sip],[OPAL_SIP], [whether to enable SIP protocol support])
+dnl MSWIN_DISPLAY  sip,SIP support
+dnl MSWIN_DEFINE   sip,OPAL_SIP
+OPAL_SIMPLE_OPTION(sip,OPAL_SIP, [whether to enable SIP protocol support])
 
-dnl MSWIN_DISPLAY h323,H.323 support
-dnl MSWIN_DEFINE  h323,OPAL_H323
-OPAL_SIMPLE_OPTION([h323],[OPAL_H323], [whether to enable H.323 protocol support])
+dnl MSWIN_DISPLAY  h323,H.323 support
+dnl MSWIN_DEFINE   h323,OPAL_H323
+OPAL_SIMPLE_OPTION(h323,OPAL_H323, [whether to enable H.323 protocol support])
 
 if test "x$OPAL_H323" = "xyes" ; then
   OPAL_CHECK_PTLIB_MANDATORY([ASN], [ptclib/asner.h],  [PPER_Stream per;])
 fi
 
-dnl MSWIN_DISPLAY iax2,IAX2 support
-dnl MSWIN_DEFINE  iax2,OPAL_IAX2
-OPAL_SIMPLE_OPTION([iax],[OPAL_IAX2], [whether to enable IAX2 protocol support])
+dnl MSWIN_DISPLAY  iax2,IAX2 support
+dnl MSWIN_DEFINE   iax2,OPAL_IAX2
+OPAL_SIMPLE_OPTION(iax2,OPAL_IAX2, [whether to enable IAX2 protocol support])
 
-dnl MSWIN_DISPLAY h224,H.224 support
-dnl MSWIN_DEFINE  h224,OPAL_HAS_H224
-OPAL_SIMPLE_OPTION([h224],[OPAL_HAS_H224], [whether to enable H.224 protocol support], [OPAL_H323])
+dnl MSWIN_DISPLAY  h224,H.224 support
+dnl MSWIN_DEFINE   h224,OPAL_HAS_H224
+OPAL_SIMPLE_OPTION(h224,OPAL_HAS_H224, [whether to enable H.224 protocol support], [OPAL_H323])
 
-dnl MSWIN_DISPLAY h281,H.281 (Far End Camera Control) support
-dnl MSWIN_DEFINE  h281,OPAL_HAS_H281
-OPAL_SIMPLE_OPTION([h281],[OPAL_HAS_H281], [whether to enable H.281 (Far End Camera Control) protocol support], [OPAL_HAS_H224])
+dnl MSWIN_DISPLAY  h281,H.281 (Far End Camera Control) support
+dnl MSWIN_DEFINE   h281,OPAL_HAS_H281
+OPAL_SIMPLE_OPTION(h281,OPAL_HAS_H281, [whether to enable H.281 (Far End Camera Control) protocol support], [OPAL_HAS_H224])
 
-dnl MSWIN_DISPLAY    t38,T.38 capability
-dnl MSWIN_DEFINE     t38,OPAL_T38_CAPABILITY
-OPAL_SIMPLE_OPTION([t38],[OPAL_T38_CAPABILITY], [whether to enable T.38 capability support])
+dnl MSWIN_DISPLAY  t38,T.38 capability
+dnl MSWIN_DEFINE   t38,OPAL_T38_CAPABILITY
+OPAL_SIMPLE_OPTION(t38,OPAL_T38_CAPABILITY, [whether to enable T.38 capability support])
 
-dnl MSWIN_DISPLAY   msrp,MSRP capability
-dnl MSWIN_DEFINE    msrp,OPAL_HAS_MSRP
-OPAL_SIMPLE_OPTION([msrp],[OPAL_HAS_MSRP], [whether to enable MSRP support])
+dnl MSWIN_DISPLAY  msrp,MSRP capability
+dnl MSWIN_DEFINE   msrp,OPAL_HAS_MSRP
+OPAL_SIMPLE_OPTION(msrp,OPAL_HAS_MSRP, [whether to enable MSRP support])
 
 dnl if test "x$OPAL_HAS_MSRP" = "xyes" ; then
 dnl   AC_MSG_NOTICE([WARNING: MSRP is highly experimental and is recommended for developers only. Please don't complain if this does not compile or breaks your system])
 dnl fi
 
-dnl MSWIN_DISPLAY    sipim,SIPIM capability
-dnl MSWIN_DEFINE     sipim,OPAL_HAS_SIPIM
-OPAL_SIMPLE_OPTION([sipim],[OPAL_HAS_SIPIM], [whether to enable SIPIM session support])
+dnl MSWIN_DISPLAY  sipim,SIPIM capability
+dnl MSWIN_DEFINE   sipim,OPAL_HAS_SIPIM
+OPAL_SIMPLE_OPTION(sipim,OPAL_HAS_SIPIM, [whether to enable SIPIM session support])
 
-dnl MSWIN_DISPLAY    rfc4103,RFC4103 capability
-dnl MSWIN_DEFINE     rfc4103,OPAL_HAS_RFC4103
-OPAL_SIMPLE_OPTION([rfc4103],[OPAL_HAS_RFC4103], [whether to enable RFC4103 support])
+dnl MSWIN_DISPLAY  rfc4103,RFC4103 capability
+dnl MSWIN_DEFINE   rfc4103,OPAL_HAS_RFC4103
+OPAL_SIMPLE_OPTION(rfc4103,OPAL_HAS_RFC4103, [whether to enable RFC4103 support])
 
-dnl MSWIN_DISPLAY    fax,T.38 FAX protocol
-dnl MSWIN_DEFINE     fax,OPAL_FAX
-OPAL_SIMPLE_OPTION([fax],[OPAL_FAX], [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
+dnl MSWIN_DISPLAY  fax,T.38 FAX protocol
+dnl MSWIN_DEFINE   fax,OPAL_FAX
+OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
 
 dnl MSWIN_DISPLAY    h450,H.450
-dnl MSWIN_DEFINE     h450,OPAL_H450
 dnl MSWIN_IF_FEATURE h450,h323
-OPAL_SIMPLE_OPTION([h450],[OPAL_H450], [whether to enable H.450], [OPAL_H323])
+dnl MSWIN_DEFINE     h450,OPAL_H450
+OPAL_SIMPLE_OPTION(  h450,OPAL_H450, [whether to enable H.450], [OPAL_H323])
 
 dnl MSWIN_DISPLAY    h460,H.460
-dnl MSWIN_DEFINE     h460,OPAL_H460
 dnl MSWIN_IF_FEATURE h460,h323
-OPAL_SIMPLE_OPTION([h460],[OPAL_H460], [whether to enable H.460], [OPAL_H323])
+dnl MSWIN_DEFINE     h460,OPAL_H460
+OPAL_SIMPLE_OPTION(  h460,OPAL_H460, [whether to enable H.460], [OPAL_H323])
 
 dnl MSWIN_DISPLAY    h239,H.239
-dnl MSWIN_DEFINE     h239,OPAL_H239
 dnl MSWIN_IF_FEATURE h239,h323
-OPAL_SIMPLE_OPTION([h239],[OPAL_H239], [whether to enable H.239], [OPAL_H323])
+dnl MSWIN_DEFINE     h239,OPAL_H239
+OPAL_SIMPLE_OPTION(  h239,OPAL_H239, [whether to enable H.239], [OPAL_H323])
 
 dnl MSWIN_DISPLAY    h501,H.501
-dnl MSWIN_DEFINE     h501,OPAL_H501
 dnl MSWIN_IF_FEATURE h501,h323
-OPAL_SIMPLE_OPTION([h501],[OPAL_H501], [whether to enable H.501], [OPAL_H323])
+dnl MSWIN_DEFINE     h501,OPAL_H501
+OPAL_SIMPLE_OPTION(  h501,OPAL_H501, [whether to enable H.501], [OPAL_H323])
 
 dnl T.120 is disabled
 dnl _MSWIN_DISPLAY    t120,T.120
-dnl _MSWIN_DEFINE     t120,OPAL_T120DATA
 dnl _MSWIN_IF_FEATURE t120,h323
-dnl OPAL_SIMPLE_OPTION([t120],[OPAL_T120DATA], [whether to enable T.120], [OPAL_H323])
+dnl _MSWIN_DEFINE     t120,OPAL_T120DATA
+OPAL_SIMPLE_OPTION(   t120,OPAL_T120DATA, [whether to enable T.120], [OPAL_H323])
 
-dnl MSWIN_DISPLAY lids,Line Interface Device
-dnl MSWIN_DEFINE  lids,OPAL_LID
-OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [whether to enable LID support])
+dnl MSWIN_DISPLAY  lid,Line Interface Device
+dnl MSWIN_DEFINE   lid,OPAL_LID
+OPAL_SIMPLE_OPTION(lid,OPAL_LID, [whether to enable LID support])
 
-dnl MSWIN_DISPLAY ivr,IVR support
-dnl MSWIN_DEFINE  ivr,OPAL_IVR
-OPAL_SIMPLE_OPTION([ivr],[OPAL_IVR], [whether to enable IVR support], [OPAL_PTLIB_EXPAT], [OPAL_PTLIB_VXML])
+dnl MSWIN_DISPLAY  ivr,IVR support
+dnl MSWIN_DEFINE   ivr,OPAL_IVR
+OPAL_SIMPLE_OPTION(ivr,OPAL_IVR, [whether to enable IVR support], [OPAL_PTLIB_EXPAT], [OPAL_PTLIB_VXML])
 
-dnl MSWIN_DISPLAY rfc4175,RFC4175 Raw Video support
-dnl MSWIN_DEFINE  rfc4175,OPAL_RFC4175
-OPAL_SIMPLE_OPTION([rfc4175],[OPAL_RFC4175], [whether to enable RFC4175 support], [OPAL_VIDEO])
+dnl MSWIN_DISPLAY  rfc4175,RFC4175 Raw Video support
+dnl MSWIN_DEFINE   rfc4175,OPAL_RFC4175
+OPAL_SIMPLE_OPTION(rfc4175,OPAL_RFC4175, [whether to enable RFC4175 support], [OPAL_VIDEO])
 
-dnl MSWIN_DISPLAY rfc2435,RFC2435 JPEG Video support (experimental)
-dnl MSWIN_DEFINE  rfc2435,OPAL_RFC2435
-OPAL_SIMPLE_OPTION([rfc2435],[OPAL_RFC2435], [whether to enable RFC2435 support (experimental)], [OPAL_VIDEO])
+dnl MSWIN_DISPLAY  rfc2435,RFC2435 JPEG Video support (experimental)
+dnl MSWIN_DEFAULT  rfc2435,Disabled
+dnl MSWIN_DEFINE   rfc2435,OPAL_RFC2435
+OPAL_SIMPLE_OPTION(rfc2435,OPAL_RFC2435, [whether to enable RFC2435 support (experimental)], [OPAL_VIDEO])
 
-dnl MSWIN_DISPLAY aec,Accoustic Echo Cancellation
-dnl MSWIN_DEFINE  aec,OPAL_AEC
-OPAL_SIMPLE_OPTION([aec],[OPAL_AEC], [whether to enable accoustic echo cancellation support])
+dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation
+dnl MSWIN_DEFINE   aec,OPAL_AEC
+OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [whether to enable accoustic echo cancellation support])
 
-dnl MSWIN_DISPLAY g711plc,Packet Loss Concealment for G.711
-dnl MSWIN_DEFINE  g711plc,OPAL_G711PLC
-OPAL_SIMPLE_OPTION([g711plc],[OPAL_G711PLC], [whether to enable Packet Loss Concealment for G.711])
+dnl MSWIN_DISPLAY  g711plc,Packet Loss Concealment for G.711
+dnl MSWIN_DEFINE   g711plc,OPAL_G711PLC
+OPAL_SIMPLE_OPTION(g711plc,OPAL_G711PLC, [whether to enable Packet Loss Concealment for G.711])
 
-dnl MSWIN_DISPLAY statistics,Statistics gathering support
-dnl MSWIN_DEFINE  statistics,OPAL_STATISTICS
-OPAL_SIMPLE_OPTION([statistics],[OPAL_STATISTICS], [whether to enable statistics gathering support])
+dnl MSWIN_DISPLAY  statistics,Statistics gathering support
+dnl MSWIN_DEFINE   statistics,OPAL_STATISTICS
+OPAL_SIMPLE_OPTION(statistics,OPAL_STATISTICS, [whether to enable statistics gathering support])
 
-dnl MSWIN_DISPLAY mixer,Media mixing
-dnl MSWIN_DEFINE  mixer,OPAL_HAS_MIXER
-OPAL_SIMPLE_OPTION([mixer],[OPAL_HAS_MIXER], [whether to enable media mixing support])
+dnl MSWIN_DISPLAY  mixer,Media mixing
+dnl MSWIN_DEFINE   mixer,OPAL_HAS_MIXER
+OPAL_SIMPLE_OPTION(mixer,OPAL_HAS_MIXER, [whether to enable media mixing support])
 
-dnl MSWIN_DISPLAY pcss,PC Sound System Endpoint
-dnl MSWIN_DEFINE  pcss,OPAL_HAS_PCSS
-OPAL_SIMPLE_OPTION([pcss],[OPAL_HAS_PCSS], [whether to enable PC sound system support])
+dnl MSWIN_DISPLAY  pcss,PC Sound System Endpoint
+dnl MSWIN_DEFINE   pcss,OPAL_HAS_PCSS
+OPAL_SIMPLE_OPTION(pcss,OPAL_HAS_PCSS, [whether to enable PC sound system support])
 
 
 dnl ########################################################################
