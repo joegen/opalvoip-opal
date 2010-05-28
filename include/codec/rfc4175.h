@@ -135,7 +135,6 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
-    bool Initialise();
     void DecodeFramesAndSetFrameSize(RTP_DataFrameList & output);
     virtual bool DecodeFrames(RTP_DataFrameList & output) = 0;
 

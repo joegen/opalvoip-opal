@@ -335,25 +335,13 @@ OpalRFC4175Decoder::OpalRFC4175Decoder(
   m_missingPackets   = false;
   m_maxWidth         = 0;
   m_maxHeight        = 0;
-
-  Initialise();
+  m_frameWidth  = 0;
+  m_frameHeight = 0;
 }
 
 
 OpalRFC4175Decoder::~OpalRFC4175Decoder()
 {
-}
-
-
-bool OpalRFC4175Decoder::Initialise()
-{
-  m_frameWidth  = 0;
-  m_frameHeight = 0;
-
-  m_inputFrames.RemoveAll();
-  m_scanlineCounts.resize(0);
-
-  return true;
 }
 
 
@@ -476,6 +464,8 @@ void OpalRFC4175Decoder::DecodeFramesAndSetFrameSize(RTP_DataFrameList & output)
   m_missingPackets   = false;
   m_maxWidth         = 0;
   m_maxHeight        = 0;
+  m_inputFrames.RemoveAll();
+  m_scanlineCounts.resize(0);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -603,9 +593,6 @@ bool Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
     }
   }
 
-  // reinitialise the buffers
-  Initialise();
-
   return true;
 }
 
@@ -698,9 +685,6 @@ bool Opal_RFC4175RGB_to_RGB24::DecodeFrames(RTP_DataFrameList & output)
       rgbSource += width*3;
     }
   }
-
-  // reinitialise the buffers
-  Initialise();
 
   return true;
 }
