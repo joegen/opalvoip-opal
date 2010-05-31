@@ -922,15 +922,12 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     m_consecutiveIntraFrames = 0;
   else if (forceIFrame)
     PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at " << m_totalFrames);
-  else {
-    if (m_consecutiveIntraFrames == 0) 
-      PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at " << m_totalFrames);
-    else
-      PTRACE(4, "OpalPlugin\tEncoder sending " << ((m_consecutiveIntraFrames == 0) ? "" : "consecutive ") << "I-Frame at " << m_totalFrames);
-    if (++m_consecutiveIntraFrames >= 10) {
-      PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assume codec cannot do P-Frames");
-    }
-  }
+  else if (++m_consecutiveIntraFrames == 1) 
+    PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at " << m_totalFrames);
+  else if (m_consecutiveIntraFrames < 10)
+    PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at " << m_totalFrames);
+  else if (m_consecutiveIntraFrames == 10)
+    PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assuming codec cannot do P-Frames");
 #endif
 
   if (lastFrameWasIFrame)
