@@ -51,6 +51,11 @@
 #define   REASONABLE_UDP_PACKET_SIZE  800
 
 
+#if defined(JPEGLIB_LIBRARY)
+  #pragma comment(lib, JPEGLIB_LIBRARY)
+#endif
+
+
 class RFC2435VideoFormatInternal : public OpalVideoFormatInternal
 {
   PCLASSINFO(RFC2435VideoFormatInternal, OpalVideoFormatInternal);
