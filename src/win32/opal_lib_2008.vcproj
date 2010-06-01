@@ -1955,7 +1955,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\SVN-Trunk\opal\src\codec\rfc2435.cxx"
+					RelativePath="..\codec\rfc2435.cxx"
 					>
 				</File>
 				<File
@@ -8437,7 +8437,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPAL.java"
+				RelativePath="..\java\OPAL.java"
 				>
 			</File>
 			<File
@@ -8445,7 +8445,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPALConstants.java"
+				RelativePath="..\java\OPALConstants.java"
 				>
 			</File>
 			<File
@@ -8453,7 +8453,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\SVN-Trunk\opal\src\java\OPALJNI.java"
+				RelativePath="..\java\OPALJNI.java"
 				>
 			</File>
 			<File
