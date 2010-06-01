@@ -44,8 +44,8 @@
 #include <codec/opalplugin.h>
 
 
-#define   FRAME_WIDTH   1920
-#define   FRAME_HEIGHT  1080
+#define   FRAME_WIDTH   2040
+#define   FRAME_HEIGHT  2040
 #define   FRAME_RATE    60
 
 #define   REASONABLE_UDP_PACKET_SIZE  800
@@ -118,26 +118,6 @@ RFC2435VideoFormatInternal::RFC2435VideoFormatInternal(
   if (option != NULL)
     option->SetFMTPName("height");
 #endif // OPAL_SIP
-
-#if 0
-  option = new OpalMediaOptionString("rfc4175_sampling", true, samplingName);
-#if OPAL_SIP
-  option->SetFMTPName("sampling");
-#endif // OPAL_SIP
-  AddOption(option, true);
-
-  option = new OpalMediaOptionInteger("rfc4175_depth", true, OpalMediaOption::NoMerge, 8);
-#if OPAL_SIP
-  option->SetFMTPName("depth");
-#endif // OPAL_SIP
-  AddOption(option, true);
-
-  option = new OpalMediaOptionString("rfc4175_colorimetry", true, "BT601-5");
-#if OPAL_SIP
-  option->SetFMTPName("colorimetry");
-#endif // OPAL_SIP
-  AddOption(option, true);
-#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
