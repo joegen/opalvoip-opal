@@ -535,6 +535,10 @@ const short * OpalAudioMixer::AudioStream::GetAudioDataPtr()
 OpalVideoMixer::OpalVideoMixer(Styles style, unsigned width, unsigned height, unsigned rate, bool pushThread)
   : OpalBaseMixer(pushThread, 1000/rate, OpalMediaFormat::VideoClockRate/rate)
   , m_style(style)
+  , m_bgFillRed(0)
+  , m_bgFillGreen(0)
+  , m_bgFillBlue(0)
+  , m_lastStreamCount(0)
 {
   SetFrameSize(width, height);
 }
@@ -562,7 +566,7 @@ bool OpalVideoMixer::SetFrameSize(unsigned width, unsigned height)
   m_height = height;
   PColourConverter::FillYUV420P(0, 0, m_width, m_height, m_width, m_height,
                                 m_frameStore.GetPointer(m_width*m_height*3/2),
-                                0, 0, 0);
+                                m_bgFillRed, m_bgFillGreen, m_bgFillBlue);
 
   m_mutex.Signal();
   return true;
@@ -611,15 +615,23 @@ bool OpalVideoMixer::MixStreams(RTP_DataFrame & frame)
     case eGrid :
       x = left = 0;
       y = 0;
-      switch (m_inputStreams.size()) {
+      if (m_lastStreamCount != m_inputStreams.size()) {
+        PColourConverter::FillYUV420P(0, 0, m_width, m_height, m_width, m_height,
+                                      m_frameStore.GetPointer(),
+                                      m_bgFillRed, m_bgFillGreen, m_bgFillBlue);
+        m_lastStreamCount = m_inputStreams.size();
+      }
+      switch (m_lastStreamCount) {
         case 0 :
         case 1 :
           w = m_width;
           h = m_height;
           break;
-          break;
 
         case 2 :
+          y = m_height/4;
+          // Fall into next case
+
         case 3 :
         case 4 :
           w = m_width/2;

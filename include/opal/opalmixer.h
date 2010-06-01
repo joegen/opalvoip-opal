@@ -348,7 +348,7 @@ class OpalVideoMixer : public OpalBaseMixer
       virtual void QueuePacket(const RTP_DataFrame & rtp);
       void InsertVideoFrame(unsigned x, unsigned y, unsigned w, unsigned h);
 
-      OpalVideoMixer     & m_mixer;
+      OpalVideoMixer & m_mixer;
     };
 
     friend struct VideoStream;
@@ -360,8 +360,10 @@ class OpalVideoMixer : public OpalBaseMixer
   protected:
     Styles     m_style;
     unsigned   m_width, m_height;
+    BYTE       m_bgFillRed,m_bgFillGreen,m_bgFillBlue;
 
     PBYTEArray m_frameStore;
+    size_t     m_lastStreamCount;
 };
 
 #endif // OPAL_VIDEO
