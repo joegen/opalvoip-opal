@@ -532,17 +532,8 @@ OpalRTPSessionManager::OpalRTPSessionManager(OpalRTPConnection & connection)
 
 
 OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & other)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-  : PObject(*this)
-  ,
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#else
-  :
-#endif
-  m_connection(other.m_connection)
+  : PObject(other)
+  , m_connection(other.m_connection)
   , sessions(other.sessions)
 {
   m_connection.m_allSessions.push_back(this);
