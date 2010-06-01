@@ -601,9 +601,12 @@ dnl MSWIN_DISPLAY  rfc4175,RFC4175 Raw Video support
 dnl MSWIN_DEFINE   rfc4175,OPAL_RFC4175
 OPAL_SIMPLE_OPTION(rfc4175,OPAL_RFC4175, [whether to enable RFC4175 support], [OPAL_VIDEO])
 
-dnl MSWIN_DISPLAY  rfc2435,RFC2435 JPEG Video support (experimental)
-dnl MSWIN_DEFAULT  rfc2435,Disabled
-dnl MSWIN_DEFINE   rfc2435,OPAL_RFC2435
+dnl MSWIN_DISPLAY    rfc2435,RFC2435 JPEG Video support (experimental)
+dnl dnlMSWIN_DEFAULT    rfc2435,Disabled
+dnl MSWIN_CHECK_FILE rfc2435,jpeglib.h,OPAL_RFC2435=1
+dnl MSWIN_DIR_SYMBOL rfc2435,JPEGLIB_DIR
+dnl MSWIN_CHECK_DIR  rfc2435,C:\Program Files\GnuWin32\include\
+dnl MSWIN_CHECK_DIR  rfc2435,C:\Program Files (x86)\GnuWin32\include\
 OPAL_SIMPLE_OPTION(rfc2435,OPAL_RFC2435, [whether to enable RFC2435 support (experimental)], [OPAL_VIDEO])
 
 dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation

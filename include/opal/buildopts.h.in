@@ -203,6 +203,15 @@
 
   // JPEG over RTP
   #undef  OPAL_RFC2435
+  
+  #if defined(_MSC_VER)
+
+    #define JPEGLIB_LIBRARY "@JPEGLIB_DIR@/../lib/jpeg.lib"
+
+    #pragma comment(lib, JPEGLIB_LIBRARY)
+
+    #pragma include_alias(<jpeglib.h>,           <@JPEGLIB_DIR@/jpeglib.h>)
+  #endif
 #endif
 
 

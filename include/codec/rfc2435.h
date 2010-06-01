@@ -45,6 +45,7 @@
 #include <codec/opalplugin.h>
 #include <codec/vidcodec.h>
 
+#include <jpeglib.h>
 
 #define OPAL_RFC2435_JPEG      "RFC2435_JPEG"
 extern const OpalVideoFormat & GetOpalRFC2435_JPEG();
@@ -58,8 +59,10 @@ class OpalRFC2435Encoder : public OpalVideoTranscoder
   PCLASSINFO(OpalRFC2435Encoder, OpalVideoTranscoder);
   public:
     OpalRFC2435Encoder();
-
     bool ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
+
+  public:
+    struct jpeg_compress_struct m_jpegCompressor;
 };
 
 /////////////////////////////////////////////////////////////////////////////
