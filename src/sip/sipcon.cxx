@@ -916,11 +916,13 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != sdpFormats.end() && stream->UpdateMediaFormat(*fmt)) {
+      PTRACE(4, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->SetPaused(paused);
       return !paused;
     }
   }
 
+  PTRACE(4, "SIP\tINVITE change needs to close stream " << *stream);
   stream->GetPatch()->GetSource().Close();
   stream.SetNULL();
   return false;
@@ -941,6 +943,7 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     }
 
     // They did not offer anything, so it behooves us to do so: RFC 3261, para 14.2
+    PTRACE(3, "SIP\tRemote did not offer media, so we will.");
     return OnSendOfferSDP(rtpSessions, sdpOut);
   }
 
@@ -1057,6 +1060,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
     return false;
   }
+
+  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType);
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(rtpSessionId);
   if (GetPhase() < ConnectedPhase) {
