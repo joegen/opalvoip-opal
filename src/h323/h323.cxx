@@ -1134,17 +1134,15 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
 
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+  if (fastStartState != FastStartDisabled && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
     PTRACE(3, "H225\tFast start detected");
+
+    fastStartState = FastStartDisabled;
 
     // If we have not received caps from remote, we are going to build a
     // fake one from the fast connect data.
     if (!capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
-
-    // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
-    // before it knows what what formats can support. 
-    OpalMediaFormatList previewFormats;
 
     // Extract capabilities from the fast start OpenLogicalChannel structures
     PINDEX i;
@@ -1174,7 +1172,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
             remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
           }
           if (capability != NULL)
-            previewFormats += capability->GetMediaFormat();
+            fastStartState = FastStartResponse;
         }
       }
     }
@@ -1197,23 +1195,22 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
+  if (connectionState == ShuttingDownConnection)
+    return false;
+
+  if (connectionState != AwaitingLocalAnswer)
+    return true;
+
 #if OPAL_H450
-  if (connectionState == AwaitingLocalAnswer) {
-    // If Call Intrusion is allowed we must answer the call
-    if (IsCallIntrusion()) {
-      AnsweringCall(AnswerCallDeferred);
-      return connectionState != ShuttingDownConnection;
-    }
-
-    if (isConsultationTransfer) {
-      AnsweringCall(AnswerCallNow);
-      return connectionState != ShuttingDownConnection;
-    }
-  }
+  // If Call Intrusion is allowed we must answer the call
+  if (IsCallIntrusion())
+    AnsweringCall(AnswerCallDeferred);
+  else if (isConsultationTransfer)
+    AnsweringCall(AnswerCallNow);
+  else
 #endif
-
-  // call the application callback to determine if to answer the call or not
-  AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
+    // call the application callback to determine if to answer the call or not
+    AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
 
   return connectionState != ShuttingDownConnection;
 }
@@ -1738,36 +1735,6 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
     return;
 
-  if (fastStartState != FastStartDisabled && fastStartChannels.IsEmpty()) {
-    // See if remote endpoint wants to start fast
-    H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
-    if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
-      // Extract capabilities from the fast start OpenLogicalChannel structures
-      for (PINDEX i = 0; i < setup.m_fastStart.GetSize(); i++) {
-        H245_OpenLogicalChannel open;
-        if (setup.m_fastStart[i].DecodeSubType(open)) {
-          PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
-          unsigned error;
-          H323Channel * channel = CreateLogicalChannel(open, PTrue, error);
-          if (channel != NULL) {
-            if (channel->GetDirection() == H323Channel::IsTransmitter)
-              channel->SetNumber(logicalChannels->GetNextChannelNumber());
-            fastStartChannels.Append(channel);
-          }
-        }
-        else {
-          PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
-        }
-      }
-
-      PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
-
-      // If we are incapable of ANY of the fast start channels, don't do fast start
-      fastStartState = fastStartChannels.IsEmpty() ? FastStartDisabled : FastStartResponse;
-    }
-  }
-
-
   if (response == AnswerCallProgress) {
     H323SignalPDU want245PDU;
     want245PDU.BuildProgress(*this);
@@ -2196,6 +2163,7 @@ PBoolean H323Connection::SetConnected()
   OnSetLocalCapabilities();
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
+
   // Now ask the application to select which channels to start
   if (SendFastStartAcknowledge(connect.m_fastStart))
     connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
@@ -2330,11 +2298,51 @@ PBoolean H323Connection::OnOutgoingCall(const H323SignalPDU & connectPDU)
 }
 
 
-PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & array)
+PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & fastStartReply)
 {
   // See if we have already added the fast start OLC's
-  if (array.GetSize() > 0)
-    return PTrue;
+  if (fastStartReply.GetSize() > 0)
+    return true;
+
+  if (fastStartState == FastStartDisabled)
+    return false;
+
+  if (fastStartState == FastStartAcknowledged)
+    return true;
+
+  if (fastStartChannels.IsEmpty()) {
+    // See if remote endpoint wants to start fast
+    H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
+    if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+      // Extract capabilities from the fast start OpenLogicalChannel structures
+      for (PINDEX i = 0; i < setup.m_fastStart.GetSize(); i++) {
+        H245_OpenLogicalChannel open;
+        if (setup.m_fastStart[i].DecodeSubType(open)) {
+          PTRACE(4, "H225\tFast start open:\n  " << setprecision(2) << open);
+          unsigned error;
+          H323Channel * channel = CreateLogicalChannel(open, PTrue, error);
+          if (channel != NULL) {
+            if (channel->GetDirection() == H323Channel::IsTransmitter)
+              channel->SetNumber(logicalChannels->GetNextChannelNumber());
+            fastStartChannels.Append(channel);
+          }
+        }
+        else {
+          PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
+        }
+      }
+
+      PTRACE(3, "H225\tOpened " << fastStartChannels.GetSize() << " fast start channels");
+
+      // If we are incapable of ANY of the fast start channels, don't do fast start
+      if (fastStartChannels.IsEmpty()) {
+        fastStartState = FastStartDisabled;
+        return false;
+      }
+
+      fastStartState = FastStartResponse;
+    }
+  }
 
   // See if we need to select our fast start channels
   if (fastStartState == FastStartResponse)
@@ -2362,7 +2370,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
   PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
 
   for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
-    BuildFastStartList(*channel, array, H323Channel::IsTransmitter);
+    BuildFastStartList(*channel, fastStartReply, H323Channel::IsTransmitter);
 
   // Have moved open channels to logicalChannels structure, remove all others.
   fastStartChannels.RemoveAll();
