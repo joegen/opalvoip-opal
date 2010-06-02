@@ -334,7 +334,7 @@ static PString TranslateENUM(const PString & remoteParty)
     // make sure the number has only digits
     PINDEX pos = remoteParty.Find(':');
     PString e164 = pos != P_MAX_INDEX ? remoteParty.Mid(pos+1) : remoteParty;
-    if (e164.FindSpan("0123456789*#", e164[0] != '+' ? 0 : 1) == P_MAX_INDEX) {
+    if (OpalIsE164(e164)) {
       PString str;
       if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
         PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
