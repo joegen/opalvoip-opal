@@ -204,6 +204,23 @@ class SDPMediaDescription : public PObject
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
 
+
+class SDPDummyMediaDescription : public SDPMediaDescription
+{
+  PCLASSINFO(SDPDummyMediaDescription, SDPMediaDescription);
+  public:
+    SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
+    virtual SDPMediaDescription * CreateEmpty() const;
+    virtual PString GetSDPMediaType() const;
+    virtual PCaselessString GetSDPTransportType() const;
+    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual PString GetSDPPortList() const;
+
+  private:
+    PStringArray m_tokens;
+};
+
+
 /////////////////////////////////////////////////////////
 //
 //  SDP media description for media classes using RTP/AVP transport (audio and video)
