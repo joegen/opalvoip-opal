@@ -935,6 +935,13 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     return false;
 
   SDPSessionDescription * sdp = originalInvite->GetSDP();
+
+  /* If we had SDP but no media could not be decoded from it, then we should return
+     Not Acceptable Here error and not do an offer. Only offer if there was no body
+     at all or there was a valid SDP with no m lines. */
+  if (sdp == NULL && !originalInvite->GetEntityBody().IsEmpty())
+    return false;
+
   if (sdp == NULL || sdp->GetMediaDescriptions().IsEmpty()) {
     if (m_holdFromRemote) {
       PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
