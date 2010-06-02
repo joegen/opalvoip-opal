@@ -865,11 +865,6 @@ class OpalMediaFormat : public PContainer
     unsigned GetClockRate() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
 
-    /**Get the number of audio channels for this format.
-      */
-    unsigned GetChannels() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ChannelsOption(), 1); }
-    static const PString & ChannelsOption();
-
     /**Get the name of the OpalMediaOption indicating the protocol the format is being used on.
       */
     static const PString & ProtocolOption();
