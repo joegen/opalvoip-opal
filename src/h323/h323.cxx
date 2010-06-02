@@ -1000,7 +1000,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   SetRemoteApplication(setup.m_sourceInfo);
 
   // Determine the remote parties name/number/address as best we can
-  setupPDU->GetQ931().GetCallingPartyNumber(remotePartyNumber);
+  if (!setupPDU->GetQ931().GetCallingPartyNumber(remotePartyNumber))
+    remotePartyNumber = H323GetAliasAddressE164(setup.m_sourceAddress);
   remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway

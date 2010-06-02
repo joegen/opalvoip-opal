@@ -781,6 +781,13 @@ class OpalEndPoint : public PObject
 };
 
 
+/// Test for if string is a valid E.164 number
+bool OpalIsE164(
+  const PString & number,   ///< Number to inspect
+  bool strict = false     ///< Strict interpretation, or allow leading '+'
+);
+
+
 #endif // OPAL_OPAL_ENDPOINT_H
 
 
