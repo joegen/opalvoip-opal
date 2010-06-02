@@ -141,12 +141,6 @@ void H323SetAliasAddresses(const PStringList & names,
 }
 
 
-static PBoolean IsE164(const PString & str)
-{
-  return !str && str.FindSpan("1234567890*#") == P_MAX_INDEX;
-}
-
-
 void H323SetAliasAddress(const H323TransportAddress & address, H225_AliasAddress & alias)
 {
   alias.SetTag(H225_AliasAddress::e_transportID);
@@ -185,7 +179,7 @@ void H323SetAliasAddress(const PString & _name, H225_AliasAddress & alias, int t
   
   // otherwise guess it from the string: if all digits then assume an e164 address.
   if (tag < 0)
-    tag = IsE164(name) ? H225_AliasAddress::e_dialedDigits : H225_AliasAddress::e_h323_ID;
+    tag = OpalIsE164(name, true) ? H225_AliasAddress::e_dialedDigits : H225_AliasAddress::e_h323_ID;
 
   alias.SetTag(tag);
   switch (alias.GetTag()) {
@@ -304,7 +298,7 @@ PString H323GetAliasAddressString(const H225_AliasAddress & alias)
 PString H323GetAliasAddressE164(const H225_AliasAddress & alias)
 {
   PString str = H323GetAliasAddressString(alias);
-  if (IsE164(str))
+  if (OpalIsE164(str))
     return str;
 
   return PString();
@@ -1355,7 +1349,7 @@ PBoolean H323SignalPDU::GetSourceE164(PString & number) const
 
   for (i = 0; i < setup.m_sourceAddress.GetSize(); i++) {
     PString str = H323GetAliasAddressString(setup.m_sourceAddress[i]);
-    if (IsE164(str)) {
+    if (OpalIsE164(str)) {
       number = str;
       return PTrue;
     }
@@ -1387,7 +1381,7 @@ PBoolean H323SignalPDU::GetDestinationE164(PString & number) const
 
   for (i = 0; i < setup.m_destinationAddress.GetSize(); i++) {
     PString str = H323GetAliasAddressString(setup.m_destinationAddress[i]);
-    if (IsE164(str)) {
+    if (OpalIsE164(str)) {
       number = str;
       return PTrue;
     }
@@ -1421,11 +1415,11 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
     displayName = stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME, connection.GetDisplayName());
   }
 
-  if (IsE164(localName)) {
+  if (OpalIsE164(localName)) {
     number = localName;
     if (displayName.IsEmpty()) {
       for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
-        if (!IsE164(*alias)) {
+        if (!OpalIsE164(*alias)) {
           displayName = *alias;
           break;
         }
@@ -1436,7 +1430,7 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
     if (displayName.IsEmpty())
       displayName = localName;
     for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
-      if (IsE164(*alias)) {
+      if (OpalIsE164(*alias)) {
         number = *alias;
         break;
       }
@@ -1449,7 +1443,7 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
     PString otherNumber = connection.GetRemotePartyNumber();
     if (otherNumber.IsEmpty()) {
       PString otherName = connection.GetRemotePartyName();
-      if (IsE164(otherName))
+      if (OpalIsE164(otherName))
         otherNumber = otherName;
     }
 

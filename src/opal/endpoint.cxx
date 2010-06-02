@@ -639,4 +639,24 @@ bool OpalEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaForm
 
 #endif
 
+
+bool OpalIsE164(const PString & number, bool strict)
+{
+  if (number.IsEmpty())
+    return false;
+
+  PINDEX offset;
+
+  if (strict || number[0] != '+')
+    offset = 0;
+  else {
+    if (number.GetLength() < 2)
+      return false;
+    offset = 1;
+  }
+
+  return number.FindSpan("1234567890*#", offset) == P_MAX_INDEX;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
