@@ -774,7 +774,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     if (hostname.IsEmpty()) {
       PString username = url.GetUserName();
       // make sure the number has only digits and +
-      if (username.FindSpan("+0123456789") == P_MAX_INDEX) {
+      if (OpalIsE164(username)) {
         PString newName;
         if (PDNS::ENUMLookup(username, "E2U+h323", newName)) {
           PTRACE(4, "H323\tENUM converted remote party " << username << " to " << newName);
