@@ -1733,9 +1733,9 @@ void SIPConnection::UpdateRemoteAddresses()
 
   remotePartyAddress = url.GetHostAddress();
 
-  remotePartyNumber = url.GetUserName();
-  if (remotePartyNumber.FindSpan("0123456789*#") != P_MAX_INDEX)
-    remotePartyNumber.MakeEmpty();
+  PString user = url.GetUserName();
+  if (OpalIsE164(user))
+    remotePartyNumber = user;
 
   remotePartyName = url.GetDisplayName();
   if (remotePartyName.IsEmpty())
