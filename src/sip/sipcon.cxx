@@ -649,7 +649,14 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   // get the remote media formats, if any
   if (isAnswerSDP && originalInvite != NULL) {
     SDPSessionDescription * sdp = originalInvite->GetSDP();
-    if (sdp != NULL) {
+    if (sdp == NULL) {
+      /* If we had SDP but no media could not be decoded from it, then we should return
+         Not Acceptable Here error and not do an offer. Only offer if there was no body
+         at all or there was a valid SDP with no m lines. */
+      if (!originalInvite->GetMIME().GetContentType().IsEmpty() && !originalInvite->GetEntityBody().IsEmpty())
+        return false;
+    }
+    else {
       const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
       if (!mediaDescriptions.IsEmpty()) {
         /* Shut down any media that is in a session not mentioned in a re-INVITE.

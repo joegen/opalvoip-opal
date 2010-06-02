@@ -883,6 +883,50 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
   }
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens)
+  : SDPMediaDescription(address, "")
+  , m_tokens(tokens)
+{
+  switch (m_tokens.GetSize()) {
+    case 0 :
+      m_tokens.AppendString("unknown");
+    case 1 :
+      m_tokens.AppendString("0");
+    case 2 :
+      m_tokens.AppendString("unknown");
+    case 3 :
+      m_tokens.AppendString("unknown");
+  }
+}
+
+
+PString SDPDummyMediaDescription::GetSDPMediaType() const
+{
+  return m_tokens[0];
+}
+
+
+PCaselessString SDPDummyMediaDescription::GetSDPTransportType() const
+{
+  return m_tokens[2];
+}
+
+
+SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat(const PString & /*portString*/)
+{
+  return NULL;
+}
+
+
+PString SDPDummyMediaDescription::GetSDPPortList() const
+{
+  return m_tokens[3];
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
@@ -1257,6 +1301,7 @@ PString SDPSessionDescription::Encode() const
 
 PBoolean SDPSessionDescription::Decode(const PString & str)
 {
+  bool atLeastOneValidMedia = false;
   bool ok = true;
 
   // break string into lines
@@ -1354,42 +1399,34 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
                   ok = false;
               }
 
+              currentMedia = NULL;
+
+              OpalMediaType mediaType;
+              OpalMediaTypeDefinition * defn;
               PStringArray tokens = value.Tokenise(" ");
               if (tokens.GetSize() < 4) {
                 PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+              }
+              else if ((mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2])).empty()) {
+                PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
+              }
+              else if ((defn = mediaType.GetDefinition()) == NULL) {
+                PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);
+              }
+              else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress)) == NULL) {
+                PTRACE(1, "SDP\tCould not create SDP media description for SDP media type " << tokens[0]);
+              }
+              else if (currentMedia->Decode(tokens))
+                atLeastOneValidMedia = true;
+              else {
+                delete currentMedia;
                 currentMedia = NULL;
               }
-              else
-              {
-                // parse the media type
-                PString mt = tokens[0].ToLower();
-                OpalMediaType mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2]);
-                if (mediaType.empty()) {
-                  PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
-                  currentMedia = NULL;
-                }
-                else
-                {
-                  OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
-                  if (defn == NULL) {
-                    PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);
-                    currentMedia = NULL;
-                  }
-                  else {
-                    currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress);
-                    if (currentMedia == NULL) {
-                      PTRACE(1, "SDP\tCould not create SDP media description for SDP media type " << tokens[0]);
-                    }
-                    else if (currentMedia->Decode(tokens)) {
-                      mediaDescriptions.Append(currentMedia);
-                    }
-                    else {
-                      delete currentMedia;
-                      currentMedia = NULL;
-                    }
-                  }
-                }
-              }
+
+              if (currentMedia == NULL)
+                currentMedia = new SDPDummyMediaDescription(defaultConnectAddress, tokens);
+
+              mediaDescriptions.Append(currentMedia);
             }
             break;
 
@@ -1407,7 +1444,7 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
       ok = false;
   }
 
-  return ok;
+  return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
 }
 
 
