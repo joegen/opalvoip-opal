@@ -2634,10 +2634,12 @@ PBoolean SIPTransaction::Cancel()
 
 void SIPTransaction::Abort()
 {
+  PTRACE(4, "SIP\tAttempting to abort " << GetMethod() << " transaction id=" << GetTransactionID());
+
   if (LockReadWrite()) {
-    PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " aborted.");
-    if (!IsCompleted())
+    if (!IsCompleted()) {
       SetTerminated(Terminated_Aborted);
+    }
     UnlockReadWrite();
   }
 }
@@ -3020,6 +3022,18 @@ SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & s
 }
 
 
+SIPTransaction * SIPInvite::CreateDuplicate() const
+{
+  SIPTransaction * newTransaction = new SIPInvite(*m_connection, GetSessionManager());
+
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  // For Asterisk this is not merely SHOULD, but SHALL ....
+  newTransaction->GetMIME().SetFrom(m_mime.GetFrom());
+  return newTransaction;
+}
+
+
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   if (IsTerminated())
@@ -3065,6 +3079,68 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+
+SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
+  : SIP_PDU(Method_ACK)
+{
+  if (response.GetStatusCode() < 300) {
+    InitialiseHeaders(*invite.GetConnection(), invite.GetTransport());
+    m_mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
+  }
+  else {
+    InitialiseHeaders(invite.GetURI(),
+                      response.GetMIME().GetTo(),
+                      invite.GetMIME().GetFrom(),
+                      invite.GetMIME().GetCallID(),
+                      invite.GetMIME().GetCSeqIndex(),
+                      CreateVia(invite.GetConnection()->GetEndPoint(), invite.GetTransport()));
+
+    // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
+    // as well as the initial Route
+    PStringList viaList = invite.GetMIME().GetViaList();
+    if (viaList.GetSize() > 0)
+      m_mime.SetVia(viaList.front());
+
+    if (invite.GetMIME().GetRoute().GetSize() > 0)
+      m_mime.SetRoute(invite.GetMIME().GetRoute());
+  }
+
+  // Add authentication if had any on INVITE
+  if (invite.GetMIME().Contains("Proxy-Authorization") || invite.GetMIME().Contains("Authorization")) {
+    SIPAuthenticator auth(*this);
+    invite.GetConnection()->GetAuthenticator()->Authorise(auth);
+  }
+}
+
+
+SIPTransaction * SIPAck::CreateDuplicate() const
+{
+  return NULL;
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPBye::SIPBye(SIPEndPoint & ep, OpalTransport & trans, SIPDialogContext dialog)
+  : SIPTransaction(Method_BYE, ep, trans)
+{
+  InitialiseHeaders(dialog);
+}
+
+
+SIPBye::SIPBye(SIPConnection & conn)
+  : SIPTransaction(Method_BYE, conn)
+{
+}
+
+
+SIPTransaction * SIPBye::CreateDuplicate() const
+{
+  return new SIPBye(*m_connection);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPRegister::SIPRegister(SIPEndPoint & ep,
@@ -3084,6 +3160,12 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                     CreateVia(ep, trans));
 
   SetAllow(ep.GetAllowedMethods());
+}
+
+
+SIPTransaction * SIPRegister::CreateDuplicate() const
+{
+  return new SIPRegister(*this);
 }
 
 
@@ -3256,6 +3338,12 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 }
 
 
+SIPTransaction * SIPSubscribe::CreateDuplicate() const
+{
+  return new SIPSubscribe(*this);
+}
+
+
 #if PTRACING
 ostream & operator<<(ostream & strm, const SIPSubscribe::Params & params)
 {
@@ -3287,6 +3375,12 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
   }
 
   m_entityBody = body;
+}
+
+
+SIPTransaction * SIPNotify::CreateDuplicate() const
+{
+  return new SIPNotify(*this);
 }
 
 
@@ -3328,6 +3422,12 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
 }
 
 
+SIPTransaction * SIPPublish::CreateDuplicate() const
+{
+  return new SIPPublish(*this);
+}
+
+
 /////////////////////////////////////////////////////////////////////////
 
 SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & referTo, const SIPURL & referredBy)
@@ -3340,6 +3440,12 @@ SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & referTo, const SIP
     adjustedReferredBy.Sanitise(SIPURL::RequestURI);
     m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
+}
+
+
+SIPTransaction * SIPRefer::CreateDuplicate() const
+{
+  return new SIPRefer(*m_connection, m_mime.GetReferTo(), m_mime.GetReferredBy());
 }
 
 
@@ -3358,13 +3464,31 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, StatusCodes code)
 }
 
 
+SIPTransaction * SIPReferNotify::CreateDuplicate() const
+{
+  return new SIPReferNotify(*this);
+}
+
+
 /////////////////////////////////////////////////////////////////////////
 
 SIPMessage::SIPMessage(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const Params & params,
-                       const PString & body)
+                       const Params & params)
   : SIPTransaction(Method_MESSAGE, ep, trans)
+{
+  Construct(params);
+}
+
+
+SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
+  : SIPTransaction(Method_MESSAGE, conn)
+{
+  Construct(params);
+}
+
+
+void SIPMessage::Construct(const Params & params)
 {
   SetParameters(params);
 
@@ -3376,26 +3500,94 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
     if (!params.m_addressOfRecord.IsEmpty())
       m_localAddress = params.m_addressOfRecord;
     else
-      m_localAddress = ep.GetRegisteredPartyName(addr, trans);
+      m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
   }
 
-  PString contentType;
-  if (!params.m_contentType.IsEmpty())
+  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_endpoint, m_transport));
+
+  if (!params.m_contentType.IsEmpty()) {
     m_mime.SetContentType(params.m_contentType);
-  else
-    m_mime.SetContentType("text/plain;charset=UTF-8");
-
-  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, ep.GetNextCSeq(), CreateVia(ep, trans));
-
-  m_entityBody = body;
+    m_entityBody = params.m_body;
+  }
 }
+
+
+SIPTransaction * SIPMessage::CreateDuplicate() const
+{
+  return new SIPMessage(*this);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPOptions::SIPOptions(SIPEndPoint & ep,
+                     OpalTransport & trans,
+                     const PString & id,
+                      const Params & params)
+  : SIPTransaction(Method_OPTIONS, ep, trans)
+{
+  SetParameters(params);
+
+  // Build the correct From field
+  SIPURL remoteAddress = params.m_remoteAddress;
+  SIPURL localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
+  localAddress.SetTag();
+
+  InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
+  SetAllow(ep.GetAllowedMethods());
+  m_mime.SetAccept(params.m_acceptContent);
+
+  if (!params.m_contentType.IsEmpty()) {
+    m_mime.SetContentType(params.m_contentType);
+    m_entityBody = params.m_body;
+  }
+}
+
+
+SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
+  : SIPTransaction(Method_OPTIONS, conn)
+{
+  SetParameters(params);
+
+  SetAllow(m_endpoint.GetAllowedMethods());
+  m_mime.SetAccept(params.m_acceptContent);
+
+  if (!params.m_contentType.IsEmpty()) {
+    m_mime.SetContentType(params.m_contentType);
+    m_entityBody = params.m_body;
+  }
+}
+
+
+SIPTransaction * SIPOptions::CreateDuplicate() const
+{
+  return new SIPOptions(*this);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPInfo::SIPInfo(SIPConnection & conn, const Params & params)
+  : SIPTransaction(Method_INFO, conn)
+{
+  if (!params.m_contentType.IsEmpty()) {
+    m_mime.SetContentType(params.m_contentType);
+    m_entityBody = params.m_body;
+  }
+}
+
+
+SIPTransaction * SIPInfo::CreateDuplicate() const
+{
+  return new SIPInfo(*this);
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 
 SIPPing::SIPPing(SIPEndPoint & ep,
                  OpalTransport & trans,
-                 const SIPURL & address,
-                 const PString & body)
+                 const SIPURL & address)
   : SIPTransaction(Method_PING, ep, trans)
 {
   InitialiseHeaders(address,
@@ -3406,60 +3598,13 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                     CreateVia(ep, trans));
   m_mime.SetContentType("text/plain;charset=UTF-8");
 
-  m_entityBody = body;
+  // PING must not have a body
 }
 
 
-/////////////////////////////////////////////////////////////////////////
-
-SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
-  : SIP_PDU(Method_ACK)
+SIPTransaction * SIPPing::CreateDuplicate() const
 {
-  if (response.GetStatusCode() < 300) {
-    InitialiseHeaders(*invite.GetConnection(), invite.GetTransport());
-    m_mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
-  }
-  else {
-    InitialiseHeaders(invite.GetURI(),
-                      response.GetMIME().GetTo(),
-                      invite.GetMIME().GetFrom(),
-                      invite.GetMIME().GetCallID(),
-                      invite.GetMIME().GetCSeqIndex(),
-                      CreateVia(invite.GetConnection()->GetEndPoint(), invite.GetTransport()));
-
-    // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
-    // as well as the initial Route
-    PStringList viaList = invite.GetMIME().GetViaList();
-    if (viaList.GetSize() > 0)
-      m_mime.SetVia(viaList.front());
-
-    if (invite.GetMIME().GetRoute().GetSize() > 0)
-      m_mime.SetRoute(invite.GetMIME().GetRoute());
-  }
-
-  // Add authentication if had any on INVITE
-  if (invite.GetMIME().Contains("Proxy-Authorization") || invite.GetMIME().Contains("Authorization")) {
-    SIPAuthenticator auth(*this);
-    invite.GetConnection()->GetAuthenticator()->Authorise(auth);
-  }
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-
-SIPOptions::SIPOptions(SIPEndPoint & ep,
-                       OpalTransport & trans,
-                       const SIPURL & address)
-  : SIPTransaction(Method_OPTIONS, ep, trans)
-{
-  // Build the correct From field
-  SIPURL myAddress = ep.GetRegisteredPartyName(address.GetHostName(), trans);
-  myAddress.SetTag();
-
-  InitialiseHeaders(address, address, myAddress, GenerateCallID(), ep.GetNextCSeq(), CreateVia(ep, trans));
-  m_mime.SetAccept("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay");
-
-  SetAllow(ep.GetAllowedMethods());
+  return new SIPPing(*this);
 }
 
 

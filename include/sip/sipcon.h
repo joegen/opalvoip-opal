@@ -68,6 +68,11 @@ class SIPEndPoint;
   */
 #define OPAL_OPT_REFER_SUB       "Refer-Sub"
 
+/**OpalConnection::StringOption key to a boolean indicating that we should
+   make initial SDP offer. Default true.
+  */
+#define OPAL_OPT_INITIAL_OFFER "Initial-Offer"
+
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
 
@@ -478,6 +483,26 @@ class SIPConnection : public OpalRTPConnection
     TypeOfINVITE CheckINVITE(
       const SIP_PDU & pdu
     ) const;
+
+    /**Send an OPTIONS command within this calls dialog.
+       Note if \p reply is non-NULL, this function will block until the
+       transaction completes. Care must be executed in this case that
+       no deadlocks occur.
+      */
+    bool SendOPTIONS(
+      const SIPOptions::Params & params,  ///< Parameters for OPTIONS command
+      SIP_PDU * reply = NULL              ///< Reply to message
+    );
+
+    /**Send an INFO command within this calls dialog.
+       Note if \p reply is non-NULL, this function will block until the
+       transaction completes. Care must be executed in this case that
+       no deadlocks occur.
+      */
+    bool SendINFO(
+      const SIPInfo::Params & params,  ///< Parameters for OPTIONS command
+      SIP_PDU * reply = NULL              ///< Reply to message
+    );
   //@}
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
@@ -633,6 +658,8 @@ class SIPConnection : public OpalRTPConnection
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
     void SetRemoteMediaFormats(SDPSessionDescription * sdp);
+
+    std::map<std::string, SIP_PDU *> m_responses;
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));

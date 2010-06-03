@@ -379,7 +379,7 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      (new SIPTransaction(SIP_PDU::Method_BYE, *this))->Start();
+      (new SIPBye(*this))->Start();
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         /* If we never even received a "100 Trying" from a remote, then just abort
            the transaction, do not wait, it is probably on an interface that the
@@ -749,7 +749,7 @@ PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPS
     }
   }
 
-  return sdpOK;
+  return sdpOK && !sdpOut.GetMediaDescriptions().IsEmpty();
 }
 
 
@@ -1585,6 +1585,12 @@ PString SIPConnection::GetRemotePartyURL() const
 
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
+  std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
+  if (it != m_responses.end()) {
+    it->second->SetStatusCode(transaction.GetStatusCode());
+    m_responses.erase(it);
+  }
+
   switch (transaction.GetMethod()) {
     case SIP_PDU::Method_INVITE :
       break;
@@ -1795,20 +1801,27 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     switch (response.GetStatusCode()) {
       case SIP_PDU::Failure_UnAuthorised :
       case SIP_PDU::Failure_ProxyAuthenticationRequired :
-        OnReceivedAuthenticationRequired(transaction, response);
-        break;
+        if (OnReceivedAuthenticationRequired(transaction, response))
+          return;
 
       default :
         switch (response.GetStatusCode()/100) {
           case 1 : // Treat all other provisional responses like a Trying.
             OnReceivedTrying(transaction, response);
-            break;
+            return;
 
           case 2 : // Successful response - there really is only 200 OK
             OnReceivedOK(transaction, response);
             break;
         }
     }
+
+    std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
+    if (it != m_responses.end()) {
+      *it->second = response;
+      m_responses.erase(it);
+    }
+
     return;
   }
 
@@ -2188,9 +2201,17 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
+void SIPConnection::OnReceivedOPTIONS(SIP_PDU & request)
 {
-  PTRACE(2, "SIP\tOPTIONS not yet supported");
+  if (request.GetMIME().GetAccept().Find("application/sdp") == P_MAX_INDEX)
+    request.SendResponse(*transport, SIP_PDU::Failure_UnsupportedMediaType);
+  else {
+    SDPSessionDescription sdp(m_sdpSessionId, m_sdpVersion, transport->GetLocalAddress());
+    SIP_PDU response(request, SIP_PDU::Successful_OK);
+    response.SetAllow(endpoint.GetAllowedMethods());
+    response.SetEntityBody(sdp.Encode());
+    request.SendResponse(*transport, response, &endpoint);
+  }
 }
 
 
@@ -2479,27 +2500,10 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   transport->SetInterface(transaction.GetInterface());
 
-  SIPTransaction * newTransaction;
-  switch (transaction.GetMethod()) {
-    case SIP_PDU::Method_INVITE :
-      newTransaction = new SIPInvite(*this, ((SIPInvite &)transaction).GetSessionManager());
-      // Section 8.1.3.5 of RFC3261 tells that the authenticated
-      // request SHOULD have the same value of the Call-ID, To and From.
-      // For Asterisk this is not merely SHOULD, but SHALL ....
-      newTransaction->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
-      break;
-
-    case SIP_PDU::Method_REFER :
-      newTransaction = new SIPRefer(*this, transaction.GetMIME().GetReferTo(), transaction.GetMIME().GetReferredBy());
-      break;
-
-    case SIP_PDU::Method_BYE :
-      newTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this);
-      break;
-
-    default:
-      PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for " << transaction);
-      return false;
+  SIPTransaction * newTransaction = transaction.CreateDuplicate();
+  if (newTransaction == NULL) {
+    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for " << transaction);
+    return false;
   }
 
   if (!newTransaction->Start()) {
@@ -2509,6 +2513,13 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
     forkedInvitations.Append(newTransaction);
+  else {
+    std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
+    if (it != m_responses.end()) {
+      m_responses[newTransaction->GetTransactionID()] = it->second;
+      m_responses.erase(it);
+    }
+  }
 
   return true;
 }
@@ -2725,12 +2736,14 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     mime.SetFrom(from.AsQuotedString());
   }
 
-  SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
-  if (OnSendOfferSDP(request.GetSessionManager(), *sdp) && !sdp->GetMediaDescriptions().IsEmpty())
-    request.SetSDP(sdp);
-  else {
-    delete sdp;
-    Release(EndedByCapabilityExchange);
+  if (m_connStringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+    SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
+    if (OnSendOfferSDP(request.GetSessionManager(), *sdp))
+      request.SetSDP(sdp);
+    else {
+      delete sdp;
+      Release(EndedByCapabilityExchange);
+    }
   }
 }
 
@@ -2947,24 +2960,47 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
   if (mode == SendUserInputAsRFC2833)
     return OpalRTPConnection::SendUserInputTone(tone, duration);
 
-  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
-  SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
+  SIPInfo::Params params;
   if (mode == SendUserInputAsTone) {
-    mimeInfo.SetContentType(ApplicationDTMFRelayKey);
+    params.m_contentType = ApplicationDTMFRelayKey;
     PStringStream strm;
     strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
-    infoTransaction->SetEntityBody(strm);
+    params.m_body = strm;
   }
   else {
-    mimeInfo.SetContentType(ApplicationDTMFKey);
-    infoTransaction->SetEntityBody(tone);
+    params.m_contentType = ApplicationDTMFKey;
+    params.m_body = tone;
   }
 
-  if (infoTransaction->Start())
+  if (SendINFO(params))
     return true;
 
   PTRACE(2, "SIP\tCould not send tone '" << tone << "' via INFO.");
   return OpalConnection::SendUserInputTone(tone, duration);
+}
+
+
+bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * reply)
+{
+  PSafePtr<SIPTransaction> transaction = new SIPOptions(*this, params);
+  if (reply == NULL)
+    return transaction->Start();
+
+  m_responses[transaction->GetTransactionID()] = reply;
+  transaction->WaitForTermination();
+  return !transaction->IsFailed();
+}
+
+
+bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
+{
+  PSafePtr<SIPTransaction> transaction = new SIPInfo(*this, params);
+  if (reply == NULL)
+    return transaction->Start();
+
+  m_responses[transaction->GetTransactionID()] = reply;
+  transaction->WaitForTermination();
+  return !transaction->IsFailed();
 }
 
 
@@ -2987,16 +3023,11 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
   PTRACE(3, "SIP\tSending MESSAGE within call");
 
   // else send as MESSAGE
-  PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_MESSAGE, *this);
-  SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
-  mimeInfo.SetContentType("text/plain");
-  infoTransaction->SetEntityBody(body.AsString());
+  SIPMessage::Params params;
+  params.m_body = body.AsString();
 
-  // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
-  //infoTransaction->WaitForCompletion();
-  //if (infoTransaction->IsFailed()) { }
-  infoTransaction->Start();
-  return true;
+  PSafePtr<SIPTransaction> transaction = new SIPMessage(*this, params);
+  return transaction->Start();
 }
 
 #endif
@@ -3006,25 +3037,17 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE(3, "SIP\tSending PictureFastUpdate");
-    PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(SIP_PDU::Method_INFO, *this);
-    SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
-    mimeInfo.SetContentType(ApplicationMediaControlXMLKey);
-    PStringStream str;
-    infoTransaction->SetEntityBody(
-                  "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-                  "<media_control>"
-                   "<vc_primitive>"
-                    "<to_encoder>"
-                     "<picture_fast_update>"
-                     "</picture_fast_update>"
-                    "</to_encoder>"
-                   "</vc_primitive>"
-                  "</media_control>"
-                );
-    // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
-    //infoTransaction->WaitForCompletion();
-    //if (infoTransaction->IsFailed()) { }
-    infoTransaction->Start();
+    SIPInfo::Params params(ApplicationMediaControlXMLKey,
+                           "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                           "<media_control>"
+                            "<vc_primitive>"
+                             "<to_encoder>"
+                              "<picture_fast_update>"
+                              "</picture_fast_update>"
+                             "</to_encoder>"
+                            "</vc_primitive>"
+                           "</media_control>");
+    SendINFO(params);
 #if OPAL_STATISTICS
     m_VideoUpdateRequestsSent++;
 #endif
