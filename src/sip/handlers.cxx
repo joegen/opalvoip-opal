@@ -70,13 +70,14 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
+SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParameters & params)
   : endpoint(ep)
   , authentication(NULL)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
   , m_transport(NULL)
+  , m_method(method)
   , m_addressOfRecord(params.m_addressOfRecord)
   , m_remoteAddress(params.m_remoteAddress)
   , callID(SIPTransaction::GenerateCallID())
@@ -96,7 +97,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep, const SIPParameters & params)
   if (m_proxy.IsEmpty())
     m_proxy = ep.GetProxy();
 
-  PTRACE(4, "SIP\tConstructed handler for " << params.m_addressOfRecord);
+  PTRACE(4, "SIP\tConstructed " << m_method << " handler for " << m_addressOfRecord);
 }
 
 
@@ -111,7 +112,7 @@ SIPHandler::~SIPHandler()
 
   delete authentication;
 
-  PTRACE(4, "SIP\tDeleted handler.");
+  PTRACE(4, "SIP\tDestroyed " << m_method << " handler for " << m_addressOfRecord);
 }
 
 
@@ -400,10 +401,6 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       OnReceivedTemporarilyUnavailable(transaction, response);
       break;
 
-    case SIP_PDU::Failure_RequestTimeout :
-      OnTransactionFailed(transaction);
-      break;
-
     default :
       switch (response.GetStatusCode()/100) {
         case 1 :
@@ -629,7 +626,7 @@ void SIPHandler::OnExpireTimeout(PTimer &, INT)
 ///////////////////////////////////////////////////////////////////////////////
 
 SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
-  : SIPHandler(endpoint, params)
+  : SIPHandler(SIP_PDU::Method_REGISTER, endpoint, params)
   , m_parameters(params)
   , m_sequenceNumber(0)
 {
@@ -639,12 +636,6 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   local.SetTag();
   m_parameters.m_localAddress = local.AsQuotedString();
   m_parameters.m_proxyAddress = m_proxy.AsString();
-}
-
-
-SIPRegisterHandler::~SIPRegisterHandler()
-{
-  PTRACE(4, "SIP\tDeleting SIPRegisterHandler " << GetAddressOfRecord());
 }
 
 
@@ -811,7 +802,7 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 /////////////////////////////////////////////////////////////////////////
 
 SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscribe::Params & params)
-  : SIPHandler(endpoint, params)
+  : SIPHandler(SIP_PDU::Method_SUBSCRIBE, endpoint, params)
   , m_parameters(params)
   , m_unconfirmed(true)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
@@ -832,7 +823,6 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
 
 SIPSubscribeHandler::~SIPSubscribeHandler()
 {
-  PTRACE(4, "SIP\tDeleting SIPSubscribeHandler " << GetAddressOfRecord());
   delete m_packageHandler;
 }
 
@@ -1466,7 +1456,7 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
                                    const PString & targetAddress,
                                    const SIPEventPackage & eventPackage,
                                    const SIPDialogContext & dialog)
-  : SIPHandler(endpoint, SIPParameters(targetAddress, dialog.GetRemoteURI().AsString()))
+  : SIPHandler(SIP_PDU::Method_NOTIFY, endpoint, SIPParameters(targetAddress, dialog.GetRemoteURI().AsString()))
   , m_eventPackage(eventPackage)
   , m_dialog(dialog)
   , m_reason(Deactivated)
@@ -1500,7 +1490,7 @@ SIPTransaction * SIPNotifyHandler::CreateTransaction(OpalTransport & trans)
     state += ReasonNames[m_reason];
   }
 
-  return new SIPNotify(endpoint, trans, m_dialog, m_eventPackage, state, body);
+  return new SIPNotify(endpoint, trans, m_dialog, m_eventPackage, state, m_body);
 }
 
 
@@ -1520,13 +1510,13 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
     return false;
 
   if (m_packageHandler != NULL)
-    SetBody(m_packageHandler->OnSendNOTIFY(*this, body));
+    m_body = m_packageHandler->OnSendNOTIFY(*this, body);
   else if (body == NULL)
-    SetBody(PString::Empty());
+    m_body.MakeEmpty();
   else {
     PStringStream str;
     str << *body;
-    SetBody(str);
+    m_body = str;
   }
 
   UnlockReadWrite();
@@ -1539,18 +1529,12 @@ bool SIPNotifyHandler::SendNotify(const PObject * body)
 
 SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
                                      const SIPSubscribe::Params & params,
-                                     const PString & b)
-  : SIPHandler(endpoint, params)
+                                     const PString & body)
+  : SIPHandler(SIP_PDU::Method_PUBLISH, endpoint, params)
   , m_parameters(params)
+  , m_body(body)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
-  body = b;
-}
-
-
-SIPPublishHandler::~SIPPublishHandler()
-{
-  PTRACE(4, "SIP\tDeleting SIPPublishHandler " << GetAddressOfRecord());
 }
 
 
@@ -1565,7 +1549,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
                         GetCallID(),
                         m_sipETag,
                         m_parameters,
-                        (GetState() == Refreshing) ? PString::Empty() : body);
+                        (GetState() == Refreshing) ? PString::Empty() : m_body);
 }
 
 
@@ -1734,19 +1718,12 @@ PString SIPPresenceInfo::AsXML() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::Params & params, const PString & b)
-  : SIPHandler(endpoint, params)
+SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::Params & params)
+  : SIPHandler(SIP_PDU::Method_MESSAGE, endpoint, params)
   , m_parameters(params)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
-  body   = b;
   SetState(Subscribed);
-}
-
-
-SIPMessageHandler::~SIPMessageHandler ()
-{
-  PTRACE(4, "SIP\tDeleting SIPMessageHandler " << GetAddressOfRecord());
 }
 
 
@@ -1760,18 +1737,16 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
   if (m_parameters.m_id.IsEmpty())
     m_parameters.m_id = GetCallID();
 
-  SIPMessage * msg = new SIPMessage(endpoint, transport, m_parameters, body);
-  if (msg != NULL) {
-    m_localAddress = msg->m_localAddress;
-    m_id           = m_parameters.m_id;
-  }
+  SIPMessage * msg = new SIPMessage(endpoint, transport, m_parameters);
+  if (msg != NULL)
+    m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
 
   return msg;
 }
 
 
 void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
-{ 
+{
   endpoint.OnMessageFailed(GetAddressOfRecord(), reason);
   SIPHandler::OnFailed(reason);
 }
@@ -1779,29 +1754,77 @@ void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 
 void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 {
-  SetState(Unavailable);
+  PSafeLockReadWrite lock(*this);
+  if (lock.IsLocked())
+    SetState(Unavailable);
 }
 
 
-void SIPMessageHandler::SetBody(const PString & b)
+/////////////////////////////////////////////////////////////////////////
+
+SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::Params & params)
+  : SIPHandler(SIP_PDU::Method_OPTIONS, endpoint, params)
+  , m_parameters(params)
 {
-  SIPHandler::SetBody (b);
+  m_parameters.m_proxyAddress = m_proxy.AsString();
+  SetState(Subscribed);
 }
+
+
+SIPTransaction * SIPOptionsHandler::CreateTransaction(OpalTransport & transport)
+{ 
+  if (GetState() == Unsubscribing)
+    return NULL;
+
+  return new SIPOptions(endpoint, transport, callID, m_parameters);
+}
+
+
+void SIPOptionsHandler::OnFailed(SIP_PDU::StatusCodes reason)
+{
+  SIP_PDU dummy;
+  dummy.SetStatusCode(reason);
+  endpoint.OnOptionsCompleted(m_parameters, dummy);
+  SIPHandler::OnFailed(reason);
+}
+
+
+void SIPOptionsHandler::OnFailed(const SIP_PDU & response)
+{
+  endpoint.OnOptionsCompleted(m_parameters, response);
+  SIPHandler::OnFailed(response.GetStatusCode());
+}
+
+
+void SIPOptionsHandler::OnExpireTimeout(PTimer &, INT)
+{
+  PSafeLockReadWrite lock(*this);
+  if (lock.IsLocked())
+    SetState(Unavailable);
+}
+
+
+void SIPOptionsHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+{
+  endpoint.OnOptionsCompleted(m_parameters, response);
+  SIPHandler::OnReceivedOK(transaction, response);
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 
 SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
-: SIPHandler(endpoint, SIPParameters(to.AsString()))
+  : SIPHandler(SIP_PDU::Method_MESSAGE, endpoint, SIPParameters(to.AsString()))
 {
 }
 
 
-SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
+SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport & transport)
 {
   if (GetState() == Unsubscribing)
     return NULL;
 
-  return new SIPPing(endpoint, t, GetAddressOfRecord(), body);
+  return new SIPPing(endpoint, transport, GetAddressOfRecord());
 }
 
 

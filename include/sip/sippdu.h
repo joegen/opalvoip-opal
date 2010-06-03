@@ -829,6 +829,10 @@ class SIPTransaction : public SIP_PDU
     );
     ~SIPTransaction();
 
+    /* Under some circumstances a new transaction with all the same parameters
+       but different ID needs to be created, e.g. when get authentication error. */
+    virtual SIPTransaction * CreateDuplicate() const = 0;
+
     PBoolean Start();
     bool IsTrying()     const { return m_state == Trying; }
     bool IsProceeding() const { return m_state == Proceeding; }
@@ -914,6 +918,8 @@ class SIPInvite : public SIPTransaction
       const OpalRTPSessionManager & sm
     );
 
+    virtual SIPTransaction * CreateDuplicate() const;
+
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
     const OpalRTPSessionManager & GetSessionManager() const { return m_rtpSessions; }
@@ -921,6 +927,46 @@ class SIPInvite : public SIPTransaction
 
   protected:
     OpalRTPSessionManager m_rtpSessions;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is the ACK request sent when receiving a response to an outgoing
+ * INVITE.
+ */
+class SIPAck : public SIP_PDU
+{
+    PCLASSINFO(SIPAck, SIP_PDU);
+  public:
+    SIPAck(
+      SIPTransaction & invite,
+      SIP_PDU & response
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is a BYE request
+ */
+class SIPBye : public SIPTransaction
+{
+    PCLASSINFO(SIPBye, SIPTransaction);
+    
+  public:
+    SIPBye(
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      SIPDialogContext dialog
+    );
+    SIPBye(
+      SIPConnection & conn
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -968,6 +1014,8 @@ class SIPRegister : public SIPTransaction
       unsigned cseq,
       const Params & params
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1086,6 +1134,8 @@ class SIPSubscribe : public SIPTransaction
         SIPDialogContext & dialog,
         const Params & params
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1128,6 +1178,8 @@ class SIPNotify : public SIPTransaction
         const PString & state,
         const PString & body
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1145,6 +1197,8 @@ class SIPPublish : public SIPTransaction
       const SIPSubscribe::Params & params,
       const PString & body
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1159,6 +1213,8 @@ class SIPRefer : public SIPTransaction
       const SIPURL & referTo,
       const SIPURL & referred_by = SIPURL()
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1175,6 +1231,8 @@ class SIPReferNotify : public SIPTransaction
       SIPConnection & connection,
       StatusCodes code
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1189,45 +1247,34 @@ class SIPMessage : public SIPTransaction
     struct Params : public SIPParameters
     {
       Params()
+        : m_contentType("text/plain;charset=UTF-8")
       { 
         m_expire = 5000;
       }
 
-      Params(const Params & param)
-        : SIPParameters(param)
-        , m_contentType(param.m_contentType)
-        , m_id(param.m_id)
-      { }
-
       PCaselessString m_contentType;
-      PString m_id;
+      PString         m_id;
+      PString         m_body;
     };
 
-
-  public:
     SIPMessage(
-        SIPEndPoint & ep,
-        OpalTransport & trans,
-        const Params & params,
-        const PString & body
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const Params & params
     );
+    SIPMessage(
+      SIPConnection & connection,
+      const Params & params
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
+
+    const SIPURL & GetLocalAddress() const { return m_localAddress; }
+
+  private:
+    void Construct(const Params & params);
+
     SIPURL m_localAddress;
-};
-
-
-/////////////////////////////////////////////////////////////////////////
-
-/* This is the ACK request sent when receiving a response to an outgoing
- * INVITE.
- */
-class SIPAck : public SIP_PDU
-{
-    PCLASSINFO(SIPAck, SIP_PDU);
-  public:
-    SIPAck(
-      SIPTransaction & invite,
-      SIP_PDU & response
-    );
 };
 
 
@@ -1240,11 +1287,61 @@ class SIPOptions : public SIPTransaction
     PCLASSINFO(SIPOptions, SIPTransaction);
     
   public:
+    struct Params : public SIPParameters
+    {
+      Params()
+        : m_acceptContent("application/sdp, application/media_control+xml, application/dtmf, application/dtmf-relay")
+      { 
+      }
+
+      PCaselessString m_acceptContent;
+      PCaselessString m_contentType;
+      PString         m_body;
+    };
+
     SIPOptions(
-        SIPEndPoint & ep,
+      SIPEndPoint & ep,
       OpalTransport & trans,
-       const SIPURL & address
+      const PString & id,
+      const Params & params
     );
+    SIPOptions(
+      SIPConnection & conn,
+      const Params & params
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is an INFO request
+ */
+class SIPInfo : public SIPTransaction
+{
+    PCLASSINFO(SIPInfo, SIPTransaction);
+    
+  public:
+    struct Params
+    {
+      Params(const PString & contentType = PString::Empty(),
+             const PString & body = PString::Empty())
+        : m_contentType(contentType)
+        , m_body(body)
+      {
+      }
+
+      PCaselessString m_contentType;
+      PString         m_body;
+    };
+
+    SIPInfo(
+      SIPConnection & conn,
+      const Params & params
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 
@@ -1260,9 +1357,10 @@ class SIPPing : public SIPTransaction
     SIPPing(
       SIPEndPoint & ep,
       OpalTransport & trans,
-      const SIPURL & address,
-      const PString & body = PString::Empty()
+      const SIPURL & address
     );
+
+    virtual SIPTransaction * CreateDuplicate() const;
 };
 
 

@@ -57,6 +57,7 @@ class SIPHandler : public PSafeObject
 
 protected:
   SIPHandler(
+    SIP_PDU::Methods method,
     SIPEndPoint & ep,
     const SIPParameters & params
   );
@@ -102,16 +103,14 @@ public:
   virtual PString GetCallID()
     { return callID; }
 
-  virtual void SetBody(const PString & b)
-    { body = b;}
+  virtual void SetBody(const PString & /*body*/) { }
 
   virtual bool IsDuplicateCSeq(unsigned ) { return false; }
 
   virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
 
-  virtual SIP_PDU::Methods GetMethod() = 0;
-  virtual SIPSubscribe::EventPackage GetEventPackage() const
-  { return SIPEventPackage(); }
+  SIP_PDU::Methods GetMethod() const { return m_method; }
+  virtual SIPSubscribe::EventPackage GetEventPackage() const { return SIPEventPackage(); }
 
   virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);
@@ -154,13 +153,14 @@ protected:
 
   PSafeList<SIPTransaction>   transactions;
   OpalTransport             * m_transport;
+
+  SIP_PDU::Methods            m_method;
   SIPURL                      m_addressOfRecord;
   SIPURL                      m_remoteAddress;
   PString                     callID;
   int                         expire;
   int                         originalExpire;
   int                         offlineExpire;
-  PString                     body;
   unsigned                    authenticationAttempts;
   State                       m_state;
   queue<State>                m_stateQueue;
@@ -196,12 +196,8 @@ public:
     const SIPRegister::Params & params
   );
 
-  ~SIPRegisterHandler();
-
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  virtual SIP_PDU::Methods GetMethod()
-    { return SIP_PDU::Method_REGISTER; }
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
 
@@ -229,8 +225,6 @@ public:
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
   virtual void OnFailed(const SIP_PDU & response);
-  virtual SIP_PDU::Methods GetMethod ()
-    { return SIP_PDU::Method_SUBSCRIBE; }
   virtual SIPEventPackage GetEventPackage() const
     { return m_parameters.m_eventPackage; }
 
@@ -265,10 +259,10 @@ public:
   ~SIPNotifyHandler();
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
-  virtual SIP_PDU::Methods GetMethod ()
-    { return SIP_PDU::Method_NOTIFY; }
   virtual SIPEventPackage GetEventPackage() const
     { return m_eventPackage; }
+
+  virtual void SetBody(const PString & body) { m_body = body; }
 
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
   virtual bool SendNotify(const PObject * body);
@@ -289,6 +283,7 @@ protected:
   SIPDialogContext         m_dialog;
   Reasons                  m_reason;
   SIPEventPackageHandler * m_packageHandler;
+  PString                  m_body;
 };
 
 
@@ -300,17 +295,16 @@ public:
   SIPPublishHandler(SIPEndPoint & ep, 
                     const SIPSubscribe::Params & params,
                     const PString & body);
-  ~SIPPublishHandler();
+
+  virtual void SetBody(const PString & body) { m_body = body; }
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  virtual SIP_PDU::Methods GetMethod()
-    { return SIP_PDU::Method_PUBLISH; }
-  virtual SIPEventPackage GetEventPackage() const
-    { return m_parameters.m_eventPackage; }
+  virtual SIPEventPackage GetEventPackage() const { return m_parameters.m_eventPackage; }
 
-private:
+protected:
   SIPSubscribe::Params m_parameters;
+  PString              m_body;
   PString              m_sipETag;
 };
 
@@ -319,24 +313,38 @@ class SIPMessageHandler : public SIPHandler
 {
   PCLASSINFO(SIPMessageHandler, SIPHandler);
 public:
-  SIPMessageHandler(SIPEndPoint & ep, 
-                    const SIPMessage::Params & params,
-                    const PString & body);
-  ~SIPMessageHandler();
+  SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);
+
+  virtual void SetBody(const PString & body) { m_parameters.m_body = body; }
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
-  virtual SIP_PDU::Methods GetMethod ()
-    { return SIP_PDU::Method_MESSAGE; }
-  virtual void OnFailed (SIP_PDU::StatusCodes);
-  virtual void SetBody(const PString & b);
-
-  PURL m_localAddress;
-  PString m_id;
-
-private:
-  SIPMessage::Params m_parameters;
+  virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual void OnExpireTimeout(PTimer &, INT);
-  PString m_body;
+
+  const PString & GetLocalAddress() const { return m_parameters.m_localAddress; }
+  const PString & GetIdentifier() const { return m_parameters.m_id; }
+
+protected:
+  SIPMessage::Params m_parameters;
+};
+
+
+class SIPOptionsHandler : public SIPHandler
+{
+  PCLASSINFO(SIPOptionsHandler, SIPHandler);
+public:
+  SIPOptionsHandler(SIPEndPoint & ep, const SIPOptions::Params & params);
+
+  virtual void SetBody(const PString & body) { m_parameters.m_body = body; }
+
+  virtual SIPTransaction * CreateTransaction (OpalTransport &);
+  virtual void OnFailed(SIP_PDU::StatusCodes);
+  virtual void OnFailed(const SIP_PDU & response);
+  virtual void OnExpireTimeout(PTimer &, INT);
+  virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
+
+protected:
+  SIPOptions::Params m_parameters;
 };
 
 
@@ -346,8 +354,6 @@ class SIPPingHandler : public SIPHandler
 public:
   SIPPingHandler(SIPEndPoint & ep, const PURL & to);
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
-  virtual SIP_PDU::Methods GetMethod ()
-    { return SIP_PDU::Method_MESSAGE; }
 };
 
 
