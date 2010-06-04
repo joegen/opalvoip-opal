@@ -1103,7 +1103,14 @@ OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
-  return m_answerFormatList.IsEmpty() ? m_remoteFormatList : m_answerFormatList;
+  if (m_answerFormatList.IsEmpty()) {
+    PTRACE(4, "SIP\tUsing remote media format list");
+    return m_remoteFormatList;
+  }
+  else {
+    PTRACE(4, "SIP\tUsing oferred media format list");
+    return m_answerFormatList;
+  }
 }
 
 
@@ -1961,6 +1968,11 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
     m_answerFormatList = sdpIn->GetMediaFormats();
     m_answerFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+    if (m_answerFormatList.IsEmpty()) {
+      PTRACE(3, "SIP\tAll media formats offered by remote have been removed.");
+      SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+      return;
+    }
   }
   else {
     if (m_holdFromRemote) {
