@@ -960,6 +960,10 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
   unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
   m_answerFormatList = sdp->GetMediaFormats();
   m_answerFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
+  if (m_answerFormatList.IsEmpty()) {
+    PTRACE(3, "SIP\tAll media formats offered by remote have been removed.");
+    return false;
+  }
 
   for (unsigned session = 1; session <= sessionCount; ++session) {
     if (OnSendAnswerSDPSession(*sdp, session, sdpOut))
@@ -1205,7 +1209,14 @@ OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
-  return m_answerFormatList.IsEmpty() ? m_remoteFormatList : m_answerFormatList;
+  if (m_answerFormatList.IsEmpty()) {
+    PTRACE(4, "SIP\tUsing remote media format list");
+    return m_remoteFormatList;
+  }
+  else {
+    PTRACE(4, "SIP\tUsing oferred media format list");
+    return m_answerFormatList;
+  }
 }
 
 
