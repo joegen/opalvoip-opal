@@ -167,7 +167,11 @@ static bool SetDeviceName(const PString & name,
 
 static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PString & recordResult, const char * PTRACE_PARAM(operation))
 {
-  PINDEX prefixLength = remoteParty.Find(':')+1;
+  PINDEX prefixLength = remoteParty.Find(':');
+  if (prefixLength == P_MAX_INDEX)
+    prefixLength = 0;
+  else
+    ++prefixLength;
 
   PString playDevice, recordDevice;
   PINDEX separator = remoteParty.Find('|', prefixLength);
@@ -186,6 +190,7 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
     PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
+  PTRACE(4, "PCSS\tSound player device set to \"" << playDevice << '"');
 
   if (recordDevice.IsEmpty() || recordDevice == "*")
     recordDevice = recordResult;
@@ -193,6 +198,7 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
     PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
+  PTRACE(4, "PCSS\tSound recording device set to \"" << recordDevice << '"');
 
   return true;
 }
