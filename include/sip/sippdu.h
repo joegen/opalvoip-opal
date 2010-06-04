@@ -782,6 +782,7 @@ struct SIPParameters
   PCaselessString m_proxyAddress;
   PCaselessString m_addressOfRecord;
   PCaselessString m_contactAddress;
+  SIPMIMEInfo     m_mime;
   PString         m_authID;
   PString         m_password;
   PString         m_realm;
@@ -1311,6 +1312,9 @@ class SIPOptions : public SIPTransaction
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
+
+  protected:
+    void Construct(const Params & params);
 };
 
 

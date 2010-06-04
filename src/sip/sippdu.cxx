@@ -2523,6 +2523,8 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
 
   if (!params.m_proxyAddress.IsEmpty())
     SetRoute(SIPURL(params.m_proxyAddress));
+
+  m_mime.AddMIME(params.m_mime);
 }
 
 
@@ -3150,8 +3152,6 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          const Params & params)
   : SIPTransaction(Method_REGISTER, ep, trans)
 {
-  SetParameters(params);
-
   InitialiseHeaders(params.m_registrarAddress,
                     params.m_addressOfRecord,
                     params.m_localAddress,
@@ -3160,6 +3160,8 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                     CreateVia(ep, trans));
 
   SetAllow(ep.GetAllowedMethods());
+
+  SetParameters(params);
 }
 
 
@@ -3306,8 +3308,6 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            const Params & params)
   : SIPTransaction(Method_SUBSCRIBE, ep, trans)
 {
-  SetParameters(params);
-
   InitialiseHeaders(dialog, CreateVia(ep, trans));
 
   // I have no idea why this is necessary, but it is the way OpenSIPS works ....
@@ -3335,6 +3335,8 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   m_mime.SetAccept(acceptableContentTypes);
 
   SetAllow(ep.GetAllowedMethods());
+
+  SetParameters(params);
 }
 
 
@@ -3394,8 +3396,6 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                        const PString & body)
   : SIPTransaction(Method_PUBLISH, ep, trans)
 {
-  SetParameters(params);
-
   SIPURL addr = params.m_addressOfRecord;
   InitialiseHeaders(addr, addr, addr, id, ep.GetNextCSeq(), CreateVia(ep, trans));
 
@@ -3419,6 +3419,8 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
       }
     }
   }
+
+  SetParameters(params);
 }
 
 
@@ -3490,8 +3492,6 @@ SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
 
 void SIPMessage::Construct(const Params & params)
 {
-  SetParameters(params);
-
   SIPURL addr(params.m_remoteAddress);
 
   if (!params.m_localAddress.IsEmpty())
@@ -3509,6 +3509,8 @@ void SIPMessage::Construct(const Params & params)
     m_mime.SetContentType(params.m_contentType);
     m_entityBody = params.m_body;
   }
+
+  SetParameters(params);
 }
 
 
@@ -3526,29 +3528,26 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                       const Params & params)
   : SIPTransaction(Method_OPTIONS, ep, trans)
 {
-  SetParameters(params);
-
   // Build the correct From field
   SIPURL remoteAddress = params.m_remoteAddress;
   SIPURL localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
-  SetAllow(ep.GetAllowedMethods());
-  m_mime.SetAccept(params.m_acceptContent);
 
-  if (!params.m_contentType.IsEmpty()) {
-    m_mime.SetContentType(params.m_contentType);
-    m_entityBody = params.m_body;
-  }
+  Construct(params);
 }
 
 
 SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
   : SIPTransaction(Method_OPTIONS, conn)
 {
-  SetParameters(params);
+  Construct(params);
+}
 
+
+void SIPOptions::Construct(const Params & params)
+{
   SetAllow(m_endpoint.GetAllowedMethods());
   m_mime.SetAccept(params.m_acceptContent);
 
@@ -3556,6 +3555,8 @@ SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
     m_mime.SetContentType(params.m_contentType);
     m_entityBody = params.m_body;
   }
+
+  SetParameters(params);
 }
 
 
@@ -3596,8 +3597,6 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                     GenerateCallID(),
                     ep.GetNextCSeq(),
                     CreateVia(ep, trans));
-  m_mime.SetContentType("text/plain;charset=UTF-8");
-
   // PING must not have a body
 }
 
