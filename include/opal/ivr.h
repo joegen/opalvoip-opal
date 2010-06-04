@@ -159,11 +159,6 @@ class OpalIVREndPoint : public OpalLocalEndPoint
       const OpalMediaFormatList & formats
     );
 
-    /** Called when a call needs to start the outgoing VXML.
-        This can be used to do different behaviour
-      */
-    virtual PBoolean StartVXML();
-
     /** Called when VXML ends.
         Gives an opputunity for an application to do somthing when script ends,
         start a new script for instance.
@@ -300,17 +295,18 @@ class OpalIVRConnection : public OpalLocalConnection
 
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
 
-    const PString & GetVXML() const { return m_vxmlToLoad; }
+    const PString & GetVXML() const { return m_vxmlScript; }
 
     PTextToSpeech * GetTextToSpeech() const { return m_vxmlSession.GetTextToSpeech(); }
     PTextToSpeech * SetTextToSpeech(const PString & ttsName) { return m_vxmlSession.SetTextToSpeech(ttsName); }
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false) { return m_vxmlSession.SetTextToSpeech(tts, autoDelete); }
 
   protected:
-    virtual PBoolean StartVXML();
+    virtual bool StartVXML(const PString & vxml);
+    virtual bool StartScript(const PString & script);
 
     OpalIVREndPoint   & endpoint;
-    PString             m_vxmlToLoad;
+    PString             m_vxmlScript;
     OpalMediaFormatList m_vxmlMediaFormats;
     OpalVXMLSession     m_vxmlSession;
 };

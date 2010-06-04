@@ -134,12 +134,6 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
 }
 
 
-PBoolean OpalIVREndPoint::StartVXML()
-{
-  return false;
-}
-
-
 void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & /*connection*/)
 {
 }
@@ -156,7 +150,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I'),
     endpoint(ep),
-    m_vxmlToLoad(vxml),
+    m_vxmlScript(vxml),
     m_vxmlMediaFormats(ep.GetMediaFormats()),
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -179,7 +173,7 @@ OpalIVRConnection::~OpalIVRConnection()
 
 PString OpalIVRConnection::GetLocalPartyURL() const
 {
-  return GetPrefixName() + ':' + m_vxmlToLoad.Left(m_vxmlToLoad.FindOneOf("\r\n"));
+  return GetPrefixName() + ':' + m_vxmlScript.Left(m_vxmlScript.FindOneOf("\r\n"));
 }
 
 
@@ -188,7 +182,7 @@ void OpalIVRConnection::OnEstablished()
   OpalConnection::OnEstablished();
 
   if (!m_vxmlSession.IsLoaded())
-    StartVXML();
+    StartVXML(m_vxmlScript);
 }
 
 
@@ -199,19 +193,20 @@ bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
   if (remoteParty.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
 
-  PString vxml = remoteParty.Mid(prefixLength);
-  if (vxml == "*")
-    vxml = endpoint.GetDefaultVXML();
-  if (vxml.IsEmpty())
-    return false;
-
-  m_vxmlToLoad = vxml;
-  return StartVXML();
+  return StartVXML(remoteParty.Mid(prefixLength));
 }
 
 
-PBoolean OpalIVRConnection::StartVXML()
+PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 {
+  PString vxmlToLoad = vxml;
+
+  if (vxmlToLoad.IsEmpty() || vxmlToLoad == "*") {
+    vxmlToLoad = endpoint.GetDefaultVXML();
+    if (vxmlToLoad.IsEmpty())
+      return false;
+  }
+
   PStringToString & vars = m_vxmlSession.GetSessionVars();
 
   PString originator = m_connStringOptions(OPAL_OPT_ORIGINATOR_ADDRESS);
@@ -224,37 +219,45 @@ PBoolean OpalIVRConnection::StartVXML()
 
   vars.SetAt("Time", PTime().AsString());
 
-  if (m_vxmlToLoad.IsEmpty()) 
-    m_vxmlToLoad = endpoint.GetDefaultVXML();
+  bool ok;
 
-  if (m_vxmlToLoad.IsEmpty())
-    return endpoint.StartVXML();
-
-  PCaselessString vxmlHead = m_vxmlToLoad.LeftTrim().Left(5);
+  PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
   if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
-    PTRACE(4, "IVR\tStartVXML:\n" << m_vxmlToLoad);
-    return m_vxmlSession.LoadVXML(m_vxmlToLoad);
-  }
-
-  PURL vxmlURL(m_vxmlToLoad, NULL);
-  if (vxmlURL.IsEmpty()) {
-    PFilePath vxmlFile = m_vxmlToLoad;
-    if (vxmlFile.GetType() *= ".vxml")
-      return m_vxmlSession.LoadFile(vxmlFile);
+    PTRACE(4, "IVR\tStartVXML:\n" << vxmlToLoad);
+    ok = m_vxmlSession.LoadVXML(vxmlToLoad);
   }
   else {
-    if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
-      return m_vxmlSession.LoadURL(vxmlURL);
+    PURL vxmlURL(vxmlToLoad, NULL);
+    if (vxmlURL.IsEmpty()) {
+      PFilePath vxmlFile = vxmlToLoad;
+      if (vxmlFile.GetType() *= ".vxml")
+        ok = m_vxmlSession.LoadFile(vxmlFile);
+      else
+        ok = StartScript(vxmlToLoad);
+    }
+    else {
+      if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
+        ok = m_vxmlSession.LoadURL(vxmlURL);
+      else
+        ok = StartScript(vxmlToLoad);
+    }
   }
 
-  ////////////////////////////////
+  if (ok)
+    m_vxmlScript = vxmlToLoad;
 
+  return ok;
+}
+
+
+bool OpalIVRConnection::StartScript(const PString & script)
+{
   PINDEX repeat = 1;
   PINDEX delay = 0;
   PString voice;
 
   PINDEX i;
-  PStringArray tokens = m_vxmlToLoad.Tokenise(';', false);
+  PStringArray tokens = script.Tokenise(';', false);
   for (i = 0; i < tokens.GetSize(); ++i) {
     PString str(tokens[i]);
 
@@ -324,6 +327,10 @@ PBoolean OpalIVRConnection::StartVXML()
         msecs = val.AsUnsigned();
       PTRACE(3, "IVR\tSpeaking silence for " << msecs << " msecs");
       m_vxmlSession.PlaySilence(msecs);
+    }
+    else {
+      PTRACE(2, "IVR\tInvalid command in \"" << script << '"');
+      return false;
     }
   }
 
