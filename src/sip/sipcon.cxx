@@ -478,6 +478,11 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return m_referInProgress;
   }
 
+  if (call == &ownerCall) {
+    PTRACE(2, "SIP\tCannot transfer connection to itself: " << *this);
+    return false;
+  }
+
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
     if (sip != NULL) {
