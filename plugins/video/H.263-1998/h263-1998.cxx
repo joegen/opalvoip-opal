@@ -52,6 +52,8 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
+#define __STDC_CONSTANT_MACROS
+
 #include "h263-1998.h"
 #include <limits>
 #include <stdio.h>
