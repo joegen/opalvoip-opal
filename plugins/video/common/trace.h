@@ -34,6 +34,8 @@
 
 #define TRACING 1
 
+#define __STDC_CONSTANT_MACROS
+
 #include <iostream>
 #include <iomanip>
 using namespace std;
