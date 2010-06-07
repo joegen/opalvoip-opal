@@ -176,8 +176,29 @@ PBoolean H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability 
   const H245_DataApplicationCapability_application_t38fax & fax = cap.m_application;
   const H245_DataProtocolCapability & proto = fax.m_t38FaxProtocol;
 
-  if (proto.GetTag() == H245_DataProtocolCapability::e_udp)
+  if (proto.GetTag() == H245_DataProtocolCapability::e_udp) {
     mode = e_UDP;
+
+    OpalMediaFormat & fmt = GetWritableMediaFormat();
+    fmt.SetOptionEnum("T38FaxRateManagement",
+              fax.m_t38FaxProfile.HasOptionalField(H245_T38FaxProfile::e_t38FaxRateManagement)
+                                    ? fax.m_t38FaxProfile.m_t38FaxRateManagement.GetTag() : 1);
+
+    if (fax.m_t38FaxProfile.HasOptionalField(H245_T38FaxProfile::e_t38FaxUdpOptions)) {
+      fmt.SetOptionInteger("T38FaxMaxBuffer",
+              fax.m_t38FaxProfile.m_t38FaxUdpOptions.HasOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxBuffer)
+                                              ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer : 200);
+      fmt.SetOptionInteger("T38FaxMaxDatagram",
+              fax.m_t38FaxProfile.m_t38FaxUdpOptions.HasOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxDatagram)
+                                               ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram : 72);
+      fmt.SetOptionEnum("T38FaxUdpEC", fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxUdpEC.GetTag());
+    }
+    else {
+      fmt.SetOptionInteger("T38FaxMaxBuffer", 200);
+      fmt.SetOptionInteger("T38FaxMaxDatagram", 72);
+      fmt.SetOptionEnum("T38FaxUdpEC", 0);
+    }
+  }
   else {
     const H245_T38FaxProfile & profile = fax.m_t38FaxProfile;
     if (profile.m_t38FaxTcpOptions.m_t38TCPBidirectionalMode)
