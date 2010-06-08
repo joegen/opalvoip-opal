@@ -187,10 +187,10 @@ PBoolean H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability 
     if (fax.m_t38FaxProfile.HasOptionalField(H245_T38FaxProfile::e_t38FaxUdpOptions)) {
       fmt.SetOptionInteger("T38FaxMaxBuffer",
               fax.m_t38FaxProfile.m_t38FaxUdpOptions.HasOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxBuffer)
-                                              ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer : 200);
+                                   ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxBuffer.GetValue() : 200);
       fmt.SetOptionInteger("T38FaxMaxDatagram",
               fax.m_t38FaxProfile.m_t38FaxUdpOptions.HasOptionalField(H245_T38FaxUdpOptions::e_t38FaxMaxDatagram)
-                                               ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram : 72);
+                                    ? fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxMaxDatagram.GetValue() : 72);
       fmt.SetOptionEnum("T38FaxUdpEC", fax.m_t38FaxProfile.m_t38FaxUdpOptions.m_t38FaxUdpEC.GetTag());
     }
     else {
