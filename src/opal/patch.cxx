@@ -264,6 +264,8 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 
   PTRACE(3, "Patch\tRemoving media stream sink " << *stream);
 
+  bool closeSource = false;
+
   inUse.StartWrite();
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
@@ -274,10 +276,16 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
     }
   }
 
-  if (m_bypassFromPatch != NULL && sinks.IsEmpty())
-    m_bypassFromPatch->SetBypassPatch(NULL);
+  if (sinks.IsEmpty()) {
+    closeSource = true;
+    if (m_bypassFromPatch != NULL)
+      m_bypassFromPatch->SetBypassPatch(NULL);
+  }
 
   inUse.EndWrite();
+
+  if (closeSource)
+    source.Close();
 }
 
 
