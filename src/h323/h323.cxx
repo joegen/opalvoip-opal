@@ -1406,7 +1406,6 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (connectionState == ShuttingDownConnection)
     return PFalse;
   connectionState = HasExecutedSignalConnect;
-  OnConnectedInternal();
 
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_connect)
     return PFalse;
@@ -1462,8 +1461,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
       channel->Start();
   }
 
-
-  InternalEstablishedConnectionCheck();
+  OnConnectedInternal();
 
   /* do not start h245 negotiation if it is disabled */
   if (endpoint.IsH245Disabled()){
