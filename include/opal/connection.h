@@ -391,9 +391,11 @@ class OpalConnection : public PSafeObject
       ) : code(reason), q931(cause) { }
       explicit CallEndReason(
         long reason
-      ) : code((CallEndReasonCodes)reason), q931(0) { }
+      ) : code((CallEndReasonCodes)(reason&0xff)), q931((reason>>8)&0xff) { }
 
-      operator CallEndReasonCodes() const { return code; }
+      __inline operator CallEndReasonCodes() const { return code; }
+
+      __inline int AsInteger() const { return code|(q931<<8); }
 
       CallEndReasonCodes code:8; // Normalised OPAL code
       unsigned           q931:8; // PSTN Interworking code, actually Q.850
