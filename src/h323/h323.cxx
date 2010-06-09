@@ -3822,10 +3822,22 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
 {
   if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
-    PTRACE(2, "OpalCon\tNested call to SwitchFaxMediaStreams on " << *this);
+    PTRACE(2, "H323\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
+  if (enableFax && remoteCapabilities.FindCapability(OpalT38) == NULL) {
+    PTRACE(3, "H323\tRemote does not have T.38 capabilities on " << *this);
+    return false;
+  }
+
+  if (enableFax ? (GetMediaStream(H323Capability::DefaultDataSessionID, true) != NULL)
+                : (GetMediaStream(H323Capability::DefaultAudioSessionID, true) != NULL)) {
+    PTRACE(3, "H323\tAlready switched media streams to " << (enableFax ? "fax" : "audio") << " on " << *this);
+    return false;
+  }
+
+  PTRACE(3, "H323\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
   if (!RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw))
     return false;
 
