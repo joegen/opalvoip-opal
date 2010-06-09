@@ -4692,6 +4692,9 @@ PBoolean H323Connection::SendUserInputIndicationTone(char tone,
          << logicalChannel << ','
          << rtpTimestamp << ')');
 
+  if (strchr("0123456789#*ABCD!", tone) == NULL)
+    return false;
+
   H323ControlPDU pdu;
   pdu.BuildUserInputIndication(tone, duration, logicalChannel, rtpTimestamp);
   return WriteControlPDU(pdu);
