@@ -5415,6 +5415,8 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
 
 void CallDialog::OnOK(wxCommandEvent &)
 {
+  TransferDataFromWindow();
+
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentCallsGroup);
   config->SetPath(RecentCallsGroup);
