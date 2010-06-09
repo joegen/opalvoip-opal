@@ -1279,9 +1279,14 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   // Open other direction, if needed (must be after above open)
   if (makesymmetrical) {
     m_symmetricOpenStream = true;
-    bool ok = GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
-                                                          mediaFormat.GetMediaType(), sessionID, mediaFormat);
+
+    PSafePtr<OpalConnection> otherConnection = isSource ? GetCall().GetOtherPartyConnection(*this) : this;
+    bool ok = false;
+    if (otherConnection != NULL)
+      ok = GetCall().OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), sessionID, mediaFormat);
+
     m_symmetricOpenStream = false;
+
     if (!ok) {
       newStream->Close();
       return NULL;
