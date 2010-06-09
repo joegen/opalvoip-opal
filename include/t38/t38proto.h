@@ -276,7 +276,6 @@ class OpalFaxConnection : public OpalConnection
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSendCNGCED);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
-    PDECLARE_NOTIFIER(PThread, OpalFaxConnection, ReleaseConnection);
 
 
     OpalFaxEndPoint & m_endpoint;
@@ -288,7 +287,11 @@ class OpalFaxConnection : public OpalConnection
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 
-    bool     m_awaitingSwitchToT38;
+    enum {
+      e_AwaitingSwitchToT38,
+      e_SwitchingToT38,
+      e_CompletedSwitch
+    } m_state;
     PTimer   m_faxTimer;
 
   friend class OpalFaxMediaStream;
