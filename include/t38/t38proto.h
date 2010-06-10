@@ -53,6 +53,9 @@ class PASN_OctetString;
 class OpalFaxConnection;
 
 
+#define OPAL_FAX_TIFF_FILE "TIFF-File"
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 class OpalFaxConnection;
@@ -87,23 +90,14 @@ class OpalFaxEndPoint : public OpalEndPoint
     ~OpalFaxEndPoint();
   //@}
 
+  /**@name Overrides from OpalEndPoint */
+  //@{
     virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
       unsigned int options = 0,     ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions = NULL  ///< Options to pass to connection
-    );
-
-    /**Create a connection for the fax endpoint.
-      */
-    virtual OpalFaxConnection * CreateConnection(
-      OpalCall & call,          ///< Owner of connection
-      void * userData,          ///<  Arbitrary data to pass to connection
-      OpalConnection::StringOptions * stringOptions, ///< Options to pass to connection
-      const PString & filename, ///< filename to send/receive
-      bool receiving,           ///< Flag for receiving/sending fax
-      bool disableT38           ///< Flag to disable use of T.38
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -115,11 +109,28 @@ class OpalFaxEndPoint : public OpalEndPoint
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-  /**@name User Interface operations */
     /**Accept the incoming connection.
       */
     virtual void AcceptIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
+    );
+  //@}
+
+  /**@name Fax specific operations */
+  //@{
+    /**Determine if the fax plug in is available, that is fax system can be used.
+      */
+    virtual bool IsAvailable() const;
+
+    /**Create a connection for the fax endpoint.
+      */
+    virtual OpalFaxConnection * CreateConnection(
+      OpalCall & call,          ///< Owner of connection
+      void * userData,          ///<  Arbitrary data to pass to connection
+      OpalConnection::StringOptions * stringOptions, ///< Options to pass to connection
+      const PString & filename, ///< filename to send/receive
+      bool receiving,           ///< Flag for receiving/sending fax
+      bool disableT38           ///< Flag to disable use of T.38
     );
 
     /**Fax transmission/receipt completed.
@@ -286,6 +297,9 @@ class OpalFaxConnection : public OpalConnection
     PTimeInterval     m_releaseTimeout;
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
+#if OPAL_STATISTICS
+    OpalMediaStatistics m_finalStatistics;
+#endif
 
     enum {
       e_AwaitingSwitchToT38,
