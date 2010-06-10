@@ -55,6 +55,7 @@ void FaxOPAL::Main()
 
   args.Parse("a-audio."
              "d-directory:"
+             "F-no-fast."
              "g-gk-host:"
              "G-gk-id:"
              "h-help."
@@ -99,6 +100,7 @@ void FaxOPAL::Main()
             "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
             "  -g or --gk-host host    : H.323 gatekeeper host.\n"
             "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
+            "  -F or --no-fast         : H.323 fast connect disabled.\n"
 #endif
             "  -L or --lines devices   : Set Line Interface Devices.\n"
             "  -N or --stun server     : Set NAT traversal STUN server.\n"
@@ -127,6 +129,10 @@ void FaxOPAL::Main()
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
 
+  if (!fax->IsAvailable()) {
+    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
+    return;
+  }
 
   PCaselessString interfaces;
 
@@ -190,6 +196,8 @@ void FaxOPAL::Main()
       return;
     }
 
+    h323->DisableFastStart(args.HasOption('F'));
+
     if (args.HasOption('g') || args.HasOption('G')) {
       if (!h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'))) {
         cerr << "Could not complete gatekeeper registration" << endl;
@@ -239,8 +247,17 @@ void FaxOPAL::Main()
 }
 
 
-void MyManager::OnClearedCall(OpalCall & /*call*/)
+void MyManager::OnClearedCall(OpalCall & call)
 {
+  switch (call.GetCallEndReason()) {
+    case OpalConnection::EndedByLocalUser :
+    case OpalConnection::EndedByRemoteUser :
+      break;
+
+    default :
+      cout << "call error " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
+  }
+
   m_completed.Signal();
 }
 
@@ -259,25 +276,25 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
-      cout << " failed to establish ";
+      cout << "failed to establish T.30";
       break;
     case 0 :
-      cout << " successful "
+      cout << "success, "
            << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
-           << " of " << stats.m_fax.m_totalPages << ' ';
+           << " of " << stats.m_fax.m_totalPages << " pages";
       break;
     case 41 :
-      cout << " failed to open TIFF file ";
+      cout << "failed to open TIFF file";
       break;
     case 42 :
     case 43 :
     case 44 :
     case 45 :
     case 46 :
-      cout << " illegal TIFF file ";
+      cout << "illegal TIFF file";
       break;
     default :
-      cout << " T.30 error " << stats.m_fax.m_result << ' ';
+      cout << " T.30 error " << stats.m_fax.m_result;
   }
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
 }
