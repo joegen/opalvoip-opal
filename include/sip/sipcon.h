@@ -579,7 +579,7 @@ class SIPConnection : public OpalRTPConnection
     virtual OpalMediaSession * SetUpMediaSession(
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
-      SDPMediaDescription * mediaDescription,
+      const SDPMediaDescription & mediaDescription,
       OpalTransportAddress & localAddress,
       bool & remoteChanged
     );
