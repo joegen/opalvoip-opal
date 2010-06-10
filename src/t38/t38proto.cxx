@@ -763,7 +763,8 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
   if (source.GetMediaFormat() == m_tiffFileFormat) {
     m_faxTimer.Stop();
 
-    PTRACE(4, "T38\tStopped fax media stream for " << m_tiffFileFormat);
+    PTRACE(4, "T38\tStopped fax media stream for " << m_tiffFileFormat
+           << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
@@ -897,7 +898,8 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
 {
   if (LockReadWrite()) {
     m_state = e_SwitchingToT38;
-    SwitchFaxMediaStreams(true);
+    if (!SwitchFaxMediaStreams(true))
+      m_state = e_CompletedSwitch; // Couldn't, don't try again.
     UnlockReadWrite();
   }
 }
