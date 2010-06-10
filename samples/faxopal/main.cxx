@@ -69,6 +69,7 @@ void FaxOPAL::Main()
              "P-proxy:"
              "r-register:"
              "S-sip:"
+             "T-timeout:"
              "u-user:"
 #if PTRACING
              "o-output:"             "-no-output."
@@ -89,6 +90,7 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -a or --audio           : Send fax as G.711 audio\n"
+            "  -T or --timeout n       : Set timeout to wait for incoming fax in seconds\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
 #if OPAL_SIP
@@ -242,7 +244,8 @@ void FaxOPAL::Main()
   }
 
   // Wait for call to come in and finish
-  m_manager->m_completed.Wait();
+  if (!m_manager->m_completed.Wait(args.GetOptionString('T', "1:0:0:0.0"))) // One day
+    cout << "no call";
   cout << " ... completed.";
 }
 
