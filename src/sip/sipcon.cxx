@@ -583,19 +583,19 @@ PBoolean SIPConnection::SetConnected()
 
 OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
                                                     const OpalMediaType & mediaType,
-                                                    SDPMediaDescription * mediaDescription,
+                                                    const SDPMediaDescription & mediaDescription,
                                                     OpalTransportAddress & localAddress,
                                                     bool & remoteChanged)
 {
-  if (mediaDescription->GetPort() == 0) {
+  if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "SIP\tReceived disabled/missing media description for " << mediaType);
     return false;
   }
 
-  OpalTransportAddress remoteMediaAddress = mediaDescription->GetTransportAddress();
+  OpalTransportAddress remoteMediaAddress = mediaDescription.GetTransportAddress();
   if (remoteMediaAddress.IsEmpty()) {
     PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
-    return false;
+    remoteChanged = true;
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
@@ -629,7 +629,8 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
       m_rtpSessions.AddMediaSession(mediaSession, mediaType);
     }
 
-    mediaSession->SetRemoteMediaAddress(remoteMediaAddress, mediaDescription->GetMediaFormats());
+    if (!remoteMediaAddress.IsEmpty())
+      mediaSession->SetRemoteMediaAddress(remoteMediaAddress, mediaDescription.GetMediaFormats());
     localAddress = mediaSession->GetLocalMediaAddress();
     return mediaSession;
   }
@@ -927,7 +928,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     }
   }
 
-  PTRACE(4, "SIP\tINVITE change needs to close stream " << *stream);
+  PTRACE(4, "SIP\tRe-INVITE needs to close stream " << *stream);
   stream->GetPatch()->GetSource().Close();
   stream.SetNULL();
   return false;
@@ -957,6 +958,23 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     // They did not offer anything, so it behooves us to do so: RFC 3261, para 14.2
     PTRACE(3, "SIP\tRemote did not offer media, so we will.");
     return OnSendOfferSDP(rtpSessions, sdpOut);
+  }
+
+  // The Re-INVITE can be sent to change the RTP Session parameters,
+  // the current codecs, or to put the call on hold
+  if (sdp->IsHold()) {
+    PTRACE(3, "SIP\tRemote hold detected");
+    m_holdFromRemote = true;
+    OnHold(true, true);
+  }
+  else {
+    // If we receive a consecutive reinvite without the SendOnly
+    // parameter, then we are not on hold anymore
+    if (m_holdFromRemote) {
+      PTRACE(3, "SIP\tRemote retrieve from hold detected");
+      m_holdFromRemote = false;
+      OnHold(true, false);
+    }
   }
 
   bool sdpOK = false;
@@ -1000,27 +1018,7 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
       stream->Close();
   }
 
-  if (!sdpOK)
-    return false;
-
-  // The Re-INVITE can be sent to change the RTP Session parameters,
-  // the current codecs, or to put the call on hold
-  if (sdp->IsHold()) {
-    PTRACE(3, "SIP\tRemote hold detected");
-    m_holdFromRemote = true;
-    OnHold(true, true);
-  }
-  else {
-    // If we receive a consecutive reinvite without the SendOnly
-    // parameter, then we are not on hold anymore
-    if (m_holdFromRemote) {
-      PTRACE(3, "SIP\tRemote retrieve from hold detected");
-      m_holdFromRemote = false;
-      OnHold(true, false);
-    }
-  }
-
-  return true;
+  return sdpOK;
 }
 
 
@@ -1043,7 +1041,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   OpalTransportAddress localAddress;
   bool remoteChanged = false;
-  OpalMediaSession * mediaSession = SetUpMediaSession(rtpSessionId, mediaType, incomingMedia, localAddress, remoteChanged);
+  OpalMediaSession * mediaSession = SetUpMediaSession(rtpSessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
   if (mediaSession == NULL)
     return false;
 
@@ -1105,42 +1103,44 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
      OpenSourceMediaStreams will just return true if they are already open.
      We open tx (other party source) side first so we follow the remote
      endpoints preferences. */
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-  if (otherParty != NULL && sendStream == NULL) {
-    PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
-    if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId)) {
-      sendStream = GetMediaStream(rtpSessionId, false);
+  if (!incomingMedia->GetTransportAddress().IsEmpty()) {
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+    if (otherParty != NULL && sendStream == NULL) {
+      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
+      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId)) {
+        sendStream = GetMediaStream(rtpSessionId, false);
 
-      if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
-        newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
-                                                                     : SDPMediaDescription::SendOnly;
+        if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
+          newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
+                                                                       : SDPMediaDescription::SendOnly;
+      }
     }
-  }
 
-  if (sendStream != NULL) {
-    sendStream->UpdateMediaFormat(*sdpFormats.FindFormat(sendStream->GetMediaFormat()));
-    sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
-  }
-
-  if (recvStream == NULL) {
-    PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
-    if (ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId)) {
-      recvStream = GetMediaStream(rtpSessionId, true);
-      if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-        newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
-                                                                     : SDPMediaDescription::RecvOnly;
+    if (sendStream != NULL) {
+      sendStream->UpdateMediaFormat(*sdpFormats.FindFormat(sendStream->GetMediaFormat()));
+      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
     }
-  }
 
-  if (recvStream != NULL) {
-    OpalMediaFormat adjustedMediaFormat = *sdpFormats.FindFormat(recvStream->GetMediaFormat());
+    if (recvStream == NULL) {
+      PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
+      if (ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId)) {
+        recvStream = GetMediaStream(rtpSessionId, true);
+        if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+          newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
+                                                                       : SDPMediaDescription::RecvOnly;
+      }
+    }
 
-    // If we are sendrecv we will receive the same payload type as we transmit.
-    if (newDirection == SDPMediaDescription::SendRecv)
-      adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
+    if (recvStream != NULL) {
+      OpalMediaFormat adjustedMediaFormat = *sdpFormats.FindFormat(recvStream->GetMediaFormat());
 
-    recvStream->UpdateMediaFormat(adjustedMediaFormat);
-    recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+      // If we are sendrecv we will receive the same payload type as we transmit.
+      if (newDirection == SDPMediaDescription::SendRecv)
+        adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
+
+      recvStream->UpdateMediaFormat(adjustedMediaFormat);
+      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+    }
   }
 
   // Now we build the reply, setting "direction" as appropriate for what we opened.
@@ -1219,7 +1219,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
     return m_remoteFormatList;
   }
   else {
-    PTRACE(4, "SIP\tUsing oferred media format list");
+    PTRACE(4, "SIP\tUsing offered media format list");
     return m_answerFormatList;
   }
 }
@@ -2691,7 +2691,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // Set up the media session, e.g. RTP
   bool remoteChanged = false;
   OpalTransportAddress localAddress;
-  if (SetUpMediaSession(rtpSessionId, mediaType, mediaDescription, localAddress, remoteChanged) == NULL)
+  if (SetUpMediaSession(rtpSessionId, mediaType, *mediaDescription, localAddress, remoteChanged) == NULL)
     return false;
 
   SDPMediaDescription::Direction otherSidesDir = sdp.GetDirection(rtpSessionId);
