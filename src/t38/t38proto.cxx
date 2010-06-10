@@ -52,7 +52,7 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC)
 #define new PNEW
 
 
-static const char TIFF_File_FormatName[] = "TIFF-File";
+static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -70,8 +70,20 @@ class OpalFaxMediaStream : public OpalNullMediaStream
       m_isAudio = true; // Even though we are not REALLY audio, act like we are
     }
 
+    bool Close()
+    {
+      if (isOpen && m_connection.m_state == OpalFaxConnection::e_CompletedSwitch) {
+        if (mediaPatch != NULL)
+          mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
+        GetStatistics(m_connection.m_finalStatistics);
+        PTRACE(4, "T38\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
+      }
+
+      return OpalNullMediaStream::Close();
+    }
+
   private:
-    OpalFaxConnection      & m_connection;
+    OpalFaxConnection & m_connection;
 };
 
 
@@ -524,6 +536,12 @@ PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
 }
 
 
+bool OpalFaxEndPoint::IsAvailable() const
+{
+  return OpalMediaFormat(OPAL_FAX_TIFF_FILE).IsValid();
+}
+
+
 OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call,
                                                       void * /*userData*/,
                                                       OpalConnection::StringOptions * stringOptions,
@@ -745,17 +763,13 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
   if (source.GetMediaFormat() == m_tiffFileFormat) {
     m_faxTimer.Stop();
 
-    // Look for other sink, not the one from this patch
-    OpalMediaStreamPtr sink = GetMediaStream(source.GetID(), !source.IsSource());
-    if (sink != NULL)
-      sink->ExecuteCommand(OpalFaxTerminate());
-    else
-      source.ExecuteCommand(OpalFaxTerminate());
+    PTRACE(4, "T38\tStopped fax media stream for " << m_tiffFileFormat);
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
       synchronousOnRelease = false;
-      OnFaxCompleted(false);
+      GetStatistics(m_finalStatistics);
+      OnFaxCompleted(m_finalStatistics.m_fax.m_result != 0);
     }
   }
 
@@ -800,17 +814,26 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 
 void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 {
+  if (m_finalStatistics.m_fax.m_result >= 0) {
+    statistics = m_finalStatistics;
+    return;
+  }
+
   OpalMediaStreamPtr stream;
   if ((stream = GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
       (stream = GetMediaStream(OpalMediaType::Fax(), true )) == NULL) {
 
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-    if (other == NULL)
+    if (other == NULL) {
+      PTRACE(2, "T38\tNo connection to get statistics.");
       return;
+    }
 
     if ((stream = other->GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
-        (stream = other->GetMediaStream(OpalMediaType::Fax(), true )) == NULL)
+        (stream = other->GetMediaStream(OpalMediaType::Fax(), true )) == NULL) {
+      PTRACE(2, "T38\tNo stream to get statistics.");
       return;
+    }
   }
 
   stream->GetStatistics(statistics);
