@@ -244,8 +244,13 @@ void FaxOPAL::Main()
   }
 
   // Wait for call to come in and finish
-  if (!m_manager->m_completed.Wait(args.GetOptionString('T', "1:0:0:0.0"))) // One day
-    cout << "no call";
+  if (args.HasOption('T')) {
+    if (!m_manager->m_completed.Wait(args.GetOptionString('T')))
+      cout << "no call";
+  }
+  else
+    m_manager->m_completed.Wait();
+
   cout << " ... completed.";
 }
 
