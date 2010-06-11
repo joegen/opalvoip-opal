@@ -47,6 +47,7 @@
 #include <h323/h323pdu.h>
 #include <h323/transaddr.h>
 #include <t38/h323t38.h>
+#include <codec/opalplugin.h>
 
 
 #define DEFINE_G711_CAPABILITY(cls, code, capName) \
@@ -1472,6 +1473,13 @@ PObject * H323H239VideoCapability::Clone() const
 }
 
 
+void H323H239VideoCapability::PrintOn(ostream & strm) const
+{
+  strm << GetMediaFormat() << '+';
+  H323ExtendedVideoCapability::PrintOn(strm);
+}
+
+
 PString H323H239VideoCapability::GetFormatName() const
 {
   static class H239VideoMediaFormat : public OpalMediaFormat { 
@@ -1984,6 +1992,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
    *  e_h263VideoCapability.
    */
   mediaPacketizations += "RFC2190";  // Always supported
+  mediaPacketizations += OpalPluginCodec_Identifer_H264_Aligned; // Always supported
   const H245_MultiplexCapability * muxCap = NULL;
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
     muxCap = &pdu.m_multiplexCapability;
