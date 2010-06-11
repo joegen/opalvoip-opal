@@ -1155,6 +1155,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
                           otherStream->IsOpen() &&
                           otherStream->GetMediaFormat() != mediaFormat;
   if (makesymmetrical) {
+    m_symmetricOpenStream = true;
     // We must make sure reverse stream is closed before opening the
     // new forward one or can really confuse the RTP stack, especially
     // if switching to udptl in fax mode
@@ -1165,6 +1166,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
     else
       otherStream->Close();
+    m_symmetricOpenStream = false;
   }
 
   OpalMediaStreamPtr oldStream = GetMediaStream(sessionID, isSource);
@@ -1195,8 +1197,12 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
 bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 {
-  // Use non-McCarthy boolean
-  return OpalConnection::CloseMediaStream(stream) & SendReINVITE(PTRACE_PARAM("close channel"));
+  bool closed = OpalConnection::CloseMediaStream(stream);
+
+  if (!m_symmetricOpenStream && !m_handlingINVITE)
+    closed = SendReINVITE(PTRACE_PARAM("close channel")) && closed;
+
+  return closed;
 }
 
 
