@@ -1489,6 +1489,10 @@ class H323H239VideoCapability : public H323ExtendedVideoCapability
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
+
+    /**Print name of capability.
+      */
+    void PrintOn(ostream & strm) const;
   //@}
 
   /**@name Identification functions */
