@@ -3122,6 +3122,8 @@ bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_Gener
 
 bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned bitRate)
 {
+  PTRACE(3, "H239\tOnH239FlowControlRequest(" << logicalChannel << ',' << bitRate << ") - sending acknowledge");
+
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per Table 11 of H.239 ITU spec
@@ -3131,14 +3133,18 @@ bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned 
 }
 
 
-bool H323Connection::OnH239FlowControlResponse(unsigned /*logicalChannel*/, bool /*rejected*/)
+bool H323Connection::OnH239FlowControlResponse(unsigned PTRACE_PARAM(logicalChannel), bool PTRACE_PARAM(rejected))
 {
+  PTRACE(3, "H239\tOnH239FlowControlResponse(" << logicalChannel << ',' << rejected << ')');
+
   return true;
 }
 
 
 bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned symmetryBreaking, unsigned terminalLabel)
 {
+  PTRACE(3, "H239\tOnH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ") - sending acknowledge");
+
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per 
@@ -3154,6 +3160,8 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
 
 bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigned terminalLabel, bool rejected)
 {
+  PTRACE(3, "H239\tOnH239PresentationResponse(" << logicalChannel << ',' << terminalLabel << ',' << rejected << ')');
+
   if (rejected)
     return true;
 
@@ -3166,14 +3174,16 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
 }
 
 
-bool H323Connection::OnH239PresentationRelease(unsigned /*logicalChannel*/, unsigned /*terminalLabel*/)
+bool H323Connection::OnH239PresentationRelease(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
+  PTRACE(3, "H239\tOnH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
   return true;
 }
 
 
-bool H323Connection::OnH239PresentationIndication(unsigned /*logicalChannel*/, unsigned /*terminalLabel*/)
+bool H323Connection::OnH239PresentationIndication(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
+  PTRACE(3, "H239\tOnH239PresentationIndication(" << logicalChannel << ',' << terminalLabel << ')');
   return true;
 }
 #endif
@@ -3636,7 +3646,8 @@ void H323Connection::OnSetLocalCapabilities()
 
   simultaneous = P_MAX_INDEX;
   for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-    if (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption()) != 0) {
+    if (localCapabilities.FindCapability(format->GetName()) != NULL &&
+        format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption()) != 0) {
       H323H239VideoCapability * newCap = new H323H239VideoCapability(*format);
       if (localCapabilities.FindCapability(*newCap) == NULL)
         simultaneous = localCapabilities.SetCapability(0, simultaneous, newCap);
