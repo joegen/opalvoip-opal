@@ -1030,7 +1030,7 @@ H501_DescriptorIDRequest::H501_DescriptorIDRequest(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H501_DescriptorIDRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1128,7 +1128,7 @@ H501_DescriptorUpdateAck::H501_DescriptorUpdateAck(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H501_DescriptorUpdateAck::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1235,7 +1235,7 @@ H501_UsageConfirmation::H501_UsageConfirmation(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_UsageConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1290,7 +1290,7 @@ H501_UsageField::H501_UsageField(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H501_UsageField::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+5) << "id = " << setprecision(indent) << m_id << '\n';
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
@@ -1416,7 +1416,7 @@ H501_UsageIndicationConfirmation::H501_UsageIndicationConfirmation(unsigned tag,
 #ifndef PASN_NOPRINTON
 void H501_UsageIndicationConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1559,7 +1559,7 @@ H501_NonStandardRequest::H501_NonStandardRequest(unsigned tag, PASN_Object::TagC
 #ifndef PASN_NOPRINTON
 void H501_NonStandardRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1614,7 +1614,7 @@ H501_NonStandardConfirmation::H501_NonStandardConfirmation(unsigned tag, PASN_Ob
 #ifndef PASN_NOPRINTON
 void H501_NonStandardConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -1805,7 +1805,7 @@ H501_AuthenticationConfirmation::H501_AuthenticationConfirmation(unsigned tag, P
 #ifndef PASN_NOPRINTON
 void H501_AuthenticationConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
@@ -2116,7 +2116,7 @@ H501_CallInformation::H501_CallInformation(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_CallInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "callIdentifier = " << setprecision(indent) << m_callIdentifier << '\n';
   strm << setw(indent+15) << "conferenceID = " << setprecision(indent) << m_conferenceID << '\n';
@@ -2348,7 +2348,7 @@ H501_TerminationCause::H501_TerminationCause(unsigned tag, PASN_Object::TagClass
 #ifndef PASN_NOPRINTON
 void H501_TerminationCause::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+24) << "releaseCompleteReason = " << setprecision(indent) << m_releaseCompleteReason << '\n';
   if (HasOptionalField(e_causeIE))
@@ -3231,7 +3231,7 @@ H501_Pattern_range::H501_Pattern_range(unsigned tag, PASN_Object::TagClass tagCl
 #ifndef PASN_NOPRINTON
 void H501_Pattern_range::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "startOfRange = " << setprecision(indent) << m_startOfRange << '\n';
   strm << setw(indent+13) << "endOfRange = " << setprecision(indent) << m_endOfRange << '\n';
@@ -3549,7 +3549,7 @@ H501_UsageSpecification_when::H501_UsageSpecification_when(unsigned tag, PASN_Ob
 #ifndef PASN_NOPRINTON
 void H501_UsageSpecification_when::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_never))
     strm << setw(indent+8) << "never = " << setprecision(indent) << m_never << '\n';
@@ -3702,7 +3702,7 @@ H501_MessageCommonInfo::H501_MessageCommonInfo(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_MessageCommonInfo::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "sequenceNumber = " << setprecision(indent) << m_sequenceNumber << '\n';
   strm << setw(indent+16) << "annexGversion = " << setprecision(indent) << m_annexGversion << '\n';
@@ -3862,7 +3862,7 @@ H501_SecurityMode::H501_SecurityMode(unsigned tag, PASN_Object::TagClass tagClas
 #ifndef PASN_NOPRINTON
 void H501_SecurityMode::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_authentication))
     strm << setw(indent+17) << "authentication = " << setprecision(indent) << m_authentication << '\n';
@@ -3961,7 +3961,7 @@ H501_DescriptorRequest::H501_DescriptorRequest(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_DescriptorRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "descriptorID = " << setprecision(indent) << m_descriptorID << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4037,7 +4037,7 @@ H501_DescriptorConfirmation::H501_DescriptorConfirmation(unsigned tag, PASN_Obje
 #ifndef PASN_NOPRINTON
 void H501_DescriptorConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+13) << "descriptor = " << setprecision(indent) << m_descriptor << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4113,7 +4113,7 @@ H501_DescriptorRejection::H501_DescriptorRejection(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H501_DescriptorRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_descriptorID))
@@ -4199,7 +4199,7 @@ H501_DescriptorIDConfirmation::H501_DescriptorIDConfirmation(unsigned tag, PASN_
 #ifndef PASN_NOPRINTON
 void H501_DescriptorIDConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "descriptorInfo = " << setprecision(indent) << m_descriptorInfo << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4275,7 +4275,7 @@ H501_DescriptorIDRejection::H501_DescriptorIDRejection(unsigned tag, PASN_Object
 #ifndef PASN_NOPRINTON
 void H501_DescriptorIDRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4351,7 +4351,7 @@ H501_DescriptorUpdate::H501_DescriptorUpdate(unsigned tag, PASN_Object::TagClass
 #ifndef PASN_NOPRINTON
 void H501_DescriptorUpdate::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "sender = " << setprecision(indent) << m_sender << '\n';
   strm << setw(indent+13) << "updateInfo = " << setprecision(indent) << m_updateInfo << '\n';
@@ -4434,7 +4434,7 @@ H501_UpdateInformation::H501_UpdateInformation(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_UpdateInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "descriptorInfo = " << setprecision(indent) << m_descriptorInfo << '\n';
   strm << setw(indent+13) << "updateType = " << setprecision(indent) << m_updateType << '\n';
@@ -4517,7 +4517,7 @@ H501_AccessConfirmation::H501_AccessConfirmation(unsigned tag, PASN_Object::TagC
 #ifndef PASN_NOPRINTON
 void H501_AccessConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "templates = " << setprecision(indent) << m_templates << '\n';
   strm << setw(indent+18) << "partialResponse = " << setprecision(indent) << m_partialResponse << '\n';
@@ -4610,7 +4610,7 @@ H501_AccessRejection::H501_AccessRejection(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_AccessRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_serviceControl))
@@ -4691,7 +4691,7 @@ H501_UsageRejection::H501_UsageRejection(unsigned tag, PASN_Object::TagClass tag
 #ifndef PASN_NOPRINTON
 void H501_UsageRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4767,7 +4767,7 @@ H501_UsageIndicationRejection::H501_UsageIndicationRejection(unsigned tag, PASN_
 #ifndef PASN_NOPRINTON
 void H501_UsageIndicationRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4843,7 +4843,7 @@ H501_ValidationRejection::H501_ValidationRejection(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H501_ValidationRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -4920,7 +4920,7 @@ H501_RequestInProgress::H501_RequestInProgress(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_RequestInProgress::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+8) << "delay = " << setprecision(indent) << m_delay << '\n';
   if (HasOptionalField(e_serviceControl))
@@ -5001,7 +5001,7 @@ H501_NonStandardRejection::H501_NonStandardRejection(unsigned tag, PASN_Object::
 #ifndef PASN_NOPRINTON
 void H501_NonStandardRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -5077,7 +5077,7 @@ H501_UnknownMessageResponse::H501_UnknownMessageResponse(unsigned tag, PASN_Obje
 #ifndef PASN_NOPRINTON
 void H501_UnknownMessageResponse::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "unknownMessage = " << setprecision(indent) << m_unknownMessage << '\n';
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
@@ -5160,7 +5160,7 @@ H501_AuthenticationRequest::H501_AuthenticationRequest(unsigned tag, PASN_Object
 #ifndef PASN_NOPRINTON
 void H501_AuthenticationRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+21) << "applicationMessage = " << setprecision(indent) << m_applicationMessage << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -5236,7 +5236,7 @@ H501_AuthenticationRejection::H501_AuthenticationRejection(unsigned tag, PASN_Ob
 #ifndef PASN_NOPRINTON
 void H501_AuthenticationRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
@@ -5313,7 +5313,7 @@ H501_AddressTemplate::H501_AddressTemplate(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_AddressTemplate::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+10) << "pattern = " << setprecision(indent) << m_pattern << '\n';
   strm << setw(indent+12) << "routeInfo = " << setprecision(indent) << m_routeInfo << '\n';
@@ -5414,7 +5414,7 @@ H501_ContactInformation::H501_ContactInformation(unsigned tag, PASN_Object::TagC
 #ifndef PASN_NOPRINTON
 void H501_ContactInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+19) << "transportAddress = " << setprecision(indent) << m_transportAddress << '\n';
   strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
@@ -5552,7 +5552,7 @@ H501_PriceInfoSpec::H501_PriceInfoSpec(unsigned tag, PASN_Object::TagClass tagCl
 #ifndef PASN_NOPRINTON
 void H501_PriceInfoSpec::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+11) << "currency = " << setprecision(indent) << m_currency << '\n';
   strm << setw(indent+16) << "currencyScale = " << setprecision(indent) << m_currencyScale << '\n';
@@ -5697,7 +5697,7 @@ H501_PriceElement::H501_PriceElement(unsigned tag, PASN_Object::TagClass tagClas
 #ifndef PASN_NOPRINTON
 void H501_PriceElement::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "amount = " << setprecision(indent) << m_amount << '\n';
   strm << setw(indent+10) << "quantum = " << setprecision(indent) << m_quantum << '\n';
@@ -5787,7 +5787,7 @@ H501_DescriptorInfo::H501_DescriptorInfo(unsigned tag, PASN_Object::TagClass tag
 #ifndef PASN_NOPRINTON
 void H501_DescriptorInfo::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "descriptorID = " << setprecision(indent) << m_descriptorID << '\n';
   strm << setw(indent+14) << "lastChanged = " << setprecision(indent) << m_lastChanged << '\n';
@@ -5870,7 +5870,7 @@ H501_AlternatePEInfo::H501_AlternatePEInfo(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_AlternatePEInfo::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "alternatePE = " << setprecision(indent) << m_alternatePE << '\n';
   strm << setw(indent+23) << "alternateIsPermanent = " << setprecision(indent) << m_alternateIsPermanent << '\n';
@@ -5954,7 +5954,7 @@ H501_AlternatePE::H501_AlternatePE(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H501_AlternatePE::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "contactAddress = " << setprecision(indent) << m_contactAddress << '\n';
   strm << setw(indent+11) << "priority = " << setprecision(indent) << m_priority << '\n';
@@ -6047,7 +6047,7 @@ H501_UserInformation::H501_UserInformation(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_UserInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "userIdentifier = " << setprecision(indent) << m_userIdentifier << '\n';
   if (HasOptionalField(e_userAuthenticator))
@@ -6133,7 +6133,7 @@ H501_UsageSpecification::H501_UsageSpecification(unsigned tag, PASN_Object::TagC
 #ifndef PASN_NOPRINTON
 void H501_UsageSpecification::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "sendTo = " << setprecision(indent) << m_sendTo << '\n';
   strm << setw(indent+7) << "when = " << setprecision(indent) << m_when << '\n';
@@ -6235,7 +6235,7 @@ H501_PartyInformation::H501_PartyInformation(unsigned tag, PASN_Object::TagClass
 #ifndef PASN_NOPRINTON
 void H501_PartyInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+19) << "logicalAddresses = " << setprecision(indent) << m_logicalAddresses << '\n';
   if (HasOptionalField(e_domainIdentifier))
@@ -6361,7 +6361,7 @@ H501_Message::H501_Message(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H501_Message::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+7) << "body = " << setprecision(indent) << m_body << '\n';
   strm << setw(indent+9) << "common = " << setprecision(indent) << m_common << '\n';
@@ -6445,7 +6445,7 @@ H501_ServiceRequest::H501_ServiceRequest(unsigned tag, PASN_Object::TagClass tag
 #ifndef PASN_NOPRINTON
 void H501_ServiceRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_elementIdentifier))
     strm << setw(indent+20) << "elementIdentifier = " << setprecision(indent) << m_elementIdentifier << '\n';
@@ -6560,7 +6560,7 @@ H501_ServiceConfirmation::H501_ServiceConfirmation(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H501_ServiceConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+20) << "elementIdentifier = " << setprecision(indent) << m_elementIdentifier << '\n';
   strm << setw(indent+19) << "domainIdentifier = " << setprecision(indent) << m_domainIdentifier << '\n';
@@ -6678,7 +6678,7 @@ H501_ServiceRejection::H501_ServiceRejection(unsigned tag, PASN_Object::TagClass
 #ifndef PASN_NOPRINTON
 void H501_ServiceRejection::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_alternates))
@@ -6764,7 +6764,7 @@ H501_ServiceRelease::H501_ServiceRelease(unsigned tag, PASN_Object::TagClass tag
 #ifndef PASN_NOPRINTON
 void H501_ServiceRelease::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "reason = " << setprecision(indent) << m_reason << '\n';
   if (HasOptionalField(e_alternates))
@@ -6850,7 +6850,7 @@ H501_AccessRequest::H501_AccessRequest(unsigned tag, PASN_Object::TagClass tagCl
 #ifndef PASN_NOPRINTON
 void H501_AccessRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+18) << "destinationInfo = " << setprecision(indent) << m_destinationInfo << '\n';
   if (HasOptionalField(e_sourceInfo))
@@ -6961,7 +6961,7 @@ H501_UsageRequest::H501_UsageRequest(unsigned tag, PASN_Object::TagClass tagClas
 #ifndef PASN_NOPRINTON
 void H501_UsageRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+11) << "callInfo = " << setprecision(indent) << m_callInfo << '\n';
   strm << setw(indent+12) << "usageSpec = " << setprecision(indent) << m_usageSpec << '\n';
@@ -7044,7 +7044,7 @@ H501_UsageIndication::H501_UsageIndication(unsigned tag, PASN_Object::TagClass t
 #ifndef PASN_NOPRINTON
 void H501_UsageIndication::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+11) << "callInfo = " << setprecision(indent) << m_callInfo << '\n';
   if (HasOptionalField(e_accessTokens))
@@ -7198,7 +7198,7 @@ H501_ValidationRequest::H501_ValidationRequest(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H501_ValidationRequest::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_accessToken))
     strm << setw(indent+14) << "accessToken = " << setprecision(indent) << m_accessToken << '\n';
@@ -7314,7 +7314,7 @@ H501_ValidationConfirmation::H501_ValidationConfirmation(unsigned tag, PASN_Obje
 #ifndef PASN_NOPRINTON
 void H501_ValidationConfirmation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_destinationInfo))
     strm << setw(indent+18) << "destinationInfo = " << setprecision(indent) << m_destinationInfo << '\n';
@@ -7403,7 +7403,7 @@ H501_RouteInformation::H501_RouteInformation(unsigned tag, PASN_Object::TagClass
 #ifndef PASN_NOPRINTON
 void H501_RouteInformation::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "messageType = " << setprecision(indent) << m_messageType << '\n';
   strm << setw(indent+15) << "callSpecific = " << setprecision(indent) << m_callSpecific << '\n';
@@ -7538,7 +7538,7 @@ H501_Descriptor::H501_Descriptor(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H501_Descriptor::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+17) << "descriptorInfo = " << setprecision(indent) << m_descriptorInfo << '\n';
   strm << setw(indent+12) << "templates = " << setprecision(indent) << m_templates << '\n';

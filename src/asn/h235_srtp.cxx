@@ -91,7 +91,7 @@ H235_SRTP_FecOrder::H235_SRTP_FecOrder(unsigned tag, PASN_Object::TagClass tagCl
 #ifndef PASN_NOPRINTON
 void H235_SRTP_FecOrder::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_fecBeforeSrtp))
     strm << setw(indent+16) << "fecBeforeSrtp = " << setprecision(indent) << m_fecBeforeSrtp << '\n';
@@ -225,7 +225,7 @@ H235_SRTP_SrtpKeyParameters_mki::H235_SRTP_SrtpKeyParameters_mki(unsigned tag, P
 #ifndef PASN_NOPRINTON
 void H235_SRTP_SrtpKeyParameters_mki::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+9) << "length = " << setprecision(indent) << m_length << '\n';
   strm << setw(indent+8) << "value = " << setprecision(indent) << m_value << '\n';
@@ -339,7 +339,7 @@ H235_SRTP_SrtpKeyParameters::H235_SRTP_SrtpKeyParameters(unsigned tag, PASN_Obje
 #ifndef PASN_NOPRINTON
 void H235_SRTP_SrtpKeyParameters::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "masterKey = " << setprecision(indent) << m_masterKey << '\n';
   strm << setw(indent+13) << "masterSalt = " << setprecision(indent) << m_masterSalt << '\n';
@@ -444,7 +444,7 @@ H235_SRTP_SrtpSessionParameters::H235_SRTP_SrtpSessionParameters(unsigned tag, P
 #ifndef PASN_NOPRINTON
 void H235_SRTP_SrtpSessionParameters::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_kdr))
     strm << setw(indent+6) << "kdr = " << setprecision(indent) << m_kdr << '\n';
@@ -583,7 +583,7 @@ H235_SRTP_SrtpCryptoInfo::H235_SRTP_SrtpCryptoInfo(unsigned tag, PASN_Object::Ta
 #ifndef PASN_NOPRINTON
 void H235_SRTP_SrtpCryptoInfo::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_cryptoSuite))
     strm << setw(indent+14) << "cryptoSuite = " << setprecision(indent) << m_cryptoSuite << '\n';

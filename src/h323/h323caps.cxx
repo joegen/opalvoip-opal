@@ -2124,7 +2124,7 @@ H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original
 
 void H323Capabilities::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision()-1;
+  std::streamsize indent = strm.precision()-1;
   strm << setw(indent) << " " << "Table:\n";
   for (PINDEX i = 0; i < table.GetSize(); i++)
     strm << setw(indent+2) << " " << table[i] << '\n';
