@@ -1170,7 +1170,7 @@ void H323SignalPDU::BuildQ931()
 
 void H323SignalPDU::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n"
        << setw(indent+10) << "q931pdu = " << setprecision(indent) << q931pdu << '\n'
        << setw(indent+10) << "h225pdu = " << setprecision(indent);

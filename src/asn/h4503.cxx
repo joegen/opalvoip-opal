@@ -1676,7 +1676,7 @@ H4503_ARGUMENT_activateDiversionQ::H4503_ARGUMENT_activateDiversionQ(unsigned ta
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_activateDiversionQ::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "procedure = " << setprecision(indent) << m_procedure << '\n';
   strm << setw(indent+15) << "basicService = " << setprecision(indent) << m_basicService << '\n';
@@ -1790,7 +1790,7 @@ H4503_ARGUMENT_deactivateDiversionQ::H4503_ARGUMENT_deactivateDiversionQ(unsigne
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_deactivateDiversionQ::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "procedure = " << setprecision(indent) << m_procedure << '\n';
   strm << setw(indent+15) << "basicService = " << setprecision(indent) << m_basicService << '\n';
@@ -1897,7 +1897,7 @@ H4503_ARGUMENT_interrogateDiversionQ::H4503_ARGUMENT_interrogateDiversionQ(unsig
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_interrogateDiversionQ::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "procedure = " << setprecision(indent) << m_procedure << '\n';
   strm << setw(indent+15) << "basicService = " << setprecision(indent) << m_basicService << '\n';
@@ -2004,7 +2004,7 @@ H4503_ARGUMENT_checkRestriction::H4503_ARGUMENT_checkRestriction(unsigned tag, P
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_checkRestriction::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "servedUserNr = " << setprecision(indent) << m_servedUserNr << '\n';
   strm << setw(indent+15) << "basicService = " << setprecision(indent) << m_basicService << '\n';
@@ -2108,7 +2108,7 @@ H4503_ARGUMENT_callRerouting::H4503_ARGUMENT_callRerouting(unsigned tag, PASN_Ob
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_callRerouting::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+18) << "reroutingReason = " << setprecision(indent) << m_reroutingReason << '\n';
   if (HasOptionalField(e_originalReroutingReason))
@@ -2298,7 +2298,7 @@ H4503_ARGUMENT_divertingLegInformation1::H4503_ARGUMENT_divertingLegInformation1
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_divertingLegInformation1::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+18) << "diversionReason = " << setprecision(indent) << m_diversionReason << '\n';
   strm << setw(indent+21) << "subscriptionOption = " << setprecision(indent) << m_subscriptionOption << '\n';
@@ -2431,7 +2431,7 @@ H4503_ARGUMENT_divertingLegInformation2::H4503_ARGUMENT_divertingLegInformation2
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_divertingLegInformation2::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+19) << "diversionCounter = " << setprecision(indent) << m_diversionCounter << '\n';
   strm << setw(indent+18) << "diversionReason = " << setprecision(indent) << m_diversionReason << '\n';
@@ -2575,7 +2575,7 @@ H4503_ARGUMENT_divertingLegInformation3::H4503_ARGUMENT_divertingLegInformation3
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_divertingLegInformation3::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+31) << "presentationAllowedIndicator = " << setprecision(indent) << m_presentationAllowedIndicator << '\n';
   if (HasOptionalField(e_redirectionNr))
@@ -2683,7 +2683,7 @@ H4503_ARGUMENT_divertingLegInformation4::H4503_ARGUMENT_divertingLegInformation4
 #ifndef PASN_NOPRINTON
 void H4503_ARGUMENT_divertingLegInformation4::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+18) << "diversionReason = " << setprecision(indent) << m_diversionReason << '\n';
   strm << setw(indent+21) << "subscriptionOption = " << setprecision(indent) << m_subscriptionOption << '\n';
@@ -2810,7 +2810,7 @@ H4503_IntResult::H4503_IntResult(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H4503_IntResult::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+15) << "servedUserNr = " << setprecision(indent) << m_servedUserNr << '\n';
   strm << setw(indent+15) << "basicService = " << setprecision(indent) << m_basicService << '\n';

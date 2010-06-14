@@ -410,7 +410,7 @@ PBoolean Q931::Encode(PBYTEArray & data) const
 
 void Q931::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   ios::fmtflags flags = strm.flags();
 
   strm << "{\n"
