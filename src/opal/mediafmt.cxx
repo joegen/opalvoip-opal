@@ -552,9 +552,9 @@ void OpalMediaOptionOctets::PrintOn(ostream & strm) const
     ios::fmtflags flags = strm.flags();
     char fill = strm.fill();
 
-    int fillLength = width - m_value.GetSize()*2;
+    streamsize fillLength = width - m_value.GetSize()*2;
     if (fillLength > 0 && (flags&ios_base::adjustfield) == ios::right) {
-      for (int i = 0; i < fillLength; i++)
+      for (streamsize i = 0; i < fillLength; i++)
         strm << fill;
     }
 

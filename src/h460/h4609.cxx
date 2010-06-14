@@ -100,7 +100,7 @@ H4609_Extension::H4609_Extension(unsigned tag, PASN_Object::TagClass tagClass)
 #ifndef PASN_NOPRINTON
 void H4609_Extension::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "extensionId = " << setprecision(indent) << m_extensionId << '\n';
   if (HasOptionalField(e_extensionContent))
@@ -302,7 +302,7 @@ H4609_RTCPMeasures_mediaSenderMeasures::H4609_RTCPMeasures_mediaSenderMeasures(u
 #ifndef PASN_NOPRINTON
 void H4609_RTCPMeasures_mediaSenderMeasures::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_worstEstimatedEnd2EndDelay))
     strm << setw(indent+29) << "worstEstimatedEnd2EndDelay = " << setprecision(indent) << m_worstEstimatedEnd2EndDelay << '\n';
@@ -394,7 +394,7 @@ H4609_RTCPMeasures_mediaReceiverMeasures::H4609_RTCPMeasures_mediaReceiverMeasur
 #ifndef PASN_NOPRINTON
 void H4609_RTCPMeasures_mediaReceiverMeasures::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_cumulativeNumberOfPacketsLost))
     strm << setw(indent+32) << "cumulativeNumberOfPacketsLost = " << setprecision(indent) << m_cumulativeNumberOfPacketsLost << '\n';
@@ -617,7 +617,7 @@ H4609_RTCPMeasures::H4609_RTCPMeasures(unsigned tag, PASN_Object::TagClass tagCl
 #ifndef PASN_NOPRINTON
 void H4609_RTCPMeasures::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+13) << "rtpAddress = " << setprecision(indent) << m_rtpAddress << '\n';
   strm << setw(indent+14) << "rtcpAddress = " << setprecision(indent) << m_rtcpAddress << '\n';
@@ -747,7 +747,7 @@ H4609_PerCallQoSReport::H4609_PerCallQoSReport(unsigned tag, PASN_Object::TagCla
 #ifndef PASN_NOPRINTON
 void H4609_PerCallQoSReport::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   if (HasOptionalField(e_nonStandardData))
     strm << setw(indent+18) << "nonStandardData = " << setprecision(indent) << m_nonStandardData << '\n';
@@ -867,7 +867,7 @@ H4609_PeriodicQoSMonReport::H4609_PeriodicQoSMonReport(unsigned tag, PASN_Object
 #ifndef PASN_NOPRINTON
 void H4609_PeriodicQoSMonReport::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+14) << "perCallInfo = " << setprecision(indent) << m_perCallInfo << '\n';
   if (HasOptionalField(e_extensions))
@@ -953,7 +953,7 @@ H4609_FinalQosMonReport::H4609_FinalQosMonReport(unsigned tag, PASN_Object::TagC
 #ifndef PASN_NOPRINTON
 void H4609_FinalQosMonReport::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "mediaInfo = " << setprecision(indent) << m_mediaInfo << '\n';
   if (HasOptionalField(e_nonStandardData))
@@ -1049,7 +1049,7 @@ H4609_InterGKQosMonReport::H4609_InterGKQosMonReport(unsigned tag, PASN_Object::
 #ifndef PASN_NOPRINTON
 void H4609_InterGKQosMonReport::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  std::streamsize indent = strm.precision() + 2;
   strm << "{\n";
   strm << setw(indent+12) << "mediaInfo = " << setprecision(indent) << m_mediaInfo << '\n';
   if (HasOptionalField(e_nonStandardData))
