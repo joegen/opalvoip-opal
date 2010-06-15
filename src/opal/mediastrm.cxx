@@ -504,16 +504,11 @@ void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromP
 #endif
 
 
-void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ ) 
-{ 
-  SetPatch(NULL); 
-}
-
-
 void OpalMediaStream::OnStartMediaPatch() 
 { 
   connection.OnStartMediaPatch(*mediaPatch);
 }
+
 
 void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 { 

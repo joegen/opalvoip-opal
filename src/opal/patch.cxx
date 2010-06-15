@@ -284,7 +284,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 
   inUse.EndWrite();
 
-  if (closeSource)
+  if (closeSource  && source.GetPatch() == this)
     source.Close();
 }
 
