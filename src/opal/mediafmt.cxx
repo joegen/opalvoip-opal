@@ -88,6 +88,20 @@ public:
   }
 };
 
+const OpalAudioFormat & GetOpalPCM16S()
+{
+  static OpalStereoAudioFormat stereo8k(OPAL_PCM16S,        		// name of the media format
+					RTP_DataFrame::L16_Stereo,	// RTP payload code
+					"",				// encoding name
+					64,				// frame size in bytes
+					16,				// frame time (1 ms in clock units)
+					240,				// recommended rx frames/packet
+					0,				// recommended tx frames/packet
+					256,				// max tx frame size
+					8000);				// clock rate
+  return stereo8k;
+};
+
 const OpalAudioFormat & GetOpalPCM16S_16KHZ()
 {
   static OpalStereoAudioFormat stereo16k(OPAL_PCM16S_16KHZ,		// name of the media format
