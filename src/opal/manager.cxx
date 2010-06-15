@@ -730,6 +730,8 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
     // Sound cards can only do 16 bit PCM, but at various sample rates
     // The following will be in order of preference, so lets do wideband first
     formats += OpalPCM16S_48KHZ;
+    formats += OpalPCM16S_32KHZ;
+    formats += OpalPCM16S_16KHZ;
     formats += OpalPCM16_48KHZ;
     formats += OpalPCM16_32KHZ;
     formats += OpalPCM16_16KHZ;

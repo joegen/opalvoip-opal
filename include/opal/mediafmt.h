@@ -1256,13 +1256,19 @@ class OpalVideoFormat : public OpalMediaFormat
 // List of known media formats
 
 #define OPAL_PCM16          "PCM-16"
+#define OPAL_PCM16S         "PCM-16S"
 #define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
+#define OPAL_PCM16S_16KHZ   "PCM-16S-16kHz"
 #define OPAL_PCM16_32KHZ    "PCM-16-32kHz"
+#define OPAL_PCM16S_32KHZ   "PCM-16S-32kHz"
 #define OPAL_PCM16_48KHZ    "PCM-16-48kHz"
 #define OPAL_PCM16S_48KHZ   "PCM-16S-48kHz"
 #define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
+#define OPAL_L16_STEREO_8KHZ "Linear-16-Stereo-8kHz"
 #define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
+#define OPAL_L16_STEREO_16KHZ "Linear-16-Stereo-16kHz"
 #define OPAL_L16_MONO_32KHZ "Linear-16-Mono-32kHz"
+#define OPAL_L16_STEREO_32KHZ "Linear-16-Stereo-32kHz"
 #define OPAL_L16_MONO_48KHZ "Linear-16-Mono-48kHz"
 #define OPAL_L16_STEREO_48KHZ "Linear-16-Stereo-48kHz"
 #define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
@@ -1297,13 +1303,19 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_T38            "T.38"
 
 extern const OpalAudioFormat & GetOpalPCM16();
+extern const OpalAudioFormat & GetOpalPCM16S();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_16KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_32KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_48KHZ();
 extern const OpalAudioFormat & GetOpalPCM16S_48KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
+extern const OpalAudioFormat & GetOpalL16_STEREO_8KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
+extern const OpalAudioFormat & GetOpalL16_STEREO_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_32KHZ();
+extern const OpalAudioFormat & GetOpalL16_STEREO_32KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_48KHZ();
 extern const OpalAudioFormat & GetOpalL16_STEREO_48KHZ();
 extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
@@ -1337,13 +1349,19 @@ extern const OpalMediaFormat & GetOpalT38();
 
 
 #define OpalPCM16          GetOpalPCM16()
+#define OpalPCM16S         GetOpalPCM16S()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
+#define OpalPCM16S_16KHZ   GetOpalPCM16S_16KHZ()
 #define OpalPCM16_32KHZ    GetOpalPCM16_32KHZ()
+#define OpalPCM16S_32KHZ   GetOpalPCM16S_32KHZ()
 #define OpalPCM16_48KHZ    GetOpalPCM16_48KHZ()
 #define OpalPCM16S_48KHZ   GetOpalPCM16S_48KHZ()
 #define OpalL16_MONO_8KHZ  GetOpalL16_MONO_8KHZ()
+#define OpalL16_STEREO_8KHZ GetOpalL16_STEREO_8KHZ()
 #define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
+#define OpalL16_STEREO_16KHZ GetOpalL16_STEREO_16KHZ()
 #define OpalL16_MONO_32KHZ GetOpalL16_MONO_32KHZ()
+#define OpalL16_STEREO_32KHZ GetOpalL16_STEREO_32KHZ()
 #define OpalL16_MONO_48KHZ GetOpalL16_MONO_48KHZ()
 #define OpalL16_STEREO_48KHZ GetOpalL16_STEREO_48KHZ()
 #define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()

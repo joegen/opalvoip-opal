@@ -88,6 +88,62 @@ public:
   }
 };
 
+const OpalAudioFormat & GetOpalPCM16S_16KHZ()
+{
+  static OpalStereoAudioFormat stereo16k(OPAL_PCM16S_16KHZ,		// name of the media format
+					RTP_DataFrame::L16_Stereo,	// RTP payload code
+					"",				// encoding name
+					64,				// frame size in bytes
+					16,				// frame time (1 ms in clock units)
+					240,				// recommended rx frames/packet
+					0,				// recommended tx frames/packet
+					256,				// max tx frame size
+					16000);				// clock rate
+  return stereo16k;
+};
+
+const OpalAudioFormat & GetOpalL16_STEREO_16KHZ()
+{
+  static OpalStereoAudioFormat stereo16k(OPAL_L16_STEREO_16KHZ,         // name of the media format
+					RTP_DataFrame::L16_Stereo,      // RTP payload code
+					"L16S",                         // encoding name
+					64,                            // frame size in bytes
+					16,                             // frame time (1 ms in clock units)
+					240,                            // recommended rx frames/packet
+					30,                             // recommended tx frames/packet
+					256,                            // max tx frame size
+					16000);                         // clock rate
+  return stereo16k;
+};
+
+const OpalAudioFormat & GetOpalPCM16S_32KHZ()
+{
+  static OpalStereoAudioFormat stereo32k(OPAL_PCM16S_32KHZ,		// name of the media format
+					RTP_DataFrame::L16_Stereo,	// RTP payload code
+					"",				// encoding name
+					128,				// frame size in bytes
+					32,				// frame time (1 ms in clock units)
+					240,				// recommended rx frames/packet
+					0,				// recommended tx frames/packet
+					256,				// max tx frame size
+					32000);				// clock rate
+  return stereo32k;
+};
+
+const OpalAudioFormat & GetOpalL16_STEREO_32KHZ()
+{
+  static OpalStereoAudioFormat stereo32k(OPAL_L16_STEREO_32KHZ,         // name of the media format
+					RTP_DataFrame::L16_Stereo,      // RTP payload code
+					"L16S",                         // encoding name
+					128,                            // frame size in bytes
+					32,                             // frame time (1 ms in clock units)
+					240,                            // recommended rx frames/packet
+					30,                             // recommended tx frames/packet
+					256,                            // max tx frame size
+					32000);                         // clock rate
+  return stereo32k;
+};
+
 const OpalAudioFormat & GetOpalPCM16S_48KHZ()
 {
   static OpalStereoAudioFormat stereo48k(OPAL_PCM16S_48KHZ,		// name of the media format
@@ -104,15 +160,15 @@ const OpalAudioFormat & GetOpalPCM16S_48KHZ()
 
 const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
 {
-  static OpalStereoAudioFormat stereo48k(OPAL_L16_STEREO_48KHZ,       // name of the media format
-					RTP_DataFrame::L16_Stereo,   // RTP payload code
-					"L16S",                      // encoding name
-					192,                          // frame size in bytes
-					48,                          // frame time (1 ms in clock units)
-					240,                          // recommended rx frames/packet
-					30,                          // recommended tx frames/packet
-					256,                          // max tx frame size
-					48000);                      // clock rate
+  static OpalStereoAudioFormat stereo48k(OPAL_L16_STEREO_48KHZ,         // name of the media format
+					RTP_DataFrame::L16_Stereo,      // RTP payload code
+					"L16S",                         // encoding name
+					192,                            // frame size in bytes
+					48,                             // frame time (1 ms in clock units)
+					240,                            // recommended rx frames/packet
+					30,                             // recommended tx frames/packet
+					256,                            // max tx frame size
+					48000);                         // clock rate
   return stereo48k;
 };
 

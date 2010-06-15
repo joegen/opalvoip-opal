@@ -26,38 +26,26 @@ AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+target_os=@target_os@
 
-SRCDIR	= .
 PLUGINDIR=../..
-SONAME	= sbccodec
-SAMPLERATE_LIB = -lsamplerate
+SONAME	= sbc_audio
 
 CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@ 
-CXXFLAGS 	=@CXXFLAGS@ 
+CFLAGS	 	=@CFLAGS@ -I@prefix@/include
+CXXFLAGS 	=@CXXFLAGS@ -I@prefix@/include
 CXX	 	=@CXX@
 LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@ -DSBC_DISABLE_PTLIB=1 -DOPAL_G711PLC=1
+STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 
-SBC_CFLAGS	=@SBC_CFLAGS@
-SBC_LIBS	=@SBC_LIBS@
-
-SBC_SYSTEM= @SBC_SYSTEM@
-
-SRCS   = $(SRCDIR)/sbccodec.cxx \
-	 $(SRCDIR)/sbc.c \
-	 $(SRCDIR)/g711a1_plc.cxx 
+SRCS	= sbccodec.cxx sbc.c sbc_primitives.c sbc_primitives_mmx.c sbc_primitives_neon.c
 
 EXTRACCFLAGS	= -I$(PLUGINDIR)
-EXTRALIBS 	= $(SAMPLERATE_LIB)
+EXTRALIBS 	= -lsamplerate
 
 OBJDIR	= ./obj
-
-vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
-vpath	%.cxx $(SRCDIR)
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
@@ -65,23 +53,30 @@ Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
 endif
 
 
+vpath	%.o $(OBJDIR)
+vpath	%.c $(SRCDIR)
+vpath	%.cxx $(SRCDIR)
+
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(Q_CC)$(CC) -c $(STDCCFLAGS) $(EXTRACCFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
+	$(Q_LD)$(CXX) -c -I../../../include $(STDCCFLAGS) $(CXXFLAGS) $(EXTRACCFLAGS) -o $@ $<
 
-PLUGIN	= ./sbc_audio_ptplugin.$(PLUGINEXT)
+PLUGIN	= ./sbc_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
+ifeq (solaris,$(findstring solaris,$(target_os)))
+
+	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+else
 	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
-$(SRCDIR)/g711a1_plc.cxx: ../../../src/codec/g711a1_plc.cxx
-	@ln -s ../../../src/codec/g711a1_plc.cxx $(SRCDIR)/g711a1_plc.cxx
+endif
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
@@ -92,8 +87,5 @@ uninstall:
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)
-
-distclean: clean
-	rm -f Makefile g711a1_plc.cxx
 
 ###########################################
