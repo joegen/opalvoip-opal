@@ -134,9 +134,10 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
 }
 
 
-void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & PTRACE_PARAM(connection))
+void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
 {
   PTRACE(3, "IVR\tOnEndDialog for connection " << connection);
+  connection.Release();
 }
 
 
