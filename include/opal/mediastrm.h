@@ -332,14 +332,6 @@ class OpalMediaStream : public PSafeObject
       OpalMediaPatch * patch  ///<  Media patch thread
     );
 
-    /**Remove the patch thread that is using this stream.
-       This function is useful in case of streams which can be accessed by
-       multiple instances of OpalMediaPatch.
-
-       The default behaviour simply sets patchThread to NULL.
-    */
-    virtual void RemovePatch(OpalMediaPatch * patch);
-
     /**Get the patch thread that is using the stream.
       */
     OpalMediaPatch * GetPatch() const { return mediaPatch; }
@@ -389,6 +381,7 @@ class OpalMediaStream : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnPatchStart());
     P_REMOVE_VIRTUAL_VOID(OnPatchStop());
     P_REMOVE_VIRTUAL_VOID(OnStopMediaPatch());
+    P_REMOVE_VIRTUAL_VOID(RemovePatch(OpalMediaPatch *));
 };
 
 typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
