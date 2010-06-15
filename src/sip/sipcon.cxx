@@ -875,12 +875,14 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     }
 #if PAUSE_WITH_EMPTY_ADDRESS
     if (m_holdToRemote >= eHoldOn) {
-      PString addr = localMedia->GetTransportAddress();
-      PCaselessString proto = addr.GetProto();
-      WORD port; { PIPSocket::Address dummy; localMedia->GetTransportAddress().GetIpAndPort(dummy, port); }
-      OpalTransportAddress newAddr = proto + "$0.0.0.0:" + PString(PString::Unsigned, port);
+      OpalTransportAddress addr = localMedia->GetTransportAddress();
+      PIPSocket::Address dummy;
+      WORD port;
+      addr.GetIpAndPort(dummy, port);
+      OpalTransportAddress newAddr("0.0.0.0", port, addr.GetProto());
       localMedia->SetTransportAddress(newAddr);
       localMedia->SetDirection(SDPMediaDescription::Undefined);
+      sdp.SetDefaultConnectAddress(newAddr);
     }
 #endif
   }
