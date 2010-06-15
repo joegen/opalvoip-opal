@@ -134,8 +134,9 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
 }
 
 
-void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & /*connection*/)
+void OpalIVREndPoint::OnEndDialog(OpalIVRConnection & PTRACE_PARAM(connection))
 {
+  PTRACE(3, "IVR\tOnEndDialog for connection " << connection);
 }
 
 
@@ -156,7 +157,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    m_vxmlSession(this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
+    m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -373,16 +374,6 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
   return true;
 }
 
-void OpalIVRConnection::OnStopMediaPatch(OpalMediaPatch & patch)
-{
-  // lose the audio, then lose the call
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
-    synchronousOnRelease = false; // Deadlocks if try to do it synchronously ...
-    Release();
-  }
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -430,6 +421,17 @@ PBoolean OpalIVRMediaStream::Open()
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
   return false;
 }
+
+
+PBoolean OpalIVRMediaStream::Close()
+{
+  if (connection.GetPhase() >= OpalConnection::ReleasingPhase)
+    return OpalRawMediaStream::Close();
+
+  // Pause the vxmlSession here ...
+  return OpalMediaStream::Close();
+}
+
 
 PBoolean OpalIVRMediaStream::IsSynchronous() const
 {
