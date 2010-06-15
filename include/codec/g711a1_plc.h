@@ -46,7 +46,7 @@
 class OpalG711_PLC
 {
   private:
-    enum {
+    enum modes {
       LOSS_PERIOD1=10,            /**< the first period of loss lasts 10 ms, in which the signal is not attenuated. (ITU G.711 I.2.6) */
       LOSS_PERIOD2start=20,       /**< first samples of loss period 2. */
       LOSS_PERIOD2overlap=21,     /**< period, in which concealment from loss period 1 and loss period 2 still overlap. */
@@ -54,15 +54,15 @@ class OpalG711_PLC
       LOSS_PERIOD3=30,            /**< after 60 ms of loss, the signal is zero (ITU G.711 I.2.6) */
       TRANSITION=40,              /**< the first parts of good samples are mixed with the concealed samples */
       NOLOSS=0                    /**< no loss of samples, only good samples */
-    } mode;                       /**< current mode of operation */
+    };
 
     int      conceal_count;       /**< consecutive erased samples [samples] */
-    
+
     short  * transition_buf;      /**< buffer containing the concealed frame */
-    int      transition_len;      /**< length of the transition period [samples] */
-    int      transition_count;    /**< counting the transition samples [samples] */
-    
+
     int      hist_len;            /**< history buffer length [samples]*/
+    int      pitch_overlapmax;    /**< maximum pitch OLA window [samples] */
+
     short  * hist_buf;            /**< history buffer (ring buffer)*/
     short  * tmp_buf;             /**< history buffer (ring buffer)*/
 
@@ -73,13 +73,21 @@ class OpalG711_PLC
 
     int      pitch_min;           /**< minimum allowed pitch. default 200 Hz [samples] */
     int      pitch_max;           /**< maximum allowed pitch. default 66 Hz [samples] */
-    int      pitch_overlap;       /**< overlap based on pitch [samples] */
-    int      pitch_offset;        /**< offset into pitch period [samples]*/
-    int      pitch;               /**< pitch estimate [samples] */
-    int      pitch_blen;          /**< current pitch buffer length [samples] */
-    int      pitch_overlapmax;    /**< maximum pitch OLA window [samples] */
-       
+
+    struct channel_counters {
+      enum modes mode;            /**< current mode of operation */
+      int      conceal_count;     /**< consecutive erased samples [samples] */
+      int      transition_len;    /**< length of the transition period [samples] */
+      int      transition_count;  /**< counting the transition samples [samples] */
+
+      int      pitch_overlap;     /**< overlap based on pitch [samples] */
+      int      pitch_offset;      /**< offset into pitch period [samples]*/
+      int      pitch;             /**< pitch estimate [samples] */
+      int      pitch_blen;        /**< current pitch buffer length [samples] */
+    } *channel;
+
     int      rate;                /**< sampling rate [samples/second] */
+    int      channels;            /**< number of channnels */
 
     int ms2samples(int ms) const  /**< converts ms unit into sample unit */
     {
@@ -88,7 +96,7 @@ class OpalG711_PLC
 
 
    public:
-    OpalG711_PLC(int rate=8000, double pitch_low=66.6, double pitch_high=200);    /**< constructor */
+    OpalG711_PLC(int rate=8000, int channels=1, double pitch_low=66.6, double pitch_high=200);    /**< constructor */
     ~OpalG711_PLC();
 
     void dofe(short *s, int size);         /**< synthesize speech for erasure */
@@ -97,21 +105,20 @@ class OpalG711_PLC
     void drop(short *s, int size);               /**< the previous frame has to be dropped and the playout is increased */
 
    private:
-    void scalespeech(short *inout, int sz, bool decay=true) const;
-    void getfespeech(short *out, int sz);
+    void scalespeech(short *inout, int c, int sz, bool decay=true) const;
+    void getfespeech(short *out, int c, int sz);
     void hist_savespeech(short *s, int size);
-    int findpitch();
-    void overlapadd(double *l, double *r, double *o, int cnt) const;
-    void overlapadds(short *l, short *r, short *o, int cnt) const;
-    void overlapaddatend(short *s, short *f, int start, int end, int count) const;
-    void convertsf(short *f, double *t, int cnt) const;
-    void convertfs(double *f, short *t, int cnt) const;
+    int findpitch(int c);
+    void overlapadd(double *l, double *r, double *o, int c, int cnt) const;
+    void overlapadds(short *l, short *r, short *o, int c, int cnt) const;
+    void overlapaddatend(short *s, short *f, int c, int start, int end, int count) const;
+    void convertsf(short *f, double *t, int c, int cnt) const;
+    void convertfs(double *f, short *t, int c, int cnt) const;
 
-    inline void copy(double *f, double *t, int cnt) const { memmove(t,f,cnt*sizeof(double)); };
-    inline void copy(short *f, short *t, int cnt) const { memmove(t,f,cnt*sizeof(short)); };
-    inline void zero(short *s, int cnt) const { memset(s, 0, cnt*sizeof(short)); };
+    inline void copy(double *f, double *t, int cnt) const { memmove(t,f,cnt*channels*sizeof(double)); };
+    inline void copy(short *f, short *t, int cnt) const { memmove(t,f,cnt*channels*sizeof(short)); };
 
-    int dofe_partly(short *out, int size);
+    int dofe_partly(short *out, int c, int size);
 };
 
 
