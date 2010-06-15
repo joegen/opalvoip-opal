@@ -46,52 +46,40 @@
 
 #if OPAL_PTLIB_VXML
 
-OpalVXMLSession::OpalVXMLSession(OpalIVRConnection * conn, PTextToSpeech * tts, PBoolean autoDelete)
+OpalVXMLSession::OpalVXMLSession(OpalIVRConnection & conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
     m_connection(conn)
 {
-  if (tts == NULL) {
-    PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
-    if (engines.size() != 0) {
-      PFactory<PTextToSpeech>::Key_T name;
-#ifdef _WIN32
-      name = "Microsoft SAPI";
-      if (std::find(engines.begin(), engines.end(), name) == engines.end())
-#endif
-        name = engines[0];
-      SetTextToSpeech(name);
-    }
-  }
-}
-
-
-PBoolean OpalVXMLSession::Close()
-{
-  if (!IsOpen())
-    return true;
-
-  PBoolean ok = PVXMLSession::Close();
-  m_connection->Release();
-  return ok;
+  if (tts == NULL)
+    SetTextToSpeech(PString::Empty());
 }
 
 
 void OpalVXMLSession::OnEndDialog()
 {
-  m_connection->OnEndDialog();
+  m_connection.OnEndDialog();
   PVXMLSession::OnEndDialog();
 }
 
 
 void OpalVXMLSession::OnEndSession()
 {
-  m_connection->Release();
+  m_connection.Release();
 }
 
 
 void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
 {
-  m_connection->GetCall().Transfer(destination, bridged ? &*m_connection->GetOtherPartyConnection() : &*m_connection);
+  if (!bridged)
+    m_connection.GetCall().Transfer(destination, &m_connection);
+  else {
+    PSafePtr<OpalConnection> otherConnection = m_connection.GetOtherPartyConnection();
+    if (otherConnection != NULL)
+      m_connection.GetCall().Transfer(destination, &*otherConnection);
+    else {
+      PTRACE(1, "IVR\tAttempt to make transfer when no second connecion in call");
+    }
+  }
 }
 
 
