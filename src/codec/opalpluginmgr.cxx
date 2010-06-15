@@ -678,19 +678,31 @@ static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate, unsi
   if (strcmp(fmtName, "L16") != 0 && strcmp(fmtName, "L16S") != 0)
     return fmtName;
 
-  if (channels == 2 && sampleRate == 48000)
-    return OpalPCM16S_48KHZ;
-  switch (sampleRate) {
-    default :
-    case 8000 :
-      return OpalPCM16;
-    case 16000 :
-      return OpalPCM16_16KHZ;
-    case 32000 :
-      return OpalPCM16_32KHZ;
-    case 48000 :
-      return OpalPCM16_48KHZ;
+  if (channels == 2) {
+    switch (sampleRate) {
+      default :
+      case 8000 :
+	return OpalPCM16S;
+      case 16000 :
+	return OpalPCM16S_16KHZ;
+      case 32000 :
+	return OpalPCM16S_32KHZ;
+      case 48000 :
+	return OpalPCM16S_48KHZ;
+    }
   }
+  else
+    switch (sampleRate) {
+      default :
+      case 8000 :
+	return OpalPCM16;
+      case 16000 :
+	return OpalPCM16_16KHZ;
+      case 32000 :
+	return OpalPCM16_32KHZ;
+      case 48000 :
+	return OpalPCM16_48KHZ;
+    }
 }
 
 
@@ -1540,6 +1552,8 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   GetOpalPCM16_16KHZ();
   GetOpalPCM16_32KHZ();
   GetOpalPCM16_48KHZ();
+  GetOpalPCM16S_16KHZ();
+  GetOpalPCM16S_32KHZ();
   GetOpalPCM16S_48KHZ();
 #if OPAL_VIDEO
   GetOpalYUV420P();
