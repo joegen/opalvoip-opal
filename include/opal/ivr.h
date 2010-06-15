@@ -293,8 +293,6 @@ class OpalIVRConnection : public OpalLocalConnection
       */
     virtual void OnEndDialog();
 
-    virtual void OnStopMediaPatch(OpalMediaPatch & patch);
-
     const PString & GetVXML() const { return m_vxmlScript; }
 
     PTextToSpeech * GetTextToSpeech() const { return m_vxmlSession.GetTextToSpeech(); }
@@ -340,6 +338,12 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        and "defaultDataSize".
       */
     virtual PBoolean Open();
+
+    /**Close the media stream.
+
+       Closes the associated PChannel.
+      */
+    virtual PBoolean Close();
 
     /**Indicate if the media stream is synchronous.
        Returns false for IVR streams.
