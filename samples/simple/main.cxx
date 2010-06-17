@@ -683,8 +683,6 @@ PBoolean MyManager::Initialise(PArgList & args)
       sipEP->SetDefaultLocalPartyName(aliases[0]);
     }
 
-    sipEP->SetRetryTimeouts(10000, 30000);
-
     // Start the listener thread for incoming calls.
     PStringArray listeners = args.GetOptionString("sip-listen").Lines();
     if (!sipEP->StartListeners(listeners)) {
