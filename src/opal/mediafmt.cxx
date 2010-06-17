@@ -470,6 +470,37 @@ void OpalMediaOptionString::ReadFrom(istream & strm)
 }
 
 
+bool OpalMediaOptionString::Merge(const OpalMediaOption & option)
+{
+  if (m_merge != IntersectionMerge)
+    return OpalMediaOption::Merge(option);
+
+  const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &option);
+  if (otherOption == NULL)
+    return false;
+
+  PStringArray mySet = m_value.Tokenise(',');
+  PStringArray otherSet = otherOption->m_value.Tokenise(',');
+  PINDEX i = 0;
+  while (i < mySet.GetSize()) {
+    if (otherSet.GetValuesIndex(mySet[i]) != P_MAX_INDEX)
+      ++i;
+    else
+      mySet.RemoveAt(i);
+  }
+
+  if (mySet.IsEmpty())
+    m_value.MakeEmpty();
+  else {
+    m_value = mySet[0];
+    for (i = 1; i < mySet.GetSize(); ++i)
+      m_value += ',' + mySet[i];
+  }
+
+  return true;
+}
+
+
 PObject::Comparison OpalMediaOptionString::CompareValue(const OpalMediaOption & option) const
 {
   const OpalMediaOptionString * otherOption = PDownCast(const OpalMediaOptionString, &option);
@@ -1603,7 +1634,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                                     OpalMediaOption::NoMerge));
 
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
-                                        false, OpalMediaOption::AndMerge,
+                                        false, OpalMediaOption::IntersectionMerge,
                                         0, 0, OpalVideoFormat::ContentRoleMask));
 
   // For video the max bit rate and frame rate is adjustable by user
