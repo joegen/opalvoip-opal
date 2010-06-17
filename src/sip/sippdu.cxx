@@ -73,7 +73,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "MESSAGE",
   "INFO",
   "PING",
-  "PUBLISH"
+  "PUBLISH",
+  "PRACK"
 };
 
 #if PTRACING
@@ -1102,26 +1103,103 @@ void SIPMIMEInfo::SetProxyAuthenticate(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetSupported() const
+PStringSet SIPMIMEInfo::GetTokenSet(const char * field) const
 {
-  return GetString("Supported");
-}
-
-void SIPMIMEInfo::SetSupported(const PString & v)
-{
-  SetAt("Supported",  v);
-}
-
-
-PString SIPMIMEInfo::GetUnsupported() const
-{
-  return GetString("Unsupported");       // no compact form
+  PStringSet set;
+  PStringArray tokens = GetString(field).Tokenise(',');
+  for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+    PString token = tokens[i].Trim();
+    if (!token.IsEmpty())
+      set += token;
+  }
+  return set;
 }
 
 
-void SIPMIMEInfo::SetUnsupported(const PString & v)
+void SIPMIMEInfo::AddTokenSet(const char * field, const PString & token)
 {
-  SetAt("Unsupported",  v);     // no compact form
+  if (token.IsEmpty())
+    RemoveAt(field);
+  else {
+    PString existing = GetString(field);
+    if (existing.IsEmpty())
+      SetAt(field,  token);
+    else {
+      existing += ',';
+      existing += token;
+      SetAt(field,  existing);
+    }
+  }
+}
+
+
+void SIPMIMEInfo::SetTokenSet(const char * field, const PStringSet & tokens)
+{
+  if (tokens.IsEmpty())
+    RemoveAt(field);
+  else {
+    PStringStream strm;
+    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+      if (i > 0)
+        strm << ',';
+      strm << tokens.GetKeyAt(i);
+    }
+    SetAt(field,  strm);
+  }
+}
+
+
+PStringSet SIPMIMEInfo::GetRequire() const
+{
+  return GetTokenSet("Require");
+}
+
+
+void SIPMIMEInfo::SetRequire(const PStringSet & v)
+{
+  SetTokenSet("Require", v);
+}
+
+
+void SIPMIMEInfo::AddRequire(const PString & v)
+{
+  SetTokenSet("Require", v);
+}
+
+
+PStringSet SIPMIMEInfo::GetSupported() const
+{
+  return GetTokenSet("Supported");
+}
+
+
+void SIPMIMEInfo::SetSupported(const PStringSet & v)
+{
+  SetTokenSet("Supported", v);
+}
+
+
+void SIPMIMEInfo::AddSupported(const PString & v)
+{
+  SetTokenSet("Supported", v);
+}
+
+
+PStringSet SIPMIMEInfo::GetUnsupported() const
+{
+  return GetTokenSet("Unsupported");
+}
+
+
+void SIPMIMEInfo::SetUnsupported(const PStringSet & v)
+{
+  SetTokenSet("Unsupported",  v);
+}
+
+
+void SIPMIMEInfo::AddUnsupported(const PString & v)
+{
+  SetTokenSet("Unsupported",  v);
 }
 
 
@@ -1295,21 +1373,6 @@ PString SIPMIMEInfo::GetSIPETag() const
 void SIPMIMEInfo::SetSIPETag(const PString & v)
 {
   SetAt("SIP-ETag",  v);        // no compact form
-}
-
-
-PString SIPMIMEInfo::GetRequire() const
-{
-  return GetString("Require");  // no compact form
-}
-
-
-void SIPMIMEInfo::SetRequire(const PString & v, bool overwrite)
-{
-  if (overwrite || !Contains("Require"))
-    SetAt("Require",  v);        // no compact form
-  else
-    SetAt("Require",  GetString("Require") + ", " + v);
 }
 
 
@@ -3329,7 +3392,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
     if (!acceptableContentTypes.IsEmpty())
       acceptableContentTypes += '\n';
     acceptableContentTypes += "multipart/related\napplication/rlmi+xml";
-    m_mime.SetSupported("eventlist");
+    m_mime.AddSupported("eventlist");
   }
 
   m_mime.SetAccept(acceptableContentTypes);
@@ -3604,6 +3667,22 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 SIPTransaction * SIPPing::CreateDuplicate() const
 {
   return new SIPPing(*this);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPPrack::SIPPrack(SIPConnection & conn,
+                   const PString & rack)
+  : SIPTransaction(Method_PRACK, conn)
+{
+  m_mime.SetAt("Rack", rack);
+}
+
+
+SIPTransaction * SIPPrack::CreateDuplicate() const
+{
+  return new SIPPrack(*this);
 }
 
 

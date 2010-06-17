@@ -339,11 +339,17 @@ class SIPMIMEInfo : public PMIMEInfo
 
     unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
 
-    PString GetSupported() const;
-    void SetSupported(const PString & v);
+    PStringSet GetRequire() const;
+    void SetRequire(const PStringSet & v);
+    void AddRequire(const PString & v);
 
-    PString GetUnsupported() const;
-    void SetUnsupported(const PString & v);
+    PStringSet GetSupported() const;
+    void SetSupported(const PStringSet & v);
+    void AddSupported(const PString & v);
+
+    PStringSet GetUnsupported() const;
+    void SetUnsupported(const PStringSet & v);
+    void AddUnsupported(const PString & v);
     
     PString GetEvent() const;
     void SetEvent(const PString & v);
@@ -368,9 +374,6 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetSIPETag() const;
     void SetSIPETag(const PString & v);
-
-    PString GetRequire() const;
-    void SetRequire(const PString & v, bool overwrite);
 
     void GetAlertInfo(PString & info, int & appearance);
     void SetAlertInfo(const PString & info, int appearance);
@@ -417,14 +420,18 @@ class SIPMIMEInfo : public PMIMEInfo
     );
 
   protected:
-    	/** return list of route values from internal comma-delimited list
+    /** return list of route values from internal comma-delimited list
 	 */
     PStringList GetRouteList(const char * name, bool reversed) const;
 
-	/** store string list as one comma-delimited string of route values
-	    value formed as "<v[0]>,<v[1]>,<v[2]>" etc
+    /** store string list as one comma-delimited string of route values
+        value formed as "<v[0]>,<v[1]>,<v[2]>" etc
 	 */
     void SetRouteList(const char * name, const PStringList & v);
+
+    PStringSet GetTokenSet(const char * field) const;
+    void AddTokenSet(const char * field, const PString & token);
+    void SetTokenSet(const char * field, const PStringSet & tokens);
 
     /// Encode using compact form
     bool compactForm;
@@ -477,6 +484,7 @@ class SIP_PDU : public PSafeObject
       Method_INFO,
       Method_PING,
       Method_PUBLISH,
+      Method_PRACK,
       NumMethods
     };
 
@@ -1362,6 +1370,24 @@ class SIPPing : public SIPTransaction
       SIPEndPoint & ep,
       OpalTransport & trans,
       const SIPURL & address
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is a PRACK PDU
+ */
+class SIPPrack : public SIPTransaction
+{
+  PCLASSINFO(SIPPrack, SIPTransaction);
+
+  public:
+    SIPPrack(
+      SIPConnection & conn,
+      const PString & rack
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
