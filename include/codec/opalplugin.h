@@ -230,7 +230,7 @@ enum PluginCodec_OptionMerge {
   PluginCodec_NotEqualMerge,
   PluginCodec_AlwaysMerge,
   PluginCodec_CustomMerge,
-  PluginCodec_NumOptionMerge,
+  PluginCodec_IntersectionMerge,
 
   PluginCodec_AndMerge = PluginCodec_MinMerge,
   PluginCodec_OrMerge  = PluginCodec_MaxMerge
