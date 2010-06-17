@@ -1487,7 +1487,8 @@ PString H323H239VideoCapability::GetFormatName() const
       H239VideoMediaFormat() 
         : OpalMediaFormat("H.239-Video", H239MediaType, RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
       {
-        OpalMediaOption * option = new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(), true, OpalMediaOption::AndMerge, 1, 1, 3);
+        OpalMediaOption * option = new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
+                                                               true, OpalMediaOption::IntersectionMerge, 1, 1, 3);
 
         OpalMediaOption::H245GenericInfo genericInfo;
         genericInfo.ordinal = 1;
@@ -2032,38 +2033,40 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         H323Capability * capability = allCapabilities.FindCapability(pdu.m_capabilityTable[i].m_capability);
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
-          copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
-          if (mediaPacketizations.GetSize() != 0) { // also update the mediaPacketizations option
-            OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
-            PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                                          mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-            if (!packetizationString.IsEmpty()) {
-              // remove packetizations not signaled by the remote party
-              PStringArray packetizations = packetizationString.Tokenise(",");
-              for (PINDEX j = packetizations.GetSize(); j > 0; j--) {
-                if (!mediaPacketizations.Contains(packetizations[j-1])) {
-                  packetizations.RemoveAt(j-1);
-                }
-              }
+          if (!copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
+            delete copy;
+          else {
+            copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
+            table.Append(copy);
 
-              // construct the new packetization string
-              packetizationString.MakeEmpty();
-              if (packetizations.GetSize() == 0) { // should not happen actually
-                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), PString::Empty());
-                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  PString::Empty());
-              } else {
-                packetizationString = packetizations[0];
-                for (PINDEX j = 1; j < packetizations.GetSize(); j++)
-                  packetizationString += "," + packetizations[j];
-                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), packetizationString);
-                mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  packetizations[0]);
+            if (mediaPacketizations.GetSize() != 0) { // also update the mediaPacketizations option
+              OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
+              PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
+                                            mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
+              if (!packetizationString.IsEmpty()) {
+                // remove packetizations not signaled by the remote party
+                PStringArray packetizations = packetizationString.Tokenise(",");
+                for (PINDEX j = packetizations.GetSize(); j > 0; j--) {
+                  if (!mediaPacketizations.Contains(packetizations[j-1]))
+                    packetizations.RemoveAt(j-1);
+                }
+
+                // construct the new packetization string
+                packetizationString.MakeEmpty();
+                if (packetizations.GetSize() == 0) { // should not happen actually
+                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), PString::Empty());
+                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  PString::Empty());
+                }
+                else {
+                  packetizationString = packetizations[0];
+                  for (PINDEX j = 1; j < packetizations.GetSize(); j++)
+                    packetizationString += "," + packetizations[j];
+                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), packetizationString);
+                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  packetizations[0]);
+                }
               }
             }
           }
-          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
-            table.Append(copy);
-          else
-            delete copy;
         }
       }
     }
