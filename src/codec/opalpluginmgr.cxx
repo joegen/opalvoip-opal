@@ -419,7 +419,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
 
         case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_booleanArray :
           genericInfo.integerType = OpalMediaOption::H245GenericInfo::BooleanArray;
-          mediaOption = new OpalMediaOptionUnsigned(name, ptr->readOnly, OpalMediaOption::AndMerge, ptr->value.integer, 0, 255);
+          mediaOption = new OpalMediaOptionUnsigned(name, ptr->readOnly, OpalMediaOption::IntersectionMerge, ptr->value.integer, 0, 255);
           break;
 
         case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsigned32Min :

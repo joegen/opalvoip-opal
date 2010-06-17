@@ -234,6 +234,7 @@ class OpalMediaOption : public PObject
 {
     PCLASSINFO(OpalMediaOption, PObject);
   public:
+    // Note the below enum must be identical to PluginCodec_OptionMerge in opalplugin.h
     enum MergeType {
       NoMerge,
       MinMerge,
@@ -241,10 +242,12 @@ class OpalMediaOption : public PObject
       EqualMerge,
       NotEqualMerge,
       AlwaysMerge,
+      CustomMerge,
+      IntersectionMerge, // Set intersection, applies to numeric (bit wise AND) or string (common substrings)
 
       // Synonyms
-      AndMerge = MinMerge,
-      OrMerge  = MaxMerge
+      AndMerge = MinMerge,  // Applies to Boolean option or Enum with two elements
+      OrMerge  = MaxMerge   // Applies to Boolean option or Enum with two elements
     };
 
   protected:
@@ -371,6 +374,22 @@ class OpalMediaOptionValue : public OpalMediaOption
         strm.setstate(ios::badbit);
     }
 
+    static __inline bool Intersect(bool a, bool b)         { return a && b; }
+    static __inline bool Intersect(int a, int b)           { return a & b; }
+    static __inline bool Intersect(unsigned a, unsigned b) { return a & b; }
+    static __inline bool Intersect(double a, double b)     { return std::min(a, b); }
+
+    virtual bool Merge(const OpalMediaOption & option)
+    {
+      if (m_merge != IntersectionMerge)
+        return OpalMediaOption::Merge(option);
+      const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
+      if (otherOption == NULL)
+        return false;
+      SetValue(Intersect(GetValue(), otherOption->GetValue()));
+      return true;
+    }
+
     virtual Comparison CompareValue(const OpalMediaOption & option) const
     {
       const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
@@ -486,6 +505,7 @@ class OpalMediaOptionString : public OpalMediaOption
     virtual void PrintOn(ostream & strm) const;
     virtual void ReadFrom(istream & strm);
 
+    virtual bool Merge(const OpalMediaOption & option);
     virtual Comparison CompareValue(const OpalMediaOption & option) const;
     virtual void Assign(const OpalMediaOption & option);
 
