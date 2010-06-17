@@ -396,6 +396,10 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual void OnReceivedPING(SIP_PDU & pdu);
 
+    /**Handle an incoming PRACK PDU
+      */
+    virtual void OnReceivedPRACK(SIP_PDU & pdu);
+
     /**Handle an incoming BYE PDU
       */
     virtual void OnReceivedBYE(SIP_PDU & pdu);
@@ -458,19 +462,6 @@ class SIPConnection : public OpalRTPConnection
     /**Handle a sending INVITE request
       */
     virtual void OnCreatingINVITE(SIPInvite & pdu);
-
-    /**Send a "200 OK" response for the received INVITE message.
-     */
-    virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
-	
-    /**Send a response for the received INVITE message.
-     */
-    virtual PBoolean SendInviteResponse(
-      SIP_PDU::StatusCodes code,
-      const char * contact = NULL,
-      const char * extra = NULL,
-      const SDPSessionDescription * sdp = NULL
-    );
 
     enum TypeOfINVITE {
       IsNewINVITE,
@@ -545,7 +536,7 @@ class SIPConnection : public OpalRTPConnection
   protected:
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
+    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
 
     virtual bool OnSendOfferSDP(
       OpalRTPSessionManager & rtpSessions,
@@ -591,6 +582,14 @@ class SIPConnection : public OpalRTPConnection
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE();
 
+    virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
+    virtual PBoolean SendInviteResponse(
+      SIP_PDU::StatusCodes code,
+      const char * contact = NULL,
+      const char * extra = NULL,
+      const SDPSessionDescription * sdp = NULL
+    );
+
     void UpdateRemoteAddresses();
 
     void NotifyDialogState(
@@ -635,10 +634,13 @@ class SIPConnection : public OpalRTPConnection
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
-    PTimer                    ackTimer;
-    PTimer                    ackRetry;
-    SIP_PDU                   ackPacket;
-    bool                      ackReceived;
+    bool           m_prackEnabled;
+    unsigned       m_prackSequenceNumber;
+    queue<SIP_PDU> m_responsePackets;
+    PTimer         m_responseFailTimer;
+    PTimer         m_responseRetryTimer;
+    unsigned       m_responseRetryCount;
+
     bool                      m_referInProgress;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE

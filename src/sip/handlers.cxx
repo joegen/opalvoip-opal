@@ -1007,11 +1007,13 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   }
 
   // Check any Requires field
-  PCaselessString require = requestMIME.GetRequire();
-  if (!require.IsEmpty() && !(m_parameters.m_eventList && require == "eventlist")) {
-    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << require << '"');
+  PStringSet require = requestMIME.GetRequire();
+  if (m_parameters.m_eventList)
+    require -= "eventlist";
+  if (!require.IsEmpty()) {
+    PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << setfill(',') << require << '"');
     response.SetStatusCode(SIP_PDU::Failure_BadExtension);
-    response.GetMIME().SetAt("Unsupported", require);
+    response.GetMIME().SetUnsupported(require);
     response.SetInfo("Unsupported Require");
     return request.SendResponse(*m_transport, response, &endpoint);
   }

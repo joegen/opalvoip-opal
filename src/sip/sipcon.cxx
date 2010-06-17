@@ -237,7 +237,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
-  , ackReceived(false)
+  , m_prackEnabled(false)
+  , m_prackSequenceNumber(0)
+  , m_responseRetryCount(0)
   , m_referInProgress(false)
 #if OPAL_FAX
   , m_switchedToFaxMode(false)
@@ -291,8 +293,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   pendingInvitations.DisallowDeleteObjects();
   m_pendingTransactions.DisallowDeleteObjects();
 
-  ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
-  ackRetry.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
+  m_responseFailTimer.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseTimeout));
+  m_responseRetryTimer.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
 
   sessionTimer.SetNotifier(PCREATE_NOTIFIER(OnSessionTimeout));
 
@@ -371,7 +373,7 @@ void SIPConnection::OnReleased()
          get the ACK, or OnAckTimeout() fires and sets this flag anyway. We are
          outside of a connection mutex lock at this point, so no deadlock
          should occur. Really should be a PSyncPoint. */
-      while (!ackReceived)
+      while (!m_responsePackets.empty())
         PThread::Sleep(100);
 
       notifyDialogEvent = SIPDialogNotification::Rejected;
@@ -493,7 +495,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
               << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation);
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or NOT
-      referTransaction->GetMIME().SetAt("Supported", "replaces");
+      referTransaction->GetMIME().AddSupported("replaces");
       m_referInProgress = referTransaction->Start();
       return m_referInProgress;
     }
@@ -1698,6 +1700,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_PING :
       OnReceivedPING(pdu);
       break;
+    case SIP_PDU::Method_PRACK :
+      OnReceivedPRACK(pdu);
+      break;
     case SIP_PDU::Method_MESSAGE :
       OnReceivedMESSAGE(pdu);
       break;
@@ -1711,7 +1716,8 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP_PDU & response)
 {
-  unsigned statusClass = response.GetStatusCode()/100;
+  unsigned statusCode = response.GetStatusCode();
+  unsigned statusClass = statusCode/100;
   if (statusClass > 2)
     return;
 
@@ -1751,7 +1757,20 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (response.GetSDP() != NULL)
     m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
 
-  response.GetMIME().GetProductInfo(remoteProductInfo);
+  const SIPMIMEInfo & responseMIME = response.GetMIME();
+  responseMIME.GetProductInfo(remoteProductInfo);
+
+  // Do PRACK after all the dialog completion parts above.
+  if (statusCode > 100 && statusCode < 200 && responseMIME.GetRequire().Contains("100rel")) {
+    PString rseq = responseMIME.GetString("RSeq");
+    if (rseq.IsEmpty()) {
+      PTRACE(2, "SIP\tReliable (100rel) response has no Rseq field.");
+    }
+    else {
+      SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
+      prack->Start();
+    }
+  }
 }
 
 
@@ -1851,6 +1870,16 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
+
+  // RSeq cannot be legally zero.
+  unsigned sn = response.GetMIME().GetString("RSeq", "0").AsUnsigned();
+  if (sn > 0) {
+    if (sn < m_prackSequenceNumber) {
+      PTRACE(4, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
+      return;
+    }
+    m_prackSequenceNumber = sn;
+  }
 
   bool handled = false;
 
@@ -2072,6 +2101,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // allow the application to determine if RTP NAT is enabled or not
   remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
+  m_prackEnabled = mime.GetSupported().Contains("100rel") || mime.GetRequire().Contains("100rel");
+
   releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
 
@@ -2197,9 +2228,12 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   PTRACE(3, "SIP\tACK received: " << GetPhase());
 
-  ackReceived = true;
-  ackTimer.Stop(false); // Asynchronous stop to avoid deadlock
-  ackRetry.Stop(false);
+  m_responseFailTimer.Stop(false); // Asynchronous stop to avoid deadlock
+  m_responseRetryTimer.Stop(false);
+
+  // If got ACK, any pending responses are done, even if they are not acknowledged
+  while (!m_responsePackets.empty())
+    m_responsePackets.pop();
 
   OnReceivedAnswerSDP(response);
 
@@ -2736,6 +2770,8 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PTRACE(3, "SIP\tCreating INVITE request");
 
   SIPMIMEInfo & mime = request.GetMIME();
+  mime.AddSupported("100rel");
+
   for (PINDEX i = 0; i < m_connStringOptions.GetSize(); ++i) {
     PCaselessString key = m_connStringOptions.GetKeyAt(i);
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
@@ -2743,7 +2779,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       if (!data.IsEmpty()) {
         mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_connStringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
-          mime.SetRequire("replaces", false);
+          mime.AddRequire("replaces");
       }
     }
   }
@@ -2809,7 +2845,8 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
     return true;
 
   SIP_PDU response(*originalInvite, code, contact, extra, sdp);
-  response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
+  SIPMIMEInfo & mime = response.GetMIME();
+  mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(endpoint.GetAllowedMethods());
 
   if (sdp != NULL)
@@ -2824,10 +2861,28 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   }
 
   if (response.GetStatusCode() >= 200) {
-    ackPacket = response;
-    ackRetry = endpoint.GetRetryTimeoutMin();
-    ackTimer = endpoint.GetAckTimeout();
-    ackReceived = false;
+    // If sending final response, any pending responses are done, even if they are not acknowledged
+    while (!m_responsePackets.empty())
+      m_responsePackets.pop();
+
+    m_responsePackets.push(response);
+  }
+  else if (m_prackEnabled) {
+    mime.AddRequire("100rel");
+
+    if (m_prackSequenceNumber == 0)
+      m_prackSequenceNumber = PRandom::Number(0x40000000); // as per RFC 3262
+    mime.SetAt("Rseq", PString(PString::Unsigned, ++m_prackSequenceNumber));
+
+    m_responsePackets.push(response);
+    if (m_responsePackets.size() > 1)
+      return true;
+  }
+
+  if (!m_responsePackets.empty()) {
+    m_responseRetryCount = 0;
+    m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
+    m_responseFailTimer = endpoint.GetAckTimeout();
   }
 
   return originalInvite->SendResponse(*transport, response); 
@@ -2837,26 +2892,72 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
 void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked() && !ackReceived && originalInvite != NULL) {
-    PTRACE(3, "SIP\tACK not received yet, retry sending response.");
-    originalInvite->SendResponse(*transport, ackPacket); // Not really a resonse but teh function will work
+  if (safeLock.IsLocked() && originalInvite != NULL && !m_responsePackets.empty()) {
+    PTRACE(3, "SIP\t" << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
+           << " not received yet, retry sending response.");
+
+    PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++m_responseRetryCount);
+    if (timeout > endpoint.GetRetryTimeoutMin())
+      timeout = endpoint.GetRetryTimeoutMin();
+    m_responseRetryTimer = timeout;
+
+    originalInvite->SendResponse(*transport, m_responsePackets.front()); // Not really a resonse but the function will work  }
   }
 }
 
 
-void SIPConnection::OnAckTimeout(PTimer &, INT)
+void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked() && !ackReceived) {
-    PTRACE(1, "SIP\tFailed to receive ACK!");
-    ackRetry.Stop();
-    ackReceived = true;
-    m_handlingINVITE = false;
+  if (safeLock.IsLocked() && !m_responsePackets.empty()) {
+    PTRACE(1, "SIP\tFailed to receive " << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK"));
+
+    m_responseRetryTimer.Stop();
+
     if (GetPhase() < ReleasingPhase) {
-      releaseMethod = ReleaseWithBYE;
-      Release(EndedByTemporaryFailure);
+      if (m_responsePackets.front().GetStatusCode() < 200)
+        SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
+      else {
+        releaseMethod = ReleaseWithBYE;
+        Release(EndedByTemporaryFailure);
+      }
     }
   }
+}
+
+
+void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
+{
+  PStringArray rack = request.GetMIME().GetString("RAck").Tokenise(" \r\n\t", false);
+  if (rack.GetSize() != 3) {
+    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    return;
+  }
+
+  if (originalInvite == NULL ||
+      originalInvite->GetMIME().GetCSeqIndex() != rack[1].AsUnsigned() ||
+      !(rack[2] *= "INVITE") ||
+      m_responsePackets.front().GetMIME().GetString("RSeq").AsUnsigned() != rack[0].AsUnsigned()) {
+    request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
+    return;
+  }
+
+  m_responseFailTimer.Stop(false); // Asynchronous stop to avoid deadlock
+  m_responseRetryTimer.Stop(false);
+
+  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+
+  // Got PRACK for our response, pop it off and send next, if on
+  m_responsePackets.pop();
+
+  if (!m_responsePackets.empty()) {
+    m_responseRetryCount = 0;
+    m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
+    m_responseFailTimer = endpoint.GetAckTimeout();
+    originalInvite->SendResponse(*transport, m_responsePackets.front());
+  }
+
+  OnReceivedAnswerSDP(request);
 }
 
 
