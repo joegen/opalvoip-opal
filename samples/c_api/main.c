@@ -54,6 +54,8 @@
 
   HINSTANCE hDLL;
 
+  #define snprintf _snprintf
+
 #else // _WIN32
 
   #include <memory.h>
@@ -530,6 +532,49 @@ int DoRecord(const char * to, const char * file)
 }
 
 
+int DoPlay(const char * to, const char * file)
+{
+  // Example cmd line: call 612@ekiga.net
+  OpalMessage command;
+  OpalMessage * response;
+  char buffer[1000];
+
+
+  printf("Calling %s\n", to);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSetUpCall;
+  command.m_param.m_callSetUp.m_partyB = to;
+  if ((response = MySendCommand(&command, "Could not make call")) == NULL)
+    return 0;
+
+  CurrentCallToken = strdup(response->m_param.m_callSetUp.m_callToken);
+  FreeMessageFunction(response);
+
+  printf("Playing %s\n", file);
+
+  snprintf(buffer, sizeof(buffer),
+           "ivr:<?xml version=\"1.0\"?>"
+           "<vxml version=\"1.0\">"
+             "<form id=\"PlayFile\">"
+               "<transfer bridge=\"false\" dest=\"pc:*;Auto-Answer=1\">"
+                 "<audio src=\"%s\"/>"
+               "</transfer>"
+             "</form>"
+           "</vxml>", file);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdTransferCall;
+  command.m_param.m_callSetUp.m_callToken = CurrentCallToken;
+  command.m_param.m_callSetUp.m_partyA = "pc:";
+  command.m_param.m_callSetUp.m_partyB = buffer;
+  if ((response = MySendCommand(&command, "Could not start playing")) == NULL)
+    return 0;
+
+  return 1;
+}
+
+
 typedef enum
 {
   OpListen,
@@ -541,14 +586,15 @@ typedef enum
   OpRegister,
   OpSubscribe,
   OpRecord,
+  OpPlay,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record" };
+  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record", "play" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4, 3, 3, 3 };
+  { 2, 3, 3, 3, 4, 4, 3, 3, 3, 3 };
 
 
 static Operations GetOperation(const char * name)
@@ -662,6 +708,12 @@ int main(int argc, char * argv[])
 
     case OpRecord :
       if (!DoRecord(argv[2], argv[3]))
+        break;
+      HandleMessages(INT_MAX); // More or less forever
+      break;
+
+    case OpPlay :
+      if (!DoPlay(argv[2], argv[3]))
         break;
       HandleMessages(INT_MAX); // More or less forever
       break;

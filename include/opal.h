@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 21
+#define OPAL_C_API_VERSION 22
 
 
 ///////////////////////////////////////
@@ -369,7 +369,7 @@ typedef enum OpalMessageType {
   OpalCmdHoldCall,              /**<Place call in a hold state. The OpalMessage m_callToken field is set to
                                     the token returned in OpalIndIncomingCall. */
   OpalCmdRetrieveCall,          /**<Retrieve call from hold state. The OpalMessage m_callToken field is set
-                                    to the token returned in OpalIndIncomingCall. */
+                                    to the token for the call. */
   OpalCmdTransferCall,          /**<Transfer a call to another party. This starts the outgoing call process
                                     for the other party. See the  OpalParamSetUpCall structure for more
                                     information.*/
@@ -401,6 +401,14 @@ typedef enum OpalMessageType {
                                     OpalParamSetUpCall structure for more information. */
   OpalCmdAlerting,              /**<Send an indication to the remote that we are "ringing". The OpalMessage
                                     m_callToken field indicates which call is alerting.  */
+  OpalIndTransferCall,          /**<Status of transfer operation that is under way. This message is returned in
+                                    the OpalGetMessage() function. See the OpalStatusTransferCall structure for
+                                    more information. */
+  OpalIndCompletedIVR,          /**<Indicates completion of the IVR (VXML) script. This message is returned in
+                                    the OpalGetMessage() function. The OpalMessage m_callToken field is set to
+                                    the token for the call. */
+
+// Always add new messages to ethe end to maintain backward compatibility
   OpalMessageTypeCount
 } OpalMessageType;
 
@@ -689,7 +697,10 @@ typedef struct OpalParamProtocol {
                                            This list is separated by the '\n' character. If NULL no
                                            listeners are started or stopped. If and empty string ("")
                                            then all listeners are stopped. If a "*" then listeners
-                                           are started for all interfaces in the system. */
+                                           are started for all interfaces in the system.
+
+                                           If the prefix is "ivr", then this is the default VXML script
+                                           or URL to execute on incoming calls.*/
 } OpalParamProtocol;
 
 
@@ -948,6 +959,8 @@ typedef struct OpalStatusIncomingCall {
                                    Q.931 SIGNAL (0x34) Information Element. */
   const char * m_protocolCallId;  /**< ID assigned by the underlying protocol for the call. 
                                        Only available in version 18 and above */
+  const char * m_referredByAddress; ///< This is the full address of the party doing transfer, if available.
+  const char * m_redirectingNumber; ///< This is the E.164 number of the party doing transfer, if available.
 } OpalStatusIncomingCall;
 
 
@@ -1091,7 +1104,7 @@ typedef enum OpalVideoRecordMixMode {
 /**Call recording information for the OpalCmdStartRecording command.
   */
 typedef struct OpalParamRecording {
-  const char * m_callToken;  ///< Call token for call being cleared.
+  const char * m_callToken;  ///< Call token for call being recorded.
   const char * m_file;       /**< File to record into. If NULL then a test is done
                                   for if recording is currently active. */
   unsigned     m_channels;   /**< Number of channels in WAV file, 1 for mono (default) or 2 for
@@ -1110,6 +1123,29 @@ typedef struct OpalParamRecording {
   unsigned     m_videoRate;   /**< Frame rate for recording video. */
   OpalVideoRecordMixMode m_videoMixing; /**< How the two images are saved in video recording. */
 } OpalParamRecording;
+
+
+/**Call transfer information for the OpalIndTransferCall indication.
+   This is only returned from the OpalGetMessage() function.
+  */
+typedef struct OpalStatusTransferCall {
+  const char * m_callToken;       ///< Call token for call being transferred.
+  const char * m_protocolCallId;  /**< ID assigned by the underlying protocol for the call. 
+                                       Only available in version 18 and above */
+  const char * m_result;          /**< Result of transfer operation. This is one of:
+                                            "progress"  transfer of this call is still in progress.
+                                            "success"   transfer of this call completed, call will
+                                                        be cleared.
+                                            "failed"    transfer initiated by this call did not
+                                                        complete, call remains active.
+                                            "incoming"  this call is the target of an incoming
+                                                        transfer, e.g. party C in a consultation
+                                                        transfer scenario. */
+  const char * m_info;    /**< Protocol dependent information in the form:
+                                           key=value
+                                           key=value
+                                           etc*/
+} OpalStatusTransferCall;
 
 
 /**Call clearance information for the OpalIndCallCleared indication.
@@ -1195,6 +1231,7 @@ struct OpalMessage {
     OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
     OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
     OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
+    OpalStatusTransferCall   m_transferStatus;     ///< Used by OpalIndTransferCall
   } m_param;
 };
 
@@ -1234,6 +1271,7 @@ class OpalMessagePtr
     OpalStatusMediaStream    * GetMediaStream() const;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
     OpalParamSetUserData     * GetSetUserData() const;        ///< Used by OpalCmdSetUserData
     OpalParamRecording       * GetRecording() const;          ///< Used by OpalCmdStartRecording
+    OpalStatusTransferCall   * GetTransferStatus() const;     ///< Used by OpalIndTransferCall
 
   protected:
     OpalMessage * m_message;

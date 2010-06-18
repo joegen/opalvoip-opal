@@ -116,6 +116,22 @@ public class OpalStatusIncomingCall {
     return OPALJNI.OpalStatusIncomingCall_m_protocolCallId_get(swigCPtr, this);
   }
 
+  public void setM_referredByAddress(String value) {
+    OPALJNI.OpalStatusIncomingCall_m_referredByAddress_set(swigCPtr, this, value);
+  }
+
+  public String getM_referredByAddress() {
+    return OPALJNI.OpalStatusIncomingCall_m_referredByAddress_get(swigCPtr, this);
+  }
+
+  public void setM_redirectingNumber(String value) {
+    OPALJNI.OpalStatusIncomingCall_m_redirectingNumber_set(swigCPtr, this, value);
+  }
+
+  public String getM_redirectingNumber() {
+    return OPALJNI.OpalStatusIncomingCall_m_redirectingNumber_get(swigCPtr, this);
+  }
+
   public OpalStatusIncomingCall() {
     this(OPALJNI.new_OpalStatusIncomingCall(), true);
   }
