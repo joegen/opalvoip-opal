@@ -133,4 +133,9 @@ public class OpalMessagePtr {
     return (cPtr == 0) ? null : new OpalParamRecording(cPtr, false);
   }
 
+  public OpalStatusTransferCall GetTransferStatus() {
+    long cPtr = OPALJNI.OpalMessagePtr_GetTransferStatus(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalStatusTransferCall(cPtr, false);
+  }
+
 }

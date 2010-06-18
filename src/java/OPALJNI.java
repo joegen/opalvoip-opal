@@ -195,6 +195,10 @@ class OPALJNI {
   public final static native String OpalStatusIncomingCall_m_alertingType_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native void OpalStatusIncomingCall_m_protocolCallId_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
   public final static native String OpalStatusIncomingCall_m_protocolCallId_get(long jarg1, OpalStatusIncomingCall jarg1_);
+  public final static native void OpalStatusIncomingCall_m_referredByAddress_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
+  public final static native String OpalStatusIncomingCall_m_referredByAddress_get(long jarg1, OpalStatusIncomingCall jarg1_);
+  public final static native void OpalStatusIncomingCall_m_redirectingNumber_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
+  public final static native String OpalStatusIncomingCall_m_redirectingNumber_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native long new_OpalStatusIncomingCall();
   public final static native void delete_OpalStatusIncomingCall(long jarg1);
   public final static native void OpalStatusMediaStream_m_callToken_set(long jarg1, OpalStatusMediaStream jarg1_, String jarg2);
@@ -266,6 +270,16 @@ class OPALJNI {
   public final static native int OpalParamRecording_m_videoMixing_get(long jarg1, OpalParamRecording jarg1_);
   public final static native long new_OpalParamRecording();
   public final static native void delete_OpalParamRecording(long jarg1);
+  public final static native void OpalStatusTransferCall_m_callToken_set(long jarg1, OpalStatusTransferCall jarg1_, String jarg2);
+  public final static native String OpalStatusTransferCall_m_callToken_get(long jarg1, OpalStatusTransferCall jarg1_);
+  public final static native void OpalStatusTransferCall_m_protocolCallId_set(long jarg1, OpalStatusTransferCall jarg1_, String jarg2);
+  public final static native String OpalStatusTransferCall_m_protocolCallId_get(long jarg1, OpalStatusTransferCall jarg1_);
+  public final static native void OpalStatusTransferCall_m_result_set(long jarg1, OpalStatusTransferCall jarg1_, String jarg2);
+  public final static native String OpalStatusTransferCall_m_result_get(long jarg1, OpalStatusTransferCall jarg1_);
+  public final static native void OpalStatusTransferCall_m_info_set(long jarg1, OpalStatusTransferCall jarg1_, String jarg2);
+  public final static native String OpalStatusTransferCall_m_info_get(long jarg1, OpalStatusTransferCall jarg1_);
+  public final static native long new_OpalStatusTransferCall();
+  public final static native void delete_OpalStatusTransferCall(long jarg1);
   public final static native void OpalStatusCallCleared_m_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
   public final static native String OpalStatusCallCleared_m_callToken_get(long jarg1, OpalStatusCallCleared jarg1_);
   public final static native void OpalStatusCallCleared_m_reason_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
@@ -316,6 +330,8 @@ class OPALJNI {
   public final static native long OpalMessage_m_param_m_setUserData_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_recording_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalParamRecording jarg2_);
   public final static native long OpalMessage_m_param_m_recording_get(long jarg1, OpalMessage_m_param jarg1_);
+  public final static native void OpalMessage_m_param_m_transferStatus_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusTransferCall jarg2_);
+  public final static native long OpalMessage_m_param_m_transferStatus_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native long new_OpalMessage_m_param();
   public final static native void delete_OpalMessage_m_param(long jarg1);
   public final static native long new_OpalMessagePtr__SWIG_0(int jarg1);
@@ -340,6 +356,7 @@ class OPALJNI {
   public final static native long OpalMessagePtr_GetMediaStream(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetSetUserData(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetRecording(long jarg1, OpalMessagePtr jarg1_);
+  public final static native long OpalMessagePtr_GetTransferStatus(long jarg1, OpalMessagePtr jarg1_);
   public final static native long new_OpalContext();
   public final static native void delete_OpalContext(long jarg1);
   public final static native long OpalContext_Initialise__SWIG_0(long jarg1, OpalContext jarg1_, String jarg2, long jarg3);

@@ -177,6 +177,15 @@ public class OpalMessage_m_param {
     return (cPtr == 0) ? null : new OpalParamRecording(cPtr, false);
   }
 
+  public void setM_transferStatus(OpalStatusTransferCall value) {
+    OPALJNI.OpalMessage_m_param_m_transferStatus_set(swigCPtr, this, OpalStatusTransferCall.getCPtr(value), value);
+  }
+
+  public OpalStatusTransferCall getM_transferStatus() {
+    long cPtr = OPALJNI.OpalMessage_m_param_m_transferStatus_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalStatusTransferCall(cPtr, false);
+  }
+
   public OpalMessage_m_param() {
     this(OPALJNI.new_OpalMessage_m_param(), true);
   }
