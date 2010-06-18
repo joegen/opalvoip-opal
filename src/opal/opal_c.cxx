@@ -135,6 +135,22 @@ class OpalLocalEndPoint_C : public OpalLocalEndPoint
 };
 
 
+#if OPAL_IVR
+
+class OpalIVREndPoint_C : public OpalIVREndPoint
+{
+  public:
+    OpalIVREndPoint_C(OpalManager_C & manager);
+
+    virtual void OnEndDialog(OpalIVRConnection & connection);
+
+  private:
+    OpalManager_C & m_manager;
+};
+
+#endif // OPAL_IVR
+
+
 #if OPAL_SIP
 class SIPEndPoint_C : public SIPEndPoint
 {
@@ -189,6 +205,7 @@ class OpalManager_C : public OpalManager
     OpalMessage * SendMessage(const OpalMessage * message);
 
     virtual void OnEstablishedCall(OpalCall & call);
+    virtual bool OnTransferNotify(OpalConnection &, const PStringToString &);
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnUserInputString(OpalConnection & connection, const PString & value);
@@ -198,6 +215,8 @@ class OpalManager_C : public OpalManager
     virtual void OnClearedCall(OpalCall & call);
 
     bool IsManualAlerting() const { return m_manualAlerting; }
+
+    void SendIncomingCallInfo(const OpalConnection & connection);
 
   private:
     void HandleSetGeneral    (const OpalMessage & message, OpalMessageBuffer & response);
@@ -414,8 +433,10 @@ bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 }
 
 
-static void SetIncomingCallInfo(OpalMessageBuffer & message, const OpalConnection & connection)
+void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
 {
+  OpalMessageBuffer message(OpalIndIncomingCall);
+
   PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
   PAssert(network != NULL, PLogicError); // Should not happen!
 
@@ -426,6 +447,17 @@ static void SetIncomingCallInfo(OpalMessageBuffer & message, const OpalConnectio
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledPartyURL());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledPartyNumber());
+
+  if (m_apiVersion >= 22) {
+    PString redirect = network->GetRedirectingParty();
+    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_referredByAddress, redirect);
+    if (!OpalIsE164(redirect)) {
+      redirect = PURL(redirect).GetUserName();
+      if (!OpalIsE164(redirect))
+        redirect.MakeEmpty();
+    }
+    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_redirectingNumber, redirect);
+  }
 
   const OpalProductInfo & info = connection.GetProductInfo();
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
@@ -448,14 +480,14 @@ static void SetIncomingCallInfo(OpalMessageBuffer & message, const OpalConnectio
                     " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
             "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << "\"\n"
             "        CallID=\"" << message->m_param.m_incomingCall.m_protocolCallId << '"');
+
+  PostMessage(message);
 }
 
 
 bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndIncomingCall);
-  SetIncomingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SendIncomingCallInfo(connection);
   return true;
 }
 
@@ -577,9 +609,7 @@ OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
 
 PBoolean OpalPCSSEndPoint_C::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  OpalMessageBuffer message(OpalIndIncomingCall);
-  SetIncomingCallInfo(message, connection);
-  m_manager.PostMessage(message);
+  m_manager.SendIncomingCallInfo(connection);
   return true;
 }
 
@@ -596,6 +626,29 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
 #endif // OPAL_PTLIB_AUDIO
 
 
+///////////////////////////////////////
+
+#if OPAL_IVR
+
+OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
+  : OpalIVREndPoint(manager)
+  , m_manager(manager)
+{
+}
+
+
+void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
+{
+  OpalMessageBuffer message(OpalIndCompletedIVR);
+  SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
+  m_manager.PostMessage(message);
+
+  // Do not call ancestor, do not want it to hang up
+}
+
+#endif
+
+    
 ///////////////////////////////////////
 
 #if OPAL_SIP
@@ -762,9 +815,9 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 
   PINDEX t38Pos = options.Find("t38");
-  if (t38Pos < defProtoPos) {
+  if (t38Pos < defUserPos) {
     defUser = "t38:";
-    defProtoPos = t38Pos;
+    defUserPos = t38Pos;
   }
 #endif
 
@@ -783,7 +836,7 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 
 #if OPAL_IVR
   if (options.Find("ivr") != P_MAX_INDEX) {
-    new OpalIVREndPoint(*this);
+    new OpalIVREndPoint_C(*this);
     AddRouteEntry(".*:#=ivr:"); // A hash from anywhere goes to IVR
   }
 #endif
@@ -1330,6 +1383,12 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   FillOpalProductInfo(command, response, product);
   ep->SetProductInfo(product);
 
+#if OPAL_IVR
+  OpalIVREndPoint * ivr = dynamic_cast<OpalIVREndPoint *>(ep);
+  if (ivr != NULL)
+    ivr->SetDefaultVXML(command.m_param.m_protocol.m_interfaceAddresses);
+  else
+#endif
   if (command.m_param.m_protocol.m_interfaceAddresses != NULL)
     StartStopListeners(ep, command.m_param.m_protocol.m_interfaceAddresses, response);
 }
@@ -1818,6 +1877,24 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
 }
 
 
+bool OpalManager_C::OnTransferNotify(OpalConnection & connection,
+                                     const PStringToString & info)
+{
+  OpalMessageBuffer message(OpalIndTransferCall);
+
+  SET_MESSAGE_STRING(message, m_param.m_transferStatus.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_transferStatus.m_result, info["result"]);
+
+  PStringStream infoStr;
+  infoStr << info;
+  SET_MESSAGE_STRING(message, m_param.m_transferStatus.m_info, infoStr);
+
+  PostMessage(message);
+
+  return OpalManager::OnTransferNotify(connection, info);
+}
+
+
 void OpalManager_C::OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state)
 {
   const OpalConnection & connection = stream.GetConnection();
@@ -2273,6 +2350,7 @@ OpalParamSetUpCall * OpalMessagePtr::GetCallSetUp() const
     case OpalIndProceeding :
     case OpalIndAlerting :
     case OpalIndEstablished :
+    case OpalIndCompletedIVR :
       return &m_message->m_param.m_callSetUp;
 
     default :
@@ -2346,6 +2424,12 @@ OpalParamSetUserData * OpalMessagePtr::GetSetUserData() const
 OpalParamRecording * OpalMessagePtr::GetRecording() const
 {
   return m_message->m_type == OpalCmdStartRecording ? &m_message->m_param.m_recording : NULL;
+}
+
+
+OpalStatusTransferCall * OpalMessagePtr::GetTransferStatus() const
+{
+  return m_message->m_type == OpalIndTransferCall ? &m_message->m_param.m_transferStatus : NULL;
 }
 
 
