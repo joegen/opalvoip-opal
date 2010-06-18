@@ -887,7 +887,8 @@ void SIPMIMEInfo::SetReferTo(const PString & r)
 
 PString SIPMIMEInfo::GetReferredBy() const
 {
-  return GetString("Referred-By");
+  // If no RFC 3892 header, try Cisco custom header
+  return GetString(Contains("Referred-By") ? "Referred-By" : "Diversion");
 }
 
 
@@ -895,6 +896,7 @@ void SIPMIMEInfo::SetReferredBy(const PString & r)
 {
   SetAt("Referred-By",  r);
 }
+
 
 void SIPMIMEInfo::SetContentLength(PINDEX v)
 {
