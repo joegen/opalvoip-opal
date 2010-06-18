@@ -686,7 +686,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
       sessions.resize(std::max(sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
-        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut, true);
+        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut);
       }
     }
 
@@ -697,11 +697,11 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   // Use |= to avoid McCarthy boolean || from not calling video/fax
 
   // always offer audio first
-  sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut, m_needReINVITE);
+  sdpOK  |= OfferSDPMediaDescription(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
 
 #if OPAL_VIDEO
   // always offer video second (if enabled)
-  sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut, m_needReINVITE);
+  sdpOK |= OfferSDPMediaDescription(OpalMediaType::Video(), 0, rtpSessions, sdpOut);
 #endif
 
   // offer other formats
@@ -709,7 +709,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   for (OpalMediaTypeFactory::KeyList_T::iterator r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
     OpalMediaType mediaType = *r;
     if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio())
-      sdpOK |= OfferSDPMediaDescription(mediaType, 0, rtpSessions, sdpOut, m_needReINVITE);
+      sdpOK |= OfferSDPMediaDescription(mediaType, 0, rtpSessions, sdpOut);
   }
 
   return sdpOK;
@@ -762,8 +762,7 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
 bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              unsigned rtpSessionId,
                                              OpalRTPSessionManager & rtpSessions,
-                                             SDPSessionDescription & sdp,
-                                             bool isReINVITE)
+                                             SDPSessionDescription & sdp)
 {
   OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
   if (rtpSessionId == 0 && autoStart == OpalMediaType::DontOffer)
@@ -857,7 +856,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
-  if (isReINVITE) {
+  if (m_needReINVITE) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
     bool sending = sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
@@ -1864,7 +1863,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   UpdateRemoteAddresses();
 
   // We received a Re-INVITE for a current connection
-  if (isReinvite) { 
+  if (isReinvite) {
     OnReceivedReINVITE(request);
     return;
   }
@@ -1948,6 +1947,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
 
+  m_needReINVITE = true;
   m_handlingINVITE = true;
 
   SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
