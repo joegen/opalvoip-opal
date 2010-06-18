@@ -3606,6 +3606,14 @@ void H323Connection::OnSetLocalCapabilities()
     return;
   }
 
+#if OPAL_H239
+  H323H239ControlCapability * h329Control = NULL;
+  if (m_h239Control) {
+    h329Control = new H323H239ControlCapability();
+    formats += h329Control->GetMediaFormat();
+  }
+#endif
+
   // Remove those things not in the other parties media format list
   for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
     H323Capability & capability = localCapabilities[c];
@@ -3638,9 +3646,6 @@ void H323Connection::OnSetLocalCapabilities()
   }
 
 #if OPAL_H239
-  if (m_h239Control)
-    localCapabilities.Add(new H323H239ControlCapability());
-
   simultaneous = P_MAX_INDEX;
   for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
     if (localCapabilities.FindCapability(format->GetName()) != NULL &&
@@ -3651,6 +3656,13 @@ void H323Connection::OnSetLocalCapabilities()
       else
         delete newCap;
     }
+  }
+
+  if (h329Control != NULL) {
+    if (localCapabilities.FindCapability(*h329Control) == NULL)
+      localCapabilities.SetCapability(0, P_MAX_INDEX, h329Control);
+    else
+      delete h329Control;
   }
 #endif
 

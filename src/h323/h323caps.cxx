@@ -1539,7 +1539,7 @@ PObject * H323H239ControlCapability::Clone() const
 
 PString H323H239ControlCapability::GetFormatName() const
 {
-  static const OpalMediaFormat name("H.239-Control", H239MediaType, RTP_DataFrame::IllegalPayloadType, NULL, false, 0, 0, 0, 0);
+  static const OpalMediaFormat name("H.239-Control", H239MediaType, RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
   return name;
 }
 
