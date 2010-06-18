@@ -2195,6 +2195,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
 
+  m_needReINVITE = true;
   m_handlingINVITE = true;
 
   SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
