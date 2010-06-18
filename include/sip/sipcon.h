@@ -501,8 +501,7 @@ class SIPConnection : public OpalRTPConnection
       const OpalMediaType & mediaType,
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut,
-      bool isReINVITE
+      SDPSessionDescription & sdpOut
     );
     virtual bool AnswerSDPMediaDescription(
       const SDPSessionDescription & sdpIn,
