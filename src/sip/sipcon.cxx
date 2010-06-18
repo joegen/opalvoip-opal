@@ -2166,15 +2166,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   replacedConnection->Release(OpalConnection::EndedByCallForwarded);
 
   // Check if we are the target of an attended transfer, indicated by a referred-by header
-  PString referredBy = mime.GetReferredBy();
-  if (!referredBy.IsEmpty()) {
+  if (!m_redirectingParty.IsEmpty()) {
     /* Indicate to application we are party C in a consultation transfer.
        The calls are A->B (first call), B->C (consultation call) => A->C
        (final call after the transfer) */
-    PStringToString info;
-    PCaselessString state = mime.GetSubscriptionState(info);
+    PStringToString info = PURL(m_redirectingParty).GetParamVars();
+    info.SetAt("result", "incoming");
     info.SetAt("party", "C");
-    info.SetAt("Referred-By", referredBy);
+    info.SetAt("Referred-By", m_redirectingParty);
     OnTransferNotify(info);
   }
 
@@ -2373,6 +2372,10 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   // send response before attempting the transfer
   if (!request.SendResponse(*transport, response))
     return;
+
+  m_redirectingParty = requestMIME.GetReferredBy();
+  if (m_redirectingParty.IsEmpty())
+    m_redirectingParty = requestMIME.GetFrom();
 
   SIPURL to = referTo;
   PString replaces = to.GetQueryVars()("Replaces");
@@ -3057,18 +3060,18 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {
   switch (sendUserInputMode) {
-    case SendUserInputAsTone :
-      return SendUserInputAsTone;
-
     case SendUserInputAsProtocolDefault :
     case SendUserInputAsRFC2833 :
-      if (m_remoteFormatList.HasFormat(OpalRFC2833))
-        return SendUserInputAsRFC2833;
-      // Drop into INFO string mode
+      return m_remoteFormatList.HasFormat(OpalRFC2833) ? SendUserInputAsRFC2833 : SendUserInputAsString;
 
-    default :
-      // Eveything else is INFO string mode, lowest common denominator
-      return SendUserInputAsString;
+    case NumSendUserInputModes :
+    case SendUserInputAsQ931 :
+      return SendUserInputAsTone;
+
+    case SendUserInputAsString :
+    case SendUserInputAsTone :
+    case SendUserInputInBand :
+      return sendUserInputMode;
   }
 }
 
@@ -3082,19 +3085,25 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
   PTRACE(3, "SIP\tSendUserInputTone('" << tone << "', " << duration << "), using mode " << mode);
 
-  if (mode == SendUserInputAsRFC2833)
-    return OpalRTPConnection::SendUserInputTone(tone, duration);
-
   SIPInfo::Params params;
-  if (mode == SendUserInputAsTone) {
-    params.m_contentType = ApplicationDTMFRelayKey;
-    PStringStream strm;
-    strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
-    params.m_body = strm;
-  }
-  else {
-    params.m_contentType = ApplicationDTMFKey;
-    params.m_body = tone;
+
+  switch (mode) {
+    case SendUserInputAsTone :
+      {
+        params.m_contentType = ApplicationDTMFRelayKey;
+        PStringStream strm;
+        strm << "Signal= " << tone << "\r\n" << "Duration= " << duration << "\r\n";  // spaces are important. Who can guess why?
+        params.m_body = strm;
+      }
+      break;
+
+    case SendUserInputAsString :
+      params.m_contentType = ApplicationDTMFKey;
+      params.m_body = tone;
+      break;
+
+    default :
+      return OpalRTPConnection::SendUserInputTone(tone, duration);
   }
 
   if (SendINFO(params))
