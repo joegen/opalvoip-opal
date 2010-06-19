@@ -161,48 +161,27 @@ AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
 
 OPAL_SIMPLE_OPTION([shared],[OPAL_SHARED_LIB], [whether to build a shared library])
 
+
+dnl ########################################################################
+dnl Check for PTLIB
+dnl ########################################################################
+
+OPAL_FIND_PTLIB()
+
+PKG_REQUIRES="$PKG_REQUIRES ptlib"
+CFLAGS="$CFLAGS $PTLIB_CFLAGS"
+LDFLAGS="$LDFLAGS $PTLIB_CFLAGS"
+CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+#LIBS="$LIBS $PTLIB_LIBS"
+
+
 dnl ########################################################################
 dnl Architecture dependent stuff
 dnl ########################################################################
 
-AC_CANONICAL_TARGET()
-
-MACHTYPE=
-case "$target_cpu" in
-   x86 | i686 | i586 | i486 | i386 )
-		   AC_COMPILE_IFELSE(
-		    [[int t = __amd64__;]],
-		    [[MACHTYPE=x86_64]],
-		    [[MACHTYPE=x86]]
-		   );
-		   ;;
-   x86_64)	                                        MACHTYPE=x86_64;     ;;
-   alpha | alphaev56 | alphaev6 | alphaev67 | alphaev7) MACHTYPE=alpha;      ;;
-   hppa )                                               MACHTYPE=hppa;       ;;
-   hppa64 )                                             MACHTYPE=hppa64;     ;;
-   sparc|sparc64 )                                      MACHTYPE=sparc;      ;;
-   powerpc | ppc )                                      MACHTYPE=ppc;        ;;
-   powerpc64 | ppc64 )                                  MACHTYPE=ppc64;      ;;
-   ia64)	                                        MACHTYPE=ia64;       ;;
-   * )                                                  MACHTYPE=$target_cpu ;
-        AC_MSG_WARN("CPU $target_cpu not recognized - proceed with caution!") ;;
-esac
-case "$target_os" in
-  linux*)             OSTYPE=linux;        ;;
-  freebsd* )          OSTYPE=FreeBSD;      ;;
-  openbsd* )          OSTYPE=OpenBSD;      ;;
-  netbsd* )           OSTYPE=NetBSD;       ;;
-  solaris* | sunos* ) OSTYPE=solaris;      ;;
-  darwin* )	      OSTYPE=Darwin;       ;;
-  beos*)              OSTYPE=beos;         ;;
-  cygwin*)            OSTYPE=cygwin;       ;;
-  mingw*)	      OSTYPE=mingw;        ;;
-  * )		      OSTYPE="$target_os"; ;;
-esac
-
 LDSOOPTS=
-case "$target_os" in
-	solaris*)
+case "$OSTYPE" in
+	solaris )
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-KPIC -D__inline=inline"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
@@ -213,16 +192,16 @@ case "$target_os" in
           HAVE_RANLIB=no
         ;;
 
-        darwin*)  
+        Darwin )  
 	  SHAREDLIBEXT=dylib 
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-dynamiclib"
 
-#	  CFLAGS="$CFLAGS -fno-common -dynamic"
+#	   CFLAGS="$CFLAGS -fno-common -dynamic"
 #          LDSO="-dynamiclib -multiply_defined suppress"
-dnl FIXME	  
+dnl FIXME
 STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 	  case "$target_cpu" in
@@ -231,7 +210,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           HAVE_RANLIB=no
         ;;
 
-        cygwin*|mingw**)
+        cygwin )
 	  SHAREDLIBEXT=dll
           SHARED_CFLAGS=
           OPAL_DETERMINE_LIBNAMES(DEBUG)
@@ -242,7 +221,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           HAVE_RANLIB=yes
         ;;
 
-        freebsd*|openbsd*|netbsd*)
+        *BSD )
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
@@ -287,17 +266,6 @@ OPAL_DETERMINE_DEBUG()
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
 
-
-dnl ########################################################################
-dnl Check for PTLIB
-dnl ########################################################################
-
-OPAL_FIND_PTLIB()
-
-CFLAGS="$CFLAGS $PTLIB_CFLAGS"
-CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-#LIBS="$LIBS $PTLIB_LIBS"
-PKG_REQUIRES="$PKG_REQUIRES ptlib"
 
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 

@@ -320,6 +320,9 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               fi
             fi
 
+	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
+	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
+
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
@@ -338,6 +341,9 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             else
               PKG_CHECK_MODULES(PTLIB, ptlib)
             fi            
+
+	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
+	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
