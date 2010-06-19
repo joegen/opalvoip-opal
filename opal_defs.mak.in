@@ -84,6 +84,7 @@ DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
 # Compile and linker flags
 CFLAGS           := @CFLAGS@ -I$(OPAL_INCDIR) $(CFLAGS)
 CXXFLAGS         := @CXXFLAGS@ -I$(OPAL_INCDIR) $(CXXFLAGS)
+LFLAGS           := @LFLAGS@
 LIBS             += @LIBS@
 LDSOOPTS          = @LDSOOPTS@
 
