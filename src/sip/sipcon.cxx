@@ -3071,8 +3071,10 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
     case SendUserInputAsString :
     case SendUserInputAsTone :
     case SendUserInputInBand :
-      return sendUserInputMode;
+      break;
   }
+
+  return sendUserInputMode;
 }
 
 
