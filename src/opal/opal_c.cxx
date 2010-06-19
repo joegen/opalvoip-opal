@@ -1474,7 +1474,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         subParams.m_expire = m_apiVersion = command.m_param.m_registrationInfo.m_timeToLive;
 #else
         subParams.m_expire = m_apiVersion >= 13 ? command.m_param.m_registrationInfo.m_timeToLive
-                                               : (unsigned)command.m_param.m_registrationInfo.m_eventPackage; // Backward compatibility
+                                               : *(unsigned*)&command.m_param.m_registrationInfo.m_eventPackage; // Backward compatibility
 #endif
         subParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
         bool ok = sip->Subscribe(subParams, aor);
