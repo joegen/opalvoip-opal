@@ -210,7 +210,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           HAVE_RANLIB=no
         ;;
 
-        cygwin )
+        cygwin*|mingw* )
 	  SHAREDLIBEXT=dll
           SHARED_CFLAGS=
           OPAL_DETERMINE_LIBNAMES(DEBUG)
