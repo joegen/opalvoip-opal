@@ -310,7 +310,6 @@ Global
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Win32.ActiveCfg = No Trace|Win32
-		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Win32.Build.0 = No Trace|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Win32.Deploy.0 = No Trace|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = No Trace|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = No Trace|Win32
@@ -552,7 +551,6 @@ Global
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.No Trace|Win32.ActiveCfg = Release|Win32
-		{6C1D0918-6995-41C4-9068-6300F3E60D47}.No Trace|Win32.Build.0 = Release|Win32
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{6C1D0918-6995-41C4-9068-6300F3E60D47}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
@@ -570,7 +568,6 @@ Global
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.Debug|Windows Mobile 6 Standard SDK (ARMV4I).ActiveCfg = Debug|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.No Trace|Win32.ActiveCfg = Release|Win32
-		{1650298C-5F43-47B8-974E-155D1FA0D672}.No Trace|Win32.Build.0 = Release|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I).ActiveCfg = Release|Win32
 		{1650298C-5F43-47B8-974E-155D1FA0D672}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
