@@ -75,6 +75,9 @@ class SIPEndPoint;
 
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
+#define SIP_HEADER_REFERRED_BY SIP_HEADER_PREFIX"Referred-By"
+
+#define OPAL_SIP_REFERRED_CONNECTION "Referred-Connection"
 
 
 /////////////////////////////////////////////////////////////////////////

@@ -1881,6 +1881,35 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     m_prackSequenceNumber = sn;
   }
 
+  if (GetPhase() < EstablishedPhase) {
+    PString referToken = m_connStringOptions(OPAL_SIP_REFERRED_CONNECTION);
+    if (!referToken.IsEmpty()) {
+      PSafePtr<SIPConnection> referred = endpoint.GetSIPConnectionWithLock(referToken, PSafeReadOnly);
+      if (referred != NULL) {
+        (new SIPReferNotify(*referred, response.GetStatusCode()))->Start();
+
+        if (response.GetStatusCode() >= 300) {
+          PTRACE(3, "SIP\tFailed to transfer " << *referred);
+          referred->SetPhase(EstablishedPhase); // Go back to established
+
+          PStringToString info;
+          info.SetAt("result", "failed");
+          info.SetAt("party", "A");
+          OnTransferNotify(info);
+        }
+        else if (response.GetStatusCode() >= 200) {
+          PTRACE(3, "SIP\tCompleted transfer of " << *referred);
+          referred->Release(OpalConnection::EndedByCallForwarded);
+
+          PStringToString info;
+          info.SetAt("result", "completed");
+          info.SetAt("party", "A");
+          OnTransferNotify(info);
+        }
+      }
+    }
+  }
+
   bool handled = false;
 
   // Break out to virtual functions for some special cases.
@@ -2374,20 +2403,28 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
     return;
 
   m_redirectingParty = requestMIME.GetReferredBy();
-  if (m_redirectingParty.IsEmpty())
-    m_redirectingParty = requestMIME.GetFrom();
+  if (m_redirectingParty.IsEmpty()) {
+    SIPURL from = requestMIME.GetFrom();
+    from.Sanitise(SIPURL::ExternalURI);
+    m_redirectingParty = from.AsString();
+  }
+
+  PStringToString info = PURL(m_redirectingParty).GetParamVars();
+  info.SetAt("result", "started");
+  info.SetAt("party", "A");
+  info.SetAt("Referred-By", m_redirectingParty);
+  OnTransferNotify(info);
 
   SIPURL to = referTo;
   PString replaces = to.GetQueryVars()("Replaces");
   to.SetQuery(PString::Empty());
 
-  bool ok = endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL);
+  if (referSub)
+    to.SetParamVar("OPAL-"OPAL_SIP_REFERRED_CONNECTION, GetToken());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (referSub) {
-    SIPReferNotify * notify = new SIPReferNotify(*this, ok ? SIP_PDU::Successful_OK : SIP_PDU::GlobalFailure_Decline);
-    notify->Start();
-  }
+  if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL) && referSub)
+    (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
 }
 
 
