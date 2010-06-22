@@ -3678,7 +3678,7 @@ SIPPrack::SIPPrack(SIPConnection & conn,
                    const PString & rack)
   : SIPTransaction(Method_PRACK, conn)
 {
-  m_mime.SetAt("Rack", rack);
+  m_mime.SetAt("RAck", rack);
 }
 
 
