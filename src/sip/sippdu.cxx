@@ -3526,7 +3526,7 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, StatusCodes code)
   m_mime.SetContentType("message/sipfrag");
 
   PStringStream str;
-  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << " " << code << " " << GetStatusCodeDescription(code);
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << ' ' << code;
   m_entityBody = str;
 }
 

@@ -449,13 +449,17 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   OpalConnection::StringOptions options;
   if (!callId.IsEmpty())
     options.SetAt(SIP_HEADER_REPLACES, callId);
+  options.SetAt(SIP_HEADER_REFERRED_BY, otherConnection->GetRedirectingParty());
   options.SetAt(OPAL_OPT_CALLING_PARTY_URL, otherConnection->GetLocalPartyURL());
 
   SIPConnection * connection = CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
   if (!AddConnection(connection))
     return false;
 
+  if (remoteParty.Find(";OPAL-"OPAL_SIP_REFERRED_CONNECTION) == P_MAX_INDEX)
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
+  else
+    otherConnection->SetPhase(OpalConnection::ForwardingPhase);
   otherConnection->CloseMediaStreams();
 
   return connection->SetUpConnection();
