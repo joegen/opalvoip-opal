@@ -861,6 +861,7 @@ class SIPTransaction : public SIP_PDU
     OpalTransport & GetTransport()  const { return m_transport; }
     SIPConnection * GetConnection() const { return m_connection; }
     PString         GetInterface()  const { return m_localInterface; }
+    void            SetInterface(const PString & localIf)  { m_localInterface = localIf; }
 
     static PString GenerateCallID();
 

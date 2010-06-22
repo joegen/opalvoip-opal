@@ -457,7 +457,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
     return false;
 
   if (remoteParty.Find(";OPAL-"OPAL_SIP_REFERRED_CONNECTION) == P_MAX_INDEX)
-  otherConnection->Release(OpalConnection::EndedByCallForwarded);
+    otherConnection->Release(OpalConnection::EndedByCallForwarded);
   else
     otherConnection->SetPhase(OpalConnection::ForwardingPhase);
   otherConnection->CloseMediaStreams();
@@ -1256,10 +1256,10 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
 {
   OpalIM message;
-  message.m_to             = to;
+  message.m_to.Parse(to, "sip");
+  message.m_from.Parse(from, "sip");
   message.m_mimeType       = type;
   message.m_body           = body;
-  message.m_from           = from;
   message.m_conversationId = conversationId;
 
   bool stat = Message(message);
@@ -1465,6 +1465,7 @@ unsigned SIPEndPoint::GetAllowedMethods() const
          (1<<SIP_PDU::Method_MESSAGE  )|
          (1<<SIP_PDU::Method_INFO     )|
          (1<<SIP_PDU::Method_PING     )|
+         (1<<SIP_PDU::Method_PRACK    )|
          (1<<SIP_PDU::Method_SUBSCRIBE);
 }
 
