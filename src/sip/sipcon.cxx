@@ -1764,10 +1764,14 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (statusCode > 100 && statusCode < 200 && responseMIME.GetRequire().Contains("100rel")) {
     PString rseq = responseMIME.GetString("RSeq");
     if (rseq.IsEmpty()) {
-      PTRACE(2, "SIP\tReliable (100rel) response has no Rseq field.");
+      PTRACE(2, "SIP\tReliable (100rel) response has no RSeq field.");
+    }
+    else if (rseq.AsUnsigned() <= m_prackSequenceNumber) {
+      PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
     }
     else {
       SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
+      prack->SetInterface(transaction.GetInterface()); // Make sure same as response
       prack->Start();
     }
   }
@@ -1871,14 +1875,15 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
-  // RSeq cannot be legally zero.
-  unsigned sn = response.GetMIME().GetString("RSeq", "0").AsUnsigned();
-  if (sn > 0) {
-    if (sn < m_prackSequenceNumber) {
-      PTRACE(4, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
-      return;
+  // Don't pass on retries of reliable provisional responses.
+  {
+    PString snStr = response.GetMIME().GetString("RSeq");
+    if (!snStr.IsEmpty()) {
+      unsigned sn = snStr.AsUnsigned();
+      if (sn <= m_prackSequenceNumber)
+        return;
+      m_prackSequenceNumber = sn;
     }
-    m_prackSequenceNumber = sn;
   }
 
   if (GetPhase() < EstablishedPhase) {
@@ -2913,7 +2918,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
 
     if (m_prackSequenceNumber == 0)
       m_prackSequenceNumber = PRandom::Number(0x40000000); // as per RFC 3262
-    mime.SetAt("Rseq", PString(PString::Unsigned, ++m_prackSequenceNumber));
+    mime.SetAt("RSeq", PString(PString::Unsigned, ++m_prackSequenceNumber));
 
     m_responsePackets.push(response);
     if (m_responsePackets.size() > 1)
@@ -2938,8 +2943,8 @@ void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
            << " not received yet, retry sending response.");
 
     PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++m_responseRetryCount);
-    if (timeout > endpoint.GetRetryTimeoutMin())
-      timeout = endpoint.GetRetryTimeoutMin();
+    if (timeout > endpoint.GetRetryTimeoutMax())
+      timeout = endpoint.GetRetryTimeoutMax();
     m_responseRetryTimer = timeout;
 
     originalInvite->SendResponse(*transport, m_responsePackets.front()); // Not really a resonse but the function will work  }
@@ -2978,6 +2983,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
   if (originalInvite == NULL ||
       originalInvite->GetMIME().GetCSeqIndex() != rack[1].AsUnsigned() ||
       !(rack[2] *= "INVITE") ||
+      m_responsePackets.empty() ||
       m_responsePackets.front().GetMIME().GetString("RSeq").AsUnsigned() != rack[0].AsUnsigned()) {
     request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
     return;
