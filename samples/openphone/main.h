@@ -881,6 +881,10 @@ class MyManager : public wxFrame, public OpalManager
       bool fromRemote,               ///<  Indicates remote has held local connection
       bool onHold                    ///<  Indicates have just been held/retrieved.
     );
+    virtual bool OnTransferNotify(
+      OpalConnection & connection,  ///< Connection being transferred.
+      const PStringToString & info  ///< Information on the transfer
+    );
     virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
