@@ -709,7 +709,7 @@ PBoolean OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
 
 bool OpalManager::OnTransferNotify(OpalConnection & PTRACE_PARAM(connection), const PStringToString & info)
 {
-  PTRACE(4, "OpalManager\tOnTransferNotify: " << info << " for " << connection);
+  PTRACE(4, "OpalManager\tOnTransferNotify for " << connection << '\n' << info);
   return info["result"] != "success";
 }
 
