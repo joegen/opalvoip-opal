@@ -2329,6 +2329,20 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
 }
 
 
+bool MyManager::OnTransferNotify(OpalConnection & connection, const PStringToString & info)
+{
+  LogWindow << "Transfer ";
+  if (info["party"] == "A")
+    LogWindow << "by ";
+  else if (info["party"] == "B")
+    LogWindow << "to ";
+  else
+    LogWindow << "from ";
+  LogWindow << connection.GetRemotePartyName() << ' ' << info["result"] << endl;
+  return OpalManager::OnTransferNotify(connection, info);
+}
+
+
 void MyManager::OnEvtOnHold(wxCommandEvent & )
 {
   if (m_activeCall != NULL) {
