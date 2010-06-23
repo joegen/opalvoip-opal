@@ -44,7 +44,7 @@ endif
 # Get required flags from library
 
 CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal)
-LDFLAGS += -ldl
+LDFLAGS += -ldl $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
 
 
 OBJDIR := obj
