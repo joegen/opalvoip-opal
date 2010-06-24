@@ -127,6 +127,8 @@ class OPALJNI {
   public final static native long OpalParamProtocol_m_product_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native void OpalParamProtocol_m_interfaceAddresses_set(long jarg1, OpalParamProtocol jarg1_, String jarg2);
   public final static native String OpalParamProtocol_m_interfaceAddresses_get(long jarg1, OpalParamProtocol jarg1_);
+  public final static native void OpalParamProtocol_m_userInputMode_set(long jarg1, OpalParamProtocol jarg1_, int jarg2);
+  public final static native int OpalParamProtocol_m_userInputMode_get(long jarg1, OpalParamProtocol jarg1_);
   public final static native long new_OpalParamProtocol();
   public final static native void delete_OpalParamProtocol(long jarg1);
   public final static native String OPAL_MWI_EVENT_PACKAGE_get();

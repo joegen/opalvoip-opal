@@ -205,6 +205,7 @@ class OpalManager_C : public OpalManager
     OpalMessage * SendMessage(const OpalMessage * message);
 
     virtual void OnEstablishedCall(OpalCall & call);
+    virtual void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
     virtual bool OnTransferNotify(OpalConnection &, const PStringToString &);
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
@@ -1391,6 +1392,22 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 #endif
   if (command.m_param.m_protocol.m_interfaceAddresses != NULL)
     StartStopListeners(ep, command.m_param.m_protocol.m_interfaceAddresses, response);
+
+  if (m_apiVersion >= 22) {
+    unsigned mode = ep->GetSendUserInputMode();
+    if (mode != OpalConnection::SendUserInputAsProtocolDefault)
+      ++mode;
+    else
+      mode = OpalUserInputDefault;
+    response->m_param.m_protocol.m_userInputMode = (OpalUserInputModes)mode;
+
+    mode = command.m_param.m_protocol.m_userInputMode;
+    if (mode != OpalUserInputDefault && mode <= OpalConnection::NumSendUserInputModes)
+      --mode;
+    else
+      mode = OpalConnection::SendUserInputAsProtocolDefault;
+    ep->SetSendUserInputMode((OpalConnection::SendUserInputModes)mode);
+  }
 }
 
 
@@ -1719,7 +1736,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   while (connection->GetLocalPartyURL().NumCompare(search) != EqualTo) {
     if (++connection == NULL) {
-      response.SetError("Call does not have suitable connection to transfer.");
+      response.SetError("Call does not have suitable connection to transfer from " + search);
       return;
     }
   }
@@ -1874,6 +1891,18 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
   PostMessage(message);
+}
+
+
+void OpalManager_C::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
+{
+  if (fromRemote) {
+    OpalMessageBuffer message(onHold ? OpalIndOnHold : OpalIndOffHold);
+    SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
+    PostMessage(message);
+  }
+
+  OpalManager::OnHold(connection, fromRemote, onHold);
 }
 
 
