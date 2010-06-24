@@ -680,18 +680,21 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
   }
 
   if (m_needReINVITE && !mediaStreams.IsEmpty()) {
+    PTRACE(4, "SIP\tOffering only current media streams in Re-INVITE");
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
       std::vector<bool>::size_type session = stream->GetSessionID();
       sessions.resize(std::max(sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
-        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut);
+        sdpOK |= OfferSDPMediaDescription(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut, true);
       }
     }
 
     return sdpOK;
   }
+
+  PTRACE(4, "SIP\tOffering all configured media.");
 
   // construct offer as per RFC 3261, para 14.2
   // Use |= to avoid McCarthy boolean || from not calling video/fax
@@ -762,7 +765,8 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
 bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              unsigned rtpSessionId,
                                              OpalRTPSessionManager & rtpSessions,
-                                             SDPSessionDescription & sdp)
+                                             SDPSessionDescription & sdp,
+                                             bool offerOpenMediaStreamOnly)
 {
   OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
   if (rtpSessionId == 0 && autoStart == OpalMediaType::DontOffer)
@@ -856,7 +860,7 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
-  if (m_needReINVITE) {
+  if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
     bool sending = sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
