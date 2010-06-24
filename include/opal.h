@@ -401,6 +401,10 @@ typedef enum OpalMessageType {
                                     OpalParamSetUpCall structure for more information. */
   OpalCmdAlerting,              /**<Send an indication to the remote that we are "ringing". The OpalMessage
                                     m_callToken field indicates which call is alerting.  */
+  OpalIndOnHold,                /**<Indicate a call has been placed on hold by remote. This message is returned
+                                    in the OpalGetMessage() function. */
+  OpalIndOffHold,               /**<Indicate a call has been retrieved from hold by remote. This message is
+                                    returned in the OpalGetMessage() function. */
   OpalIndTransferCall,          /**<Status of transfer operation that is under way. This message is returned in
                                     the OpalGetMessage() function. See the OpalStatusTransferCall structure for
                                     more information. */
@@ -667,6 +671,19 @@ typedef struct OpalProductDescription {
 } OpalProductDescription;
 
 
+/**Type code for controlling the mode in which user input (DTMF) is sent.
+   This is used by the OpalCmdSetProtocolParameters command in the OpalParamProtocol structure.
+  */
+typedef enum OpalUserInputModes {
+  OpalUserInputDefault,   ///< Default mode for protocol
+  OpalUserInputAsQ931,    ///< Use Q.931 Information Elements (H.323 only)
+  OpalUserInputAsString,  ///< Use arbitrary strings (H.245 string, or INFO dtmf)
+  OpalUserInputAsTone,    ///< Use DTMF specific names (H.245 signal, or INFO dtmf-relay)
+  OpalUserInputAsRFC2833, ///< Use RFC 2833 for DTMF only
+  OpalUserInputInBand,    ///< Use in-band generated audio tones for DTMF
+} OpalUserInputModes;
+
+
 /**Protocol parameters for the OpalCmdSetProtocolParameters command.
    This is only passed to and returned from the OpalSendMessage() function.
 
@@ -701,6 +718,9 @@ typedef struct OpalParamProtocol {
 
                                            If the prefix is "ivr", then this is the default VXML script
                                            or URL to execute on incoming calls.*/
+  OpalUserInputModes m_userInputMode; /**< The mode for user input transmission. Note this only applies if an
+                                           explicit protocol is indicated in m_prefix. See OpalUserInputModes
+                                           for more information. */
 } OpalParamProtocol;
 
 

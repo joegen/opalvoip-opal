@@ -2097,6 +2097,34 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1inter
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1userInputMode_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  OpalUserInputModes arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  arg2 = (OpalUserInputModes)jarg2; 
+  if (arg1) (arg1)->m_userInputMode = arg2;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_opalvoip_OPALJNI_OpalParamProtocol_1m_1userInputMode_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  OpalUserInputModes result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamProtocol **)&jarg1; 
+  result = (OpalUserInputModes) ((arg1)->m_userInputMode);
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_opalvoip_OPALJNI_new_1OpalParamProtocol(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalParamProtocol *result = 0 ;

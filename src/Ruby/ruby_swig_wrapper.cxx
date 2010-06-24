@@ -1840,14 +1840,15 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_OpalStatusRegistration swig_types[27]
 #define SWIGTYPE_p_OpalStatusTransferCall swig_types[28]
 #define SWIGTYPE_p_OpalStatusUserInput swig_types[29]
-#define SWIGTYPE_p_OpalVideoRecordMixMode swig_types[30]
-#define SWIGTYPE_p_char swig_types[31]
-#define SWIGTYPE_p_f_p_q_const__OpalMessage__int swig_types[32]
-#define SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int swig_types[33]
-#define SWIGTYPE_p_unsigned_int swig_types[34]
-#define SWIGTYPE_p_void swig_types[35]
-static swig_type_info *swig_types[37];
-static swig_module_info swig_module = {swig_types, 36, 0, 0, 0, 0};
+#define SWIGTYPE_p_OpalUserInputModes swig_types[30]
+#define SWIGTYPE_p_OpalVideoRecordMixMode swig_types[31]
+#define SWIGTYPE_p_char swig_types[32]
+#define SWIGTYPE_p_f_p_q_const__OpalMessage__int swig_types[33]
+#define SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int swig_types[34]
+#define SWIGTYPE_p_unsigned_int swig_types[35]
+#define SWIGTYPE_p_void swig_types[36]
+static swig_type_info *swig_types[38];
+static swig_module_info swig_module = {swig_types, 37, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -6031,6 +6032,79 @@ _wrap_OpalParamProtocol_m_interfaceAddresses_get(int argc, VALUE *argv, VALUE se
   arg1 = reinterpret_cast< OpalParamProtocol * >(argp1);
   result = (char *) ((arg1)->m_interfaceAddresses);
   vresult = SWIG_FromCharPtr((const char *)result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+
+/*
+  Document-method: Opal::OpalParamProtocol.m_userInputMode
+
+  call-seq:
+    m_userInputMode -> int
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalParamProtocol.m_userInputMode=
+
+  call-seq:
+    m_userInputMode=(x) -> int
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalParamProtocol_m_userInputMode_set(int argc, VALUE *argv, VALUE self) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  OpalUserInputModes arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_userInputMode", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamProtocol * >(argp1);
+  ecode2 = SWIG_AsVal_int(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "OpalUserInputModes","m_userInputMode", 2, argv[0] ));
+  } 
+  arg2 = static_cast< OpalUserInputModes >(val2);
+  if (arg1) (arg1)->m_userInputMode = arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalParamProtocol_m_userInputMode_get(int argc, VALUE *argv, VALUE self) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  OpalUserInputModes result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_userInputMode", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamProtocol * >(argp1);
+  result = (OpalUserInputModes) ((arg1)->m_userInputMode);
+  vresult = SWIG_From_int(static_cast< int >(result));
   return vresult;
 fail:
   return Qnil;
@@ -15535,6 +15609,7 @@ static swig_type_info _swigt__p_OpalStatusMessageWaiting = {"_p_OpalStatusMessag
 static swig_type_info _swigt__p_OpalStatusRegistration = {"_p_OpalStatusRegistration", "OpalStatusRegistration *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalStatusTransferCall = {"_p_OpalStatusTransferCall", "OpalStatusTransferCall *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalStatusUserInput = {"_p_OpalStatusUserInput", "OpalStatusUserInput *|OpalParamUserInput *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_OpalUserInputModes = {"_p_OpalUserInputModes", "enum OpalUserInputModes *|OpalUserInputModes *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalVideoRecordMixMode = {"_p_OpalVideoRecordMixMode", "enum OpalVideoRecordMixMode *|OpalVideoRecordMixMode *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_q_const__OpalMessage__int = {"_p_f_p_q_const__OpalMessage__int", "int (*)(OpalMessage const *)|OpalMessageAvailableFunction", 0, 0, (void*)0, 0};
@@ -15573,6 +15648,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_OpalStatusRegistration,
   &_swigt__p_OpalStatusTransferCall,
   &_swigt__p_OpalStatusUserInput,
+  &_swigt__p_OpalUserInputModes,
   &_swigt__p_OpalVideoRecordMixMode,
   &_swigt__p_char,
   &_swigt__p_f_p_q_const__OpalMessage__int,
@@ -15611,6 +15687,7 @@ static swig_cast_info _swigc__p_OpalStatusMessageWaiting[] = {  {&_swigt__p_Opal
 static swig_cast_info _swigc__p_OpalStatusRegistration[] = {  {&_swigt__p_OpalStatusRegistration, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalStatusTransferCall[] = {  {&_swigt__p_OpalStatusTransferCall, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalStatusUserInput[] = {  {&_swigt__p_OpalStatusUserInput, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_OpalUserInputModes[] = {  {&_swigt__p_OpalUserInputModes, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalVideoRecordMixMode[] = {  {&_swigt__p_OpalVideoRecordMixMode, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_q_const__OpalMessage__int[] = {  {&_swigt__p_f_p_q_const__OpalMessage__int, 0, 0, 0},{0, 0, 0, 0}};
@@ -15649,6 +15726,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_OpalStatusRegistration,
   _swigc__p_OpalStatusTransferCall,
   _swigc__p_OpalStatusUserInput,
+  _swigc__p_OpalUserInputModes,
   _swigc__p_OpalVideoRecordMixMode,
   _swigc__p_char,
   _swigc__p_f_p_q_const__OpalMessage__int,
@@ -15961,6 +16039,8 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_const(mOpal, "OpalCmdStopRecording", SWIG_From_int(static_cast< int >(OpalCmdStopRecording)));
   rb_define_const(mOpal, "OpalIndProceeding", SWIG_From_int(static_cast< int >(OpalIndProceeding)));
   rb_define_const(mOpal, "OpalCmdAlerting", SWIG_From_int(static_cast< int >(OpalCmdAlerting)));
+  rb_define_const(mOpal, "OpalIndOnHold", SWIG_From_int(static_cast< int >(OpalIndOnHold)));
+  rb_define_const(mOpal, "OpalIndOffHold", SWIG_From_int(static_cast< int >(OpalIndOffHold)));
   rb_define_const(mOpal, "OpalIndTransferCall", SWIG_From_int(static_cast< int >(OpalIndTransferCall)));
   rb_define_const(mOpal, "OpalIndCompletedIVR", SWIG_From_int(static_cast< int >(OpalIndCompletedIVR)));
   rb_define_const(mOpal, "OpalMessageTypeCount", SWIG_From_int(static_cast< int >(OpalMessageTypeCount)));
@@ -16077,6 +16157,12 @@ SWIGEXPORT void Init_opal(void) {
   SwigClassOpalProductDescription.mark = 0;
   SwigClassOpalProductDescription.destroy = (void (*)(void *)) free_OpalProductDescription;
   SwigClassOpalProductDescription.trackObjects = 0;
+  rb_define_const(mOpal, "OpalUserInputDefault", SWIG_From_int(static_cast< int >(OpalUserInputDefault)));
+  rb_define_const(mOpal, "OpalUserInputAsQ931", SWIG_From_int(static_cast< int >(OpalUserInputAsQ931)));
+  rb_define_const(mOpal, "OpalUserInputAsString", SWIG_From_int(static_cast< int >(OpalUserInputAsString)));
+  rb_define_const(mOpal, "OpalUserInputAsTone", SWIG_From_int(static_cast< int >(OpalUserInputAsTone)));
+  rb_define_const(mOpal, "OpalUserInputAsRFC2833", SWIG_From_int(static_cast< int >(OpalUserInputAsRFC2833)));
+  rb_define_const(mOpal, "OpalUserInputInBand", SWIG_From_int(static_cast< int >(OpalUserInputInBand)));
   
   SwigClassOpalParamProtocol.klass = rb_define_class_under(mOpal, "OpalParamProtocol", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_OpalParamProtocol, (void *) &SwigClassOpalParamProtocol);
@@ -16092,6 +16178,8 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_product", VALUEFUNC(_wrap_OpalParamProtocol_m_product_get), -1);
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_interfaceAddresses=", VALUEFUNC(_wrap_OpalParamProtocol_m_interfaceAddresses_set), -1);
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_interfaceAddresses", VALUEFUNC(_wrap_OpalParamProtocol_m_interfaceAddresses_get), -1);
+  rb_define_method(SwigClassOpalParamProtocol.klass, "m_userInputMode=", VALUEFUNC(_wrap_OpalParamProtocol_m_userInputMode_set), -1);
+  rb_define_method(SwigClassOpalParamProtocol.klass, "m_userInputMode", VALUEFUNC(_wrap_OpalParamProtocol_m_userInputMode_get), -1);
   SwigClassOpalParamProtocol.mark = 0;
   SwigClassOpalParamProtocol.destroy = (void (*)(void *)) free_OpalParamProtocol;
   SwigClassOpalParamProtocol.trackObjects = 0;
