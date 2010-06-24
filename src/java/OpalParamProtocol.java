@@ -76,6 +76,14 @@ public class OpalParamProtocol {
     return OPALJNI.OpalParamProtocol_m_interfaceAddresses_get(swigCPtr, this);
   }
 
+  public void setM_userInputMode(OpalUserInputModes value) {
+    OPALJNI.OpalParamProtocol_m_userInputMode_set(swigCPtr, this, value.swigValue());
+  }
+
+  public OpalUserInputModes getM_userInputMode() {
+    return OpalUserInputModes.swigToEnum(OPALJNI.OpalParamProtocol_m_userInputMode_get(swigCPtr, this));
+  }
+
   public OpalParamProtocol() {
     this(OPALJNI.new_OpalParamProtocol(), true);
   }
