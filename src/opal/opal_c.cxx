@@ -836,9 +836,10 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 
 
 #if OPAL_IVR
-  if (options.Find("ivr") != P_MAX_INDEX) {
-    new OpalIVREndPoint_C(*this);
-    AddRouteEntry(".*:#=ivr:"); // A hash from anywhere goes to IVR
+  PINDEX ivrPos = options.Find("ivr");
+  if (ivrPos < defUserPos) {
+    defUser = "ivr:";
+    defUserPos = localPos;
   }
 #endif
 
@@ -898,6 +899,13 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
     localEP = new OpalLocalEndPoint_C(*this);
     AddRouteEntry("local:.*=" + defProto + ":<da>");
   }
+
+#if OPAL_IVR
+  if (ivrPos != P_MAX_INDEX) {
+    new OpalIVREndPoint_C(*this);
+    AddRouteEntry("ivr:.*=" + defProto + ":<da>");
+  }
+#endif
 
   return true;
 }
@@ -1744,7 +1752,7 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
   if (connection->GetPhase() < OpalConnection::ConnectedPhase)
     connection->ForwardCall(command.m_param.m_callSetUp.m_partyB);
   else
-    connection->TransferConnection(command.m_param.m_callSetUp.m_partyB);
+    call->Transfer(command.m_param.m_callSetUp.m_partyB, connection);
 }
 
 
