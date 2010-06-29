@@ -1229,7 +1229,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
+bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
 {
   /* As SIP does not really do capability exchange, if we don't have an initial
      INVITE from the remote (indicated by sdp == NULL) then all we can do is
@@ -1241,7 +1241,13 @@ void SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
 
   m_remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
+  if (m_remoteFormatList.IsEmpty()) {
+    PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
+   return false;
+  }
+
   PTRACE(4, "SIP\tRemote media formats set to " << setfill(',') << m_remoteFormatList << setfill(' '));
+  return true;
 }
 
 
@@ -1472,7 +1478,8 @@ PBoolean SIPConnection::SetUpConnection()
 
   ++m_sdpVersion;
 
-  SetRemoteMediaFormats(NULL);
+  if (!SetRemoteMediaFormats(NULL))
+    return false;
 
   bool ok;
   if (!transport->GetInterface().IsEmpty())
@@ -2142,7 +2149,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SetPhase(SetUpPhase);
 
-  SetRemoteMediaFormats(originalInvite->GetSDP());
+  if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
+    Release(EndedByCapabilityExchange);
+    return;
+  }
 
   // See if we have a replaces header, if not is normal call
   PString replaces = mime("Replaces");
