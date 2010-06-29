@@ -662,7 +662,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
-    void SetRemoteMediaFormats(SDPSessionDescription * sdp);
+    bool SetRemoteMediaFormats(SDPSessionDescription * sdp);
 
     std::map<std::string, SIP_PDU *> m_responses;
 
