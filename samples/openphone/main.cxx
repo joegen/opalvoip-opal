@@ -1016,9 +1016,9 @@ bool MyManager::Initialise()
   }
 
 #if PTRACING
-  {
+  if (PTrace::CanTrace(4)) {
     OpalMediaFormatList mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
     traceStream << "OpenPhone\tRegistered media formats:\n";
     for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
       mediaFormats[i].PrintOptions(traceStream);
