@@ -142,6 +142,7 @@ class OpalIVREndPoint_C : public OpalIVREndPoint
   public:
     OpalIVREndPoint_C(OpalManager_C & manager);
 
+    virtual bool OnIncomingCall(OpalLocalConnection & connection);
     virtual void OnEndDialog(OpalIVRConnection & connection);
 
   private:
@@ -635,6 +636,13 @@ OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
   : OpalIVREndPoint(manager)
   , m_manager(manager)
 {
+}
+
+
+bool OpalIVREndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
+{
+  m_manager.SendIncomingCallInfo(connection);
+  return true;
 }
 
 
