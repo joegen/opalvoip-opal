@@ -2,7 +2,7 @@
 static const char * const AppIcon_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "64 64 17 1",
-"  c opaque",
+"  c None",
 ". c #313173",
 "X c #4a5284",
 "o c #6b6b84",
