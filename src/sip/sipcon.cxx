@@ -2129,6 +2129,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   m_redirectingParty = mime.GetReferredBy();
+  PTRACE_IF(4, !m_redirectingParty.IsEmpty(),
+            "SIP\tRedirecting party (Referred-By/Diversion) set to \"" << m_redirectingParty << '"');
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
