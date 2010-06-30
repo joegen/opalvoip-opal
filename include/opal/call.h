@@ -427,10 +427,14 @@ class OpalCall : public PSafeObject
       const RTP_Session & session         ///<  Session with statistics
     );
 
+    /**Start the media streams on the connections.
+     */
+    virtual void StartMediaStreams();
+
     /**Close the media streams on the connections.
      */
     virtual void CloseMediaStreams();
-    
+
     /**See if the media can bypass the local host.
      */
     virtual PBoolean IsMediaBypassPossible(
