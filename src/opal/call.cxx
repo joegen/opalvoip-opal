@@ -650,6 +650,14 @@ bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
 }
 
 
+void OpalCall::StartMediaStreams()
+{
+  PSafePtr<OpalConnection> connection;
+  while (EnumerateConnections(connection, PSafeReadWrite))
+    connection->StartMediaStreams();
+}
+
+
 void OpalCall::CloseMediaStreams()
 {
   PSafePtr<OpalConnection> connection;

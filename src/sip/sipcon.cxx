@@ -2286,19 +2286,9 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   m_handlingINVITE = false;
 
-  switch (GetPhase()) {
-    case ConnectedPhase :
-      SetPhase(EstablishedPhase);
-      OnEstablished();
-      break;
-
-    case EstablishedPhase :
-      // If we receive an ACK in established phase, it is a re-INVITE
-      StartMediaStreams();
-      break;
-
-    default :
-      break;
+  if (GetPhase() == ConnectedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
   }
 
   StartPendingReINVITE();
@@ -2527,7 +2517,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
   }
 
   PTRACE_IF(4, response.GetSDP() != NULL, "SIP\tStarting receive media to annunciate remote alerting tone");
-  StartMediaStreams();
+  ownerCall.StartMediaStreams();
 }
 
 
@@ -2544,7 +2534,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   }
 
   PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
-  StartMediaStreams();
+  ownerCall.StartMediaStreams();
 }
 
 
@@ -2757,7 +2747,7 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
   }
 
   if (GetPhase() == EstablishedPhase)
-    StartMediaStreams(); // re-INVITE
+    ownerCall.StartMediaStreams(); // re-INVITE
   else {
     if (!ok)
       Release(EndedByCapabilityExchange);
