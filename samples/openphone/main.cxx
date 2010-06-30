@@ -1155,7 +1155,7 @@ bool MyManager::Initialise()
 #endif // OPAL_SIP
 
 
-#if OPAL_IVR
+#if OPAL_CAPI
   capiEP->OpenControllers();
 #endif
 
