@@ -47,6 +47,7 @@
 #include <opal/transcoders.h>
 #include <ptclib/random.h>              // for local dialog tag
 #include <ptclib/pdns.h>
+#include <ptclib/pxml.h>
 #include <h323/q931.h>
 
 #if OPAL_HAS_H224
@@ -3250,109 +3251,35 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 
 
 #if OPAL_VIDEO
-class QDXML 
-{
-  public:
-    struct statedef {
-      int currState;
-      const char * str;
-      int newState;
-    };
-
-    virtual ~QDXML() {}
-
-    bool ExtractNextElement(std::string & str)
-    {
-      while (isspace(*ptr))
-        ++ptr;
-      if (*ptr != '<')
-        return false;
-      ++ptr;
-      if (*ptr == '\0')
-        return false;
-      const char * start = ptr;
-      while (*ptr != '>') {
-        if (*ptr == '\0')
-          return false;
-        ++ptr;
-      }
-      ++ptr;
-      str = std::string(start, ptr-start-1);
-      return true;
-    }
-
-    int Parse(const std::string & xml, const statedef * states, unsigned numStates)
-    {
-      ptr = xml.c_str(); 
-      state = 0;
-      std::string str;
-      while ((state >= 0) && ExtractNextElement(str)) {
-        unsigned i;
-        for (i = 0; i < numStates; ++i) {
-          if ((state == states[i].currState) && (str.compare(0, strlen(states[i].str), states[i].str) == 0)) {
-            state = states[i].newState;
-            break;
-          }
-        }
-        if (i == numStates) {
-          state = -1;
-          break;
-        }
-        if (!OnMatch(str)) {
-          state = -1;
-          break; 
-        }
-      }
-      return state;
-    }
-
-    virtual bool OnMatch(const std::string & )
-    { return true; }
-
-    int state;
-
-  protected:
-    const char * ptr;
-};
-
-class VFUXML : public QDXML
-{
-  public:
-    bool vfu;
-
-    VFUXML()
-    { vfu = false; }
-
-    PBoolean Parse(const std::string & xml)
-    {
-      static const struct statedef states[] = {
-        { 0, "?xml",                 1 },
-        { 1, "media_control",        2 },
-        { 2, "vc_primitive",         3 },
-        { 3, "to_encoder",           4 },
-        { 4, "picture_fast_update",  5 },
-        { 4, "picture_fast_update/", 6 },
-        { 5, "/picture_fast_update", 6 },
-        { 6, "/to_encoder",          7 },
-        { 7, "/vc_primitive",        8 },
-        { 8, "/media_control",       255 },
-      };
-      const int numStates = sizeof(states)/sizeof(states[0]);
-      return QDXML::Parse(xml, states, numStates) == 255;
-    }
-
-    bool OnMatch(const std::string &)
-    {
-      if (state == 6)
-        vfu = true;
-      return true;
-    }
-};
 
 PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 {
-  VFUXML vfu;
-  if (!vfu.Parse(request.GetEntityBody()) || !vfu.vfu) {
+#if OPAL_PTLIB_EXPAT
+
+  PXML xml;
+  PXMLElement * element;
+  if (xml.Load(request.GetEntityBody()) &&
+      xml.GetRootElement()->GetName() == "media_control" &&
+     (element =      xml.GetElement("vc_primitive")) != NULL &&
+     (element = element->GetElement("to_encoder")) != NULL &&
+                element->GetElement("picture_fast_update")  != NULL)
+
+#else // OPAL_PTLIB_EXPAT
+
+  PCaselessString body = request.GetEntityBody();
+  PINDEX pos;
+  if ((pos = body.Find("media_control"           )) != P_MAX_INDEX &&
+      (pos = body.Find("vc_primitive"       , pos)) != P_MAX_INDEX &&
+      (pos = body.Find("to_encoder"         , pos)) != P_MAX_INDEX &&
+             body.Find("picture_fast_update", pos)  != P_MAX_INDEX)
+
+#endif // OPAL_PTLIB_EXPAT
+
+  {
+    SendVideoUpdatePicture();
+    request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  }
+  else {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     SIP_PDU response(request, SIP_PDU::Failure_Undecipherable);
     response.SetEntityBody(
@@ -3364,14 +3291,11 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
       "</media_control>\n");
     request.SendResponse(*transport, response);
   }
-  else {
-    SendVideoUpdatePicture();
-    request.SendResponse(*transport, SIP_PDU::Successful_OK);
-  }
 
-  return PTrue;
+  return true;
 }
-#endif
+
+#endif // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
 
