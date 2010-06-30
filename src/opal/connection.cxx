@@ -598,7 +598,7 @@ void OpalConnection::OnConnected()
 void OpalConnection::OnEstablished()
 {
   PTRACE(3, "OpalCon\tOnEstablished " << *this);
-  StartMediaStreams();
+  ownerCall.StartMediaStreams();
   endpoint.OnEstablished(*this);
 }
 
@@ -753,7 +753,7 @@ void OpalConnection::StartMediaStreams()
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream)
     mediaStream->Start();
 
-  PTRACE(3, "OpalCon\tMedia stream threads started.");
+  PTRACE(3, "OpalCon\tMedia stream threads started for " << *this);
 }
 
 
