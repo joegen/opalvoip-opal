@@ -1,5 +1,5 @@
 /* XPM */
-static char *busy16[] = {
+static char const * const busy16_xpm[] = {
 "16 16 14 1 0 0",
 "  c #000000",
 "! c #330000",
