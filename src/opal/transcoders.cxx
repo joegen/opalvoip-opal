@@ -175,8 +175,9 @@ static bool GetBaseFormat(const OpalMediaFormatList & masterFormats,
 {
   OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(capability);
   if (masterFormat == masterFormats.end()) {
-    PTRACE(2, "Opal\tCould not find " << direction << " format " << capability << " in master list");
-    return false;
+    format = capability;
+    PTRACE(5, "Opal\tInitial " << direction << " format from capabilities:\n" << setw(-1) << format);
+    return true;
   }
 
   format = *masterFormat;
