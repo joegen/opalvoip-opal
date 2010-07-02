@@ -182,11 +182,14 @@ class OpalManager_C : public OpalManager
 {
   public:
     OpalManager_C(unsigned version)
-      : localEP(NULL)
+      : m_localEP(NULL)
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-      , pcssEP(NULL)
+      , m_pcssEP(NULL)
 #endif
+#endif
+#if OPAL_IVR
+      , m_ivrEP(NULL)
 #endif
       , m_apiVersion(version)
       , m_manualAlerting(false)
@@ -241,11 +244,14 @@ class OpalManager_C : public OpalManager
 
     bool FindCall(const char * token, OpalMessageBuffer & response, PSafePtr<OpalCall> & call);
 
-    OpalLocalEndPoint_C * localEP;
+    OpalLocalEndPoint_C * m_localEP;
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-    OpalPCSSEndPoint_C  * pcssEP;
+    OpalPCSSEndPoint_C  * m_pcssEP;
 #endif
+#endif
+#if OPAL_IVR
+    OpalIVREndPoint_C   * m_ivrEP;
 #endif
 
     unsigned                  m_apiVersion;
@@ -636,6 +642,7 @@ OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
   : OpalIVREndPoint(manager)
   , m_manager(manager)
 {
+  m_deferredAlerting = manager.IsManualAlerting();
 }
 
 
@@ -897,20 +904,20 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (pcPos != P_MAX_INDEX) {
-    pcssEP = new OpalPCSSEndPoint_C(*this);
+    m_pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
 #endif
 #endif
 
   if (localPos != P_MAX_INDEX) {
-    localEP = new OpalLocalEndPoint_C(*this);
+    m_localEP = new OpalLocalEndPoint_C(*this);
     AddRouteEntry("local:.*=" + defProto + ":<da>");
   }
 
 #if OPAL_IVR
   if (ivrPos != P_MAX_INDEX) {
-    new OpalIVREndPoint_C(*this);
+    m_ivrEP = new OpalIVREndPoint_C(*this);
     AddRouteEntry("ivr:.*=" + defProto + ":<da>");
   }
 #endif
@@ -1011,14 +1018,14 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 {
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-  if (pcssEP != NULL) {
-    SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
+  if (m_pcssEP != NULL) {
+    SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, m_pcssEP->GetSoundChannelRecordDevice());
     if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
-      pcssEP->SetSoundChannelRecordDevice(command.m_param.m_general.m_audioRecordDevice);
+      m_pcssEP->SetSoundChannelRecordDevice(command.m_param.m_general.m_audioRecordDevice);
 
-    SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, pcssEP->GetSoundChannelPlayDevice());
+    SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, m_pcssEP->GetSoundChannelPlayDevice());
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
-      pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
+      m_pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
 #endif
 #endif // OPAL_PTLIB_AUDIO
@@ -1172,10 +1179,10 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-  if (pcssEP != NULL) {
-    response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
+  if (m_pcssEP != NULL) {
+    response->m_param.m_general.m_audioBuffers = m_pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
-      pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
+      m_pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
 #endif
 #endif
@@ -1183,23 +1190,23 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 5)
     return;
 
-  if (localEP != NULL) {
-    response->m_param.m_general.m_mediaReadData = localEP->m_mediaReadData;
+  if (m_localEP != NULL) {
+    response->m_param.m_general.m_mediaReadData = m_localEP->m_mediaReadData;
     if (command.m_param.m_general.m_mediaReadData != NULL)
-      localEP->m_mediaReadData = command.m_param.m_general.m_mediaReadData;
+      m_localEP->m_mediaReadData = command.m_param.m_general.m_mediaReadData;
 
-    response->m_param.m_general.m_mediaWriteData = localEP->m_mediaWriteData;
+    response->m_param.m_general.m_mediaWriteData = m_localEP->m_mediaWriteData;
     if (command.m_param.m_general.m_mediaWriteData != NULL)
-      localEP->m_mediaWriteData = command.m_param.m_general.m_mediaWriteData;
+      m_localEP->m_mediaWriteData = command.m_param.m_general.m_mediaWriteData;
 
-    response->m_param.m_general.m_mediaDataHeader = localEP->m_mediaDataHeader;
+    response->m_param.m_general.m_mediaDataHeader = m_localEP->m_mediaDataHeader;
     if (command.m_param.m_general.m_mediaDataHeader != 0)
-      localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
+      m_localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
 
     if (m_apiVersion >= 20) {
-      response->m_param.m_general.m_mediaTiming = localEP->m_mediaTiming;
+      response->m_param.m_general.m_mediaTiming = m_localEP->m_mediaTiming;
       if (command.m_param.m_general.m_mediaTiming != 0)
-        localEP->m_mediaTiming = command.m_param.m_general.m_mediaTiming;
+        m_localEP->m_mediaTiming = command.m_param.m_general.m_mediaTiming;
     }
   }
 
@@ -1283,10 +1290,10 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-  if (pcssEP != NULL) {
-    response->m_param.m_general.m_audioBufferTime = pcssEP->GetSoundChannelBufferTime();
+  if (m_pcssEP != NULL) {
+    response->m_param.m_general.m_audioBufferTime = m_pcssEP->GetSoundChannelBufferTime();
     if (command.m_param.m_general.m_audioBufferTime != 0)
-      pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
+      m_pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
   }
 #endif
 #endif
@@ -1538,13 +1545,17 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   if (partyA.IsEmpty()) {
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-    if (pcssEP != NULL)
+    if (m_pcssEP != NULL)
       partyA = "pc:*";
     else
 #endif
 #endif
-    if (localEP != NULL)
+    if (m_localEP != NULL)
       partyA = "local:*";
+#if OPAL_IVR
+    else if (m_ivrEP != NULL)
+      partyA = "ivr:*";
+#endif
     else
       partyA = "pots:*";
   }
@@ -1577,25 +1588,19 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
     return;
   }
 
-  if (
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-      pcssEP == NULL &&
-#endif
-#endif
-      localEP == NULL) {
-    response.SetError("Can only control alerting from PC.");
-    return;
-  }
-
-#if OPAL_PTLIB_AUDIO
-#if OPAL_HAS_PCSS
-  if (pcssEP != NULL && pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
+  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
 #endif
 #endif
 
-  if (localEP != NULL && localEP->AlertingIncomingCall(command.m_param.m_callToken))
+#if OPAL_IVR
+  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken))
+    return;
+#endif
+
+  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
 
   response.SetError("No call found by the token provided.");
@@ -1609,25 +1614,19 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-  if (
 #if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
-      pcssEP == NULL &&
-#endif
-#endif
-      localEP == NULL) {
-    response.SetError("Can only answer calls to PC.");
-    return;
-  }
-
-#if OPAL_PTLIB_AUDIO
-#if OPAL_HAS_PCSS
-  if (pcssEP != NULL && pcssEP->AcceptIncomingCall(command.m_param.m_callToken))
+  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_callToken))
     return;
 #endif
 #endif
 
-  if (localEP != NULL && localEP->AcceptIncomingCall(command.m_param.m_callToken))
+#if OPAL_IVR
+  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_callToken))
+    return;
+#endif
+
+  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_callToken))
     return;
 
   response.SetError("No call found by the token provided.");
