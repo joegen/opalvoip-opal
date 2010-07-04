@@ -655,6 +655,7 @@ bool OpalIVREndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 
 void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
 {
+  PTRACE(4, "OpalC API\tOnEndDialog fir " << connection);
   OpalMessageBuffer message(OpalIndCompletedIVR);
   SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
   m_manager.PostMessage(message);
