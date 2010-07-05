@@ -186,7 +186,9 @@
 #undef GCC_HAS_CLZ
 
 #undef OPAL_HAS_MIXER
-#undef OPAL_HAS_PCSS
+#if OPAL_PTLIB_AUDIO
+  #undef OPAL_HAS_PCSS
+#endif
 
 
 /////////////////////////////////////////////////

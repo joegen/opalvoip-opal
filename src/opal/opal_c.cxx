@@ -93,7 +93,6 @@ class OpalMessageBuffer
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
 
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
 
 class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
@@ -108,8 +107,7 @@ class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
     OpalManager_C & m_manager;
 };
 
-#endif
-#endif // OPAL_PTLIB_AUDIO
+#endif // OPAL_HAS_PCSS
 
 
 class OpalLocalEndPoint_C : public OpalLocalEndPoint
@@ -183,16 +181,13 @@ class OpalManager_C : public OpalManager
   public:
     OpalManager_C(unsigned version)
       : m_localEP(NULL)
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
       , m_pcssEP(NULL)
-#endif
 #endif
 #if OPAL_IVR
       , m_ivrEP(NULL)
 #endif
       , m_apiVersion(version)
-      , m_manualAlerting(false)
       , m_messagesAvailable(0, INT_MAX)
     {
     }
@@ -219,8 +214,6 @@ class OpalManager_C : public OpalManager
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
 
-    bool IsManualAlerting() const { return m_manualAlerting; }
-
     void SendIncomingCallInfo(const OpalConnection & connection);
 
   private:
@@ -245,17 +238,14 @@ class OpalManager_C : public OpalManager
     bool FindCall(const char * token, OpalMessageBuffer & response, PSafePtr<OpalCall> & call);
 
     OpalLocalEndPoint_C * m_localEP;
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
     OpalPCSSEndPoint_C  * m_pcssEP;
-#endif
 #endif
 #if OPAL_IVR
     OpalIVREndPoint_C   * m_ivrEP;
 #endif
 
     unsigned                  m_apiVersion;
-    bool                      m_manualAlerting;
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
@@ -415,7 +405,6 @@ OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   , m_mediaTiming(OpalMediaTimingSynchronous)
   , m_manager(mgr)
 {
-  m_deferredAlerting = mgr.IsManualAlerting();
 }
 
 
@@ -604,14 +593,12 @@ bool OpalLocalEndPoint_C::IsSynchronous() const
 
 ///////////////////////////////////////
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
 
 OpalPCSSEndPoint_C::OpalPCSSEndPoint_C(OpalManager_C & mgr)
   : OpalPCSSEndPoint(mgr)
   , m_manager(mgr)
 {
-  m_deferredAlerting = mgr.IsManualAlerting();
 }
 
 
@@ -630,8 +617,7 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   return true;
 }
 
-#endif
-#endif // OPAL_PTLIB_AUDIO
+#endif // OPAL_HAS_PCSS
 
 
 ///////////////////////////////////////
@@ -642,7 +628,6 @@ OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
   : OpalIVREndPoint(manager)
   , m_manager(manager)
 {
-  m_deferredAlerting = manager.IsManualAlerting();
 }
 
 
@@ -902,13 +887,11 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   }
 #endif
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (pcPos != P_MAX_INDEX) {
     m_pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
-#endif
 #endif
 
   if (localPos != P_MAX_INDEX) {
@@ -1017,7 +1000,6 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, m_pcssEP->GetSoundChannelRecordDevice());
@@ -1028,8 +1010,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
       m_pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
   }
-#endif
-#endif // OPAL_PTLIB_AUDIO
+#endif // OPAL_HAS_PCSS
 
 #if OPAL_VIDEO
   PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -1178,14 +1159,12 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 3)
     return;
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL) {
     response->m_param.m_general.m_audioBuffers = m_pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
       m_pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
-#endif
 #endif
 
   if (m_apiVersion < 5)
@@ -1289,7 +1268,6 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 17)
     return;
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL) {
     response->m_param.m_general.m_audioBufferTime = m_pcssEP->GetSoundChannelBufferTime();
@@ -1297,14 +1275,22 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       m_pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
   }
 #endif
-#endif
 
   if (m_apiVersion < 19)
     return;
 
-  response->m_param.m_general.m_audioBufferTime = m_manualAlerting ? 2 : 1;
-  if (command.m_param.m_general.m_manualAlerting != 0)
-    m_manualAlerting = command.m_param.m_general.m_manualAlerting != 1;
+  response->m_param.m_general.m_audioBufferTime = m_localEP->IsDeferredAlerting() ? 2 : 1;
+  if (command.m_param.m_general.m_manualAlerting != 0) {
+    m_localEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+#if OPAL_HAS_PCSS
+    if (m_pcssEP != NULL)
+      m_pcssEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+#endif
+#if OPAL_IVR
+    if (m_ivrEP != NULL)
+      m_ivrEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+#endif
+  }
 }
 
 
@@ -1544,12 +1530,10 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
 
   PString partyA = command.m_param.m_callSetUp.m_partyA;
   if (partyA.IsEmpty()) {
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
     if (m_pcssEP != NULL)
       partyA = "pc:*";
     else
-#endif
 #endif
     if (m_localEP != NULL)
       partyA = "local:*";
@@ -1589,11 +1573,9 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
     return;
   }
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
     return;
-#endif
 #endif
 
 #if OPAL_IVR
@@ -1615,11 +1597,9 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
-#if OPAL_PTLIB_AUDIO
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_callToken))
     return;
-#endif
 #endif
 
 #if OPAL_IVR
