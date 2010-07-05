@@ -41,8 +41,6 @@
 
 #if OPAL_HAS_PCSS
 
-#if OPAL_PTLIB_AUDIO
-
 #include <ptlib/sound.h>
 #include <opal/localep.h>
 
@@ -420,7 +418,6 @@ class OpalPCSSConnection : public OpalLocalConnection
 #warning "PTLib soundcard support not available"
 #endif
 
-#endif // OPAL_PTLIB_AUDIO
 
 #endif // OPAL_HAS_PCSS
 

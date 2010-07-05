@@ -40,8 +40,6 @@
 
 #if OPAL_HAS_PCSS
 
-#if OPAL_PTLIB_AUDIO
-
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
@@ -463,8 +461,6 @@ PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & m
   return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
-
-#endif // OPAL_PTLIB_AUDIO
 
 #endif // OPAL_HAS_PCSS
 

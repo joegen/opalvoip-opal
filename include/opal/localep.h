@@ -259,6 +259,10 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Indicate OnAlerting() is be deferred or immediate.
       */
     bool IsDeferredAlerting() const { return m_deferredAlerting; }
+
+    /**Indicate OnAlerting() is be deferred or immediate.
+      */
+    void SetDeferredAlerting(bool defer) { m_deferredAlerting = defer; }
   //@}
 
   protected:
