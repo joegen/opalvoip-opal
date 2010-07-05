@@ -73,6 +73,18 @@ class SIPEndPoint;
   */
 #define OPAL_OPT_INITIAL_OFFER "Initial-Offer"
 
+/**OpalConnection::StringOption key to a string representing the precise SDP
+   to be included in the INVITE offer. No media streams are opened or any
+   checks whstsoever made on the string. It is simply included as the body of
+   the INVITE.
+   
+   Note this options presence also prevents handling of the response SDP
+   
+   Defaults to empty string which generates SDP from available
+   media formats and media streams.
+  */
+#define OPAL_OPT_EXTERNAL_SDP "External-SDP"
+
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
 #define SIP_HEADER_REFERRED_BY SIP_HEADER_PREFIX"Referred-By"
@@ -585,12 +597,13 @@ class SIPConnection : public OpalRTPConnection
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE();
 
-    virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
+    virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
       SIP_PDU::StatusCodes code,
       const char * contact = NULL,
       const char * extra = NULL,
-      const SDPSessionDescription * sdp = NULL
+      const SDPSessionDescription * sdp = NULL,
+      const char * body = NULL
     );
 
     void UpdateRemoteAddresses();

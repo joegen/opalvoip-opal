@@ -565,14 +565,11 @@ PBoolean SIPConnection::SetConnected()
   
   PTRACE(3, "SIP\tSetConnected");
 
-  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
-  if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false)) {
-    Release(EndedByCapabilityExchange);
-    return PFalse;
-  }
-    
   // send the 200 OK response
-  SendInviteOK(sdpOut);
+  if (!SendInviteOK()) {
+    Release(EndedByCapabilityExchange);
+    return false;
+  }
 
   releaseMethod = ReleaseWithBYE;
   sessionTimer = 10000;
@@ -2244,12 +2241,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_needReINVITE = true;
   m_handlingINVITE = true;
 
-  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
-
   // send the 200 OK response
-  if (OnSendAnswerSDP(m_rtpSessions, sdpOut, true))
-    SendInviteOK(sdpOut);
-  else
+  if (!SendInviteOK())
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   m_answerFormatList.RemoveAll();
@@ -2833,9 +2826,6 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     }
   }
 
-  if (m_needReINVITE)
-    ++m_sdpVersion;
-
   if (IsPresentationBlocked()) {
     // Should do more as per RFC3323, but this is all for now
     SIPURL from = mime.GetFrom();
@@ -2844,7 +2834,13 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     mime.SetFrom(from.AsQuotedString());
   }
 
-  if (m_connStringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+  PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
+  if (!externalSDP.IsEmpty())
+    request.SetEntityBody(externalSDP);
+  else if (m_connStringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+    if (m_needReINVITE)
+      ++m_sdpVersion;
+
     SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
     if (OnSendOfferSDP(request.GetSessionManager(), *sdp))
       request.SetSDP(sdp);
@@ -2869,8 +2865,16 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 }
 
 
-PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
+bool SIPConnection::SendInviteOK()
 {
+  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
+
+  PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
+  if (externalSDP.IsEmpty()) {
+    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false))
+      return false;
+  }
+
   // this can be used to prompoe any incoming calls to TCP. Not quite there yet, but it *almost* works
   SIPURL contact;
   bool promoteToTCP = false;    // disable code for now
@@ -2884,11 +2888,15 @@ PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
     contact = SIPURL("", newAddr, 0);
   }
 
-  return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
+  return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdpOut, externalSDP);
 }
 
 
-PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
+PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
+                                           const char * contact,
+                                           const char * extra,
+                                           const SDPSessionDescription * sdp,
+                                           const char * body)
 {
   if (originalInvite == NULL)
     return true;
@@ -2899,14 +2907,16 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.SetAllow(endpoint.GetAllowedMethods());
 
   if (sdp != NULL)
-    response.GetSDP()->SetSessionName(response.GetMIME().GetUserAgent());
+    response.GetSDP()->SetSessionName(mime.GetUserAgent());
+  else if (body != NULL && *body != '\0')
+    response.SetEntityBody(body);
 
   if (response.GetStatusCode() == SIP_PDU::Information_Ringing) {
     if (m_allowedEvents.GetSize() > 0) {
       PStringStream strm; strm << setfill(',') << m_allowedEvents;
-      response.GetMIME().SetAllowEvents(strm);
+      mime.SetAllowEvents(strm);
     }
-    response.GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
+    mime.SetAlertInfo(m_alertInfo, m_appearanceCode);
   }
 
   if (response.GetStatusCode() >= 200) {
