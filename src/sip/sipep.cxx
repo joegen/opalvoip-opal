@@ -219,10 +219,11 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
       switch (natMethod) {
 
-        case Options: 
+        case Options:
           {
-            SIPOptions options(*this, *transport, SIPURL(transport->GetRemoteAddress()).GetHostName());
-            options.Write(*transport);
+            SIPOptions::Params params;
+            params.m_remoteAddress = transport->GetRemoteAddress().GetHostName();
+            SendOPTIONS(params);
           }
           break;
 
@@ -492,8 +493,7 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   context.GetNextCSeq(1000000);
 
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
-  PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this, *transport);
-  byeTransaction->InitialiseHeaders(context);
+  PSafePtr<SIPTransaction> byeTransaction = new SIPBye(*this, *transport, context);
   byeTransaction->WaitForTermination();
   return !byeTransaction->IsFailed();
 }
@@ -1259,18 +1259,37 @@ PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PStri
     params.m_remoteAddress   = to.AsString();
     params.m_id              = conversationId;
     params.m_contentType     = type;
+    params.m_body            = body;
 
-    handler = new SIPMessageHandler(*this, params, body);
+    handler = new SIPMessageHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
 
   if (!handler->ActivateState(SIPHandler::Subscribing))
     return false;
 
-  from           = ((SIPMessageHandler *)&*handler)->m_localAddress;
-  conversationId = ((SIPMessageHandler *)&*handler)->m_id;
+  from           = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
+  conversationId = ((SIPMessageHandler *)&*handler)->GetIdentifier();
 
   return true;
+}
+
+
+bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
+{
+  SIPOptions::Params params(newParams);
+  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+
+  PSafePtr<SIPHandler> handler = new SIPOptionsHandler(*this, params);
+  activeSIPHandlers.Append(handler);
+  return handler->ActivateState(SIPHandler::Subscribing);
+}
+
+
+void SIPEndPoint::OnOptionsCompleted(const SIPOptions::Params & PTRACE_PARAM(params),
+                                                const SIP_PDU & PTRACE_PARAM(response))
+{
+  PTRACE(3, "SIP\tCompleted OPTIONS command to " << params.m_remoteAddress << ", status=" << response.GetStatusCode());
 }
 
 

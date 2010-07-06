@@ -57,6 +57,23 @@
 class OpalCall;
 class SIPEndPoint;
 
+/**OpalConnection::StringOption key to a boolean indicating that we should
+   make initial SDP offer. Default true.
+  */
+#define OPAL_OPT_INITIAL_OFFER "Initial-Offer"
+
+/**OpalConnection::StringOption key to a string representing the precise SDP
+   to be included in the INVITE offer. No media streams are opened or any
+   checks whstsoever made on the string. It is simply included as the body of
+   the INVITE.
+   
+   Note this options presence also prevents handling of the response SDP
+   
+   Defaults to empty string which generates SDP from available
+   media formats and media streams.
+  */
+#define OPAL_OPT_EXTERNAL_SDP "External-SDP"
+
 #define SIP_HEADER_PREFIX   "SIP-Header:"
 #define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
 
@@ -265,7 +282,7 @@ class SIPConnection : public OpalRTPConnection
        function when an application wishes to redirect an unwanted incoming
        call.
 
-       The return value is PTrue if the call is to be forwarded, PFalse 
+       The return value is true if the call is to be forwarded, false 
        otherwise. Note that if the call is forwarded, the current connection
        is cleared with the ended call code set to EndedByCallForwarded.
       */
@@ -401,7 +418,7 @@ class SIPConnection : public OpalRTPConnection
     virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
-       Returns: PTrue if handled, if PFalse is returned connection is released.
+       Returns: true if handled, if false is returned connection is released.
       */
     virtual PBoolean OnReceivedAuthenticationRequired(
       SIPTransaction & transaction,
@@ -424,19 +441,6 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual void OnCreatingINVITE(SIPInvite & pdu);
 
-    /**Send a "200 OK" response for the received INVITE message.
-     */
-    virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
-	
-    /**Send a response for the received INVITE message.
-     */
-    virtual PBoolean SendInviteResponse(
-      SIP_PDU::StatusCodes code,
-      const char * contact = NULL,
-      const char * extra = NULL,
-      const SDPSessionDescription * sdp = NULL
-    );
-
     enum TypeOfINVITE {
       IsNewINVITE,
       IsDuplicateINVITE,
@@ -448,6 +452,26 @@ class SIPConnection : public OpalRTPConnection
     TypeOfINVITE CheckINVITE(
       const SIP_PDU & pdu
     ) const;
+
+    /**Send an OPTIONS command within this calls dialog.
+       Note if \p reply is non-NULL, this function will block until the
+       transaction completes. Care must be executed in this case that
+       no deadlocks occur.
+      */
+    bool SendOPTIONS(
+      const SIPOptions::Params & params,  ///< Parameters for OPTIONS command
+      SIP_PDU * reply = NULL              ///< Reply to message
+    );
+
+    /**Send an INFO command within this calls dialog.
+       Note if \p reply is non-NULL, this function will block until the
+       transaction completes. Care must be executed in this case that
+       no deadlocks occur.
+      */
+    bool SendINFO(
+      const SIPInfo::Params & params,  ///< Parameters for OPTIONS command
+      SIP_PDU * reply = NULL              ///< Reply to message
+    );
   //@}
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
@@ -463,7 +487,7 @@ class SIPConnection : public OpalRTPConnection
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
 
-       Return PFalse if default reponse of Failure_UnsupportedMediaType is to be returned
+       Return false if default reponse of Failure_UnsupportedMediaType is to be returned
 
       */
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
@@ -492,28 +516,32 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
-    virtual bool OnSendSDP(
-      bool isAnswerSDP,
+    virtual bool OnSendOfferSDP(
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
-    virtual bool OfferSDPMediaDescription(
+    virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut,
-      bool offerOpenMediaStreamOnly = false
+      bool offerOpenMediaStreamOnly
     );
-    virtual bool AnswerSDPMediaDescription(
+    virtual bool OnSendAnswerSDP(
+      OpalRTPSessionManager & rtpSessions,
+      SDPSessionDescription & sdpOut,
+      bool reInvite
+    );
+    virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
       unsigned sessionIndex,
       SDPSessionDescription & sdpOut
     );
 
-    virtual void OnReceivedSDP(
+    virtual void OnReceivedAnswerSDP(
       SIP_PDU & pdu
     );
-    virtual bool OnReceivedSDPMediaDescription(
+    virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
       unsigned sessionId
     );
@@ -521,7 +549,7 @@ class SIPConnection : public OpalRTPConnection
     virtual OpalMediaSession * SetUpMediaSession(
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
-      SDPMediaDescription * mediaDescription,
+      const SDPMediaDescription & mediaDescription,
       OpalTransportAddress & localAddress,
       bool & remoteChanged
     );
@@ -532,6 +560,15 @@ class SIPConnection : public OpalRTPConnection
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE();
+
+    virtual bool SendInviteOK();
+    virtual PBoolean SendInviteResponse(
+      SIP_PDU::StatusCodes code,
+      const char * contact = NULL,
+      const char * extra = NULL,
+      const SDPSessionDescription * sdp = NULL,
+      const char * body = NULL
+    );
 
     void UpdateRemoteAddresses();
 
@@ -599,7 +636,9 @@ class SIPConnection : public OpalRTPConnection
 
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
-    void SetRemoteMediaFormats(SDPSessionDescription * sdp);
+    bool SetRemoteMediaFormats(SDPSessionDescription * sdp);
+
+    std::map<std::string, SIP_PDU *> m_responses;
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
