@@ -723,24 +723,27 @@ PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPS
   bool sdpOK = false;
 
   if (m_needReINVITE && !mediaStreams.IsEmpty()) {
+    PTRACE(4, "SIP\tOffering only current media streams in Re-INVITE");
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
       std::vector<bool>::size_type session = stream->GetSessionID();
       sessions.resize(std::max(sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
-        if (OnSendOfferSDPSession(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut))
+        if (OnSendOfferSDPSession(stream->GetMediaFormat().GetMediaType(), session, rtpSessions, sdpOut, true))
           sdpOK = true;
       }
     }
   }
   else {
+    PTRACE(4, "SIP\tOffering all configured media.");
+
     // always offer audio first
-    sdpOK = OnSendOfferSDPSession(OpalMediaType::Audio(), 0, rtpSessions, sdpOut);
+    sdpOK = OnSendOfferSDPSession(OpalMediaType::Audio(), 0, rtpSessions, sdpOut, false);
 
 #if OPAL_VIDEO
     // always offer video second (if enabled)
-    if (OnSendOfferSDPSession(OpalMediaType::Video(), 0, rtpSessions, sdpOut))
+    if (OnSendOfferSDPSession(OpalMediaType::Video(), 0, rtpSessions, sdpOut, false))
       sdpOK = true;
 #endif
 
@@ -749,7 +752,7 @@ PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPS
     for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
       OpalMediaType mediaType = *iter;
       if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio()) {
-        if (OnSendOfferSDPSession(mediaType, 0, rtpSessions, sdpOut))
+        if (OnSendOfferSDPSession(mediaType, 0, rtpSessions, sdpOut, false))
           sdpOK = true;
       }
     }
@@ -762,7 +765,8 @@ PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPS
 bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
                                                      unsigned   rtpSessionId,
                                         OpalRTPSessionManager & rtpSessions,
-                                        SDPSessionDescription & sdp)
+                                        SDPSessionDescription & sdp,
+                                                         bool   offerOpenMediaStreamOnly)
 {
   OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
   if (rtpSessionId == 0 && autoStart == OpalMediaType::DontOffer)
@@ -856,7 +860,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
-  if (m_needReINVITE) {
+  if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
     bool sending = sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
