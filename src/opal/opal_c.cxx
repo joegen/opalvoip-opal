@@ -188,6 +188,7 @@ class OpalManager_C : public OpalManager
       , m_ivrEP(NULL)
 #endif
       , m_apiVersion(version)
+      , m_manualAlerting(false)
       , m_messagesAvailable(0, INT_MAX)
     {
     }
@@ -246,6 +247,7 @@ class OpalManager_C : public OpalManager
 #endif
 
     unsigned                  m_apiVersion;
+    bool                      m_manualAlerting;
     std::queue<OpalMessage *> m_messageQueue;
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
@@ -640,12 +642,13 @@ bool OpalIVREndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 
 void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
 {
-  PTRACE(4, "OpalC API\tOnEndDialog fir " << connection);
+  PTRACE(4, "OpalC API\tOnEndDialog for " << connection);
   OpalMessageBuffer message(OpalIndCompletedIVR);
   SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
   m_manager.PostMessage(message);
 
-  // Do not call ancestor, do not want it to hang up
+  // Do not call ancestor and start a long pause, as do not want it to hang up
+  connection.TransferConnection("silence=3600000"); 
 }
 
 #endif
@@ -1279,16 +1282,18 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 19)
     return;
 
-  response->m_param.m_general.m_audioBufferTime = m_localEP->IsDeferredAlerting() ? 2 : 1;
+  response->m_param.m_general.m_manualAlerting = m_manualAlerting ? 2 : 1;
   if (command.m_param.m_general.m_manualAlerting != 0) {
-    m_localEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+    m_manualAlerting = command.m_param.m_general.m_manualAlerting != 1;
+    if (m_localEP)
+      m_localEP->SetDeferredAlerting(m_manualAlerting);
 #if OPAL_HAS_PCSS
     if (m_pcssEP != NULL)
-      m_pcssEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+      m_pcssEP->SetDeferredAlerting(m_manualAlerting);
 #endif
 #if OPAL_IVR
     if (m_ivrEP != NULL)
-      m_ivrEP->SetDeferredAlerting(command.m_param.m_general.m_manualAlerting != 1);
+      m_ivrEP->SetDeferredAlerting(m_manualAlerting);
 #endif
   }
 }
