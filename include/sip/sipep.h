@@ -660,6 +660,7 @@ class SIPEndPoint : public OpalRTPEndPoint
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
 
+
     /**Send SIP message
      */
     virtual bool Message(
@@ -677,6 +678,21 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual void OnMessageFailed(
       const SIPURL & messageUrl,
       SIP_PDU::StatusCodes reason
+    );
+
+
+    /**Send SIP OPTIONS
+     */
+    virtual bool SendOPTIONS(
+      const SIPOptions::Params & params
+    );
+
+    /**Callback called when an OPTIONS command is completed, either
+       successfully or with error.
+     */
+    virtual void OnOptionsCompleted(
+      const SIPOptions::Params & params,    ///< Original parameter for SendOPTIONS() call
+      const SIP_PDU & response              ///< Response packet, check GetStatusCode() for result
     );
 
 
