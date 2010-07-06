@@ -561,7 +561,8 @@ class SIPConnection : public OpalRTPConnection
       const OpalMediaType & mediaType,
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut
+      SDPSessionDescription & sdpOut,
+      bool offerOpenMediaStreamOnly = false
     );
     virtual bool OnSendAnswerSDP(
       OpalRTPSessionManager & rtpSessions,
