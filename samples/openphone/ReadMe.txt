@@ -83,3 +83,16 @@ For Linux:
 
 You should now be able to go to $OPALDIR/samples/openphone and do "make opt".
 
+
+For Mac OS-X
+------------
+
+  1.  Use mac ports to install wxWidgets.
+
+  2.  Build PTLib/OPAL as per OPAL VoIP web site, with one additional caveat.
+      If you are using 64 bit Snow Leopard, you must configure with the
+      --enable-force32 option as wxWidgets only supports 32 bit OS-X at the
+      time of writing.
+
+You should now be able to go to $OPALDIR/samples/openphone and do "make".
+

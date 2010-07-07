@@ -41,7 +41,7 @@
                 </item>
                 <item>
                     <label>E&amp;xit</label>
-                    <name>MenuQuit</name>
+                    <name>wxID_EXIT</name>
                 </item>
             </menu>
             <menu name="" label="&amp;Edit">
@@ -108,7 +108,7 @@
                 </item>
                 <item>
                     <label>&amp;Options...</label>
-                    <name>MenuOptions</name>
+                    <name>wxID_PREFERENCES</name>
                 </item>
             </menu>
             <menu name="" label="&amp;Call">
@@ -224,7 +224,7 @@
             <menu name="" label="&amp;Help">
                 <item>
                     <label>&amp;About ...</label>
-                    <name>MenuAbout</name>
+                    <name>wxID_ABOUT</name>
                 </item>
             </menu>
         </menus>
@@ -306,7 +306,7 @@
                         <border>20</border>
                         <option>1</option>
                         <object class="wxComboBox" name="Address" base="EditComboBox">
-                            <selection>0</selection>
+                            <selection>-1</selection>
                             <choices>
                             </choices>
                             <size>160, 12d</size>
@@ -1071,7 +1071,7 @@
                                                         <border>8</border>
                                                         <option>0</option>
                                                         <object class="wxComboBox" name="Country" base="EditComboBox">
-                                                            <selection>0</selection>
+                                                            <selection>-1</selection>
                                                             <choices>
                                                             </choices>
                                                             <size>80, 11d</size>

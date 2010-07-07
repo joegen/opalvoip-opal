@@ -73,6 +73,7 @@ class wxListEvent;
 class wxNotebook;
 class wxGrid;
 class wxConfigBase;
+class wxImageList;
 
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -478,16 +479,22 @@ class InCallPanel : public CallPanelBase
 };
 
 
-class SpeedDialDialog : public wxDialog
+struct SpeedDialInfo
+{
+  PwxString m_Name;
+  PwxString m_Number;
+  PwxString m_Address;
+  PwxString m_StateURL;
+  PwxString m_Description;
+
+  bool operator<(const SpeedDialInfo & info) const { return m_Name < info.m_Name; }
+};
+
+
+class SpeedDialDialog : public wxDialog, public SpeedDialInfo
 {
   public:
-    SpeedDialDialog(MyManager *parent);
-
-    wxString m_Name;
-    wxString m_Number;
-    wxString m_Address;
-    wxString m_StateURL;
-    wxString m_Description;
+    SpeedDialDialog(MyManager *parent, const SpeedDialInfo & info);
 
   private:
     void OnChange(wxCommandEvent & event);
@@ -1021,9 +1028,13 @@ class MyManager : public wxFrame, public OpalManager
     wxNotebook       * m_tabs;
     wxTextCtrl       * m_logWindow;
     wxListCtrl       * m_speedDials;
+    bool               m_speedDialDetail;
     wxImageList      * m_imageListNormal;
     wxImageList      * m_imageListSmall;
     wxDataFormat       m_ClipboardFormat;
+
+    set<SpeedDialInfo> m_speedDialInfo;
+    SpeedDialInfo * GetSelectedSpeedDial(int previous = -1) const;
 
     MyPCSSEndPoint   * pcssEP;
     OpalLineEndPoint * potsEP;

@@ -1,0 +1,184 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+/* Begin PBXFileReference section */
+		A370BDAB11D5FCC9008AE956 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A370BDAC11D5FCC9008AE956 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; path = InfoPlist.strings; sourceTree = "<group>"; };
+		A370BDAD11D5FCC9008AE956 /* version.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = version.plist; sourceTree = "<group>"; };
+		A370BDE711D6361B008AE956 /* openphone.xrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = openphone.xrc; sourceTree = "<group>"; };
+		A370BE0811D7608C008AE956 /* absent16.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = absent16.xpm; sourceTree = "<group>"; };
+		A370BE0911D7608C008AE956 /* absent48.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = absent48.xpm; sourceTree = "<group>"; };
+		A370BE0A11D7608C008AE956 /* busy16.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = busy16.xpm; sourceTree = "<group>"; };
+		A370BE0B11D7608C008AE956 /* busy48.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = busy48.xpm; sourceTree = "<group>"; };
+		A370BE0C11D7608C008AE956 /* openphone.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = openphone.icns; sourceTree = "<group>"; };
+		A370BE0D11D7608C008AE956 /* openphone.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = openphone.xpm; sourceTree = "<group>"; };
+		A370BE0E11D7608C008AE956 /* present16.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = present16.xpm; sourceTree = "<group>"; };
+		A370BE0F11D7608C008AE956 /* present48.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = present48.xpm; sourceTree = "<group>"; };
+		A370BE1011D7608C008AE956 /* unknown16.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unknown16.xpm; sourceTree = "<group>"; };
+		A370BE1111D7608C008AE956 /* unknown48.xpm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unknown48.xpm; sourceTree = "<group>"; };
+		A3A08C4411BA297B00DB73D5 /* main.cxx */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = main.cxx; sourceTree = SOURCE_ROOT; };
+		A3A08C4511BA297B00DB73D5 /* main.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = SOURCE_ROOT; };
+		A3A08C4611BA297B00DB73D5 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = SOURCE_ROOT; };
+		A3A08C4711BA297B00DB73D5 /* openphone.wxg */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text.xml; path = openphone.wxg; sourceTree = SOURCE_ROOT; };
+		A3A08C4811BA297B00DB73D5 /* version.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* OpenPhone */ = {
+			isa = PBXGroup;
+			children = (
+				A370BE0611D7603D008AE956 /* Images */,
+				A370BDE711D6361B008AE956 /* openphone.xrc */,
+				A370BDAB11D5FCC9008AE956 /* Info.plist */,
+				A370BDAC11D5FCC9008AE956 /* InfoPlist.strings */,
+				A370BDAD11D5FCC9008AE956 /* version.plist */,
+				A3A08C4411BA297B00DB73D5 /* main.cxx */,
+				A3A08C4511BA297B00DB73D5 /* main.h */,
+				A3A08C4611BA297B00DB73D5 /* Makefile */,
+				A3A08C4711BA297B00DB73D5 /* openphone.wxg */,
+				A3A08C4811BA297B00DB73D5 /* version.h */,
+			);
+			name = OpenPhone;
+			sourceTree = "<group>";
+		};
+		A370BE0611D7603D008AE956 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				A370BE0811D7608C008AE956 /* absent16.xpm */,
+				A370BE0911D7608C008AE956 /* absent48.xpm */,
+				A370BE0A11D7608C008AE956 /* busy16.xpm */,
+				A370BE0B11D7608C008AE956 /* busy48.xpm */,
+				A370BE0C11D7608C008AE956 /* openphone.icns */,
+				A370BE0D11D7608C008AE956 /* openphone.xpm */,
+				A370BE0E11D7608C008AE956 /* present16.xpm */,
+				A370BE0F11D7608C008AE956 /* present48.xpm */,
+				A370BE1011D7608C008AE956 /* unknown16.xpm */,
+				A370BE1111D7608C008AE956 /* unknown48.xpm */,
+			);
+			name = Images;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		D28A88AD04BDD90700651E21 /* OpenPhone */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = debug;
+			buildConfigurationList = 1DEB918F08733D9F0010E9CD /* Build configuration list for PBXLegacyTarget "OpenPhone" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "";
+			dependencies = (
+			);
+			name = OpenPhone;
+			passBuildSettingsInEnvironment = 1;
+			productName = OpenPhone;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = NO;
+			};
+			buildConfigurationList = 1DEB919308733D9F0010E9CD /* Build configuration list for PBXProject "OpenPhone" */;
+			compatibilityVersion = "Xcode 3.1";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* OpenPhone */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D28A88AD04BDD90700651E21 /* OpenPhone */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB919008733D9F0010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUG = 1;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = "\U00010";
+				OPALDIR = $HOME/opal;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PATH = "/opt/local/bin:$PATH";
+				PRODUCT_NAME = OpenPhone;
+				PTLIBDIR = $HOME/ptlib;
+			};
+			name = Debug;
+		};
+		1DEB919108733D9F0010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				OPALDIR = $HOME/opal;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PATH = "/opt/local/bin:$PATH";
+				PRODUCT_NAME = OpenPhone;
+				PTLIBDIR = $HOME/ptlib;
+			};
+			name = Release;
+		};
+		1DEB919408733D9F0010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		1DEB919508733D9F0010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB918F08733D9F0010E9CD /* Build configuration list for PBXLegacyTarget "OpenPhone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB919008733D9F0010E9CD /* Debug */,
+				1DEB919108733D9F0010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB919308733D9F0010E9CD /* Build configuration list for PBXProject "OpenPhone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB919408733D9F0010E9CD /* Debug */,
+				1DEB919508733D9F0010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
