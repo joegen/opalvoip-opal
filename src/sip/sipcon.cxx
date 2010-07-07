@@ -1789,8 +1789,11 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL url = m_dialog.GetRemoteURI();
-  url.Sanitise(SIPURL::ExternalURI);
+  SIPURL url = m_ciscoRemotePartyID;
+  if (url.IsEmpty()) {
+    url = m_dialog.GetRemoteURI();
+    url.Sanitise(SIPURL::ExternalURI);
+  }
 
   remotePartyAddress = url.GetHostAddress();
 
@@ -2121,6 +2124,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
 
+  m_ciscoRemotePartyID = mime.GetString("Remote-Party-ID");
+  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
+            "SIP\tRemotePartyID set to \"" << m_ciscoRemotePartyID << '"');
+
   mime.SetTo(m_dialog.GetLocalURI().AsQuotedString());
 
   // get the called destination number and name
@@ -2250,6 +2257,20 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   m_answerFormatList.RemoveAll();
+
+  SIPURL newRemotePartyID = request.GetMIME().GetString("Remote-Party-ID");
+  if (m_ciscoRemotePartyID != newRemotePartyID) {
+    PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
+
+    m_ciscoRemotePartyID = newRemotePartyID;
+    UpdateRemoteAddresses();
+
+    PStringToString info = m_ciscoRemotePartyID.GetParamVars();
+    info.SetAt("result", "incoming");
+    info.SetAt("party", "C");
+    info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
+    OnTransferNotify(info);
+  }
 }
 
 
