@@ -3584,7 +3584,9 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
 {
   // Build the correct From field
   SIPURL remoteAddress = params.m_remoteAddress;
-  SIPURL localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
+  SIPURL localAddress = params.m_localAddress;
+  if (localAddress.IsEmpty())
+    localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
