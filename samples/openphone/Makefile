@@ -72,10 +72,40 @@ endif
 endif
 endif
 
+
+# Need this before the include of opal_inc.mak
+default_target: bundle
+
+
 ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
 endif
 
+
 openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
 
+
+ifneq ($(OSTYPE),Darwin)
+bundle: $(TARGET)
+else
+bundle: $(PROG).app
+
+STRINGSFILE= #InfoPlist.strings
+
+$(PROG).app: $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
+	if test ! -d $@; then mkdir $@; fi
+	if test ! -d $@; then mkdir $@/Contents; fi
+	if test ! -d $@; then mkdir $@/Contents/MacOS; fi
+	if test ! -d $@; then mkdir $@/Contents/Resources; fi
+	if test ! -d $@; then mkdir $@/Contents/Resources/English.lproj; fi
+	cp Info.plist        $@/Contents/
+	cp version.plist     $@/Contents/
+	cp $(PROG).icns      $@/Contents/Resources/
+ifneq ($(STRINGSFILE),)	
+	cp InfoPlist.strings $@/Contents/Resources/English.lproj/
+endif
+	echo -n 'APPL????' > $@/Contents/PkgInfo
+	cp $(TARGET)         $@/Contents/MacOS/$(PROG)
+
+endif
