@@ -963,6 +963,9 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
     case OpalCmdSetUpCall :
       HandleSetUpCall(*message, response);
       break;
+    case OpalCmdAlerting :
+      HandleAlerting(*message, response);
+      break;
     case OpalCmdAnswerCall :
       HandleAnswerCall(*message, response);
       break;
