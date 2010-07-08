@@ -190,7 +190,7 @@ void OpalIVRConnection::OnEstablished()
 
 bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
 {
-  // First strip of the prefix if present
+  // First strip off the prefix if present
   PINDEX prefixLength = 0;
   if (remoteParty.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
@@ -225,23 +225,27 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 
   PCaselessString vxmlHead = vxmlToLoad.LeftTrim().Left(5);
   if (vxmlHead == "<?xml" || vxmlHead == "<vxml") {
-    PTRACE(4, "IVR\tStartVXML:\n" << vxmlToLoad);
+    PTRACE(4, "IVR\tStarted using raw VXML:\n" << vxmlToLoad);
     ok = m_vxmlSession.LoadVXML(vxmlToLoad);
   }
   else {
     PURL vxmlURL(vxmlToLoad, NULL);
     if (vxmlURL.IsEmpty()) {
       PFilePath vxmlFile = vxmlToLoad;
-      if (vxmlFile.GetType() *= ".vxml")
-        ok = m_vxmlSession.LoadFile(vxmlFile);
-      else
+      if (vxmlFile.GetType() != ".vxml")
         ok = StartScript(vxmlToLoad);
+      else {
+        PTRACE(4, "IVR\tStarted using VXML file: " << vxmlFile);
+        ok = m_vxmlSession.LoadFile(vxmlFile);
+      }
     }
     else {
       if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
-        ok = m_vxmlSession.LoadURL(vxmlURL);
-      else
         ok = StartScript(vxmlToLoad);
+      else {
+        PTRACE(4, "IVR\tStarted using VXML URL: " << vxmlURL);
+        ok = m_vxmlSession.LoadURL(vxmlURL);
+      }
     }
   }
 
@@ -257,6 +261,8 @@ bool OpalIVRConnection::StartScript(const PString & script)
   PINDEX repeat = 1;
   PINDEX delay = 0;
   PString voice;
+
+  PTRACE(4, "IVR\tStarted using simplified script: " << script);
 
   PINDEX i;
   PStringArray tokens = script.Tokenise(';', false);
