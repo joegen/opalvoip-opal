@@ -2229,6 +2229,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     info.SetAt("result", "incoming");
     info.SetAt("party", "C");
     info.SetAt("Referred-By", m_redirectingParty);
+    info.SetAt("Remote-Party", GetRemotePartyURL());
     OnTransferNotify(info);
   }
 
@@ -2269,6 +2270,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     info.SetAt("result", "incoming");
     info.SetAt("party", "C");
     info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
+    info.SetAt("Remote-Party", m_ciscoRemotePartyID);
     OnTransferNotify(info);
   }
 }
