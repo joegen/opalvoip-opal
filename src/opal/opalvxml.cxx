@@ -64,6 +64,7 @@ void OpalVXMLSession::OnEndDialog()
 
 void OpalVXMLSession::OnEndSession()
 {
+  PTRACE(3, "IVR\tEnd of session, releasing connection.");
   m_connection.Release();
 }
 
