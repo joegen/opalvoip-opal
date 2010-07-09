@@ -557,9 +557,13 @@ typedef struct OpalParamGeneral {
                                            This list of names (e.g. "G.723.1") is separated by the '\n'
                                            character. */
   const char * m_autoRxMedia;         /**< List of media types (e.g. audio, video) separated by spaces
-                                           which may automatically be received automatically. */
+                                           which may automatically be received automatically. If NULL
+                                           no change is made, but if "" then all media is prevented from
+                                           auto-starting. */
   const char * m_autoTxMedia;         /**< List of media types (e.g. audio, video) separated by spaces
-                                           which may automatically be transmitted automatically. */
+                                           which may automatically be transmitted automatically. If NULL
+                                           no change is made, but if "" then all media is prevented from
+                                           auto-starting.  */
   const char * m_natRouter;           /**< The host name or IP address of the Network Address Translation
                                            router which may be between the endpoint and the Internet. */
   const char * m_stunServer;          /**< The host name or IP address of the STUN server which may be
