@@ -79,6 +79,7 @@ OpalHandle              hOPAL;
 
 char * CurrentCallToken;
 char * HeldCallToken;
+char * PlayScript;
 
 
 
@@ -190,7 +191,8 @@ int InitialiseOPAL()
                                   OPAL_PREFIX_H323  " "
                                   OPAL_PREFIX_SIP   " "
                                   OPAL_PREFIX_IAX2  " "
-                                  LOCAL_PREFIX
+                                  LOCAL_PREFIX      " "
+                                  OPAL_PREFIX_IVR
                                   " TraceLevel=4")) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
@@ -326,6 +328,18 @@ static void HandleMessages(unsigned timeout)
 
       case OpalIndEstablished :
         puts("Established.\n");
+
+        if (PlayScript != NULL) {
+          printf("Playing %s\n", PlayScript);
+
+          memset(&command, 0, sizeof(command));
+          command.m_type = OpalCmdTransferCall;
+          command.m_param.m_callSetUp.m_callToken = CurrentCallToken;
+          command.m_param.m_callSetUp.m_partyA = "pc:";
+          command.m_param.m_callSetUp.m_partyB = PlayScript;
+          if ((response = MySendCommand(&command, "Could not start playing")) != NULL)
+            FreeMessageFunction(response);
+        }
         break;
 
       case OpalIndMediaStream :
@@ -537,10 +551,18 @@ int DoPlay(const char * to, const char * file)
   // Example cmd line: call 612@ekiga.net
   OpalMessage command;
   OpalMessage * response;
-  char buffer[1000];
 
 
-  printf("Calling %s\n", to);
+  printf("Playing %s to %s\n", file, to);
+
+  PlayScript = (char *)malloc(1000);
+  snprintf(PlayScript, 999,
+           "ivr:<?xml version=\"1.0\"?>"
+           "<vxml version=\"1.0\">"
+             "<form id=\"PlayFile\">"
+               "<audio src=\"%s\"/>"
+             "</form>"
+           "</vxml>", file);
 
   memset(&command, 0, sizeof(command));
   command.m_type = OpalCmdSetUpCall;
@@ -550,26 +572,6 @@ int DoPlay(const char * to, const char * file)
 
   CurrentCallToken = strdup(response->m_param.m_callSetUp.m_callToken);
   FreeMessageFunction(response);
-
-  printf("Playing %s\n", file);
-
-  snprintf(buffer, sizeof(buffer),
-           "ivr:<?xml version=\"1.0\"?>"
-           "<vxml version=\"1.0\">"
-             "<form id=\"PlayFile\">"
-               "<transfer bridge=\"false\" dest=\"pc:*;Auto-Answer=1\">"
-                 "<audio src=\"%s\"/>"
-               "</transfer>"
-             "</form>"
-           "</vxml>", file);
-
-  memset(&command, 0, sizeof(command));
-  command.m_type = OpalCmdTransferCall;
-  command.m_param.m_callSetUp.m_callToken = CurrentCallToken;
-  command.m_param.m_callSetUp.m_partyA = "pc:";
-  command.m_param.m_callSetUp.m_partyB = buffer;
-  if ((response = MySendCommand(&command, "Could not start playing")) == NULL)
-    return 0;
 
   return 1;
 }
