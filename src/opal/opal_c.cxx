@@ -948,6 +948,8 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
   if (message == NULL)
     return NULL;
 
+  PTRACE(4, "OpalC API\tHandling message " << message->m_type << " from applicatiion");
+
   OpalMessageBuffer response(message->m_type);
 
   switch (message->m_type) {
@@ -1072,11 +1074,17 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     PString autoXxMedia;
     if (autoStart == OpalMediaType::Receive) {
       SET_MESSAGE_STRING(response, m_param.m_general.m_autoRxMedia, strm);
-      autoXxMedia = command.m_param.m_general.m_autoRxMedia;
+      if (command.m_param.m_general.m_autoRxMedia != NULL)
+        autoXxMedia = command.m_param.m_general.m_autoRxMedia;
+      else
+        autoXxMedia = strm;
     }
     else {
       SET_MESSAGE_STRING(response, m_param.m_general.m_autoTxMedia, strm);
-      autoXxMedia = command.m_param.m_general.m_autoTxMedia;
+      if (command.m_param.m_general.m_autoTxMedia != NULL)
+        autoXxMedia = command.m_param.m_general.m_autoTxMedia;
+      else
+        autoXxMedia = strm;
     }
 
     PStringArray enabledMediaTypes = autoXxMedia.Tokenise(" \t\n", false);
