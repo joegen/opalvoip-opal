@@ -7,7 +7,7 @@
  */
 
 
-#include	"config.h"
+#include	"../inc/config.h"
 
 
 #include	<string.h>
