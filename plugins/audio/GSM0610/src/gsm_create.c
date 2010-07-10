@@ -7,7 +7,7 @@
  */
 
 
-#include	"config.h"
+#include	"../inc/config.h"
 
 #ifdef	HAS_STRING_H
 #include	<string.h>

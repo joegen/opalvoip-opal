@@ -8,7 +8,7 @@
 
 
 #include "gsm.h"
-#include "config.h"
+#include "../inc/config.h"
 #include "proto.h"
 
 #ifdef	HAS_STDLIB_H
