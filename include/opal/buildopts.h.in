@@ -55,7 +55,9 @@
 #ifndef _WIN32_WCE
 #undef  OPAL_PTLIB_DNS
 #endif
+#ifndef P_IPHONEOS
 #undef  OPAL_PTLIB_LDAP
+#endif
 #undef  OPAL_PTLIB_VXML
 #undef  OPAL_PTLIB_CONFIG_FILE
 #undef  OPAL_AEC
