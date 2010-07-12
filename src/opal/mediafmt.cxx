@@ -921,30 +921,6 @@ bool OpalMediaFormat::ValidateMerge(const OpalMediaFormat & mediaFormat) const
 }
 
 
-OpalMediaFormatList OpalMediaFormat::GetMatchingRegisteredMediaFormats(RTP_DataFrame::PayloadTypes rtpPayloadType,
-                                                                       const unsigned clockRate,
-                                                                       const char * rtpEncodingName,
-                                                                       const char * protocol)
-{
-  OpalMediaFormatList matches;
-
-  PWaitAndSignal mutex(GetMediaFormatsListMutex());
-
-  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
-  OpalMediaFormatList::const_iterator format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol);
-  while (format != registeredFormats.end()) {
-    matches += *format;
-
-    if (++format == registeredFormats.end())
-      break;
-
-    format = registeredFormats.FindFormat(rtpPayloadType, clockRate, rtpEncodingName, protocol, format);
-  }
-
-  return matches;
-}
-
-
 OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
 {
   OpalMediaFormatList copy;
