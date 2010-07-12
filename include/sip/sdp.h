@@ -91,14 +91,14 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v) { parameters = v; }
 
-    const OpalMediaFormat & GetMediaFormat() const;
-    OpalMediaFormat & GetWritableMediaFormat();
+    const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
+    OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
 
     bool PreEncode();
+    bool Decode(const OpalMediaFormatList & mediaFormats);
     bool PostDecode(unsigned bandwidth);
 
   protected:
-    void InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const;
     void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
     OpalMediaFormat m_mediaFormat;
@@ -138,7 +138,7 @@ class SDPMediaDescription : public PObject
     virtual void Encode(const OpalTransportAddress & commonAddr, ostream & str) const;
     virtual bool PrintOn(ostream & strm, const PString & str) const;
 
-    virtual bool Decode(const PStringArray & tokens);
+    virtual bool Decode(const PStringArray & tokens, const OpalMediaFormatList & mediaFormats);
     virtual bool Decode(char key, const PString & value);
     virtual bool PostDecode();
 
@@ -296,7 +296,7 @@ class SDPSessionDescription : public PObject
 
     void PrintOn(ostream & strm) const;
     PString Encode() const;
-    PBoolean Decode(const PString & str);
+    bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
 
     void SetSessionName(const PString & v) { sessionName = v; }
     PString GetSessionName() const         { return sessionName; }
