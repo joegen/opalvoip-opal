@@ -294,7 +294,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetVia() const;
     void SetVia(const PString & v);
 
-    PStringList GetViaList() const;
+    bool GetViaList(PStringList & v) const;
     void SetViaList(const PStringList & v);
 
     PString GetReferTo() const;
