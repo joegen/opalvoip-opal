@@ -1162,6 +1162,12 @@ typedef struct OpalStatusTransferCall {
                                                         be cleared.
                                             "failed"    transfer initiated by this call did not
                                                         complete, call remains active.
+                                            "started"   remote system has asked local connection
+                                                        to transfer to another target.
+                                            "completed" local connection has completed the transfer
+                                                        to other target.
+                                            "forwarded" remote has forwarded call local system has
+                                                        initiated to another address.
                                             "incoming"  this call is the target of an incoming
                                                         transfer, e.g. party C in a consultation
                                                         transfer scenario. */
