@@ -1823,6 +1823,8 @@ void SIPConnection::UpdateRemoteAddresses()
   PString user = url.GetUserName();
   if (OpalIsE164(user))
     remotePartyNumber = user;
+  else
+    remotePartyNumber.MakeEmpty();
 
   remotePartyName = url.GetDisplayName();
   if (remotePartyName.IsEmpty())
