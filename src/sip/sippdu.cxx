@@ -849,16 +849,15 @@ void SIPMIMEInfo::SetVia(const PString & v)
 }
 
 
-PStringList SIPMIMEInfo::GetViaList() const
+bool SIPMIMEInfo::GetViaList(PStringList & viaList) const
 {
-  PStringList viaList;
   PString s = GetVia();
   if (s.FindOneOf("\r\n") != P_MAX_INDEX)
     viaList = s.Lines();
   else
     viaList = s.Tokenise(",", PFalse);
 
-  return viaList;
+  return !viaList.IsEmpty();
 }
 
 
@@ -1846,8 +1845,8 @@ void SIP_PDU::SetAllow(unsigned bitmask)
 void SIP_PDU::AdjustVia(OpalTransport & transport)
 {
   // Update the VIA field following RFC3261, 18.2.1 and RFC3581
-  PStringList viaList = m_mime.GetViaList();
-  if (viaList.GetSize() == 0)
+  PStringList viaList;
+  if (!m_mime.GetViaList(viaList))
     return;
 
   PString viaFront = viaList.front();
@@ -1907,8 +1906,8 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
   else {
     WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
 
-    PStringList viaList = m_mime.GetViaList();
-    if (viaList.GetSize() > 0) {
+    PStringList viaList;
+    if (m_mime.GetViaList(viaList)) {
       PString viaAddress = viaList.front();
       PString proto = viaList.front();
       PString viaPort = defaultPort;
@@ -2284,8 +2283,8 @@ PString SIP_PDU::GetTransactionID() const
        CSeq in our id as we want the CANCEL messages directed at out
        transaction structure.
      */
-    PStringList vias = m_mime.GetViaList();
-    if (!vias.IsEmpty())
+    PStringList vias;
+    if (m_mime.GetViaList(vias))
       m_transactionID = SIPMIMEInfo::ExtractFieldParameter(vias.front(), "branch");
     if (m_transactionID.IsEmpty()) {
       PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has no branch parameter!");
@@ -2486,8 +2485,8 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
   /* Update target address, if required */
   if (pdu.GetMethod() == SIP_PDU::Method_INVITE || pdu.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
     PINDEX start, val, end;
-    PStringList viaList = mime.GetViaList();
-    if (viaList.GetSize() > 0)
+    PStringList viaList;
+    if (mime.GetViaList(viaList))
       m_usePeerTransportAddress = LocateFieldParameter(viaList.front(), "rport", start, val, end);
   }
 }
@@ -2714,13 +2713,17 @@ bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 bool SIPTransaction::ResendCANCEL()
 {
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
+  PStringList vias;
+  if (!m_mime.GetViaList(vias))
+    vias.AppendString(PString());
+
   SIP_PDU cancel(Method_CANCEL);
   cancel.InitialiseHeaders(m_uri,
                            m_mime.GetTo(),
                            m_mime.GetFrom(),
                            m_mime.GetCallID(),
                            m_mime.GetCSeqIndex(),
-                           m_mime.GetViaList().front());
+                           vias.front());
 
   return SendPDU(cancel);
 }
@@ -3154,8 +3157,8 @@ SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 
     // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
     // as well as the initial Route
-    PStringList viaList = invite.GetMIME().GetViaList();
-    if (viaList.GetSize() > 0)
+    PStringList viaList;
+    if (invite.GetMIME().GetViaList(viaList))
       m_mime.SetVia(viaList.front());
 
     if (invite.GetMIME().GetRoute().GetSize() > 0)
