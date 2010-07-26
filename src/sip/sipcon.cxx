@@ -2143,7 +2143,13 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
-  PIPSocket::GetHostAddress(m_dialog.GetRequestURI().GetHostName(), sigAddr);  
+  if (!PIPSocket::GetHostAddress(m_dialog.GetRequestURI().GetHostName(), sigAddr)) {
+    PStringList vias;
+    if (mime.GetViaList(vias)) {
+      PString via = vias.front();
+      sigAddr = via(via.Find(' ')+1, via.Find(':')-1);
+    }
+  }
 
   // get the local and peer transport addresses
   PIPSocket::Address peerAddr, localAddr;
