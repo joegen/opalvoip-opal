@@ -2609,6 +2609,8 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
         mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_connStringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
           mime.SetRequire("replaces", false);
+        else if (key == SIP_HEADER_PREFIX"Route")
+          m_dialog.SetRouteSet(mime.GetRoute());
       }
     }
   }
