@@ -1753,25 +1753,25 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   {
     SIPURL newRemotePartyID = responseMIME.GetString("Remote-Party-ID");
-    if (m_ciscoRemotePartyID.IsEmpty() && !newRemotePartyID.IsEmpty() &&
-        newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
-      PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
-      m_ciscoRemotePartyID = newRemotePartyID;
-    }
+    if (!newRemotePartyID.IsEmpty()) {
+      if (m_ciscoRemotePartyID.IsEmpty() && newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
+        PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
+        m_ciscoRemotePartyID = newRemotePartyID;
+      }
+      else if (m_ciscoRemotePartyID != newRemotePartyID) {
+        PTRACE(3, "SIP\tOld style Remote-Party-ID used for forwarding indication to \"" << newRemotePartyID << '"');
 
-    if (m_ciscoRemotePartyID != newRemotePartyID) {
-      PTRACE(3, "SIP\tOld style Remote-Party-ID used for forwarding indication to \"" << newRemotePartyID << '"');
+        m_ciscoRemotePartyID = newRemotePartyID;
+        newRemotePartyID.SetParameters(PString::Empty());
 
-      m_ciscoRemotePartyID = newRemotePartyID;
-      newRemotePartyID.SetParameters(PString::Empty());
-
-      PStringToString info = m_ciscoRemotePartyID.GetParamVars();
-      info.SetAt("result", "forwarded");
-      info.SetAt("party", "A");
-      info.SetAt("code", psprintf("%u", statusCode));
-      info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
-      info.SetAt("Remote-Party", newRemotePartyID.AsString());
-      OnTransferNotify(info);
+        PStringToString info = m_ciscoRemotePartyID.GetParamVars();
+        info.SetAt("result", "forwarded");
+        info.SetAt("party", "A");
+        info.SetAt("code", psprintf("%u", statusCode));
+        info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
+        info.SetAt("Remote-Party", newRemotePartyID.AsString());
+        OnTransferNotify(info);
+      }
     }
   }
 
@@ -2297,7 +2297,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_answerFormatList.RemoveAll();
 
   SIPURL newRemotePartyID = request.GetMIME().GetString("Remote-Party-ID");
-  if (m_ciscoRemotePartyID != newRemotePartyID) {
+  if (!newRemotePartyID.IsEmpty() && m_ciscoRemotePartyID != newRemotePartyID) {
     PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
 
     m_ciscoRemotePartyID = newRemotePartyID;
