@@ -1743,15 +1743,21 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     }
   }
 
+  // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
+  // response for a target refresh request
+  m_dialog.Update(response);
+
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
   {
     SIPURL newRemotePartyID = responseMIME.GetString("Remote-Party-ID");
-    if (m_ciscoRemotePartyID.IsEmpty()) {
+    if (m_ciscoRemotePartyID.IsEmpty() && !newRemotePartyID.IsEmpty() &&
+        newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
       PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
       m_ciscoRemotePartyID = newRemotePartyID;
     }
-    else if (m_ciscoRemotePartyID != newRemotePartyID) {
+
+    if (m_ciscoRemotePartyID != newRemotePartyID) {
       PTRACE(3, "SIP\tOld style Remote-Party-ID used for forwarding indication to \"" << newRemotePartyID << '"');
 
       m_ciscoRemotePartyID = newRemotePartyID;
@@ -1767,9 +1773,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     }
   }
 
-  // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
-  // response for a target refresh request
-  m_dialog.Update(response);
+  // Update internal variables on remote part names/number/address
   UpdateRemoteAddresses();
 
   if (reInvite)
