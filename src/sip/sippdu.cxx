@@ -2343,6 +2343,8 @@ bool SIPDialogContext::SetRemoteURI(const PString & uri)
 
 void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 {
+  PTRACE_IF(3, !proxy.IsEmpty(), "SIP\tOutbound proxy for dialog set to " << proxy);
+
   m_proxy = proxy;
 
   // Default routeSet if there is a proxy

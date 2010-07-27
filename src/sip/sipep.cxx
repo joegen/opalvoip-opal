@@ -1412,6 +1412,7 @@ void SIPEndPoint::SetProxy(const PString & hostname,
 void SIPEndPoint::SetProxy(const SIPURL & url) 
 { 
   proxy = url; 
+  PTRACE_IF(3, !proxy.IsEmpty(), "SIP\tOutbound proxy for endpoint set to " << proxy);
 }
 
 

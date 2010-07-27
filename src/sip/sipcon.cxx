@@ -1411,6 +1411,8 @@ PBoolean SIPConnection::SetUpConnection()
 
   if (!m_dialog.GetRouteSet().IsEmpty()) 
     transportAddress = m_dialog.GetRouteSet().front();
+  else if (!m_dialog.GetProxy().IsEmpty())
+    transportAddress = m_dialog.GetProxy().GetHostAddress();
   else {
     transportAddress = m_dialog.GetRequestURI();
     transportAddress.AdjustToDNS(); // Do a DNS SRV lookup
@@ -2356,7 +2358,9 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
     PTRACE (3, "SIP\tFound auth info for realm \"" << newAuth->GetAuthRealm() << "\", user \"" << username << '"');
   }
   else {
-    SIPURL proxy = endpoint.GetProxy();
+    SIPURL proxy = m_dialog.GetProxy();
+    if (proxy.IsEmpty())
+      proxy = endpoint.GetProxy();
     if (proxy.IsEmpty()) {
       PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm());
       delete newAuth;
