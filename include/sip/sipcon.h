@@ -566,8 +566,7 @@ class SIPConnection : public OpalRTPConnection
     );
     virtual bool OnSendAnswerSDP(
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut,
-      bool reInvite
+      SDPSessionDescription & sdpOut
     );
     virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
