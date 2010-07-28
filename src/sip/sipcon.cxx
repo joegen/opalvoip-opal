@@ -2061,7 +2061,9 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_handlingINVITE = true;
 
   // send the 200 OK response
-  if (!SendInviteOK())
+  if (SendInviteOK())
+    ownerCall.StartMediaStreams();
+  else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   m_answerFormatList.RemoveAll();
