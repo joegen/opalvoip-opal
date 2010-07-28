@@ -527,7 +527,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
-    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false)) {
+    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut)) {
       Release(EndedByCapabilityExchange);
       return PFalse;
     }
@@ -941,7 +941,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
 }
 
 
-bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut, bool reInvite)
+bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
   if (!PAssert(originalInvite != NULL, PLogicError))
     return false;
@@ -994,16 +994,13 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     return false;
   }
 
+  vector<bool> goodSession(sessionCount+1);
   for (unsigned session = 1; session <= sessionCount; ++session) {
-    if (OnSendAnswerSDPSession(*sdp, session, sdpOut))
+    if (OnSendAnswerSDPSession(*sdp, session, sdpOut)) {
       sdpOK = true;
-    else if (!reInvite) {
-      OpalMediaStreamPtr stream;
-      if ((stream = GetMediaStream(session, false)) != NULL)
-        stream->Close();
-      if ((stream = GetMediaStream(session, true)) != NULL)
-        stream->Close();
-
+      goodSession[session] = true;
+    }
+    else {
       SDPMediaDescription * incomingMedia = sdp->GetMediaDescriptionByIndex(session);
       if (PAssert(incomingMedia != NULL, "SDP Media description list changed")) {
         SDPMediaDescription * outgoingMedia = incomingMedia->CreateEmpty();
@@ -1016,12 +1013,15 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     }
   }
 
-  /* Shut down any media that is in a session not mentioned in a re-INVITE.
-     While the SIP/SDP specification says this shouldn't happen, it does
-     anyway so we need to deal. */
-  for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-    if (stream->GetSessionID() > sessionCount)
-      stream->Close();
+  if (sdpOK) {
+    /* Shut down any media that is in a session not mentioned in a re-INVITE.
+       While the SIP/SDP specification says this shouldn't happen, it does
+       anyway so we need to deal. */
+    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+      unsigned session = stream->GetSessionID();
+      if (session > sessionCount || !goodSession[session])
+        stream->Close();
+    }
   }
 
   return sdpOK;
@@ -2946,7 +2946,7 @@ bool SIPConnection::SendInviteOK()
 
   PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (externalSDP.IsEmpty()) {
-    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false))
+    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut))
       return false;
   }
 
