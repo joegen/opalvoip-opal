@@ -1463,6 +1463,12 @@ PBoolean SIPConnection::SetUpConnection()
 
   OnApplyStringOptions();
 
+  if (m_connStringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
+    SIPMIMEInfo mime;
+    mime.SetRoute(m_connStringOptions[SIP_HEADER_PREFIX"Route"]);
+    m_dialog.SetRouteSet(mime.GetRoute());
+  }
+
   SIPURL transportAddress;
 
   if (!m_dialog.GetRouteSet().IsEmpty()) 
@@ -2891,8 +2897,6 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
         mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_connStringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
           mime.AddRequire("replaces");
-        else if (key == SIP_HEADER_PREFIX"Route")
-          m_dialog.SetRouteSet(mime.GetRoute());
       }
     }
   }
