@@ -262,7 +262,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     }
     else {
       // We contacted the server on an interface last time, assume it still works!
-      if (WriteSIPHandler(*m_transport))
+      if (WriteSIPHandler(*m_transport, false))
         return true;
     }
 
@@ -336,11 +336,11 @@ void SIPHandler::SetExpire(int e)
 
 PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 {
-  return param != NULL && ((SIPHandler *)param)->WriteSIPHandler(transport);
+  return param != NULL && ((SIPHandler *)param)->WriteSIPHandler(transport, true);
 }
 
 
-bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
+bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool /*forked*/)
 {
   SIPTransaction * transaction = CreateTransaction(transport);
 
@@ -873,6 +873,15 @@ PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 {
   SendStatus(SIP_PDU::Information_Trying, s);
   return SIPHandler::SendRequest(s);
+}
+
+
+bool SIPSubscribeHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
+{
+  m_dialog.SetForking(forked);
+  bool ok = SIPHandler::WriteSIPHandler(transport, forked);
+  m_dialog.SetForking(false);
+  return ok;
 }
 
 
@@ -1503,6 +1512,15 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
     m_reason = Timeout;
 
   return SIPHandler::SendRequest(state == Refreshing ? Unsubscribing : state);
+}
+
+
+bool SIPNotifyHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
+{
+  m_dialog.SetForking(forked);
+  bool ok = SIPHandler::WriteSIPHandler(transport, forked);
+  m_dialog.SetForking(false);
+  return ok;
 }
 
 
