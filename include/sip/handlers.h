@@ -143,7 +143,7 @@ protected:
   void RetryLater(unsigned after);
   PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
-  bool WriteSIPHandler(OpalTransport & transport);
+  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
 
   SIPEndPoint               & endpoint;
 
@@ -242,6 +242,7 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
+  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
   bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
 
@@ -284,6 +285,7 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
+  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
 
   SIPEventPackage          m_eventPackage;
   SIPDialogContext         m_dialog;

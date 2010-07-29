@@ -489,7 +489,7 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   /* This is an extra increment of the sequence number to allow for
      any PDU's in the dialog being sent between the last saved
      context. Highly unlikely this will ever by a million ... */
-  context.GetNextCSeq(1000000);
+  context.IncrementCSeq(1000000);
 
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
   PSafePtr<SIPTransaction> byeTransaction = new SIPTransaction(SIP_PDU::Method_BYE, *this, *transport);
