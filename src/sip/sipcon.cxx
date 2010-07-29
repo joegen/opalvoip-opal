@@ -1359,7 +1359,9 @@ PBoolean SIPConnection::SetUpConnection()
     ok = WriteINVITE();
   else {
     PWaitAndSignal mutex(transport->GetWriteMutex());
+    m_dialog.SetForking(true);
     ok = transport->WriteConnect(WriteINVITE, this);
+    m_dialog.SetForking(false);
   }
 
   if (ok) {
@@ -2312,10 +2314,6 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   delete m_authentication;
   m_authentication = newAuth;
   m_authenticatedCseq = cseq;
-
-  // Make sure we increment sequence number as the call inside SIPInvite ctor
-  // will not do so due to prevention to increment on "interface forked" INVITEs
-  m_dialog.GetNextCSeq();
 
   transport->SetInterface(transaction.GetInterface());
 

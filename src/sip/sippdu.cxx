@@ -1702,7 +1702,7 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
                     dialog.GetRemoteURI(),
                     dialog.GetLocalURI(),
                     dialog.GetCallID(),
-                    dialog.GetNextCSeq(dialog.IsEstablished() && m_method != Method_ACK ? 1 : 0),
+                    dialog.GetNextCSeq(),
                     via);
   SetRoute(dialog.GetRouteSet());
   m_usePeerTransportAddress = dialog.UsePeerTransportAddress();
@@ -2229,9 +2229,10 @@ void SIP_PDU::SetSDP(SDPSessionDescription * sdp)
 
 SIPDialogContext::SIPDialogContext()
   : m_callId(SIPTransaction::GenerateCallID())
-  , m_lastSentCSeq(1)
+  , m_lastSentCSeq(0)
   , m_lastReceivedCSeq(0)
   , m_usePeerTransportAddress(false)
+  , m_forking(false)
 {
 }
 
@@ -2397,6 +2398,15 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     if (viaList.GetSize() > 0)
       m_usePeerTransportAddress = LocateFieldParameter(viaList.front(), "rport", start, val, end);
   }
+}
+
+
+unsigned SIPDialogContext::GetNextCSeq()
+{
+  if (m_forking && m_lastSentCSeq > 0)
+    return m_lastSentCSeq;
+
+  return ++m_lastSentCSeq;
 }
 
 

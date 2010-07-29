@@ -734,7 +734,9 @@ class SIPDialogContext
 
     void Update(const SIP_PDU & response);
 
-    unsigned GetNextCSeq(unsigned inc = 1) { return m_lastSentCSeq += inc; }
+    unsigned GetNextCSeq();
+    void IncrementCSeq(unsigned inc) { m_lastSentCSeq += inc; }
+
     bool IsDuplicateCSeq(unsigned sequenceNumber);
 
     bool IsEstablished() const
@@ -747,6 +749,8 @@ class SIPDialogContext
 
     bool UsePeerTransportAddress() const { return m_usePeerTransportAddress; }
 
+    void SetForking(bool f) { m_forking = f; }
+
   protected:
     PString     m_callId;
     SIPURL      m_requestURI;
@@ -758,6 +762,7 @@ class SIPDialogContext
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
     bool        m_usePeerTransportAddress;
+    bool        m_forking;
     SIPURL      m_proxy;
 };
 
