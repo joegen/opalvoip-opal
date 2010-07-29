@@ -478,10 +478,9 @@ class IAX2Connection : public OpalConnection
 
 #endif // OPAL_IAX2_IAX2CON_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

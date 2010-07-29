@@ -120,6 +120,7 @@ class IAX2IeData :  public PObject
   unsigned short     receivedDelay;         /*!< Max playout delay for received frame (in ms) u16*/
   unsigned int       receivedDropped;       /*!< Dropped frames (presumably by jitterbuf) u32 */
   unsigned int       receivedOoo;           /*!< Frames received Out of Order u32 */
+  PBYTEArray         callToken;             /*!< "Fix" DOS vulnerability from lots of calls being setup.*/
 };
 
 
@@ -127,13 +128,11 @@ class IAX2IeData :  public PObject
 
 #endif // OPAL_IAX2_IEDATA_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

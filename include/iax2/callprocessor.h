@@ -171,6 +171,10 @@ class IAX2CallProcessor : public IAX2Processor
   /**Get the username*/
   PString GetUserName() const;
   
+  /**Report the calling name - which we send to the remote endpoint
+     when making a call */
+  PString GetCallingName() const { return callingName; }
+
   /**Set the password for when we connect to a remote node
      we use it as authentication.  Note this must only be
      used before the main thread is started.  This is optional
@@ -435,13 +439,28 @@ class IAX2CallProcessor : public IAX2Processor
      Provision device  */
   void ProcessIaxCmdProvision(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Download
-     firmware  */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Download firmware  */
   void ProcessIaxCmdFwDownl(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Firmware
-     Data  */
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     Firmware Data  */
   void ProcessIaxCmdFwData(IAX2FullFrameProtocol *src);
+
+  /** Process a FullFrameProtocol class, where the sub Class value is
+     CallToken. This is an authentication like packet that IAX2 added
+     in sep 2009 to prevent a DOS attack from too many incoming
+     callers.  
+
+     Reply with a NEW packet and the calltoken from supplied frame.*/
+  void ProcessIaxCmdCallToken(IAX2FullFrameProtocol *src);
+
+  /**We have to send a new frame to the remote host. This builds the
+     frame, and adds many of the information elements required. does
+     not add the calltoken ie - that is added elsewhere. This method
+     assumes this class already holds the relevant information on the
+     destination box */
+  IAX2FullFrameProtocol *BuildNewFrameForSending(IAX2FullFrameProtocol *inReplyTo = NULL);
   
   /**Count of the number of sound frames sent */
   PAtomicInteger audioFramesSent;
@@ -655,6 +674,21 @@ class IAX2CallProcessor : public IAX2Processor
   /**Process a full frame and respond accordingly to it*/
   virtual void ProcessFullFrame(IAX2FullFrame & fullFrame);
   
+  /**The calling Name - used when we send a new packet to the remote
+     host - this name is put the new packet */
+  PString callingName;
+
+  /**The calling extension - derived from the destination of the
+     call */
+  PString callingExtension;
+
+  /**The Dnid - used in creating a cmdNew packet for creating call */
+  PString callingDnid;
+
+  /**the context index - used in creating a cmdNew packet for creating
+     call */
+  PString callingContext;
+
   /**Optional username for when we connect to a remote node
      we use it as authentication.  Note this must only be
      set before the main thread is started.*/
@@ -680,10 +714,9 @@ class IAX2CallProcessor : public IAX2Processor
 
 /////////////////////////////////////////////////////////////////////////
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

@@ -73,7 +73,7 @@ Note that all connections send data to the same IAX2Transmit.
 \li IAX2Processor           - Separate thread to handle all IAX2 protocol requests, and transfer media frames.
 \li IAX2IncomingEthernetFrames - Separate thread to transfer all frames from the IAX2Receiver to the 
                                   appropriate IAX2Connection.
-\li IAX2OpalMediaStream     - Transfer media frames between IAX2Connection to Opal.
+\li OpalIAX2MediaStream     - Transfer media frames between IAX2Connection to Opal.
 \li IAX2PacketIdList           - A list of IAX2FrameIdValue elements, which is used to keep track of incoming IAX2FullFrame out sequence numbers
 \li IAX2Receiver               - Handles the reception of data from the remote node
 \li IAX2Remote                 - contain information about the remote node. 
@@ -106,6 +106,7 @@ Note that all connections send data to the same IAX2Transmit.
 \li IAX2Ie - the parent of all information element types
 
 \subsection subsecIeData classes for the different data types expressed in an Ie
+\li IAX2IeBinary      - a series of Bytes in the data field.
 \li IAX2IeByte        - Byte of data in data field.
 \li IAX2IeChar        - character of data in the data field
 \li IAX2IeDateAndTime - data field contains a 32 bit number with date and time (2 sec resolution)
@@ -134,6 +135,7 @@ Note that all connections send data to the same IAX2Transmit.
 \li IAX2IeCallingPres 
 \li IAX2IeCallingTns 
 \li IAX2IeCallingTon 
+\li IAX2IeCallToken
 \li IAX2IeCapability 
 \li IAX2IeCause         - text description of what happened (typically used at call completion, explaining why the call was finished)
 \li IAX2IeCauseCode     - numeric value describing why the call was completed.

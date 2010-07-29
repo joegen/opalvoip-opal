@@ -455,15 +455,24 @@ class IAX2EndPoint : public OpalEndPoint
      connection (for the connection to process) and return true;
   */
   PBoolean ProcessInMatchingConnection(IAX2Frame *f);  
-    
-  /**The TokenTranslationDict may need a new entry. Examine
-     the list of active connections, to see if any match this frame.
-     If any do, then we add a new translation entry in tokenTable;
+
+  /**For the supplied IAX2Frame, pass it to a connection in the
+     connectionsActive structure.  We are told the token of the connection
+     that matches this particular frame. 
      
-     If a matching connection is found in connectionsActive, create a
-     new translation entry and return true. The connection, after
-     processing the frame, will then delete the frame. */
-  PBoolean AddNewTranslationEntry(IAX2Frame *f);
+
+     @return true - this is the normal and expected outcome. 
+     @return false - connection not found - say it died immediately
+     before this method was called */
+    PBoolean ProcessFrameInConnection(IAX2Frame *f, const PString & token);  
+    
+  /**Take the supplied frame, and compare it with all the existing
+     connections.  If any of the existing connections has a matching
+     dest call number, then put this frame to that connection.  
+
+     Update the token translation dictionary if the supplied frame has
+     a valid connection token. */
+  PBoolean ProcessInConnectionTestAll(IAX2Frame *f);
   
   /**tokenTable is a hack to allow IAX2 to fit in with one of the
      demands of the opal library. 
@@ -507,10 +516,9 @@ class IAX2EndPoint : public OpalEndPoint
 
 #endif // OPAL_IAX2_IAX2EP_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2
