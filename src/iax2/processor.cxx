@@ -248,8 +248,6 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (frame == NULL) {
     return PFalse;
   }
-  PTRACE(3, "Processor\t XXXX  Our remote info is " << remote);
-  PTRACE(3, "Processor\t XXXX  Our remote info is " << remote);
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
     PTRACE(5, "Procesor\tUnknown  incoming frame " << frame->IdString()
