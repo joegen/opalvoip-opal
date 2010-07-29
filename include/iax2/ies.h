@@ -570,7 +570,7 @@ class IAX2IeBinary : public IAX2Ie
   /**@name Worker methods*/
   //@{  
   /**return the number of bytes to hold this data element */
-    virtual BYTE GetLengthOfData() { return dataValue.GetSize(); }
+  virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
