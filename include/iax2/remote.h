@@ -90,10 +90,10 @@ class IAX2Remote : public PObject
   /**the connection token can be derived from the information in this
      class. Consequently, get this class to create the connection
      token */
-  PString BuildConnectionTokenId();
+  PString BuildConnectionToken();
 
   /**Similar to BuildConnectionTokenId, but build it with our source call  number, not remote call number */
-  PString BuildOurConnectionTokenId();
+  PString BuildOurConnectionToken();
 
   /** return the current value of the port at the other end of this call */
   PINDEX   RemotePort() { return remotePort; }
@@ -114,7 +114,7 @@ class IAX2Remote : public PObject
   void SetSourceCallNumber(PINDEX newVal) { sourceCallNumber = newVal; }
   
   /**Set the Dest Call Number, as used by this class */
-  void SetDestCallNumber(PINDEX newVal) { destCallNumber = newVal; }
+  void SetDestCallNumber(PINDEX newVal);
   
   /**Return true if remote port & address & destCallNumber & source
      call number match up.  This is used when finding a Connection
@@ -405,10 +405,9 @@ class IAX2Encryption : public PObject
 
 #endif // OPAL_IAX2_REMOTE_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

@@ -96,13 +96,11 @@ class IAX2SoundList : public PBYTEArray *
 
 #endif // OPAL_IAX2_SOUND_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.  
+ *
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

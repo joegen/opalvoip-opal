@@ -153,10 +153,9 @@ class IAX2Transmit : public PThread
 
 #endif // OPAL_IAX2_TRANSMIT_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

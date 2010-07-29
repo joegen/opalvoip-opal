@@ -90,13 +90,13 @@ class IAX2Frame :  public PObject
   virtual PBoolean ProcessNetworkPacket();
   
   /**True if this is a full frame */
-  virtual PBoolean IsFullFrame();
+  virtual PBoolean IsFullFrame() { return isFullFrame; }
   
   /**True if it is a video frame */
-  PBoolean IsVideo() const;
+  PBoolean IsVideo() const { return isVideo; }
   
   /**True if is is an audio frame */
-  PBoolean IsAudio() const;
+  PBoolean IsAudio() const { return isAudio; }
 
   /**Pointer to the beginning of the media (after the header) in this packet.
      The low level frame has no idea on headers, so just return pointer to beginning
@@ -159,6 +159,9 @@ class IAX2Frame :  public PObject
   /**Get the timestamp as used by this class*/
   DWORD  GetTimeStamp() { return timeStamp; }
   
+  /**Alter the timestamp as used by this class - quite unusual, but ok,.. */
+  void SetTimeStamp(DWORD newValue);
+
   /** Report flag stating that this call must be active when this frame is transmitted*/
   virtual PBoolean CallMustBeActive() { return true; }     
   
@@ -199,9 +202,9 @@ class IAX2Frame :  public PObject
      is responsible for this frame */
   void SetConnectionToken(PString newToken) { connectionToken = newToken; } 
 
-  /**Create the connection token id, which uniquely identifies the
+  /**Create the connection token, which uniquely identifies the
      connection to process this call */
-  void BuildConnectionTokenId();
+  void BuildConnectionToken();
 
   /**Write the data in the variables to this frame's data array. If
      encryption is on, the data will be encrypted */
@@ -288,11 +291,11 @@ class IAX2Frame :  public PObject
   /**Indicate if this frame can be retransmitted*/
   PBoolean               canRetransmitFrame;
 
-  /**Connection Token, which uniquely identifies the IAXConnection
+  /**Connection Token, which uniquely identifies the IAX2Connection
      that sent this frame. The token will (except for the first setup
-     packet) uniquely identify the IAXConnection that is to receive
+     packet) uniquely identify the IAX2Connection that is to receive
      this incoming frame.  */
-  PString            connectionToken;
+  PString connectionToken;
 
   /**The time stamp to use, for those cases when the user demands a
    * particular timestamp on construction. */
@@ -417,6 +420,9 @@ class IAX2FullFrame : public IAX2Frame
   
   /**Return True if this is a REGREJ frame */
   PBoolean IsRegRejFrame();
+
+  /**Return True if this is a CALLTOKEN frame */
+  PBoolean IsCallTokenFrame();
 
   /**Return True if this FullFrame is of a type that increments the
      InSeqNo */
@@ -570,7 +576,7 @@ class IAX2FullFrame : public IAX2Frame
   
   /** Internal variables specifying the retry time periods (in milliseconds) */
   enum RetryTime {
-    minRetryTime = 500,    /*!< 500 milliseconds     */
+    minRetryTime = 1000,   /*!< 1000 milliseconds    */
     maxRetryTime = 010000, /*!< 10 seconds           */
     maxRetries   = 3       /*!< number of retries    */
   };
@@ -919,7 +925,10 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
     cmdTransfer  =  34,      /*!< Initiate the remote end to do a transfer */
     cmdProvision =  35,      /*!< Provision the remote end    */
     cmdFwDownl   =  36,      /*!< The remote end must download some firmware    */
-    cmdFwData    =  37       /*!< This message contains firmware.    */
+    cmdFwData    =  37,      /*!< This message contains firmware.    */
+    cmdTxMedia   =  38,      /*!< undocumented - for now . */
+    cmdRtKey     =  39,      /*!< More undocumented. Apologies */
+    cmdCallToken =  40       /*!< Prevents DOS attack of handling multiple incoming calls. */
   };
   
   /**Construction from a supplied dataframe.
@@ -996,21 +1005,29 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   
   /**Look through the list of IEs, and look for remote capabability
      and preferred codec */
-  void GetRemoteCapability(unsigned int & capability, unsigned int & preferred);
+  void GetRemoteCapability(unsigned int & capability, 
+			   unsigned int & preferred);
 
-  /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
+  /**Return the IAX2FullFrame type represented here (voice, protocol,
+     session etc*/
   virtual BYTE GetFullFrameType() { return iax2ProtocolType; }
   
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
+
+  /**Go through the list of IEs read in, and find the CallToken Ie,
+     and return a copy of it to the caller. If found, return true. */
+  PBoolean GetCallTokenIe(IAX2IeCallToken & callToken);
 
  protected:
   
   /**Read the information elements from the incoming data array 
      to generate a list of information element classes*/
   PBoolean ReadInformationElements();
-  
-  /**A list of the IEs read from/(or  written to) the data section of this frame,*/
+ 
+
+  /**A list of the IEs read from/(or written to) the data section of
+     this frame,*/
   IAX2IeList ieElements;
 
   /**Pretty print the protocol value with an English word. */
@@ -1216,10 +1233,9 @@ class IAX2ActiveFrameList : public IAX2FrameList
 
 #endif // OPAL_IAX2_FRAME_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

@@ -108,7 +108,13 @@ class IAX2Ie : public PObject
     ie_recPackets        = 48,    /*!< Recevied number of frames (total frames received) (unsigned 32 bit) */
     ie_recDelay          = 49,    /*!< Received frame largest playout delay (in ms) (unsigned 16 bit)*/
     ie_recDropped        = 50,    /*!< The number of dropped received frames by the jitter buf, so it is a measure of the number of late frames (unsigned 32 bit) */
-    ie_recOoo            = 51     /*!< The number of received frames which were Out Of Order (unsigned 32 number) */
+    ie_recOoo            = 51,    /*!< The number of received frames which were Out Of Order (unsigned 32 number) */
+    ie_variable          = 52,    /*!< do remote variables                                                            */
+    ie_ospToken          = 53,    /*!< OSP token                                                                      */
+    ie_callToken         = 54,    /*!< For security - do Call number tests                                            */
+    ie_capability2       = 55,    /*!< Do the Actual codec capability - u8 version + integer array                    */
+    ie_format2           = 56,    /*!< Desired codec format - u8 version + integer array                              */
+    ie_countEntries              /*!< Report on how many different ie types there are                                */
   };
   
   /**@name construction/destruction*/
@@ -136,7 +142,7 @@ class IAX2Ie : public PObject
   int GetBinarySize() { return 2 + GetLengthOfData(); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /** Get the enum value for this information element class */
   virtual BYTE GetKeyValue() const  { return 255; }
@@ -173,15 +179,17 @@ class IAX2IeInvalidElement : public IAX2Ie
  public:
   IAX2IeInvalidElement() : IAX2Ie() {};
   
-  /**Access function to get the length of data, which is used when writing to network packet*/
+  /**Access function to get the length of data, which is used when
+     writing to network packet*/
   virtual BYTE GetlengthOfData() { return 0; }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const
+  virtual void PrintOn(ostream & str) const
     { str << "Invlalid Information Element" << endl; }
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.
-      For an IAX2IeInvalidElement, there is no work done, as the data is invalid. */
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.  For an IAX2IeInvalidElement, there is no work
+      done, as the data is invalid. */
   virtual void WriteBinary(BYTE * /*data*/) {  }
 };
 /////////////////////////////////////////////////////////////////////////////    
@@ -210,10 +218,11 @@ class IAX2IeNone : public IAX2Ie
   BYTE GetValue() { return 0; }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(void * /*newData*/) { PAssertAlways("IeNone cannot set data"); }
+  void SetData(void * /*newData*/) 
+  { PAssertAlways("IeNone cannot set data"); }
   
   /**Read the value of the stored data for this class */
   int ReadData() { PAssertAlways("IeNone cannot read the internal data value"); return 0; }
@@ -251,7 +260,7 @@ class IAX2IeByte : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(BYTE newData) { dataValue = newData; validData = true; }
@@ -261,7 +270,8 @@ class IAX2IeByte : public IAX2Ie
   
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data) { data[0] = dataValue; }
   
   /**The actual data stored in a IAX2IeByte class */
@@ -294,7 +304,7 @@ class IAX2IeChar : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(char newData) { dataValue = newData; validData = true; }
@@ -304,7 +314,8 @@ class IAX2IeChar : public IAX2Ie
   
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data) { data[0] = dataValue; }
   
   /**The actual data stored in a IAX2IeChar class */
@@ -337,7 +348,7 @@ class IAX2IeShort : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(short newData) { dataValue = newData; validData = true; }
@@ -346,7 +357,8 @@ class IAX2IeShort : public IAX2Ie
   short ReadData() { return dataValue; }  
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeShort class */
@@ -378,7 +390,7 @@ class IAX2IeInt : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(int newData) { dataValue = newData; validData = true; }
@@ -388,7 +400,8 @@ class IAX2IeInt : public IAX2Ie
   
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeInt class */
@@ -420,7 +433,7 @@ class IAX2IeUShort : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(unsigned short newData) { dataValue = newData; validData = true; }
@@ -429,7 +442,8 @@ class IAX2IeUShort : public IAX2Ie
   unsigned short ReadData() { return dataValue; }         
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeUShort class */
@@ -461,7 +475,7 @@ class IAX2IeUInt : public IAX2Ie
   virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(unsigned int &newData) { dataValue = newData; validData = true; }
@@ -471,7 +485,8 @@ class IAX2IeUInt : public IAX2Ie
   //@}
   
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeUInt class */
@@ -521,12 +536,66 @@ class IAX2IeString : public IAX2Ie
   //@}
   
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeString class */
   PString dataValue;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+/**An Information Element that contains numbers which are in the range
+   of 0..255 It is valid to have zero elements in this field. */
+class IAX2IeBinary : public IAX2Ie
+{
+  PCLASSINFO(IAX2IeBinary, IAX2Ie);
+  /**@name construction/destruction*/
+  //@{
+  
+ public:
+  /**Constructor - read data from source array. 
+     
+  If the length is zero, the value of srcData is ignored, and an empty
+  array is created. */
+  IAX2IeBinary(BYTE length, BYTE *srcData);     
+  
+  /**Construct to an initialised value */
+  IAX2IeBinary(PBYTEArray newValue) : IAX2Ie() { SetData(newValue); }
+  
+  /**Constructor to an invalid and empty result*/
+  IAX2IeBinary() : IAX2Ie() {}
+  //@}
+  
+  /**@name Worker methods*/
+  //@{  
+  /**return the number of bytes to hold this data element */
+    virtual BYTE GetLengthOfData() { return dataValue.GetSize(); }
+  
+  /**print this class (nicely) to the designated stream*/
+  virtual void PrintOn(ostream & str) const;
+  
+  /**Take the supplied data and copy contents into this IE */
+  void SetData(const PBYTEArray & newData);
+
+  /**Take the internal data and copy it to the parameter */
+  void GetData(PBYTEArray & answer);
+
+  /**Copy the data from the supplied IAX2IeBinary and put it into this
+     instance */
+  void CopyData(IAX2IeBinary *src);
+  //@}
+  
+ protected:
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
+  virtual void WriteBinary(BYTE *data);
+  
+  /**The actual data stored in a IAX2IeBinary class */
+  PBYTEArray dataValue;
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /**An Information Element that contains the date and time, from a 32 bit long representation*/
 class IAX2IeDateAndTime : public IAX2Ie
@@ -551,19 +620,21 @@ class IAX2IeDateAndTime : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
   virtual BYTE GetLengthOfData() { return 4; }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(const PTime & newData) { dataValue = newData; validData = true; }
+  void SetData(const PTime & newData) 
+  { dataValue = newData; validData = true; }
   
   /**Report the value of the stored data for this class */
   PTime ReadData() { return dataValue; }
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeDateAndTime class */
@@ -593,20 +664,22 @@ class IAX2IeBlockOfData : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
   virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(const PBYTEArray & newData) { dataValue = newData; validData = true; }
+  void SetData(const PBYTEArray & newData) 
+     { dataValue = newData; validData = true; }
   
   /**Report the value of the stored data for this class */
   PBYTEArray ReadData() { return dataValue; }
   
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual data stored in a IAX2IeBlockOfData class */
@@ -627,7 +700,8 @@ class IAX2IeSockaddrIn : public IAX2Ie
   IAX2IeSockaddrIn(BYTE length, BYTE *srcData);     
   
   /**Construct to an initialized value */
-  IAX2IeSockaddrIn(const PIPSocket::Address & addr, PINDEX port) : IAX2Ie() { SetData(addr, port); }
+  IAX2IeSockaddrIn(const PIPSocket::Address & addr, PINDEX port) : IAX2Ie() 
+    { SetData(addr, port); }
   
   /**Constructor to an invalid and empty result*/
   IAX2IeSockaddrIn() : IAX2Ie() {}
@@ -639,12 +713,11 @@ class IAX2IeSockaddrIn : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
   virtual BYTE GetLengthOfData() { return sizeof(struct sockaddr_in); }
-  
-  
+    
   /**Take the supplied data and copy contents into this IE */
   void SetData(const PIPSocket::Address & newAddr, PINDEX newPort) 
     { dataValue = newAddr; portNumber = newPort; validData = true; }
@@ -654,7 +727,8 @@ class IAX2IeSockaddrIn : public IAX2Ie
   
   //@}
  protected:
-  /** Take the data value for this particular IAX2Ie and copy into the memory region.*/
+  /** Take the data value for this particular IAX2Ie and copy into the
+      memory region.*/
   virtual void WriteBinary(BYTE *data);
   
   /**The actual ip address data stored in a IAX2IeSockaddrIn class */
@@ -673,24 +747,27 @@ class IAX2IeCalledNumber : public IAX2IeString
   /**Constructor from data read from the network.
      
   Contents are undefined if network data is bogus.*/
-  IAX2IeCalledNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) {};
+  IAX2IeCalledNumber(BYTE length, BYTE *srcData) 
+    : IAX2IeString(length, srcData) {};
   
   /**Initialise to the supplied string value */
   IAX2IeCalledNumber(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_calledNumber; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.calledNumber = dataValue; }
  protected:
 };
 ////////////////////////////////////////////////////////////////////////////////
-/**An Information Element that contains the Calling number (number trying to make call?)*/
+/**An Information Element that contains the Calling number (number
+   trying to make call?)*/
 class IAX2IeCallingNumber : public IAX2IeString
 {
   PCLASSINFO(IAX2IeCallingNumber, IAX2IeString);
@@ -698,20 +775,23 @@ class IAX2IeCallingNumber : public IAX2IeString
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus. */
-  IAX2IeCallingNumber(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
+  IAX2IeCallingNumber(BYTE length, BYTE *srcData) 
+     : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
   IAX2IeCallingNumber(const PString & newValue)  { SetData(newValue); } 
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingNumber; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.callingNumber = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) 
+  { res.callingNumber = dataValue; }     
  protected:
 };
 
@@ -724,20 +804,23 @@ class IAX2IeCallingAni : public IAX2IeString
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus. */
-  IAX2IeCallingAni(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
+  IAX2IeCallingAni(BYTE length, BYTE *srcData) 
+    : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
   IAX2IeCallingAni(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingAni; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.callingAni = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) 
+     { res.callingAni = dataValue; }     
  protected:
 };
 
@@ -750,20 +833,23 @@ class IAX2IeCallingName : public IAX2IeString
   /** Constructor from data read from the network.
       
   Contents are undefined if the network data is bogus/invalid */
-  IAX2IeCallingName(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
+  IAX2IeCallingName(BYTE length, BYTE *srcData) 
+    : IAX2IeString(length, srcData) { };
   
   /**Initialise to the supplied string value */
   IAX2IeCallingName(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingName; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.callingName = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) 
+  { res.callingName = dataValue; }     
  protected:
 };
 
@@ -782,14 +868,16 @@ class IAX2IeCalledContext : public IAX2IeString
   IAX2IeCalledContext(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_calledContext; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.calledContext = dataValue; }     
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) 
+  { res.calledContext = dataValue; }     
  protected:
 };
 
@@ -808,13 +896,14 @@ class IAX2IeUserName : public IAX2IeString
   IAX2IeUserName(const PString & newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_userName; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.userName = dataValue; }     
  protected:
 };
@@ -834,13 +923,14 @@ class IAX2IePassword : public IAX2IeString
   IAX2IePassword(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_password; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.password = dataValue; }     
  protected:
 };
@@ -860,13 +950,14 @@ class IAX2IeCapability : public IAX2IeUInt
   IAX2IeCapability(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_capability; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.capability = dataValue; }     
  protected:
 };
@@ -886,13 +977,14 @@ class IAX2IeFormat : public IAX2IeUInt
   IAX2IeFormat(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_format; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.format = dataValue; }     
  protected:
 };
@@ -912,13 +1004,14 @@ class IAX2IeLanguage : public IAX2IeString
   IAX2IeLanguage(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_language; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.language = dataValue; }     
  protected:
 };
@@ -938,13 +1031,14 @@ class IAX2IeVersion : public IAX2IeShort
   IAX2IeVersion() { dataValue = 2; validData = true; }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_version; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.version = dataValue; }     
  protected:
 };
@@ -961,13 +1055,14 @@ class IAX2IeAdsicpe : public IAX2IeShort
   IAX2IeAdsicpe(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_adsicpe; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.adsicpe = dataValue; }     
  protected:
 };
@@ -987,13 +1082,14 @@ class IAX2IeDnid : public IAX2IeString
   IAX2IeDnid(const PString & newValue)  { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dnid; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.dnid = dataValue; }     
  protected:
 };
@@ -1013,13 +1109,14 @@ class IAX2IeAuthMethods : public IAX2IeShort
   IAX2IeAuthMethods(short newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_authMethods; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.authMethods = dataValue; }     
   
   /**Return true if the supplied value has the RSA key on*/
@@ -1067,13 +1164,14 @@ class IAX2IeChallenge : public IAX2IeString
   IAX2IeChallenge(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_challenge; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.challenge = dataValue; }     
  protected:
 };
@@ -1102,13 +1200,14 @@ class IAX2IeMd5Result : public IAX2IeString
   void InitializeChallengePassword(const PString & newChallenge, const PString & newPassword);
 
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_md5Result; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.md5Result = dataValue; }     
 
   /**GetAccess to the stomach, which is the concatanation of the various
@@ -1136,13 +1235,14 @@ class IAX2IeRsaResult : public IAX2IeString
   IAX2IeRsaResult(const PString & newValue) { SetData(newValue); }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_rsaResult; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.rsaResult = dataValue; }
  protected:
 };
@@ -1162,13 +1262,14 @@ class IAX2IeApparentAddr : public IAX2IeSockaddrIn
   ~IAX2IeApparentAddr() { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_apparentAddr; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.apparentAddr = dataValue; }     
  protected:
 };
@@ -1188,13 +1289,14 @@ class IAX2IeRefresh : public IAX2IeShort
   IAX2IeRefresh(short refreshTime) : IAX2IeShort(refreshTime) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_refresh; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.refresh = dataValue; }     
  protected:
 };
@@ -1211,13 +1313,14 @@ class IAX2IeDpStatus : public IAX2IeShort
   IAX2IeDpStatus(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dpStatus; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.dpStatus = dataValue; }     
  protected:
 };
@@ -1234,13 +1337,14 @@ class IAX2IeCallNo : public IAX2IeShort
   IAX2IeCallNo(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callNo; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.callNo = dataValue; }     
  protected:
 };
@@ -1263,13 +1367,14 @@ class IAX2IeCause : public IAX2IeString
   IAX2IeCause(const char *newValue) : IAX2IeString(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_cause; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.cause = dataValue; }     
  protected:
 };
@@ -1289,13 +1394,14 @@ class IAX2IeIaxUnknown : public IAX2IeByte
   IAX2IeIaxUnknown(BYTE newValue) : IAX2IeByte(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_iaxUnknown; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.iaxUnknown = dataValue; }     
  protected:
 };
@@ -1312,13 +1418,14 @@ class IAX2IeMsgCount : public IAX2IeShort
   IAX2IeMsgCount(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_msgCount; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.msgCount = dataValue; }     
  protected:
 };
@@ -1335,13 +1442,14 @@ class IAX2IeAutoAnswer : public IAX2IeNone
   IAX2IeAutoAnswer(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_autoAnswer; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.autoAnswer = true;; }     
  protected:
 };
@@ -1361,13 +1469,14 @@ class IAX2IeMusicOnHold : public IAX2IeNone
   IAX2IeMusicOnHold() : IAX2IeNone() { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_musicOnHold; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.musicOnHold = true; }     
  protected:
 };
@@ -1384,13 +1493,14 @@ class IAX2IeTransferId : public IAX2IeInt
   IAX2IeTransferId(BYTE length, BYTE *srcData) : IAX2IeInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_transferId; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.transferId = dataValue; }     
  protected:
 };
@@ -1407,13 +1517,14 @@ class IAX2IeRdnis : public IAX2IeString
   IAX2IeRdnis(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_rdnis; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.rdnis = dataValue; }     
  protected:
 };
@@ -1430,13 +1541,14 @@ class IAX2IeProvisioning : public IAX2IeBlockOfData
   IAX2IeProvisioning(BYTE length, BYTE *srcData) : IAX2IeBlockOfData   (length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_provisioning; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &/*res*/) {  }     
  protected:
 };
@@ -1453,13 +1565,14 @@ class IAX2IeAesProvisioning : public IAX2IeNone
   IAX2IeAesProvisioning(BYTE length, BYTE *srcData) : IAX2IeNone(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_aesProvisioning; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &/*res*/) {  }     
  protected:
 };
@@ -1476,13 +1589,14 @@ class IAX2IeDateTime : public IAX2IeDateAndTime
   IAX2IeDateTime(BYTE length, BYTE *srcData) : IAX2IeDateAndTime(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_dateTime; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.dateTime = dataValue; }     
  protected:
 };
@@ -1499,13 +1613,14 @@ class IAX2IeDeviceType : public IAX2IeString
   IAX2IeDeviceType(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_deviceType; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.deviceType = dataValue; }     
  protected:
 };
@@ -1522,13 +1637,14 @@ class IAX2IeServiceIdent : public IAX2IeString
   IAX2IeServiceIdent(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_serviceIdent; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.serviceIdent = dataValue; }     
  protected:
 };
@@ -1545,13 +1661,14 @@ class IAX2IeFirmwareVer : public IAX2IeShort
   IAX2IeFirmwareVer(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_firmwareVer; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.firmwareVer = dataValue; }     
  protected:
 };
@@ -1571,13 +1688,14 @@ class IAX2IeFwBlockDesc : public IAX2IeUInt
   IAX2IeFwBlockDesc(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_fwBlockDesc; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.fwBlockDesc = dataValue; }     
  protected:
 };
@@ -1594,13 +1712,14 @@ class IAX2IeFwBlockData : public IAX2IeBlockOfData
   IAX2IeFwBlockData(BYTE length, BYTE *srcData) : IAX2IeBlockOfData(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_fwBlockData; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.fwBlockData = dataValue; }     
  protected:
 };
@@ -1620,13 +1739,14 @@ class IAX2IeProvVer : public IAX2IeUInt
   IAX2IeProvVer(unsigned int newValue) : IAX2IeUInt(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_provVer; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.provVer = dataValue; }     
  protected:
 };
@@ -1643,13 +1763,14 @@ class IAX2IeCallingPres : public IAX2IeByte
   IAX2IeCallingPres(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingPres; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.callingPres = dataValue; }     
  protected:
 };
@@ -1666,13 +1787,14 @@ class IAX2IeCallingTon : public IAX2IeByte
   IAX2IeCallingTon(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingTon; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.callingTon = dataValue; }     
  protected:
 };
@@ -1689,13 +1811,14 @@ class IAX2IeCallingTns : public IAX2IeUShort
   IAX2IeCallingTns(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_callingTns; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.callingTns = dataValue; }     
  protected:
 };
@@ -1712,13 +1835,14 @@ class IAX2IeSamplingRate : public IAX2IeUShort
   IAX2IeSamplingRate(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_samplingRate; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.samplingRate = dataValue; }     
  protected:
 };
@@ -1743,13 +1867,14 @@ class IAX2IeEncryption : public IAX2IeUShort
   IAX2IeEncryption(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_encryption; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.encryptionMethods = dataValue; }
  protected:
 };
@@ -1766,13 +1891,14 @@ class IAX2IeEncKey : public IAX2IeString
   IAX2IeEncKey(BYTE length, BYTE *srcData) : IAX2IeString(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_encKey; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.encKey = dataValue; }     
  protected:
 };
@@ -1789,13 +1915,14 @@ class IAX2IeCodecPrefs : public IAX2IeByte
   IAX2IeCodecPrefs(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_codecPrefs; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.codecPrefs = dataValue; }     
  protected:
 };
@@ -1812,13 +1939,14 @@ class IAX2IeReceivedJitter : public IAX2IeUInt
   IAX2IeReceivedJitter(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recJitter; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedJitter = dataValue; }     
  protected:
 };
@@ -1835,13 +1963,14 @@ class IAX2IeReceivedLoss : public IAX2IeUInt
   IAX2IeReceivedLoss(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recLoss; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedLoss = dataValue; }     
  protected:
 };
@@ -1858,13 +1987,14 @@ class IAX2IeReceivedFrames : public IAX2IeUInt
   IAX2IeReceivedFrames(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recPackets; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedPackets = dataValue; }     
  protected:
 };
@@ -1881,13 +2011,14 @@ class IAX2IeReceivedDelay : public IAX2IeUShort
   IAX2IeReceivedDelay(BYTE length, BYTE *srcData) : IAX2IeUShort(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recDelay; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedDelay = dataValue; }     
  protected:
 };
@@ -1904,13 +2035,14 @@ class IAX2IeDroppedFrames : public IAX2IeUInt
   IAX2IeDroppedFrames(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recDropped; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedDropped = dataValue; }     
  protected:
 };
@@ -1927,18 +2059,88 @@ class IAX2IeReceivedOoo : public IAX2IeUInt
   IAX2IeReceivedOoo(BYTE length, BYTE *srcData) : IAX2IeUInt(length, srcData) { };
   
   /**print this class (nicely) to the designated stream*/
-  void PrintOn(ostream & str) const;
+  virtual void PrintOn(ostream & str) const;
   
   /**Get the key value for this particular Information Element class */
   virtual BYTE GetKeyValue() const  { return ie_recOoo; }
   
-  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
-      This is done on processing an incoming frame which contains IAX2Ie in the data section. */
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
   virtual void StoreDataIn(IAX2IeData &res) { res.receivedOoo = dataValue; }     
  protected:
 };
 
 ///////////////////////////////////////////////////////////////////////
+/**An Information Element that contains the Call Token - a mechanism to stop
+   DOS attacks through setting up lots of calls 
+
+   The IAX2IeCallToken uses the HMAC SHA1 algorithm to secure the
+   challenge message sent to the initiating computer. With this
+   approach, it is not feasible for spoofing etc of the reply. You can
+   readup on hmac-sha1 at http://en.wikipedia.org/wiki/HMAC */
+class IAX2IeCallToken : public IAX2IeBinary
+{
+  PCLASSINFO(IAX2IeCallToken, IAX2IeBinary);
+ public:
+  /** Constructor from data read from the network.  Contents are
+  undefined if the network data is bogus/invalid */
+  IAX2IeCallToken(BYTE length, BYTE *srcData) 
+    : IAX2IeBinary(length, srcData) { };
+    
+  /** Build an emtpy IAX2IeCallToken, which is used in the new packet,
+        as sent by the node initiating a call */
+   IAX2IeCallToken() : IAX2IeBinary(0, NULL) {};
+     
+  /**print this class (nicely) to the designated stream*/
+     virtual void PrintOn(ostream & str) const;
+  
+  /**Get the key value for this particular Information Element class */
+  virtual BYTE GetKeyValue() const  { return ie_callToken; }
+  
+  /** Take the data from this IAX2Ie, and copy it into the IAX2IeData
+      structure.  This is done on processing an incoming frame which
+      contains IAX2Ie in the data section. */
+  virtual void StoreDataIn(IAX2IeData &res) { res.callToken = dataValue; }     
+
+  /**Initialise the internal key, and the iKeyPad and oKeyPad
+     variables, for the generation of the SHA1-HMAC keysequence. This
+     initialisation happens once, at program startup. */
+  static void InitialiseKey();
+
+  /**Fill with a hash key sequence, that we will later verify*/
+  void WriteKeySequence(PIPSocket::Address & remoteAddress);
+
+  /**Examine the hash key sequence in the supplied IE, and see if it
+     is valid. */
+  static PBoolean ValidKeySequence (IAX2IeCallToken & cf, 
+				    PIPSocket::Address & remote);
+
+ protected:
+ /**Report the key sequence that should be built, provided the
+    supplied time string and address */
+  static PString ReportKeySequence(const PString & time, PIPSocket::Address & remote);
+
+  /**The internal size of the hmac sha1 key, which the protocol sets
+     at 64 bytes, as this is a 512 bit hash */
+  enum {
+    iKeyValue = 0x36, /*!< Speced in protocol, an ambiguitating value */
+    oKeyValue = 0x5c, /*!< Same as iKeyValue, bitwise is very different.*/
+    blockSize = 64    /*!< Size of the cypher. 64 bytes = 512 bits. */
+  };
+
+  /**The key used in generating the SHA1-HMAC hash. Key is required for
+    handling incoming calls */
+  static PString secretKey;
+
+  /**Used for generating the SHA1-HMAC hash.  Initialised at program
+    startup, saves on time later. */
+  static BYTE iKeyPad[blockSize];
+
+  /**Similar to the iKeyPad, an internal variable*/
+  static BYTE oKeyPad[blockSize];
+};
+/////////////////////////////////////////////////////////////////////////////
 
 
 PDECLARE_LIST (IAX2IeList, IAX2Ie *)
@@ -1991,13 +2193,11 @@ class IAX2IeList : public IAX2Ie *
 
 #endif // OPAL_IAX2_IES_H
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */
