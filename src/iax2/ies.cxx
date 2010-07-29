@@ -31,6 +31,7 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
+#include <ptclib/random.h>
 
 #if OPAL_IAX2
 
@@ -105,7 +106,7 @@ IAX2Ie * IAX2Ie::BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcD
   case ie_recDelay        : return new IAX2IeReceivedDelay(length, srcData);
   case ie_recDropped      : return new IAX2IeDroppedFrames(length, srcData);
   case ie_recOoo          : return new IAX2IeReceivedOoo(length, srcData);
-    
+  case ie_callToken       : return new IAX2IeCallToken(length, srcData);
   default: PTRACE(1, "Ie\t Invalid IE type code " << ::hex << ((int)_typeCode) << ::dec);
   };
   
@@ -395,6 +396,58 @@ void IAX2IeString::SetData(const char * newData)
   validData = PTrue; 
 }
 
+/////////////////////////////////////////////////////////////////////////////
+IAX2IeBinary::IAX2IeBinary(BYTE length, BYTE *srcData)
+  : IAX2Ie()
+{
+  validData = PTrue;
+  if (length == 0)
+    dataValue = PBYTEArray(); /*A zero sized array */
+  else
+    dataValue = PBYTEArray(srcData, length);
+}
+
+void IAX2IeBinary::PrintOn(ostream & str) const
+{
+  if (validData)
+    str << setw(17) << Class() << " " << dataValue;
+  else
+    str << setw(17) << Class() << " does not hold valid data" ;
+}
+
+void IAX2IeBinary::WriteBinary(BYTE *data)
+{
+  if(validData) {
+    memcpy(data, dataValue.GetPointer(), GetLengthOfData());
+  }
+  else {
+    PTRACE(3, "Iax2IeBinary\tError - major error in IAX2IeBinary");
+    PAssertAlways("Attempt to use faulty data");
+  }
+}
+    
+void IAX2IeBinary::GetData(PBYTEArray & answer)
+{
+  if (!validData) {
+    answer.SetSize(0);
+    return;
+  }
+
+  answer = dataValue;
+}
+
+void IAX2IeBinary::CopyData(IAX2IeBinary *src)
+{
+  dataValue = src->dataValue;
+  validData = src->validData;
+}
+
+void IAX2IeBinary::SetData(const PBYTEArray & newData) 
+{ 
+  dataValue = newData; 
+  validData = PTrue; 
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2IeSockaddrIn::IAX2IeSockaddrIn(BYTE length, BYTE *srcData)
@@ -457,6 +510,116 @@ void IAX2IeBlockOfData::WriteBinary(BYTE *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void IAX2IeCallToken::PrintOn(ostream & strm) const
+{
+  if (validData) 
+    strm << Class() << " " << dataValue.GetSize() 
+	 << " bytes ";
+  else
+    strm << "Invalid contents in " << Class();
+}
+
+
+void IAX2IeCallToken::InitialiseKey()
+{
+  PINDEX i;
+  for (i = 0; i < blockSize; i++) {
+    iKeyPad[i] = iKeyValue;
+    oKeyPad[i] = oKeyValue;
+  }
+  PStringStream msg;
+  msg << ::hex << PRandom::Number() << ::dec;
+  secretKey = msg;
+
+  BYTE block[20];
+  memcpy(block, secretKey.GetPointer(), secretKey.GetLength());
+  for (i = 0; i < secretKey.GetLength(); i++) {
+    iKeyPad[i] ^= block[i];
+    oKeyPad[i] ^= block[i];
+  }
+}
+    
+void IAX2IeCallToken::WriteKeySequence(PIPSocket::Address & remote)
+{
+  PString srcTime = PString(PTime().GetTimeInSeconds());
+  PString answer = srcTime + PString("?") + ReportKeySequence(srcTime, remote);
+  
+  PBYTEArray data;
+  data.SetSize(answer.GetLength());
+  memcpy(data.GetPointer(), answer.GetPointer(), answer.GetLength());
+  SetData(data);
+}
+
+PBoolean IAX2IeCallToken::ValidKeySequence (IAX2IeCallToken & cf, 
+					    PIPSocket::Address & remote)
+{
+  PINDEX startTime = PTime().GetTimeInSeconds();
+  PBYTEArray srcData;
+  cf.GetData(srcData);
+  PString src((const char *)srcData.GetPointer(), srcData.GetSize());
+  PStringList bits = src.Tokenise("?");
+  if (bits.GetSize() != 2)
+    return PFalse;
+  PINDEX srcTime = bits[0].AsInteger();
+
+  if ((srcTime != startTime)        && 
+      (srcTime != (startTime + 1))  && 
+      (srcTime != (startTime + 2))) 
+    return PFalse;
+
+  PString keySequence = ReportKeySequence(bits[0], remote);
+  
+  return keySequence == bits[1];
+}
+
+PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
+					   PIPSocket::Address & remote)
+{
+  BYTE block[1000];
+
+  memcpy(block, iKeyPad, blockSize);
+  PString message = srcTime + remote.AsString();
+  memcpy(block + blockSize, message.GetPointer(), message.GetLength());
+  
+  PMessageDigest::Result bin_digest;
+  PMessageDigestSHA1::Encode((const void *)block,
+			     blockSize + message.GetLength(), bin_digest);
+  memcpy(block, oKeyPad, blockSize);
+  const BYTE *data = bin_digest.GetPointer();
+  memcpy(block + blockSize, data, bin_digest.GetSize());
+  PMessageDigestSHA1::Encode((const void *)block,
+			     blockSize + bin_digest.GetSize(),
+			     bin_digest);
+  
+  PString answer;
+  PINDEX max;
+  PINDEX i;
+  for (i = 0, max = bin_digest.GetSize(); i < max ; i++)
+    answer.sprintf("%02x", (unsigned)data[i]);
+
+  return answer;
+}
+/************
+  These variables are static, as they are only accessed from the
+  IAX2IeCallToken class, and they never ever change during program
+  execution. they are initialised and setup at program startup, which
+  saves time on processing each incoming call packet*/
+
+/**The key used in generating the SHA1-HMAC hash. Key is required for
+   handling incoming calls. This key is set to a random value (hex
+   representation of a random number, which is in the range of
+   1..2^32 */
+PString IAX2IeCallToken::secretKey;
+
+/**Used for generating the SHA1-HMAC hash.  Initialised at program
+     startup, saves on time later. */
+BYTE IAX2IeCallToken::iKeyPad[IAX2IeCallToken::blockSize];
+
+/**Similar to the iKeyPad, an internal variable*/
+BYTE IAX2IeCallToken::oKeyPad[IAX2IeCallToken::blockSize];
+
+/////////////////////////////////////////////////////////////////////////////
+
 IAX2IeList::~IAX2IeList()
 {
     AllowDeleteObjects();
@@ -506,6 +669,7 @@ IAX2Ie *IAX2IeList::GetIeAt(int i) const
   
   return (IAX2Ie *)GetAt(i); 
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1004,13 +1168,11 @@ void IAX2IeReceivedOoo::PrintOn(ostream & str) const
 #endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */

@@ -121,19 +121,18 @@ void IAX2IeData::PrintOn(ostream & strm) const
        <<   "recevied frames (total frames received) u32          " << receivedPackets   << endl
        <<   "Max playout delay for received frame (in ms) u16     " << receivedDelay     << endl
        <<   "Dropped frames (presumably by jitterbuf) u32         " << receivedDropped   << endl
-       <<   "Frames received Out of Order u32                     " << receivedOoo       << endl;
+       <<   "Frames received Out of Order u32                     " << receivedOoo       << endl
+       <<   "Call Token element                                   " << callToken         << endl;
 }
 
 
 #endif // OPAL_IAX2
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
- * c-file-style:linux
  * c-basic-offset:2
  * End:
  */
