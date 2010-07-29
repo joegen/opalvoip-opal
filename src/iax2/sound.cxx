@@ -86,10 +86,9 @@ void IAX2SoundList::GetAllDeleteAll(IAX2SoundList &dest)
 #endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
  * c-file-style:linux

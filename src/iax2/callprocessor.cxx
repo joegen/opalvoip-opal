@@ -29,6 +29,8 @@
  * $Date$
  */
 
+
+
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
@@ -65,6 +67,8 @@
  *  ReleasedPhase,   
  *
  ********************************************************************************/
+
+
 
 IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   : IAX2Processor(ep)
@@ -224,7 +228,7 @@ void IAX2CallProcessor::CheckForHangupMessages()
 void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
 {      // Parse a string like guest@node.name.com/23234
   
-  PTRACE(2, "Connect to remote node " << newRemoteNode);
+  PTRACE(2, "CallProc\tConnect to remote node " << newRemoteNode);
   PStringArray res = IAX2EndPoint::DissectRemoteParty(newRemoteNode);
 
   if (res[IAX2EndPoint::addressIndex].IsEmpty()) {
@@ -248,8 +252,34 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
     
   remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
   remote.SetRemoteAddress(ip);
-    
-  IAX2FullFrameProtocol * f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdNew);
+
+  if (res[IAX2EndPoint::userIndex].IsEmpty()) {
+    callingName = userName;
+  } else {
+    callingName = res[IAX2EndPoint::userIndex];
+    userName = callingName;
+  }
+
+  callingExtension = res[IAX2EndPoint::extensionIndex];
+  callingDnid = res[IAX2EndPoint::extensionIndex];
+  callingContext = res[IAX2EndPoint::contextIndex];
+
+  IAX2FullFrameProtocol * f = BuildNewFrameForSending();
+  f->AppendIe(new IAX2IeCallToken());
+
+  TransmitFrameToRemoteEndpoint(f);
+  StartNoResponseTimer();
+  return;
+}
+
+
+IAX2FullFrameProtocol *IAX2CallProcessor::BuildNewFrameForSending(IAX2FullFrameProtocol *inReplyTo)
+{
+  IAX2FullFrameProtocol * f;
+  if (inReplyTo == NULL)
+    f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdNew);
+  else
+    f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdNew, inReplyTo);
   f->AppendIe(new IAX2IeVersion());
   f->AppendIe(new IAX2IeFormat(con->GetPreferredCodec()));
   f->AppendIe(new IAX2IeCapability(con->GetSupportedCodecs()));
@@ -257,31 +287,25 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   if (!endpoint.GetLocalNumber().IsEmpty())
     f->AppendIe(new IAX2IeCallingNumber(endpoint.GetLocalNumber()));
 
-  if (!res[IAX2EndPoint::userIndex].IsEmpty()) {
-    f->AppendIe(new IAX2IeCallingName(res[IAX2EndPoint::userIndex]));
-    f->AppendIe(new IAX2IeUserName(res[IAX2EndPoint::userIndex]));
-  } else if (!GetUserName().IsEmpty()) {
-    f->AppendIe(new IAX2IeCallingName(GetUserName()));
-    f->AppendIe(new IAX2IeUserName(GetUserName()));
-  }
+  f->AppendIe(new IAX2IeCallingName(GetCallingName()));
+  f->AppendIe(new IAX2IeUserName(GetUserName()));
 
-  if (!res[IAX2EndPoint::extensionIndex].IsEmpty())
-    f->AppendIe(new IAX2IeCalledNumber(res[IAX2EndPoint::extensionIndex] ));
+  if (!callingExtension.IsEmpty())
+    f->AppendIe(new IAX2IeCalledNumber(callingExtension));
 
-  if (!res[IAX2EndPoint::extensionIndex].IsEmpty())
-    f->AppendIe(new IAX2IeDnid(res[IAX2EndPoint::extensionIndex]));
+  if (!callingDnid.IsEmpty())
+    f->AppendIe(new IAX2IeDnid(callingDnid));
 
-  if (!res[IAX2EndPoint::contextIndex].IsEmpty())
-    f->AppendIe(new IAX2IeCalledContext(res[IAX2EndPoint::contextIndex]));
+  if (!callingContext.IsEmpty())
+    f->AppendIe(new IAX2IeCalledContext(callingContext));
 
 #if OPAL_PTLIB_SSL_AES
   f->AppendIe(new IAX2IeEncryption());
 #endif
 
-  TransmitFrameToRemoteEndpoint(f);
-  StartNoResponseTimer();
-  return;
+  return f;
 }
+
 
 void IAX2CallProcessor::ReportStatistics()
 {
@@ -402,6 +426,7 @@ void IAX2CallProcessor::ProcessLists()
   CheckForHangupMessages();
 }
 
+
 void IAX2CallProcessor::ProcessIncomingAudioFrame(IAX2Frame *newFrame)
 {
   PTRACE(5, "Processor\tProcessIncomingAudioframe " << newFrame->IdString());
@@ -417,7 +442,6 @@ void IAX2CallProcessor::ProcessIncomingVideoFrame(IAX2Frame *newFrame)
   IncVideoFramesRcvd();
   delete newFrame;
 }
-
 
 void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
 {
@@ -538,6 +562,8 @@ void IAX2CallProcessor::SendUnQuelchMessage()
   TransmitFrameToRemoteEndpoint(f);
 }
 
+
+
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2MiniFrame * src)
 {
   src->AlterTimeStamp(lastFullFrameTimeStamp);
@@ -615,9 +641,13 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameVideo * src)
   return;
 }
 
+
+
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
-{ /* these frames are labelled as AST_FRAME_CONTROL in the asterisk souces.
-     We could get an Answer message from here., or a hangup., or...congestion control... */
+{
+ /* these frames are labelled as AST_FRAME_CONTROL in the asterisk
+     souces.  We could get an Answer message from here., or a hangup.,
+     or...congestion control... */
   
   PTRACE(4, "ProcessNetworkFrame(IAX2FullFrameSessionControl * src)");
   SendAckFrame(src);  
@@ -698,6 +728,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   return;
 }
 
+
 PBoolean IAX2CallProcessor::SetUpConnection()
 {
   PTRACE(3, "IAX2\tSet Up Connection to remote node " 
@@ -765,7 +796,8 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   case IAX2FullFrameProtocol::cmdDial:
     ProcessIaxCmdDial(src);
     break;
-  /*case IAX2FullFrameProtocol::cmdTxreq:
+#if DONTUSE
+  case IAX2FullFrameProtocol::cmdTxreq:
     ProcessIaxCmdTxreq(src);
     break;
   case IAX2FullFrameProtocol::cmdTxcnt:
@@ -782,7 +814,7 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;
   case IAX2FullFrameProtocol::cmdTxrej:
     ProcessIaxCmdTxrej(src);
-    break;*/
+    break;
   case IAX2FullFrameProtocol::cmdQuelch:
     ProcessIaxCmdQuelch(src);
     break;
@@ -791,7 +823,7 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;
   case IAX2FullFrameProtocol::cmdPage:
     ProcessIaxCmdPage(src);
-    break;/*
+    break;
   case IAX2FullFrameProtocol::cmdMwi:
     ProcessIaxCmdMwi(src);
     break;
@@ -809,7 +841,11 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;
   case IAX2FullFrameProtocol::cmdFwData:
     ProcessIaxCmdFwData(src);
-    break;*/
+    break;
+#endif
+  case IAX2FullFrameProtocol::cmdCallToken:
+    ProcessIaxCmdCallToken(src);
+    break;
   default:
     PTRACE(1, "Process Full Frame Protocol, Type not expected");
     SendUnsupportedFrame(src);   //This method will delete the frame src.
@@ -817,6 +853,9 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   
   return PFalse;
 }
+
+
+
 
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameText * src)
 {
@@ -845,7 +884,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameCng * src)
   delete src;
   return;
 }
-
+  
 void IAX2CallProcessor::CheckForRemoteCapabilities(IAX2FullFrameProtocol *src)
 {
   unsigned int remoteCapability, format;
@@ -859,6 +898,8 @@ void IAX2CallProcessor::CheckForRemoteCapabilities(IAX2FullFrameProtocol *src)
   con->BuildRemoteCapabilityTable(remoteCapability, format);
 }
 
+
+  
 PBoolean IAX2CallProcessor::RemoteSelectedCodecOk()
 {
   selectedCodec = con->ChooseCodec();
@@ -875,6 +916,9 @@ PBoolean IAX2CallProcessor::RemoteSelectedCodecOk()
   
   return PTrue;
 }
+  
+
+ 
 
 void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
 { /*That we are here indicates this connection is already in place */
@@ -882,6 +926,32 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   remote.SetRemoteAddress(src->GetRemoteInfo().RemoteAddress());
   remote.SetRemotePort(src->GetRemoteInfo().RemotePort());
 
+  IAX2IeCallToken token;
+  PIPSocket::Address addr(remote.RemoteAddress());
+  if (src->GetCallTokenIe(token)) {
+    PTRACE(3, "CallProc\tReceived a callToken");
+    if (token.GetLengthOfData() < 5) {
+      IAX2IeCallToken *tSend = new IAX2IeCallToken();
+      tSend->WriteKeySequence(addr);
+      IAX2FullFrameProtocol * reply = 
+	 new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdCallToken, src);
+      reply->AppendIe(tSend);
+      TransmitFrameToRemoteEndpoint(reply);
+      delete src;
+      return;
+    } else {
+      bool validCallToken = IAX2IeCallToken::ValidKeySequence(token, addr);
+      if (!validCallToken) {
+	PTRACE(3, "CallProc\tfailed CALLTOKEN test");
+	IAX2FullFrameProtocol * reply = 
+	  new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdReject, src);
+	TransmitFrameToRemoteEndpoint(reply);
+	delete src;
+	return;
+      }
+      PTRACE(3, "CallProc\tValid CALLTOKEN test");
+    }
+  }
   if (IsCallHappening()) {
     PTRACE(3, "Remote node has sent us a second new message. ignore");
     delete src;
@@ -889,15 +959,14 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   }
 
   IAX2FullFrameProtocol * reply;
-  
-  
+    
   if (!RemoteSelectedCodecOk()) {
-    PTRACE(3, "Remote node sected a bad codec, hangup call ");
+    PTRACE(3, "CallProc\tRemote node sected a bad codec, hangup call ");
     reply = new  IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdInval, src, IAX2FullFrame::callIrrelevant);
     TransmitFrameToRemoteEndpoint(reply);
     
     reply= new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdHangup, IAX2FullFrame::callIrrelevant);
-    PTRACE(3, "Send a hangup frame to the remote endpoint as there is no codec available");    
+    PTRACE(3, "CallProc\tSend a hangup frame to the remote endpoint as there is no codec available");    
     reply->AppendIe(new IAX2IeCause("No matching codec"));
     SetCallTerminating();
     //              f->AppendIe(new IeCauseCode(IeCauseCode::NormalClearing));
@@ -935,6 +1004,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   TransmitFrameToRemoteEndpoint(r, IAX2WaitingForAck::RingingAcked);
   delete src;
 }
+
 
 void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
 {
@@ -1031,7 +1101,7 @@ void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
 void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
 {
   if (IsCallAccepted()) {
-    PTRACE(3, "Second accept packet received. Ack, delete, & do nothing.");
+    PTRACE(3, "Processor\t2nd accept packet received. ack+del+ignore.");
     SendAckFrame(src);
     delete src;
     return;
@@ -1043,7 +1113,6 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
      Tell our connection that the phone is ringing at the other end. */
   PString calleeName = con->GetRemotePartyName();
   con->SetAlerting(calleeName, PTrue);
-
 
   SendAckFrame(src);
   SetCallAccepted();
@@ -1217,6 +1286,22 @@ void IAX2CallProcessor::ProcessIaxCmdFwData(IAX2FullFrameProtocol *src)
   delete src;
 }
 
+void IAX2CallProcessor::ProcessIaxCmdCallToken(IAX2FullFrameProtocol *src)
+{
+  PTRACE(4, "Processor\tProcessIaxCmdCallToken(IAX2FullFrameProtocol *src)");
+  IAX2IeCallToken *ie = new IAX2IeCallToken();
+  if (src->GetCallTokenIe(*ie)) {
+    IAX2FullFrameProtocol *f = BuildNewFrameForSending(src);
+    f->AppendIe(ie);
+    TransmitFrameToRemoteEndpoint(f);
+    StopNoResponseTimer();
+    StartNoResponseTimer();
+  } else
+    delete ie;
+  
+  delete src;
+}
+
 void IAX2CallProcessor::StartStatusCheckTimer(PINDEX msToWait)
 {
   PTRACE(4, "Processor\tStatusCheck time. Now set flag to send a ping+lagrq packets");
@@ -1295,15 +1380,13 @@ PBoolean IAX2CallProcessor::IncomingMessageOutOfOrder(IAX2FullFrame *f)
   return PFalse;
 }
 
-
 #endif // OPAL_IAX2
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

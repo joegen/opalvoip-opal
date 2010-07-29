@@ -52,7 +52,7 @@ IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   
   keepGoing = PTrue;
   
-  PTRACE(6,"Constructor - IAX2 Transmitter");
+  PTRACE(6,"IAX2Transmit\tConstructor - IAX2 Transmitter");
   Resume();
 }
 
@@ -85,17 +85,16 @@ void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
   if (!PIsDescendant(newFrame, IAX2FullFrame))
     return;
 
-  PTRACE(5, "PurgeMatchingFullFrames to " << *newFrame);
+  PTRACE(5, "IAX2Transmit\tPurgeMatchingFullFrames to " << *newFrame);
 
   ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
 void IAX2Transmit::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
 {
-  PTRACE(4, "SendVnakRequestedFramees to " << src);
+  PTRACE(4, "IAX2Transmit\tSendVnakRequestedFrames to " << src);
   ackingFrames.SendVnakRequestedFrames(src);
 }
-
 
 void IAX2Transmit::Main()
 {
@@ -120,7 +119,7 @@ void IAX2Transmit::ProcessAckingList()
 {
   IAX2ActiveFrameList framesToSend;
   
-  PTRACE(5, "GetResendFramesDeleteOldFrames");
+  PTRACE(5, "IAX2Transmit\tGetResendFramesDeleteOldFrames");
   ackingFrames.GetResendFramesDeleteOldFrames(framesToSend);
   
   framesToSend.MarkAllAsResent();
@@ -159,20 +158,22 @@ void IAX2Transmit::ProcessSendList()
       isFullFrame = PTrue;
       IAX2FullFrame *f= (IAX2FullFrame *)active;
       if (f->DeleteFrameNow()) {
-	PTRACE(6, "This frame has timed out, so do not transmit" <<  f->IdString());
+	PTRACE(6, "IAX2Transmit\tFrame timed out, do not transmit" 
+	       <<  f->GetRemoteInfo());
 	delete f;
 	continue;
       }
     }
     
     if (!active->TransmitPacket(sock)) {
-      PTRACE(4, "Delete  " << active->IdString() << " as transmit failed.");
+      PTRACE(4, "IAX2Transmit\tDelete  " << active->IdString() 
+	     << " as transmit failed.");
       delete active;
       continue;
     }
     
     if (!isFullFrame) {
-      PTRACE(5, "Delete this frame as it is a mini frame, and continue" << active->IdString());
+      PTRACE(5, "IAX2Transmit\tDelete this frame as it is a mini frame, and continue" << active->IdString());
       delete active;
       continue;
     }
@@ -188,7 +189,8 @@ void IAX2Transmit::ProcessSendList()
       continue;
     }
     
-    PTRACE(5, "Add frame " << *active << " to list of frames waiting on acks");
+    PTRACE(5, "IAX2Transmit\tAdd frame " << *active 
+	   << " to list of frames waiting on acks");
     ackingFrames.AddNewFrame(active);
   }
 }
@@ -196,10 +198,9 @@ void IAX2Transmit::ProcessSendList()
 
 #endif // OPAL_IAX2
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2
