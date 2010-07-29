@@ -553,14 +553,14 @@ void IAX2IeCallToken::WriteKeySequence(PIPSocket::Address & remote)
 PBoolean IAX2IeCallToken::ValidKeySequence (IAX2IeCallToken & cf, 
 					    PIPSocket::Address & remote)
 {
-  PINDEX startTime = PTime().GetTimeInSeconds();
+  time_t startTime = PTime().GetTimeInSeconds();
   PBYTEArray srcData;
   cf.GetData(srcData);
   PString src((const char *)srcData.GetPointer(), srcData.GetSize());
   PStringList bits = src.Tokenise("?");
   if (bits.GetSize() != 2)
     return PFalse;
-  PINDEX srcTime = bits[0].AsInteger();
+  time_t srcTime = bits[0].AsInteger();
 
   if ((srcTime != startTime)        && 
       (srcTime != (startTime + 1))  && 
