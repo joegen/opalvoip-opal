@@ -123,15 +123,20 @@ PBoolean IAX2Remote::operator!=(IAX2Remote & other)
   return !(*this == other);
 }
 
-void IAX2Remote::PrintOn(ostream & strm) const
-{
-  strm << "src call number" << sourceCallNumber 
-       << "        Dest call number" << destCallNumber 
-       << "        remote address" << remoteAddress 
-       << "        Remote port" << remotePort ;
+void IAX2Remote::SetDestCallNumber(PINDEX newVal) 
+{ 
+  destCallNumber = newVal; 
 }
 
-PString IAX2Remote::BuildConnectionTokenId()
+void IAX2Remote::PrintOn(ostream & strm) const
+{
+  strm << "src" << sourceCallNumber 
+       << " dest" << destCallNumber 
+       << " " << remoteAddress 
+       << ":" << remotePort ;
+}
+
+PString IAX2Remote::BuildConnectionToken()
 {
   return PString("iax2:") 
     + RemoteAddress().AsString() 
@@ -139,7 +144,7 @@ PString IAX2Remote::BuildConnectionTokenId()
     + PString(SourceCallNumber());  
 }
 
-PString IAX2Remote::BuildOurConnectionTokenId()
+PString IAX2Remote::BuildOurConnectionToken()
 {
   return PString("iax2:") 
     + RemoteAddress().AsString() 
@@ -517,12 +522,11 @@ void IAX2Encryption::CalculateAesKeys()
   
 #endif // OPAL_IAX2
 
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file.
+ * With the comment below, the tab key does auto indent to 2 spaces.    
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2

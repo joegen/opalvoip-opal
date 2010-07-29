@@ -157,7 +157,7 @@ PString IAX2Processor::GetCallToken()
 
 void IAX2Processor::Main()
 {
-  PTRACE(3, "Start of iax2 processing thread");
+  PTRACE(3, "Processor\tStart of iax2 processing thread");
   PString name = GetThreadName();
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
@@ -236,7 +236,7 @@ void IAX2Processor::Terminate()
   if (IsSuspended())
     Resume();
 
-  PTRACE(4, "IAX2\tProcessor has been directed to end. " 
+  PTRACE(4, "Processor\tProcessor has been directed to end. " 
 	 << (IsTerminated() ? "Has already ended" : "So end now."));
   
   Activate();
@@ -248,10 +248,13 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (frame == NULL) {
     return PFalse;
   }
-  
+  PTRACE(3, "Processor\t XXXX  Our remote info is " << remote);
+  PTRACE(3, "Processor\t XXXX  Our remote info is " << remote);
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
-    PTRACE(5, "Procesor\tUnknown  incoming frame " << frame->IdString());
+    PTRACE(5, "Procesor\tUnknown  incoming frame " << frame->IdString()
+	   << " " << frame->GetRemoteInfo()
+	   << " " << frame->Class());
     IAX2Frame *af = frame->BuildAppropriateFrameType(encryption);
     delete frame;
     
@@ -262,7 +265,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   }  
   
   if (PIsDescendant(frame, IAX2MiniFrame)) {
-    PTRACE(5, "IaxConnection\tIncoming mini frame" << frame->IdString());
+    PTRACE(5, "Processor\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((IAX2MiniFrame *)frame);
     return PTrue;
   }
@@ -270,18 +273,30 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
   PTRACE(5, "Processor\tFullFrame incoming frame " << frame->IdString());
 
-  if (IncomingMessageOutOfOrder(f))
+  /*This test must go here, before the duplicate frame check. The
+    other end can get the sequence numbers wrong at call startup. */
+  if ((remote.DestCallNumber() == 0) &&
+      (!f->IsCallTokenFrame())  ){
+    PTRACE(3, "Processor\tSet Destination call number to " 
+	   << frame->GetRemoteInfo().SourceCallNumber());
+    remote.SetDestCallNumber(frame->GetRemoteInfo().SourceCallNumber());
+  }
+
+
+  /*Due to the vagaries of the internet etc, the remote end can send
+    us a duplicate copy of a frame we have already processed. In this
+    case, we have to ignore the new frame. We never receive multiple miniframes. */
+  if (IncomingMessageOutOfOrder(f)) {
+    PTRACE(5, "Processor\tFullFrame incoming frame " 
+	   << frame->GetRemoteInfo() << " is out of order");
     return PTrue;
+  }
 
   // sequence numbers are Ok. Good.
   endpoint.transmitter->PurgeMatchingFullFrames(f);
   
   IncControlFramesRcvd();
-
-  if (remote.DestCallNumber() == 0) {
-    PTRACE(3, "Processor\tSet Destination call number to " << frame->GetRemoteInfo().SourceCallNumber());
-    remote.SetDestCallNumber(frame->GetRemoteInfo().SourceCallNumber());
-  }
+  PTRACE(3, "Processor\t Our remote info is " << remote);
   
   ProcessFullFrame(*f);
  

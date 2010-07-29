@@ -65,17 +65,18 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   receiver = NULL;
   sock = NULL;
   callsEstablished.SetValue(0);
-  
+
+  IAX2IeCallToken::InitialiseKey();
   //We handle the deletion of regProcessor objects.
   regProcessors.AllowDeleteObjects(PFalse);
 
   Initialise();
-  PTRACE(5, "IAX2\tCreated endpoint.");
+  PTRACE(5, "Iax2Ep\tCreated endpoint.");
 }
 
 IAX2EndPoint::~IAX2EndPoint()
 {
-  PTRACE(5, "Endpoint\tIaxEndPoint destructor. Terminate the  transmitter, receiver, and incoming frame handler.");
+  PTRACE(5, "Iax2Ep\tIaxEndPoint destructor. Terminate the  transmitter, receiver, and incoming frame handler.");
   
   //contents of this array are automatically shifted when removed
   //so we only need to loop through the first element until all
@@ -87,27 +88,27 @@ IAX2EndPoint::~IAX2EndPoint()
     delete regProcessor;
   }
 
-  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the different registration processeors");
+  PTRACE(6, "Iax2Ep\tDestructor - cleaned up the different registration processeors");
 
   incomingFrameHandler.Terminate();
   incomingFrameHandler.WaitForTermination();
   packetsReadFromEthernet.AllowDeleteObjects();  
-  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the incoming frame handler");
+  PTRACE(6, "Iax2Ep\tDestructor - cleaned up the incoming frame handler");
   
   if (receiver != NULL && transmitter != NULL) {
     transmitter->Terminate();
     receiver->Terminate();
     transmitter->WaitForTermination();
-    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 transmitter");
+    PTRACE(6, "Iax2Ep\tDestructor - cleaned up the iax2 transmitter");
     receiver->WaitForTermination();
-    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 receiver");
+    PTRACE(6, "Iax2Ep\tDestructor - cleaned up the iax2 receiver");
   }
 
   if (specialPacketHandler != NULL) {
     specialPacketHandler->Terminate();
     specialPacketHandler->WaitForTermination();
     delete specialPacketHandler;
-    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 special packet handler");
+    PTRACE(6, "Iax2Ep\tDestructor - cleaned up the iax2 special packet handler");
   }
   specialPacketHandler = NULL;
   
@@ -119,7 +120,7 @@ IAX2EndPoint::~IAX2EndPoint()
   if (sock != NULL)
     delete sock; 
   
-  PTRACE(6, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
+  PTRACE(6, "Iax2Ep\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
 
 void IAX2EndPoint::ReportTransmitterLists(PString & answer, bool getFullReport)
@@ -198,7 +199,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 
 void IAX2EndPoint::OnEstablished(OpalConnection & con)
 {
-  PTRACE(3, "Endpoint\tOnEstablished for " << con);
+  PTRACE(3, "Iax2Ep\tOnEstablished for " << con);
 
   OpalEndPoint::OnEstablished(con);
 }
@@ -359,7 +360,7 @@ void IAX2EndPoint::OnReleased(OpalConnection & opalCon)
 {
   IAX2Connection &con((IAX2Connection &)opalCon);
 
-  PString token(con.GetRemoteInfo().BuildOurConnectionTokenId());
+  PString token(con.GetRemoteInfo().BuildOurConnectionToken());
   mutexTokenTable.StartWrite();
   tokenTable.RemoveAt(token);
   mutexTokenTable.EndWrite();
@@ -393,7 +394,7 @@ PSafePtr<OpalConnection> IAX2EndPoint::MakeConnection(OpalCall & call,
   }
 
   PStringStream callId;
-  callId << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
+  callId << "iax2:" <<  ip.AsString() << "Out" << PString(++callsEstablished);
   IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
   if (AddConnection(connection) == NULL)
     return NULL;
@@ -488,30 +489,46 @@ PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
 }
 
 
-PBoolean IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
-{   
+PBoolean IAX2EndPoint::ProcessInConnectionTestAll(IAX2Frame *frame)
+{
   if (!frame->IsFullFrame()) {
     // Do Not have a FullFrame, so dont add a translation entry.
+    // Only process miniframes when the call is setup, when we have a 
+    // translation table in place and working...
     return PFalse;
   }
-  
-  PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  /*Call number at our end */
-  /* We do not know if the frame is encrypted, so examination of anything other than the 
+     
+  PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  
+  /*destCallNo is the call number at our end. We do not know if the
+     frame is encrypted, so examination of anything other than the
      source call number/dest call number is unwise */ 
 
-  PSafePtr<IAX2Connection> connection;
-  for (connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.GetAt(0)); 
-       connection != NULL; 
-       ++connection) {
-    if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
-      mutexTokenTable.StartWrite();
-      tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
-      mutexTokenTable.EndWrite();
-      return PTrue;
+  PString callToken;
+  {
+    PSafePtr<IAX2Connection> connection;
+    for (connection = PSafePtrCast<OpalConnection, IAX2Connection>
+	   (connectionsActive.GetAt(0)); 
+	 connection != NULL; 
+	 ++connection) {
+      if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
+	PString token(frame->GetConnectionToken());
+	callToken = connection->GetCallToken();
+	if (!token.IsEmpty()) /* token available, modify token table */ {
+	  mutexTokenTable.StartWrite();
+	  tokenTable.SetAt(token, callToken);
+	  mutexTokenTable.EndWrite();
+	}
+      }
     }
   }
 
-  return PFalse;
+  if (callToken.IsEmpty()) {
+    PTRACE(3, "Iax2Ep\tFail to find home for the frame " << *frame);
+    return PFalse;
+  }
+
+  PTRACE(5, "Iax2Ep\tProcess " << *frame << " in connection" << callToken);
+  return ProcessFrameInConnection(frame, callToken);
 }
 
 
@@ -527,20 +544,31 @@ PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
   if (tokenTranslated.IsEmpty()) 
     tokenTranslated = f->GetConnectionToken();
 
+  if (tokenTranslated.IsEmpty()) {
+    PTRACE(3, "Distribution\tERR Could not find matching connection "
+	   << "for incoming frame of " << f->GetRemoteInfo());
+    return PFalse;
+  }
+
+  return ProcessFrameInConnection(f, tokenTranslated);
+}
+
+PBoolean IAX2EndPoint::ProcessFrameInConnection(IAX2Frame *f, 
+						const PString & token)
+{
   IAX2Connection *connection;
-  connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.FindWithLock(tokenTranslated));
+  connection = PSafePtrCast<OpalConnection, IAX2Connection>
+    (connectionsActive.FindWithLock(token));
   if (connection != NULL) {
+    PTRACE(5, "Distribution\tHave a connection for " << f->GetRemoteInfo());
     connection->IncomingEthernetFrame(f);
     return PTrue;
   }
   
-  PTRACE(3, "ERR Could not find matching connection for \"" << tokenTranslated 
-	 << "\" or \"" << f->GetConnectionToken() << "\"");
+  PTRACE(3, "Distribution\tERR Could not find matching connection for \"" 
+	 << token << "\" or \"" << f->GetConnectionToken() << "\"");
   return PFalse;
 }
-
-
-
 
 //The receiving thread has finished reading a frame, and has droppped it here.
 //At this stage, we do not know the frame type. We just know the frame is
@@ -569,11 +597,8 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
       continue;
     }
 
-    if (AddNewTranslationEntry(f)) {
-      if (ProcessInMatchingConnection(f)) {
+    if (ProcessInConnectionTestAll(f))
 	continue;
-      }
-    }
 
     /**These packets cannot be encrypted, as they are not going to a phone call */
     IAX2Frame *af = f->BuildAppropriateFrameType();
@@ -623,18 +648,17 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
 
 PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
 {
-  PTRACE(3, "preferred codecs are " << list);
+  PTRACE(4, "Iax2Ep\tPreferred codecs are " << list);
 
   for (OpalMediaFormatList::iterator iterFormat = list.begin(); iterFormat != list.end(); ++iterFormat) {
     unsigned short val = IAX2FullFrameVoice::OpalNameToIax2Value(*iterFormat);
     if (val != 0) {
-      PTRACE(3, "EndPoint\tPreferred codec is  " << *iterFormat);
+      PTRACE(4, "Iax2Ep\tPreferred codec is  " << *iterFormat);
       return val;
     }
-
   }
   
-  PTRACE(3, "Preferred codec is empty");
+  PTRACE(4, "Preferred codec is empty");
   return 0;
 }
 
@@ -675,13 +699,13 @@ void IAX2EndPoint::GetCodecLengths(PINDEX codec, PINDEX &compressedBytes, PINDEX
 
 PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
 {
-  PTRACE(3, "Supported codecs are " << list);
+  PTRACE(4, "Iax2Ep\tSupported codecs are " << list);
 
   PINDEX returnValue = 0;
   for (OpalMediaFormatList::iterator iterFormat = list.begin(); iterFormat != list.end(); ++iterFormat)
     returnValue += IAX2FullFrameVoice::OpalNameToIax2Value(*iterFormat);
 
-  PTRACE(5, "Bitmask of codecs we support is 0x" << ::hex << returnValue << ::dec);
+  PTRACE(5, "Iax2Ep\tBitmask of codecs we support is 0x" << ::hex << returnValue << ::dec);
   
   return  returnValue;
 }
@@ -826,10 +850,9 @@ void IAX2IncomingEthernetFrames::Main()
 
 #endif // OPAL_IAX2
 
-/* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 2 spaces.     */
-
-/*
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 2 spaces.     
+ *
  * Local Variables:
  * mode:c
  * c-basic-offset:2
