@@ -675,6 +675,7 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, OpalRTPSessionManager & rtpS
         if (sdpOK && mediaStreams.IsEmpty())
           m_holdFromRemote = true;
 
+        ownerCall.StartMediaStreams();
         return sdpOK;
       }
     }
