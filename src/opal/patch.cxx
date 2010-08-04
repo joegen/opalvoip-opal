@@ -365,6 +365,8 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , primaryCodec(NULL)
   , secondaryCodec(NULL)
   , writeSuccessful(true)
+  , m_lastPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_consecutivePayloadTypeMismatches(0)
 #if OPAL_VIDEO
   , rateController(NULL)
 #endif
@@ -685,7 +687,7 @@ void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
 }
 
 
-static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & frame)
+bool OpalMediaPatch::Sink::CannotTranscodeFrame(OpalTranscoder & codec, RTP_DataFrame & frame)
 {
   RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
 
@@ -699,6 +701,18 @@ static bool CannotTranscodeFrame(const OpalTranscoder & codec, RTP_DataFrame & f
   }
 
   if ((pt != codec.GetPayloadType(true)) && !codec.AcceptOtherPayloads()) {
+    if (pt != m_lastPayloadType) {
+      m_consecutivePayloadTypeMismatches = 0;
+      m_lastPayloadType = pt;
+    }
+    else if (++m_consecutivePayloadTypeMismatches > 10) {
+      PTRACE(2, "Patch\tConsecutive mismatched payload type, was expecting " 
+             << codec.GetPayloadType(true) << ", now using " << pt);
+      OpalMediaFormat fmt = codec.GetInputFormat();
+      fmt.SetPayloadType(pt);
+      codec.UpdateMediaFormats(fmt, OpalMediaFormat());
+      return false;
+    }
     PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt << " - should be " << codec.GetPayloadType(true));
     frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
     frame.SetPayloadType(codec.GetPayloadType(true)); // Reset pt so if get silence frames from jitter buffer, they don't cause errors
