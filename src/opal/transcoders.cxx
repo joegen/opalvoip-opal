@@ -168,27 +168,6 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-static bool GetBaseFormat(const OpalMediaFormatList & masterFormats,
-                          const OpalMediaFormat & capability,
-                          OpalMediaFormat & format,
-                          const char * PTRACE_PARAM(direction) = NULL)
-{
-  OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(capability);
-  if (masterFormat == masterFormats.end()) {
-    format = capability;
-    PTRACE(5, "Opal\tInitial " << direction << " format from capabilities:\n" << setw(-1) << format);
-    return true;
-  }
-
-  format = *masterFormat;
-  PTRACE(5, "Opal\tInitial " << direction << " format from master:\n" << setw(-1) << format
-                           << "Merging with capability\n" << setw(-1) << capability);
-
-  OpalMediaFormat tmpCapability = capability;
-  return tmpCapability.Merge(format) && format.Update(tmpCapability);
-}
-
-
 static bool MergeFormats(const OpalMediaFormatList & masterFormats,
                          const OpalMediaFormat & srcCapability,
                          const OpalMediaFormat & dstCapability,
@@ -253,11 +232,36 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
          dstFormat = YUV420P[QCIF]          <-- No change, srcFormat is superset
    */
 
-  if (!GetBaseFormat(masterFormats, srcCapability, srcFormat, PTRACE_PARAM("source")))
-    return false;
+  OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(srcCapability);
+  if (masterFormat == masterFormats.end()) {
+    srcFormat = srcCapability;
+    PTRACE(5, "Opal\tInitial source format from capabilities:\n" << setw(-1) << srcFormat);
+  }
+  else {
+    srcFormat = *masterFormat;
+    PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat
+                        << "Merging with capability\n" << setw(-1) << srcCapability);
+    if (!srcFormat.Merge(srcCapability))
+      return false;
+  }
 
-  if (!GetBaseFormat(masterFormats, dstCapability, dstFormat, PTRACE_PARAM("destination")))
-    return false;
+  masterFormat = masterFormats.FindFormat(dstCapability);
+  if (masterFormat == masterFormats.end()) {
+    dstFormat = dstCapability;
+    PTRACE(5, "Opal\tInitial destination format from capabilities:\n" << setw(-1) << dstFormat);
+  }
+  else {
+    dstFormat = *masterFormat;
+    PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat
+                             << "Merging with capability\n" << setw(-1) << dstCapability);
+
+    OpalMediaFormat tmpCapability = dstCapability;
+    if (!tmpCapability.Merge(dstFormat))
+      return false;
+
+    if (!dstFormat.Update(tmpCapability))
+      return false;
+  }
 
   if (!srcFormat.Merge(dstFormat))
     return false;
