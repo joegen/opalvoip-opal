@@ -619,6 +619,7 @@ class SIPConnection : public OpalRTPConnection
 
     PTimer                    ackTimer;
     PTimer                    ackRetry;
+    unsigned                  ackRetryCount;
     SIP_PDU                   ackPacket;
     bool                      ackReceived;
     bool                      m_referInProgress;
