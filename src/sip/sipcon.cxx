@@ -237,6 +237,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
+  , ackRetryCount(0)
   , ackReceived(false)
   , m_referInProgress(false)
 #if OPAL_FAX
@@ -2635,7 +2636,13 @@ void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
   PSafeLockReadWrite safeLock(*this);
   if (safeLock.IsLocked() && !ackReceived && originalInvite != NULL) {
     PTRACE(3, "SIP\tACK not received yet, retry sending response.");
-    originalInvite->SendResponse(*transport, ackPacket); // Not really a resonse but teh function will work
+
+    PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++ackRetryCount);
+    if (timeout > endpoint.GetRetryTimeoutMax())
+      timeout = endpoint.GetRetryTimeoutMax();
+    ackRetry = timeout;
+
+    originalInvite->SendResponse(*transport, ackPacket); // Not really a resonse but the function will work
   }
 }
 
