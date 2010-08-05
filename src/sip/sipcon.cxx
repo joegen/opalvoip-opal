@@ -1826,9 +1826,12 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
     return IsLoopedINVITE;
   }
 
-  // No original INVITE, so must be first time
+  // No original INVITE, so we are in a race condition at start up of the
+  // connection, assume a duplicate so it is ignored. If it does turn out
+  // to be new INVITE, then it should be retried and next time the race
+  // will be passed.
   if (originalInvite == NULL)
-    return IsNewINVITE;
+    return IsDuplicateINVITE;
 
   /* If we have same transaction ID, it means it is a retransmission
      of the original INVITE, probably should re-transmit last sent response
