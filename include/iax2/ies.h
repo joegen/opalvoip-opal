@@ -2088,7 +2088,7 @@ class IAX2IeCallToken : public IAX2IeBinary
   IAX2IeCallToken(BYTE length, BYTE *srcData) 
     : IAX2IeBinary(length, srcData) { };
     
-  /** Build an emtpy IAX2IeCallToken, which is used in the new packet,
+  /** Build an empty IAX2IeCallToken, which is used in the new packet,
         as sent by the node initiating a call */
    IAX2IeCallToken() : IAX2IeBinary(0, NULL) {};
      
