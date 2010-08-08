@@ -508,8 +508,7 @@ void IAX2IeBlockOfData::WriteBinary(BYTE *data)
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////////////////////////
 void IAX2IeCallToken::PrintOn(ostream & strm) const
 {
   if (validData) 
@@ -575,6 +574,7 @@ PBoolean IAX2IeCallToken::ValidKeySequence (IAX2IeCallToken & cf,
 PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
 					   PIPSocket::Address & remote)
 {
+#if P_SSL
   BYTE block[1000];
 
   memcpy(block, iKeyPad, blockSize);
@@ -598,6 +598,10 @@ PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
     answer.sprintf("%02x", (unsigned)data[i]);
 
   return answer;
+#else 
+  PAssertAlways("SSL should be enabled in the build when call token is used");
+  return PString::Empty();
+#endif
 }
 /************
   These variables are static, as they are only accessed from the
@@ -617,7 +621,6 @@ BYTE IAX2IeCallToken::iKeyPad[IAX2IeCallToken::blockSize];
 
 /**Similar to the iKeyPad, an internal variable*/
 BYTE IAX2IeCallToken::oKeyPad[IAX2IeCallToken::blockSize];
-
 /////////////////////////////////////////////////////////////////////////////
 
 IAX2IeList::~IAX2IeList()
