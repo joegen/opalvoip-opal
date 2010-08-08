@@ -80,7 +80,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   PStringArray res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
   remotePartyNumber = res[IAX2EndPoint::extensionIndex];
 
-   SetCallToken(token);
+  SetCallToken(token);
   originating = PFalse;
 
   ep.CopyLocalMediaFormats(localMediaFormats);

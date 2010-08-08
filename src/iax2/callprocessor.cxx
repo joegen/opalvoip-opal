@@ -265,8 +265,9 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   callingContext = res[IAX2EndPoint::contextIndex];
 
   IAX2FullFrameProtocol * f = BuildNewFrameForSending();
+#if P_SSL
   f->AppendIe(new IAX2IeCallToken());
-
+#endif
   TransmitFrameToRemoteEndpoint(f);
   StartNoResponseTimer();
   return;
@@ -926,8 +927,8 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   remote.SetRemoteAddress(src->GetRemoteInfo().RemoteAddress());
   remote.SetRemotePort(src->GetRemoteInfo().RemotePort());
 
-  IAX2IeCallToken token;
   PIPSocket::Address addr(remote.RemoteAddress());
+  IAX2IeCallToken token;
   if (src->GetCallTokenIe(token)) {
     PTRACE(3, "CallProc\tReceived a callToken");
     if (token.GetLengthOfData() < 5) {
@@ -1291,7 +1292,7 @@ void IAX2CallProcessor::ProcessIaxCmdCallToken(IAX2FullFrameProtocol *src)
   PTRACE(4, "Processor\tProcessIaxCmdCallToken(IAX2FullFrameProtocol *src)");
   IAX2IeCallToken *ie = new IAX2IeCallToken();
   if (src->GetCallTokenIe(*ie)) {
-    IAX2FullFrameProtocol *f = BuildNewFrameForSending(src);
+    IAX2FullFrameProtocol *f = BuildNewFrameForSending();
     f->AppendIe(ie);
     TransmitFrameToRemoteEndpoint(f);
     StopNoResponseTimer();
