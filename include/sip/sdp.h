@@ -138,8 +138,9 @@ class SDPMediaDescription : public PObject
     virtual void Encode(const OpalTransportAddress & commonAddr, ostream & str) const;
     virtual bool PrintOn(ostream & strm, const PString & str) const;
 
-    virtual bool Decode(const PStringArray & tokens, const OpalMediaFormatList & mediaFormats);
+    virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
+    virtual void DecodeMap(const PString & info, const OpalMediaFormatList & mediaFormats);
     virtual bool PostDecode();
 
     // return the string used within SDP to identify this media type
@@ -232,7 +233,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void DecodeMap(const PString & info, const OpalMediaFormatList & mediaFormats);
 };
 
 /////////////////////////////////////////////////////////
