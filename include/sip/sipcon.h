@@ -57,8 +57,9 @@
 class OpalCall;
 class SIPEndPoint;
 
-#define SIP_HEADER_PREFIX   "SIP-Header:"
-#define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
+#define SIP_HEADER_PREFIX      "SIP-Header:"
+#define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
+#define SIP_HEADER_CONTACT     SIP_HEADER_PREFIX"Contact"
 
 
 /////////////////////////////////////////////////////////////////////////
