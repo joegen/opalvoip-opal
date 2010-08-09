@@ -1298,14 +1298,16 @@ bool SIPConnection::WriteINVITE()
   m_needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
-  SIPURL contact = invite->GetMIME().GetContact();
-  if (!number.IsEmpty())
-    contact.SetUserName(number);
-  if (!name.IsEmpty())
-    contact.SetDisplayName(name);
-  if (!domain.IsEmpty())
-    contact.SetHostName(domain);
-  invite->GetMIME().SetContact(contact);
+  if (!m_connStringOptions.Contains(SIP_HEADER_CONTACT)) {
+    SIPURL contact = invite->GetMIME().GetContact();
+    if (!number.IsEmpty())
+      contact.SetUserName(number);
+    if (!name.IsEmpty())
+      contact.SetDisplayName(name);
+    if (!domain.IsEmpty())
+      contact.SetHostName(domain);
+    invite->GetMIME().SetContact(contact);
+  }
 
   invite->GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
 
