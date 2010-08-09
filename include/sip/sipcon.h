@@ -85,9 +85,10 @@ class SIPEndPoint;
   */
 #define OPAL_OPT_EXTERNAL_SDP "External-SDP"
 
-#define SIP_HEADER_PREFIX   "SIP-Header:"
-#define SIP_HEADER_REPLACES SIP_HEADER_PREFIX"Replaces"
+#define SIP_HEADER_PREFIX      "SIP-Header:"
+#define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
 #define SIP_HEADER_REFERRED_BY SIP_HEADER_PREFIX"Referred-By"
+#define SIP_HEADER_CONTACT     SIP_HEADER_PREFIX"Contact"
 
 #define OPAL_SIP_REFERRED_CONNECTION "Referred-Connection"
 
