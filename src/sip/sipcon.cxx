@@ -2024,8 +2024,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SetPhase(SetUpPhase);
 
-  SetRemoteMediaFormats(originalInvite->GetSDP(*this));
-
   // Replaces header has already been validated in SIPEndPoint::OnReceivedINVITE
   PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(mime("Replaces"), PSafeReadOnly);
   if (replacedConnection != NULL) {
@@ -2050,6 +2048,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
   OnApplyStringOptions();
+  SetRemoteMediaFormats(originalInvite->GetSDP(*this));
 
   if (!ownerCall.OnSetUp(*this)) {
     PTRACE(1, "SIP\tOnSetUp failed for INVITE from " << request.GetURI() << " for " << *this);
