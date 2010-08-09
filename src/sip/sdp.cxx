@@ -672,7 +672,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   // unknown attributes
-  PTRACE(2, "SDP\tUnknown media attribute " << attr);
+  PTRACE_IF(2, !(attr *= "rtpmap"), "SDP\tUnknown media attribute " << attr);
   return;
 }
 
@@ -1284,6 +1284,8 @@ PString SDPSessionDescription::Encode() const
 
 bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatList & mediaFormats)
 {
+  PTRACE(5, "SDP\tDecode using media formats: " << setfill(',') << mediaFormats);
+
   bool atLeastOneValidMedia = false;
   bool ok = true;
 
@@ -1390,7 +1392,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
             // process all of the "a=rtpmap" lines first so that the media formats are 
             // created before any media description paramaters are processed
-            for (int j = i; j < lines.GetSize(); ++j) {
+            for (int j = i+1; j < lines.GetSize(); ++j) {
               const PString & line2 = lines[j];
               if (line2.NumCompare("m=") == EqualTo)
                 break;
