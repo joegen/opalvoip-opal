@@ -645,10 +645,8 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-capi")) {
     capiEP = new OpalCapiEndPoint(*this);
     
-    if (!capiEP->OpenControllers()) {
-      cerr << "CAPI Endpoint is not initialised correctly" << endl;
-      return false;
-    }
+    if (!capiEP->OpenControllers())
+      cerr << "CAPI Endpoint failed to initialise any controllers." << endl;
   }
 #endif
 
