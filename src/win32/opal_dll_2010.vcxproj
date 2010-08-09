@@ -216,7 +216,7 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(OutDir)opalsn.lib;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Merging symbols ...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">MergeSym -I "$(IncludePath);$(ProjectDir)..\..\..\ptlib\lib" -x "$(ConfigurationName)\ptlibn.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opalsd.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">MergeSym -I "$(IncludePath);$(ProjectDir)..\..\..\ptlib\lib" -x "$(ConfigurationName)\ptlibn.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opalsn.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
     </CustomBuild>
     <CustomBuild Include="opal_2010.dtf">
@@ -227,7 +227,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(IntDir)$(TargetName).def;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)opals.lib;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(OutDir)opals.lib;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MergeSym -I "$(IncludePath);$(ProjectDir)..\..\..\ptlib\lib" -x "$(ConfigurationName)\ptlib.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opalsd.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MergeSym -I "$(IncludePath);$(ProjectDir)..\..\..\ptlib\lib" -x "$(ConfigurationName)\ptlib.def" -x "%(RootDir)%(Directory)Private.def" "$(OutDir)\opals.lib" "%(FullPath)" "$(IntDir)\$(TargetName).def"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">MergeSym -I "$(_ACP_LIB);..\..\..\ptlib\lib" -x "$(ConfigurationName)\ptlib.def" -x "$(InputDir)\Private.def" "$(OutDir)\opals.lib" "$(InputPath)" "$(IntDir)\$(TargetName).def"
 </Command>
