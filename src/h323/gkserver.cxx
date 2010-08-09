@@ -3185,7 +3185,9 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnAdmission(H323Gatekeeper
 
     response = newCall->OnAdmission(info);
 
-    if (response != H323GatekeeperRequest::Reject) {
+    if (response == H323GatekeeperRequest::Reject)
+      delete newCall;
+    else {
       mutex.Wait();
 
       info.endpoint->AddCall(newCall);
