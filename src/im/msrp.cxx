@@ -82,13 +82,24 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & url);
 
     PCaselessString GetSDPTransportType() const
-    { return "tcp/msrp"; }
+    {
+      return "tcp/msrp";
+    }
+
+    virtual SDPMediaDescription * CreateEmpty() const
+    {
+      return new SDPMSRPMediaDescription(OpalTransportAddress());
+    }
 
     virtual PString GetSDPMediaType() const 
-    { return "message"; }
+    {
+      return "message";
+    }
 
     virtual PString GetSDPPortList() const
-    { return " *"; }
+    {
+      return " *";
+    }
 
     virtual void CreateSDPMediaFormats(const PStringArray &);
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
@@ -461,7 +472,8 @@ OpalMSRPManager::~OpalMSRPManager()
 
 std::string OpalMSRPManager::CreateSessionID()
 {
-  return PGloballyUniqueID().AsString();
+  PString str = PGloballyUniqueID().AsString();
+  return (const char *)str;
 }
 
 
@@ -509,7 +521,7 @@ void OpalMSRPManager::ListenerThread()
     {
       PWaitAndSignal m(m_connectionInfoMapAddMutex);
       connection.SetSafetyMode(PSafeReference);
-      m_connectionInfoMap.insert(ConnectionInfoMapType::value_type(remoteAddr.AsString(), connection));
+      m_connectionInfoMap.insert(ConnectionInfoMapType::value_type((const char *)remoteAddr.AsString(), connection));
       connection.SetSafetyMode(PSafeReadWrite);
     }
     connection->StartHandler();
