@@ -956,8 +956,6 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
     }
   }
 
-  bool sdpOK = false;
-
   // get the remote media formats, if any
   unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
   m_answerFormatList = sdp->GetMediaFormats();
@@ -968,28 +966,26 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
   }
 
   OpalMediaFormatList localFormatList = GetLocalMediaFormats();
+  std::vector<bool> sessions(sessionCount+1);
 
-  for (unsigned session = 1; session <= sessionCount; ++session) {
-    if (OnSendAnswerSDPSession(*sdp, localFormatList, session, sdpOut))
-      sdpOK = true;
-    else if (!reInvite) {
-      OpalMediaStreamPtr stream;
-      if ((stream = GetMediaStream(session, false)) != NULL)
-        stream->Close();
-      if ((stream = GetMediaStream(session, true)) != NULL)
-        stream->Close();
-    }
-  }
+  for (unsigned session = 1; session <= sessionCount; ++session)
+    sessions[session] = OnSendAnswerSDPSession(*sdp, localFormatList, session, sdpOut);
+
+  if (find(sessions.begin(), sessions.end(), true) == sessions.end())
+    return false;
 
   /* Shut down any media that is in a session not mentioned in a re-INVITE.
      While the SIP/SDP specification says this shouldn't happen, it does
      anyway so we need to deal. */
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-    if (stream->GetSessionID() > sessionCount)
+    unsigned session = stream->GetSessionID();
+    if (session > sessionCount || !sessions[session])
       stream->Close();
   }
 
-  return sdpOK;
+  // In case some new streams got created.
+  ownerCall.StartMediaStreams();
+  return true;
 }
 
 
