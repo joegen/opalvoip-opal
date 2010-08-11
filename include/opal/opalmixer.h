@@ -388,7 +388,7 @@ struct OpalMixerNodeInfo
     , m_height(PVideoFrameInfo::CIFHeight)
     , m_rate(15)
 #endif
-    , m_noMediaBypass(false)
+    , m_noMediaPassThru(false)
   { }
 
   virtual ~OpalMixerNodeInfo() { }
@@ -405,7 +405,7 @@ struct OpalMixerNodeInfo
   unsigned m_height;              ///< Height of mixed video
   unsigned m_rate;                ///< Frame rate of mixed video
 #endif
-  bool     m_noMediaBypass;       /**< Disable media bypass to optimise mixer node
+  bool     m_noMediaPassThru;     /**< Disable media pass through to optimise mixer node
                                        with precisely two attached connections. */
 };
 
@@ -982,7 +982,7 @@ class OpalMixerNode : public PSafeObject
 
     /**Use media bypass if applicable.
       */
-    void UseMediaBypass(
+    void UseMediaPassThrough(
       unsigned sessionID,                 ///< Session ID to bypass, 0 indicates all
       OpalConnection * connection = NULL  ///< Just deleted connection
     );
