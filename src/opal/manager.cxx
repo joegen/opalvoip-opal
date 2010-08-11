@@ -807,10 +807,25 @@ static bool BypassOne(OpalMediaStreamPtr source,
                       OpalMediaStreamPtr sink,
                       bool bypass)
 {
-  OpalMediaPatch * sourcePatch = source != NULL ? source->GetPatch() : NULL;
-  OpalMediaPatch * sinkPatch = sink != NULL ? sink->GetPatch() : NULL;
-  if (sourcePatch == NULL || sinkPatch == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as one patch does not exist");
+  if (source == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as source stream does not exist");
+    return false;
+  }
+
+  if (sink == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as sink stream does not exist");
+    return false;
+  }
+
+  OpalMediaPatch * sourcePatch = source->GetPatch();
+  if (sourcePatch == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as source patch does not exist");
+    return false;
+  }
+
+  OpalMediaPatch * sinkPatch = sink->GetPatch();
+  if (sinkPatch == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as sink patch does not exist");
     return false;
   }
 
