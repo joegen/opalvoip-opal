@@ -95,8 +95,7 @@ class SDPMediaFormat : public PObject
     OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
 
     bool PreEncode();
-    bool Decode(const OpalMediaFormatList & mediaFormats);
-    bool PostDecode(unsigned bandwidth);
+    bool PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth);
 
   protected:
     void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
@@ -140,8 +139,7 @@ class SDPMediaDescription : public PObject
 
     virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
-    virtual void DecodeMap(const PString & info, const OpalMediaFormatList & mediaFormats);
-    virtual bool PostDecode();
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
     // return the string used within SDP to identify this media type
     virtual PString GetSDPMediaType() const = 0;
@@ -233,7 +231,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    virtual void DecodeMap(const PString & info, const OpalMediaFormatList & mediaFormats);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 };
 
 /////////////////////////////////////////////////////////
@@ -248,7 +246,7 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     SDPAudioMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 };
 
 /////////////////////////////////////////////////////////
