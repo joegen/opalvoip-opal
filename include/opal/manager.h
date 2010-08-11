@@ -707,7 +707,7 @@ class OpalManager : public PObject
       bool opened                   ///< Media streams are opened/closed
     ) const;
 
-    /**Set bypass mode for media.
+    /**Set pass though mode for media.
 
        Bypass the internal media handling, passing RTP data directly from
        one call/connection to another.
@@ -722,24 +722,24 @@ class OpalManager : public PObject
        calls in the node, it is a waste to decode the audio, add to mixer and
        re-encode it again. In practice this is identical to just bypassing the
        mixer node completely, until a third party is added, then we need to
-       switch back to normal (non-bypassed) operation.
+       switch back to normal (non-pass-through) operation.
 
        Note this is the complement to OnLocalRTP() as this function transfers
        RTP data directly between the two endpoints, while OnLocalRTP() stops
        the RTP data from being sent/received.
 
-       @return true if bypass is started/stopped, false if there was no such
-               call/connection/stream, the streams are incompatible formats
+       @return true if pass through is started/stopped, false if there was no
+               such call/connection/stream, the streams are incompatible formats
                or a conflicting bypass is already in place.
       */
-    bool SetMediaBypass(
+    bool SetMediaPassThrough(
       const PString & token1, ///< First calls token
       const PString & token2, ///< Second calls token
       bool bypass,            ///< Bypass the media
       unsigned sessionID = 0, ///< Session ID of media stream, 0 indicates all
-      bool network  = true    ///< Bypass the network connections of the calls
+      bool network  = true    ///< Pass through the network connections of the calls only
     );
-    static bool SetMediaBypass(
+    static bool SetMediaPassThrough(
       OpalConnection & connection1, ///< First connection
       OpalConnection & connection2, ///< Second connection
       bool bypass,                  ///< Bypass the media

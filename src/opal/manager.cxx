@@ -819,9 +819,9 @@ bool OpalManager::OnLocalRTP(OpalConnection & PTRACE_PARAM(connection1),
 }
 
 
-static bool BypassOne(OpalMediaStreamPtr source,
-                      OpalMediaStreamPtr sink,
-                      bool bypass)
+static bool PassOneThrough(OpalMediaStreamPtr source,
+                           OpalMediaStreamPtr sink,
+                           bool bypass)
 {
   OpalMediaPatch * sourcePatch = source != NULL ? source->GetPatch() : NULL;
   OpalMediaPatch * sinkPatch = sink != NULL ? sink->GetPatch() : NULL;
@@ -841,28 +841,28 @@ static bool BypassOne(OpalMediaStreamPtr source,
 }
 
 
-bool OpalManager::SetMediaBypass(OpalConnection & connection1,
-                                 OpalConnection & connection2,
-                                 bool bypass,
-                                 unsigned sessionID)
+bool OpalManager::SetMediaPassThrough(OpalConnection & connection1,
+                                      OpalConnection & connection2,
+                                      bool bypass,
+                                      unsigned sessionID)
 {
   bool gotOne = false;
 
   if (sessionID != 0) {
     // Do not use || as McCarthy will not execute the second bypass
-    if (BypassOne(connection1.GetMediaStream(sessionID, true), connection2.GetMediaStream(sessionID, false), bypass))
+    if (PassOneThrough(connection1.GetMediaStream(sessionID, true), connection2.GetMediaStream(sessionID, false), bypass))
       gotOne = true;
-    if (BypassOne(connection2.GetMediaStream(sessionID, true), connection1.GetMediaStream(sessionID, false), bypass))
+    if (PassOneThrough(connection2.GetMediaStream(sessionID, true), connection1.GetMediaStream(sessionID, false), bypass))
       gotOne = true;
   }
   else {
     OpalMediaStreamPtr stream;
     while ((stream = connection1.GetMediaStream(OpalMediaType(), true , stream)) != NULL) {
-      if (BypassOne(stream, connection2.GetMediaStream(stream->GetSessionID(), false), bypass))
+      if (PassOneThrough(stream, connection2.GetMediaStream(stream->GetSessionID(), false), bypass))
         gotOne = true;
     }
     while ((stream = connection2.GetMediaStream(OpalMediaType(), true, stream)) != NULL) {
-      if (BypassOne(stream, connection1.GetMediaStream(stream->GetSessionID(), false), bypass))
+      if (PassOneThrough(stream, connection1.GetMediaStream(stream->GetSessionID(), false), bypass))
         gotOne = true;
     }
   }
@@ -871,11 +871,11 @@ bool OpalManager::SetMediaBypass(OpalConnection & connection1,
 }
 
 
-bool OpalManager::SetMediaBypass(const PString & token1,
-                                 const PString & token2,
-                                 bool bypass,
-                                 unsigned sessionID,
-                                 bool network)
+bool OpalManager::SetMediaPassThrough(const PString & token1,
+                                      const PString & token2,
+                                      bool bypass,
+                                      unsigned sessionID,
+                                      bool network)
 {
   PSafePtr<OpalCall> call1 = FindCallWithLock(token1);
   PSafePtr<OpalCall> call2 = FindCallWithLock(token2);
@@ -898,7 +898,7 @@ bool OpalManager::SetMediaBypass(const PString & token1,
     return false;
   }
 
-  return OpalManager::SetMediaBypass(*connection1, *connection2, sessionID, bypass);
+  return OpalManager::SetMediaPassThrough(*connection1, *connection2, sessionID, bypass);
 }
 
 
