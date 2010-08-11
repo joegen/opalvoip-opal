@@ -255,47 +255,11 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 }
 
 
-bool SDPMediaFormat::Decode(const OpalMediaFormatList & mediaFormats)
-{
-  if (m_mediaFormat.IsEmpty()) {
-    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip");
-         iterFormat != mediaFormats.end();
-         iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip", iterFormat)) {
-      OpalMediaFormat adjustedFormat = *iterFormat;
-      SetMediaFormatOptions(adjustedFormat);
-      // skip formats whose fmtp don't match options
-      if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
-        m_mediaFormat = adjustedFormat;
-        break;
-      }
-
-      PTRACE(4, "SIP\tRTP payload type " << encodingName << " not matched to codec " << *iterFormat);
-    }
-  }
-
-  if (m_mediaFormat.IsEmpty()) {
-    PTRACE(2, "SDP\tCould not find media format for \""
-           << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
-    return false;
-  }
-
-  SetMediaFormatOptions(m_mediaFormat);
-  return true;
-}
-
-
 void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
   mediaFormat.MakeUnique();
   mediaFormat.SetPayloadType(payloadType);
   mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.IsEmpty() ? 1 : parameters.AsUnsigned());
-
-  // Set bandwidth limits, if present
-  for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
-    if (r->second > 0)
-      mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
-  }
 
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -403,11 +367,42 @@ bool SDPMediaFormat::PreEncode()
 }
 
 
-bool SDPMediaFormat::PostDecode(unsigned bandwidth)
+bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth)
 {
   // try to init encodingName from global list, to avoid PAssert when media has no rtpmap
   if (encodingName.IsEmpty())
     encodingName = m_mediaFormat.GetEncodingName();
+
+  if (m_mediaFormat.IsEmpty()) {
+    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip");
+         iterFormat != mediaFormats.end();
+         iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip", iterFormat)) {
+      OpalMediaFormat adjustedFormat = *iterFormat;
+      SetMediaFormatOptions(adjustedFormat);
+      // skip formats whose fmtp don't match options
+      if (iterFormat->ValidateMerge(adjustedFormat)) {
+        PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
+        m_mediaFormat = adjustedFormat;
+        break;
+      }
+
+      PTRACE(4, "SIP\tRTP payload type " << encodingName << " not matched to codec " << *iterFormat);
+    }
+
+    if (m_mediaFormat.IsEmpty()) {
+      PTRACE(2, "SDP\tCould not find media format for \""
+             << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
+      return false;
+    }
+  }
+
+  SetMediaFormatOptions(m_mediaFormat);
+
+  // Set bandwidth limits, if present
+  for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
+    if (r->second > 0)
+      m_mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
+  }
 
   if (bandwidth > 0) {
     PTRACE(4, "SDP\tAdjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
@@ -582,6 +577,9 @@ void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens)
 
 bool SDPMediaDescription::Decode(char key, const PString & value)
 {
+  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+           not require it to have an OpalMediaFormat yet, as that is not created
+           until PostDecode() */
   PINDEX pos;
 
   switch (key) {
@@ -616,12 +614,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 }
 
 
-void SDPMediaDescription::DecodeMap(const PString &, const OpalMediaFormatList &)
-{
-}
-
-
-bool SDPMediaDescription::PostDecode()
+bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 {
   unsigned bw = bandwidth[SDPSessionDescription::TransportIndependentBandwidthType()];
   if (bw == 0)
@@ -629,7 +622,7 @@ bool SDPMediaDescription::PostDecode()
 
   SDPMediaFormatList::iterator format = formats.begin();
   while (format != formats.end()) {
-    if (format->PostDecode(bw))
+    if (format->PostDecode(mediaFormats, bw))
       ++format;
     else
       formats.erase(format++);
@@ -641,6 +634,10 @@ bool SDPMediaDescription::PostDecode()
 
 void SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
+  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+           not require it to have an OpalMediaFormat yet, as that is not created
+           until PostDecode() */
+
   // get the attribute type
   if (attr *= "sendonly") {
     direction = SendOnly;
@@ -672,7 +669,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   // unknown attributes
-  PTRACE_IF(2, !(attr *= "rtpmap"), "SDP\tUnknown media attribute " << attr);
+  PTRACE(2, "SDP\tUnknown media attribute " << attr);
   return;
 }
 
@@ -959,26 +956,33 @@ bool SDPRTPAVPMediaDescription::PrintOn(ostream & str, const PString & connectSt
 }
 
 
-void SDPRTPAVPMediaDescription::DecodeMap(const PString & info, const OpalMediaFormatList & mediaFormats)
+void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-  PString params = info;
-  SDPMediaFormat * format = FindFormat(params);
-  if (format == NULL)
-    return;
+  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+           not require it to have an OpalMediaFormat yet, as that is not created
+           until PostDecode() */
 
-  PStringArray tokens = params.Tokenise('/');
-  if (tokens.GetSize() < 2) {
-    PTRACE(2, "SDP\tMalformed rtpmap attribute for " << format->GetEncodingName());
+  if (attr == "rtpmap") {
+    PString params = value;
+    SDPMediaFormat * format = FindFormat(params);
+    if (format == NULL)
+      return;
+
+    PStringArray tokens = params.Tokenise('/');
+    if (tokens.GetSize() < 2) {
+      PTRACE(2, "SDP\tMalformed rtpmap attribute for " << format->GetEncodingName());
+      return;
+    }
+
+    format->SetEncodingName(tokens[0]);
+    format->SetClockRate(tokens[1].AsUnsigned());
+    if (tokens.GetSize() > 2)
+      format->SetParameters(tokens[2]);
+
     return;
   }
 
-  format->SetEncodingName(tokens[0]);
-  format->SetClockRate(tokens[1].AsUnsigned());
-  if (tokens.GetSize() > 2)
-    format->SetParameters(tokens[2]);
-
-  if (!format->Decode(mediaFormats))
-    formats.Remove(format);
+  SDPMediaDescription::SetAttribute(attr, value);
 }
 
 
@@ -1054,6 +1058,10 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
 
 void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
+  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+           not require it to have an OpalMediaFormat yet, as that is not created
+           until PostDecode() */
+
   if (attr *= "ptime") {
     unsigned newTime = value.AsUnsigned();
     if (newTime < SDP_MIN_PTIME) {
@@ -1117,6 +1125,10 @@ bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectStr
 
 void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
+  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+           not require it to have an OpalMediaFormat yet, as that is not created
+           until PostDecode() */
+
   if (attr *= "content") {
     PINDEX role = 0;
     PStringArray tokens = value.Tokenise(',');
@@ -1357,7 +1369,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
             if (currentMedia != NULL) {
               PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
                                                           << " '" << currentMedia->GetSDPMediaType() << "' formats");
-              if (!currentMedia->PostDecode())
+              if (!currentMedia->PostDecode(mediaFormats))
                 ok = false;
             }
 
@@ -1389,19 +1401,6 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
               currentMedia = new SDPDummyMediaDescription(defaultConnectAddress, tokens);
 
             mediaDescriptions.Append(currentMedia);
-
-            // process all of the "a=rtpmap" lines first so that the media formats are 
-            // created before any media description paramaters are processed
-            for (int j = i+1; j < lines.GetSize(); ++j) {
-              const PString & line2 = lines[j];
-              if (line2.NumCompare("m=") == EqualTo)
-                break;
-              if (line2.NumCompare("a=") == EqualTo) {
-                PCaselessString value = line2.Mid(2).Trim();
-                if (value.NumCompare("rtpmap:") == EqualTo)
-                  currentMedia->DecodeMap(value.Mid(7).Trim(), mediaFormats);
-              }
-            }
           }
           break;
 
@@ -1414,7 +1413,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
   if (currentMedia != NULL) {
     PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
                                                 << " '" << currentMedia->GetSDPMediaType() << "' formats");
-    if (!currentMedia->PostDecode())
+    if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
   }
 
