@@ -53,6 +53,55 @@ class OpalConnection;
 class OpalRTPConnection;
 class OpalMediaStatistics;
 
+/*!< \page pageOpalMediaStream Media streams in the OPAL library
+
+\section secOverviewM Overview
+This page of the documentation is designed to provide an understanding of the
+use of the OpalMediaStream class in the OPAL library. 
+
+A voip call that is handled in OPAL consists of two instances of the
+OpalConnection class (or derivative) plus instances of the
+OpalMediaStream class (or derivatives). Consequently, for handling a
+H.323 call which is directed to the PC speaker/microphone, there will
+H323Connection and a PCSSConnection. OPAL requires that media can be
+transferred between these two clases. To transfer the media, OPAL uses
+the OpalMediaStream.
+
+Key to understanding the OpalMediaStream class is that this class is
+responsible for transferring media from one instance of an
+OpalConnection to another instance of an OpalConnection.
+
+\section secDescriptionM Description
+
+From \ref pageOpalConnections, we see that derivatives of the
+OpalConnection class take many different forms (depending on the
+protocol). Further, the media from those protocols may well have
+different forms. For example, H.323 and PCSS have quite different
+format for the media. The class OpalMediaStream (and derivatives) is
+responsible for making the format of the media (from each OpalConnection
+instance) consistent.
+
+The standard output format of an OpalMediaStream (or derivative) is a
+RTP_DataFrame. Consequently, different OpalConnection instances (or
+derivatives) can be connected together and exchange media (where the
+media is encapsulated inside instances of the RTP_DataFrame class).
+
+When handling an audio only call, each OpalConnection instance (or
+derivative) has two attached OpalMediaStream instances (or
+derivatives). When the call contains video and audio, each
+OpalConnection instance (or derivative) will have four attached
+OpalMediaStream instances (or derivatives).
+
+For handling a H.323 call, which is an audio only call, that goes the speaker/microphone of the box, there will be 
+\li one instance of a H323Connection
+\li one instance of a OpalPCSSConnection
+\li two instances of a OpalAudioMediaStream
+\li two instances of a OpalRTPMediaStream
+
+Note that an OpalMediaStream instance is designed to take media in one
+direction.
+
+*/
 
 /**This class describes a media stream as used in the OPAL system. A media
    stream is the channel through which media data is trasferred between OPAL
