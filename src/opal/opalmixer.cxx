@@ -922,7 +922,7 @@ OpalMediaStream * OpalMixerConnection::CreateMediaStream(const OpalMediaFormat &
 void OpalMixerConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
   OpalLocalConnection::OnStartMediaPatch(patch);
-  m_node->UseMediaBypass(patch.GetSource().GetSessionID());
+  m_node->UseMediaPassThrough(patch.GetSource().GetSessionID());
 }
 
 
@@ -1160,7 +1160,7 @@ void OpalMixerNode::AttachConnection(OpalConnection * connection)
 
   m_connections.Append(connection);
 
-  UseMediaBypass(0);
+  UseMediaPassThrough(0);
 }
 
 
@@ -1170,7 +1170,7 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
     return;
 
   if (m_connections.Remove(connection))
-    UseMediaBypass(0, connection);
+    UseMediaPassThrough(0, connection);
 }
 
 
@@ -1224,9 +1224,9 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 }
 
 
-void OpalMixerNode::UseMediaBypass(unsigned sessionID, OpalConnection * connection)
+void OpalMixerNode::UseMediaPassThrough(unsigned sessionID, OpalConnection * connection)
 {
-  if (m_info->m_noMediaBypass)
+  if (m_info->m_noMediaPassThru)
     return;
 
   PSafePtr<OpalConnection> other2;
@@ -1254,7 +1254,7 @@ void OpalMixerNode::UseMediaBypass(unsigned sessionID, OpalConnection * connecti
   if (other1 == NULL)
     return;
 
-  OpalManager::SetMediaBypass(*other1, *other2, m_connections.GetSize() == 2, sessionID);
+  OpalManager::SetMediaPassThrough(*other1, *other2, m_connections.GetSize() == 2, sessionID);
 }
 
 
