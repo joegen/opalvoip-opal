@@ -570,9 +570,9 @@ void OpalMediaOptionOctets::PrintOn(ostream & strm) const
     ios::fmtflags flags = strm.flags();
     char fill = strm.fill();
 
-    int fillLength = width - m_value.GetSize()*2;
+    std::streamsize fillLength = width - m_value.GetSize()*2;
     if (fillLength > 0 && (flags&ios_base::adjustfield) == ios::right) {
-      for (int i = 0; i < fillLength; i++)
+      for (std::streamsize i = 0; i < fillLength; i++)
         strm << fill;
     }
 
@@ -582,7 +582,7 @@ void OpalMediaOptionOctets::PrintOn(ostream & strm) const
 
     if (fillLength > 0 && (flags&ios_base::adjustfield) == ios::left) {
       strm << setw(1);
-      for (int i = 0; i < fillLength; i++)
+      for (std::streamsize i = 0; i < fillLength; i++)
         strm << fill;
     }
 
@@ -1719,11 +1719,15 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
 }
 
 
-OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol, const_iterator iter) const
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol, const_iterator format) const
 {
+  if (format == const_iterator())
+    format = begin();
+  else
+    ++format;
+
   // First look for a matching encoding name
   if (name != NULL && *name != '\0') {
-    OpalMediaFormatList::const_iterator format ((iter == const_iterator()) ? begin() : iter);
     for (; format != end(); ++format) {
       // If encoding name matches exactly, then use it regardless of payload code.
       const char * otherName = format->GetEncodingName();
@@ -1739,7 +1743,6 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
   // someone to override a standard payload type with another encoding name, so
   // have to search all formats by name before trying by number.
   if (pt < RTP_DataFrame::DynamicBase) {
-    OpalMediaFormatList::const_iterator format ((iter == const_iterator()) ? begin() : iter);
     for (; format != end(); ++format) {
       if (format->GetPayloadType() == pt &&
           (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
@@ -1793,6 +1796,8 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PStrin
 
   if (iter == const_iterator())
     iter = begin();
+  else
+    ++iter;
 
   bool negative = search[0] == '!';
 
