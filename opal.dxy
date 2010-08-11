@@ -29,18 +29,21 @@ component of this library.
 \li \ref pageDocumentationTerms attempts to give a non circular description of
 the terms used in this documentation.
 
-\li \ref pageH323Overview contains a somewhat dated description of the Opal architecture (from
-a H.323 perspective). It has been included to give a slightly different
-perspective, that may aid the reader.
+\li \ref pageH323Overview contains a somewhat dated description of the
+Opal architecture (from a H.323 perspective). It has been included to
+give a slightly different perspective, that may aid the reader.
+
+\li \ref pageOpalMediaStream attempts to give a description of the OpalMediaStream class.
 
 \subsection history History
 
 \li 28 February 2005 -  Converted from Doc++ to Doxygen format by Derek Smithies
-\li 10 May 2005     - Added some comments to explain data flow in a RTP classes
-\li 12 May 2005     - Changed main page to list only the Opal classes.
-\li 11 March 2006   - Add link to description of the IAX2 code.
-\li 20 March 2008 - Add documentation on the different phases of a call, which
+\li 10 May 2005    - Added some comments to explain data flow in a RTP classes
+\li 12 May 2005    - Changed main page to list only the Opal classes.
+\li 11 March 2006  - Add link to description of the IAX2 code.
+\li 20 March 2008  - Add documentation on the different phases of a call, which
                      are driven by the OpalConnection class.
+\li 12 August 2010 - Add a description of the OpalMediaStream class.
 */
 
 /*! \page pageOpalClasses   Opal Classes 
