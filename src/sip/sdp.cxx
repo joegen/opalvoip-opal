@@ -398,7 +398,14 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
 
   SetMediaFormatOptions(m_mediaFormat);
 
-  // Set bandwidth limits, if present
+  /* Set bandwidth limits, if present, e.g. "SDP-Bandwidth-AS" and "SDP-Bandwidth-TIAS".
+
+     Some codecs (e.g. MPEG4, H.264) have difficulties with controlling max
+     bit rate. This is due to the very poor support of TIAS by SIP clients.
+     So, if we HAVE got a TIAS we indicate it with a special media option
+     so the codec can then trust the "MaxBitRate" option. If this is not
+     present then the codec has to play games with downgrading profile
+     levels to assure that a max bit rate is not exceeded. */
   for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
     if (r->second > 0)
       m_mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
@@ -407,14 +414,6 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   if (bandwidth > 0) {
     PTRACE(4, "SDP\tAdjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
     m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
-
-    /* Some codecs (e.g. MPEG4, H.264) have difficulties with controlling max
-       bit rate. This is due to the very poor support of TIAS by SIP clients.
-       So, if we HAVE got a TIAS we indicate it with a special media option
-       so the codec can then trust the "MaxBitRate" option. If this is not
-       present then the codec has to play games with downgrading profile
-       levels to assure that a max bit rate is not exceeded. */
-    m_mediaFormat.AddOption(new OpalMediaOptionBoolean("SDP-Bandwidth-TIAS", false, OpalMediaOption::AndMerge, true), true);
   }
 
   m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
