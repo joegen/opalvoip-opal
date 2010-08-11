@@ -1022,6 +1022,9 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
       if (session > sessionCount || !goodSession[session])
         stream->Close();
     }
+
+    // In case some new streams got created.
+    ownerCall.StartMediaStreams();
   }
 
   return sdpOK;
