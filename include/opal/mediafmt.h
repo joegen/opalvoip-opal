@@ -1050,16 +1050,6 @@ class OpalMediaFormat : public PContainer
       PINDEX length               ///<  Number of octets
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, data, length); }
 
-    /**Create a media format list containing all of the registered media 
-	   formats matching the encoding name and clock rate, or the payload type.
-      */
-    static OpalMediaFormatList GetMatchingRegisteredMediaFormats(
-      RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const unsigned clockRate,                   ///<  clock rate
-      const char * rtpEncodingName = NULL,        ///<  RTP payload type name
-      const char * protocol = NULL                ///<  protocol to be valid for (if NULL, then all)
-    );
-
     /**Get a copy of the list of media formats that have been registered.
       */
     static OpalMediaFormatList GetAllRegisteredMediaFormats();
