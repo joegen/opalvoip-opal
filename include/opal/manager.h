@@ -691,8 +691,8 @@ class OpalManager : public PObject
        the transfer in some way, rather than the full media path of codecs and
        sockets which might not be necessary.
 
-       Note this is the complement to SetMediaBypass() as this function stops
-       RTP data from being sent/received, while SetMediaBypass() transfers
+       Note this is the complement to SetMediaPassThrough() as this function stops
+       RTP data from being sent/received, while SetMediaPassThrough() transfers
        RTP data between the two endpoints.
 
        The default behaviour returns false.
