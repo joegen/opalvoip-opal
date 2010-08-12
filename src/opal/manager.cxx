@@ -823,15 +823,30 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
                            OpalMediaStreamPtr sink,
                            bool bypass)
 {
-  OpalMediaPatch * sourcePatch = source != NULL ? source->GetPatch() : NULL;
-  OpalMediaPatch * sinkPatch = sink != NULL ? sink->GetPatch() : NULL;
-  if (sourcePatch == NULL || sinkPatch == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as one patch does not exist");
+  if (source == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source stream does not exist");
+    return false;
+  }
+
+  if (sink == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink stream does not exist");
+    return false;
+  }
+
+  OpalMediaPatch * sourcePatch = source->GetPatch();
+  if (sourcePatch == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source patch does not exist");
+    return false;
+  }
+
+  OpalMediaPatch * sinkPatch = sink->GetPatch();
+  if (sinkPatch == NULL) {
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink patch does not exist");
     return false;
   }
 
   if (source->GetMediaFormat() != sink->GetMediaFormat()) {
-    PTRACE(3, "OpalMan\tSetMediaBypass could not complete as different formats: "
+    PTRACE(3, "OpalMan\tSetMediaPassThrough could not complete as different formats: "
            << source->GetMediaFormat() << "!=" << sink->GetMediaFormat());
     return false;
   }
@@ -881,7 +896,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
   PSafePtr<OpalCall> call2 = FindCallWithLock(token2);
 
   if (call1 == NULL || call2 == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as one call does not exist");
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as one call does not exist");
     return false;
   }
 
@@ -894,7 +909,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
     ++connection2;
 
   if (connection1 == NULL || connection2 == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaBypass could not complete as network connection not present in calls");
+    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as network connection not present in calls");
     return false;
   }
 
