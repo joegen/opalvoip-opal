@@ -24,6 +24,9 @@
 #include <dlfcn.h>
 #include <string.h>
 
+#define QUOTEME_(x) #x
+#define QUOTEME(x) QUOTEME_(x)
+
 X264Library::X264Library()
 {
   _dynamicLibrary = NULL;
@@ -53,7 +56,11 @@ bool X264Library::Load()
     return false;
   }
 
+#ifdef x264_encoder_open
+  if (!GetFunction(QUOTEME(x264_encoder_open), (Function &)Xx264_encoder_open)) {
+#else
   if (!GetFunction("x264_encoder_open", (Function &)Xx264_encoder_open)) {
+#endif
     TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_open");
     return false;
   }
