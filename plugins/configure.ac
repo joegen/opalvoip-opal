@@ -232,6 +232,7 @@ else
                      AC_SUBST(LIBAVCODEC_CFLAGS)
                      AC_SUBST(LIBAVCODEC_LIBS)
                      AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
+                     OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
                      AC_SUBST(LIBAVCODEC_LIB_NAME)
                      HAVE_LIBAVCODEC=yes
                      OPAL_LIBAVCODEC_HACK
@@ -261,6 +262,16 @@ else
                    )
 fi
 AC_SUBST(HAVE_LIBAVCODEC)
+
+PKG_CHECK_MODULES([LIBAVUTIL],
+                  [libavutil],
+                  [
+                   AC_SUBST(LIBAVUTIL_CFLAGS)
+                   AC_SUBST(LIBAVUTIL_LIBS)
+                   OPAL_GET_LIBNAME([LIBAVUTIL], [libavutil], [$LIBAVUTIL_LIBS])
+                   AC_SUBST(LIBAVUTIL_LIB_NAME)
+                  ]
+                 )
 
 OPAL_LIBAVCODEC_SOURCE()
 AC_SUBST(LIBAVCODEC_SOURCE_DIR)
@@ -445,7 +456,7 @@ AC_COMPILE_IFELSE([
                   )
                   ],
   AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_POSIX_MEMALIGN, 1),
+  AC_DEFINE(HAVE_POSIX_MEMALIGN, 1, [Is posix_memalign supported]),
   AC_MSG_RESULT(no)
 )
 AC_LANG_POP([C++])
