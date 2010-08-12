@@ -265,7 +265,7 @@ class OpalMediaStream : public PSafeObject
 
        The default behaviour does nothing.
       */
-    virtual void EnableJitterBuffer() const;
+    virtual void EnableJitterBuffer(bool enab = true) const;
   //@}
 
   /**@name Member variable access */
@@ -564,7 +564,7 @@ class OpalRTPMediaStream : public OpalMediaStream
 
        The default behaviour does nothing.
       */
-    virtual void EnableJitterBuffer() const;
+    virtual void EnableJitterBuffer(bool enab = true) const;
 
     /**Set the patch thread that is using this stream.
       */
