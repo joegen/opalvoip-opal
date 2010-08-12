@@ -559,8 +559,6 @@ void OpalMediaPatch::Main()
 
 bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 {
-  PTRACE(4, "Patch\tSetting media patch bypass to " << patch << " on " << *this);
-
   PWriteWaitAndSignal mutex(inUse);
 
   if (!PAssert(m_bypassFromPatch == NULL, PLogicError))
@@ -568,6 +566,8 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 
   if (m_bypassToPatch == patch)
     return true; // Already set
+
+  PTRACE(4, "Patch\tSetting media patch bypass to " << patch << " on " << *this);
 
   if (m_bypassToPatch != NULL) {
     if (!PAssert(m_bypassToPatch->m_bypassFromPatch == this, PLogicError))
@@ -587,6 +587,9 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   m_bypassToPatch = patch;
 
 #if OPAL_VIDEO
+  if (m_videoDecoder)
+    source.ExecuteCommand(OpalVideoUpdatePicture());
+
   m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
 #else
   m_bypassActive = m_bypassToPatch != NULL;
