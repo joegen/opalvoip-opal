@@ -99,10 +99,6 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     return false;
   }
 
-#ifndef _WIN32
-  strcat(path, ".so");
-#endif
-
   // Load the Libary
 #ifdef _WIN32
 # ifdef UNICODE
@@ -214,6 +210,11 @@ bool FFMPEGLibrary::Load(int ver)
 
   bool seperateLibAvutil = false;
 
+#ifdef LIBAVCODEC_LIB_NAME
+  if (libAvcodec.Open(LIBAVCODEC_LIB_NAME))
+    seperateLibAvutil = true;
+  else
+#endif
   if (libAvcodec.Open("libavcodec"))
     seperateLibAvutil = false;
   else if (libAvcodec.Open("avcodec-52") || libAvcodec.Open("avcodec-51"))
@@ -223,7 +224,11 @@ bool FFMPEGLibrary::Load(int ver)
     return false;
   }
 
-  if (seperateLibAvutil && !(libAvutil.Open("avutil-50") || libAvutil.Open("avutil-49")) ) {
+  if (seperateLibAvutil && !(
+#ifdef LIBAVUTIL_LIB_NAME
+    libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
+#endif
+    libAvutil.Open("avutil-50") || libAvutil.Open("avutil-49")) ) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load FFMPEG libavutil library");
     return false;
   }
