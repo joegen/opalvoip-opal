@@ -594,15 +594,14 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   m_bypassToPatch = patch;
 
 #if OPAL_VIDEO
+  m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
   if (m_videoDecoder)
     source.ExecuteCommand(OpalVideoUpdatePicture());
   else
     source.EnableJitterBuffer(m_bypassToPatch == NULL);
-
-  m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
 #else
-  source.EnableJitterBuffer(m_bypassToPatch == NULL);
   m_bypassActive = m_bypassToPatch != NULL;
+  source.EnableJitterBuffer(m_bypassToPatch == NULL);
 #endif
 
   return true;
