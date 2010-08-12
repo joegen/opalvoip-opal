@@ -134,7 +134,7 @@ PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
   if (!safeLock.IsLocked())
     return false;
 
-  if (mediaPatch == NULL)
+  if (!isOpen || mediaPatch == NULL)
     return false;
 
   return mediaPatch->ExecuteCommand(command, IsSink());
@@ -743,6 +743,9 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 void OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 {
+  if (!isOpen)
+    return;
+
   unsigned minJitter, maxJitter;
   if (enab && mediaFormat.NeedsJitterBuffer()) {
     minJitter = minAudioJitterDelay*mediaFormat.GetTimeUnits();
