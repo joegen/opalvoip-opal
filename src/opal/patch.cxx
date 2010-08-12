@@ -493,10 +493,12 @@ bool OpalMediaPatch::OnStartMediaPatch()
 
   PReadWaitAndSignal mutex(inUse);
 
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->stream->IsSynchronous()) {
-      source.EnableJitterBuffer();
-      return false;
+  if (m_bypassToPatch == NULL) {
+    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+      if (s->stream->IsSynchronous()) {
+        source.EnableJitterBuffer();
+        return false;
+      }
     }
   }
 	
@@ -599,6 +601,7 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 
   m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
 #else
+  source.EnableJitterBuffer(m_bypassToPatch == NULL);
   m_bypassActive = m_bypassToPatch != NULL;
 #endif
 
