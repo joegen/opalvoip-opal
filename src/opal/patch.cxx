@@ -458,9 +458,14 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
   if (fromSink)
     return source.ExecuteCommand(command);
 
-  PBoolean atLeastOne = PFalse;
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-    atLeastOne = s->ExecuteCommand(command) || atLeastOne;
+  bool atLeastOne = false;
+
+  PList<Sink> & sinksToUse = m_bypassActive ? m_bypassToPatch->sinks : sinks;
+
+  for (PList<Sink>::iterator s = sinksToUse.begin(); s != sinksToUse.end(); ++s) {
+    if (s->ExecuteCommand(command))
+      atLeastOne = true;
+  }
 
   return atLeastOne;
 }
@@ -589,6 +594,8 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 #if OPAL_VIDEO
   if (m_videoDecoder)
     source.ExecuteCommand(OpalVideoUpdatePicture());
+  else
+    source.EnableJitterBuffer(m_bypassToPatch == NULL);
 
   m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
 #else
