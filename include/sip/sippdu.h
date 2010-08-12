@@ -670,7 +670,7 @@ class SIP_PDU : public PSafeObject
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
-    SDPSessionDescription * GetSDP();
+    SDPSessionDescription * GetSDP(const SIPConnection & connection);
     void SetSDP(SDPSessionDescription * sdp);
 
   protected:

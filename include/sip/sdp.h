@@ -91,14 +91,13 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v) { parameters = v; }
 
-    const OpalMediaFormat & GetMediaFormat() const;
-    OpalMediaFormat & GetWritableMediaFormat();
+    const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
+    OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
 
     bool PreEncode();
-    bool PostDecode(unsigned bandwidth);
+    bool PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth);
 
   protected:
-    void InitialiseMediaFormat(OpalMediaFormat & mediaFormat) const;
     void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
     OpalMediaFormat m_mediaFormat;
@@ -140,7 +139,7 @@ class SDPMediaDescription : public PObject
 
     virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
-    virtual bool PostDecode();
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
     virtual SDPMediaDescription * CreateEmpty() const = 0;
 
@@ -235,7 +234,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 };
 
 /////////////////////////////////////////////////////////
@@ -251,7 +250,7 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     virtual SDPMediaDescription * CreateEmpty() const;
     virtual PString GetSDPMediaType() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 
     bool GetOfferPTime() const { return m_offerPTime; }
     void SetOfferPTime(bool value) { m_offerPTime = value; }
@@ -308,7 +307,7 @@ class SDPSessionDescription : public PObject
 
     void PrintOn(ostream & strm) const;
     PString Encode() const;
-    PBoolean Decode(const PString & str);
+    bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
 
     void SetSessionName(const PString & v) { sessionName = v; }
     PString GetSessionName() const         { return sessionName; }
