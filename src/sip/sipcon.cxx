@@ -2866,8 +2866,7 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
     case SendUserInputAsQ931 :
       return SendUserInputAsTone;
 
-    case SendUserInputAsString :
-    case SendUserInputAsTone :
+    default :
       break;
   }
 
