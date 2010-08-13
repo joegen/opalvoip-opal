@@ -1,0 +1,157 @@
+// !$*UTF8*$!
+{
+	08FB7793FE84155DC02AAC07 /* Project object */ = {
+		activeBuildConfigurationName = Debug;
+		activeTarget = D28A88AD04BDD90700651E21 /* opal */;
+		addToTargets = (
+			D28A88AD04BDD90700651E21 /* opal */,
+		);
+		codeSenseManager = A3F1804E12157C8D00E3634B /* Code sense */;
+		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXExecutablesDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXExecutablesDataSource_NameID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					22,
+					300,
+					447,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXExecutablesDataSource_ActiveFlagID,
+					PBXExecutablesDataSource_NameID,
+					PBXExecutablesDataSource_CommentsID,
+				);
+			};
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					559,
+					20,
+					48,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
+			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					519,
+					60,
+					20,
+					48,
+					43,
+					43,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXTargetDataSource_PrimaryAttribute,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+				);
+			};
+			PBXPerProjectTemplateStateSaveDate = 303404843;
+			PBXWorkspaceStateSaveDate = 303404843;
+		};
+		perUserProjectItems = {
+			A387A2C21215986600148C2B /* PBXTextBookmark */ = A387A2C21215986600148C2B /* PBXTextBookmark */;
+			A3F181CC12157E3B00E3634B /* PBXTextBookmark */ = A3F181CC12157E3B00E3634B /* PBXTextBookmark */;
+			A3F8999412158ED500E92BDC /* PBXTextBookmark */ = A3F8999412158ED500E92BDC /* PBXTextBookmark */;
+		};
+		sourceControlManager = A3F1804D12157C8D00E3634B /* Source Control */;
+		userBuildSettings = {
+			SYMROOT = /Users/robertj/opal/lib_Darwin_x86;
+		};
+	};
+	A387A2C21215986600148C2B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = A3F181A012157D7800E3634B /* manager.cxx */;
+		name = "manager.cxx: 2";
+		rLen = 0;
+		rLoc = 17;
+		rType = 0;
+		vrLen = 1359;
+		vrLoc = 0;
+	};
+	A3F1804D12157C8D00E3634B /* Source Control */ = {
+		isa = PBXSourceControlManager;
+		fallbackIsa = XCSourceControlManager;
+		isSCMEnabled = 0;
+		scmConfiguration = {
+			repositoryNamesForRoots = {
+				"" = "";
+			};
+		};
+	};
+	A3F1804E12157C8D00E3634B /* Code sense */ = {
+		isa = PBXCodeSenseManager;
+		indexTemplatePath = "";
+	};
+	A3F180C612157D3600E3634B /* buildopts.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {737, 5304}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{0, 1365}";
+		};
+	};
+	A3F1813D12157D7800E3634B /* AUTHORS */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {737, 650}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{0, 461}";
+		};
+	};
+	A3F181A012157D7800E3634B /* manager.cxx */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {737, 25155}}";
+			sepNavSelRange = "{17, 0}";
+			sepNavVisRange = "{0, 1359}";
+		};
+	};
+	A3F181CC12157E3B00E3634B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = A3F181CD12157E3B00E3634B /* main.h */;
+		name = "main.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 1234;
+		vrLoc = 0;
+	};
+	A3F181CD12157E3B00E3634B /* main.h */ = {
+		isa = PBXFileReference;
+		lastKnownFileType = sourcecode.c.h;
+		name = main.h;
+		path = /Users/robertj/opal/samples/openphone/main.h;
+		sourceTree = "<absolute>";
+	};
+	A3F8999412158ED500E92BDC /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = A3F181A012157D7800E3634B /* manager.cxx */;
+		name = "manager.cxx: 2";
+		rLen = 0;
+		rLoc = 17;
+		rType = 0;
+		vrLen = 1378;
+		vrLoc = 0;
+	};
+	D28A88AD04BDD90700651E21 /* opal */ = {
+		activeExec = 0;
+	};
+}
