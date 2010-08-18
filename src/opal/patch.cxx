@@ -204,6 +204,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
       return false;
     }
     sink->primaryCodec->SetMaxOutputSize(sinkStream->GetDataSize());
+    sink->primaryCodec->SetSessionID(source.GetSessionID());
 
     PTRACE(3, "Patch\tAdded media stream sink " << *sinkStream
            << " using transcoder " << *sink->primaryCodec << ", data size=" << sinkStream->GetDataSize());
@@ -239,6 +240,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
     PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->primaryCodec->SetMaxOutputSize(sink->secondaryCodec->GetOptimalDataFrameSize(true));
+    sink->primaryCodec->SetSessionID(source.GetSessionID());
 
     if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
       PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
@@ -246,6 +248,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
       return false;
     }
     sink->secondaryCodec->SetMaxOutputSize(sinkStream->GetDataSize());
+    sink->secondaryCodec->SetSessionID(source.GetSessionID());
 
     PTRACE(3, "Patch\tAdded media stream sink " << *sinkStream
            << " using transcoders " << *sink->primaryCodec

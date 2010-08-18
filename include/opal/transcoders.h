@@ -311,6 +311,17 @@ class OpalTranscoder : public OpalMediaFormatPair
       */
     const PNotifier & GetCommandNotifier() const { return commandNotifier; }
 
+    /// Notify command notifier of command
+    void NotifyCommand(
+      OpalMediaCommand & command
+    ) const { if (commandNotifier != PNotifier()) commandNotifier(command, m_sessionID); }
+
+    /// Get session ID for the transcoder (from OpalMediaStream)
+    unsigned GetSessionID() const { return m_sessionID; }
+
+    /// Set session ID for the transcoder (from OpalMediaStream)
+    void SetSessionID(unsigned id) { m_sessionID = id; }
+
     /** Set the unique instance identifier for transcoder
       */
     virtual void SetInstanceID(
@@ -336,9 +347,10 @@ class OpalTranscoder : public OpalMediaFormatPair
     PNotifier commandNotifier;
     PMutex    updateMutex;
 
-    PBoolean outputIsRTP, inputIsRTP;
-    bool acceptEmptyPayload;
-    bool acceptOtherPayloads;
+    unsigned m_sessionID;
+    bool     outputIsRTP, inputIsRTP;
+    bool     acceptEmptyPayload;
+    bool     acceptOtherPayloads;
     unsigned m_inClockRate;
     unsigned m_outClockRate;
 };
