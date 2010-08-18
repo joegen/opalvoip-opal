@@ -75,7 +75,7 @@ void ConfOPAL::Main()
              "-rtp-max:"
              "-rtp-tos:"
              "-rtp-size:"
-             "-no-bypass."
+             "-no-pass-thru."
              , FALSE);
 
 #if PTRACING
@@ -94,7 +94,7 @@ void ConfOPAL::Main()
             "                          : conferences are created.\n"
             "  -m or --moderator pin   : PIN to allow to become a moderator and have talk\n"
             "                          : rights if absent, all participants are moderators.\n"
-            "        --no-bypass       : Disable media bypass optimisation.\n"
+            "        --no-pass-thru    : Disable media pass through optimisation.\n"
             "  -n or --name alias      : Default name for ad-hoc conference.\n"
 #if OPAL_VIDEO
             "  -V or --no-video        : Disable video for ad-hoc conference.\n"
@@ -227,7 +227,7 @@ void ConfOPAL::Main()
     info->m_name = args.GetOptionString('n', "room101");
     info->m_moderatorPIN = args.GetOptionString('m');
     info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
-    info->m_noMediaBypass = args.HasOption("no-bypass");
+    info->m_noMediaPassThru = args.HasOption("no-pass-thru");
 
 #if OPAL_VIDEO
     info->m_audioOnly = args.HasOption('V');
@@ -268,7 +268,7 @@ void ConfOPAL::Main()
                   "\n"
                   "  -m or --moderator pin  : PIN to allow to become a moderator and have talk rights\n"
                   "                         : if absent, all participants are moderators.\n"
-                  "        --no-bypass      : Disable media bypass optimisation.\n"
+                  "        --no-pass-thru   : Disable media pass through optimisation.\n"
                  );
   cli->SetCommand("conf list", PCREATE_NOTIFIER_EXT(mixer, MyMixerEndPoint, CmdConfList),
                   "List conferances");
@@ -446,7 +446,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
   if (args.HasOption('s'))
     PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
   info->m_moderatorPIN = args.GetOptionString('m');
-  info->m_noMediaBypass = args.HasOption("no-bypass");
+  info->m_noMediaPassThru = args.HasOption("no-pass-thru");
 
   PSafePtr<OpalMixerNode> node = AddNode(info);
 
