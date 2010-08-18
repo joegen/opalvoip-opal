@@ -122,6 +122,12 @@ void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 {
   inUseFlag.Wait();
   defaultVXML = vxml;
+
+  if (vxml.Find("<--G.722.1-->") != P_MAX_INDEX)
+    defaultMediaFormats += OPAL_G7231;
+  if (vxml.Find("<--G.729-->") != P_MAX_INDEX)
+    defaultMediaFormats += OPAL_G729;
+
   inUseFlag.Signal();
 }
 
