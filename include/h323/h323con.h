@@ -1176,6 +1176,17 @@ class H323Connection : public OpalRTPConnection
       unsigned terminalLabel
     );
 
+    /**Send a H.239 presentation token request.
+       Asks the remote for the "token" allow local system to own the
+       presentation video channel. A OnH239PresentationResponse() callback
+       should occur when the remote responds to the request.
+      */
+    virtual bool SendH239PresentationRequest(
+      unsigned logicalChannel,
+      unsigned symmetryBreaking,
+      unsigned terminalLabel
+    );
+
     /**Handle a H.239 presentation token ack/reject response.
        Default behaviour simply sends a release command.
       */
@@ -1189,6 +1200,15 @@ class H323Connection : public OpalRTPConnection
        Default behaviour does nothing.
       */
     virtual bool OnH239PresentationRelease(
+      unsigned logicalChannel,
+      unsigned terminalLabel
+    );
+
+    /**Send a H.239 presentation token release.
+       Tell the remote we no longer require the "token" allowing the local
+       system to own the presentation video channel.
+      */
+    virtual bool SendH239PresentationRelease(
       unsigned logicalChannel,
       unsigned terminalLabel
     );
