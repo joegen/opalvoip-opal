@@ -3158,6 +3158,26 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
 }
 
 
+bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsigned symmetryBreaking, unsigned terminalLabel)
+{
+  if (!GetRemoteH239Control()) {
+    PTRACE(2, "H239\tCannot send presentation token request, not completed TCS or remote not capable");
+    return false;
+  }
+
+  PTRACE(3, "H239\tSendH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ')');
+
+  H323ControlPDU pdu;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 3).m_messageContent;
+  // Note order is important (Table 12/H.239)
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 43, symmetryBreaking, H245_ParameterValue::e_unsignedMin, false);
+
+  return WriteControlPDU(pdu);
+}
+
+
 bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigned terminalLabel, bool rejected)
 {
   PTRACE(3, "H239\tOnH239PresentationResponse(" << logicalChannel << ',' << terminalLabel << ',' << rejected << ')');
@@ -3178,6 +3198,25 @@ bool H323Connection::OnH239PresentationRelease(unsigned PTRACE_PARAM(logicalChan
 {
   PTRACE(3, "H239\tOnH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
   return true;
+}
+
+
+bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsigned terminalLabel)
+{
+  if (!GetRemoteH239Control()) {
+    PTRACE(2, "H239\tCannot send presentation token release, not completed TCS or remote not capable");
+    return false;
+  }
+
+  PTRACE(3, "H239\tSendH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
+
+  H323ControlPDU pdu;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 5).m_messageContent;
+  // Note order is important (Table 12/H.239)
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+
+  return WriteControlPDU(pdu);
 }
 
 
