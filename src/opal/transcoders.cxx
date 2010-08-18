@@ -75,13 +75,15 @@ PObject::Comparison OpalMediaFormatPair::Compare(const PObject & obj) const
 OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
                                const OpalMediaFormat & outputMediaFormat)
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
+  , maxOutputSize(32768) // Just something, usually changed by OpalMediaPatch
+  , m_sessionID(0)
+  , outputIsRTP(false)
+  , inputIsRTP(false)
+  , acceptEmptyPayload(false)
+  , acceptOtherPayloads(false)
+  , m_inClockRate(inputMediaFormat.GetClockRate())
+  , m_outClockRate(outputMediaFormat.GetClockRate())
 {
-  maxOutputSize = 32768; // Just something, usually changed by OpalMediaPatch
-  outputIsRTP = inputIsRTP = PFalse;
-  acceptEmptyPayload = false;
-  acceptOtherPayloads = false;
-  m_inClockRate = inputMediaFormat.GetClockRate();
-  m_outClockRate = outputMediaFormat.GetClockRate();
 }
 
 
