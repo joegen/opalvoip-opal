@@ -991,7 +991,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
     }
   }
 
-  if ((commandNotifier != PNotifier()) && (flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
+  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
     PTimeInterval tick = PTimer::Tick();
     // Don't send lots of consecutive VideoFastUpdate commands
     if (tick - m_lastVideoFastUpdate < 2000)
@@ -999,7 +999,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
     else {
       m_lastVideoFastUpdate = PTimer::Tick();
       OpalVideoUpdatePicture2 updatePictureCommand(src.GetSequenceNumber(), src.GetTimestamp());
-      commandNotifier(updatePictureCommand, 0);
+      NotifyCommand(updatePictureCommand);
       PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
     }
   }
