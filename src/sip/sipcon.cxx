@@ -503,7 +503,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
-    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false)) {
+    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut)) {
       Release(EndedByCapabilityExchange);
       return PFalse;
     }
@@ -914,7 +914,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
 }
 
 
-bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut, bool reInvite)
+bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
   if (!PAssert(originalInvite != NULL, PLogicError))
     return false;
@@ -2669,7 +2669,7 @@ bool SIPConnection::SendInviteOK()
 
   PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (externalSDP.IsEmpty()) {
-    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut, false))
+    if (!OnSendAnswerSDP(m_rtpSessions, sdpOut))
       return false;
   }
 

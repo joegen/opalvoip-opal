@@ -711,16 +711,8 @@ class OpalEndPoint : public PObject
       PURL & from, 
       PString & conversationId
     );
-
-    /**Called when text message received
-     */
-    virtual void OnMessageReceived(
-      const PURL & from, 
-      const PString & fromName,
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      const PString & conversationId
+    virtual PBoolean Message(
+      OpalIM & Message
     );
 
 #if OPAL_HAS_IM
@@ -763,6 +755,7 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
 };
 
 

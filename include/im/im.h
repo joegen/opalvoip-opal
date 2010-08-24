@@ -34,6 +34,25 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#include <ptclib/url.h>
+#include <opal/transports.h>
+
+
+
+class OpalIM : public PObject
+{
+  public:
+    PURL    m_to;
+    PURL    m_from;
+    PString m_fromName;
+    PString m_mimeType;
+    PString m_body;
+    PString m_conversationId;
+
+    OpalTransportAddress m_fromAddr;
+    OpalTransportAddress m_toAddr;
+};
+
 #if OPAL_HAS_IM
 
 #include <opal/mediastrm.h>

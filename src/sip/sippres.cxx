@@ -892,17 +892,20 @@ static bool RecursiveGetBuddyList(OpalPresentity::BuddyList & buddies, XCAPClien
 }
 
 
-bool SIPXCAP_Presentity::GetBuddyList(BuddyList & buddies)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyListEx(BuddyList & buddies)
 {
   XCAPClient xcap;
   InitBuddyXcap(xcap);
-  return RecursiveGetBuddyList(buddies, xcap, xcap.BuildURL()) ||
-         !buddies.empty() ||
-         xcap.GetLastResponseCode() == PHTTP::NotFound;
+  if (RecursiveGetBuddyList(buddies, xcap, xcap.BuildURL()) ||
+      !buddies.empty() ||
+      xcap.GetLastResponseCode() == PHTTP::NotFound)
+    return BuddyStatus_OK;
+
+  return BuddyStatus_GenericFailure;
 }
 
 
-bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyListEx(const BuddyList & buddies)
 {
   PXML xml(PXML::FragmentOnly);
 
@@ -917,7 +920,7 @@ bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
   InitBuddyXcap(xcap);
 
   if (xcap.PutXml(xml))
-    return true;
+    return BuddyStatus_OK;
 
   if (xcap.GetLastResponseCode() == PHTTP::Conflict && xcap.GetLastResponseInfo().Find("Parent") != P_MAX_INDEX) {
     // Got "Parent does not exist" error, so need to add whole file
@@ -932,43 +935,47 @@ bool SIPXCAP_Presentity::SetBuddyList(const BuddyList & buddies)
 
     xcap.ClearNode();
     if (xcap.PutXml(xml))
-      return true;
+      return BuddyStatus_OK;
   }
 
   PTRACE(2, "SIPPres\tError setting buddy list of '" << m_aor << "\'\n"
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-  return false;
+
+  return BuddyStatus_GenericFailure;
 }
 
 
-bool SIPXCAP_Presentity::DeleteBuddyList()
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyListEx()
 {
   XCAPClient xcap;
   InitBuddyXcap(xcap);
 
   if (xcap.DeleteXml())
-    return true;
+    return BuddyStatus_OK;
 
   PTRACE(2, "SIPPres\tError deleting buddy list of '" << m_aor << "\'\n"
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-  return false;
+  return BuddyStatus_GenericFailure;
 }
 
 
-bool SIPXCAP_Presentity::GetBuddy(BuddyInfo & buddy)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyEx(BuddyInfo & buddy)
 {
   XCAPClient xcap;
   InitBuddyXcap(xcap, buddy.m_presentity);
 
   PXML xml;
-  return xcap.GetXml(xml) && XMLToBuddyInfo(xml.GetRootElement(), buddy);
+  if (xcap.GetXml(xml) && XMLToBuddyInfo(xml.GetRootElement(), buddy))
+    return BuddyStatus_OK;
+  else
+    return BuddyStatus_GenericFailure;
 }
 
 
-bool SIPXCAP_Presentity::SetBuddy(const BuddyInfo & buddy)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyEx(const BuddyInfo & buddy)
 {
   if (buddy.m_presentity.IsEmpty())
-    return false;
+    return BuddyStatus_GenericFailure;
 
   XCAPClient xcap;
   InitBuddyXcap(xcap, buddy.m_presentity);
@@ -977,36 +984,36 @@ bool SIPXCAP_Presentity::SetBuddy(const BuddyInfo & buddy)
   xml.SetRootElement(BuddyInfoToXML(buddy, NULL));
 
   if (xcap.PutXml(xml))
-    return true;
+    return BuddyStatus_OK;
 
   if (xcap.GetLastResponseCode() != PHTTP::Conflict || xcap.GetLastResponseInfo().Find("Parent") == P_MAX_INDEX) {
     PTRACE(2, "SIPPres\tError setting buddy '" << buddy.m_presentity << "' of '" << m_aor << "\'\n"
            << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-    return false;
+    return BuddyStatus_GenericFailure;
   }
 
   // Got "Parent does not exist" error, so need to add whole list
   BuddyList buddies;
   buddies.push_back(buddy);
-  return SetBuddyList(buddies);
+  return SetBuddyListEx(buddies);
 }
 
 
-bool SIPXCAP_Presentity::DeleteBuddy(const PURL & presentity)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyEx(const PURL & presentity)
 {
   XCAPClient xcap;
   InitBuddyXcap(xcap, presentity);
 
   if (xcap.DeleteXml())
-    return true;
+    return BuddyStatus_OK;
 
   PTRACE(2, "SIPPres\tError deleting buddy '" << presentity << "' of '" << m_aor << "\'\n"
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-  return false;
+  return BuddyStatus_GenericFailure;
 }
 
 
-bool SIPXCAP_Presentity::SubscribeBuddyList(bool subscribe)
+OpalPresentity::BuddyStatus SIPXCAP_Presentity::SubscribeBuddyListEx(PINDEX & numSuccessful, bool subscribe)
 {
   PXML xml;
   XCAPClient xcap;
@@ -1024,7 +1031,7 @@ bool SIPXCAP_Presentity::SubscribeBuddyList(bool subscribe)
     if (xcap.GetLastResponseCode() != PHTTP::NotFound) {
       PTRACE(2, "SIPPres\tUnexpected error getting rls-services file for at '" << m_aor << "\'\n"
              << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
-      return OpalPresentity::SubscribeBuddyList(subscribe); // Do individual subscribes
+      return OpalPresentity::SubscribeBuddyListEx(numSuccessful, subscribe); // Do individual subscribes
     }
 
     // No file at all, add the root element.
@@ -1035,7 +1042,8 @@ bool SIPXCAP_Presentity::SubscribeBuddyList(bool subscribe)
     PXMLElement * element = xml.GetElement("service", "uri", serviceURI);
     if (element != NULL) {
       PTRACE(4, "SIPPres\tConfirmed rls-services entry for '" << serviceURI << "\' is\n" << xml);
-      return SubscribeToPresence(serviceURI, subscribe);
+      numSuccessful = P_MAX_INDEX;
+      return SubscribeToPresence(serviceURI, subscribe) ? BuddyStatus_OK : BuddyStatus_GenericFailure;
     }
 
     // Nope, so add it
@@ -1052,13 +1060,15 @@ bool SIPXCAP_Presentity::SubscribeBuddyList(bool subscribe)
 
   element->AddElement("packages")->AddElement("package")->SetData("presence");
 
-  if (xcap.PutXml(xml))
-    return SubscribeToPresence(serviceURI, subscribe);
+  if (xcap.PutXml(xml)) {
+    numSuccessful = P_MAX_INDEX;
+    return SubscribeToPresence(serviceURI, subscribe) ? BuddyStatus_OK : BuddyStatus_GenericFailure;
+  }
 
   PTRACE(2, "SIPPres\tCould not add new rls-services entry for '" << m_aor << "\'\n"
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
 
-  return OpalPresentity::SubscribeBuddyList(subscribe); // Do individual subscribes
+  return OpalPresentity::SubscribeBuddyListEx(numSuccessful, subscribe); // Do individual subscribes
 }
 
 
