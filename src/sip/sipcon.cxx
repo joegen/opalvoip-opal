@@ -1463,11 +1463,11 @@ PString SIPConnection::GetDestinationAddress()
 
 PString SIPConnection::GetCalledPartyURL()
 {
-  if (originalInvite != NULL)
+  if (!originating && originalInvite != NULL)
     return originalInvite->GetURI().AsString();
 
-  SIPURL calledParty = m_dialog.GetRemoteURI();
-  calledParty.Sanitise(SIPURL::ToURI);
+  SIPURL calledParty = m_dialog.GetRequestURI();
+  calledParty.Sanitise(SIPURL::ExternalURI);
   return calledParty.AsString();
 }
 
@@ -1553,7 +1553,7 @@ PString SIPConnection::GetIdentifier() const
 
 PString SIPConnection::GetRemotePartyURL() const
 {
-  SIPURL url = m_dialog.GetRemoteURI();
+  SIPURL url = m_dialog.GetRequestURI();
   url.Sanitise(SIPURL::ExternalURI);
   return url.AsString();
 }
@@ -1710,18 +1710,13 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL url = m_dialog.GetRemoteURI();
-  url.Sanitise(SIPURL::ExternalURI);
+  remotePartyAddress = m_dialog.GetRequestURI().GetHostAddress();
 
-  remotePartyAddress = url.GetHostAddress();
+  remotePartyNumber = m_dialog.GetRequestURI().GetUserName();
+  if (!OpalIsE164(remotePartyNumber))
+    remotePartyNumber.MakeEmpty();
 
-  PString user = url.GetUserName();
-  if (OpalIsE164(user))
-    remotePartyNumber = user;
-
-  remotePartyName = url.GetDisplayName();
-  if (remotePartyName.IsEmpty())
-    remotePartyName = remotePartyNumber.IsEmpty() ? url.GetUserName() : url.AsString();
+  remotePartyName = m_dialog.GetRemoteURI().GetDisplayName();
 }
 
 
