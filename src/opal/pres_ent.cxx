@@ -147,7 +147,13 @@ static PAtomicInteger::IntegerType g_idNumber = 1;
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
   , m_idNumber(g_idNumber++)
+  , m_temporarilyUnavailable(false)
 {
+}
+
+OpalPresentity::~OpalPresentity()
+{
+  m_manager->RemovePresentity(m_aor);
 }
 
 
@@ -210,6 +216,34 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 }
 
 
+bool OpalPresentity::SendMessageTo(const OpalIM & message)
+{
+  OpalSendMessageToCommand * cmd = CreateCommand<OpalSendMessageToCommand>();
+  if (cmd == NULL)
+    return false;
+
+  cmd->m_message = message;
+  SendCommand(cmd);
+  return true;
+}
+
+
+void OpalPresentity::OnReceivedMessage(const OpalIM & message)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  if (!m_onReceivedMessageNotifier.IsNULL())
+    m_onReceivedMessageNotifier(*this, message);
+}
+
+
+void OpalPresentity::SetReceivedMessageNotifier(const ReceivedMessageNotifier & notifier)
+{
+  PWaitAndSignal mutex(m_notificationMutex);
+  m_onReceivedMessageNotifier = notifier;
+}
+
+
 void OpalPresentity::OnAuthorisationRequest(const AuthorisationRequest & request)
 {
   PWaitAndSignal mutex(m_notificationMutex);
@@ -224,7 +258,6 @@ void OpalPresentity::OnAuthorisationRequest(const AuthorisationRequest & request
 void OpalPresentity::SetAuthorisationRequestNotifier(const AuthorisationRequestNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-
   m_onAuthorisationRequestNotifier = notifier;
 }
 
@@ -246,95 +279,126 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
 }
 
 
-bool OpalPresentity::GetBuddyList(BuddyList &)
+OpalPresentity::BuddyStatus OpalPresentity::GetBuddyListEx(BuddyList &)
 {
-  return false;
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::SetBuddyList(const BuddyList &)
+OpalPresentity::BuddyStatus OpalPresentity::SetBuddyListEx(const BuddyList &)
 {
-  return false;
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::DeleteBuddyList()
+OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyListEx()
 {
-  return false;
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
+  return BuddyStatus_ListFeatureNotImplemented;
 }
 
 
-bool OpalPresentity::GetBuddy(BuddyInfo & buddy)
+OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 {
   if (buddy.m_presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
+
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (it->m_presentity == buddy.m_presentity) {
       buddy = *it;
-      return true;
+      return BuddyStatus_OK;
     }
   }
 
-  return false;
+  return BuddyStatus_SpecifiedBuddyNotFound;
 }
 
 
-bool OpalPresentity::SetBuddy(const BuddyInfo & buddy)
-{
+OpalPresentity::BuddyStatus OpalPresentity::SetBuddyEx(const BuddyInfo & buddy)
+{  
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
   if (buddy.m_presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   buddies.push_back(buddy);
-  return SetBuddyList(buddies);
+  return SetBuddyListEx(buddies);
 }
 
 
-bool OpalPresentity::DeleteBuddy(const PURL & presentity)
+OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentity)
 {
   if (presentity.IsEmpty())
-    return false;
+    return BuddyStatus_BadBuddySpecification;
+
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
 
   BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
 
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (it->m_presentity == presentity) {
       buddies.erase(it);
-      return SetBuddyList(buddies);
+      return SetBuddyListEx(buddies);
     }
   }
 
-  return false;
+  return BuddyStatus_SpecifiedBuddyNotFound;
 }
 
 
-bool OpalPresentity::SubscribeBuddyList(bool subscribe)
+OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & successfulCount, bool subscribe)
 {
-  BuddyList buddies;
-  if (!GetBuddyList(buddies))
-    return false;
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
 
+  BuddyList buddies;
+  BuddyStatus status = GetBuddyListEx(buddies);
+  if (status != BuddyStatus_OK)
+    return status;
+
+  successfulCount = 0;
   for (BuddyList::iterator it = buddies.begin(); it != buddies.end(); ++it) {
     if (!SubscribeToPresence(it->m_presentity, subscribe))
-      return false;
+      return BuddyStatus_ListSubscribeFailed;
+    ++successfulCount;
   }
 
-  return true;
+  return BuddyStatus_OK;
 }
 
-bool OpalPresentity::UnsubscribeBuddyList()
+OpalPresentity::BuddyStatus OpalPresentity::UnsubscribeBuddyListEx()
 {
-  return SubscribeBuddyList(false);
+  if (m_temporarilyUnavailable)
+    return BuddyStatus_ListTemporarilyUnavailable;
+
+  PINDEX successfulCount;
+  return SubscribeBuddyListEx(successfulCount, false);
 }
 
 
@@ -356,8 +420,10 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
 
   for (unsigned ancestor = 0; *(className = GetClass(ancestor)) != '\0'; ++ancestor) {
     OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(className+partialKey);
-    if (cmd != NULL)
+    if (cmd != NULL) {
+      PTRACE(3, "Opal\tCreating presentity command '" << className+partialKey << "'");
       return cmd;
+    }
   }
 
   PAssertAlways(PUnimplementedFunction);
@@ -373,10 +439,47 @@ PString OpalPresentity::GetID() const
 }
 
 
+void OpalPresentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand &)
+{
+}
+
+void OpalPresentity::Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand &)
+{
+}
+
+void OpalPresentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand &)
+{
+}
+
+void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd)
+{
+  OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
+  if (endpoint == NULL) {
+    PTRACE(1, "Opal\tCannot find endpoint for '" << m_aor.GetScheme() << "'");
+    return;
+  }
+
+  // need writable message object
+  OpalIM msg(cmd.m_message);
+
+  if (msg.m_from.IsEmpty())
+    msg.m_from = m_aor;
+
+  endpoint->Message(msg);
+}
+
+
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     OpalPresentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  OpalPresentity, Internal_SubscribeToPresence);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, OpalPresentity, Internal_AuthorisationRequest);
+OPAL_DEFINE_COMMAND(OpalSendMessageToCommand,        OpalPresentity, Internal_SendMessageToCommand);
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
   : m_threadRunning(false)
+  , m_queueRunning(false)
   , m_thread(NULL)
 {
 }
@@ -391,16 +494,24 @@ OpalPresentityWithCommandThread::~OpalPresentityWithCommandThread()
 }
 
 
-void OpalPresentityWithCommandThread::StartThread()
+void OpalPresentityWithCommandThread::StartThread(bool startQueue)
 {
   if (m_threadRunning)
     return;
 
   // start handler thread
   m_threadRunning = true;
+  m_queueRunning  = startQueue;
   m_thread = new PThreadObj<OpalPresentityWithCommandThread>(*this, &OpalPresentityWithCommandThread::ThreadMain);
 }
 
+void OpalPresentityWithCommandThread::StartQueue(bool startQueue)
+{
+  if (m_threadRunning) {
+    m_queueRunning = startQueue;
+    m_commandQueueSync.Signal();
+  }
+}
 
 void OpalPresentityWithCommandThread::StopThread()
 {
@@ -437,24 +548,25 @@ bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
 void OpalPresentityWithCommandThread::ThreadMain()
 {
   while (m_threadRunning) {
-    OpalPresentityCommand * cmd = NULL;
+    if (m_queueRunning) {
+      OpalPresentityCommand * cmd = NULL;
 
-    {
-      PWaitAndSignal mutex(m_commandQueueMutex);
-      if (!m_commandQueue.empty()) {
-        cmd = m_commandQueue.front();
-        m_commandQueue.pop();
+      {
+        PWaitAndSignal mutex(m_commandQueueMutex);
+        if (!m_commandQueue.empty()) {
+          cmd = m_commandQueue.front();
+          m_commandQueue.pop();
+        }
       }
-    }
-
-    if (cmd != NULL) {
-      cmd->Process(*this);
-      delete cmd;
+  
+      if (cmd != NULL) {
+        cmd->Process(*this);
+        delete cmd;
+      }
     }
 
     m_commandQueueSync.Wait(1000);
   }
 }
-
 
 /////////////////////////////////////////////////////////////////////////////

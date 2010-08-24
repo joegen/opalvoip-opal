@@ -39,6 +39,8 @@
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
 
+#include <im/im.h>
+
 #include <list>
 #include <queue>
 
@@ -110,8 +112,12 @@ class OpalPresenceInfo
 
 ostream & operator<<(ostream & strm, OpalPresenceInfo::State state);
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class OpalSetLocalPresenceCommand;
+class OpalSubscribeToPresenceCommand;
+class OpalAuthorisationRequestCommand;
+class OpalSendMessageToCommand;
 
 /**Representation of a presence identity.
    This class contains an abstraction of the functionality for "presence"
@@ -133,6 +139,8 @@ class OpalPresentity : public PSafeObject
     OpalPresentity();
 
   public:
+    ~OpalPresentity();
+
     /**Create a concrete class based on the scheme of the URL provided.
       */
     static OpalPresentity * Create(
@@ -364,60 +372,128 @@ class OpalPresentity : public PSafeObject
 
     typedef std::list<BuddyInfo> BuddyList;
 
+    enum BuddyStatus {
+      BuddyStatus_GenericFailure             = -1,
+      BuddyStatus_OK                         = 0,
+      BuddyStatus_SpecifiedBuddyNotFound,
+      BuddyStatus_ListFeatureNotImplemented,
+      BuddyStatus_ListTemporarilyUnavailable,
+      BuddyStatus_ListMayBeIncomplete,
+      BuddyStatus_BadBuddySpecification,
+      BuddyStatus_ListSubscribeFailed,
+      BuddyStatus_AccountNotLoggedIn
+    };
+
     /**Get complete buddy list.
       */
-    virtual bool GetBuddyList(
+    virtual BuddyStatus GetBuddyListEx(
       BuddyList & buddies   ///< List of buddies
     );
+    virtual bool GetBuddyList(
+      BuddyList & buddies   ///< List of buddies
+    )
+    { return GetBuddyListEx(buddies) == BuddyStatus_OK; }
 
     /**Set complete buddy list.
       */
-    virtual bool SetBuddyList(
+    virtual BuddyStatus SetBuddyListEx(
       const BuddyList & buddies   ///< List of buddies
     );
+    virtual bool SetBuddyList(
+      const BuddyList & buddies   ///< List of buddies
+    )
+    { return SetBuddyListEx(buddies) == BuddyStatus_OK; }
+
 
     /**Delete the buddy list.
       */
-    virtual bool DeleteBuddyList();
+    virtual BuddyStatus DeleteBuddyListEx();
+    virtual bool DeleteBuddyList() { return DeleteBuddyListEx() == BuddyStatus_OK; }
 
     /**Get a specific buddy from the buddy list.
        Note the buddy.m_presentity field must be preset to the URI to search
        the buddy list for.
       */
-    virtual bool GetBuddy(
+    virtual BuddyStatus GetBuddyEx(
       BuddyInfo & buddy
     );
+    virtual bool GetBuddy(
+      BuddyInfo & buddy
+    )
+    { return GetBuddyEx(buddy) == BuddyStatus_OK; }
 
     /**Set/Add a buddy to the buddy list.
       */
-    virtual bool SetBuddy(
+    virtual BuddyStatus SetBuddyEx(
       const BuddyInfo & buddy
     );
+    virtual bool SetBuddy(
+      const BuddyInfo & buddy
+    )
+    { return SetBuddyEx(buddy) == BuddyStatus_OK; }
 
     /**Delete a buddy to the buddy list.
       */
-    virtual bool DeleteBuddy(
+    virtual BuddyStatus DeleteBuddyEx(
       const PURL & presentity
     );
+    virtual bool DeleteBuddy(
+      const PURL & presentity
+    )
+    { return DeleteBuddyEx(presentity) == BuddyStatus_OK; }
 
     /**Subscribe to buddy list.
        Send a subscription for the presence of every presentity in the current
        buddy list. This might cause multiple calls to SubscribeToPresence() or
        if the underlying protocol allows a single call for all.
       */
-    virtual bool SubscribeBuddyList(
+    virtual BuddyStatus SubscribeBuddyListEx(
+      PINDEX & successfulCount,
       bool subscribe = true
     );
+    virtual bool SubscribeBuddyList(
+      bool subscribe = true
+    )
+    { PINDEX successfulCount; return SubscribeBuddyListEx(successfulCount, subscribe) == BuddyStatus_OK; }
 
     /**Unsubscribe to buddy list.
        Send an unsubscription for the presence of every presentity in the current
        buddy list. This might cause multiple calls to UnsubscribeFromPresence() or
        if the underlying protocol allows a single call for all.
       */
-    virtual bool UnsubscribeBuddyList();
+    virtual BuddyStatus UnsubscribeBuddyListEx();
+    virtual bool UnsubscribeBuddyList()
+    { return UnsubscribeBuddyListEx() == BuddyStatus_OK; }
 
     virtual PString GetID() const;
   //@}
+  
+  
+    virtual bool SendMessageTo(
+      const OpalIM & message
+    );
+
+    /** Callback when presentity receives a message
+
+        Default implementation calls m_onReceivedMessageNotifier.
+      */
+    virtual void OnReceivedMessage(
+      const OpalIM & message ///< incoming message
+    );
+
+    typedef PNotifierTemplate<const OpalIM &> ReceivedMessageNotifier;
+    #define PDECLARE_ReceivedMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalIM &)
+    #define PCREATE_ReceivedMessageNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalIM &)
+
+    /// Set the notifier for the OnPresenceChange() function.
+    void SetReceivedMessageNotifier(
+      const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
+    );
+
+    void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
+    void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
+    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
+    void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
@@ -429,9 +505,12 @@ class OpalPresentity : public PSafeObject
 
     AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;
     PresenceChangeNotifier       m_onPresenceChangeNotifier;
+    ReceivedMessageNotifier      m_onReceivedMessageNotifier;
 
     PMutex m_notificationMutex;
     PAtomicInteger::IntegerType m_idNumber;
+
+    bool m_temporarilyUnavailable;
 };
 
 
@@ -475,12 +554,21 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     );
   //@}
 
-  /**@name Overrides from OpalPresentity */
+  /**@name new functions */
   //@{
     /**Start the background thread to handle commands.
        This is typically called from the concrete classes Open() function.
+
+       If the argument is true (the default) then the thread starts processing
+       queue entries ASAP.
+
+       If the argument is false, the thread is still created and still runs, 
+       but it does not process queue entries. This allows for presenties that
+       may need to allow commands to be paused, for example during initialisation
       */
-    void StartThread();
+    void StartThread(
+      bool startQueue = true
+    );
 
     /**Stop the background thread to handle commands.
        This is typically called from the concrete classes Close() function.
@@ -488,6 +576,13 @@ class OpalPresentityWithCommandThread : public OpalPresentity
        before the object is destroyed.
       */
     void StopThread();
+
+    /**Start/resume processing of queue commands
+      */
+    void StartQueue(
+      bool startQueue = true
+    );
+    
   //@}
 
   protected:
@@ -500,9 +595,9 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     PSyncPoint     m_commandQueueSync;
 
     bool      m_threadRunning;
+    bool      m_queueRunning;
     PThread * m_thread;
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -575,6 +670,16 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
     OpalSetLocalPresenceCommand(State state = NoPresence) : OpalPresenceInfo(state) { }
 };
 
+
+/** Command for sending an IM 
+  */
+class OpalSendMessageToCommand : public OpalPresentityCommand
+{
+  public:
+    OpalSendMessageToCommand() { }
+
+    OpalIM m_message;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -336,16 +336,14 @@ class OpalManager : public PObject
       PURL & from, 
       PString & conversationId
     );
+    virtual PBoolean Message(
+      OpalIM & message
+    );
 
     /**Called when text message received
      */
     virtual void OnMessageReceived(
-      const PURL & from, 
-      const PString & fromName,
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      const PString & conversationId
+      const OpalIM & message
     );
 
 #if OPAL_HAS_IM
@@ -1566,6 +1564,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
 };
 
 
