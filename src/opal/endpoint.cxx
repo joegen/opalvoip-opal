@@ -638,15 +638,13 @@ PBoolean OpalEndPoint::Message(OpalIM & /*Message*/)
 }
 
 
-#if OPAL_HAS_IM
-
-bool OpalEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
+void OpalEndPoint::OnMessageReceived(const OpalIM & message)
 {
-  return manager.TransmitExternalIM(conn, format, frame);
+  manager.OnMessageReceived(message);
 }
 
-#endif
 
+/////////////////////////////////////////////////////////////////////////////
 
 bool OpalIsE164(const PString & number, bool strict)
 {
