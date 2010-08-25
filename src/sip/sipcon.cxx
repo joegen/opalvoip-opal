@@ -58,6 +58,9 @@
 #include <im/msrp.h>
 #endif
 
+#include <algorithm>
+
+
 #define new PNEW
 
 //
