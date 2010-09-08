@@ -198,6 +198,12 @@ class OpalMediaPatch : public PObject
       PBoolean fromSink                 ///<  Flag for source or sink
     );
 
+    /**Set streams to paused.
+      */
+    virtual void SetPaused(
+      bool pause
+    );
+
     /**Push a frame out to all the sink streams, transcoding as necessary.
       */
     virtual PBoolean PushFrame(

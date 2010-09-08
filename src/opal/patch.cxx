@@ -484,6 +484,17 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
 }
 
 
+void OpalMediaPatch::SetPaused(bool pause)
+{
+  PReadWaitAndSignal mutex(inUse);
+
+  source.SetPaused(pause);
+
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+    s->stream->SetPaused(pause);
+}
+
+
 bool OpalMediaPatch::OnStartMediaPatch()
 {
   source.OnStartMediaPatch();
