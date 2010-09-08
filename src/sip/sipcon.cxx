@@ -843,7 +843,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
-    bool sending = sendStream != NULL && sendStream->IsOpen();
+    bool sending = !m_holdFromRemote && sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
