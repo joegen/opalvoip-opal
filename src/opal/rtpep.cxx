@@ -91,17 +91,7 @@ static RTP_UDP * GetRTPFromStream(const OpalMediaStream & stream)
 
 void OpalRTPEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  RTP_UDP * rtp = GetRTPFromStream(stream);
-  if (rtp != NULL) {
-    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
-    if (it != m_connectionsByRtpLocalPort.end()) {
-      m_connectionsByRtpLocalPort.erase(it);
-
-      it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
-      if (it != m_connectionsByRtpLocalPort.end())
-        OnLocalRTP(stream.GetConnection(), it->second.m_connection, rtp->GetSessionID(), false);
-    }
-  }
+  CheckEndLocalRTP(stream.GetConnection(), GetRTPFromStream(stream));
 
   OpalEndPoint::OnClosedMediaStream(stream);
 }
@@ -162,4 +152,20 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   }
 
   return it->second.m_previousResult != 0;
+}
+
+
+void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp)
+{
+  if (rtp == NULL)
+    return;
+
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
+  if (it != m_connectionsByRtpLocalPort.end()) {
+    m_connectionsByRtpLocalPort.erase(it);
+
+    it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
+    if (it != m_connectionsByRtpLocalPort.end())
+      OnLocalRTP(connection, it->second.m_connection, rtp->GetSessionID(), false);
+  }
 }

@@ -633,6 +633,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
       PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address: "
                 << rtpSession->GetRemoteAddress() << "!=" << ip
                 << " || " << rtpSession->GetRemoteDataPort() << "!=" << port);
+      ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
       if (!rtpSession->SetRemoteSocketInfo(ip, port, true)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
         return NULL;
@@ -925,7 +926,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != sdpFormats.end() && stream->UpdateMediaFormat(*fmt)) {
-      stream->SetPaused(paused);
+      stream->GetPatch()->SetPaused(paused);
       return !paused;
     }
   }
