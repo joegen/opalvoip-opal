@@ -3059,8 +3059,9 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
   }
 
   if (response.GetStatusCode() >= 200) {
-    // If sending final response, any pending responses are done, even if they are not acknowledged
-    while (!m_responsePackets.empty())
+    // If sending final response, any pending unsent responses no longer need to be sent.
+    // But the last sent response still needs to be acknowledged, so leave it in the queue.
+    while (m_responsePackets.size() > 1)
       m_responsePackets.pop();
 
     m_responsePackets.push(response);
@@ -3073,14 +3074,20 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
     mime.SetAt("RSeq", PString(PString::Unsigned, ++m_prackSequenceNumber));
 
     m_responsePackets.push(response);
-    if (m_responsePackets.size() > 1)
-      return true;
   }
 
-  if (!m_responsePackets.empty()) {
-    m_responseRetryCount = 0;
-    m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
-    m_responseFailTimer = endpoint.GetAckTimeout();
+  switch (m_responsePackets.size()) {
+    case 0 :
+      break;
+
+    case 1 :
+      m_responseRetryCount = 0;
+      m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
+      m_responseFailTimer = endpoint.GetAckTimeout();
+      break;
+
+    default :
+      return true;
   }
 
   return originalInvite->SendResponse(*transport, response); 
