@@ -61,8 +61,8 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
 {
+  PTRACE(5, "Patch\tCreated media patch " << this << ", session " << src.GetSessionID());
   src.SetPatch(this);
-  PTRACE(5, "Patch\tCreated media patch " << this);
 }
 
 
