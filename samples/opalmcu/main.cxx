@@ -446,7 +446,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
   if (args.HasOption('s'))
     PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
   info->m_moderatorPIN = args.GetOptionString('m');
-  info->m_noMediaPassThru = args.HasOption("no-pass-thru");
+  info->m_mediaPassThru = args.HasOption("pass-thru");
 
   PSafePtr<OpalMixerNode> node = AddNode(info);
 
