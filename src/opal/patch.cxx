@@ -61,8 +61,8 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
 {
+  PTRACE(5, "Patch\tCreated media patch " << this << ", session " << src.GetSessionID());
   src.SetPatch(this);
-  PTRACE(5, "Patch\tCreated media patch " << this);
 }
 
 
@@ -492,6 +492,17 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
     for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
       s->SetCommandNotifier(notifier);
   }
+}
+
+
+void OpalMediaPatch::SetPaused(bool pause)
+{
+  PReadWaitAndSignal mutex(inUse);
+
+  source.SetPaused(pause);
+
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+    s->stream->SetPaused(pause);
 }
 
 

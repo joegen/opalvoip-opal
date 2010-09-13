@@ -664,6 +664,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
       PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address: "
                 << rtpSession->GetRemoteAddress() << "!=" << ip
                 << " || " << rtpSession->GetRemoteDataPort() << "!=" << port);
+      ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
       if (!rtpSession->SetRemoteSocketInfo(ip, port, true)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
         return NULL;
@@ -863,7 +864,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
-    bool sending = sendStream != NULL && sendStream->IsOpen();
+    bool sending = !m_holdFromRemote && sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
@@ -930,7 +931,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != sdpFormats.end() && stream->UpdateMediaFormat(*fmt)) {
       PTRACE(4, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
-      stream->SetPaused(paused);
+      stream->GetPatch()->SetPaused(paused);
       return !paused;
     }
   }
