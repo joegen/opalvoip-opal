@@ -238,6 +238,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
+  , m_prackMode(ep.GetDefaultPRACKMode())
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
   , m_responseRetryCount(0)
@@ -1905,6 +1906,8 @@ void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDi
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  unsigned responseClass = response.GetStatusCode()/100;
+
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     switch (response.GetStatusCode()) {
       case SIP_PDU::Failure_UnAuthorised :
@@ -1913,7 +1916,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           return;
 
       default :
-        switch (response.GetStatusCode()/100) {
+        switch (responseClass) {
           case 1 : // Treat all other provisional responses like a Trying.
             OnReceivedTrying(transaction, response);
             return;
@@ -1937,9 +1940,20 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (!lock.IsLocked())
     return;
 
+  const SIPMIMEInfo & responseMIME = response.GetMIME();
+
+  // If they ignore our "Require" header, we have to kill the call ourselves
+  if (m_prackMode == e_prackRequired &&
+      responseClass == 1 &&
+      response.GetStatusCode() != SIP_PDU::Information_Trying &&
+      !responseMIME.GetRequire().Contains("100rel")) {
+    Release(EndedBySecurityDenial);
+    return;
+  }
+
   // Don't pass on retries of reliable provisional responses.
   {
-    PString snStr = response.GetMIME().GetString("RSeq");
+    PString snStr = responseMIME.GetString("RSeq");
     if (!snStr.IsEmpty()) {
       unsigned sn = snStr.AsUnsigned();
       if (sn <= m_prackSequenceNumber)
@@ -2017,7 +2031,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
 
     default :
-      switch (response.GetStatusCode()/100) {
+      switch (responseClass) {
         case 1 : // Treat all other provisional responses like a Trying.
           OnReceivedTrying(transaction, response);
           return;
@@ -2038,7 +2052,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // To avoid overlapping INVITE transactions, wait till here before
   // starting the next one.
-  if (response.GetStatusCode()/100 != 1) {
+  if (responseClass != 1) {
     pendingInvitations.Remove(&transaction);
     StartPendingReINVITE();
   }
@@ -2212,7 +2226,32 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // allow the application to determine if RTP NAT is enabled or not
   remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
-  m_prackEnabled = mime.GetSupported().Contains("100rel") || mime.GetRequire().Contains("100rel");
+  bool prackSupported = mime.GetSupported().Contains("100rel");
+  bool prackRequired = mime.GetRequire().Contains("100rel");
+  switch (m_prackMode) {
+    case e_prackDisabled :
+      if (prackRequired) {
+        SIP_PDU response(request, SIP_PDU::Failure_BadExtension);
+        response.GetMIME().SetUnsupported("100rel");
+        request.SendResponse(*transport, response);
+        return;
+      }
+      // Ignore, if just supported
+      break;
+
+    case e_prackSupported :
+      m_prackEnabled = prackSupported || prackRequired;
+      break;
+
+    case e_prackRequired :
+      m_prackEnabled = prackSupported || prackRequired;
+      if (!m_prackEnabled) {
+        SIP_PDU response(request, SIP_PDU::Failure_ExtensionRequired);
+        response.GetMIME().SetRequire("100rel");
+        request.SendResponse(*transport, response);
+        return;
+      }
+  }
 
   releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
@@ -2901,7 +2940,18 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PTRACE(3, "SIP\tCreating INVITE request");
 
   SIPMIMEInfo & mime = request.GetMIME();
-  mime.AddSupported("100rel");
+
+  switch (m_prackMode) {
+    case e_prackDisabled :
+      break;
+
+    case e_prackRequired :
+      mime.AddRequire("100rel");
+      // Then add supported as well
+
+    case e_prackSupported :
+      mime.AddSupported("100rel");
+  }
 
   for (PINDEX i = 0; i < m_connStringOptions.GetSize(); ++i) {
     PCaselessString key = m_connStringOptions.GetKeyAt(i);
