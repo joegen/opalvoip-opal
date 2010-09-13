@@ -388,7 +388,7 @@ struct OpalMixerNodeInfo
     , m_height(PVideoFrameInfo::CIFHeight)
     , m_rate(15)
 #endif
-    , m_noMediaPassThru(false)
+    , m_mediaPassThru(false)
   { }
 
   virtual ~OpalMixerNodeInfo() { }
@@ -405,7 +405,7 @@ struct OpalMixerNodeInfo
   unsigned m_height;              ///< Height of mixed video
   unsigned m_rate;                ///< Frame rate of mixed video
 #endif
-  bool     m_noMediaPassThru;     /**< Disable media pass through to optimise mixer node
+  bool     m_mediaPassThru;       /**< Enable media pass through to optimise mixer node
                                        with precisely two attached connections. */
 };
 

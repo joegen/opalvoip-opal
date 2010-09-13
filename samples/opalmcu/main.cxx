@@ -75,7 +75,7 @@ void ConfOPAL::Main()
              "-rtp-max:"
              "-rtp-tos:"
              "-rtp-size:"
-             "-no-pass-thru."
+             "-pass-thru."
              , FALSE);
 
 #if PTRACING
@@ -94,7 +94,7 @@ void ConfOPAL::Main()
             "                          : conferences are created.\n"
             "  -m or --moderator pin   : PIN to allow to become a moderator and have talk\n"
             "                          : rights if absent, all participants are moderators.\n"
-            "        --no-pass-thru    : Disable media pass through optimisation.\n"
+            "        --pass-thru       : Enable media pass through optimisation.\n"
             "  -n or --name alias      : Default name for ad-hoc conference.\n"
 #if OPAL_VIDEO
             "  -V or --no-video        : Disable video for ad-hoc conference.\n"
@@ -227,7 +227,7 @@ void ConfOPAL::Main()
     info->m_name = args.GetOptionString('n', "room101");
     info->m_moderatorPIN = args.GetOptionString('m');
     info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
-    info->m_noMediaPassThru = args.HasOption("no-pass-thru");
+    info->m_mediaPassThru = args.HasOption("pass-thru");
 
 #if OPAL_VIDEO
     info->m_audioOnly = args.HasOption('V');
