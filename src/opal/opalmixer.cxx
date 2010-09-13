@@ -1226,7 +1226,7 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 
 void OpalMixerNode::UseMediaPassThrough(unsigned sessionID, OpalConnection * connection)
 {
-  if (m_info->m_noMediaPassThru)
+  if (!m_info->m_mediaPassThru)
     return;
 
   PSafePtr<OpalConnection> other2;
