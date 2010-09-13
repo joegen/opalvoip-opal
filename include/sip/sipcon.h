@@ -522,6 +522,23 @@ class SIPConnection : public OpalRTPConnection
     const SIPDialogContext & GetDialog() const { return m_dialog; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
+    enum PRACKMode {
+      e_prackDisabled,  /**< Do not use PRACK if remote asks for 100rel in Supported
+                             field, refuse call with 420 Bad Extension if 100rel is
+                             in Require header field. */
+                             
+      e_prackSupported, /** Add 100rel to Supported header in outgoing INVITE. For
+                            incoming INVITE enable PRACK is either Supported or
+                            Require headers include 100rel. */
+      e_prackRequired   /** Add 100rel to Require header in outgoing INVITE. For
+                            incoming INVITE enable PRACK is either Supported or
+                            Require headers include 100rel, fail the call with
+                            a 421 Extension Required if missing. */
+    };
+    /**Get active PRACK mode. See PRACKMode enum for details.
+      */
+    PRACKMode GetPRACKMode() const { return m_prackMode; }
+
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
 
@@ -655,6 +672,7 @@ class SIPConnection : public OpalRTPConnection
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
+    PRACKMode      m_prackMode;
     bool           m_prackEnabled;
     unsigned       m_prackSequenceNumber;
     queue<SIP_PDU> m_responsePackets;

@@ -747,6 +747,13 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PURL & to
     );
 
+    /**Get default mode for PRACK support.
+      */
+    SIPConnection::PRACKMode GetDefaultPRACKMode() const { return m_defaultPrackMode; }
+
+    /**Set default mode for PRACK support.
+      */
+    void SetDefaultPRACKMode(SIPConnection::PRACKMode mode) { m_defaultPrackMode = mode; }
 
     void SetMIMEForm(PBoolean v) { mimeForm = v; }
     PBoolean GetMIMEForm() const { return mimeForm; }
@@ -937,6 +944,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     SIPURL        proxy;
     PString       userAgentString;
+
+    SIPConnection::PRACKMode m_defaultPrackMode;
 
     bool          mimeForm;
     unsigned      maxRetries;

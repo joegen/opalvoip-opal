@@ -54,6 +54,7 @@
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   : OpalRTPEndPoint(mgr, "sip", CanTerminateCall)
+  , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , retryTimeoutMin(500)             // 0.5 seconds
   , retryTimeoutMax(0, 4)            // 4 seconds
   , nonInviteTimeout(0, 16)          // 16 seconds
