@@ -996,7 +996,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
 
   // Check packet sequence numbers
   if (packetsReceived == 0) {
-    expectedSequenceNumber = (WORD)(frame.GetSequenceNumber() + 1);
     PTRACE(3, "RTP\tSession " << sessionID << ", first receive data:"
               " ver=" << frame.GetVersion()
            << " pt=" << frame.GetPayloadType()
@@ -1007,6 +1006,15 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
            << " ts=" << frame.GetTimestamp()
            << " src=" << hex << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount() << dec);
+
+    if ((frame.GetPayloadType() == RTP_DataFrame::T38) &&
+        (frame.GetSequenceNumber() >= 0x8000) &&
+         (frame.GetPayloadSize() == 0)) {
+      PTRACE(4, "RTP\tSession " << sessionID << ", ignoring left over audio packet from switch to T.38");
+      return e_IgnorePacket; // Non fatal error, just ignore
+    }
+
+    expectedSequenceNumber = (WORD)(frame.GetSequenceNumber() + 1);
   }
   else {
     if (frame.GetSyncSource() != syncSourceIn) {
