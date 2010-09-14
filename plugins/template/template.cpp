@@ -169,11 +169,26 @@ class MyEncoder : public PluginCodec
   protected:
     unsigned m_width;
     unsigned m_height;
+    unsigned m_frameRate;
+    unsigned m_bitRate;
 
   public:
     MyEncoder(const PluginCodec_Definition * defn)
       : PluginCodec(defn)
+      , m_width(352)
+      , m_height(288)
+      , m_frameRate(15)
+      , m_bitRate(512000)
     {
+    }
+
+
+    virtual bool Construct()
+    {
+      /* Complete construction of object after it has been created. This
+         allows you to fail the create operation (return false), which cannot
+         be done in the normal C++ constructor. */
+      return true;
     }
 
 
@@ -184,6 +199,17 @@ class MyEncoder : public PluginCodec
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         return SetOptionUnsigned(m_height, optionValue, 16, MyMaxHeight);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0) {
+        unsigned frameTime = MyClockRate/m_frameRate;
+        if (!SetOptionUnsigned(frameTime, optionValue, MyClockRate/MyMaxFrameRate, MyClockRate))
+          return false;
+        m_frameRate = MyClockRate/frameTime;
+        return true;
+      }
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+        return SetOptionUnsigned(m_bitRate, optionValue, 1000);
 
       // Base class sets bit rate and frame time
       return PluginCodec::SetOption(optionName, optionValue);
@@ -247,6 +273,15 @@ class MyDecoder : public PluginCodec
     MyDecoder(const PluginCodec_Definition * defn)
       : PluginCodec(defn)
     {
+    }
+
+
+    virtual bool Construct()
+    {
+      /* Complete construction of object after it has been created. This
+         allows you to fail the create operation (return false), which cannot
+         be done in the normal C++ constructor. */
+      return true;
     }
 
 
