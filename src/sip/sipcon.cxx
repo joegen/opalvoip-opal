@@ -1628,13 +1628,15 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  remotePartyAddress = m_dialog.GetRequestURI().GetHostAddress();
+  SIPURL remote = m_dialog.GetRemoteURI();
+  remote.Sanitise(SIPURL::ExternalURI);
+  remotePartyAddress = remote.AsString();
 
   remotePartyNumber = m_dialog.GetRequestURI().GetUserName();
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
 
-  remotePartyName = m_dialog.GetRemoteURI().GetDisplayName();
+  remotePartyName = remote.GetDisplayName();
 }
 
 
