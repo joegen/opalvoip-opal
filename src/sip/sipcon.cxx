@@ -1011,7 +1011,8 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, sdpFormats, remoteChanged, (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
+  if (PauseOrCloseMediaStream(recvStream, sdpFormats, remoteChanged,
+                              m_holdToRemote >= eHoldOn && (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
   /* After (possibly) closing streams, we now open them again if necessary,
