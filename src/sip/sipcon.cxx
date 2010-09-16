@@ -1477,14 +1477,6 @@ PString SIPConnection::GetIdentifier() const
 }
 
 
-PString SIPConnection::GetRemotePartyURL() const
-{
-  SIPURL url = m_dialog.GetRequestURI();
-  url.Sanitise(SIPURL::ExternalURI);
-  return url.AsString();
-}
-
-
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
   switch (transaction.GetMethod()) {
@@ -1630,13 +1622,18 @@ void SIPConnection::UpdateRemoteAddresses()
 {
   SIPURL remote = m_dialog.GetRemoteURI();
   remote.Sanitise(SIPURL::ExternalURI);
-  remotePartyAddress = remote.AsString();
 
-  remotePartyNumber = m_dialog.GetRequestURI().GetUserName();
+  remotePartyAddress = remote.AsString();
+  remotePartyName = remote.GetDisplayName();
+
+  SIPURL request = m_dialog.GetRequestURI();
+  request.Sanitise(SIPURL::ExternalURI);
+
+  remotePartyURL = request.AsString();
+
+  remotePartyNumber = request.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
-
-  remotePartyName = remote.GetDisplayName();
 }
 
 
