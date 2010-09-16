@@ -128,14 +128,6 @@ class SIPConnection : public OpalRTPConnection
      */
     virtual PString GetIdentifier() const;
 
-    /**Get the remote party address as URL.
-       This will return the "best guess" at an address to use in a
-       to call the user again later. Note that under some circumstances this may be
-       different to the value GetRemotePartyAddress() value returns. In particular
-       if a gatekeeper is involved.
-      */
-    virtual PString GetRemotePartyURL() const;
-
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
