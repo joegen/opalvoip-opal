@@ -1179,10 +1179,10 @@ PBoolean OpalVideoMediaStream::Close()
     return false;
 
   if (inputDevice != NULL)
-    inputDevice->Close();
+    inputDevice->Stop();
 
   if (outputDevice != NULL)
-    outputDevice->Close();
+    outputDevice->Stop();
 
   return true;
 }
