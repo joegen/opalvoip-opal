@@ -72,7 +72,9 @@ class OpalFaxMediaStream : public OpalNullMediaStream
 
     bool Close()
     {
-      if (isOpen && m_connection.m_state == OpalFaxConnection::e_CompletedSwitch) {
+      if (isOpen &&
+          m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
+          m_connection.m_finalStatistics.m_fax.m_result < 0) {
         if (mediaPatch != NULL)
           mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
         GetStatistics(m_connection.m_finalStatistics);
@@ -769,7 +771,8 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
       synchronousOnRelease = false;
-      GetStatistics(m_finalStatistics);
+      patch.ExecuteCommand(OpalFaxTerminate(), false);
+      patch.GetStatistics(m_finalStatistics, false);
       OnFaxCompleted(m_finalStatistics.m_fax.m_result != 0);
     }
   }
