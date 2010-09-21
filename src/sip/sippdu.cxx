@@ -2199,11 +2199,11 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 
   m_mime.SetCompactForm(false);
   PString strPDU = Build();
-  if (!transport.IsReliable() && strPDU.GetLength() > 1450) {
+  if (!transport.IsReliable() && strPDU.GetLength() > 1300) {
     PTRACE(4, "SIP\tPDU is too large (" << strPDU.GetLength() << " bytes) trying compact form.");
     m_mime.SetCompactForm(true);
     strPDU = Build();
-    PTRACE_IF(2, strPDU.GetLength() > 1450,
+    PTRACE_IF(2, strPDU.GetLength() > PluginCodec_RTP_MaxPacketSize,
               "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
   }
 
