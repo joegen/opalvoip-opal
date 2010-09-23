@@ -421,7 +421,7 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
   for (unsigned ancestor = 0; *(className = GetClass(ancestor)) != '\0'; ++ancestor) {
     OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(className+partialKey);
     if (cmd != NULL) {
-      PTRACE(3, "Opal\tCreating presentity command '" << className+partialKey << "'");
+      PTRACE(3, "OpalPres\tCreating presentity command '" << className+partialKey << "'");
       return cmd;
     }
   }
@@ -455,7 +455,7 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
 {
   OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
   if (endpoint == NULL) {
-    PTRACE(1, "Opal\tCannot find endpoint for '" << m_aor.GetScheme() << "'");
+    PTRACE(1, "OpalPres\tCannot find endpoint for '" << m_aor.GetScheme() << "'");
     return;
   }
 
@@ -516,11 +516,13 @@ void OpalPresentityWithCommandThread::StartQueue(bool startQueue)
 void OpalPresentityWithCommandThread::StopThread()
 {
   if (m_threadRunning && m_thread != NULL) {
+    PTRACE(4, "OpalPres\tStopping command thread " << *m_thread);
     m_threadRunning = false;
     m_commandQueueSync.Signal();
-    m_thread->WaitForTermination();
+    PAssert(m_thread->WaitForTermination(5000), "Could not terminate presentity command thread");
     delete m_thread;
     m_thread = NULL;
+    PTRACE(5, "OpalPres\tStopped command thread " << *m_thread);
   }
 }
 
@@ -547,6 +549,8 @@ bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
 
 void OpalPresentityWithCommandThread::ThreadMain()
 {
+  PTRACE(4, "OpalPres\tCommand thread started");
+
   while (m_threadRunning) {
     if (m_queueRunning) {
       OpalPresentityCommand * cmd = NULL;
@@ -567,6 +571,8 @@ void OpalPresentityWithCommandThread::ThreadMain()
 
     m_commandQueueSync.Wait(1000);
   }
+
+  PTRACE(4, "OpalPres\tCommand thread ended");
 }
 
 /////////////////////////////////////////////////////////////////////////////
