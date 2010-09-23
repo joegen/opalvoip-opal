@@ -489,8 +489,10 @@ OpalPresentityWithCommandThread::~OpalPresentityWithCommandThread()
 {
   StopThread();
 
-  while (!m_commandQueue.empty())
+  while (!m_commandQueue.empty()) {
     delete m_commandQueue.front();
+    m_commandQueue.pop();
+  }
 }
 
 
