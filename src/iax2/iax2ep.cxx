@@ -51,8 +51,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "iax2", CanTerminateCall)
+IAX2EndPoint::IAX2EndPoint(OpalManager & mgr, unsigned short port)
+  : OpalEndPoint(mgr, "iax2", CanTerminateCall), localPort(port)
 {
   
   localUserName = mgr.GetDefaultUserName();
@@ -287,9 +287,6 @@ PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
   } else
     working = halfs[0];
 
-  if (working.IsEmpty())
-    goto finishedDissection;
-
   halfs = working.Tokenise("$");
   if (halfs.GetSize() == 2) {
     res[transportIndex] = halfs[0];
@@ -297,32 +294,27 @@ PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
   } else
     working = halfs[0];
 
-  if (working.IsEmpty())
-    goto finishedDissection;
-
   halfs = working.Tokenise("/");
+  res[addressIndex] = halfs[0];
   if (halfs.GetSize() == 2) {
-    res[addressIndex] = halfs[0];
     working = halfs[1];
-  } else {
-    res[addressIndex] = halfs[0];
-    goto finishedDissection;
+    halfs = working.Tokenise("+");
+    res[extensionIndex] = halfs[0];
+    if (halfs.GetSize() == 2)
+	  res[contextIndex] = halfs[1];
   }
 
-
-  halfs = working.Tokenise("+");
+  halfs = res[addressIndex].Tokenise(":");
   if (halfs.GetSize() == 2) {
-    res[extensionIndex] = halfs[0];
-    res[contextIndex]   = halfs[1];
-  } else
-    res[extensionIndex] = halfs[0];
-
- finishedDissection:
+	res[addressIndex] = halfs[0];
+	res[portIndex] = halfs[1];
+  }
 
   PTRACE(4, "Opal\t call protocol          " << res[protoIndex]);
   PTRACE(4, "Opal\t destination user       " << res[userIndex]);
   PTRACE(4, "Opal\t transport to use       " << res[transportIndex]);
   PTRACE(4, "Opal\t destination address    " << res[addressIndex]);
+  PTRACE(4, "Opal\t destination port       " << res[portIndex]);
   PTRACE(4, "Opal\t destination extension  " << res[extensionIndex]);
   PTRACE(4, "Opal\t destination context    " << res[contextIndex]);
 
@@ -461,16 +453,16 @@ PBoolean IAX2EndPoint::Initialise()
   rand.SetSeed((DWORD)(PTime().GetTimeInSeconds() + 1));
   callnumbs = PRandom::Number() % 32000;
   
-  sock = new PUDPSocket(ListenPortNumber());
+  sock = new PUDPSocket(localPort);
   PTRACE(4, "IAX2EndPoint\tCreate Socket " << sock->GetPort());
   
-  if (!sock->Listen(INADDR_ANY, 0, ListenPortNumber())) {
-    PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << ListenPortNumber());
+  if (!sock->Listen(INADDR_ANY, 0, localPort)) {
+    PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << localPort);
     PTRACE(3, "Receiver\tFailed because the socket:::" << sock->GetErrorText());
     return PFalse;
   }
   
-  PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << ListenPortNumber());
+  PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << localPort);
   
   transmitter = new IAX2Transmit(*this, *sock);
   receiver    = new IAX2Receiver(*this, *sock);
