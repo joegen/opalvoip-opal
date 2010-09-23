@@ -110,7 +110,8 @@ class IAX2EndPoint : public OpalEndPoint
   //@{
   /**Create the endpoint, and define local variables */
   IAX2EndPoint(
-    OpalManager & manager
+    OpalManager & manager,
+    unsigned short port	= 4569
   );
   
   /**Destroy the endpoint, and all associated connections*/
@@ -309,9 +310,10 @@ class IAX2EndPoint : public OpalEndPoint
     userIndex      = 1,     /*!< the username, or alias field            */
     transportIndex = 2,     /*!< the transport, or transport field       */
     addressIndex   = 3,     /*!< the address, or 192.168.1.1 field       */
-    extensionIndex = 4,     /*!< the extension, or "extension"" field    */
-    contextIndex   = 5,     /*!< the context,   or "+context" field      */
-    maximumIndex   = 6      /*!< the number of possible fields           */
+    portIndex      = 4,     /*!< the port number                         */
+    extensionIndex = 5,     /*!< the extension, or "extension"" field    */
+    contextIndex   = 6,     /*!< the context,   or "+context" field      */
+    maximumIndex   = 7      /*!< the number of possible fields           */
   };
 
   /**Given a remote party name of the format:
@@ -418,7 +420,10 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**The socket on which all data is sent/received.*/
   PUDPSocket  *sock;
-  
+
+  /** The local port */
+  unsigned short localPort;
+
   /**Number of active calls */
   int callnumbs;
   
