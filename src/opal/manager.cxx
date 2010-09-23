@@ -1710,7 +1710,9 @@ PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 
 void OpalManager::GarbageCollection()
 {
-  PBoolean allCleared = activeCalls.DeleteObjectsToBeRemoved();
+  m_presentities.DeleteObjectsToBeRemoved();
+
+  bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
   endpointsMutex.StartRead();
 
@@ -1788,6 +1790,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
   if (newPresentity == NULL)
     return NULL;
 
+  PTRACE(4, "OpalMan\tAdded presentity for " << newPresentity);
   m_presentities.SetAt(presentity, newPresentity);
   return PSafePtr<OpalPresentity>(newPresentity, PSafeReadWrite);
 }
@@ -1812,6 +1815,7 @@ PStringList OpalManager::GetPresentities() const
 
 bool OpalManager::RemovePresentity(const PString & presentity)
 {
+  PTRACE(4, "OpalMan\tRemoving presentity for " << presentity);
   return m_presentities.RemoveAt(presentity);
 }
 
