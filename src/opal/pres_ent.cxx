@@ -522,7 +522,6 @@ void OpalPresentityWithCommandThread::StopThread()
     PAssert(m_thread->WaitForTermination(5000), "Could not terminate presentity command thread");
     delete m_thread;
     m_thread = NULL;
-    PTRACE(5, "OpalPres\tStopped command thread " << *m_thread);
   }
 }
 
