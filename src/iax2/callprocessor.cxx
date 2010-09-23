@@ -249,8 +249,11 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
     return;
   }
   PTRACE(4, "Resolve " << res[IAX2EndPoint::addressIndex]  << " as ip address " << ip);
-    
-  remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
+
+  if (!res[IAX2EndPoint::portIndex].IsEmpty())
+	  remote.SetRemotePort(res[IAX2EndPoint::portIndex].AsUnsigned());
+  else
+	  remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
   remote.SetRemoteAddress(ip);
 
   if (res[IAX2EndPoint::userIndex].IsEmpty()) {
