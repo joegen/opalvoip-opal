@@ -174,25 +174,24 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
 
 PBoolean IAX2Connection::SetConnected()
 {
-    PTRACE(3, "IAX2Con\t SET CONNECTED " 
+  PTRACE(3, "IAX2Con\t SET CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   ////if no media streams, try and start them
-    
+  
+  if (!IsOriginating())
+    iax2Processor.SendAnswerMessageToRemoteNode();
+  
   if (mediaStreams.IsEmpty()) {
-    if (!IsOriginating())
-      iax2Processor.SendAnswerMessageToRemoteNode();
-
+    
     ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
-
-    
+        
     jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
 			  endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
     PTRACE(5, "Iax2Con\t Start jitter buffer");
-  }
-
+  }  
   return OpalConnection::SetConnected();
 }
 
