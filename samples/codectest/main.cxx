@@ -439,7 +439,10 @@ bool AudioThread::Initialise(PArgList & args)
   // Audio recorder
   PString driverName = args.GetOptionString("record-driver");
   PString deviceName = args.GetOptionString("record-device");
-  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Recorder, 1, mediaFormat.GetClockRate());
+  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
+                                                PSoundChannel::Recorder,
+                                                mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption()),
+                                                mediaFormat.GetClockRate());
   if (recorder == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
@@ -475,7 +478,10 @@ bool AudioThread::Initialise(PArgList & args)
   // Audio player
   driverName = args.GetOptionString("play-driver");
   deviceName = args.GetOptionString("play-device");
-  player = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Player);
+  player = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
+                                              PSoundChannel::Player,
+                                              mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption()),
+                                              mediaFormat.GetClockRate());
   if (player == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
