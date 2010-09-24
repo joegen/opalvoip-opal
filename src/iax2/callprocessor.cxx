@@ -1303,6 +1303,7 @@ void IAX2CallProcessor::ProcessIaxCmdCallToken(IAX2FullFrameProtocol *src)
   if (src->GetCallTokenIe(*ie)) {
     IAX2FullFrameProtocol *f = BuildNewFrameForSending();
     f->AppendIe(ie);
+    GetSequenceInfo().ZeroAllValues();
     TransmitFrameToRemoteEndpoint(f);
     StopNoResponseTimer();
     StartNoResponseTimer();
