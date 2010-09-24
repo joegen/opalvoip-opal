@@ -12,10 +12,12 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 target_os=@target_os@
 
+SILK_LIB_BASE=SKP_SILK_SDK
+SILK_LIB_FILE=./SILK_SDK/lib$(SILK_LIB_BASE).a
+
 SONAME	= silk
 STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
-SRCDIR	= ./AMR-WB
 OBJDIR	= ./obj
 PLUGINDIR=../..
 
@@ -26,11 +28,9 @@ PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 EXTRACFLAGS     =-I$(PLUGINDIR)
+EXTRALIBS       =-L$(dir $(SILK_LIB_FILE)) -l$(SILK_LIB_BASE)
 
 SRCS	= SILKCodec.cpp
-
-vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
@@ -52,13 +52,16 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdi
 
 all: $(PLUGIN)
 
-$(PLUGIN): $(OBJECTS)
+$(PLUGIN): $(OBJECTS) $(SILK_LIB_FILE)
 ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ (EXTRALIBS)
 else
 	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 endif	
+
+$(SILK_LIB_FILE):
+	$(MAKE) -C $(dir $@)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
