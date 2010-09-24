@@ -499,7 +499,7 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
     }
 
     if (!ConvertFrame(inputPtr, inLen, outputPtr, outLen))
-      return PFalse;
+      return false;
 
     if (!outputIsRTP)
       output.SetPayloadSize(outLen);
@@ -510,7 +510,7 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
     else 
       output.SetPayloadSize(outLen - output.GetHeaderSize());
 
-    return PTrue;
+    return true;
   }
 
   const BYTE * inputPtr = input.GetPayloadPtr();
@@ -523,22 +523,21 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
 
   // set maximum output payload size
   if (!output.SetPayloadSize(maxOutputDataSize))
-    return PFalse;
+    return false;
 
   BYTE * outputPtr = output.GetPayloadPtr();
-
   PINDEX outLen = 0;
 
-  while (inputLength > 0) {
+  while (inputLength > 0 && outLen < maxOutputDataSize) {
 
-    PINDEX consumed = inputLength; // PMIN(inputBytesPerFrame, inputLength);
-    PINDEX created  = output.GetPayloadSize() - outLen;
+    PINDEX consumed = inputLength;
+    PINDEX created  = maxOutputDataSize - outLen;
 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
-      return PFalse;
+      return false;
 
-    // If did not consume any data, codec must think it is rubbish, skip rest of packet.
-    if (consumed == 0)
+    // If did not consume or produce any data, codec has gone wrong, abort!
+    if (consumed == 0 && created == 0)
       break;
 
     outputPtr   += created;
@@ -550,7 +549,7 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
   // set actual output payload size
   output.SetPayloadSize(outLen);
 
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
