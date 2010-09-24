@@ -11,7 +11,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = A3F8998E12158EBC00E92BDC /* ptlib.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = D28A88AD04BDD90700651E21 /* ptlib */;
+			remoteGlobalIDString = D28A88AD04BDD90700651E21;
 			remoteInfo = ptlib;
 		};
 /* End PBXContainerItemProxy section */
@@ -1056,9 +1056,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEBUG = yes;
-				OPALDIR = $HOME/opal;
+				OPALDIR = $SOURCE_ROOT;
+				PATH = "/opt/local/bin:$PATH";
 				PRODUCT_NAME = opal;
-				PTLIBDIR = $HOME/ptlib;
+				PTLIBDIR = $SOURCE_ROOT/../ptlib;
 			};
 			name = Debug;
 		};
@@ -1066,32 +1067,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEBUG = "";
-				OPALDIR = $HOME/opal;
+				OPALDIR = $SOURCE_ROOT;
+				PATH = "/opt/local/bin:$PATH";
 				PRODUCT_NAME = opal;
-				PTLIBDIR = $HOME/ptlib;
+				PTLIBDIR = $SOURCE_ROOT/../ptlib;
 			};
 			name = Release;
 		};
 		1DEB919408733D9F0010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-				SDKROOT = macosx10.6;
 			};
 			name = Debug;
 		};
 		1DEB919508733D9F0010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				PREBINDING = NO;
-				SDKROOT = macosx10.6;
 			};
 			name = Release;
 		};
