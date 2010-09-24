@@ -275,6 +275,12 @@ class PluginCodec
     }
 
 
+    bool SetOptionUnsigned(int & oldValue, const char * optionValue, unsigned minimum, unsigned maximum = UINT_MAX)
+    {
+      return SetOptionUnsigned((unsigned &)oldValue, optionValue, minimum, maximum);
+    }
+
+
     bool SetOptionUnsigned(unsigned & oldValue, const char * optionValue, unsigned minimum, unsigned maximum = UINT_MAX)
     {
       char * end;
@@ -296,6 +302,22 @@ class PluginCodec
     }
 
 
+    bool SetOptionBoolean(int & oldValue, const char * optionValue)
+    {
+      return SetOptionBoolean((unsigned &)oldValue, optionValue);
+    }
+
+
+    bool SetOptionBoolean(unsigned & oldValue, const char * optionValue)
+    {
+      bool opt = oldValue != 0;
+      if (!SetOptionBoolean(opt, optionValue))
+        return false;
+      oldValue = opt;
+      return true;
+    }
+
+
     bool SetOptionBoolean(bool & oldValue, const char * optionValue)
     {
       bool newValue;
@@ -312,6 +334,12 @@ class PluginCodec
       }
 
       return true;
+    }
+
+
+    bool SetOptionBit(int & oldValue, unsigned bit, const char * optionValue)
+    {
+      return SetOptionBit((unsigned &)oldValue, bit, optionValue);
     }
 
 
