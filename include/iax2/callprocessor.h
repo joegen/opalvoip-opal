@@ -260,8 +260,9 @@ class IAX2CallProcessor : public IAX2Processor
   /**Internal method to process an incoming network frame of type
      IAX2FullFrameProtocol.
      
-  A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the asterisk souces,
-  It will contain 0, 1, 2 or more Information Elements (Ie) in the data section.*/
+  A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in
+  the asterisk souces, It will contain 0, 1, 2 or more Information
+  Elements (Ie) in the data section.*/
   virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Internal method to process an incoming network frame of type
@@ -710,6 +711,12 @@ class IAX2CallProcessor : public IAX2Processor
   
   /**The context to call for a transfer -- this is optional*/
   PString transferCalledContext;    
+
+  /**Flag to indicate we should not send the hangup frame on call
+     termination.  Normally, when a call ends, we send a hangup
+     frame. However, in the case where the remote endpoint rejects our
+     call, we are not supposed to send a hangup frame */
+  PBoolean suppressHangupFrame;
 };
 
 /////////////////////////////////////////////////////////////////////////
