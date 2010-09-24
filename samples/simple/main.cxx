@@ -169,6 +169,7 @@ void SimpleOpalProcess::Main()
 #endif
 #if OPAL_IAX2
              "X-no-iax2."
+	     "-iaxport:"
 #endif
 #if OPAL_CAPI
              "-no-capi."
@@ -299,6 +300,7 @@ void SimpleOpalProcess::Main()
 #endif
 #if OPAL_IAX2
             "  -X --no-iax2            : Remove support for iax2\n"
+            "     --iaxport n          : Set port to use (def. 4569)\n"
 #endif
 #if OPAL_CAPI
             "     --no-capi            : Remove support for CAPI ISDN\n"
@@ -620,11 +622,19 @@ PBoolean MyManager::Initialise(PArgList & args)
   // Create IAX2 protocol handler
 
   if (!args.HasOption("no-iax2")) {
-    iax2EP = new IAX2EndPoint(*this);
+    PINDEX port = 0;
+    if (args.HasOption("iaxport"))
+      port = args.GetOptionString("iaxport").AsInteger();
+    cerr << " port is " << port << endl;
+
+    if (port > 0)
+      iax2EP = new IAX2EndPoint(*this, port);
+    else
+      iax2EP = new IAX2EndPoint(*this);
     
     if (!iax2EP->InitialisedOK()) {
       cerr << "IAX2 Endpoint is not initialised correctly" << endl;
-      cerr << "Is there another application using port 4569? " << endl;
+      cerr << "Is there another application using the iax port? " << endl;
       return PFalse;
     }
 
