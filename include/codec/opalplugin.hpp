@@ -36,7 +36,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <limits.h>
 
 #include <map>
