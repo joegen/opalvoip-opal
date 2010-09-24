@@ -81,7 +81,7 @@ IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   
   audioCanFlow = PFalse;
   audioFramesNotStarted = PTrue;
-
+  suppressHangupFrame = PFalse;
   con = NULL;
 
   firstMediaFrame = PTrue;
@@ -208,6 +208,11 @@ void IAX2CallProcessor::CheckForHangupMessages()
 {
   if (hangList.IsEmpty()) 
     return;
+
+  if (suppressHangupFrame == PTrue) {
+    Terminate();
+    return;
+  }
 
   if (!IsCallTerminating()) {
     IAX2FullFrameProtocol * f = 
@@ -1093,6 +1098,7 @@ void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 
 void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
 {
+  suppressHangupFrame = PTrue;
   PTRACE(3, "Processor\tProcessIaxCmdReject(IAX2FullFrameProtocol *src)");
   //cout << "Remote endpoint has rejected our call " << endl;
   //cout << "Cause \"" << ieData.cause << "\"" << endl;
