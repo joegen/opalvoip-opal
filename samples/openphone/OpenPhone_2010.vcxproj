@@ -95,7 +95,7 @@ exit 1
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>.\Release/OpenPhone.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>$(OutDir)$(TargetName)</PrecompiledHeaderOutputFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -147,7 +147,7 @@ exit 1
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>.\Debug/OpenPhone.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>$(OutDir)$(TargetName)</PrecompiledHeaderOutputFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
@@ -204,7 +204,7 @@ exit 1
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>.\Release/OpenPhone.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>$(OutDir)$(TargetName)</PrecompiledHeaderOutputFile>
       <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
