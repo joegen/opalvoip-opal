@@ -412,10 +412,10 @@ class T38PseudoRTP_Handler : public RTP_Encoding
   #endif
 
         m_consecutiveBadPackets++;
-        if (m_consecutiveBadPackets < 100)
+        if (m_consecutiveBadPackets < 1000)
           return RTP_Session::e_IgnorePacket;
 
-        PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
+        PTRACE(1, "RTP_T38\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
         return RTP_Session::e_AbortTransport;
       }
 
@@ -752,6 +752,9 @@ void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
   if (patch.GetSink()->GetMediaFormat() == OpalT38) {
     m_faxTimer.Stop(false);
     m_state = e_CompletedSwitch;
+    m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
+    PTRACE(4, "T38\tStarted fax media stream for " << m_tiffFileFormat
+           << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
   }
 
   OpalConnection::OnStartMediaPatch(patch);
@@ -773,7 +776,8 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
       synchronousOnRelease = false;
 #if OPAL_STATISTICS
       InternalGetStatistics(m_finalStatistics, true);
-      OnFaxCompleted(m_finalStatistics.m_fax.m_result != 0);
+      PTRACE(3, "T38\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
+      OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
 #else
       OnFaxCompleted(true);
 #endif
