@@ -407,6 +407,10 @@ void SIPConnection::OnReleased()
       notifyDialogEvent = SIPDialogNotification::Cancelled;
   }
 
+  // Abort the queued up re-INVITEs we never got a chance to send.
+  for (PSafePtr<SIPTransaction> invitation(pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
+    invitation->Abort();
+
   // No termination event set yet, get it from the call end reason
   if (notifyDialogEvent == SIPDialogNotification::NoEvent) {
     switch (GetCallEndReason()) {
@@ -425,12 +429,9 @@ void SIPConnection::OnReleased()
 
   NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
 
-  // Close media
-  CloseMediaStreams();
-
-  // Abort the queued up re-INVITEs we never got a chance to send.
-  for (PSafePtr<SIPTransaction> invitation(pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
-    invitation->Abort();
+  // Close media and indicate call ended, even though we have a little bit more
+  // to go in clean up, don't ket other bits wait for it.
+  OpalRTPConnection::OnReleased();
 
   /* Note we wait for various transactions to complete as the transport they
      rely on may be owned by the connection, and would be deleted once we exit
@@ -446,11 +447,10 @@ void SIPConnection::OnReleased()
   pendingInvitations.RemoveAll();
   forkedInvitations.RemoveAll();
 
-  SetPhase(ReleasedPhase);
-
-  OpalRTPConnection::OnReleased();
-
+  // Delete the transport now we are finished with it
   SetTransport(PString::Empty());
+
+  SetPhase(ReleasedPhase);
 }
 
 
