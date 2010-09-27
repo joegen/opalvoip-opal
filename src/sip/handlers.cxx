@@ -1206,6 +1206,78 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 #if P_EXPAT
 
+class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
+{
+  virtual PCaselessString GetContentType() const
+  {
+    return "application/pidf+xml";
+  }
+
+  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  {
+    SIPURL from = request.GetMIME().GetFrom();
+    from.Sanitise(SIPURL::ExternalURI);
+
+    SIPURL to = request.GetMIME().GetTo();
+    to.Sanitise(SIPURL::ExternalURI);
+
+    SIPPresenceInfo info;
+    info.m_entity = from.AsString();
+    info.m_target = to.AsString();
+
+    // Check for empty body, if so then is OK, just a ping ...
+    if (request.GetEntityBody().IsEmpty()) {
+      handler.GetEndPoint().OnPresenceInfoReceived(info);
+      return true;
+    }
+
+    PXML xml;
+    if (!xml.Load(request.GetEntityBody()))
+      return false;
+
+    PXMLElement * rootElement = xml.GetRootElement();
+    if (rootElement == NULL || rootElement->GetName() != "presence")
+      return false;
+
+    PXMLElement * tupleElement = rootElement->GetElement("tuple");
+    if (tupleElement == NULL)
+      return false;
+
+    PXMLElement * statusElement = tupleElement->GetElement("status");
+    if (statusElement == NULL)
+      return false;
+
+    PXMLElement * basicElement = statusElement->GetElement("basic");
+    if (basicElement != NULL) {
+      PCaselessString value = basicElement->GetData();
+      if (value == "open")
+        info.m_state = SIPPresenceInfo::Available;
+      else if (value == "closed")
+        info.m_state = SIPPresenceInfo::NoPresence;
+      else
+        info.m_state = SIPPresenceInfo::Unchanged;
+    }
+
+    PXMLElement * noteElement = statusElement->GetElement("note");
+    if (!noteElement)
+      noteElement = rootElement->GetElement("note");
+    if (!noteElement)
+      noteElement = tupleElement->GetElement("note");
+    if (noteElement)
+      info.m_note = noteElement->GetData();
+
+    PXMLElement * contactElement = tupleElement->GetElement("contact");
+    if (contactElement != NULL)
+      info.m_contact = contactElement->GetData();
+
+    handler.GetEndPoint().OnPresenceInfoReceived(info);
+    return true;
+  }
+};
+
+static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
+
+
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
   if (participantElement == NULL)
