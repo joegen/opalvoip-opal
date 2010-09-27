@@ -266,7 +266,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   ownerCall.connectionsActive.Append(this);
 
   if (stringOptions != NULL)
-    m_connStringOptions = *stringOptions;
+    m_stringOptions = *stringOptions;
 
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
   maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
@@ -627,8 +627,34 @@ void OpalConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaF
   if (otherConnection != NULL && otherConnection != this)
     otherConnection->AdjustMediaFormats(local, mediaFormats, NULL);
   else {
-    mediaFormats.Remove(m_connStringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
+    mediaFormats.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
     endpoint.AdjustMediaFormats(local, *this, mediaFormats);
+
+    if (local) {
+      for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
+        PString key = m_stringOptions.GetKeyAt(i);
+        PINDEX colon = key.Find(':');
+        if (colon != P_MAX_INDEX) {
+          PString fmtName = key.Left(colon);
+          PString optName = key.Mid(colon+1);
+          if (!fmtName.IsEmpty() && !optName.IsEmpty()) {
+            PString optValue = m_stringOptions.GetDataAt(i);
+            OpalMediaFormatList::const_iterator iterFormat;
+            while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
+              OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
+              if (format.SetOptionValue(optName, optValue)) {
+                PTRACE(4, "OpalCon\tSet media format " << format
+                       << " option " << optName << " to \"" << optValue << '"');
+              }
+              else {
+                PTRACE(2, "OpalCon\tFailed to set media format " << format
+                       << " option " << optName << " to \"" << optValue << '"');
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -1346,7 +1372,7 @@ PString OpalConnection::GetLocalPartyURL() const
 
 bool OpalConnection::IsPresentationBlocked() const
 {
-  return m_connStringOptions.GetBoolean(OPAL_OPT_PRESENTATION_BLOCK);
+  return m_stringOptions.GetBoolean(OPAL_OPT_PRESENTATION_BLOCK);
 }
 
 
@@ -1448,28 +1474,23 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 void OpalConnection::SetStringOptions(const StringOptions & options, bool overwrite)
 {
   if (overwrite)
-    m_connStringOptions = options;
+    m_stringOptions = options;
   else {
     for (PINDEX i = 0; i < options.GetSize(); ++i)
-      m_connStringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
+      m_stringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
   }
 }
 
 void OpalConnection::OnApplyStringOptions()
 {
-  endpoint.GetManager().OnApplyStringOptions(*this, m_connStringOptions);
-}
+  endpoint.GetManager().OnApplyStringOptions(*this, m_stringOptions);
 
-void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
-{
-  PTRACE_IF(4, !stringOptions.IsEmpty(), "OpalCon\tApplying string options:\n" << stringOptions);
+  PTRACE_IF(4, !m_stringOptions.IsEmpty(), "OpalCon\tApplying string options:\n" << m_stringOptions);
 
   if (LockReadWrite()) {
     PCaselessString str;
 
-    m_connStringOptions = stringOptions;
-
-    str = stringOptions(OPAL_OPT_USER_INPUT_MODE);
+    str = m_stringOptions(OPAL_OPT_USER_INPUT_MODE);
     if (str == "RFC2833")
       SetSendUserInputMode(SendUserInputAsRFC2833);
     else if (str == "String")
@@ -1484,40 +1505,40 @@ void OpalConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOp
     }
 
 #if OPAL_PTLIB_DTMF
-    m_sendInBandDTMF   = stringOptions.GetBoolean(OPAL_OPT_ENABLE_INBAND_DTMF, m_sendInBandDTMF);
-    m_detectInBandDTMF = stringOptions.GetBoolean(OPAL_OPT_DETECT_INBAND_DTMF, m_detectInBandDTMF);
-    m_sendInBandDTMF   = stringOptions.GetBoolean(OPAL_OPT_SEND_INBAND_DTMF,   m_sendInBandDTMF);
+    m_sendInBandDTMF   = m_stringOptions.GetBoolean(OPAL_OPT_ENABLE_INBAND_DTMF, m_sendInBandDTMF);
+    m_detectInBandDTMF = m_stringOptions.GetBoolean(OPAL_OPT_DETECT_INBAND_DTMF, m_detectInBandDTMF);
+    m_sendInBandDTMF   = m_stringOptions.GetBoolean(OPAL_OPT_SEND_INBAND_DTMF,   m_sendInBandDTMF);
 
-    m_dtmfScaleMultiplier = stringOptions.GetInteger(OPAL_OPT_DTMF_MULT, m_dtmfScaleMultiplier);
-    m_dtmfScaleDivisor    = stringOptions.GetInteger(OPAL_OPT_DTMF_DIV,  m_dtmfScaleDivisor);
+    m_dtmfScaleMultiplier = m_stringOptions.GetInteger(OPAL_OPT_DTMF_MULT, m_dtmfScaleMultiplier);
+    m_dtmfScaleDivisor    = m_stringOptions.GetInteger(OPAL_OPT_DTMF_DIV,  m_dtmfScaleDivisor);
 #endif
 
-    m_autoStartInfo.Initialise(stringOptions);
+    m_autoStartInfo.Initialise(m_stringOptions);
 
-    if (stringOptions.GetBoolean(OPAL_OPT_DISABLE_JITTER))
+    if (m_stringOptions.GetBoolean(OPAL_OPT_DISABLE_JITTER))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
     else {
-      maxAudioJitterDelay = stringOptions.GetInteger(OPAL_OPT_MAX_JITTER, maxAudioJitterDelay);
-      minAudioJitterDelay = stringOptions.GetInteger(OPAL_OPT_MIN_JITTER, minAudioJitterDelay);
+      maxAudioJitterDelay = m_stringOptions.GetInteger(OPAL_OPT_MAX_JITTER, maxAudioJitterDelay);
+      minAudioJitterDelay = m_stringOptions.GetInteger(OPAL_OPT_MIN_JITTER, minAudioJitterDelay);
     }
 
 #if OPAL_HAS_MIXER
-    if (stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
-      m_recordingFilename = m_connStringOptions(OPAL_OPT_RECORD_AUDIO);
+    if (m_stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
+      m_recordingFilename = m_stringOptions(OPAL_OPT_RECORD_AUDIO);
 #endif
 
-    str = stringOptions(OPAL_OPT_ALERTING_TYPE);
+    str = m_stringOptions(OPAL_OPT_ALERTING_TYPE);
     if (!str.IsEmpty())
       SetAlertingType(str);
 
 #if P_LUA
     if (!m_luaScriptLoaded) {
-      str = stringOptions("script");
+      str = m_stringOptions("script");
       bool ok = true;
       if (!str.IsEmpty()) 
         ok = m_lua.LoadString(str);
       else {
-        str = stringOptions("scriptfile");
+        str = m_stringOptions("scriptfile");
         if (!str.IsEmpty()) 
           m_lua.LoadFile(str);
       }

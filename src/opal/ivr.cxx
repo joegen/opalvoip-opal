@@ -217,12 +217,11 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 
   PStringToString & vars = m_vxmlSession.GetSessionVars();
 
-  PString originator = m_connStringOptions(OPAL_OPT_ORIGINATOR_ADDRESS);
-  if (originator.IsEmpty())
-    originator = m_connStringOptions("Remote-Address");
+  PString originator = m_stringOptions(OPAL_OPT_ORIGINATOR_ADDRESS, m_stringOptions("Remote-Address"));
   if (!originator.IsEmpty()) {
     PIPSocketAddressAndPort ap(originator);
     vars.SetAt("Source-IP-Address", ap.GetAddress().AsString());
+    vars.SetAt("Source-IP-Port", ap.GetPort());
   }
 
   vars.SetAt("Time", PTime().AsString());

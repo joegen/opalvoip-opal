@@ -216,7 +216,7 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual bool IsNetworkConnection() const { return false; }
 
-    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    virtual void OnApplyStringOptions();
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual void AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const;
 
