@@ -620,10 +620,10 @@ PString OpalFaxConnection::GetPrefixName() const
 }
 
 
-void OpalFaxConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+void OpalFaxConnection::OnApplyStringOptions()
 {
-  m_stationId = stringOptions("stationid");
-  OpalConnection::ApplyStringOptions(stringOptions);
+  OpalConnection::OnApplyStringOptions();
+  m_stationId = m_stringOptions("stationid");
 }
 
 

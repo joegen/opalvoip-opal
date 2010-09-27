@@ -926,10 +926,10 @@ void OpalMixerConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 }
 
 
-void OpalMixerConnection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+void OpalMixerConnection::OnApplyStringOptions()
 {
-  SetListenOnly(stringOptions.GetBoolean(OPAL_OPT_LISTEN_ONLY, GetListenOnly()));
-  OpalLocalConnection::ApplyStringOptions(stringOptions);
+  OpalLocalConnection::OnApplyStringOptions();
+  SetListenOnly(m_stringOptions.GetBoolean(OPAL_OPT_LISTEN_ONLY, GetListenOnly()));
 }
 
 

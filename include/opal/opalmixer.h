@@ -808,7 +808,8 @@ class OpalMixerConnection : public OpalLocalConnection
       OpalMediaPatch & patch    ///< Patch being started
     );
 
-    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    /// Call back for connection to act on changed string options
+    virtual void OnApplyStringOptions();
   //@}
 
   /**@name Operations */

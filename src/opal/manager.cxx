@@ -1780,7 +1780,6 @@ bool OpalManager::StopRecording(const PString & callToken)
 
 void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & stringOptions)
 {
-  conn.ApplyStringOptions(stringOptions);
 }
 
 

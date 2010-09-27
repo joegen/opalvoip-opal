@@ -333,16 +333,16 @@ H323Connection::~H323Connection()
 }
 
 
-void H323Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+void H323Connection::OnApplyStringOptions()
 {
+  OpalConnection::OnApplyStringOptions();
+
   if (LockReadWrite()) {
-    PString str(stringOptions(OPAL_OPT_CALL_IDENTIFIER));
+    PString str = m_stringOptions(OPAL_OPT_CALL_IDENTIFIER);
     if (!str.IsEmpty())
       callIdentifier = PGloballyUniqueID(str);
     UnlockReadWrite();
   }
-
-  OpalConnection::ApplyStringOptions(stringOptions);
 }
 
 
