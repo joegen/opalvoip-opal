@@ -1956,9 +1956,9 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
   // get the message from transport/datagram into cmd and parse MIME
   PString cmd;
-  *stream >> cmd;
+  *stream >> cmd >> m_mime;
 
-  if (!stream->good() || cmd.IsEmpty()) {
+  if (!stream->good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
     if (stream == &datagram) {
       transport.setstate(ios::failbit);
       PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
@@ -2007,14 +2007,6 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
 
   if (m_versionMajor < 2) {
     PTRACE(2, "SIP\tInvalid version (" << m_versionMajor << ") received on " << transport);
-    return PFalse;
-  }
-
-  // Getthe MIME fields
-  *stream >> m_mime;
-  if (!stream->good() || m_mime.IsEmpty()) {
-    PTRACE(2, "SIP\tInvalid MIME received on " << transport);
-    transport.clear(); // Clear flags so BadRequest response is sent by caller
     return PFalse;
   }
 
