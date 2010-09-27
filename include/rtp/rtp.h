@@ -324,6 +324,12 @@ class OpalMediaStatistics : public PObject
 
     // Fax
 #if OPAL_FAX
+    enum {
+      FaxNotStarted = -2,
+      FaxInProgress = -1,
+      FaxSuccessful = 0,
+      FaxErrorBase  = 1
+    };
     struct Fax {
       Fax();
 

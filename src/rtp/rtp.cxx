@@ -490,7 +490,7 @@ OpalMediaStatistics::OpalMediaStatistics()
 
 #if OPAL_FAX
 OpalMediaStatistics::Fax::Fax()
-  : m_result(-2)
+  : m_result(OpalMediaStatistics::FaxNotStarted)
   , m_bitRate(9600)
   , m_compression(1)
   , m_errorCorrection(false)
