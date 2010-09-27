@@ -3446,9 +3446,9 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
-      OpalMediaStreamPtr stream = GetMediaStream (session_id, PFalse);
 
       if (!channelNumber.IsFromRemote()) { // Transmit channel
+        OpalMediaStreamPtr stream = GetMediaStream(session_id, false);
         if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
@@ -3461,6 +3461,7 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         }
       }
       else {
+        OpalMediaStreamPtr stream = GetMediaStream(session_id, true);
         // Enable/mute the receive channel depending on whether the remote endis held
         chan2->SetPause(IsLocalHold());
         stream->SetPaused(IsLocalHold());
