@@ -1778,7 +1778,7 @@ bool OpalManager::StopRecording(const PString & callToken)
 #endif
 
 
-void OpalManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & stringOptions)
+void OpalManager::OnApplyStringOptions(OpalConnection &, OpalConnection::StringOptions &)
 {
 }
 
