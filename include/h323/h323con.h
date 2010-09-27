@@ -334,7 +334,7 @@ class H323Connection : public OpalRTPConnection
       */
     virtual void CleanUpOnCallEnd();
 
-    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    virtual void OnApplyStringOptions();
   //@}
 
 

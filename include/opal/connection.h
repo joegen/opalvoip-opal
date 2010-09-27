@@ -1653,7 +1653,7 @@ class OpalConnection : public PSafeObject
   //@}
 
     /// Get the string options associated with this connection.
-    const StringOptions & GetStringOptions() const { return m_connStringOptions; }
+    const StringOptions & GetStringOptions() const { return m_stringOptions; }
 
     /// Set the string options associated with this connection.
     void SetStringOptions(
@@ -1661,7 +1661,7 @@ class OpalConnection : public PSafeObject
       bool overwrite
     );
 
-    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+    /// Call back for connection to act on changed string options
     virtual void OnApplyStringOptions();
 
 #if OPAL_HAS_MIXER
@@ -1796,7 +1796,7 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 
-    StringOptions m_connStringOptions;
+    StringOptions m_stringOptions;
 
 #if OPAL_HAS_MIXER
     PString       m_recordingFilename;
@@ -1862,6 +1862,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool, HoldConnection(), false);
     P_REMOVE_VIRTUAL(bool, RetrieveConnection(), false);
     P_REMOVE_VIRTUAL(bool, IsConnectionOnHold(bool), false);
+    P_REMOVE_VIRTUAL_VOID(ApplyStringOptions(OpalConnection::StringOptions &));
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

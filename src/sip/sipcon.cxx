@@ -272,10 +272,10 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   const PStringToString & query = adjustedDestination.GetQueryVars();
   for (PINDEX i = 0; i < query.GetSize(); ++i)
-    m_connStringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i), query.GetDataAt(i));
+    m_stringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i), query.GetDataAt(i));
   adjustedDestination.SetQuery(PString::Empty());
 
-  m_connStringOptions.ExtractFromURL(adjustedDestination);
+  m_stringOptions.ExtractFromURL(adjustedDestination);
 
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
@@ -323,7 +323,7 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
   if (destination.IsEmpty())
     transport = NULL;
   else
-    transport = endpoint.CreateTransport(destination, m_connStringOptions(OPAL_OPT_INTERFACE));
+    transport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
   deleteTransport = true;
 
   if (transport != NULL)
@@ -472,7 +472,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   // If we want to get NOTIFYs we have to clear the old connection on the progress message
   // where the connection is transfered. See OnTransferNotify().
   const char * referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB,
-            m_connStringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true)) ? "true" : "false";
+                m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true)) ? "true" : "false";
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
   if (call == NULL) {
@@ -901,7 +901,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   if (mediaType == OpalMediaType::Audio()) {
     SDPAudioMediaDescription * audioMedia = dynamic_cast<SDPAudioMediaDescription *>(localMedia);
     if (audioMedia != NULL)
-      audioMedia->SetOfferPTime(m_connStringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME));
+      audioMedia->SetOfferPTime(m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME));
 
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
@@ -1395,7 +1395,7 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport &, void * param)
 bool SIPConnection::WriteINVITE()
 {
   const SIPURL & requestURI = m_dialog.GetRequestURI();
-  SIPURL myAddress = m_connStringOptions(OPAL_OPT_CALLING_PARTY_URL);
+  SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())
     myAddress = endpoint.GetRegisteredPartyName(requestURI, *transport);
 
@@ -1406,15 +1406,15 @@ bool SIPConnection::WriteINVITE()
   // only allow override of calling party number if the local party
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
-  PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME)));
+  PString number(m_stringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_stringOptions(OPAL_OPT_CALLING_PARTY_NAME)));
   if (!number.IsEmpty())
     myAddress.SetUserName(number);
 
-  PString name(m_connStringOptions(OPAL_OPT_CALLING_DISPLAY_NAME));
+  PString name(m_stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME));
   if (!name.IsEmpty())
     myAddress.SetDisplayName(name);
 
-  PString domain(m_connStringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
+  PString domain(m_stringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
   if (!domain.IsEmpty())
     myAddress.SetHostName(domain);
 
@@ -1429,7 +1429,7 @@ bool SIPConnection::WriteINVITE()
   m_needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
-  if (!m_connStringOptions.Contains(SIP_HEADER_CONTACT)) {
+  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT)) {
     SIPURL contact = invite->GetMIME().GetContact();
     if (!number.IsEmpty())
       contact.SetUserName(number);
@@ -1440,7 +1440,7 @@ bool SIPConnection::WriteINVITE()
     invite->GetMIME().SetContact(contact);
   }
 
-  SIPURL redir(m_connStringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
+  SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
   if (!redir.IsEmpty())
     invite->GetMIME().SetReferredBy(redir.AsQuotedString());
 
@@ -1474,9 +1474,9 @@ PBoolean SIPConnection::SetUpConnection()
 
   OnApplyStringOptions();
 
-  if (m_connStringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
+  if (m_stringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
     SIPMIMEInfo mime;
-    mime.SetRoute(m_connStringOptions[SIP_HEADER_PREFIX"Route"]);
+    mime.SetRoute(m_stringOptions[SIP_HEADER_PREFIX"Route"]);
     m_dialog.SetRouteSet(mime.GetRoute());
   }
 
@@ -1964,7 +1964,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   }
 
   if (GetPhase() < EstablishedPhase) {
-    PString referToken = m_connStringOptions(OPAL_SIP_REFERRED_CONNECTION);
+    PString referToken = m_stringOptions(OPAL_SIP_REFERRED_CONNECTION);
     if (!referToken.IsEmpty()) {
       PSafePtr<SIPConnection> referred = endpoint.GetSIPConnectionWithLock(referToken, PSafeReadOnly);
       if (referred != NULL) {
@@ -2954,12 +2954,12 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       mime.AddSupported("100rel");
   }
 
-  for (PINDEX i = 0; i < m_connStringOptions.GetSize(); ++i) {
-    PCaselessString key = m_connStringOptions.GetKeyAt(i);
+  for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
+    PCaselessString key = m_stringOptions.GetKeyAt(i);
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
-      PString data = m_connStringOptions.GetDataAt(i);
+      PString data = m_stringOptions.GetDataAt(i);
       if (!data.IsEmpty()) {
-        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_connStringOptions.GetDataAt(i));
+        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_stringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
           mime.AddRequire("replaces");
       }
@@ -2974,10 +2974,10 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     mime.SetFrom(from.AsQuotedString());
   }
 
-  PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
+  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (!externalSDP.IsEmpty())
     request.SetEntityBody(externalSDP);
-  else if (m_connStringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
     if (m_needReINVITE)
       ++m_sdpVersion;
 
@@ -3009,7 +3009,7 @@ bool SIPConnection::SendInviteOK()
 {
   SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
 
-  PString externalSDP = m_connStringOptions(OPAL_OPT_EXTERNAL_SDP);
+  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (externalSDP.IsEmpty()) {
     if (!OnSendAnswerSDP(m_rtpSessions, sdpOut))
       return false;
