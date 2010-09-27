@@ -771,9 +771,12 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
       synchronousOnRelease = false;
-      patch.ExecuteCommand(OpalFaxTerminate(), false);
-      patch.GetStatistics(m_finalStatistics, false);
+#if OPAL_STATISTICS
+      InternalGetStatistics(m_finalStatistics, true);
       OnFaxCompleted(m_finalStatistics.m_fax.m_result != 0);
+#else
+      OnFaxCompleted(true);
+#endif
     }
   }
 
@@ -816,7 +819,15 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 }
 
 
+#if OPAL_STATISTICS
+
 void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  InternalGetStatistics(statistics, false);
+}
+
+
+void OpalFaxConnection::InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const
 {
   if (m_finalStatistics.m_fax.m_result >= 0) {
     statistics = m_finalStatistics;
@@ -840,8 +851,13 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
     }
   }
 
+  if (terminate)
+    stream->ExecuteCommand(OpalFaxTerminate());
+
   stream->GetStatistics(statistics);
 }
+
+#endif
 
 
 void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)

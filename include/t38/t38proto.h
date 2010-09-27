@@ -298,6 +298,7 @@ class OpalFaxConnection : public OpalConnection
     PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 #if OPAL_STATISTICS
+    void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
     OpalMediaStatistics m_finalStatistics;
 #endif
 
