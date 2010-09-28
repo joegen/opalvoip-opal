@@ -55,6 +55,8 @@ void FaxOPAL::Main()
 
   args.Parse("a-audio."
              "d-directory:"
+             "D-station-id:"
+             "E-suppress-ced."
              "F-no-fast."
              "g-gk-host:"
              "G-gk-id:"
@@ -65,16 +67,20 @@ void FaxOPAL::Main()
              "L-lines:"
              "m-mode:"
              "N-stun:"
+             "O-fax-only."
+#if PTRACING
+             "o-output:"             "-no-output."
+#endif
              "p-password:"
              "P-proxy:"
              "r-register:"
              "S-sip:"
              "T-timeout:"
-             "u-user:"
 #if PTRACING
-             "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
 #endif
+             "u-user:"
+             "X-switch-time:"
              , FALSE);
 
 #if PTRACING
@@ -90,6 +96,10 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -a or --audio           : Send fax as G.711 audio\n"
+            "  -O or --fax-only        : T.38 fax only mode, no audio phase\n"
+            "  -D or --station-id id   : Set T.30 Station Identifier string\n"
+            "  -E or --suppress-ced    : Suppress transmission of CED tone\n"
+            "  -X or --switch-time n   : Set fail safe T.38 switch time in seconds\n"
             "  -T or --timeout n       : Set timeout to wait for incoming fax in seconds\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
@@ -226,11 +236,25 @@ void FaxOPAL::Main()
   }
 
 
+  if (args.HasOption('O')) {
+    OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
+    OpalMediaType::Audio().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
+  }
+  OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
+
+
   OpalConnection::StringOptions stringOptions;
   if (args.HasOption('I'))
     stringOptions.SetAt(OPAL_OPT_DETECT_INBAND_DTMF, "false");
   if (args.HasOption('i'))
     stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
+  if (args.HasOption('D'))
+    stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString('D'));
+  if (args.HasOption('E'))
+    stringOptions.SetAt(OPAL_SUPPRESS_CED, "true");
+  if (args.HasOption('X'))
+    stringOptions.SetAt(OPAL_T38_SWITCH_TIME, args.GetOptionString('X').AsUnsigned());
+
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
