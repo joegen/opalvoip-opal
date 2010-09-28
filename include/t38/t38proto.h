@@ -53,6 +53,10 @@ class PASN_OctetString;
 class OpalFaxConnection;
 
 
+#define OPAL_OPT_STATION_ID  "Station-Id"      ///< String option for fax station ID string
+#define OPAL_SUPPRESS_CED    "Suppress-CED"    ///< Suppress transmission of CED tone
+#define OPAL_T38_SWITCH_TIME "T38-Switch-Time" ///< Seconds for fail safe switch to T.38 mode
+
 #define OPAL_FAX_TIFF_FILE "TIFF-File"
 
 
