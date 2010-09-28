@@ -592,7 +592,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_filename(filename)
   , m_receiving(receiving)
   , m_disableT38(disableT38)
-  , m_releaseTimeout(0, 0, 1)
+  , m_releaseTimeout(0, 30, 1)
   , m_tiffFileFormat(TIFF_File_FormatName)
   , m_state(disableT38 ? e_CompletedSwitch : e_AwaitingSwitchToT38)
 {
@@ -623,7 +623,17 @@ PString OpalFaxConnection::GetPrefixName() const
 void OpalFaxConnection::OnApplyStringOptions()
 {
   OpalConnection::OnApplyStringOptions();
-  m_stationId = m_stringOptions("stationid");
+  m_stationId = m_stringOptions(OPAL_OPT_STATION_ID);
+
+  PString str = m_stringOptions(OPAL_T38_SWITCH_TIME);
+  if (!str.IsEmpty())
+    m_switchTimeout.SetInterval(0, str.AsUnsigned());
+  else if (m_receiving) {
+    if (m_stringOptions.GetBoolean(OPAL_SUPPRESS_CED))
+      m_switchTimeout.SetInterval(0, 5);
+    else
+      m_switchTimeout.SetInterval(0, 10);
+  }
 }
 
 
@@ -727,7 +737,7 @@ void OpalFaxConnection::OnEstablished()
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
   if (m_state == e_AwaitingSwitchToT38) {
-    m_faxTimer.SetInterval(1000);
+    m_faxTimer.SetInterval(m_receiving ? 5000 : 1000);
     PTRACE(3, "T38\tStarting timer for CNG/CED tone");
   }
 }
@@ -797,8 +807,8 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
-  // Not yet switched and got a CED from the remote system, start switch
-  if (m_state == e_AwaitingSwitchToT38 && !m_receiving && toupper(tone) == 'Y') {
+  // Not yet switched and got a CNG/CED from the remote system, start switch
+  if (m_state == e_AwaitingSwitchToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y')) {
     PTRACE(3, "T38\tRequesting mode change in response to CED");
     PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
   }
@@ -872,19 +882,20 @@ void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
       Release(OpalConnection::EndedByCapabilityExchange);
     }
-    else if (m_receiving) {
-      PTRACE(2, "T38\tSwitching to T.38 mode");
-      PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
-    }
-    else
-    if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
+    else if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
       PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
     }
-    else {
+    else if (!m_receiving) {
       // Cadence for CNG is 500ms on 3 seconds off
       OpalConnection::OnUserInputTone('X', 500);
       m_faxTimer = 3500;
+    }
+    else {
+      // Cadence for CED is 3 seconds on once only
+      if (!m_stringOptions.GetBoolean(OPAL_SUPPRESS_CED))
+        OpalConnection::OnUserInputTone('Y', 3000);
+      m_faxTimer = m_switchTimeout - elapsed;
     }
     UnlockReadOnly();
   }
