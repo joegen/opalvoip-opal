@@ -54,6 +54,7 @@ void FaxOPAL::Main()
   PArgList & args = GetArguments();
 
   args.Parse("a-audio."
+             "A-no-audio."
              "d-directory:"
              "D-station-id:"
              "E-suppress-ced."
@@ -81,6 +82,7 @@ void FaxOPAL::Main()
 #endif
              "u-user:"
              "X-switch-time:"
+             "sip-ui:"
              , FALSE);
 
 #if PTRACING
@@ -96,6 +98,7 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -a or --audio           : Send fax as G.711 audio\n"
+            "  -A or --no-audio        : Do not send fax as G.711 audio\n"
             "  -O or --fax-only        : T.38 fax only mode, no audio phase\n"
             "  -D or --station-id id   : Set T.30 Station Identifier string\n"
             "  -E or --suppress-ced    : Suppress transmission of CED tone\n"
@@ -107,6 +110,7 @@ void FaxOPAL::Main()
             "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
             "  -r or --register server : SIP registration to server.\n"
             "  -P or --proxy url       : SIP outbound proxy.\n"
+            "        --sip-ui mode     : SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
 #endif
 #if OPAL_H323
             "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
@@ -170,6 +174,20 @@ void FaxOPAL::Main()
 
     if (args.HasOption('P'))
       sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
+
+    PString str = args.GetOptionString("sip-ui");                                                                     
+    if (str *= "inband")                                                                                             
+      sip->SetSendUserInputMode(OpalConnection::SendUserInputInBand);                                            
+    else if (str *= "rfc2833")                                                                                             
+      sip->SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);                                            
+    else if (str *= "info-tone")                                                                                      
+      sip->SetSendUserInputMode(OpalConnection::SendUserInputAsTone);                                               
+    else if (str *= "info-string")                                                                                    
+      sip->SetSendUserInputMode(OpalConnection::SendUserInputAsString);
+    else if (!(str *= "")) {
+      cerr << "Unknown --sip-ui option " << str  << endl;
+      return;
+    }
 
     if (args.HasOption('r')) {
       SIPRegister::Params params;
@@ -250,11 +268,12 @@ void FaxOPAL::Main()
     stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
   if (args.HasOption('D'))
     stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString('D'));
+  if (args.HasOption('A'))
+    stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
   if (args.HasOption('E'))
     stringOptions.SetAt(OPAL_SUPPRESS_CED, "true");
   if (args.HasOption('X'))
     stringOptions.SetAt(OPAL_T38_SWITCH_TIME, args.GetOptionString('X').AsUnsigned());
-
 
   if (args.GetCount() == 1)
     cout << "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
