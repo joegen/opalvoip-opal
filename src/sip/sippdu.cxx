@@ -1025,6 +1025,20 @@ PString SIPMIMEInfo::GetAllow() const
 }
 
 
+unsigned SIPMIMEInfo::GetAllowBitMask() const
+{
+  unsigned bits = 0;
+
+  PCaselessString allowedMethods = GetAllow();
+  for (unsigned i = 0; i < SIP_PDU::NumMethods; ++i) {
+    if (allowedMethods.Find(MethodNames[i]) != P_MAX_INDEX)
+      bits |= (1 << i);
+  }
+
+  return bits;
+}
+
+
 void SIPMIMEInfo::SetAllow(const PString & v)
 {
   SetAt("Allow", v);   // no compact form

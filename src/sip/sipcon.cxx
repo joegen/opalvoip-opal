@@ -226,6 +226,10 @@ SIPConnection::SIPConnection(OpalCall & call,
   , endpoint(ep)
   , transport(newTransport)
   , deleteTransport(newTransport == NULL || !newTransport->IsReliable())
+  , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
+                     (1<<SIP_PDU::Method_ACK   )|
+                     (1<<SIP_PDU::Method_CANCEL)|
+                     (1<<SIP_PDU::Method_BYE   )) // Minimum set
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
   , originalInvite(NULL)
@@ -459,6 +463,11 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   // There is still an ongoing REFER transaction 
   if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
+    return false;
+  }
+
+  if ((m_allowedMethods&(1<<SIP_PDU::Method_REFER)) == 0) {
+    PTRACE(2, "SIP\tRemote does not allow REFER message.");
     return false;
   }
 
@@ -1701,6 +1710,8 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     return;
   }
   m_lastRxCSeq[method] = sequenceNumber;
+
+  m_allowedMethods |= pdu.GetMIME().GetAllowBitMask();
 
   switch (method) {
     case SIP_PDU::Method_INVITE :
@@ -3321,6 +3332,11 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * reply)
 {
+  if ((m_allowedMethods&(1<<SIP_PDU::Method_OPTIONS)) == 0) {
+    PTRACE(2, "SIP\tRemote does not allow OPTIONS message.");
+    return false;
+  }
+
   PSafePtr<SIPTransaction> transaction = new SIPOptions(*this, params);
   if (reply == NULL)
     return transaction->Start();
@@ -3333,6 +3349,11 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
 
 bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 {
+  if ((m_allowedMethods&(1<<SIP_PDU::Method_INFO)) == 0) {
+    PTRACE(2, "SIP\tRemote does not allow INFO message.");
+    return false;
+  }
+
   PSafePtr<SIPTransaction> transaction = new SIPInfo(*this, params);
   if (reply == NULL)
     return transaction->Start();
@@ -3358,6 +3379,11 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
     }
   }
 #endif
+
+  if ((m_allowedMethods&(1<<SIP_PDU::Method_MESSAGE)) == 0) {
+    PTRACE(2, "SIP\tRemote does not allow MESSAGE message.");
+    return false;
+  }
 
   PTRACE(3, "SIP\tSending MESSAGE within call");
 
