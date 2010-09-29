@@ -279,6 +279,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetAcceptLanguage(const PString & v);
 
     PString GetAllow() const;
+    unsigned GetAllowBitMask() const;
     void SetAllow(const PString & v);
 
     PString GetCallID() const;
