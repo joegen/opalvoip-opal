@@ -920,8 +920,12 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
   }
   else {
     PTRACE(4, "T38\tMode change request to fax failed, falling back to G.711");
-    m_disableT38 = true;
-    SwitchFaxMediaStreams(false);
+    if (m_stringOptions.GetBoolean(OPAL_NO_G111_FAX))
+      OnFaxCompleted(true);
+    else {
+      m_disableT38 = true;
+      SwitchFaxMediaStreams(false);
+    }
   }
 
   m_state = e_CompletedSwitch;
