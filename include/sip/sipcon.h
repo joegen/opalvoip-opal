@@ -640,6 +640,7 @@ class SIPConnection : public OpalRTPConnection
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
     bool                  deleteTransport;
+    unsigned              m_allowedMethods;
     PStringList           m_allowedEvents;
 
     enum HoldState {
