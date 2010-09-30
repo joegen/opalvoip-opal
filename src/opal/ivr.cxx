@@ -437,7 +437,7 @@ PBoolean OpalIVRMediaStream::Open()
 
 PBoolean OpalIVRMediaStream::Close()
 {
-  if (connection.GetPhase() >= OpalConnection::ReleasingPhase)
+  if (connection.IsReleased())
     return OpalRawMediaStream::Close();
 
   // Pause the vxmlSession here ...

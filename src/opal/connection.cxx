@@ -432,7 +432,7 @@ void OpalConnection::Release(CallEndReason reason)
 {
   {
     PWaitAndSignal m(phaseMutex);
-    if (phase >= ReleasingPhase) {
+    if (IsReleased()) {
       PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
     }
@@ -488,9 +488,11 @@ void OpalConnection::OnReleased()
 {
   PTRACE(3, "OpalCon\tOnReleased " << *this);
 
+  CloseMediaStreams();
+
   endpoint.OnReleased(*this);
 
-  CloseMediaStreams();
+  SetPhase(ReleasedPhase);
 }
 
 
@@ -1272,9 +1274,7 @@ void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) &&
-      GetPhase() < ReleasingPhase &&
-      LockReadWrite()) {
+  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) && !IsReleased() && LockReadWrite()) {
     reply = userInputString;
     userInputString = PString();
     UnlockReadWrite();

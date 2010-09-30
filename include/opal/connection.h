@@ -560,7 +560,13 @@ class OpalConnection : public PSafeObject
        This indicates the current phase of the connection sequence. Whether
        all phases and the transitions between phases is protocol dependent.
       */
-    inline Phases GetPhase() const { return phase; }
+    __inline Phases GetPhase() const { return phase; }
+
+    /// Return true if connection is in the established phase.
+    __inline bool IsEstablished() const { return phase == EstablishedPhase; }
+
+    /// Return true if connection is in the established phase.
+    __inline bool IsReleased() const { return phase >= ReleasingPhase; }
 
     /**Set the phase of the connection.
        Note that this is primarily for internal use and calling from user code
@@ -572,9 +578,9 @@ class OpalConnection : public PSafeObject
 
     /**Get the reason for this connection shutting down.
        Note that this function is only generally useful in the
-       H323EndPoint::OnConnectionCleared() function. This is due to the
+       OpalEndPoint::OnClearedCall() function. This is due to the
        connection not being cleared before that, and the object not even
-       exiting after that.
+       existing after that.
 
        If the call is still active then this will return NumCallEndReasons.
       */
