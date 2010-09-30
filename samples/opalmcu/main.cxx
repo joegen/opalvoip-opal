@@ -51,44 +51,22 @@ ConfOPAL::~ConfOPAL()
 
 void ConfOPAL::Main()
 {
+  m_manager = new MyManager();
+
   PArgList & args = GetArguments();
 
-  args.Parse("a-attendant:"
-             "c-cli:"
-             "g-gk-host:"
-             "G-gk-id:"
-             "h-help."
-             "H-h323:"
-             "m-moderator:"
-             "n-name:"
-             "N-stun:"
-             "o-output:"
-             "p-password:"
-             "P-proxy:"
-             "r-register:"
-             "s-size:"
-             "S-sip:"
-             "t-trace."
-             "u-user:"
-             "V-no-video."
-             "-rtp-base:"
-             "-rtp-max:"
-             "-rtp-tos:"
-             "-rtp-size:"
-             "-pass-thru."
-             , FALSE);
-
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
-
-  if (args.HasOption('h')) {
+  if (!args.Parse(m_manager->GetArgumentSpec() +
+                  "a-attendant:"
+                  "c-cli:"
+                  "m-moderator:"
+                  "n-name:"
+                  "s-size:"
+                  "V-no-video."
+                  "-pass-thru.", false) ||
+       args.HasOption('h')) {
     cerr << "usage: " << GetFile().GetTitle() << " [ options ] [ name ]\n"
             "\n"
             "Available options are:\n"
-            "  -h or --help            : print this help message.\n"
             "  -a or --attendant vxml  : VXML script to run for incoming calls not directed.\n"
             "                          : to a specific conference. If absent, then ad-hoc\n"
             "                          : conferences are created.\n"
@@ -100,113 +78,13 @@ void ConfOPAL::Main()
             "  -V or --no-video        : Disable video for ad-hoc conference.\n"
             "  -s or --size            : Set default video size for ad-hoc conference.\n"
 #endif
-            "  -u or --user name       : Set local username for registration, defaults to\n"
-            "                          : Operating System username.\n"
-            "  -p or --password pwd    : Set password for authentication.\n"
-#if OPAL_SIP
-            "  -S or --sip interface   : SIP interface to listen on, defaults to udp$*:5060,\n"
-            "                          : 'x' disables SIP.\n"
-            "  -r or --register server : SIP registration to server.\n"
-            "  -P or --proxy url       : SIP outbound proxy.\n"
-#endif
-#if OPAL_H323
-            "  -H or --h323 interface  : H.323 interface to listen on, defaults to tcp$*:1720,\n"
-            "                          : 'x' disables H.323.\n"
-            "  -g or --gk-host host    : H.323 gatekeeper host.\n"
-            "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
-#endif
-            "  -N or --stun server     : Set NAT traversal STUN server.\n"
-            "        --rtp-base port   : Set RTP port range base, default 5000.\n"
-            "        --rtp-max port    : Set RTP port range maximum, default 5999.\n"
-            "        --rtp-tos tos     : Set RTP Type Of Service (DiffServ code).\n"
-            "        --rtp-size size   : Set RTP maximum payload size in bytes.\n"
-#if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"
-            "  -t or --trace           : verbosity of error log (more times for more detail)\n"
-#endif
             "\n"
-            "\n";
+         << m_manager->GetArgumentUsage();
     return;
   }
 
-  m_manager = new MyManager();
-
-  PIPSocket::InterfaceTable interfaceTable;
-  if (PIPSocket::GetInterfaceTable(interfaceTable))
-    cout << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
-              << setfill('\n') << interfaceTable << setfill(' ') << endl;
-
-  if (args.HasOption('N')) {
-    PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
-    cout << "STUN server \"" << m_manager->GetSTUNClient()->GetServer() << "\" replies " << nat;
-    PIPSocket::Address externalAddress;
-    if (nat != PSTUNClient::BlockedNat && m_manager->GetSTUNClient()->GetExternalAddress(externalAddress))
-      cout << " with address " << externalAddress;
-    cout << endl;
-  }
-
-  if (args.HasOption("rtp-base") || args.HasOption("rtp-max"))
-    m_manager->SetRtpIpPorts(args.GetOptionString("rtp-base", psprintf("%u", m_manager->GetRtpIpPortBase())).AsUnsigned(),
-                             args.GetOptionString("rtp-max").AsUnsigned());
-  if (args.HasOption("rtp-tos"))
-    m_manager->SetRtpIpTypeofService(args.GetOptionString("rtp-tos").AsUnsigned());
-  if (args.HasOption("rtp-size"))
-    m_manager->SetMaxRtpPayloadSize(args.GetOptionString("rtp-size").AsUnsigned());
-
-  if (args.HasOption('u'))
-    m_manager->SetDefaultUserName(args.GetOptionString('u'));
-
-  PCaselessString interfaces;
-
-#if OPAL_SIP
-  // Set up SIP
-  interfaces = args.GetOptionString('S');
-  if (interfaces != "x") {
-    SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-    if (!sip->StartListeners(interfaces.Lines())) {
-      cerr << "Could not start SIP listeners." << endl;
-      return;
-    }
-    cout << "SIP listening on:\n" << setfill('\n') << sip->GetListeners() << setfill(' ') << endl;
-
-    if (args.HasOption('P'))
-      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
-
-    if (args.HasOption('r')) {
-      SIPRegister::Params params;
-      params.m_addressOfRecord = args.GetOptionString('r');
-      params.m_password = args.GetOptionString('p');
-      params.m_expire = 300;
-
-      PString aor;
-      if (!sip->Register(params, aor)) {
-        cerr << "Could not start SIP registration to " << params.m_addressOfRecord << endl;
-        return;
-      }
-    }
-
-    m_manager->AddRouteEntry("sip.*:.* = mcu:<du>");
-  }
-#endif // OPAL_SIP
-
-
-#if OPAL_H323
-  // Set up H.323
-  interfaces = args.GetOptionString('H');
-  if (interfaces != "x") {
-    H323EndPoint * h323 = new H323EndPoint(*m_manager);
-    if (!h323->StartListeners(interfaces.Lines())) {
-      cerr << "Could not start H.323 listeners." << endl;
-      return;
-    }
-    cout << "H.323 listening on:\n" << setfill('\n') << h323->GetListeners() << setfill(' ') << endl;
-
-    if (args.HasOption('g') || args.HasOption('G'))
-      h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
-
-    m_manager->AddRouteEntry("h323.*:.* = mcu:<du>");
-  }
-#endif // OPAL_H323
+  if (!m_manager->Initialise(args, true))
+    return;
 
   // Set up PCSS to do speaker playback
   new MyPCSSEndPoint(*m_manager);
@@ -238,6 +116,11 @@ void ConfOPAL::Main()
   }
 
   MyMixerEndPoint * mixer = m_manager->m_mixer = new MyMixerEndPoint(*m_manager, info);
+
+
+  m_manager->AddRouteEntry("sip.*:.* = mcu:<du>");
+  m_manager->AddRouteEntry("h323.*:.* = mcu:<du>");
+
 
   // Wait for call to come in and finish
   PCLI * cli;

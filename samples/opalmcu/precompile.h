@@ -28,7 +28,7 @@
 
 #include <ptlib.h>
 #include <ptclib/cli.h>
-#include <opal/manager.h>
+#include <opal/console_mgr.h>
 #include <opal/opalmixer.h>
 #include <opal/ivr.h>
 #include <opal/pcss.h>

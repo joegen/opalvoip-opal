@@ -405,6 +405,9 @@
     <ClCompile Include="..\opal\connection.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
+    <ClCompile Include="..\opal\console_mgr.cxx">
+      <Filter>Source Files\OPAL</Filter>
+    </ClCompile>
     <ClCompile Include="..\opal\endpoint.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
@@ -804,6 +807,9 @@
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\opal\connection.h">
+      <Filter>Header Files\OPAL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\console_mgr.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\opal\endpoint.h">

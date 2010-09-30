@@ -128,9 +128,9 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 
-class MyManager : public OpalManager
+class MyManager : public OpalManagerConsole
 {
-    PCLASSINFO(MyManager, OpalManager)
+    PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
     MyManager();
