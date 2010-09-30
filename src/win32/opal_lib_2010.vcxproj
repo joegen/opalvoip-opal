@@ -290,6 +290,7 @@
     <ClCompile Include="..\lids\lidpluginmgr.cxx" />
     <ClCompile Include="..\opal\call.cxx" />
     <ClCompile Include="..\opal\connection.cxx" />
+    <ClCompile Include="..\opal\console_mgr.cxx" />
     <ClCompile Include="..\opal\endpoint.cxx" />
     <ClCompile Include="..\opal\guid.cxx" />
     <ClCompile Include="..\opal\ivr.cxx" />
@@ -430,6 +431,7 @@
     <ClInclude Include="..\..\include\opal\buildopts.h" />
     <ClInclude Include="..\..\include\opal\call.h" />
     <ClInclude Include="..\..\include\opal\connection.h" />
+    <ClInclude Include="..\..\include\opal\console_mgr.h" />
     <ClInclude Include="..\..\include\opal\endpoint.h" />
     <ClInclude Include="..\..\include\opal\guid.h" />
     <ClInclude Include="..\..\include\opal\ivr.h" />

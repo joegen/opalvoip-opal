@@ -119,6 +119,7 @@ VPATH_C := $(OPAL_SRCDIR)/codec
 # Source files for library
 
 SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
+           $(OPAL_SRCDIR)/opal/console_mgr.cxx \
            $(OPAL_SRCDIR)/opal/endpoint.cxx \
            $(OPAL_SRCDIR)/opal/rtpep.cxx \
            $(OPAL_SRCDIR)/opal/connection.cxx \

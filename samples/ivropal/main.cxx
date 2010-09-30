@@ -44,61 +44,19 @@ IvrOPAL::IvrOPAL()
 }
 
 
-IvrOPAL::~IvrOPAL()
-{
-  delete m_manager;
-}
-
-
 void IvrOPAL::Main()
 {
+  m_manager = new MyManager();
+
   PArgList & args = GetArguments();
 
-  args.Parse("g-gk-host:"
-             "G-gk-id:"
-             "h-help."
-             "H-h323:"
-             "N-stun:"
-             "p-password:"
-             "P-proxy:"
-             "r-register:"
-             "S-sip:"
-             "u-user:"
-#if PTRACING
-             "t-trace."              "-no-trace."
-             "o-output:"             "-no-output."
-#endif
-             , FALSE);
-
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
-
-  if (args.HasOption('h') || args.GetCount() == 0) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] vxml [ url ]\n"
+  if (!args.Parse(m_manager->GetArgumentSpec()) || args.HasOption('h') || args.GetCount() == 0) {
+    PString name = GetFile().GetTitle();
+    cerr << "usage: " << name << " [ options ] vxml [ url ]\n"
             "\n"
             "Available options are:\n"
-            "  -h or --help            : print this help message.\n"
-            "  -u or --user name       : Set local username, defaults to OS username.\n"
-            "  -p or --password pwd    : Set password for authentication.\n"
-#if OPAL_SIP
-            "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
-            "  -r or --register server : SIP registration to server.\n"
-            "  -P or --proxy url       : SIP outbound proxy.\n"
-#endif
-#if OPAL_H323
-            "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
-            "  -g or --gk-host host    : H.323 gatekeeper host.\n"
-            "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
-#endif
-            "  -N or --stun server     : Set NAT traversal STUN server.\n"
-#if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"       
-            "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-            "\n"
+         << m_manager->GetArgumentUsage()
+         << "\n"
             "where vxml is a VXML script, a URL to a VXML script or a WAV file, or a\n"
             "series of commands separated by ';'.\n"
             "\n"
@@ -122,90 +80,26 @@ void IvrOPAL::Main()
             "will continuosly listen for incoming calls and execute the script on each\n"
             "call. Simultaneous calls to the limits of the operating system arre possible.\n"
             "\n"
-            "e.g. " << GetFile().GetTitle() << " file://message.wav sip:fred@bloggs.com\n"
-            "     " << GetFile().GetTitle() << " http://voicemail.vxml\n"
-            "     " << GetFile().GetTitle() << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
+            "e.g. " << name << " file://message.wav sip:fred@bloggs.com\n"
+            "     " << name << " http://voicemail.vxml\n"
+            "     " << name << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
             "\n";
     return;
   }
 
-  m_manager = new MyManager();
-
-  if (args.HasOption('N')) {
-    PSTUNClient::NatTypes nat = m_manager->SetSTUNServer(args.GetOptionString('N'));
-    cout << "STUN server \"" << m_manager->GetSTUNClient()->GetServer() << "\" replies " << nat;
-    PIPSocket::Address externalAddress;
-    if (nat != PSTUNClient::BlockedNat && m_manager->GetSTUNClient()->GetExternalAddress(externalAddress))
-      cout << " with address " << externalAddress;
-    cout << endl;
-  }
-
-  if (args.HasOption('u'))
-    m_manager->SetDefaultUserName(args.GetOptionString('u'));
-
-  PCaselessString interfaces;
-
-#if OPAL_SIP
-  // Set up SIP
-  interfaces = args.GetOptionString('S');
-  if (interfaces != "x") {
-    MySIPEndPoint * sip  = new MySIPEndPoint(*m_manager);
-    if (!sip->StartListeners(interfaces.Lines())) {
-      cerr << "Could not start SIP listeners." << endl;
-      return;
-    }
-
-    if (args.HasOption('P'))
-      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
-
-    if (args.HasOption('r')) {
-      SIPRegister::Params params;
-      params.m_addressOfRecord = args.GetOptionString('r');
-      params.m_password = args.GetOptionString('p');
-      params.m_expire = 300;
-
-      PString aor;
-      if (!sip->Register(params, aor)) {
-        cerr << "Could not start SIP registration to " << params.m_addressOfRecord << endl;
-        return;
-      }
-
-      sip->m_completed.Wait();
-
-      if (!sip->IsRegistered(aor)) {
-        cerr << "Could not complete SIP registration for " << aor << endl;
-        return;
-      }
-    }
-
-    m_manager->AddRouteEntry("sip.*:.* = ivr:");
-    m_manager->AddRouteEntry("ivr:.* = sip:<da>");
-  }
-#endif // OPAL_SIP
-
-
-#if OPAL_H323
-  // Set up H.323
-  interfaces = args.GetOptionString('H');
-  if (interfaces != "x") {
-    H323EndPoint * h323 = new H323EndPoint(*m_manager);
-    if (!h323->StartListeners(interfaces.Lines())) {
-      cerr << "Could not start H.323 listeners." << endl;
-      return;
-    }
-
-    if (args.HasOption('g') || args.HasOption('G'))
-      h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'));
-
-    m_manager->AddRouteEntry("h323.*:.* = ivr:");
-    m_manager->AddRouteEntry("ivr:.* = h323:<da>");
-  }
-#endif // OPAL_H323
+  if (!m_manager->Initialise(args, true))
+    return;
 
 
   // Set up IVR
   OpalIVREndPoint * ivr  = new OpalIVREndPoint(*m_manager);
   ivr->SetDefaultVXML(args[0]);
+
+
+  m_manager->AddRouteEntry("sip.*:.* = ivr:");
+  m_manager->AddRouteEntry("ivr:.* = sip:<da>");
+  m_manager->AddRouteEntry("h323.*:.* = ivr:");
+  m_manager->AddRouteEntry("ivr:.* = h323:<da>");
 
 
   if (args.GetCount() == 1)
@@ -243,14 +137,6 @@ bool IvrOPAL::OnInterrupt(bool)
 
   m_manager->m_completed.Signal();
   return true;
-}
-
-
-void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
-{
-  SIPEndPoint::OnRegistrationStatus(status);
-  if (status.m_reason >= SIP_PDU::Successful_OK)
-    m_completed.Signal();
 }
 
 

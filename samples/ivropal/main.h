@@ -34,24 +34,13 @@
 #error Cannot compile IVR test program without OPAL_IVR set!
 #endif
 
-class MyManager : public OpalManager
+
+class MyManager : public OpalManagerConsole
 {
-    PCLASSINFO(MyManager, OpalManager)
+    PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
     virtual void OnClearedCall(OpalCall & call); // Callback override
-
-    PSyncPoint m_completed;
-};
-
-
-class MySIPEndPoint : public SIPEndPoint
-{
-    PCLASSINFO(MySIPEndPoint, SIPEndPoint)
-
-  public:
-    MySIPEndPoint(OpalManager & manager) : SIPEndPoint(manager) { }
-    void OnRegistrationStatus(const RegistrationStatus & status);
 
     PSyncPoint m_completed;
 };
@@ -63,7 +52,6 @@ class IvrOPAL : public PProcess
 
   public:
     IvrOPAL();
-    ~IvrOPAL();
 
     virtual void Main();
     virtual bool OnInterrupt(bool);
