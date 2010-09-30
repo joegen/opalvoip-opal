@@ -1087,12 +1087,6 @@ PBoolean H323EndPoint::OnOutgoingCall(H323Connection & /*connection*/,
 }
 
 
-void H323EndPoint::OnConnectionCleared(H323Connection & /*connection*/,
-                                       const PString & /*token*/)
-{
-}
-
-
 #if PTRACING
 static void OnStartStopChannel(const char * startstop, const H323Channel & channel)
 {
