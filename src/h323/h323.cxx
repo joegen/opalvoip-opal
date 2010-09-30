@@ -348,15 +348,7 @@ void H323Connection::OnApplyStringOptions()
 
 void H323Connection::OnReleased()
 {
-  OpalRTPConnection::OnReleased();
-  CleanUpOnCallEnd();
-  OnCleared();
-}
-
-
-void H323Connection::CleanUpOnCallEnd()
-{
-  PTRACE(4, "H323\tConnection " << callToken << " closing: connectionState=" << connectionState);
+  PTRACE(4, "H323\tOnReleased: " << callToken << ", connectionState=" << connectionState);
 
   connectionState = ShuttingDownConnection;
 
@@ -433,9 +425,7 @@ void H323Connection::CleanUpOnCallEnd()
   if (signallingChannel != NULL)
     signallingChannel->CloseWait();
 
-  SetPhase(ReleasedPhase);
-
-  PTRACE(3, "H323\tConnection " << callToken << " terminated.");
+  OpalRTPConnection::OnReleased();
 }
 
 
@@ -574,7 +564,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   if (!safeLock.IsLocked())
     return PFalse;
 
-  if (GetPhase() >= ReleasingPhase) {
+  if (IsReleased()) {
     // Continue to look for endSession/releaseComplete pdus
     if (pdu.m_h323_uu_pdu.m_h245Tunneling) {
       for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
@@ -917,12 +907,6 @@ void H323Connection::OnSendDRQ(H225_DisengageRequest & drq) const
 }
 
 
-void H323Connection::OnCleared()
-{
-  endpoint.OnConnectionCleared(*this, callToken);
-}
-
-
 void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolIdentifier)
 {
   if (protocolIdentifier.GetSize() < 6)
@@ -1084,7 +1068,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       PTRACE(2, "H225\tApplication not accepting calls");
       return PFalse;
     }
-    if (GetPhase() >= ReleasingPhase) {
+    if (IsReleased()) {
       PTRACE(1, "H225\tApplication called ClearCall during OnIncomingCall");
       return PFalse;
     }
@@ -1731,7 +1715,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
   PTRACE(3, "H323\tAnswering call: " << response);
 
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+  if (!safeLock.IsLocked() || IsReleased())
     return;
 
   if (response == AnswerCallProgress) {
@@ -1871,7 +1855,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
         digitsWaitFlag.Wait();
         if (!LockReadWrite()) // Lock while checking for shutting down.
           return EndedByCallerAbort;
-        if (GetPhase() >= ReleasingPhase)
+        if (IsReleased())
           return EndedByCallerAbort;
       }
     }
@@ -1938,7 +1922,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   if (!safeLock.Lock())
     return EndedByCallerAbort;
 
-  if (GetPhase() >= ReleasingPhase)
+  if (IsReleased())
     return EndedByCallerAbort;
 
   // See if transport connect failed, abort if so.
@@ -2692,10 +2676,10 @@ void H323Connection::HandleControlChannel()
       if (ok) {
         // Process the received PDU
         PTRACE(4, "H245\tReceived TPKT: " << strm);
-        if (GetPhase() < ReleasingPhase)
-          ok = HandleControlData(strm);
-        else
+        if (IsReleased())
           ok = InternalEndSessionCheck(strm);
+        else
+          ok = HandleControlData(strm);
         UnlockReadWrite(); // Unlock connection
       }
     }
@@ -3756,7 +3740,7 @@ PBoolean H323Connection::IsH245Master() const
 void H323Connection::StartRoundTripDelay()
 {
   if (LockReadWrite()) {
-    if (GetPhase() < ReleasingPhase &&
+    if (!IsReleased() &&
         masterSlaveDeterminationProcedure->IsDetermined() &&
         capabilityExchangeProcedure->HasSentCapabilities()) {
       if (roundTripDelayProcedure->IsRemoteOffline()) {
@@ -4022,7 +4006,7 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
   // For a channel, this gets called twice. The first time we send CLC to remote
   // The second time is after CLC Ack or a timeout occurs, then we call the ancestor
   // function to clean up the media stream.
-  if (GetPhase() < ReleasingPhase) {
+  if (!IsReleased()) {
     for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
       H323Channel * channel = logicalChannels->GetNegLogicalChannelAt(i).GetChannel();
       if (channel != NULL && channel->GetMediaStream() == &stream) {
@@ -5060,7 +5044,7 @@ void H323Connection::MonitorCallStatus()
   if (!safeLock.IsLocked())
     return;
 
-  if (GetPhase() >= ReleasingPhase)
+  if (IsReleased())
     return;
 
   if (endpoint.GetRoundTripDelayRate() > 0 && !roundTripDelayTimer.IsRunning()) {

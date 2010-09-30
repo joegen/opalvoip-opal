@@ -504,8 +504,6 @@ void OpalLineConnection::OnReleased()
   else
     line.SetOnHook();
 
-  SetPhase(ReleasedPhase);
-
   OpalConnection::OnReleased();
 }
 
@@ -749,7 +747,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         return;
       }
       PThread::Sleep(100);
-      if (GetPhase() >= ReleasingPhase)
+      if (IsReleased())
         return;
     } while (count < minimumRingCount); // Wait till we have CLID
 
@@ -782,7 +780,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   if (!OnIncomingConnection(0, NULL)) {
     PTRACE(3, "LID\tWaiting for RING to stop on " << *this);
     while (line.GetRingCount() > 0) {
-      if (GetPhase() >= ReleasingPhase)
+      if (IsReleased())
         return;
       PThread::Sleep(100);
     }

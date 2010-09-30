@@ -310,6 +310,23 @@ SIPConnection::SIPConnection(OpalCall & call,
 
 SIPConnection::~SIPConnection()
 {
+  /* Note we wait for various transactions to complete as the transport they
+     rely on may be owned by the connection, and would be deleted once we exit
+     from OnRelease() causing a crash in the transaction processing. */
+  PSafePtr<SIPTransaction> transaction;
+  while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
+    PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
+    transaction->WaitForTermination();
+    m_pendingTransactions.Remove(transaction);
+  }
+
+  // Remove all the references to the transactions so garbage can be collected
+  pendingInvitations.RemoveAll();
+  forkedInvitations.RemoveAll();
+
+  // Delete the transport now we are finished with it
+  SetTransport(PString::Empty());
+
   delete m_authentication;
   delete originalInvite;
 
@@ -333,26 +350,15 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
   if (transport != NULL)
     return true;
 
-  if (GetPhase() < ReleasingPhase)
-    Release(EndedByUnreachable);
-
+  Release(EndedByUnreachable);
   return false;
 }
 
 
 void SIPConnection::OnReleased()
 {
-  PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << GetPhase());
+  PTRACE(3, "SIP\tOnReleased: " << *this);
   
-  // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
-  // thread
-  if (GetPhase() >= ReleasedPhase) {
-    PTRACE(2, "SIP\tOnReleased: already released");
-    return;
-  };
-
-  SetPhase(ReleasingPhase);
-
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
@@ -436,25 +442,6 @@ void SIPConnection::OnReleased()
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't ket other bits wait for it.
   OpalRTPConnection::OnReleased();
-
-  /* Note we wait for various transactions to complete as the transport they
-     rely on may be owned by the connection, and would be deleted once we exit
-     from OnRelease() causing a crash in the transaction processing. */
-  PSafePtr<SIPTransaction> transaction;
-  while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
-    PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
-    transaction->WaitForTermination();
-    m_pendingTransactions.Remove(transaction);
-  }
-
-  // Remove all the references to the transactions so garbage can be collected
-  pendingInvitations.RemoveAll();
-  forkedInvitations.RemoveAll();
-
-  // Delete the transport now we are finished with it
-  SetTransport(PString::Empty());
-
-  SetPhase(ReleasedPhase);
 }
 
 
@@ -1459,7 +1446,7 @@ bool SIPConnection::WriteINVITE()
   // to be released (e.g. there are no UDP ports available for the RTP sessions)
   // Since the connection is released immediately, a INVITE must not be
   // sent out.
-  if (GetPhase() >= OpalConnection::ReleasingPhase) {
+  if (IsReleased()) {
     PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
     delete invite; // Before Start() is called we are responsible for deletion
     return PFalse;
@@ -1671,7 +1658,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
   // If we are releasing then I can safely ignore failed
   // transactions - otherwise I'll deadlock.
-  if (GetPhase() >= ReleasingPhase)
+  if (IsReleased())
     return;
 
   bool allFailed = true;
@@ -2512,7 +2499,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   m_referInProgress = false;
 
   // Release the connection
-  if (GetPhase() >= ReleasingPhase)
+  if (IsReleased())
     return;
 
   releaseMethod = ReleaseWithBYE;
@@ -2574,7 +2561,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   PTRACE(3, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
   
-  if (GetPhase() >= ReleasingPhase) {
+  if (IsReleased()) {
     PTRACE(2, "SIP\tAlready released " << *this);
     return;
   }
@@ -3131,7 +3118,7 @@ void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
 
     m_responseRetryTimer.Stop();
 
-    if (GetPhase() < ReleasingPhase) {
+    if (IsReleased()) {
       if (m_responsePackets.front().GetStatusCode() < 200)
         SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
       else {
