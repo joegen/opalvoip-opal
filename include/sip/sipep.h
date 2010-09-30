@@ -390,7 +390,8 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     bool Register(
       const SIPRegister::Params & params, ///< Registration parameters
-      PString & aor                       ///< Resultant address-of-record for unregister
+      PString & aor,                      ///< Resultant address-of-record for unregister
+      bool asynchronous = true            ///< Wait for completion, may take some time
     );
 
     /// Registration function for backward compatibility.
@@ -970,6 +971,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     NATBindingRefreshMethod natMethod;
     PAtomicInteger          lastSentCSeq;
     int                     m_defaultAppearanceCode;
+
+    std::map<PString, PSyncPoint> m_registrationComplete;
 
   public:
     class WorkThreadPool;
