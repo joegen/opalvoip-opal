@@ -882,7 +882,7 @@ void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
       Release(OpalConnection::EndedByCapabilityExchange);
     }
-    else if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
+    else if (m_switchTimeout > 0 && elapsed >= m_switchTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
       PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
     }
@@ -892,10 +892,12 @@ void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
       m_faxTimer = 3500;
     }
     else {
-      // Cadence for CED is 3 seconds on once only
+      // Cadence for CED is 3 seconds on, once only
       if (!m_stringOptions.GetBoolean(OPAL_SUPPRESS_CED))
         OpalConnection::OnUserInputTone('Y', 3000);
-      m_faxTimer = m_switchTimeout - elapsed;
+
+      if (m_switchTimeout > elapsed)
+        m_faxTimer = m_switchTimeout - elapsed;
     }
     UnlockReadOnly();
   }
