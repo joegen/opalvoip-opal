@@ -1437,6 +1437,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\opal\console_mgr.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\endpoint.cxx"
 					>
 				</File>
@@ -3457,6 +3461,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\connection.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\console_mgr.h"
 					>
 				</File>
 				<File

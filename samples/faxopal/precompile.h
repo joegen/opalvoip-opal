@@ -27,7 +27,7 @@
  */
 
 #include <ptlib.h>
-#include <opal/manager.h>
+#include <opal/console_mgr.h>
 #include <t38/t38proto.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>

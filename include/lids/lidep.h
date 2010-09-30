@@ -272,6 +272,21 @@ class OpalLineEndPoint : public OpalEndPoint
     void SetDefaultLine(
       const PString & lineName  ///<  Name of line to set to default.
     );
+
+    /**Set the country code set for the device.
+       This may change the line analogue coefficients, ring detect, call
+       disconnect detect and call progress tones to fit the countries
+       telephone network.
+      */
+    bool SetCountryCode(
+      OpalLineInterfaceDevice::T35CountryCodes country   ///<  Country code for device
+    );
+
+    /**Set the country code set for the device.
+      */
+    bool SetCountryCodeName(
+      const PString & countryName   ///<  Country code for device
+    );
   //@}
 
 

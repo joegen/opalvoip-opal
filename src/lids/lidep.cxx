@@ -382,6 +382,30 @@ void OpalLineEndPoint::SetDefaultLine(const PString & lineName)
 }
 
 
+bool OpalLineEndPoint::SetCountryCode(OpalLineInterfaceDevice::T35CountryCodes country)
+{
+  PWaitAndSignal mutex(linesMutex);
+  for (OpalLIDList::iterator iterDev = devices.begin(); iterDev != devices.end(); ++iterDev) {
+    if (!iterDev->SetCountryCode(country))
+      return false;
+  }
+
+  return true;
+}
+
+
+bool OpalLineEndPoint::SetCountryCodeName(const PString & countryName)
+{
+  PWaitAndSignal mutex(linesMutex);
+  for (OpalLIDList::iterator iterDev = devices.begin(); iterDev != devices.end(); ++iterDev) {
+    if (!iterDev->SetCountryCodeName(countryName))
+      return false;
+  }
+
+  return true;
+}
+
+
 void OpalLineEndPoint::MonitorLines(PThread &, INT)
 {
   PTRACE(4, "LID EP\tMonitor thread started for " << GetPrefixName());

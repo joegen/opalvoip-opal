@@ -30,24 +30,12 @@
 #define _FaxOPAL_MAIN_H
 
 
-class MyManager : public OpalManager
+class MyManager : public OpalManagerConsole
 {
-    PCLASSINFO(MyManager, OpalManager)
+    PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
     virtual void OnClearedCall(OpalCall & call); // Callback override
-
-    PSyncPoint m_completed;
-};
-
-
-class MySIPEndPoint : public SIPEndPoint
-{
-    PCLASSINFO(MySIPEndPoint, SIPEndPoint)
-
-  public:
-    MySIPEndPoint(OpalManager & manager) : SIPEndPoint(manager) { }
-    void OnRegistrationStatus(const RegistrationStatus & status);
 
     PSyncPoint m_completed;
 };
