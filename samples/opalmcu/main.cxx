@@ -97,7 +97,7 @@ void ConfOPAL::Main()
   if (args.HasOption('a')) {
     PFilePath path = args.GetOptionString('a');
     ivr->SetDefaultVXML(path);
-    m_manager->AddRouteEntry(".*:.* = ivr:");
+    m_manager->AddRouteEntry(".*:.* = ivr:<da>");
     cout << "Using attendant IVR " << path << endl;
   }
   else {
