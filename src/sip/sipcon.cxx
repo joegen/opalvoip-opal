@@ -310,6 +310,8 @@ SIPConnection::SIPConnection(OpalCall & call,
 
 SIPConnection::~SIPConnection()
 {
+  PTRACE(4, "SIP\tDeleting connection.");
+
   /* Note we wait for various transactions to complete as the transport they
      rely on may be owned by the connection, and would be deleted once we exit
      from OnRelease() causing a crash in the transaction processing. */
@@ -329,8 +331,6 @@ SIPConnection::~SIPConnection()
 
   delete m_authentication;
   delete originalInvite;
-
-  PTRACE(4, "SIP\tDeleted connection.");
 }
 
 
