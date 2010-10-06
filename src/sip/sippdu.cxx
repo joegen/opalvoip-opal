@@ -39,6 +39,7 @@
 
 #include <sip/sippdu.h>
 
+#include <codec/opalplugin.h>
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
 #include <opal/call.h>
