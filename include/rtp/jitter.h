@@ -216,8 +216,7 @@ class OpalJitterBufferThread : public OpalJitterBuffer
 
        @return true on successful read, false on faulty read. */
     virtual PBoolean OnReadPacket(
-      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop           ///<  If true, loop as long as data is available, if false, only process once
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     ) = 0;
 
   protected:
@@ -256,8 +255,7 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
 
        @return true on successful read, false on faulty read. */
     virtual PBoolean OnReadPacket(
-      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop           ///<  If true, loop as long as data is available, if false, only process once
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
  protected:
