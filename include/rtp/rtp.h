@@ -43,6 +43,8 @@
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
 
+#include <queue>
+
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -161,6 +163,9 @@ class RTP_DataFrame : public PBYTEArray
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
 
     virtual void PrintOn(ostream & strm) const;
+
+    __inline bool operator==(const RTP_DataFrame & rhs) const { return GetSequenceNumber() == rhs.GetSequenceNumber(); }
+    __inline bool operator< (const RTP_DataFrame & rhs) const { return GetSequenceNumber() <  rhs.GetSequenceNumber(); }
 
   protected:
     PINDEX payloadSize;
@@ -486,8 +491,7 @@ class RTP_Session : public PObject
        available or an error occurs.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
+      RTP_DataFrame & frame   ///<  Frame read from the RTP session
     ) = 0;
 
     /**Write a data frame from the RTP channel.
@@ -664,16 +668,6 @@ class RTP_Session : public PObject
     void SetAnySyncSource(
       bool allow    ///<  Flag for allow any SSRC values
     ) { allowAnySyncSource = allow; }
-
-    /**Indicate if will ignore out of order packets.
-      */
-    PBoolean WillIgnoreOutOfOrderPackets() const { return ignoreOutOfOrderPackets; }
-
-    /**Indicate if will ignore out of order packets.
-      */
-    void SetIgnoreOutOfOrderPackets(
-      PBoolean ignore   ///<  Flag for ignore out of order packets
-    ) { ignoreOutOfOrderPackets = ignore; }
 
     /**Indicate if will ignore rtp payload type changes in received packets.
      */
@@ -882,7 +876,6 @@ class RTP_Session : public PObject
     typedef PSafePtr<RTP_JitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
 
-    PBoolean      ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
@@ -898,7 +891,13 @@ class RTP_Session : public PObject
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
     WORD          lastRRSequenceNumber;
-    PINDEX        consecutiveOutOfOrderPackets;
+    bool          resequenceOutOfOrderPackets;
+    unsigned      consecutiveOutOfOrderPackets;
+    PTimeInterval outOfOrderPacketTime;
+
+    std::priority_queue<RTP_DataFrame,
+                        std::vector<RTP_DataFrame>,
+                        std::greater<RTP_DataFrame> > m_outOfOrderPackets;
 
     PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
@@ -985,8 +984,8 @@ class RTP_UDP : public RTP_Session
        returned by this function. It will block until a data frame is
        available or an error occurs.
       */
-    virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
-    virtual PBoolean Internal_ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual PBoolean ReadData(RTP_DataFrame & frame);
+    virtual PBoolean Internal_ReadData(RTP_DataFrame & frame);
 
     /** Write a data frame to the RTP channel.
       */
@@ -1166,7 +1165,7 @@ class RTP_Encoding
     virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
-    virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual PBoolean ReadData(RTP_DataFrame & frame);
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
 
     PMutex      mutex;

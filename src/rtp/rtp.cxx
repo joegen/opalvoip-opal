@@ -511,7 +511,6 @@ RTP_Session::RTP_Session(const Params & params)
   userData = params.userData;
   autoDeleteUserData = params.autoDelete;
 
-  ignoreOutOfOrderPackets = true;
   ignorePayloadTypeChanges = true;
   syncSourceOut = PRandom::Number();
 
@@ -529,6 +528,7 @@ RTP_Session::RTP_Session(const Params & params)
   lastSentSequenceNumber = (WORD)PRandom::Number();
   expectedSequenceNumber = 0;
   lastRRSequenceNumber = 0;
+  resequenceOutOfOrderPackets = true;
   consecutiveOutOfOrderPackets = 0;
 
   ClearStatistics();
@@ -713,7 +713,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
-    SetIgnoreOutOfOrderPackets(false);
+    resequenceOutOfOrderPackets = false;
     if (m_jitterBuffer != NULL)
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
     else
@@ -732,7 +732,17 @@ unsigned RTP_Session::GetJitterBufferSize() const
 PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
 {
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
-  return jitter != NULL ? jitter->ReadData(frame) : ReadData(frame, true);
+  if (jitter != NULL)
+    return jitter->ReadData(frame);
+
+  if (m_outOfOrderPackets.empty() ||
+      m_outOfOrderPackets.top().GetSequenceNumber() != expectedSequenceNumber)
+    return ReadData(frame);
+
+  frame = m_outOfOrderPackets.top();
+  m_outOfOrderPackets.pop();
+  expectedSequenceNumber = frame.GetSequenceNumber() + 1;
+  return true;
 }
 
 
@@ -1020,10 +1030,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
              << expectedSequenceNumber << " ssrc=" << syncSourceIn);
     }
     else if (sequenceNumber < expectedSequenceNumber) {
-      PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
-             << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
-      packetsOutOfOrder++;
-
       // Check for Cisco bug where sequence numbers suddenly start incrementing
       // from a different base.
       if (++consecutiveOutOfOrderPackets > 10) {
@@ -1031,11 +1037,38 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         PTRACE(2, "RTP\tSession " << sessionID << ", abnormal change of sequence numbers,"
                   " adjusting to expect " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
       }
+      else {
+        PTRACE(2, "RTP\tSession " << sessionID << ", incorrect sequence, received "
+               << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
 
-      if (ignoreOutOfOrderPackets)
-        return e_IgnorePacket; // Non fatal error, just ignore
+        if (resequenceOutOfOrderPackets)
+          return e_IgnorePacket; // Non fatal error, just ignore
+
+        packetsOutOfOrder++;
+      }
+    }
+    else if (resequenceOutOfOrderPackets &&
+                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < 200)) {
+      if (m_outOfOrderPackets.empty()) {
+        PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
+               << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+        packetsOutOfOrder++;
+      }
+
+      // Maybe packet lost, maybe out of order, save for now
+      m_outOfOrderPackets.push(frame);
+      outOfOrderPacketTime = tick;
     }
     else {
+      if (!m_outOfOrderPackets.empty()) {
+        // Give up on the packet, probably never coming in. Save current and switch in
+        // the lowest numbered packet.
+        m_outOfOrderPackets.push(frame);
+        frame = m_outOfOrderPackets.top();
+        m_outOfOrderPackets.pop();
+      }
+
+      sequenceNumber = frame.GetSequenceNumber();
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
@@ -1836,14 +1869,14 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
 }
 
 
-PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
+PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame)
 {
-  return EncodingLock(*this)->ReadData(frame, loop);
+  return EncodingLock(*this)->ReadData(frame);
 }
 
-PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
+PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
 {
-  do {
+  for (;;) {
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     {
@@ -1906,10 +1939,7 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return false;
     }
-  } while (loop);
-
-  frame.SetSize(0);
-  return true;
+  }
 }
 
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
@@ -2313,9 +2343,9 @@ RTP_Session::SendReceiveStatus RTP_Encoding::OnReadTimeout(RTP_DataFrame & frame
   return rtpUDP->Internal_OnReadTimeout(frame);
 }
 
-PBoolean RTP_Encoding::ReadData(RTP_DataFrame & frame, PBoolean loop)
+PBoolean RTP_Encoding::ReadData(RTP_DataFrame & frame)
 {
-  return rtpUDP->Internal_ReadData(frame, loop);
+  return rtpUDP->Internal_ReadData(frame);
 }
 
 int RTP_Encoding::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & t)
