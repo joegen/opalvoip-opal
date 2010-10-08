@@ -43,7 +43,7 @@
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
 
-#include <queue>
+#include <list>
 
 
 class RTP_JitterBuffer;
@@ -163,9 +163,6 @@ class RTP_DataFrame : public PBYTEArray
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
 
     virtual void PrintOn(ostream & strm) const;
-
-    __inline bool operator==(const RTP_DataFrame & rhs) const { return GetSequenceNumber() == rhs.GetSequenceNumber(); }
-    __inline bool operator< (const RTP_DataFrame & rhs) const { return GetSequenceNumber() <  rhs.GetSequenceNumber(); }
 
   protected:
     PINDEX payloadSize;
@@ -895,9 +892,8 @@ class RTP_Session : public PObject
     unsigned      consecutiveOutOfOrderPackets;
     PTimeInterval outOfOrderPacketTime;
 
-    std::priority_queue<RTP_DataFrame,
-                        std::vector<RTP_DataFrame>,
-                        std::greater<RTP_DataFrame> > m_outOfOrderPackets;
+    std::list<RTP_DataFrame> m_outOfOrderPackets;
+    void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
     PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
