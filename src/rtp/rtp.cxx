@@ -749,7 +749,7 @@ PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
          << sequenceNumber << " ssrc=" << syncSourceIn);
   frame = m_outOfOrderPackets.top();
   m_outOfOrderPackets.pop();
-  expectedSequenceNumber = sequenceNumber + 1;
+  expectedSequenceNumber = (WORD)(sequenceNumber + 1);
   outOfOrderPacketTime = PTimer::Tick();
   return true;
 }
