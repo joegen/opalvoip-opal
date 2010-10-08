@@ -442,7 +442,7 @@ void OpalRTPConnection::SessionFailing(RTP_Session & session)
   // if so, clear the call
   if (m_rtpSessions.AllSessionsFailing()) {
     PTRACE(2, "RTPCon\tClearing call as all RTP session are failing");
-    ClearCall();
+    Release();
   }
 }
 
