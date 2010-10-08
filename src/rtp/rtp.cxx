@@ -735,13 +735,22 @@ PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
   if (jitter != NULL)
     return jitter->ReadData(frame);
 
-  if (m_outOfOrderPackets.empty() ||
-      m_outOfOrderPackets.top().GetSequenceNumber() != expectedSequenceNumber)
+  if (m_outOfOrderPackets.empty())
     return ReadData(frame);
 
+  unsigned sequenceNumber = m_outOfOrderPackets.top().GetSequenceNumber();
+  if (sequenceNumber != expectedSequenceNumber) {
+    PTRACE(5, "RTP\tSession " << sessionID << ", still out of order packets, next "
+           << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+    return ReadData(frame);
+  }
+
+  PTRACE(5, "RTP\tSession " << sessionID << ", resequenced of order packet "
+         << sequenceNumber << " ssrc=" << syncSourceIn);
   frame = m_outOfOrderPackets.top();
   m_outOfOrderPackets.pop();
-  expectedSequenceNumber = frame.GetSequenceNumber() + 1;
+  expectedSequenceNumber = sequenceNumber + 1;
+  outOfOrderPacketTime = PTimer::Tick();
   return true;
 }
 
@@ -996,6 +1005,10 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
 
     WORD sequenceNumber = frame.GetSequenceNumber();
     if (sequenceNumber == expectedSequenceNumber) {
+      PTRACE_IF(5, !m_outOfOrderPackets.empty(),
+                "RTP\tSession " << sessionID << ", received out of order packet "
+                << sequenceNumber << " ssrc=" << syncSourceIn);
+
       expectedSequenceNumber++;
       consecutiveOutOfOrderPackets = 0;
       // Only do statistics on packets after first received in talk burst
@@ -1049,15 +1062,18 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
     }
     else if (resequenceOutOfOrderPackets &&
                 (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < 200)) {
-      if (m_outOfOrderPackets.empty()) {
-        PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
-               << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
-        packetsOutOfOrder++;
-      }
+      PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
+             << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+      packetsOutOfOrder++;
 
       // Maybe packet lost, maybe out of order, save for now
       m_outOfOrderPackets.push(frame);
-      outOfOrderPacketTime = tick;
+      frame.MakeUnique();
+
+      if (m_outOfOrderPackets.empty())
+        outOfOrderPacketTime = tick;
+
+      return e_IgnorePacket;
     }
     else {
       if (!m_outOfOrderPackets.empty()) {
