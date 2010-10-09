@@ -312,13 +312,25 @@ SIPConnection::~SIPConnection()
 {
   PTRACE(4, "SIP\tDeleting connection.");
 
+  // Delete the transport now we are finished with it
+  SetTransport(PString::Empty());
+
+  delete m_authentication;
+  delete originalInvite;
+}
+
+
+bool SIPConnection::GarbageCollection()
+{
   /* Note we wait for various transactions to complete as the transport they
      rely on may be owned by the connection, and would be deleted once we exit
      from OnRelease() causing a crash in the transaction processing. */
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
     PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
-    transaction->WaitForTermination();
+    if (!transaction->IsTerminated())
+      return false;
+
     m_pendingTransactions.Remove(transaction);
   }
 
@@ -326,11 +338,7 @@ SIPConnection::~SIPConnection()
   pendingInvitations.RemoveAll();
   forkedInvitations.RemoveAll();
 
-  // Delete the transport now we are finished with it
-  SetTransport(PString::Empty());
-
-  delete m_authentication;
-  delete originalInvite;
+  return OpalConnection::GarbageCollection();
 }
 
 

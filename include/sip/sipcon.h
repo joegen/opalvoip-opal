@@ -567,6 +567,7 @@ class SIPConnection : public OpalRTPConnection
     PString GetLocalPartyURL() const;
 
   protected:
+    virtual bool GarbageCollection();
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
