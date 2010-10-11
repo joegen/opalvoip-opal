@@ -709,6 +709,7 @@ class SIPConnection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
 
   friend class SIPTransaction;
+  friend class SIP_RTP_Session;
 };
 
 
@@ -723,7 +724,7 @@ class SIP_RTP_Session : public RTP_UserData
     /**Create a new channel.
      */
     SIP_RTP_Session(
-      const SIPConnection & connection  ///<  Owner of the RTP session
+      SIPConnection & connection  ///<  Owner of the RTP session
     );
   //@}
 
@@ -770,7 +771,7 @@ class SIP_RTP_Session : public RTP_UserData
     virtual void SessionFailing(RTP_Session & /*session*/);
 
   protected:
-    const SIPConnection & connection; /// Owner of the RTP session
+    SIPConnection & connection; /// Owner of the RTP session
 };
 
 
