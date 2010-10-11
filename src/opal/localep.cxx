@@ -48,6 +48,7 @@
 OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
   , m_deferredAlerting(false)
+  , m_deferredAnswer(false)
 {
   PTRACE(3, "LocalEP\tCreated endpoint.");
 }
@@ -92,7 +93,8 @@ bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & /*connection*
 
 bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
-  connection.AcceptIncoming();
+  if (!m_deferredAnswer)
+    connection.AcceptIncoming();
   return true;
 }
 
