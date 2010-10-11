@@ -597,7 +597,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
       H323Connection & connection,        ///<  Connection to endpoint for channel
       const H323Capability & capability,  ///<  Capability channel is using
       Directions direction,               /// Direction of channel
-      RTP_Session & rtp                   /// RTP session for channel
+      H323_RTP_Session & rtp              /// RTP session for channel
     );
 
     /// Destroy the channel
@@ -608,7 +608,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
   //@{
     /**Indicate the session number of the channel.
        Return session for channel. This returns the session ID of the
-       RTP_Session member variable.
+       H323_RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
 
@@ -661,8 +661,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
   //@}
 
   protected:
-    RTP_Session      & rtpSession;
-    H323_RTP_Session & rtpCallbacks;
+    H323_RTP_Session & rtpSession;
 };
 
 
@@ -712,7 +711,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
   //@{
     /**Indicate the session number of the channel.
        Return session for channel. This returns the session ID of the
-       RTP_Session member variable.
+       H323_RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
 
@@ -842,7 +841,7 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@{
     /**Indicate the session number of the channel.
        Return session for channel. This returns the session ID of the
-       RTP_Session member variable.
+       H323_RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
 

@@ -666,7 +666,7 @@ void OpalCall::CloseMediaStreams()
 }
 
 
-void OpalCall::OnRTPStatistics(const OpalConnection & /*connection*/, const RTP_Session & /*session*/)
+void OpalCall::OnMediaStatistics(const OpalConnection & /*connection*/, const OpalMediaSession & /*session*/)
 {
 }
 

@@ -1633,12 +1633,6 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
 }
 
 
-void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
-                                  const RTP_Session & session) const
-{
-  manager.OnRTPStatistics(connection, session);
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::WorkThreadPool::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()

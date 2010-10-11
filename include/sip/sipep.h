@@ -323,18 +323,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual void OnTransactionFailed(
       SIPTransaction & transaction
     );
-    
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRTPStatistics(
-      const SIPConnection & connection,  ///<  Connection for the channel
-      const RTP_Session & session         ///<  Session with statistics
-    ) const;
   //@}
  
 

@@ -421,16 +421,16 @@ class OpalCall : public PSafeObject
       OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
     ) const;
 
-    /**Callback from the RTP session for statistics monitoring.
+    /**Callback from the media session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been
        updated.
 
        The default behaviour does nothing.
       */
-    virtual void OnRTPStatistics(
+    virtual void OnMediaStatistics(
       const OpalConnection & connection,  ///<  Connection for the channel
-      const RTP_Session & session         ///<  Session with statistics
+      const OpalMediaSession & session    ///<  Session with statistics
     );
 
     /**Start the media streams on the connections.
@@ -603,6 +603,8 @@ class OpalCall : public PSafeObject
   friend OpalConnection::OpalConnection(OpalCall &, OpalEndPoint &, const PString &, unsigned int, OpalConnection::StringOptions *);
   //use to remove the connection from the call's connection list
   friend OpalConnection::~OpalConnection();
+
+  P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
 };
 
 

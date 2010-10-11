@@ -57,111 +57,21 @@ class H323_RTPChannel;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class is for encpsulating the IETF Real Time Protocol interface.
- */
-class H323_RTP_Session : public RTP_UserData
-{
-  PCLASSINFO(H323_RTP_Session, RTP_UserData);
-
-  /**@name Overrides from RTP_UserData */
-  //@{
-    /**Callback from the RTP session for transmit statistics monitoring.
-       This is called every RTP_Session::senderReportInterval packets on the
-       transmitter indicating that the statistics have been updated.
-
-       The default behaviour calls H323Connection::OnRTPStatistics().
-      */
-    virtual void OnTxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-    /**Callback from the RTP session for receive statistics monitoring.
-       This is called every RTP_Session::receiverReportInterval packets on the
-       receiver indicating that the statistics have been updated.
-
-       The default behaviour calls H323Connection::OnRTPStatistics().
-      */
-    virtual void OnRxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
-     */
-    virtual PBoolean OnSendingPDU(
-      const H323_RTPChannel & channel,            ///<  Channel using this session.
-      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
-    ) const = 0;
-
-    /**This is called when request to create a channel is received from a
-       remote machine and is about to be acknowledged.
-     */
-    virtual void OnSendingAckPDU(
-      const H323_RTPChannel & channel,              ///<  Channel using this session.
-      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const = 0;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-     */
-    virtual PBoolean OnReceivedPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
-      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
-      unsigned & errorCode                              ///<  Error on failure
-    ) = 0;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-     */
-    virtual PBoolean OnReceivedAckPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
-      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) = 0;
-
-    /**This is called when a gatekeeper wants to get status information from
-       the endpoint.
-
-       The default behaviour fills in the session ID's and SSRC parameters
-       but does not do anything with the transport fields.
-     */
-    virtual void OnSendRasInfo(
-      H225_RTPSession & info  ///<  RTP session info PDU
-    ) = 0;
-  //@}
-
-
-  protected:
-  /**@name Construction */
-  //@{
-    /**Create a new channel.
-     */
-    H323_RTP_Session(
-      const H323Connection & connection  ///<  Owner of the RTP session
-    );
-  //@}
-
-    const H323Connection & connection; ///<  Owner of the RTP session
-};
-
-
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
  */
-class H323_RTP_UDP : public H323_RTP_Session
+class H323_RTP_Session : public OpalRTPSession
 {
-  PCLASSINFO(H323_RTP_UDP, H323_RTP_Session);
+  PCLASSINFO(H323_RTP_Session, OpalRTPSession);
 
   public:
   /**@name Construction */
   //@{
     /**Create a new RTP session H323 info.
      */
-    H323_RTP_UDP(
-      const H323Connection & connection, ///<  Owner of the RTP session
-      RTP_UDP & rtp                      ///<  RTP session
+    H323_RTP_Session(
+      H323Connection & connection,    ///<  Owner of the RTP session
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
     );
   //@}
 
@@ -223,7 +133,7 @@ class H323_RTP_UDP : public H323_RTP_Session
       unsigned & errorCode
     );
 
-    RTP_UDP & rtp;
+    const H323Connection & connection; ///<  Owner of the RTP session
 };
 
 

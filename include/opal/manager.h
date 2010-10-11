@@ -662,26 +662,16 @@ class OpalManager : public PObject
       OpalMediaStream & stream    ///<  New media stream being opened
     );
 
-    /**Create an RTP session.
-       This function allows an application to have the system create descendant
-       class versions of the RTP_UDP class. The application could use this to 
-	   modify the default RTP transfer behaviour.
-	   This is called when a connection determines that RTP is required for 
-	   transporting media.
-       The default behaviour returns a new RTP_UDP.
-      */
-	virtual RTP_UDP * CreateRTPSession (const RTP_Session::Params & params);
-
-	/**Callback from the RTP session for statistics monitoring.
+    /**Callback from the media session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been
        updated.
 
        The default behaviour does nothing.
       */
-    virtual void OnRTPStatistics(
+    virtual void OnMediaStatistics(
       const OpalConnection & connection,  ///<  Connection for the channel
-      const RTP_Session & session         ///<  Session with statistics
+      const OpalMediaSession & session    ///<  Session with statistics
     );
 
     /**Indicate is a local RTP connection.
@@ -1579,6 +1569,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
+    P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
 };
 
 

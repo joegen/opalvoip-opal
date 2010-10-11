@@ -279,6 +279,13 @@ class H323Connection : public OpalRTPConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
+    /** Create a new underlying RTP session instance.
+      */
+    virtual OpalMediaSession * CreateRTPSession(
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    );
+
 #if OPAL_FAX
     /**Switch to/from FAX mode.
       */
@@ -1459,7 +1466,7 @@ class H323Connection : public OpalRTPConnection
     virtual H323_RTPChannel * CreateRTPChannel(
       const H323Capability & capability,
       H323Channel::Directions direction,
-      RTP_Session & rtp
+      H323_RTP_Session & rtp
     );
 
     /**This function is called when the remote endpoint want's to create
@@ -1700,47 +1707,6 @@ class H323Connection : public OpalRTPConnection
 
   /**@name RTP Session Management */
   //@{
-    /**Get an H323 RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
-      */
-    virtual H323_RTP_Session * GetSessionCallbacks(
-      unsigned sessionID
-    ) const;
-
-    /**Use an RTP session for the specified ID and for the given direction.
-       If there is no session of the specified ID, a new one is created using
-       the information provided in the tranport parameter. If the system
-       does not support the specified transport, NULL is returned.
-
-       If this function is used, then the ReleaseSession() function MUST be
-       called or the session is never deleted for the lifetime of the H323
-       connection.
-      */
-    virtual RTP_Session * UseSession(
-      const OpalTransport & transport,
-                   unsigned sessionID,
-      const OpalMediaType & mediatype,  ///<  media type
-                  RTP_QOS * rtpqos = NULL
-    );
-
-    /**Release the session. If the session ID is not being used any more any
-       clients via the UseSession() function, then the session is deleted.
-     */
-    virtual void ReleaseSession(
-      unsigned sessionID
-    );
-
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour calls H323EndPoint::OnRTPStatistics().
-      */
-    virtual void OnRTPStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
     /**Get the names of the codecs in use for the RTP session.
        If there is no session of the specified ID, an empty string is returned.
       */
@@ -2173,6 +2139,8 @@ class H323Connection : public OpalRTPConnection
 
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
     P_REMOVE_VIRTUAL_VOID(OnCleared());
+    P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
+    P_REMOVE_VIRTUAL(H323_RTP_Session *,GetSessionCallbacks(unsigned) const,NULL);
 };
 
 

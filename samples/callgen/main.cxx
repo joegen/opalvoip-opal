@@ -709,15 +709,14 @@ PBoolean MyCall::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream 
 }
 
 
-void MyCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
+void MyCall::OnMediaStatistics(const OpalConnection & connection, const OpalMediaSession & session)
 {
-  if (receivedMedia.GetTimeInSeconds() == 0 && session.GetPacketsReceived() > 0) {
+  OpalMediaStatistics stats;
+  session.GetStatistics(stats, true);
+  if (receivedMedia.GetTimeInSeconds() == 0 && stats.m_totalPackets > 0) {
     receivedMedia = PTime();
     OUTPUT(index, connection.GetCall().GetToken(), "Received media");
-
-    const RTP_UDP * udpSess = dynamic_cast<const RTP_UDP *>(&session);
-    if (udpSess != NULL) 
-      mediaGateway = OpalTransportAddress(udpSess->GetRemoteAddress(), udpSess->GetRemoteDataPort());
+    mediaGateway = session.GetRemoteMediaAddress();
   }
 }
 

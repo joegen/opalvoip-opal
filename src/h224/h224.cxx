@@ -73,18 +73,14 @@ class SDPH224MediaDescription : public SDPRTPAVPMediaDescription
     {
     }
 
-    virtual SDPMediaDescription * CreateEmpty() const
-    {
-      return new SDPH224MediaDescription(OpalTransportAddress());
-    }
-
     virtual PString GetSDPMediaType() const
     {
       return "application";
     }
 };
 
-SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                   OpalMediaSession * /*session*/) const
 {
   return new SDPH224MediaDescription(localAddress);
 }

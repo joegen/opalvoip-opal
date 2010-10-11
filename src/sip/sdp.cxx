@@ -83,13 +83,15 @@ OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const 
   return OpalMediaType();
 }
 
-SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                    OpalMediaSession * /*session*/) const
 {
   return new SDPAudioMediaDescription(localAddress);
 }
 
 #if OPAL_VIDEO
-SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                    OpalMediaSession * /*session*/) const
 {
   return new SDPVideoMediaDescription(localAddress);
 }
@@ -886,12 +888,6 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
 }
 
 
-SDPMediaDescription * SDPDummyMediaDescription::CreateEmpty() const
-{
-  return new SDPDummyMediaDescription(*this);
-}
-
-
 PString SDPDummyMediaDescription::GetSDPMediaType() const
 {
   return m_tokens[0];
@@ -1003,12 +999,6 @@ SDPAudioMediaDescription::SDPAudioMediaDescription(const OpalTransportAddress & 
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Audio())
   , m_offerPTime(false)
 {
-}
-
-
-SDPMediaDescription * SDPAudioMediaDescription::CreateEmpty() const
-{
-  return new SDPAudioMediaDescription(OpalTransportAddress());
 }
 
 
@@ -1131,12 +1121,6 @@ SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & 
 }
 
 
-SDPMediaDescription * SDPVideoMediaDescription::CreateEmpty() const
-{
-  return new SDPVideoMediaDescription(OpalTransportAddress());
-}
-
-
 PString SDPVideoMediaDescription::GetSDPMediaType() const 
 { 
   return "video"; 
@@ -1240,12 +1224,6 @@ SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTranspo
 PCaselessString SDPApplicationMediaDescription::GetSDPTransportType() const
 { 
   return "rtp/avp"; 
-}
-
-
-SDPMediaDescription * SDPApplicationMediaDescription::CreateEmpty() const
-{
-  return new SDPApplicationMediaDescription(OpalTransportAddress());
 }
 
 
@@ -1439,7 +1417,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
             else if ((defn = mediaType.GetDefinition()) == NULL) {
               PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);
             }
-            else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress)) == NULL) {
+            else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress, NULL)) == NULL) {
               PTRACE(1, "SDP\tCould not create SDP media description for SDP media type " << tokens[0]);
             }
             else if (currentMedia->Decode(tokens))

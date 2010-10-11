@@ -64,7 +64,8 @@ Either, or both, can be used in a call
 
 /////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                  OpalMediaSession * /*session*/) const
 {
   return new SDPFaxMediaDescription(localAddress);
 }
@@ -84,12 +85,6 @@ PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
 { 
   return "udptl";
 }
-
-SDPMediaDescription * SDPFaxMediaDescription::CreateEmpty() const
-{
-  return new SDPFaxMediaDescription(OpalTransportAddress());
-}
-
 
 PString SDPFaxMediaDescription::GetSDPMediaType() const 
 { 

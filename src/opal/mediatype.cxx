@@ -137,24 +137,18 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
 }
 
 
-OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & /*conn*/, unsigned /* sessionID*/) const
-{ 
-  return NULL; 
-}
-
-
-RTP_UDP * OpalMediaTypeDefinition::CreateRTPSession(OpalRTPConnection & connection,
-                                                    unsigned sessionID,
-                                                    bool remoteIsNAT)
+OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection &, unsigned) const
 {
-  RTP_Session::Params params;
-  params.id = sessionID;
-  params.encoding = GetRTPEncoding();
-  params.isAudio = m_mediaType == OpalMediaType::Audio();
-  params.remoteIsNAT = remoteIsNAT;
-
-  return connection.GetEndPoint().GetManager().CreateRTPSession(params);
+  return NULL;
 }
+
+
+#if OPAL_SIP
+SDPMediaDescription * OpalMediaTypeDefinition::CreateSDPMediaDescription(const OpalTransportAddress &, OpalMediaSession *) const
+{
+  return NULL;
+}
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -167,14 +161,14 @@ OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
 {
 }
 
-PString OpalRTPAVPMediaType::GetRTPEncoding() const
-{
-  return "rtp/avp";
-}
 
-OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
+OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
 {
-  return new OpalRTPMediaSession(conn, m_mediaType, sessionID, NULL);
+  OpalRTPConnection * rtpConnection = dynamic_cast<OpalRTPConnection *>(&connection);
+  if (rtpConnection != NULL)
+    return rtpConnection->CreateRTPSession(sessionID, m_mediaType);
+
+  return new OpalRTPSession(connection, sessionID, m_mediaType);
 }
 
 

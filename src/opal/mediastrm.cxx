@@ -618,7 +618,7 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
                                    const OpalMediaFormat & mediaFormat,
                                                   PBoolean isSource,
-                                             RTP_Session & rtp,
+                                          OpalRTPSession & rtp,
                                                   unsigned minJitter,
                                                   unsigned maxJitter)
   : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
@@ -648,7 +648,6 @@ PBoolean OpalRTPMediaStream::Open()
   if (isOpen)
     return true;
 
-  rtpSession.SetEncoding(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
   rtpSession.Reopen(IsSource());
 
   return OpalMediaStream::Open();
@@ -696,7 +695,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (paused)
     packet.SetPayloadSize(0);
   else {
-    if (!rtpSession.ReadBufferedData(packet))
+    if (!rtpSession.ReadData(packet))
       return false;
   }
 

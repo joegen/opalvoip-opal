@@ -46,6 +46,7 @@
 #include <opal/call.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
+#include <h323/h323rtp.h>
 #include <ptclib/url.h>
 #include <ptclib/enum.h>
 #include <ptclib/pils.h>
@@ -1131,10 +1132,11 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 }
 
 
-void H323EndPoint::OnRTPStatistics(const H323Connection & connection,
-                                   const RTP_Session & session) const
+OpalMediaSession * H323EndPoint::CreateRTPSession(H323Connection & connection,
+                                                  unsigned sessionId,
+                                                  const OpalMediaType & mediaType)
 {
-  manager.OnRTPStatistics(connection, session);
+  return new H323_RTP_Session(connection, sessionId, mediaType);
 }
 
 

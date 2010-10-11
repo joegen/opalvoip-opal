@@ -321,6 +321,51 @@ class OpalFaxConnection : public OpalConnection
 typedef OpalFaxConnection OpalT38Connection; // For backward compatibility
 
 
+class T38_UDPTLPacket;
+
+class OpalFaxSession : public OpalMediaSession
+{
+  public:
+    OpalFaxSession(OpalConnection & connection, unsigned sessionId);
+    ~OpalFaxSession();
+
+    virtual OpalTransportAddress GetLocalMediaAddress() const;
+    virtual OpalTransportAddress GetRemoteMediaAddress() const;
+
+    virtual void AttachTransport(Transport & transport);
+    virtual Transport DetachTransport();
+
+    bool WriteData(RTP_DataFrame & frame);
+    bool ReadData(RTP_DataFrame & frame);
+
+    void ApplyStringOptions(const PStringToString & stringOptions);
+
+  protected:
+    void SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber);
+    void DecrementSentPacketRedundancy(bool stripRedundancy);
+    bool WriteUDPTL();
+
+    Transport          m_savedTransport;
+    PUDPSocket       * m_dataSocket;
+
+    int                m_consecutiveBadPackets;
+    bool               m_oneGoodPacket;
+    T38_UDPTLPacket  * m_receivedPacket;
+    unsigned           m_expectedSequenceNumber;
+    int                m_secondaryPacket;
+
+    std::map<int, int> m_redundancy;
+    PTimeInterval      m_redundancyInterval;
+    PTimeInterval      m_keepAliveInterval;
+    bool               m_optimiseOnRetransmit;
+    std::vector<int>   m_sentPacketRedundancy;
+    T38_UDPTLPacket  * m_sentPacket;
+    PMutex             m_writeMutex;
+    PTimer             m_timerWriteDataIdle;
+    PDECLARE_NOTIFIER(PTimer,  OpalFaxSession, OnWriteDataIdle);
+};
+
+
 #endif // OPAL_FAX
 
 #endif // OPAL_T38_T38PROTO_H

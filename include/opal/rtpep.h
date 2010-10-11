@@ -137,7 +137,7 @@ class OpalRTPEndPoint : public OpalEndPoint
     bool CheckForLocalRTP(const OpalRTPMediaStream & stream);
 
     // Check for local RTP connection. Internal function.
-    void CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp);
+    void CheckEndLocalRTP(OpalConnection & connection, OpalRTPSession * rtp);
   //@}
 
   protected:

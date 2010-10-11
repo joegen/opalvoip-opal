@@ -1465,6 +1465,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\opal\mediasession.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\mediastrm.cxx"
 					>
 				</File>
@@ -3493,6 +3497,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediafmt.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\mediasession.h"
 					>
 				</File>
 				<File

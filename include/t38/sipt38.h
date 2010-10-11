@@ -55,7 +55,6 @@ class SDPFaxMediaDescription : public SDPMediaDescription
     SDPFaxMediaDescription(const OpalTransportAddress & address);
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
-    virtual SDPMediaDescription * CreateEmpty() const;
     virtual PString GetSDPMediaType() const;
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
