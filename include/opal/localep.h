@@ -263,10 +263,19 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Indicate OnAlerting() is be deferred or immediate.
       */
     void SetDeferredAlerting(bool defer) { m_deferredAlerting = defer; }
+
+    /**Indicate AcceptIncomingCall() execution is be deferred or immediate on OnIncomingCall().
+      */
+    bool IsDeferredAnswer() const { return m_deferredAnswer; }
+
+    /**Indicate AcceptIncomingCall() execution is be deferred or immediate on OnIncomingCall().
+      */
+    void SetDeferredAnswer(bool defer) { m_deferredAnswer = defer; }
   //@}
 
   protected:
     bool m_deferredAlerting;
+    bool m_deferredAnswer;
 
   private:
     P_REMOVE_VIRTUAL(OpalLocalConnection *, CreateConnection(OpalCall &, void *), 0);
