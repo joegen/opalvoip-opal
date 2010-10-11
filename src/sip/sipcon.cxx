@@ -3467,7 +3467,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 
 /////////////////////////////////////////////////////////////////////////////
 
-SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn)
+SIP_RTP_Session::SIP_RTP_Session(SIPConnection & conn)
   : connection(conn)
 {
 }
@@ -3502,7 +3502,10 @@ void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) con
 
 void SIP_RTP_Session::SessionFailing(RTP_Session & session)
 {
-  ((SIPConnection &)connection).SessionFailing(session);
+  // Some systems, e.g. Cisco, stop listening to media while doing a transfer
+  // so don't fail the call while transfer is in progress
+  if (!connection.m_referInProgress)
+    connection.SessionFailing(session);
 }
 
 
