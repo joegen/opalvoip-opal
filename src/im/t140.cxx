@@ -62,11 +62,6 @@ class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
     {
     }
 
-    virtual SDPMediaDescription * CreateEmpty() const
-    {
-      return new SDPT140MediaDescription(OpalTransportAddress());
-    }
-
     virtual PString GetSDPMediaType() const
     {
       return "text";
@@ -84,7 +79,8 @@ OpalT140MediaType::OpalT140MediaType()
 
 #if OPAL_SIP
 
-SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                   OpalMediaSession * /*session*/) const
 {
   return new SDPT140MediaDescription(localAddress);
 }

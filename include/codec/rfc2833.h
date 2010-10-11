@@ -166,14 +166,14 @@ class OpalRFC2833Proto : public PObject {
       TransmitEnding3,
     } m_transmitState;
 
-    RTP_Session * m_rtpSession;
-    PTimer        m_asyncTransmitTimer;
-    PTimer        m_asyncDurationTimer;
-    DWORD         m_transmitTimestamp;
-    bool          m_rewriteTransmitTimestamp;
-    PTimeInterval m_asyncStart;
-    BYTE          m_transmitCode;
-    unsigned      m_transmitDuration;
+    OpalRTPSession * m_rtpSession;
+    PTimer           m_asyncTransmitTimer;
+    PTimer           m_asyncDurationTimer;
+    DWORD            m_transmitTimestamp;
+    bool             m_rewriteTransmitTimestamp;
+    PTimeInterval    m_asyncStart;
+    BYTE             m_transmitCode;
+    unsigned         m_transmitDuration;
 
     PMutex m_mutex;
 };

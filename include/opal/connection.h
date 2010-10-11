@@ -1165,6 +1165,26 @@ class OpalConnection : public PSafeObject
       OpalMediaPatch & patch    ///< Patch being stopped
     );
 
+    /**Callback from the media session for transmit statistics monitoring.
+       This is called every OpalRTPSession::senderReportInterval packets on the
+       transmitter indicating that the statistics have been updated.
+
+       The default behaviour calls endpoint function of same name.
+      */
+    virtual void OnMediaStatistics(
+      const OpalMediaSession & session   ///<  Session with statistics
+    ) const;
+
+#if OPAL_VIDEO
+    /**Callback from the RTP session after an IntraFrameRequest is receieved.
+       The default behaviour executes an OpalVideoUpdatePicture command on the
+       connection's source video stream if it exists.
+      */
+    virtual void OnRxIntraFrameRequest(
+      const OpalMediaSession & session   ///<  Session with statistics
+    ) const;
+#endif
+
     /** Notifier function for OpalVideoUpdatePicture.
         Calls the SendIntraFrameRequest on the rtp session
       */

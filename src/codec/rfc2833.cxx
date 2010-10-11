@@ -150,8 +150,6 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
 
 OpalRFC2833Proto::~OpalRFC2833Proto()
 {
-  if (m_rtpSession != NULL)
-    m_connection.ReleaseSession(m_rtpSession->GetSessionID());
 }
 
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
@@ -161,7 +159,7 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   // find an audio session in the current connection to send the packet on
   if (m_rtpSession == NULL) {
     OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
-    if (stream == NULL || (m_rtpSession = m_connection.GetSession(stream->GetSessionID())) == NULL) {
+    if (stream == NULL || (m_rtpSession = dynamic_cast<OpalRTPSession *>(m_connection.GetMediaSession(stream->GetSessionID()))) == NULL) {
       PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833");
       return false;
     }

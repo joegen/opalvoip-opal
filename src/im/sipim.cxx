@@ -74,17 +74,11 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 {
   PCLASSINFO(SDPSIPIMMediaDescription, SDPMediaDescription);
   public:
-    SDPSIPIMMediaDescription(const OpalTransportAddress & address);
     SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & fromURL);
 
     PCaselessString GetSDPTransportType() const
     {
       return "sip";
-    }
-
-    virtual SDPMediaDescription * CreateEmpty() const
-    {
-      return new SDPSIPIMMediaDescription(OpalTransportAddress());
     }
 
     virtual PString GetSDPMediaType() const 
@@ -115,18 +109,17 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
+                                                                    OpalMediaSession * session) const
 {
-  return new SDPSIPIMMediaDescription(localAddress);
+  OpalSIPIMMediaSession * imSession = dynamic_cast<OpalSIPIMMediaSession *>(session);
+  if (imSession == NULL)
+    return new SDPSIPIMMediaDescription(localAddress, PString::Empty(), PString::Empty());
+  else
+    return new SDPSIPIMMediaDescription(localAddress, imSession->transportAddress, imSession->localURL);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-
-SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, SIP_IM)
-{
-  SetDirection(SDPMediaDescription::SendRecv);
-}
 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & _fromURL)
   : SDPMediaDescription(address, SIP_IM)
@@ -211,23 +204,15 @@ OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn,
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & _conn, unsigned _sessionId)
-: OpalMediaSession(_conn, SIP_IM, _sessionId)
+OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & conn, unsigned sessionId)
+  : OpalMediaSession(conn, sessionId, SIP_IM)
 {
-  transportAddress = connection.GetTransport().GetLocalAddress();
-  localURL         = connection.GetLocalPartyURL();
-  remoteURL        = connection.GetRemotePartyURL();
-  callId           = connection.GetToken();
+  transportAddress = conn.GetTransport().GetLocalAddress();
+  localURL         = conn.GetLocalPartyURL();
+  remoteURL        = conn.GetRemotePartyURL();
+  callId           = conn.GetToken();
 }
 
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & obj)
-  : OpalMediaSession(obj)
-{
-  transportAddress = obj.transportAddress;
-  localURL         = obj.localURL;        
-  remoteURL        = obj.remoteURL;       
-  callId           = obj.callId;          
-}
 
 OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
 {
@@ -235,9 +220,9 @@ OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
 }
 
 
-SDPMediaDescription * OpalSIPIMMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
+OpalTransportAddress OpalSIPIMMediaSession::GetRemoteMediaAddress() const
 {
-  return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, localURL);
+  return remoteURL;
 }
 
 
@@ -245,13 +230,8 @@ OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
-  return new OpalIMMediaStream(connection, mediaFormat, sessionID, isSource);
-}
-
-
-void OpalSIPIMMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList &)
-{
+  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (m_connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
+  return new OpalIMMediaStream(m_connection, mediaFormat, sessionID, isSource);
 }
 
 

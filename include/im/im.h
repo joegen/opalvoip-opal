@@ -69,8 +69,6 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
       : OpalMediaTypeDefinition(mediaType, sdpType, 0, OpalMediaType::DontOffer)
     { }
 
-    PString GetRTPEncoding() const { return PString::Empty(); }
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & , unsigned , bool ) { return NULL; }
     virtual bool UsesRTP() const { return false; }
 };
 

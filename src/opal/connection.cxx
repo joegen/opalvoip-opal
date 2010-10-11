@@ -53,13 +53,6 @@
 #include <t38/t38proto.h>
 #include <ptclib/url.h>
 
-#if OPAL_HAS_IM
-#include <im/rfc4103.h>
-#if OPAL_SIP
-#include <im/sipim.h>
-#include <sip/sipcon.h>
-#endif
-#endif
 
 #define new PNEW
 
@@ -1579,6 +1572,20 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 #endif
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
+
+
+void OpalConnection::OnMediaStatistics(const OpalMediaSession & session) const
+{
+  endpoint.OnMediaStatistics(*this, session);
+}
+
+
+#if OPAL_VIDEO
+void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session) const
+{
+  SendVideoUpdatePicture(session.GetSessionID());
+}
+#endif
 
 
 void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*/)

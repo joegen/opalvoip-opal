@@ -79,13 +79,13 @@ bool OpalRTPEndPoint::GetZRTPEnabled() const
 #endif
 
 
-static RTP_UDP * GetRTPFromStream(const OpalMediaStream & stream)
+static OpalRTPSession * GetRTPFromStream(const OpalMediaStream & stream)
 {
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtpStream == NULL)
     return NULL;
 
-  return dynamic_cast<RTP_UDP *>(&rtpStream->GetRtpSession());
+  return dynamic_cast<OpalRTPSession *>(&rtpStream->GetRtpSession());
 }
 
 
@@ -108,7 +108,7 @@ bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
 
 bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 {
-  RTP_UDP * rtp = GetRTPFromStream(stream);
+  OpalRTPSession * rtp = GetRTPFromStream(stream);
   if (rtp == NULL)
     return false;
 
@@ -171,7 +171,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 }
 
 
-void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp)
+void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSession * rtp)
 {
   if (rtp == NULL)
     return;

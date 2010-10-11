@@ -337,9 +337,6 @@ class H323Capability : public PObject
 
     /// Set the payload type for the capaibility
     void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { rtpPayloadType = pt; }
-
-    /// Attach a QoS specification to this channel
-    virtual void AttachQoS(RTP_QOS *) { }
   //@}
 
 #if PTRACING
@@ -536,10 +533,6 @@ class H323RealTimeCapability : public H323Capability
     H323RealTimeCapability();
     H323RealTimeCapability(const H323RealTimeCapability &rtc);
     virtual ~H323RealTimeCapability();
-    void AttachQoS(RTP_QOS * _rtpqos);
-
-  protected:
-    RTP_QOS * rtpqos;
   //@}
 };
 
@@ -575,7 +568,7 @@ class H323AudioCapability : public H323RealTimeCapability
     /**Get the default RTP session.
        This function gets the default RTP session ID for the capability
        type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
+       H323Capability::DefaultAudioSessionID etc.
 
        The default behaviour returns zero, indicating it is not an RTP
        based capability.
@@ -963,7 +956,7 @@ class H323VideoCapability : public H323RealTimeCapability
     /**Get the default RTP session.
        This function gets the default RTP session ID for the capability
        type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
+       H323Capability::DefaultAudioSessionID etc.
 
        The default behaviour returns zero, indicating it is not an RTP
        based capability.
@@ -1601,7 +1594,7 @@ class H323DataCapability : public H323Capability
     /**Get the default RTP session.
        This function gets the default RTP session ID for the capability
        type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
+       H323Capability::DefaultAudioSessionID etc.
 
        The default behaviour returns 3, indicating a data session.
       */

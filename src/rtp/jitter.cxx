@@ -715,7 +715,7 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
       bufferMutex.Signal();
 
       // Keep reading from the RTP transport frames
-      if (!OnReadPacket(*availableEntry, true)) {
+      if (!OnReadPacket(*availableEntry)) {
         delete availableEntry;  // Destructor won't delete this one, so do it here.
         m_running = false; // Flag to stop the reading side thread
         goto exitThread;
@@ -735,11 +735,11 @@ exitThread:
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
-                                        unsigned minJitterDelay,
-                                        unsigned maxJitterDelay,
-                                        unsigned time,
-                                          PINDEX packetSize)
+RTP_JitterBuffer::RTP_JitterBuffer(OpalRTPSession & sess,
+                                           unsigned minJitterDelay,
+                                           unsigned maxJitterDelay,
+                                           unsigned time,
+                                             PINDEX packetSize)
   : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
     session(sess)
 {
@@ -761,11 +761,12 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 }
 
 
-PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame, PBoolean loop)
+PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
 {
-  PBoolean success = session.ReadData(frame, loop);
-  PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
-  return success;
+  OpalRTPSession::SendReceiveStatus status;
+  while ((status = session.InternalReadData(frame)) == OpalRTPSession::e_IgnorePacket)
+    ;
+  return status == OpalRTPSession::e_ProcessPacket;
 }
 
 

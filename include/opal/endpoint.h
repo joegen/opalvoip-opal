@@ -551,6 +551,18 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
+    /**Callback from the media session for statistics monitoring.
+       This is called every so many packets on the transmitter and receiver
+       threads of the RTP session indicating that the statistics have been
+       updated.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnMediaStatistics(
+      const OpalConnection & connection, ///<  Connection for the channel
+      const OpalMediaSession & session   ///<  Session with statistics
+    ) const;
+
 #if OPAL_VIDEO
     /**Create an PVideoInputDevice for a source media stream.
       */

@@ -3865,6 +3865,12 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 }
 
 
+OpalMediaSession * H323Connection::CreateRTPSession(unsigned sessionId, const OpalMediaType & mediaType)
+{
+  return endpoint.CreateRTPSession(*this, sessionId, mediaType);
+}
+
+
 #if OPAL_FAX
 bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
 {
@@ -4436,8 +4442,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     }
   }
 
-  RTP_Session * session;
-
   if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     // We only support unicast IP at this time.
     if (param->m_mediaControlChannel.GetTag() != H245_TransportAddress::e_unicastAddress)
@@ -4449,18 +4453,31 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
   }
 
-  session = UseSession(GetControlChannel(), sessionID, mediaType, rtpqos);
+  const H323Transport & transport = GetControlChannel();
+
+  // We only support RTP over UDP at this point in time ...
+  if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
+    return NULL;
+
+  H323_RTP_Session * session = dynamic_cast<H323_RTP_Session *>(UseMediaSession(sessionID, mediaType));
   if (session == NULL)
     return NULL;
 
-  ((RTP_UDP *) session)->Reopen(dir == H323Channel::IsReceiver);
+  session->SetRemoteMediaAddress(transport.GetRemoteAddress());
+  if (!session->Open(transport.GetLocalAddress(false))) {
+    ReleaseMediaSession(sessionID);
+    return NULL;
+  }
+
+  session->ModifyQOS(rtpqos);
+  session->Reopen(dir == H323Channel::IsReceiver);
   return CreateRTPChannel(capability, dir, *session);
 }
 
 
 H323_RTPChannel * H323Connection::CreateRTPChannel(const H323Capability & capability,
                                                    H323Channel::Directions direction,
-                                                   RTP_Session & rtp)
+                                                   H323_RTP_Session & rtp)
 {
   return new H323_RTPChannel(*this, capability, direction, rtp);
 }
@@ -4779,46 +4796,6 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
       break;
     }
   }
-}
-
-
-H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
-{
-  RTP_Session * session = m_rtpSessions.GetSession(sessionID);
-  if (session == NULL)
-    return NULL;
-
-  PTRACE(3, "RTP\tFound existing session " << sessionID);
-  PObject * data = session->GetUserData();
-  PAssert(PIsDescendant(data, H323_RTP_Session), PInvalidCast);
-  return (H323_RTP_Session *)data;
-}
-
-
-RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
-                                                      unsigned sessionID,
-                                         const OpalMediaType & mediatype,  ///<  media type
-                                                     RTP_QOS * rtpqos)
-{
-  RTP_UDP * udp_session = (RTP_UDP *)OpalRTPConnection::UseSession(transport, sessionID, mediatype, rtpqos);
-  if (udp_session == NULL)
-    return NULL;
-
-  if (udp_session->GetUserData() == NULL)
-    udp_session->SetUserData(new H323_RTP_UDP(*this, *udp_session));
-  return udp_session;
-}
-
-
-void H323Connection::ReleaseSession(unsigned sessionID)
-{
-  m_rtpSessions.ReleaseSession(sessionID);
-}
-
-
-void H323Connection::OnRTPStatistics(const RTP_Session & session) const
-{
-  endpoint.OnRTPStatistics(*this, session);
 }
 
 

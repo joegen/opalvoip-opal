@@ -52,10 +52,14 @@ class OpalMSRPMediaType : public OpalIMMediaType
 {
   public:
     OpalMSRPMediaType();
+
     virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
 
 #if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+    SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress,
+      OpalMediaSession * session
+    ) const;
 #endif
 };
 
@@ -286,28 +290,18 @@ class OpalMSRPMediaSession : public OpalMediaSession
   PCLASSINFO(OpalMSRPMediaSession, OpalMediaSession);
   public:
     OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId);
-    OpalMSRPMediaSession(const OpalMSRPMediaSession & _obj);
     ~OpalMSRPMediaSession();
-
-    bool Open(const PURL & remoteParty);
-
-    virtual void Close();
 
     virtual PObject * Clone() const { return new OpalMSRPMediaSession(*this); }
 
-    virtual bool IsActive() const { return true; }
-
-    virtual bool IsRTP() const { return false; }
-
-    virtual bool HasFailed() const { return false; }
-
+    virtual bool Close(bool);
     virtual OpalTransportAddress GetLocalMediaAddress() const;
+    virtual OpalTransportAddress GetRemoteMediaAddress() const;
+    virtual void SetRemoteMediaAddress(const OpalTransportAddress &);
 
     PURL GetLocalURL() const { return m_localUrl; }
     PURL GetRemoteURL() const { return m_remoteUrl; }
     void SetRemoteURL(const PURL & url) { m_remoteUrl = url; }
-
-    virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
 
     virtual bool WritePacket(      
       RTP_DataFrame & frame
@@ -318,12 +312,6 @@ class OpalMSRPMediaSession : public OpalMediaSession
       PINDEX length,
       PINDEX & read
     );
-
-#if OPAL_SIP
-    virtual SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress
-    );
-#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -345,7 +333,15 @@ class OpalMSRPMediaSession : public OpalMediaSession
     PURL m_remoteUrl;
     PSafePtr<OpalMSRPManager::Connection> m_connectionPtr;
     OpalTransportAddress m_remoteAddress;
+
+  private:
+    OpalMSRPMediaSession(const OpalMSRPMediaSession & obj)
+      : OpalMediaSession(obj.m_connection, obj.m_sessionId, obj.m_mediaType)
+      , m_manager(obj.m_manager)
+    { }
+    void operator=(const OpalMSRPMediaSession &) { }
 };
+
 
 ////////////////////////////////////////////////////////////////////////////
 

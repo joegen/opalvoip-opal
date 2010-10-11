@@ -628,7 +628,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     cerr << " port is " << port << endl;
 
     if (port > 0)
-      iax2EP = new IAX2EndPoint(*this, port);
+      iax2EP = new IAX2EndPoint(*this, (WORD)port);
     else
       iax2EP = new IAX2EndPoint(*this);
     

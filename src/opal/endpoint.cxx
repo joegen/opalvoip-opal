@@ -532,6 +532,14 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
   manager.OnClosedMediaStream(stream);
 }
 
+
+void OpalEndPoint::OnMediaStatistics(const OpalConnection & connection,
+                                     const OpalMediaSession & session) const
+{
+  manager.OnMediaStatistics(connection, session);
+}
+
+
 #if OPAL_VIDEO
 PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,

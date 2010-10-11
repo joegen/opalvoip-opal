@@ -348,17 +348,6 @@ class SIPConnection : public OpalRTPConnection
        The default behaviour sends the tone using RFC2833.
       */
     PBoolean SendUserInputTone(char tone, unsigned duration);
-
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRTPStatistics(
-      const RTP_Session & session         ///<  Session with statistics
-    ) const;
   //@}
 
   /**@name Protocol handling functions */
@@ -567,24 +556,22 @@ class SIPConnection : public OpalRTPConnection
     PString GetLocalPartyURL() const;
 
   protected:
+    virtual bool GarbageCollection();
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
 
     virtual bool OnSendOfferSDP(
-      OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
     virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,
       unsigned sessionID,
-      OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut,
       const OpalMediaFormatList & localMediaFormats,
       bool offerOpenMediaStreamOnly
     );
     virtual bool OnSendAnswerSDP(
-      OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
     virtual bool OnSendAnswerSDPSession(
@@ -708,68 +695,6 @@ class SIPConnection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
 
   friend class SIPTransaction;
-};
-
-
-/**This class is for encpsulating the IETF Real Time Protocol interface.
- */
-class SIP_RTP_Session : public RTP_UserData
-{
-  PCLASSINFO(SIP_RTP_Session, RTP_UserData);
-
-  /**@name Construction */
-  //@{
-    /**Create a new channel.
-     */
-    SIP_RTP_Session(
-      const SIPConnection & connection  ///<  Owner of the RTP session
-    );
-  //@}
-
-  /**@name Overrides from RTP_UserData */
-  //@{
-    /**Callback from the RTP session for transmit statistics monitoring.
-       This is called every RTP_Session::senderReportInterval packets on the
-       transmitter indicating that the statistics have been updated.
-
-       The default behaviour calls H323Connection::OnRTPStatistics().
-      */
-    virtual void OnTxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-    /**Callback from the RTP session for receive statistics monitoring.
-       This is called every RTP_Session::receiverReportInterval packets on the
-       receiver indicating that the statistics have been updated.
-
-       The default behaviour calls H323Connection::OnRTPStatistics().
-      */
-    virtual void OnRxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-#if OPAL_VIDEO
-    /**Callback from the RTP session after an IntraFrameRequest is receieved.
-       The default behaviour executes an OpalVideoUpdatePicture command on the
-       connection's source video stream if it exists.
-      */
-    virtual void OnRxIntraFrameRequest(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-    /**Callback from the RTP session after an IntraFrameRequest is sent.
-       The default behaviour does nothing.
-      */
-    virtual void OnTxIntraFrameRequest(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-#endif
-  //@}
-
-    virtual void SessionFailing(RTP_Session & /*session*/);
-
-  protected:
-    const SIPConnection & connection; /// Owner of the RTP session
 };
 
 

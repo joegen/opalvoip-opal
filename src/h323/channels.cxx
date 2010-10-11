@@ -715,10 +715,9 @@ PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
 H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
                                  const H323Capability & cap,
                                  Directions direction,
-                                 RTP_Session & r)
-  : H323_RealTimeChannel(conn, cap, direction),
-    rtpSession(r),
-    rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
+                                 H323_RTP_Session & rtp)
+  : H323_RealTimeChannel(conn, cap, direction)
+  , rtpSession(rtp)
 {
   // If we are the receiver of RTP data then we create a source media stream
   mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), receiver);
@@ -731,7 +730,7 @@ H323_RTPChannel::~H323_RTPChannel()
 {
   // Finished with the RTP session, this will delete the session if it is no
   // longer referenced by any logical channels.
-  connection.ReleaseSession(GetSessionID());
+  connection.ReleaseMediaSession(GetSessionID());
 }
 
 
@@ -753,13 +752,13 @@ bool H323_RTPChannel::SetSessionID(unsigned sessionID)
 
 PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
-  return rtpCallbacks.OnSendingPDU(*this, param) && H323_RealTimeChannel::OnSendingPDU(param);
+  return rtpSession.OnSendingPDU(*this, param) && H323_RealTimeChannel::OnSendingPDU(param);
 }
 
 
 void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {
-  rtpCallbacks.OnSendingAckPDU(*this, param);
+  rtpSession.OnSendingAckPDU(*this, param);
   H323_RealTimeChannel::OnSendOpenAck(param);
 }
 
@@ -767,14 +766,14 @@ void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & para
 PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
                                     unsigned & errorCode)
 {
-  return rtpCallbacks.OnReceivedPDU(*this, param, errorCode) &&
+  return rtpSession.OnReceivedPDU(*this, param, errorCode) &&
          H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
 }
 
 
 PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
-  return rtpCallbacks.OnReceivedAckPDU(*this, param) && H323_RealTimeChannel::OnReceivedAckPDU(param);
+  return rtpSession.OnReceivedAckPDU(*this, param) && H323_RealTimeChannel::OnReceivedAckPDU(param);
 }
 
 
