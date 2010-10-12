@@ -558,11 +558,6 @@ class OpalRTPSession : public OpalMediaSession
       const PTimeInterval & interval ///<  New time interval for reports.
     )  { reportTimeInterval = interval; }
 
-    /**Get the current report timer
-     */
-    PTimeInterval GetReportTimer()
-    { return reportTimer; }
-
     /**Get the interval for transmitter statistics in the session.
       */
     unsigned GetTxStatisticsInterval() { return txStatisticsInterval; }
@@ -837,8 +832,8 @@ class OpalRTPSession : public OpalMediaSession
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
     bool ignorePayloadTypeChanges;
 
-    PMutex reportMutex;
-    PTimer reportTimer;
+    PMutex       m_reportMutex;
+    PSimpleTimer m_reportTimer;
 
     bool closeOnBye;
     bool byeSent;
