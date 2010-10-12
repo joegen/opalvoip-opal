@@ -57,36 +57,38 @@ static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalFaxMediaStream : public OpalNullMediaStream
+OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
+                                       unsigned sessionID,
+                                       bool isSource,
+                                       OpalFaxSession & session)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , m_session(session)
 {
-  public:
-    OpalFaxMediaStream(OpalFaxConnection & conn,
-                       const OpalMediaFormat & mediaFormat,
-                       unsigned sessionID,
-                       bool isSource)
-      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource, true)
-      , m_connection(conn)
-    {
-      m_isAudio = true; // Even though we are not REALLY audio, act like we are
-    }
+}
 
-    bool Close()
-    {
-      if (isOpen &&
-          m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
-          m_connection.m_finalStatistics.m_fax.m_result < 0) {
-        if (mediaPatch != NULL)
-          mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
-        GetStatistics(m_connection.m_finalStatistics);
-        PTRACE(4, "T38\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
-      }
 
-      return OpalNullMediaStream::Close();
-    }
+PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
+{
+  if (!m_session.ReadData(packet))
+    return false;
 
-  private:
-    OpalFaxConnection & m_connection;
-};
+  timestamp = packet.GetTimestamp();
+  return true;
+}
+
+
+PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
+{
+  timestamp = packet.GetTimestamp();
+  return m_session.WriteData(packet);
+}
+
+
+PBoolean OpalFaxMediaStream::IsSynchronous() const
+{
+  return false;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,28 +96,20 @@ class OpalFaxMediaStream : public OpalNullMediaStream
 OpalFaxSession::OpalFaxSession(OpalConnection & connection, unsigned sessionId)
   : OpalMediaSession(connection, sessionId, OpalMediaType::Fax())
   , m_dataSocket(NULL)
+  , m_consecutiveBadPackets(0)
+  , m_oneGoodPacket(false)
+  , m_receivedPacket(new T38_UDPTLPacket)
+  , m_expectedSequenceNumber(0)
+  , m_secondaryPacket(-1)
+  , m_optimiseOnRetransmit(false) // not optimise udptl packets on retransmit
+  , m_sentPacket(new T38_UDPTLPacket)
 {
   m_timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle));
 
-  m_receivedPacket = new T38_UDPTLPacket();
-  m_consecutiveBadPackets  = 0;
-  m_oneGoodPacket          = false;
-  m_expectedSequenceNumber = 0;
-  m_secondaryPacket        = -1;
-
-  m_sentPacketRedundancy.clear();
-  m_sentPacket = new T38_UDPTLPacket();
   m_sentPacket->m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
   m_sentPacket->m_seq_number = (unsigned)-1;
 
-  PStringToString options;
-
-  options.SetAt("T38-UDPTL-Redundancy", "32767:1");           // re-send all ifp packets 1 time
-  options.SetAt("T38-UDPTL-Redundancy-Interval", "0");        // re-send redundancy ifp packets only with next ifp
-  options.SetAt("T38-UDPTL-Keep-Alive-Interval", "0");        // no send keep-alive packets
-  options.SetAt("T38-UDPTL-Optimise-On-Retransmit", "false"); // not optimise udptl packets on retransmit
-
-  ApplyStringOptions(options);
+  m_redundancy[32767] = 1;  // re-send all ifp packets 1 time
 }
 
 
@@ -127,13 +121,14 @@ OpalFaxSession::~OpalFaxSession()
 }
 
 
-void OpalFaxSession::ApplyStringOptions(const PStringToString & stringOptions)
+void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 {
-  for (PINDEX i = 0 ; i < stringOptions.GetSize() ; i++) {
-    PCaselessString key = stringOptions.GetKeyAt(i);
+  for (PINDEX i = 0 ; i < mediaFormat.GetOptionCount() ; i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    PCaselessString key = option.GetName();
 
     if (key == "T38-UDPTL-Redundancy") {
-      PStringArray value = stringOptions.GetDataAt(i).Tokenise(",", FALSE);
+      PStringArray value = option.AsString().Tokenise(",", FALSE);
       PWaitAndSignal mutex(m_writeMutex);
 
       m_redundancy.clear();
@@ -175,27 +170,22 @@ void OpalFaxSession::ApplyStringOptions(const PStringToString & stringOptions)
     else
     if (key == "T38-UDPTL-Redundancy-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
-      m_redundancyInterval = stringOptions.GetDataAt(i).AsUnsigned();
+      m_redundancyInterval = option.AsString().AsUnsigned();
       PTRACE(3, "T38_UDPTL\tUse redundancy interval " << m_redundancyInterval);
     }
     else
     if (key == "T38-UDPTL-Keep-Alive-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
-      m_keepAliveInterval = stringOptions.GetDataAt(i).AsUnsigned();
+      m_keepAliveInterval = option.AsString().AsUnsigned();
       PTRACE(3, "T38_UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
     }
     else
     if (key == "T38-UDPTL-Optimise-On-Retransmit") {
-      PCaselessString value = stringOptions.GetDataAt(i);
+      PCaselessString value = option.AsString();
       PWaitAndSignal mutex(m_writeMutex);
-
-      m_optimiseOnRetransmit =
-        (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
+      m_optimiseOnRetransmit = (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
 
       PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
-    }
-    else {
-      PTRACE(4, "T38_UDPTL\tIgnored option " << key << " = \"" << stringOptions.GetDataAt(i) << "\"");
     }
   }
 }
@@ -226,6 +216,12 @@ OpalMediaSession::Transport OpalFaxSession::DetachTransport()
   m_savedTransport = Transport(); // Detaches reference
   m_dataSocket = NULL;
   return temp;
+}
+
+
+OpalMediaStream * OpalFaxSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+{
+  return new OpalFaxMediaStream(m_connection, mediaFormat, sessionID, isSource, *this);
 }
 
 
@@ -711,7 +707,7 @@ void OpalFaxConnection::OnReleased()
 
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource);
+  return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, isSource, true);
 }
 
 

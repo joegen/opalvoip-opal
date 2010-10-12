@@ -453,7 +453,7 @@ class OpalMediaStreamPacing
     );
 
   protected:
-    bool           m_isAudio;
+    bool           m_timeOnMarkers;
     unsigned       m_frameTime;
     PINDEX         m_frameSize;
     unsigned       m_timeUnits;

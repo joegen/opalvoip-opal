@@ -128,12 +128,6 @@ OpalMediaSession::Transport OpalMediaSession::DetachTransport()
 }
 
 
-OpalMediaStream * OpalMediaSession::CreateMediaStream(const OpalMediaFormat &, unsigned, bool)
-{
-  return NULL;
-}
-
-
 #if OPAL_STATISTICS
 void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const
 {

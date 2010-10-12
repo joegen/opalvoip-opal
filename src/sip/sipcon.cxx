@@ -997,27 +997,6 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
   }
 
-  OpalTransportAddress localAddress;
-  bool remoteChanged = false;
-  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
-  if (mediaSession == NULL)
-    return false;
-
-  // For fax we have to translate the media type
-  if (mediaSession->GetMediaType() != mediaType) {
-    OpalMediaSession * newSession = mediaDef->CreateMediaSession(*this, sessionId);
-    if (newSession == NULL) {
-      PTRACE(2, "SIP\tCould not create session for " << mediaType);
-      return false;
-    }
-    // Copy sockets from old session to new
-    newSession->AttachTransport(mediaSession->DetachTransport());
-    // Finished with old session
-    delete mediaSession;
-    // Swap in the new session
-    m_sessions[sessionId] = mediaSession = newSession;
-  }
-
   SDPMediaDescription * localMedia = NULL;
 
   OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats();
@@ -1027,8 +1006,9 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   if (sdpFormats.IsEmpty()) {
     PTRACE(1, "SIP\tNo available media formats in SDP media description for session " << sessionId);
+
     // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
-    localMedia = mediaDef->CreateSDPMediaDescription(OpalTransportAddress(), mediaSession);
+    localMedia = mediaDef->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
     if (localMedia  == NULL) {
       PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
       return false;
@@ -1039,8 +1019,31 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
   }
   
+  OpalTransportAddress localAddress;
+  bool remoteChanged = false;
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
+  if (mediaSession == NULL)
+    return false;
+
+  // For fax for example, we have to switch the media session according to mediaType
+  OpalMediaSession * previousSession = NULL;
+  if (mediaSession->GetMediaType() != mediaType) {
+    previousSession = mediaSession;
+
+    mediaSession = mediaDef->CreateMediaSession(*this, sessionId);
+    if (mediaSession == NULL) {
+      PTRACE(2, "SIP\tCould not create session for " << mediaType);
+      return false;
+    }
+
+    // Set flag to force media stream close
+    remoteChanged = true;
+  }
+
   // construct a new media session list 
   if ((localMedia = mediaDef->CreateSDPMediaDescription(localAddress, mediaSession)) == NULL) {
+    if (previousSession != NULL)
+      delete mediaSession;
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
     return false;
   }
@@ -1069,6 +1072,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   if (PauseOrCloseMediaStream(recvStream, sdpFormats, remoteChanged,
                               m_holdToRemote >= eHoldOn && (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
+
+  // See if we need to do a session switcharoo, but must be after stream closing
+  if (previousSession != NULL) {
+    mediaSession->AttachTransport(previousSession->DetachTransport());
+    m_sessions[sessionId] = mediaSession;
+    delete previousSession;
+  }
 
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.
