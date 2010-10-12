@@ -137,7 +137,7 @@ class OpalMediaSession : public PObject
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 
       bool isSource
-    );
+    ) = 0;
 
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;

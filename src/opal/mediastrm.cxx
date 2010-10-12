@@ -519,12 +519,12 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
-  : m_isAudio(mediaFormat.GetMediaType() == OpalMediaType::Audio())
+  : m_timeOnMarkers(mediaFormat.GetMediaType() == OpalMediaType::Video())
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
   , m_timeUnits(mediaFormat.GetTimeUnits())
 {
-  PAssert(!(m_isAudio && m_frameSize == 0), PInvalidParameter);
+  PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
 }
 
 
@@ -532,7 +532,7 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
 {
   unsigned timeToWait = m_frameTime;
 
-  if (m_isAudio)
+  if (!m_timeOnMarkers)
     timeToWait *= (bytes + m_frameSize - 1) / m_frameSize;
   else {
     if (reading)

@@ -313,8 +313,6 @@ class OpalFaxConnection : public OpalConnection
       e_CompletedSwitch
     } m_state;
     PTimer   m_faxTimer;
-
-  friend class OpalFaxMediaStream;
 };
 
 
@@ -335,10 +333,16 @@ class OpalFaxSession : public OpalMediaSession
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
 
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, 
+      unsigned sessionID, 
+      bool isSource
+    );
+
     bool WriteData(RTP_DataFrame & frame);
     bool ReadData(RTP_DataFrame & frame);
 
-    void ApplyStringOptions(const PStringToString & stringOptions);
+    void ApplyMediaOptions(const OpalMediaFormat & mediaFormat);
 
   protected:
     void SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber);
@@ -364,6 +368,27 @@ class OpalFaxSession : public OpalMediaSession
     PTimer             m_timerWriteDataIdle;
     PDECLARE_NOTIFIER(PTimer,  OpalFaxSession, OnWriteDataIdle);
 };
+
+
+class OpalFaxMediaStream : public OpalMediaStream
+{
+    PCLASSINFO(OpalFaxMediaStream, OpalMediaStream);
+
+  public:
+    OpalFaxMediaStream(OpalConnection & conn,
+                       const OpalMediaFormat & mediaFormat,
+                       unsigned sessionID,
+                       bool isSource,
+                       OpalFaxSession & session);
+
+    PBoolean ReadPacket(RTP_DataFrame & packet);
+    PBoolean WritePacket(RTP_DataFrame & packet);
+    virtual PBoolean IsSynchronous() const;
+
+  protected:
+    OpalFaxSession & m_session;
+};
+
 
 
 #endif // OPAL_FAX
