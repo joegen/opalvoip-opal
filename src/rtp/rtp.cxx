@@ -472,7 +472,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
   , reportTimeInterval(0, 12)  // Seconds
-  , reportTimer(reportTimeInterval)
   , remoteAddress(0)
   , remoteTransmitAddress(0)
   , remoteIsNAT(false)
@@ -687,7 +686,7 @@ void OpalRTPSession::SendBYE()
 
 PString OpalRTPSession::GetCanonicalName() const
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   PString s = canonicalName;
   s.MakeUnique();
   return s;
@@ -696,14 +695,14 @@ PString OpalRTPSession::GetCanonicalName() const
 
 void OpalRTPSession::SetCanonicalName(const PString & name)
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   canonicalName = name;
 }
 
 
 PString OpalRTPSession::GetToolName() const
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   PString s = toolName;
   s.MakeUnique();
   return s;
@@ -712,7 +711,7 @@ PString OpalRTPSession::GetToolName() const
 
 void OpalRTPSession::SetToolName(const PString & name)
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   toolName = name;
 }
 
@@ -1154,7 +1153,7 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
   int third = interval/3;
   interval += PRandom::Number()%(2*third);
   interval -= third;
-  reportTimer = interval;
+  m_reportTimer = interval;
 
   return true;
 }
@@ -1162,14 +1161,14 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
 
 bool OpalRTPSession::SendReport()
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
 
-  if (reportTimer.IsRunning())
+  if (m_reportTimer.IsRunning())
     return true;
 
   // Have not got anything yet, do nothing
   if (packetsSent == 0 && packetsReceived == 0) {
-    reportTimer = reportTimeInterval;
+    m_reportTimer = reportTimeInterval;
     return true;
   }
 
@@ -1870,7 +1869,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData(RTP_DataFrame
     first = false;
   }
 
-  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
+  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_reportTimer.GetRemaining());
 
   {
     PWaitAndSignal mutex(dataMutex);
