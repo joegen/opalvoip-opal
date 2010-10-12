@@ -350,8 +350,20 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
   // fill the PwdCertToken to calculate the hash
   clearToken.m_tokenOID = "0.0";
 
+  // Create the H.225 crypto token
+  H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
+  cryptoToken->SetTag(H225_CryptoH323Token::e_cryptoEPPwdHash);
+  H225_CryptoH323Token_cryptoEPPwdHash & cryptoEPPwdHash = *cryptoToken;
+
+  // Set the alias using possible alias type prefix strings, e.g. "e164:", "h323:"
+  H323SetAliasAddress(localId, cryptoEPPwdHash.m_alias);
+
+  // Extract back from translated alias so we have ID sans prefix.
+  PString tempId = H323GetAliasAddressString(cryptoEPPwdHash.m_alias);
+
+  // Use SetValueRaw to make sure trailing NULL is included
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID.SetValueRaw(localId.AsUCS2()); // Use SetValueRaw to make sure trailing NULL is included
+  clearToken.m_generalID.SetValueRaw(tempId.AsUCS2());
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
   clearToken.m_password.SetValueRaw(password.AsUCS2());
@@ -370,14 +382,7 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
   PMessageDigest5::Code digest;
   stomach.Complete(digest);
 
-  // Create the H.225 crypto token
-  H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
-  cryptoToken->SetTag(H225_CryptoH323Token::e_cryptoEPPwdHash);
-  H225_CryptoH323Token_cryptoEPPwdHash & cryptoEPPwdHash = *cryptoToken;
-
   // Set the token data that actually goes over the wire
-  H323SetAliasAddress(localId, cryptoEPPwdHash.m_alias);
-
   cryptoEPPwdHash.m_timeStamp = clearToken.m_timeStamp;
   cryptoEPPwdHash.m_token.m_algorithmOID = OID_MD5;
   cryptoEPPwdHash.m_token.m_hash.SetData(sizeof(digest)*8, (const BYTE *)&digest);
