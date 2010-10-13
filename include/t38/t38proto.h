@@ -44,7 +44,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
-#include <opal/endpoint.h>
+#include <opal/localep.h>
 
 
 class OpalTransport;
@@ -76,9 +76,9 @@ class OpalFaxConnection;
 
     Relies on the presence of the spandsp plug in to do the hard work.
  */
-class OpalFaxEndPoint : public OpalEndPoint
+class OpalFaxEndPoint : public OpalLocalEndPoint
 {
-  PCLASSINFO(OpalFaxEndPoint, OpalEndPoint);
+  PCLASSINFO(OpalFaxEndPoint, OpalLocalEndPoint);
   public:
   /**@name Construction */
   //@{
@@ -113,12 +113,6 @@ class OpalFaxEndPoint : public OpalEndPoint
        media formats returned here, but should return no more.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
-
-    /**Accept the incoming connection.
-      */
-    virtual void AcceptIncomingConnection(
-      const PString & connectionToken ///<  Token of connection to accept call
-    );
   //@}
 
   /**@name Fax specific operations */
@@ -185,9 +179,9 @@ class OpalFaxEndPoint : public OpalEndPoint
     switched, to T.38 operation. If the switch fails, then the m_disableT38
     is set and we proceed in fall back mode.
  */
-class OpalFaxConnection : public OpalConnection
+class OpalFaxConnection : public OpalLocalConnection
 {
-  PCLASSINFO(OpalFaxConnection, OpalConnection);
+  PCLASSINFO(OpalFaxConnection, OpalLocalConnection);
   public:
   /**@name Construction */
   //@{
@@ -207,48 +201,14 @@ class OpalFaxConnection : public OpalConnection
     ~OpalFaxConnection();
   //@}
 
-  /**@name Overrides from OpalConnection */
+  /**@name Overrides from OpalLocalConnection */
   //@{
     virtual PString GetPrefixName() const;
-
-    /**Get indication of connection being to a "network".
-       This indicates the if the connection may be regarded as a "network"
-       connection. The distinction is about if there is a concept of a "remote"
-       party being connected to and is best described by example: sip, h323,
-       iax and pstn are all "network" connections as they connect to something
-       "remote". While pc, pots and ivr are not as the entity being connected
-       to is intrinsically local.
-      */
-    virtual bool IsNetworkConnection() const { return false; }
 
     virtual void OnApplyStringOptions();
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual void AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const;
-
-    /**Start an outgoing connection.
-       This function will initiate the connection to the remote entity, for
-       example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
-
-       The default behaviour does.
-      */
-    virtual PBoolean SetUpConnection();
-
-    /**Indicate to remote endpoint an alert is in progress.
-       If this is an incoming connection and the AnswerCallResponse is in a
-       AnswerCallDeferred or AnswerCallPending state, then this function is
-       used to indicate to that endpoint that an alert is in progress. This is
-       usually due to another connection which is in the call (the B party)
-       has received an OnAlerting() indicating that its remote endpoint is
-       "ringing".
-
-       The default behaviour does nothing.
-      */
-    virtual PBoolean SetAlerting(
-      const PString & calleeName,   ///<  Name of endpoint being alerted.
-      PBoolean withMedia                ///<  Open media with alerting
-    );
-
-    virtual PBoolean SetConnected();
+    virtual void AcceptIncoming();
     virtual void OnEstablished();
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
@@ -258,13 +218,10 @@ class OpalFaxConnection : public OpalConnection
     virtual void OnUserInputTone(char tone, unsigned duration);
     virtual bool SwitchFaxMediaStreams(bool enableFax);
     virtual void OnSwitchedFaxMediaStreams(bool enabledFax);
+  //@}
 
   /**@name New operations */
   //@{
-    /**Accept the incoming connection.
-      */
-    virtual void AcceptIncoming();
-
     /**Fax transmission/receipt completed.
        Default behaviour calls equivalent function on OpalFaxEndPoint.
       */
