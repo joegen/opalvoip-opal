@@ -425,7 +425,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxEndPoint::OpalFaxEndPoint(OpalManager & mgr, const char * g711Prefix, const char * t38Prefix)
-  : OpalEndPoint(mgr, g711Prefix, CanTerminateCall)
+  : OpalLocalEndPoint(mgr, g711Prefix)
   , m_t38Prefix(t38Prefix)
   , m_defaultDirectory(".")
 {
@@ -519,14 +519,6 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 }
 
 
-void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
-{
-  PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(token, PSafeReadOnly));
-  if (connection != NULL)
-    connection->AcceptIncoming();
-}
-
-
 void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool PTRACE_PARAM(failed))
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
@@ -542,7 +534,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
                                      bool              receiving,
                                      bool              disableT38,
                                      OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, ep.GetManager().GetNextToken('F'), 0, stringOptions)
+  : OpalLocalConnection(call, ep, NULL, 0, stringOptions, 'F')
   , m_endpoint(ep)
   , m_filename(filename)
   , m_receiving(receiving)
@@ -628,60 +620,6 @@ void OpalFaxConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & med
   }
 
   OpalConnection::AdjustMediaFormats(local, mediaFormats, otherConnection);
-}
-
-
-PBoolean OpalFaxConnection::SetUpConnection()
-{
-  // Check if we are A-Party in this call, so need to do things differently
-  if (ownerCall.GetConnection(0) == this) {
-    SetPhase(SetUpPhase);
-
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return false;
-    }
-
-    PTRACE(2, "FAX\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
-      Release(EndedByNoAccept);
-      return false;
-    }
-
-    return true;
-  }
-
-  PTRACE(3, "FAX\tSetUpConnection(" << remotePartyName << ')');
-  SetPhase(AlertingPhase);
-  OnAlerting();
-
-  OnConnectedInternal();
-
-  // Do not need to do audio mode initially if not going to T.38, already there!
-  if (m_disableT38)
-    return true;
-
-  if (GetMediaStream(PString::Empty(), true) == NULL)
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
-
-  return true;
-}
-
-
-PBoolean OpalFaxConnection::SetAlerting(const PString & calleeName, PBoolean)
-{
-  PTRACE(3, "Fax\tSetAlerting(" << calleeName << ')');
-  SetPhase(AlertingPhase);
-  remotePartyName = calleeName;
-  return true;
-}
-
-
-PBoolean OpalFaxConnection::SetConnected()
-{
-  if (GetMediaStream(PString::Empty(), true) == NULL)
-    ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio());
-  return OpalConnection::SetConnected();
 }
 
 
@@ -773,6 +711,10 @@ void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 void OpalFaxConnection::AcceptIncoming()
 {
   if (LockReadWrite()) {
+    AlertingIncoming();
+    // Do not need to do audio mode initially if not going to T.38, already there!
+    if (!m_disableT38)
+      AutoStartMediaStreams();
     OnConnectedInternal();
     UnlockReadWrite();
   }
