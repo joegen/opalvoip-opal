@@ -378,8 +378,9 @@ class OpalVideoMixer : public OpalBaseMixer
   */
 struct OpalMixerNodeInfo
 {
-  OpalMixerNodeInfo()
-    : m_listenOnly(false)
+  OpalMixerNodeInfo(const char * name = NULL)
+    : m_name(name)
+    , m_listenOnly(false)
     , m_sampleRate(OpalMediaFormat::AudioClockRate)
 #if OPAL_VIDEO
     , m_audioOnly(false)
