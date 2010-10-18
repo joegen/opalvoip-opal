@@ -1634,14 +1634,6 @@ PString SIPConnection::GetIdentifier() const
 }
 
 
-PString SIPConnection::GetRemotePartyURL() const
-{
-  SIPURL url = m_dialog.GetRequestURI();
-  url.Sanitise(SIPURL::ExternalURI);
-  return url.AsString();
-}
-
-
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
   std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
@@ -1843,25 +1835,24 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL url = m_ciscoRemotePartyID;
-  if (url.IsEmpty()) {
-    url = m_dialog.GetRemoteURI();
-    url.Sanitise(SIPURL::ExternalURI);
+  SIPURL remote = m_ciscoRemotePartyID;
+  if (remote.IsEmpty()) {
+    remote = m_dialog.GetRemoteURI();
+    remote.Sanitise(SIPURL::ExternalURI);
   }
 
-  remotePartyNumber = m_dialog.GetRequestURI().GetUserName();
+  remotePartyNumber = remote.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
 
-  PString user = url.GetUserName();
-  if (OpalIsE164(user))
-    remotePartyNumber = user;
-  else
-    remotePartyNumber.MakeEmpty();
-
-  remotePartyName = url.GetDisplayName();
+  remotePartyAddress = remote.AsString();
+  remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
-    remotePartyName = remotePartyNumber.IsEmpty() ? url.GetUserName() : url.AsString();
+    remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
+
+  SIPURL request = m_dialog.GetRequestURI();
+  request.Sanitise(SIPURL::ExternalURI);
+  remotePartyURL = request.AsString();
 }
 
 
