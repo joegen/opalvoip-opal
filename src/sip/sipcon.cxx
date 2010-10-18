@@ -1661,7 +1661,8 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP_PDU & response)
 {
-  unsigned statusClass = response.GetStatusCode()/100;
+  unsigned statusCode = response.GetStatusCode();
+  unsigned statusClass = statusCode/100;
   if (statusClass > 2)
     return;
 
@@ -1681,6 +1682,24 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
   m_dialog.Update(response);
+
+  const SIPMIMEInfo & responseMIME = response.GetMIME();
+
+  {
+    SIPURL newRemotePartyID = responseMIME.GetString("Remote-Party-ID");
+    if (!newRemotePartyID.IsEmpty()) {
+      if (m_ciscoRemotePartyID.IsEmpty() && newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
+        PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
+        m_ciscoRemotePartyID = newRemotePartyID;
+      }
+      else if (m_ciscoRemotePartyID != newRemotePartyID) {
+        PTRACE(3, "SIP\tOld style Remote-Party-ID used for forwarding indication to \"" << newRemotePartyID << '"');
+        m_ciscoRemotePartyID = newRemotePartyID;
+      }
+    }
+  }
+
+  // Update internal variables on remote part names/number/address
   UpdateRemoteAddresses();
 
   if (reInvite)
@@ -1701,26 +1720,30 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (response.GetSDP(*this) != NULL)
     m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
 
-  response.GetMIME().GetProductInfo(remoteProductInfo);
+  responseMIME.GetProductInfo(remoteProductInfo);
 }
 
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL remote = m_dialog.GetRemoteURI();
-  remote.Sanitise(SIPURL::ExternalURI);
+  SIPURL remote = m_ciscoRemotePartyID;
+  if (remote.IsEmpty()) {
+    remote = m_dialog.GetRemoteURI();
+    remote.Sanitise(SIPURL::ExternalURI);
+  }
+
+  remotePartyNumber = remote.GetUserName();
+  if (!OpalIsE164(remotePartyNumber))
+    remotePartyNumber.MakeEmpty();
 
   remotePartyAddress = remote.AsString();
   remotePartyName = remote.GetDisplayName();
+  if (remotePartyName.IsEmpty())
+    remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
 
   SIPURL request = m_dialog.GetRequestURI();
   request.Sanitise(SIPURL::ExternalURI);
-
   remotePartyURL = request.AsString();
-
-  remotePartyNumber = request.GetUserName();
-  if (!OpalIsE164(remotePartyNumber))
-    remotePartyNumber.MakeEmpty();
 }
 
 
@@ -1987,6 +2010,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
 
+  m_ciscoRemotePartyID = mime.GetString("Remote-Party-ID");
+  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
+            "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
+
   mime.SetTo(m_dialog.GetLocalURI().AsQuotedString());
 
   // get the called destination number and name
@@ -2075,6 +2102,15 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   m_answerFormatList.RemoveAll();
+
+  SIPURL newRemotePartyID = request.GetMIME().GetString("Remote-Party-ID");
+  if (!newRemotePartyID.IsEmpty() && m_ciscoRemotePartyID != newRemotePartyID) {
+    PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
+
+    m_ciscoRemotePartyID = newRemotePartyID;
+    newRemotePartyID.SetParameters(PString::Empty());
+    UpdateRemoteAddresses();
+  }
 }
 
 
