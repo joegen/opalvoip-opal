@@ -3015,13 +3015,10 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
                             "</vc_primitive>"
                            "</media_control>");
     SendINFO(params);
-#if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
-#endif
   }
-  else
 #endif
-    OpalRTPConnection::OnMediaCommand(command, extra);
+
+  OpalRTPConnection::OnMediaCommand(command, extra);
 }
 
 
