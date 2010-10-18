@@ -239,7 +239,7 @@ void OpalG711_PLC::dofe(short *out, int size)
 
 int OpalG711_PLC::dofe_partly(short *out, int c, int size)
 {
-  printf("dofe_partly: mode %d\tcnt %d\tsz %d\t->\t", channel[c].mode, channel[c].conceal_count, size);
+  //printf("dofe_partly: mode %d\tcnt %d\tsz %d\t->\t", channel[c].mode, channel[c].conceal_count, size);
 
   switch(channel[c].mode) {
   case NOLOSS:
@@ -359,7 +359,7 @@ int OpalG711_PLC::dofe_partly(short *out, int c, int size)
   }
 
   channel[c].conceal_count+=size;
-  printf("mode %d\tsz %d\n", channel[c].mode, size);
+  //printf("mode %d\tsz %d\n", channel[c].mode, size);
   return size;
 }
 
