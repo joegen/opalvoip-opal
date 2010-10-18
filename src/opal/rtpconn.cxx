@@ -279,18 +279,15 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
 }
 
 #if OPAL_VIDEO
-void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT /*extra*/)
+void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    OpalMediaStreamPtr videoStream = GetMediaStream(OpalMediaType::Video(), false);
-    if (videoStream != NULL) {
-      RTP_Session * session = m_rtpSessions.GetSession(videoStream->GetSessionID());
-      if (session != NULL) {
-        session->SendIntraFrameRequest();
+    RTP_Session * session = m_rtpSessions.GetSession(sessionID);
+    if (session != NULL) {
+      session->SendIntraFrameRequest();
 #if OPAL_STATISTICS
-        m_VideoUpdateRequestsSent++;
+      m_VideoUpdateRequestsSent++;
 #endif
-      }
     }
   }
 }
