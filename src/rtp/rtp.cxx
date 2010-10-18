@@ -2186,19 +2186,20 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
 }
 
 
-void RTP_Session::SendIntraFrameRequest(){
-    // Create packet
-    RTP_ControlFrame request;
-    request.StartNewPacket();
-    request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
-    request.SetPayloadSize(4);
-    // Insert SSRC
-    request.SetCount(1);
-    BYTE * payload = request.GetPayloadPtr();
-    *(PUInt32b *)payload = syncSourceOut;
-    // Send it
-    request.EndPacket();
-    WriteControl(request);
+void RTP_Session::SendIntraFrameRequest()
+{
+  // Create packet
+  RTP_ControlFrame request;
+  request.StartNewPacket();
+  request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
+  request.SetPayloadSize(4);
+  // Insert SSRC
+  request.SetCount(1);
+  BYTE * payload = request.GetPayloadPtr();
+  *(PUInt32b *)payload = syncSourceIn;
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
 }
 
 

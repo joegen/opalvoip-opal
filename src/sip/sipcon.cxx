@@ -2868,16 +2868,11 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
                   "</media_control>"
                 );
     // cannot wait for completion as this keeps the SIPConnection locked, thus preventing the response from being processed
-    //infoTransaction->WaitForCompletion();
-    //if (infoTransaction->IsFailed()) { }
     infoTransaction->Start();
-#if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
-#endif
   }
-  else
 #endif
-    OpalRTPConnection::OnMediaCommand(command, extra);
+
+  OpalRTPConnection::OnMediaCommand(command, extra);
 }
 
 
