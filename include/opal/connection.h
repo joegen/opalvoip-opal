@@ -1754,6 +1754,7 @@ class OpalConnection : public PSafeObject
     PString              localPartyName;
     PString              displayName;
     PString              remotePartyName;
+    PString              remotePartyURL;
     OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
     PString              remotePartyAddress;
