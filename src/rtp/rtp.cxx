@@ -2188,6 +2188,8 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
 
 void RTP_Session::SendIntraFrameRequest()
 {
+  PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Sending Intra-Frame Request via RFC2032");
+
   // Create packet
   RTP_ControlFrame request;
   request.StartNewPacket();
