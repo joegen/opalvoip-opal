@@ -120,7 +120,7 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -pthread -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
@@ -130,9 +130,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) -pthread $(LDFLAGS) -o $@ $^ $(DL_LIBS)
 else
-	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $(DL_LIBS) $@ -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
 endif
 
 
