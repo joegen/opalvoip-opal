@@ -107,6 +107,13 @@ PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 }
 
 
+void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
+{
+  if (commandNotifier != PNotifier())
+    commandNotifier(const_cast<OpalMediaCommand &>(command), m_sessionID);
+}
+
+
 void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanceLen*/)
 {
 }

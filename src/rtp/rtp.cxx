@@ -340,6 +340,15 @@ void RTP_ControlFrame::SetCount(unsigned count)
 }
 
 
+void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
+{
+  PAssert(type < 32, PInvalidParameter);
+  theArray[compoundOffset] &= 0xe0;
+  theArray[compoundOffset] |= type;
+  SetPayloadSize(fciSize+8);
+}
+
+
 void RTP_ControlFrame::SetPayloadType(unsigned t)
 {
   PAssert(t < 256, PInvalidParameter);
@@ -1361,127 +1370,144 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 {
   do {
     BYTE * payload = frame.GetPayloadPtr();
-    unsigned size = frame.GetPayloadSize(); 
+    PINDEX size = frame.GetPayloadSize(); 
     if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
       /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
                2. what's the correct exit status ? */
       PTRACE(2, "RTP\tSession " << sessionID << ", OnReceiveControl invalid frame");
-
       break;
     }
+
     switch (frame.GetPayloadType()) {
-    case RTP_ControlFrame::e_SenderReport :
-      if (size >= sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)) {
-        SenderReport sender;
-        sender.sourceIdentifier = *(const PUInt32b *)payload;
-        const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-        sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
-        sender.rtpTimestamp = sr.rtp_ts;
-        sender.packetsSent = sr.psent;
-        sender.octetsSent = sr.osent;
-        OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", SenderReport packet truncated");
-      }
-      break;
+      case RTP_ControlFrame::e_SenderReport :
+        if (size >= (PINDEX)(sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))) {
+          SenderReport sender;
+          sender.sourceIdentifier = *(const PUInt32b *)payload;
+          const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
+          sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
+          sender.rtpTimestamp = sr.rtp_ts;
+          sender.packetsSent = sr.psent;
+          sender.octetsSent = sr.osent;
+          OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", SenderReport packet truncated");
+        }
+        break;
 
-    case RTP_ControlFrame::e_ReceiverReport :
-      if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))
-        OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
-      }
-      break;
+      case RTP_ControlFrame::e_ReceiverReport :
+        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)))
+          OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
+        }
+        break;
 
-    case RTP_ControlFrame::e_SourceDescription :
-      if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
-        SourceDescriptionArray descriptions;
-        const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
-        PINDEX srcIdx;
-        for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-          descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-          const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-          unsigned uiSizeCurrent = 0;   /* current size of the items already parsed */
-          while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
-            descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-            uiSizeCurrent += item->GetLengthTotal();
-            PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription item " << item << ", current size = " << uiSizeCurrent);
-            
-            /* avoid reading where GetNextItem() shall not */
-            if (uiSizeCurrent >= size){
-              PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription end of items");
-              item = NULL;
+      case RTP_ControlFrame::e_SourceDescription :
+        if (size >= (PINDEX)(frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription))) {
+          SourceDescriptionArray descriptions;
+          const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+          PINDEX srcIdx;
+          for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+            descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+            const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+            PINDEX uiSizeCurrent = 0;   /* current size of the items already parsed */
+            while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
+              descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+              uiSizeCurrent += item->GetLengthTotal();
+              PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription item " << item << ", current size = " << uiSizeCurrent);
+              
+              /* avoid reading where GetNextItem() shall not */
+              if (uiSizeCurrent >= size){
+                PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription end of items");
+                item = NULL;
+                break;
+              } else {
+                item = item->GetNextItem();
+              }
+            }
+            /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
+               otherwise it reads over the buffer */
+            if((item == NULL) || 
+              (item->type == RTP_ControlFrame::e_END) || 
+              ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
               break;
-            } else {
-              item = item->GetNextItem();
             }
           }
-          /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
-             otherwise it reads over the buffer */
-          if((item == NULL) || 
-            (item->type == RTP_ControlFrame::e_END) || 
-            ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
+          OnRxSourceDescription(descriptions);
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", SourceDescription packet truncated");
+        }
+        break;
+
+      case RTP_ControlFrame::e_Goodbye :
+        if (size >= 4) {
+          PString str;
+          PINDEX count = frame.GetCount()*4;
+    
+          if (size > count) {
+            if (size >= (PINDEX)(payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */))
+              str = PString((const char *)(payload+count+1), payload[count]);
+            else {
+              PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet invalid");
+            }
+          }
+
+          PDWORDArray sources(count);
+          for (PINDEX i = 0; i < count; i++)
+            sources[i] = ((const PUInt32b *)payload)[i];
+          OnRxGoodbye(sources, str);
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet truncated");
+        }
+        if (closeOnBye) {
+          PTRACE(3, "RTP\tSession " << sessionID << ", Goodbye packet closing transport");
+          return e_AbortTransport;
+        }
+        break;
+
+      case RTP_ControlFrame::e_ApplDefined :
+        if (size >= 4) {
+          PString str((const char *)(payload+4), 4);
+          OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
+          payload+8, frame.GetPayloadSize()-8);
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", ApplDefined packet truncated");
+        }
+        break;
+
+  #if OPAL_VIDEO
+      case RTP_ControlFrame::e_IntraFrameRequest :
+        PTRACE(4, "RTP\tSession " << sessionID << ", received RFC2032 FIR");
+        if(userData != NULL)
+          userData->OnRxIntraFrameRequest(*this);
+        break;
+  #endif
+
+      case RTP_ControlFrame::e_PayloadSpecificFeedBack :
+        switch (frame.GetFbType()) {
+          case RTP_ControlFrame::e_PictureLossIndication :
+            PTRACE(4, "RTP\tSession " << sessionID << ", received RFC5104 PLI");
+            if(userData != NULL)
+              userData->OnRxIntraFrameRequest(*this);
             break;
-          }
+
+          case RTP_ControlFrame::e_FullIntraRequest :
+            PTRACE(4, "RTP\tSession " << sessionID << ", received RFC5104 FIR");
+            if(userData != NULL)
+              userData->OnRxIntraFrameRequest(*this);
+            break;
+
+          default :
+            PTRACE(2, "RTP\tSession " << sessionID << ", Unknown Payload Specific feedback type: " << frame.GetFbType());
         }
-        OnRxSourceDescription(descriptions);
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", SourceDescription packet truncated");
-      }
-      break;
+        break;
 
-    case RTP_ControlFrame::e_Goodbye :
-    {
-      unsigned count = frame.GetCount()*4;
-      if ((size >= 4) && (count > 0)) {
-        PString str;
-  
-        if (size > count){
-          if((payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */) <= size){
-            str = PString((const char *)(payload+count+1), payload[count]);
-          } else {
-            PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet invalid");
-          }
-        }
-        PDWORDArray sources(frame.GetCount());
-        for (PINDEX i = 0; i < (PINDEX)frame.GetCount(); i++){
-          sources[i] = ((const PUInt32b *)payload)[i];
-        }  
-        OnRxGoodbye(sources, str);
-        }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet truncated");
-      }
-      if (closeOnBye) {
-        PTRACE(3, "RTP\tSession " << sessionID << ", Goodbye packet closing transport");
-        return e_AbortTransport;
-      }
-    break;
-
-    }
-    case RTP_ControlFrame::e_ApplDefined :
-      if (size >= 4) {
-        PString str((const char *)(payload+4), 4);
-        OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
-        payload+8, frame.GetPayloadSize()-8);
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", ApplDefined packet truncated");
-      }
-      break;
-
-#if OPAL_VIDEO
-     case RTP_ControlFrame::e_IntraFrameRequest :
-      PTRACE(4, "RTP\tSession " << sessionID << ", received RF2032 FIR");
-      if(userData != NULL)
-        userData->OnRxIntraFrameRequest(*this);
-      break;
-#endif
-
-    default :
-      PTRACE(2, "RTP\tSession " << sessionID << ", Unknown control payload type: " << frame.GetPayloadType());
+      default :
+        PTRACE(2, "RTP\tSession " << sessionID << ", Unknown control payload type: " << frame.GetPayloadType());
     }
   } while (frame.ReadNextPacket());
 
@@ -2351,19 +2377,58 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
 }
 
 
-void RTP_Session::SendIntraFrameRequest(){
+void RTP_Session::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
+{
+  PTRACE(3, "RTP\tSession " << sessionID << ", SendIntraFrameRequest using "
+         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR")));
+
+  // Create packet
+  RTP_ControlFrame request;
+  request.StartNewPacket();
+
+  if (rfc2032) {
     // Create packet
-    RTP_ControlFrame request;
-    request.StartNewPacket();
     request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
     request.SetPayloadSize(4);
     // Insert SSRC
     request.SetCount(1);
     BYTE * payload = request.GetPayloadPtr();
     *(PUInt32b *)payload = syncSourceOut;
-    // Send it
-    request.EndPacket();
-    WriteControl(request);
+  }
+  else {
+    request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
+    if (pictureLoss)
+      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, 0);
+    else {
+      request.SetFbType(RTP_ControlFrame::e_FullIntraRequest, sizeof(RTP_ControlFrame::FbFIR));
+      RTP_ControlFrame::FbFIR * fir = (RTP_ControlFrame::FbFIR *)request.GetPayloadPtr();
+      fir->requestSSRC = syncSourceIn;
+    }
+    RTP_ControlFrame::FbFCI * fci = (RTP_ControlFrame::FbFCI *)request.GetPayloadPtr();
+    fci->senderSSRC = syncSourceOut;
+  }
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
+}
+
+
+void RTP_Session::SendTemporalSpatialTradeOff(unsigned tradeOff)
+{
+  PTRACE(3, "RTP\tSession " << sessionID << ", SendTemporalSpatialTradeOff " << tradeOff);
+
+  RTP_ControlFrame request;
+  request.StartNewPacket();
+  request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
+  request.SetFbType(RTP_ControlFrame::e_TemporalSpatialTradeOffRequest, sizeof(RTP_ControlFrame::FbTSTO));
+  RTP_ControlFrame::FbTSTO * tsto = (RTP_ControlFrame::FbTSTO *)request.GetPayloadPtr();
+  tsto->requestSSRC = syncSourceIn;
+  tsto->tradeOff = tradeOff;
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
 }
 
 

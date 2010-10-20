@@ -38,7 +38,7 @@
 
 /** This is the base class for a command to a media transcoder and/or media
     stream. The commands are highly context sensitive, for example
-    VideoFastUpdate would only apply to a video transcoder.
+    OpalVideoUpdatePicture would only apply to a video transcoder.
   */
 class OpalMediaCommand : public PObject
 {

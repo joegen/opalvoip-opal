@@ -179,25 +179,25 @@ PString OpalVideoUpdatePicture::GetName() const
   return "Update Picture";
 }
 
-PString OpalVideoUpdatePicture2::GetName() const
+
+OpalVideoPictureLoss::OpalVideoPictureLoss(unsigned sequenceNumber, unsigned timestamp)
+  : m_sequenceNumber(sequenceNumber)
+  , m_timestamp(timestamp)
 {
-  return "Update Picture 2";
 }
+
+
+PString OpalVideoPictureLoss::GetName() const
+{
+  return "Picture Loss";
+}
+
 
 PString OpalTemporalSpatialTradeOff::GetName() const
 {
   return "Temporal Spatial Trade Off";
 }
 
-PString OpalLostPartialPicture::GetName() const
-{
-  return "Lost Partial Picture";
-}
-
-PString OpalLostPicture::GetName() const
-{
-  return "Lost Picture";
-}
 
 #endif // OPAL_VIDEO
 
