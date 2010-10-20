@@ -590,10 +590,11 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))
     SetAlternates(rcf.m_alternateGatekeeper, PFalse);
 
+  // If gk does not include timetoLive then we assume it accepted what we offered
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive))
     timeToLive = AdjustTimeout(rcf.m_timeToLive);
   else
-    timeToLive = 0; // zero disables lightweight RRQ
+    timeToLive = AdjustTimeout(endpoint.GetGatekeeperTimeToLive().GetSeconds());
 
   // At present only support first call signal address to GK
   if (rcf.m_callSignalAddress.GetSize() > 0)
