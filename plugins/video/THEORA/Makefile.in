@@ -42,7 +42,7 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 THEORA_LIBS     =@THEORA_LIBS@
 
-EXTRACCFLAGS    += -I$(COMMONDIR) -I$(PLUGINDIR)
+EXTRACCFLAGS    += -I$(COMMONDIR) -I$(PLUGINDIR) -pthread
 
 vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
@@ -73,7 +73,7 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) $(LDSO) -o $@ $^ $(THEORA_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $(LDSO) -pthread -o $@ $^ $(THEORA_LIBS)
 else	
 	$(Q_LD)$(CXX) $(LDFLAGS) $(LDSO) $@ -o $@ $^ $(THEORA_LIBS)
 endif
