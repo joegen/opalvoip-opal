@@ -60,14 +60,14 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -pthread -c $< -o $@
 
-PLUGIN	= ./ixj_lid_pwplugin.so
+PLUGIN	= ./capi_lid_pwplugin.so
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-	$(Q_LD)$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDSO)$(SONAME) -pthread -o $@ $^ $(EXTRALIBS) -lrt -lcapi20
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)

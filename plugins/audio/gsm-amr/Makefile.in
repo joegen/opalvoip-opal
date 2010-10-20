@@ -60,9 +60,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ -lm
 else	
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ -lm
 
 endif	
 

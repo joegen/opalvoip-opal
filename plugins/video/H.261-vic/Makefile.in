@@ -103,11 +103,11 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -pthread -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) -pthread -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
@@ -116,7 +116,7 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) -pthread -o $@ $^
 else	
 	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^
 endif
