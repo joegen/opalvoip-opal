@@ -226,6 +226,7 @@ endif
 
 ifdef OPAL_PTLIB_SSL
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
+LIBS += -lcrypto
 endif
 
 ifeq ($(OPAL_T120DATA), yes)
