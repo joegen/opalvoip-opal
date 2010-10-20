@@ -204,7 +204,9 @@ class RTP_ControlFrame : public PBYTEArray
       e_ReceiverReport,
       e_SourceDescription,
       e_Goodbye,
-      e_ApplDefined
+      e_ApplDefined,
+      e_TransportLayerFeedBack, // RFC4585
+      e_PayloadSpecificFeedBack
     };
 
     unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
@@ -283,6 +285,41 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned type,            ///<  Description type
       const PString & data      ///<  Data for description
     );
+
+    // RFC4585 Feedback Message Type (FMT)
+    unsigned GetFbType() const { return (BYTE)theArray[compoundOffset]&0x1f; }
+    void     SetFbType(unsigned type, PINDEX fciSize);
+
+    enum PayloadSpecificFbTypes {
+      e_PictureLossIndication = 1,
+      e_SliceLostIndication,
+      e_ReferencePictureSelectionIndication,
+      e_FullIntraRequest,                     //RFC5104
+      e_TemporalSpatialTradeOffRequest,
+      e_TemporalSpatialTradeOffNotification,
+      e_VideoBackChannelMessage,
+      e_ApplicationLayerFbMessage = 15
+    };
+
+    struct FbFCI {
+      PUInt32b senderSSRC;  /* data source of sender of message */
+      PUInt32b mediaSSRC;   /* data source of media */
+    };
+
+    struct FbFIR {
+      FbFCI    fci;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNUmber;
+    };
+
+    struct FbTSTO {
+      FbFCI    fci;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNUmber;
+      BYTE     reserver[2];
+      BYTE     tradeOff;
+    };
+
 #pragma pack()
 
   protected:
@@ -836,7 +873,13 @@ class RTP_Session : public PObject
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
-    virtual void SendIntraFrameRequest();
+    virtual void SendIntraFrameRequest(bool rfc2032, bool pictureLoss);
+
+    /** Tell the rtp session to send out an temporal spatial trade off request
+        control packet. This is called when the media stream receives an
+        OpalTemporalSpatialTradeOff media command.
+      */
+    virtual void SendTemporalSpatialTradeOff(unsigned tradeOff);
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 

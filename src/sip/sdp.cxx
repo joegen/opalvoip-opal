@@ -287,6 +287,10 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   if (mediaFormat.SetOptionString("FMTP", m_fmtp))
     return;
 
+  // Save the RTCP feedback (RFC4585) capability.
+  if (!m_rtcp_fb.IsEmpty())
+    mediaFormat.AddOption(new OpalMediaOptionString("RTCP-FB", false, m_rtcp_fb), true);
+
   // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
     return;
@@ -990,6 +994,22 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     if (tokens.GetSize() > 2)
       format->SetParameters(tokens[2]);
 
+    return;
+  }
+
+  if (attr *= "rtcp-fb") {
+    if (value[0] == '*') {
+      PString params = value.Mid(1).Trim();
+      SDPMediaFormatList::iterator format;
+      for (format = formats.begin(); format != formats.end(); ++format)
+        format->SetRTCP_FB(params);
+    }
+    else {
+      PString params = value;
+      SDPMediaFormat * format = FindFormat(params);
+      if (format != NULL)
+        format->SetRTCP_FB(params);
+    }
     return;
   }
 

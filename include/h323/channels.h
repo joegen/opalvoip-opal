@@ -330,7 +330,7 @@ class H323Channel : public PObject
     ) { paused = pause; }
   //@}
 
-    virtual void OnMediaCommand(OpalMediaCommand &) { }
+    virtual void OnMediaCommand(OpalMediaCommand &);
 
   protected:
     virtual void InternalClose();
@@ -405,13 +405,6 @@ class H323UnidirectionalChannel : public H323Channel
        Receive() or Transmit() depending on the receiver member variable.
      */
     virtual PBoolean Start();
-
-    /**Process a miscellaneous command on the logical channel.
-       The default behaviour passes this on to the codec if not NULL.
-     */
-    virtual void OnMiscellaneousCommand(
-      const H245_MiscellaneousCommand_type & type  ///<  Command to process
-    );
   //@}
 
   /**@name Member variable access */
@@ -422,7 +415,6 @@ class H323UnidirectionalChannel : public H323Channel
     virtual OpalMediaStreamPtr GetMediaStream() const;
   //@}
 
-    void OnMediaCommand(OpalMediaCommand & command);
 
   protected:
     virtual void InternalClose();

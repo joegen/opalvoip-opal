@@ -1114,7 +1114,7 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 }
 
 
-bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, int firstGOB, int firstMB, int numBlocks) const
+bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
@@ -1126,9 +1126,11 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, int firstGOB, in
     PTRACE(3, "OpalCon\tNo video stream do video update picture in connection " << *this);
     return false;
   }
-  
-  OpalVideoUpdatePicture updatePictureCommand(firstGOB, firstMB, numBlocks);
-  stream->ExecuteCommand(updatePictureCommand);
+
+  if (force)
+    stream->ExecuteCommand(OpalVideoUpdatePicture());
+  else
+    stream->ExecuteCommand(OpalVideoPictureLoss());
   PTRACE(3, "OpalCon\tUpdate video picture (I-frame) requested in video stream " << *stream);
 
   return true;

@@ -840,7 +840,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastVideoFastUpdate(0)
+  , m_lastVideoPictureLoss(0)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -1007,14 +1007,13 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
     PTimeInterval tick = PTimer::Tick();
-    // Don't send lots of consecutive VideoFastUpdate commands
-    if (tick - m_lastVideoFastUpdate < 2000)
-      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
+    // Don't send lots of consecutive OpalVideoPictureLoss commands
+    if (tick - m_lastVideoPictureLoss < 2000)
+      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent OpalVideoPictureLoss was sent.");
     else {
-      m_lastVideoFastUpdate = PTimer::Tick();
-      OpalVideoUpdatePicture2 updatePictureCommand(src.GetSequenceNumber(), src.GetTimestamp());
-      NotifyCommand(updatePictureCommand);
-      PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
+      m_lastVideoPictureLoss = PTimer::Tick();
+      NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
+      PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame.");
     }
   }
 
