@@ -92,7 +92,7 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -pthread -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a
@@ -101,9 +101,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $(DL_LIBS) -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) -pthread -o $@ $^ $(DL_LIBS)
 else	
-	$(Q_LD)$(CXX) $(LDSO) $(DL_LIBS) $@ -o $@ $^
+	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(DL_LIBS)
 endif
 
 install:
