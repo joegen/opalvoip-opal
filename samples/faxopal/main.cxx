@@ -59,7 +59,7 @@ void FaxOPAL::Main()
                   "a-audio."
                   "A-no-audio."
                   "d-directory:"
-                  "I-station-id:"
+                  "-station-id:"
                   "e-ignore-ced."
                   "E-suppress-ced."
                   "O-fax-only."
@@ -75,7 +75,7 @@ void FaxOPAL::Main()
             "  -a or --audio           : Send fax as G.711 audio\n"
             "  -A or --no-audio        : Do not send fax as G.711 audio\n"
             "  -O or --fax-only        : T.38 fax only mode, no audio phase\n"
-            "  -I or --station-id id   : Set T.30 Station Identifier string\n"
+            "        --station-id id   : Set T.30 Station Identifier string\n"
             "  -E or --suppress-ced    : Suppress transmission of CED tone\n"
             "  -e or --ignore-ced      : Ignore receipt of CED tone\n"
             "  -X or --switch-time n   : Set fail safe T.38 switch time in seconds\n"
@@ -121,8 +121,8 @@ void FaxOPAL::Main()
     stringOptions.SetAt(OPAL_OPT_DETECT_INBAND_DTMF, "false");
   if (args.HasOption('i'))
     stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
-  if (args.HasOption('D'))
-    stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString('D'));
+  if (args.HasOption("station-id"))
+    stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString("station-id"));
   if (args.HasOption('A'))
     stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
   if (args.HasOption('E'))
