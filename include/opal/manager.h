@@ -1268,11 +1268,23 @@ class OpalManager : public PObject
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
-    BYTE GetRtpIpTypeofService() const { return rtpIpTypeofService; }
+    BYTE GetMediaTypeOfService() const { return m_defaultMediaTypeOfService; }
 
     /**Set the IP Type Of Service byte for media (eg RTP) channels.
      */
-    void SetRtpIpTypeofService(unsigned tos) { rtpIpTypeofService = (BYTE)tos; }
+    void SetMediaTypeOfService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
+
+    // For backward compatibility
+    BYTE P_DEPRECATED GetRtpIpTypeofService() const { return m_defaultMediaTypeOfService; }
+    void P_DEPRECATED SetRtpIpTypeofService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
+
+    /**Get the IP Type Of Service byte for media (eg RTP) channels.
+     */
+    BYTE GetMediaTypeOfService(const OpalMediaType & type) const;
+
+    /**Set the IP Type Of Service byte for media (eg RTP) channels.
+     */
+    void SetMediaTypeOfService(const OpalMediaType & type, unsigned tos);
 
     /**Get the maximum transmitted RTP payload size.
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
@@ -1474,7 +1486,9 @@ class OpalManager : public PObject
     PString       defaultUserName;
     PString       defaultDisplayName;
 
-    BYTE          rtpIpTypeofService;
+    BYTE                     m_defaultMediaTypeOfService;
+    map<OpalMediaType, BYTE> m_mediaTypeOfService;
+
     PINDEX        rtpPayloadSizeMax;
     PINDEX        rtpPacketSizeMax;
     unsigned      minAudioJitterDelay;
