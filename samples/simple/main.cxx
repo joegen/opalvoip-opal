@@ -523,13 +523,13 @@ PBoolean MyManager::Initialise(PArgList & args)
       cerr << "IP Type Of Service bits must be 0 to 255.\n";
       return PFalse;
     }
-    SetRtpIpTypeofService(tos);
+    SetMediaTypeOfService(tos);
   }
 
   cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
           "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
           "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-          "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << "\n"
+          "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
           "STUN server: " << flush;
 
   if (args.HasOption("stun"))
