@@ -2424,7 +2424,7 @@ void RTP_Session::SendTemporalSpatialTradeOff(unsigned tradeOff)
   request.SetFbType(RTP_ControlFrame::e_TemporalSpatialTradeOffRequest, sizeof(RTP_ControlFrame::FbTSTO));
   RTP_ControlFrame::FbTSTO * tsto = (RTP_ControlFrame::FbTSTO *)request.GetPayloadPtr();
   tsto->requestSSRC = syncSourceIn;
-  tsto->tradeOff = tradeOff;
+  tsto->tradeOff = (BYTE)tradeOff;
 
   // Send it
   request.EndPacket();
