@@ -1191,11 +1191,11 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the IP Type Of Service byte for RTP channels.
      */
-    BYTE GetRtpIpTypeofService() const { return manager.GetRtpIpTypeofService(); }
+    BYTE P_DEPRECATED GetRtpIpTypeofService() const { return manager.GetMediaTypeOfService(); }
 
     /**Set the IP Type Of Service byte for RTP channels.
      */
-    void SetRtpIpTypeofService(unsigned tos) { manager.SetRtpIpTypeofService(tos); }
+    void P_DEPRECATED SetRtpIpTypeofService(unsigned tos) { manager.SetMediaTypeOfService(tos); }
 
     /**Get the default timeout for calling another endpoint.
      */

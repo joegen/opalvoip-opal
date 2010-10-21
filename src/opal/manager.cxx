@@ -170,7 +170,7 @@ PCaselessString OpalProductInfo::AsString() const
 OpalManager::OpalManager()
   : defaultUserName(PProcess::Current().GetUserName())
   , defaultDisplayName(defaultUserName)
-  , rtpIpTypeofService(0xb8)  // New DiffServ value for Expidited Forwarding as per RFC3246
+  , m_defaultMediaTypeOfService(0xb8)  // New DiffServ value for Expidited Forwarding as per RFC3246
   , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
   , rtpPacketSizeMax(2048)
   , minAudioJitterDelay(50)  // milliseconds
@@ -1612,6 +1612,19 @@ void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 WORD OpalManager::GetRtpIpPortPair()
 {
   return rtpIpPorts.GetNext(2);
+}
+
+
+BYTE OpalManager::GetMediaTypeOfService(const OpalMediaType & type) const
+{
+  map<OpalMediaType, BYTE>::const_iterator it = m_mediaTypeOfService.find(type);
+  return it != m_mediaTypeOfService.end() ? it->second : m_defaultMediaTypeOfService;
+}
+
+
+void OpalManager::SetMediaTypeOfService(const OpalMediaType & type, unsigned tos)
+{
+  m_mediaTypeOfService[type] = (BYTE)tos;
 }
 
 
