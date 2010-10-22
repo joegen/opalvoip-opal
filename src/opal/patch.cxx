@@ -236,6 +236,8 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+    if (sink->primaryCodec == NULL || sink->secondaryCodec == NULL)
+      return false;
 
     PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 

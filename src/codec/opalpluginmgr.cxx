@@ -652,6 +652,9 @@ OpalPluginTranscoder::~OpalPluginTranscoder()
 
 bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 {
+  if (context == NULL)
+    return false;
+
   PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
 
   char ** options = fmt.GetOptions().ToCharArray(false);
@@ -663,6 +666,9 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 
 bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  if (context == NULL)
+    return false;
+
   OpalPluginControl cmd(codecDef, command.GetName());
   return cmd.Call(command.GetPlugInData(), command.GetPlugInSize(), context) > 0;
 }
@@ -739,6 +745,9 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    BYTE * output,
                                                    PINDEX & created)
 {
+  if (context == NULL)
+    return false;
+
   // Note updateMutex should already be locked at this point.
 
   unsigned int fromLen = consumed;
@@ -754,7 +763,7 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
 
 PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 { 
-  if (codecDef == NULL)
+  if (codecDef == NULL || context == NULL)
     return false;
 
   unsigned length;
@@ -822,6 +831,9 @@ PBoolean OpalPluginStreamedAudioTranscoder::ExecuteCommand(const OpalMediaComman
 
 int OpalPluginStreamedAudioTranscoder::ConvertOne(int from) const
 {
+  if (context == NULL)
+    return false;
+
   // Note updateMutex should already be locked at this point.
 
   unsigned int fromLen = sizeof(from);
@@ -872,6 +884,9 @@ PBoolean OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & comm
 
 PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
+  if (context == NULL)
+    return false;
+
   PWaitAndSignal mutex(updateMutex);
   return isEncoder ? EncodeFrames(src, dstList) : DecodeFrames(src, dstList);
 }
@@ -1170,6 +1185,9 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     virtual PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
     {
+      if (context == NULL)
+        return false;
+
       PWaitAndSignal mutex(updateMutex);
 
       dstList.RemoveAll();
