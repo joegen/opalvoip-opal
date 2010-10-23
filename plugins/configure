@@ -10818,7 +10818,7 @@ if test "x${HAVE_IMA_ADPCM}" = "xyes" ; then
 fi
 
 
-if test -d audio/SBC ; then
+if test -d audio/SBC -s -d audio/SBC/bluez_sbc ; then
   # Check whether --enable-sbc was given.
 if test "${enable_sbc+set}" = set; then
   enableval=$enable_sbc; HAVE_SBC=$enableval

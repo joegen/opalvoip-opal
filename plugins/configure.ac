@@ -333,7 +333,7 @@ fi
 dnl #########
 dnl sbc,Bluetooth SBC for telephony with CD quality
 
-if test -d audio/SBC ; then
+if test -d audio/SBC -s -d audio/SBC/bluez_sbc ; then
   AC_ARG_ENABLE([sbc],
                 [AC_HELP_STRING([--disable-sbc],[Disable Bluetooth SBC])],
                 [HAVE_SBC=$enableval],
