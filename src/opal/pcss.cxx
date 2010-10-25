@@ -218,9 +218,12 @@ PSafePtr<OpalConnection> OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 
     PStringToString params;
     PURL::SplitVars(remoteParty.Mid(semicolon), params, ';', '=');
-    for (PINDEX i = 0; i < params.GetSize(); ++i)
-      stringOptions->SetAt(params.GetKeyAt(i), params.GetDataAt(i));
-
+    for (PINDEX i = 0; i < params.GetSize(); ++i) {
+      PString key = params.GetKeyAt(i);
+      if (key.NumCompare("OPAL-") == EqualTo)
+        key.Delete(0, 5);
+      stringOptions->SetAt(key, params.GetDataAt(i));
+    }
     deviceNames.Delete(semicolon, P_MAX_INDEX);
   }
 
