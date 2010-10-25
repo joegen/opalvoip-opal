@@ -3313,7 +3313,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
     return true;
 
   PTRACE(2, "SIP\tCould not send tone '" << tone << "' via INFO.");
-  return OpalConnection::SendUserInputTone(tone, duration);
+  return OpalRTPConnection::SendUserInputTone(tone, duration);
 }
 
 
