@@ -557,7 +557,7 @@ bool MyMixerConnection::SendUserInputString(const PString & value)
     m_endpoint.m_manager.m_cli->Broadcast(strm);
   }
 
-  return true;
+  return OpalMixerConnection::SendUserInputString(value);
 }
 
 

@@ -933,6 +933,20 @@ void OpalMixerConnection::OnApplyStringOptions()
 }
 
 
+bool OpalMixerConnection::SendUserInputString(const PString & value)
+{
+  m_node->BroadcastUserInput(this, value);
+  return true;
+}
+
+
+PBoolean OpalMixerConnection::SendUserInputTone(char tone, unsigned /*duration*/)
+{
+  m_node->BroadcastUserInput(this, tone);
+  return true;
+}
+
+
 void OpalMixerConnection::SetListenOnly(bool listenOnly)
 {
   PTRACE(3, "MixerCon\tSet listen only mode to " << (listenOnly ? "ON" : "OFF"));
@@ -1255,6 +1269,15 @@ void OpalMixerNode::UseMediaPassThrough(unsigned sessionID, OpalConnection * con
     return;
 
   OpalManager::SetMediaPassThrough(*other1, *other2, m_connections.GetSize() == 2, sessionID);
+}
+
+
+void OpalMixerNode::BroadcastUserInput(const OpalConnection * connection, const PString & value)
+{
+  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {
+    if (connection != conn)
+      conn->OnUserInputString(value);
+  }
 }
 
 
