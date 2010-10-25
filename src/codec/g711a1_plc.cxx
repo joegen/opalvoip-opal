@@ -208,7 +208,7 @@ void OpalG711_PLC::scalespeech(short *inout, int c, int size, bool decay) const
 void OpalG711_PLC::dofe(short *out, int size)
 {
   for (int c=0; c<channels; c++) {
-    PTRACE(4, " concealing channel " << c);
+    PTRACE(6, " concealing channel " << c);
     short *buf = out;
     int rest = size;
     do {
@@ -218,7 +218,6 @@ void OpalG711_PLC::dofe(short *out, int size)
 #endif
       rest -= res;
       buf += res * channels;
-    PTRACE(4, "  done");
     }while(rest>0);
   }
   hist_savespeech(out, size);
