@@ -2585,10 +2585,10 @@ void MyManager::AddToConference(OpalCall & call)
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
       pc += ";OPAL-AutoStart=video:no";
     SetUpCall(pc, "mcu:"CONFERENCE_NAME);
-    m_activeCall = NULL;
+    m_activeCall.SetNULL();
   }
 
-  PSafePtr<OpalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
+  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
   call.Transfer("mcu:"CONFERENCE_NAME, connection);
   call.Retrieve();
   LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
