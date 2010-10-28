@@ -184,9 +184,9 @@ const char * H235AuthProcedure1::GetName() const
 }
 
 
-H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken()
+H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken(bool digits)
 {
-  if (!IsActive())
+  if (!IsActive() || digits)
     return NULL;
 
   H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
