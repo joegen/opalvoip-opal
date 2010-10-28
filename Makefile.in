@@ -225,7 +225,7 @@ SOURCES += $(OPAL_SRCDIR)/h460/h4601.cxx \
 endif
 endif
 
-ifdef OPAL_PTLIB_SSL
+ifeq ($(OPAL_PTLIB_SSL), yes)
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
 LIBS += -lcrypto
 endif
