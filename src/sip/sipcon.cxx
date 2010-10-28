@@ -2487,16 +2487,14 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
+  m_referInProgress = state != "terminated";
   info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", state != "terminated" || code < 200
-                        ? "progress" : (code < 300 ? "success" : "failed"));
+  info.SetAt("result", m_referInProgress ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info))
     return;
-
-  m_referInProgress = false;
 
   // Release the connection
   if (IsReleased())
