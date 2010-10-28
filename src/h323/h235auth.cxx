@@ -40,6 +40,7 @@
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>
 
+#include <opal/endpoint.h>
 #include <h323/h235auth.h>
 #include <h323/h323pdu.h>
 
@@ -101,8 +102,11 @@ PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
       clearTokens.Append(clearToken);
   }
 
-  H225_CryptoH323Token * cryptoToken = CreateCryptoToken();
-  if (cryptoToken != NULL)
+  H225_CryptoH323Token * cryptoToken;
+  if ((cryptoToken = CreateCryptoToken(false)) != NULL)
+    cryptoTokens.Append(cryptoToken);
+
+  if ((cryptoToken = CreateCryptoToken(true)) != NULL)
     cryptoTokens.Append(cryptoToken);
 
   return PTrue;
@@ -115,7 +119,7 @@ H235_ClearToken * H235Authenticator::CreateClearToken()
 }
 
 
-H225_CryptoH323Token * H235Authenticator::CreateCryptoToken()
+H225_CryptoH323Token * H235Authenticator::CreateCryptoToken(bool)
 {
   return NULL;
 }
@@ -334,7 +338,7 @@ const char * H235AuthSimpleMD5::GetName() const
 }
 
 
-H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
+H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken(bool digits)
 {
   if (!IsActive())
     return NULL;
@@ -343,6 +347,9 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
     PTRACE(2, "H235RAS\tH235AuthSimpleMD5 requires local ID for encoding.");
     return NULL;
   }
+
+  if (digits && !OpalIsE164(localId, true))
+    return NULL;
 
   // Cisco compatible hash calculation
   H235_ClearToken clearToken;
@@ -355,15 +362,19 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken()
   cryptoToken->SetTag(H225_CryptoH323Token::e_cryptoEPPwdHash);
   H225_CryptoH323Token_cryptoEPPwdHash & cryptoEPPwdHash = *cryptoToken;
 
-  // Set the alias using possible alias type prefix strings, e.g. "e164:", "h323:"
-  H323SetAliasAddress(localId, cryptoEPPwdHash.m_alias);
-
-  // Extract back from translated alias so we have ID sans prefix.
-  PString tempId = H323GetAliasAddressString(cryptoEPPwdHash.m_alias);
+  // Set the alias
+  if (digits) {
+    cryptoEPPwdHash.m_alias.SetTag(H225_AliasAddress::e_dialedDigits);
+    (PASN_IA5String &)cryptoEPPwdHash.m_alias = localId;
+  }
+  else {
+    cryptoEPPwdHash.m_alias.SetTag(H225_AliasAddress::e_h323_ID);
+    (PASN_BMPString &)cryptoEPPwdHash.m_alias = localId;
+  }
 
   // Use SetValueRaw to make sure trailing NULL is included
   clearToken.IncludeOptionalField(H235_ClearToken::e_generalID);
-  clearToken.m_generalID.SetValueRaw(tempId.AsUCS2());
+  clearToken.m_generalID.SetValueRaw(localId.AsUCS2());
 
   clearToken.IncludeOptionalField(H235_ClearToken::e_password);
   clearToken.m_password.SetValueRaw(password.AsUCS2());
