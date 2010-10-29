@@ -372,6 +372,10 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
+  unsigned responseClass = response.GetStatusCode()/100;
+  if (responseClass < 2)
+    return; // Don't do anything with pending responses.
+
   // Received a response, so indicate that and collapse the forking on multiple interfaces.
   m_receivedResponse = true;
 
@@ -402,18 +406,10 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       break;
 
     default :
-      switch (response.GetStatusCode()/100) {
-        case 1 :
-          // Do nothing on 1xx
-          break;
-
-        case 2 :
-          OnReceivedOK(transaction, response);
-          break;
-
-        default :
-          OnFailed(response);
-      }
+      if (responseClass == 2)
+        OnReceivedOK(transaction, response);
+      else
+        OnFailed(response);
   }
 }
 
