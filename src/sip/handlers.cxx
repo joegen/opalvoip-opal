@@ -91,7 +91,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
   , retryTimeoutMax(params.m_maxRetryTime)
   , m_proxy(params.m_proxyAddress)
 {
-  transactions.DisallowDeleteObjects();
+  m_transactions.DisallowDeleteObjects();
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
   if (m_proxy.IsEmpty())
@@ -126,22 +126,28 @@ PObject::Comparison SIPHandler::Compare(const PObject & obj) const
 
 bool SIPHandler::ShutDown()
 {
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return true;
+  PSafeList<SIPTransaction> transactions;
 
-  while (!m_stateQueue.empty())
-    m_stateQueue.pop();
+  {
+    PSafeLockReadWrite mutex(*this);
+    if (!mutex.IsLocked())
+      return true;
 
-  switch (GetState()) {
-    case Subscribed :
-    case Unavailable :
-      SendRequest(Unsubscribing);
-    case Unsubscribing :
-      return transactions.IsEmpty();
+    while (!m_stateQueue.empty())
+      m_stateQueue.pop();
 
-    default :
-      break;
+    switch (GetState()) {
+      case Subscribed :
+      case Unavailable :
+        SendRequest(Unsubscribing);
+      case Unsubscribing :
+        return m_transactions.IsEmpty();
+
+      default :
+        break;
+    }
+
+    transactions = m_transactions;
   }
 
   for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
@@ -183,10 +189,6 @@ void SIPHandler::SetState(SIPHandler::State newState)
 
 bool SIPHandler::ActivateState(SIPHandler::State newState)
 {
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return true;
-
   // If subscribing with zero expiry time, is same as unsubscribe
   if (newState == Subscribing && expire == 0)
     newState = Unsubscribing;
@@ -215,6 +217,10 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
     /* Unsubscribing     */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange, e_NoChange,   e_Invalid  },
     /* Unsubscribed      */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange,   e_NoChange }
   };
+
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return true;
 
   switch (StateChangeActions[GetState()][newState]) {
     case e_Invalid :
@@ -354,7 +360,7 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool /*forked*/)
       authentication->Authorise(auth); // If already have info from last time, use it!
     }
     if (transaction->Start()) {
-      transactions.Append(transaction);
+      m_transactions.Append(transaction);
       return true;
     }
   }
@@ -379,12 +385,12 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
   // Received a response, so indicate that and collapse the forking on multiple interfaces.
   m_receivedResponse = true;
 
-  transactions.Remove(&transaction); // Take this transaction out of list
+  m_transactions.Remove(&transaction); // Take this transaction out of list
 
   // And kill all the rest
   PSafePtr<SIPTransaction> transToGo;
-  while ((transToGo = transactions.GetAt(0)) != NULL) {
-    transactions.Remove(transToGo);
+  while ((transToGo = m_transactions.GetAt(0)) != NULL) {
+    m_transactions.Remove(transToGo);
     transToGo->Abort();
   }
 
@@ -544,7 +550,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
 
 void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
-  if (transactions.Remove(&transaction)) {
+  if (m_transactions.Remove(&transaction)) {
     OnFailed(transaction.GetStatusCode());
     if (!transaction.IsCanceled())
       RetryLater(offlineExpire);

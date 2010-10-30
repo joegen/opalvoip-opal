@@ -151,7 +151,7 @@ protected:
   PString                     m_password;
   PString                     m_realm;
 
-  PSafeList<SIPTransaction>   transactions;
+  PSafeList<SIPTransaction>   m_transactions;
   OpalTransport             * m_transport;
 
   SIP_PDU::Methods            m_method;
