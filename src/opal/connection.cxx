@@ -885,22 +885,24 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     OnStopRecording(patch);
 #endif
 
-    if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), OpalPCM16)) {
+    if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), m_filterMediaFormat)) {
       PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
     }
 
 #if OPAL_AEC
-    if (echoCanceler && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
-                                                              : echoCanceler->GetSendHandler(), OpalPCM16)) {
+    if (echoCanceler != NULL && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
+                                                  : echoCanceler->GetSendHandler(), m_filterMediaFormat)) {
       PTRACE(4, "OpalCon\tRemoved echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
 
 #if OPAL_PTLIB_DTMF
-    if (patch->RemoveFilter(m_dtmfDetectNotifier, OPAL_PCM16)) {
+    if (patch->RemoveFilter(m_dtmfDetectNotifier, OpalPCM16)) {
       PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this << ", patch " << patch);
     }
-    patch->RemoveFilter(m_dtmfSendNotifier, OPAL_PCM16);
+    if (patch->RemoveFilter(m_dtmfSendNotifier, OpalPCM16)) {
+      PTRACE(4, "OpalCon\tRemoved DTMF send filter on connection " << *this << ", patch " << patch);
+    }
 #endif
   }
 
@@ -925,7 +927,7 @@ void OpalConnection::OnStartRecording(OpalMediaPatch * patch)
     return;
   }
 
-  patch->AddFilter(m_recordAudioNotifier, OPAL_PCM16);
+  patch->AddFilter(m_recordAudioNotifier, OpalPCM16);
 #if OPAL_VIDEO
   patch->AddFilter(m_recordVideoNotifier, OPAL_YUV420P);
 #endif
@@ -941,7 +943,7 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
 
   ownerCall.OnStopRecording(MakeRecordingKey(*patch));
 
-  patch->RemoveFilter(m_recordAudioNotifier, OPAL_PCM16);
+  patch->RemoveFilter(m_recordAudioNotifier, OpalPCM16);
 #if OPAL_VIDEO
   patch->RemoveFilter(m_recordVideoNotifier, OPAL_YUV420P);
 #endif
@@ -955,35 +957,38 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 {
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 
-  OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
-  if (mediaFormat.GetEncodingName()[0] != '\0')
-    mediaFormat = patch.GetSink()->GetMediaFormat();
+  m_filterMediaFormat = patch.GetSource().GetMediaFormat();
+  if (m_filterMediaFormat.GetEncodingName()[0] != '\0') {
+    m_filterMediaFormat = patch.GetSink()->GetMediaFormat();
+    if (m_filterMediaFormat.GetEncodingName()[0] != '\0')
+      m_filterMediaFormat = PString::Empty();
+  }
 
-  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+  if (m_filterMediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (isSource && silenceDetector != NULL) {
-      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
+      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), m_filterMediaFormat.GetClockRate());
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), m_filterMediaFormat);
       PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
     }
 #if OPAL_AEC
     if (echoCanceler) {
       echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
-      echoCanceler->SetClockRate(mediaFormat.GetClockRate());
+      echoCanceler->SetClockRate(m_filterMediaFormat.GetClockRate());
       patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
-                               : echoCanceler->GetSendHandler(), mediaFormat);
+                               : echoCanceler->GetSendHandler(), m_filterMediaFormat);
       PTRACE(4, "OpalCon\tAdded echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      patch.AddFilter(m_dtmfDetectNotifier, mediaFormat);
+      patch.AddFilter(m_dtmfDetectNotifier, OpalPCM16);
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
 
     if (m_sendInBandDTMF && !isSource) {
       m_installedInBandDTMF = true;
-      patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
+      patch.AddFilter(m_dtmfSendNotifier, OpalPCM16);
       PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
 #endif
