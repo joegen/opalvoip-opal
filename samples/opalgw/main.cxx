@@ -358,8 +358,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase()));
   rsrc->Add(new PHTTPIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax()));
 
-  SetRtpIpTypeofService(cfg.GetInteger(RTPTOSKey, GetRtpIpTypeofService()));
-  rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetRtpIpTypeofService()));
+  SetMediaTypeOfService(cfg.GetInteger(RTPTOSKey, GetMediaTypeOfService()));
+  rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService()));
 
   PString STUNServer = cfg.GetString(STUNServerKey, "stun.voxgratia.org");
   rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer));

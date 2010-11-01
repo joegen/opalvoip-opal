@@ -116,8 +116,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     ) const;
 
     /**Execute the command specified to the transcoder. The commands are
-       highly context sensitive, for example VideoFastUpdate would only apply
-       to a video transcoder.
+       highly context sensitive, for example OpalVideoUpdatePicture would only
+       apply to a video transcoder.
 
        The default behaviour checks for a OpalVideoUpdatePicture and sets the
        updatePicture member variable if that is the command.
@@ -168,72 +168,59 @@ class OpalVideoTranscoder : public OpalTranscoder
 
 OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture");
 
+/**This indicates that a force video picture update is required, that
+   is an Intra or Key frame MUST be sent. This may be called when the
+   system logic requires a scene chage, e.g. when recording a video an
+   Intra frame is required before it can start, the sender must send one.
+  */
 class OpalVideoUpdatePicture : public OpalMediaCommand
 {
   PCLASSINFO(OpalVideoUpdatePicture, OpalMediaCommand);
   public:
-    OpalVideoUpdatePicture(int firstGOB = -1, int firstMB = -1, int numBlocks = 0)
-      : m_firstGOB(firstGOB), m_firstMB(firstMB), m_numBlocks(numBlocks) { }
-
     virtual PString GetName() const;
-
-    int GetFirstGOB() const { return m_firstGOB; }
-    int GetFirstMB() const { return m_firstMB; }
-    int GetNumBlocks() const { return m_numBlocks; }
-
-  protected:
-    int m_firstGOB;
-    int m_firstMB;
-    int m_numBlocks;
 };
 
-class OpalVideoUpdatePicture2 : public OpalVideoUpdatePicture
+/**This indicates that the remote has had a picture loss and that a
+   video picture update is desired, that is an Intra or Key frame should be
+   sent, however, the sender can opt due to say bandwidth constraints not to
+   do so and suffer with the corrupted video.
+  */
+class OpalVideoPictureLoss : public OpalVideoUpdatePicture
 {
-  PCLASSINFO(OpalVideoUpdatePicture2, OpalVideoUpdatePicture);
+  PCLASSINFO(OpalVideoPictureLoss, OpalVideoUpdatePicture);
   public:
-    OpalVideoUpdatePicture2(WORD seq, DWORD ts, int firstGOB = -1, int firstMB = -1, int numBlocks = 0)
-      : OpalVideoUpdatePicture(firstGOB, firstMB, numBlocks), m_seq(seq), m_ts(ts)  { }
+    OpalVideoPictureLoss(unsigned sequenceNumber = 0, unsigned timestamp = 0);
 
     virtual PString GetName() const;
 
-    WORD GetSequenceNumber() const { return m_seq; }
-    DWORD GetTimestamp() const     { return m_ts; }
+    unsigned GetSequenceNumber() const { return m_sequenceNumber; }
+    unsigned GetTimestamp() const { return m_timestamp; }
 
   protected:
-    WORD m_seq;
-    DWORD m_ts;
+    unsigned m_sequenceNumber;
+    unsigned m_timestamp;
 };
 
+
+/**This is an indication to the video encoder to change the way it is to
+   encode the video stream.
+
+   The trade off integer is a value that trade spatial quality (blockiness)
+   for temparaly quality (frame rate). A value of zero is maxium spatial
+   quality and a value fo 31 is maximum frame rate.
+  */
 class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {
   PCLASSINFO(OpalTemporalSpatialTradeOff, OpalMediaCommand);
   public:
-    OpalTemporalSpatialTradeOff(int quality) : m_quality(quality) { }
+    OpalTemporalSpatialTradeOff(int tradeoff) : m_tradeOff(tradeoff) { }
 
     virtual PString GetName() const;
 
-    int GetQuality() const { return m_quality; }
+    int GetTradeOff() const { return m_tradeOff; }
 
   protected:
-    int m_quality;
-};
-
-
-class OpalLostPartialPicture : public OpalMediaCommand
-{
-  PCLASSINFO(OpalLostPartialPicture, OpalMediaCommand);
-  public:
-    OpalLostPartialPicture() { }
-    virtual PString GetName() const;
-};
-
-
-class OpalLostPicture : public OpalMediaCommand
-{
-  PCLASSINFO(OpalLostPicture, OpalMediaCommand);
-  public:
-    OpalLostPicture() { }
-    virtual PString GetName() const;
+    int m_tradeOff;
 };
 
 

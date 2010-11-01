@@ -1181,7 +1181,8 @@ class OpalConnection : public PSafeObject
        connection's source video stream if it exists.
       */
     virtual void OnRxIntraFrameRequest(
-      const OpalMediaSession & session   ///<  Session with statistics
+      const OpalMediaSession & session,   ///<  Session with statistics
+      bool force                          ///<  Force Intra frame, or just indicate picture loss
     ) const;
 #endif
 
@@ -1225,12 +1226,13 @@ class OpalConnection : public PSafeObject
     );
 
     /** Send a Video Update Picture request to media stream.
+        If \p force is set then a "force Intra frame" is sent, otherwise a
+        "picture loss" is sent. The underlying protocol may or may not make a
+        distinction.
       */
     virtual bool SendVideoUpdatePicture(
       unsigned sessionID = 0, ///< Session for media stream, 0 is use first Video stream
-      int firstGOB = -1,      ///< First Group Of Blocks for update, -1 is use MB
-      int firstMB = -1,       ///< First Macro Block for update, -1 is use GOB
-      int numBlocks = 0       ///< First Group Of Blocks for update, 0 is all
+      bool force = false      ///< Indicate is a picture loss or forced I-Frame
     ) const;
 #endif
 
@@ -1774,6 +1776,7 @@ class OpalConnection : public PSafeObject
     PString              localPartyName;
     PString              displayName;
     PString              remotePartyName;
+    PString              remotePartyURL;
     OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
     PString              remotePartyAddress;

@@ -378,8 +378,9 @@ class OpalVideoMixer : public OpalBaseMixer
   */
 struct OpalMixerNodeInfo
 {
-  OpalMixerNodeInfo()
-    : m_listenOnly(false)
+  OpalMixerNodeInfo(const char * name = NULL)
+    : m_name(name)
+    , m_listenOnly(false)
     , m_sampleRate(OpalMediaFormat::AudioClockRate)
 #if OPAL_VIDEO
     , m_audioOnly(false)
@@ -810,6 +811,37 @@ class OpalMixerConnection : public OpalLocalConnection
 
     /// Call back for connection to act on changed string options
     virtual void OnApplyStringOptions();
+
+    /**Send a user input indication to the remote endpoint.
+       This is for sending arbitrary strings as user indications.
+
+       The default behaviour is to call SendUserInputTone() for each character
+       in the string.
+      */
+    virtual PBoolean SendUserInputString(
+      const PString & value                   ///<  String value of indication
+    );
+
+    /**Send a user input indication to the remote endpoint.
+       This sends DTMF emulation user input. If something more sophisticated
+       than the simple tones that can be sent using the SendUserInput()
+       function.
+
+       A duration of zero indicates that no duration is to be indicated.
+       A non-zero logical channel indicates that the tone is to be syncronised
+       with the logical channel at the rtpTimestamp value specified.
+
+       The tone parameter must be one of "0123456789#*ABCD!" where '!'
+       indicates a hook flash. If tone is a ' ' character then a
+       signalUpdate PDU is sent that updates the last tone indication
+       sent. See the H.245 specifcation for more details on this.
+
+       The default behaviour sends the tone using RFC2833.
+      */
+    virtual PBoolean SendUserInputTone(
+      char tone,        ///<  DTMF tone code
+      unsigned duration = 0  ///<  Duration of tone in milliseconds
+    );
   //@}
 
   /**@name Operations */
@@ -1003,6 +1035,13 @@ class OpalMixerNode : public PSafeObject
       const RTP_DataFrame & input       ///< Input RTP data for media
     ) { return m_videoMixer.WriteStream(key, input); }
 #endif // OPAL_VIDEO
+
+    /**Send a user input indication to all connections.
+      */
+    virtual void BroadcastUserInput(
+      const OpalConnection * connection,      ///<  Connection NOT to send to
+      const PString & value                   ///<  String value of indication
+    );
   //@}
 
   /**@name Member variable access */

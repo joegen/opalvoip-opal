@@ -1128,9 +1128,9 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (command.m_param.m_general.m_rtpPortBase != 0)
     SetRtpIpPorts(command.m_param.m_general.m_rtpPortBase, command.m_param.m_general.m_rtpPortMax);
 
-  response->m_param.m_general.m_rtpTypeOfService = GetRtpIpTypeofService();
+  response->m_param.m_general.m_rtpTypeOfService = GetMediaTypeOfService();
   if (command.m_param.m_general.m_rtpTypeOfService != 0)
-    SetRtpIpTypeofService(command.m_param.m_general.m_rtpTypeOfService);
+    SetMediaTypeOfService(command.m_param.m_general.m_rtpTypeOfService);
 
   response->m_param.m_general.m_rtpMaxPayloadSize = GetMaxRtpPayloadSize();
   if (command.m_param.m_general.m_rtpMaxPayloadSize != 0)

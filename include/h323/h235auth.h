@@ -74,7 +74,7 @@ class H235Authenticator : public PObject
     );
 
     virtual H235_ClearToken * CreateClearToken();
-    virtual H225_CryptoH323Token * CreateCryptoToken();
+    virtual H225_CryptoH323Token * CreateCryptoToken(bool digits);
 
     virtual PBoolean Finalise(
       PBYTEArray & rawPDU
@@ -159,6 +159,9 @@ class H235Authenticator : public PObject
     int      timestampGracePeriod;
 
     PMutex mutex;
+
+  private:
+    P_REMOVE_VIRTUAL(H225_CryptoH323Token *,CreateCryptoToken(),NULL);
 };
 
 
@@ -199,7 +202,7 @@ class H235AuthSimpleMD5 : public H235Authenticator
 
     virtual const char * GetName() const;
 
-    virtual H225_CryptoH323Token * CreateCryptoToken();
+    virtual H225_CryptoH323Token * CreateCryptoToken(bool digits);
 
     virtual ValidationResult ValidateCryptoToken(
       const H225_CryptoH323Token & cryptoToken,
@@ -280,7 +283,7 @@ class H235AuthProcedure1 : public H235Authenticator
 
     virtual const char * GetName() const;
 
-    virtual H225_CryptoH323Token * CreateCryptoToken();
+    virtual H225_CryptoH323Token * CreateCryptoToken(bool digits);
 
     virtual PBoolean Finalise(
       PBYTEArray & rawPDU

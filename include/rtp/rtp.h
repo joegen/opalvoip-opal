@@ -44,6 +44,8 @@
 #include <ptlib/safecoll.h>
 #include <opal/mediasession.h>
 
+#include <list>
+
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -191,7 +193,9 @@ class RTP_ControlFrame : public PBYTEArray
       e_ReceiverReport,
       e_SourceDescription,
       e_Goodbye,
-      e_ApplDefined
+      e_ApplDefined,
+      e_TransportLayerFeedBack, // RFC4585
+      e_PayloadSpecificFeedBack
     };
 
     unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
@@ -270,6 +274,41 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned type,            ///<  Description type
       const PString & data      ///<  Data for description
     );
+
+    // RFC4585 Feedback Message Type (FMT)
+    unsigned GetFbType() const { return (BYTE)theArray[compoundOffset]&0x1f; }
+    void     SetFbType(unsigned type, PINDEX fciSize);
+
+    enum PayloadSpecificFbTypes {
+      e_PictureLossIndication = 1,
+      e_SliceLostIndication,
+      e_ReferencePictureSelectionIndication,
+      e_FullIntraRequest,                     //RFC5104
+      e_TemporalSpatialTradeOffRequest,
+      e_TemporalSpatialTradeOffNotification,
+      e_VideoBackChannelMessage,
+      e_ApplicationLayerFbMessage = 15
+    };
+
+    struct FbFCI {
+      PUInt32b senderSSRC;  /* data source of sender of message */
+      PUInt32b mediaSSRC;   /* data source of media */
+    };
+
+    struct FbFIR {
+      FbFCI    fci;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNUmber;
+    };
+
+    struct FbTSTO {
+      FbFCI    fci;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNUmber;
+      BYTE     reserver[2];
+      BYTE     tradeOff;
+    };
+
 #pragma pack()
 
   protected:
@@ -532,16 +571,6 @@ class OpalRTPSession : public OpalMediaSession
       bool allow    ///<  Flag for allow any SSRC values
     ) { allowAnySyncSource = allow; }
 
-    /**Indicate if will ignore out of order packets.
-      */
-    bool WillIgnoreOutOfOrderPackets() const { return ignoreOutOfOrderPackets; }
-
-    /**Indicate if will ignore out of order packets.
-      */
-    void SetIgnoreOutOfOrderPackets(
-      bool ignore   ///<  Flag for ignore out of order packets
-    ) { ignoreOutOfOrderPackets = ignore; }
-
     /**Indicate if will ignore rtp payload type changes in received packets.
      */
     void SetIgnorePayloadTypeChanges(
@@ -730,7 +759,13 @@ class OpalRTPSession : public OpalMediaSession
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
-    virtual void SendIntraFrameRequest();
+    virtual void SendIntraFrameRequest(bool rfc2032, bool pictureLoss);
+
+    /** Tell the rtp session to send out an temporal spatial trade off request
+        control packet. This is called when the media stream receives an
+        OpalTemporalSpatialTradeOff media command.
+      */
+    virtual void SendTemporalSpatialTradeOff(unsigned tradeOff);
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 
@@ -747,7 +782,8 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
 
     virtual void ApplyQOS(const PIPSocket::Address & addr);
-    virtual SendReceiveStatus InternalReadData(RTP_DataFrame & frame);
+    virtual bool InternalReadData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus InternalReadData2(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
       BYTE * framePtr,
@@ -771,7 +807,6 @@ class OpalRTPSession : public OpalMediaSession
     typedef PSafePtr<RTP_JitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
 
-    bool          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
@@ -787,7 +822,12 @@ class OpalRTPSession : public OpalMediaSession
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
     WORD          lastRRSequenceNumber;
-    PINDEX        consecutiveOutOfOrderPackets;
+    bool          resequenceOutOfOrderPackets;
+    unsigned      consecutiveOutOfOrderPackets;
+    PTimeInterval outOfOrderPacketTime;
+
+    std::list<RTP_DataFrame> m_outOfOrderPackets;
+    void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
     PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut

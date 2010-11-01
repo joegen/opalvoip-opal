@@ -208,7 +208,7 @@ void OpalG711_PLC::scalespeech(short *inout, int c, int size, bool decay) const
 void OpalG711_PLC::dofe(short *out, int size)
 {
   for (int c=0; c<channels; c++) {
-    PTRACE(4, " concealing channel " << c);
+    PTRACE(6, " concealing channel " << c);
     short *buf = out;
     int rest = size;
     do {
@@ -218,7 +218,6 @@ void OpalG711_PLC::dofe(short *out, int size)
 #endif
       rest -= res;
       buf += res * channels;
-    PTRACE(4, "  done");
     }while(rest>0);
   }
   hist_savespeech(out, size);
@@ -239,7 +238,7 @@ void OpalG711_PLC::dofe(short *out, int size)
 
 int OpalG711_PLC::dofe_partly(short *out, int c, int size)
 {
-  printf("dofe_partly: mode %d\tcnt %d\tsz %d\t->\t", channel[c].mode, channel[c].conceal_count, size);
+  //printf("dofe_partly: mode %d\tcnt %d\tsz %d\t->\t", channel[c].mode, channel[c].conceal_count, size);
 
   switch(channel[c].mode) {
   case NOLOSS:
@@ -359,7 +358,7 @@ int OpalG711_PLC::dofe_partly(short *out, int c, int size)
   }
 
   channel[c].conceal_count+=size;
-  printf("mode %d\tsz %d\n", channel[c].mode, size);
+  //printf("mode %d\tsz %d\n", channel[c].mode, size);
   return size;
 }
 

@@ -325,7 +325,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     bool DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
 
     RTP_DataFrame * m_bufferRTP;
-    PTimeInterval   m_lastVideoFastUpdate;
+    PTimeInterval   m_lastVideoPictureLoss;
 
 #if PTRACING
     unsigned m_consecutiveIntraFrames;
