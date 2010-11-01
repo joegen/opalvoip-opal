@@ -949,10 +949,13 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 
   OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
+  if (mediaFormat.GetEncodingName()[0] != '\0')
+    mediaFormat = patch.GetSink()->GetMediaFormat();
+
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (isSource && silenceDetector != NULL) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
       PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
     }
 #if OPAL_AEC
@@ -960,20 +963,20 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
       echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
       echoCanceler->SetClockRate(mediaFormat.GetClockRate());
       patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
-                               : echoCanceler->GetSendHandler(), OpalPCM16);
+                               : echoCanceler->GetSendHandler(), mediaFormat);
       PTRACE(4, "OpalCon\tAdded echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      patch.AddFilter(m_dtmfDetectNotifier, OPAL_PCM16);
+      patch.AddFilter(m_dtmfDetectNotifier, mediaFormat);
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
 
     if (m_sendInBandDTMF && !isSource) {
       m_installedInBandDTMF = true;
-      patch.AddFilter(m_dtmfSendNotifier, OPAL_PCM16);
+      patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
       PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
 #endif
@@ -1107,7 +1110,7 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 }
 
 
-bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, int firstGOB, int firstMB, int numBlocks) const
+bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
@@ -1119,9 +1122,11 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, int firstGOB, in
     PTRACE(3, "OpalCon\tNo video stream do video update picture in connection " << *this);
     return false;
   }
-  
-  OpalVideoUpdatePicture updatePictureCommand(firstGOB, firstMB, numBlocks);
-  stream->ExecuteCommand(updatePictureCommand);
+
+  if (force)
+    stream->ExecuteCommand(OpalVideoUpdatePicture());
+  else
+    stream->ExecuteCommand(OpalVideoPictureLoss());
   PTRACE(3, "OpalCon\tUpdate video picture (I-frame) requested in video stream " << *stream);
 
   return true;
@@ -1386,6 +1391,9 @@ static PString MakeURL(const PString & prefix, const PString & partyName)
 
 PString OpalConnection::GetRemotePartyURL() const
 {
+  if (!remotePartyURL.IsEmpty())
+    return remotePartyURL;
+
   return MakeURL(GetPrefixName(), GetRemotePartyAddress());
 }
 
@@ -1401,6 +1409,7 @@ void OpalConnection::CopyPartyNames(const OpalConnection & other)
   remotePartyName     = other.remotePartyName;
   remotePartyNumber   = other.remotePartyNumber;
   remotePartyAddress  = other.remotePartyAddress;
+  remotePartyURL      = other.remotePartyURL;
   m_calledPartyName   = other.m_calledPartyName;
   m_calledPartyNumber = other.m_calledPartyNumber;
   remoteProductInfo   = other.remoteProductInfo;
@@ -1581,9 +1590,9 @@ void OpalConnection::OnMediaStatistics(const OpalMediaSession & session) const
 
 
 #if OPAL_VIDEO
-void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session) const
+void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force) const
 {
-  SendVideoUpdatePicture(session.GetSessionID());
+  SendVideoUpdatePicture(session.GetSessionID(), force);
 }
 #endif
 

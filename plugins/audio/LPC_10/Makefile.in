@@ -129,9 +129,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS) -lm
 else	
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS) -lm
 
 endif	
 

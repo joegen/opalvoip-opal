@@ -763,10 +763,7 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
 {
-  OpalRTPSession::SendReceiveStatus status;
-  while ((status = session.InternalReadData(frame)) == OpalRTPSession::e_IgnorePacket)
-    ;
-  return status == OpalRTPSession::e_ProcessPacket;
+  return session.InternalReadData(frame);
 }
 
 

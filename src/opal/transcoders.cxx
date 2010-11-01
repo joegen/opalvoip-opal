@@ -107,6 +107,13 @@ PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 }
 
 
+void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
+{
+  if (commandNotifier != PNotifier())
+    commandNotifier(const_cast<OpalMediaCommand &>(command), m_sessionID);
+}
+
+
 void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanceLen*/)
 {
 }
@@ -168,12 +175,18 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                                        unsigned instanceLen)
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
-  if (transcoder != NULL) {
-    transcoder->SetInstanceID(instance, instanceLen); // Make sure this is done first
-    transcoder->UpdateMediaFormats(srcFormat, destFormat);
+  if (transcoder == NULL) {
+    PTRACE(2, "Opal\tCould not create transcoder instance from " << srcFormat << " to " << destFormat);
+    return NULL;
   }
 
-  return transcoder;
+  transcoder->SetInstanceID(instance, instanceLen); // Make sure this is done first
+  if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
+    return transcoder;
+
+  delete transcoder;
+  PTRACE(2, "Opal\tError creating transcoder instance from " << srcFormat << " to " << destFormat);
+  return NULL;
 }
 
 

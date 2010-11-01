@@ -63,6 +63,7 @@ class MyManager;
 class OpalLineEndPoint;
 class OpalCapiEndPoint;
 class OpalIVREndPoint;
+class OpalMixerEndPoint;
 class OpalFaxEndPoint;
 
 class wxSplitterWindow;
@@ -438,6 +439,7 @@ class InCallPanel : public CallPanelBase
   private:
     void OnHangUp(wxCommandEvent & event);
     void OnHoldRetrieve(wxCommandEvent & event);
+    void OnConference(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
@@ -461,6 +463,7 @@ class InCallPanel : public CallPanelBase
     void UpdateStatistics();
 
     wxButton  * m_Hold;
+    wxButton  * m_Conference;
     wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
     wxCheckBox* m_MicrophoneMute;
@@ -471,7 +474,6 @@ class InCallPanel : public CallPanelBase
     wxTimer     m_vuTimer;
     unsigned    m_updateStatistics;
     bool        m_FirstTime;
-    bool        m_SwitchingHold;
 
     StatisticsPage m_pages[NumPages];
 
@@ -963,6 +965,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnOptions(wxCommandEvent& event);
     void OnRequestHold(wxCommandEvent& event);
     void OnRetrieve(wxCommandEvent& event);
+    void OnConference(wxCommandEvent& event);
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
@@ -1084,6 +1087,10 @@ class MyManager : public wxFrame, public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
+#if OPAL_HAS_MIXER
+    OpalMixerEndPoint * m_mcuEP;
+#endif
+
 #if OPAL_FAX
     OpalFaxEndPoint  * m_faxEP;
 #endif
@@ -1149,6 +1156,7 @@ class MyManager : public wxFrame, public OpalManager
       const PString & token,
       bool onHold
     );
+    void AddToConference(OpalCall & call);
 
     struct CallsOnHold {
       CallsOnHold() { }
@@ -1156,9 +1164,11 @@ class MyManager : public wxFrame, public OpalManager
 
       PSafePtr<OpalCall> m_call;
       int                m_retrieveMenuId;
+      int                m_conferenceMenuId;
       int                m_transferMenuId;
     };
     list<CallsOnHold>    m_callsOnHold;
+    PString              m_switchHoldToken;
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;

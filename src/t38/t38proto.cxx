@@ -701,7 +701,9 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
   // Not yet switched and got a CNG/CED from the remote system, start switch
-  if (m_state == e_AwaitingSwitchToT38 && toupper(tone) == (m_receiving ? 'X' : 'Y')) {
+  if (m_state == e_AwaitingSwitchToT38 &&
+      m_receiving ? (tone == 'X')
+                  : (tone == 'Y' && !m_stringOptions.GetBoolean(OPAL_IGNORE_CED))) {
     PTRACE(3, "T38\tRequesting mode change in response to CED");
     PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
   }

@@ -340,6 +340,15 @@ void RTP_ControlFrame::SetCount(unsigned count)
 }
 
 
+void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
+{
+  PAssert(type < 32, PInvalidParameter);
+  theArray[compoundOffset] &= 0xe0;
+  theArray[compoundOffset] |= type;
+  SetPayloadSize(fciSize+8);
+}
+
+
 void RTP_ControlFrame::SetPayloadType(unsigned t)
 {
   PAssert(t < 256, PInvalidParameter);
@@ -479,7 +488,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   PAssert(sessionId > 0, PInvalidParameter);
   sessionID = sessionId;
 
-  ignoreOutOfOrderPackets = true;
   ignorePayloadTypeChanges = true;
   syncSourceOut = PRandom::Number();
 
@@ -497,6 +505,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   lastSentSequenceNumber = (WORD)PRandom::Number();
   expectedSequenceNumber = 0;
   lastRRSequenceNumber = 0;
+  resequenceOutOfOrderPackets = true;
   consecutiveOutOfOrderPackets = 0;
 
   ClearStatistics();
@@ -730,7 +739,7 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
-    SetIgnoreOutOfOrderPackets(false);
+    resequenceOutOfOrderPackets = false;
     if (m_jitterBuffer != NULL)
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
     else
@@ -752,10 +761,24 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
   if (jitter != NULL)
     return jitter->ReadData(frame);
 
-  SendReceiveStatus status;
-  while ((status = InternalReadData(frame)) == e_IgnorePacket)
-    ;
-  return status == e_ProcessPacket;
+  if (m_outOfOrderPackets.empty())
+    return InternalReadData(frame);
+
+  unsigned sequenceNumber = m_outOfOrderPackets.back().GetSequenceNumber();
+  if (sequenceNumber != expectedSequenceNumber) {
+    PTRACE(5, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+           << ", still out of order packets, next "
+           << sequenceNumber << " expected " << expectedSequenceNumber);
+    return InternalReadData(frame);
+  }
+
+  frame = m_outOfOrderPackets.back();
+  m_outOfOrderPackets.pop_back();
+  expectedSequenceNumber = (WORD)(sequenceNumber + 1);
+
+  PTRACE(5, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn << ", resequenced "
+         << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
+  return true;
 }
 
 
@@ -930,7 +953,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 
   if (lastReceivedPayloadType != frame.GetPayloadType() && !ignorePayloadTypeChanges) {
 
-    PTRACE(4, "RTP\tSession " << sessionID << ", received payload type "
+    PTRACE(4, "RTP\tSession " << sessionID << ", got payload type "
            << frame.GetPayloadType() << ", but was expecting " << lastReceivedPayloadType);
     return e_IgnorePacket;
   }
@@ -990,6 +1013,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     if (sequenceNumber == expectedSequenceNumber) {
       expectedSequenceNumber++;
       consecutiveOutOfOrderPackets = 0;
+
+      if (!m_outOfOrderPackets.empty()) {
+        PTRACE(5, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+               << ", received out of order packet " << sequenceNumber);
+        outOfOrderPacketTime = tick;
+        packetsOutOfOrder++;
+      }
+
       // Only do statistics on packets after first received in talk burst
       if ( ! (isAudio && frame.GetMarker()) ) {
         DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
@@ -1018,31 +1049,56 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
       allowSequenceChange = false;
-      PTRACE(2, "RTP\tSession " << sessionID << ", adjusting sequence numbers to expect "
-             << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+      m_outOfOrderPackets.clear();
+      PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+             << ", adjusting sequence numbers to expect " << expectedSequenceNumber);
     }
     else if (sequenceNumber < expectedSequenceNumber) {
-      PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
-             << sequenceNumber << " expected " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
-      packetsOutOfOrder++;
-
       // Check for Cisco bug where sequence numbers suddenly start incrementing
       // from a different base.
       if (++consecutiveOutOfOrderPackets > 10) {
         expectedSequenceNumber = (WORD)(sequenceNumber + 1);
-        PTRACE(2, "RTP\tSession " << sessionID << ", abnormal change of sequence numbers,"
-                  " adjusting to expect " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+        PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+               << ", abnormal change of sequence numbers, adjusting to expect " << expectedSequenceNumber);
       }
+      else {
+        PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+               << ", incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
 
-      if (ignoreOutOfOrderPackets)
-        return e_IgnorePacket; // Non fatal error, just ignore
+        if (resequenceOutOfOrderPackets) {
+          packetsLost++;
+          packetsLostSinceLastRR++;
+          return e_IgnorePacket; // Non fatal error, just ignore
+        }
+
+        packetsOutOfOrder++;
+      }
+    }
+    else if (resequenceOutOfOrderPackets &&
+                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < 200)) {
+      if (m_outOfOrderPackets.empty())
+        outOfOrderPacketTime = tick;
+      // Maybe packet lost, maybe out of order, save for now
+      SaveOutOfOrderPacket(frame);
+      return e_IgnorePacket;
     }
     else {
+      if (!m_outOfOrderPackets.empty()) {
+        // Give up on the packet, probably never coming in. Save current and switch in
+        // the lowest numbered packet.
+        SaveOutOfOrderPacket(frame);
+
+        frame = m_outOfOrderPackets.back();
+        m_outOfOrderPackets.pop_back();
+        sequenceNumber = frame.GetSequenceNumber();
+        outOfOrderPacketTime = tick;
+      }
+
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
-      PTRACE(2, "RTP\tSession " << sessionID << ", dropped " << dropped
-             << " packet(s) at " << sequenceNumber << ", ssrc=" << syncSourceIn);
+      PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
+             << ", dropped " << dropped << " packet(s) at " << sequenceNumber);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
     }
@@ -1092,6 +1148,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 
   return e_ProcessPacket;
 }
+
+
+void OpalRTPSession::SaveOutOfOrderPacket(RTP_DataFrame & frame)
+{
+  WORD sequenceNumber = frame.GetSequenceNumber();
+
+  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+         "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn << ", "
+         << (m_outOfOrderPackets.empty() ? "first" : "next") << " out of order packet, got "
+         << sequenceNumber << " expected " << expectedSequenceNumber);
+
+  std::list<RTP_DataFrame>::iterator it;
+  for (it  = m_outOfOrderPackets.begin(); it != m_outOfOrderPackets.end(); ++it) {
+    if (sequenceNumber > it->GetSequenceNumber())
+      break;
+  }
+
+  m_outOfOrderPackets.insert(it, frame);
+  frame.MakeUnique();
+}
+
 
 bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
 {
@@ -1237,126 +1314,141 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 {
   do {
     BYTE * payload = frame.GetPayloadPtr();
-    unsigned size = frame.GetPayloadSize(); 
+    PINDEX size = frame.GetPayloadSize(); 
     if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
       /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
                2. what's the correct exit status ? */
       PTRACE(2, "RTP\tSession " << sessionID << ", OnReceiveControl invalid frame");
-
       break;
     }
+
     switch (frame.GetPayloadType()) {
-    case RTP_ControlFrame::e_SenderReport :
-      if (size >= sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)) {
-        SenderReport sender;
-        sender.sourceIdentifier = *(const PUInt32b *)payload;
-        const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-        sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
-        sender.rtpTimestamp = sr.rtp_ts;
-        sender.packetsSent = sr.psent;
-        sender.octetsSent = sr.osent;
-        OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", SenderReport packet truncated");
-      }
-      break;
+      case RTP_ControlFrame::e_SenderReport :
+        if (size >= (PINDEX)(sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))) {
+          SenderReport sender;
+          sender.sourceIdentifier = *(const PUInt32b *)payload;
+          const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
+          sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
+          sender.rtpTimestamp = sr.rtp_ts;
+          sender.packetsSent = sr.psent;
+          sender.octetsSent = sr.osent;
+          OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", SenderReport packet truncated");
+        }
+        break;
 
-    case RTP_ControlFrame::e_ReceiverReport :
-      if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))
-        OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
-      }
-      break;
+      case RTP_ControlFrame::e_ReceiverReport :
+        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)))
+          OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
+        }
+        break;
 
-    case RTP_ControlFrame::e_SourceDescription :
-      if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
-        SourceDescriptionArray descriptions;
-        const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
-        PINDEX srcIdx;
-        for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-          descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-          const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-          unsigned uiSizeCurrent = 0;   /* current size of the items already parsed */
-          while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
-            descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-            uiSizeCurrent += item->GetLengthTotal();
-            PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription item " << item << ", current size = " << uiSizeCurrent);
-            
-            /* avoid reading where GetNextItem() shall not */
-            if (uiSizeCurrent >= size){
-              PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription end of items");
-              item = NULL;
+      case RTP_ControlFrame::e_SourceDescription :
+        if (size >= (PINDEX)(frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription))) {
+          SourceDescriptionArray descriptions;
+          const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+          PINDEX srcIdx;
+          for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+            descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+            const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+            PINDEX uiSizeCurrent = 0;   /* current size of the items already parsed */
+            while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
+              descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+              uiSizeCurrent += item->GetLengthTotal();
+              PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription item " << item << ", current size = " << uiSizeCurrent);
+              
+              /* avoid reading where GetNextItem() shall not */
+              if (uiSizeCurrent >= size){
+                PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription end of items");
+                item = NULL;
+                break;
+              } else {
+                item = item->GetNextItem();
+              }
+            }
+            /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
+               otherwise it reads over the buffer */
+            if((item == NULL) || 
+              (item->type == RTP_ControlFrame::e_END) || 
+              ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
               break;
-            } else {
-              item = item->GetNextItem();
             }
           }
-          /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
-             otherwise it reads over the buffer */
-          if((item == NULL) || 
-            (item->type == RTP_ControlFrame::e_END) || 
-            ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
-            break;
-          }
+          OnRxSourceDescription(descriptions);
         }
-        OnRxSourceDescription(descriptions);
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", SourceDescription packet truncated");
-      }
-      break;
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", SourceDescription packet truncated");
+        }
+        break;
 
-    case RTP_ControlFrame::e_Goodbye :
-    {
-      unsigned count = frame.GetCount()*4;
-      if ((size >= 4) && (count > 0)) {
-        PString str;
-  
-        if (size > count){
-          if((payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */) <= size){
-            str = PString((const char *)(payload+count+1), payload[count]);
-          } else {
-            PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet invalid");
+      case RTP_ControlFrame::e_Goodbye :
+        if (size >= 4) {
+          PString str;
+          PINDEX count = frame.GetCount()*4;
+    
+          if (size > count) {
+            if (size >= (PINDEX)(payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */))
+              str = PString((const char *)(payload+count+1), payload[count]);
+            else {
+              PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet invalid");
+            }
           }
-        }
-        PDWORDArray sources(frame.GetCount());
-        for (PINDEX i = 0; i < (PINDEX)frame.GetCount(); i++){
-          sources[i] = ((const PUInt32b *)payload)[i];
-        }  
-        OnRxGoodbye(sources, str);
-        }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet truncated");
-      }
-      if (closeOnBye) {
-        PTRACE(3, "RTP\tSession " << sessionID << ", Goodbye packet closing transport");
-        return e_AbortTransport;
-      }
-    break;
 
-    }
-    case RTP_ControlFrame::e_ApplDefined :
-      if (size >= 4) {
-        PString str((const char *)(payload+4), 4);
-        OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
-        payload+8, frame.GetPayloadSize()-8);
-      }
-      else {
-        PTRACE(2, "RTP\tSession " << sessionID << ", ApplDefined packet truncated");
-      }
-      break;
+          PDWORDArray sources(count);
+          for (PINDEX i = 0; i < count; i++)
+            sources[i] = ((const PUInt32b *)payload)[i];
+          OnRxGoodbye(sources, str);
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet truncated");
+        }
+        if (closeOnBye) {
+          PTRACE(3, "RTP\tSession " << sessionID << ", Goodbye packet closing transport");
+          return e_AbortTransport;
+        }
+        break;
+
+      case RTP_ControlFrame::e_ApplDefined :
+        if (size >= 4) {
+          PString str((const char *)(payload+4), 4);
+          OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
+          payload+8, frame.GetPayloadSize()-8);
+        }
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", ApplDefined packet truncated");
+        }
+        break;
 
 #if OPAL_VIDEO
-     case RTP_ControlFrame::e_IntraFrameRequest :
-      PTRACE(4, "RTP\tSession " << sessionID << ", received RF2032 FIR");
-      m_connection.OnRxIntraFrameRequest(*this);
+    case RTP_ControlFrame::e_IntraFrameRequest :
+      PTRACE(4, "RTP\tSession " << sessionID << ", received RFC2032 FIR");
+      m_connection.OnRxIntraFrameRequest(*this, true);
       break;
 #endif
 
-    default :
-      PTRACE(2, "RTP\tSession " << sessionID << ", Unknown control payload type: " << frame.GetPayloadType());
+      case RTP_ControlFrame::e_PayloadSpecificFeedBack :
+        switch (frame.GetFbType()) {
+          case RTP_ControlFrame::e_PictureLossIndication :
+            PTRACE(4, "RTP\tSession " << sessionID << ", received RFC5104 PLI");
+            m_connection.OnRxIntraFrameRequest(*this, false);
+            break;
+
+          case RTP_ControlFrame::e_FullIntraRequest :
+            PTRACE(4, "RTP\tSession " << sessionID << ", received RFC5104 FIR");
+            m_connection.OnRxIntraFrameRequest(*this, true);
+            break;
+
+          default :
+            PTRACE(2, "RTP\tSession " << sessionID << ", Unknown Payload Specific feedback type: " << frame.GetFbType());
+        }
+        break;
+
+      default :
+        PTRACE(2, "RTP\tSession " << sessionID << ", Unknown control payload type: " << frame.GetPayloadType());
     }
   } while (frame.ReadNextPacket());
 
@@ -1492,17 +1584,55 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 }
 
 
-void OpalRTPSession::SendIntraFrameRequest()
+void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
+  PTRACE(3, "RTP\tSession " << sessionID << ", SendIntraFrameRequest using "
+         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR")));
+
   // Create packet
   RTP_ControlFrame request;
   request.StartNewPacket();
-  request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
-  request.SetPayloadSize(4);
-  // Insert SSRC
-  request.SetCount(1);
-  BYTE * payload = request.GetPayloadPtr();
-  *(PUInt32b *)payload = syncSourceOut;
+
+  if (rfc2032) {
+    // Create packet
+    request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
+    request.SetPayloadSize(4);
+    // Insert SSRC
+    request.SetCount(1);
+    BYTE * payload = request.GetPayloadPtr();
+    *(PUInt32b *)payload = syncSourceOut;
+  }
+  else {
+    request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
+    if (pictureLoss)
+      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, 0);
+    else {
+      request.SetFbType(RTP_ControlFrame::e_FullIntraRequest, sizeof(RTP_ControlFrame::FbFIR));
+      RTP_ControlFrame::FbFIR * fir = (RTP_ControlFrame::FbFIR *)request.GetPayloadPtr();
+      fir->requestSSRC = syncSourceIn;
+    }
+    RTP_ControlFrame::FbFCI * fci = (RTP_ControlFrame::FbFCI *)request.GetPayloadPtr();
+    fci->senderSSRC = syncSourceOut;
+  }
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
+}
+
+
+void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
+{
+  PTRACE(3, "RTP\tSession " << sessionID << ", SendTemporalSpatialTradeOff " << tradeOff);
+
+  RTP_ControlFrame request;
+  request.StartNewPacket();
+  request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
+  request.SetFbType(RTP_ControlFrame::e_TemporalSpatialTradeOffRequest, sizeof(RTP_ControlFrame::FbTSTO));
+  RTP_ControlFrame::FbTSTO * tsto = (RTP_ControlFrame::FbTSTO *)request.GetPayloadPtr();
+  tsto->requestSSRC = syncSourceIn;
+  tsto->tradeOff = (BYTE)tradeOff;
+
   // Send it
   request.EndPacket();
   WriteControl(request);
@@ -1712,7 +1842,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
 #ifndef __BEOS__
   // Set the IP Type Of Service field for prioritisation of media UDP packets
   // through some Cisco routers and Linux boxes
-  if (!dataSocket->SetOption(IP_TOS, manager.GetRtpIpTypeofService(), IPPROTO_IP)) {
+  if (!dataSocket->SetOption(IP_TOS, manager.GetMediaTypeOfService(m_mediaType), IPPROTO_IP)) {
     PTRACE(1, "RTP_UDP\tSession " << sessionID << ", could not set TOS field in IP header: " << dataSocket->GetErrorText());
   }
 
@@ -1823,7 +1953,7 @@ bool OpalRTPSession::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, 
   
   allowOneSyncSourceChange = true;
   allowRemoteTransmitAddressChange = true;
-  allowSequenceChange = true;
+  allowSequenceChange = packetsReceived != 0;
 
   if (isDataPort) {
     remoteDataPort = port;
@@ -1852,7 +1982,16 @@ bool OpalRTPSession::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, 
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
+bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
+{
+  SendReceiveStatus status;
+  while ((status = InternalReadData2(frame)) == e_IgnorePacket)
+    ;
+  return status == e_ProcessPacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFrame & frame)
 {
   if (first && isAudio) {
     PTimeInterval oldTimeout = dataSocket->GetReadTimeout();

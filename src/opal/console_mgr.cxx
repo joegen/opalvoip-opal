@@ -185,7 +185,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cerr << "IP Type Of Service bits must be 0 to 255.\n";
       return false;
     }
-    SetRtpIpTypeofService(tos);
+    SetMediaTypeOfService(tos);
   }
 
   if (args.HasOption("rtp-size")) {
@@ -201,7 +201,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
             "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
             "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-            "RTP IP TOS: 0x" << hex << (unsigned)GetRtpIpTypeofService() << dec << "\n"
+            "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
             "RTP payload size: " << GetMaxRtpPayloadSize() << "\n"
             "STUN server: " << flush;
 

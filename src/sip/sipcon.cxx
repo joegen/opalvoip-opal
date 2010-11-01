@@ -1596,14 +1596,6 @@ PString SIPConnection::GetIdentifier() const
 }
 
 
-PString SIPConnection::GetRemotePartyURL() const
-{
-  SIPURL url = m_dialog.GetRequestURI();
-  url.Sanitise(SIPURL::ExternalURI);
-  return url.AsString();
-}
-
-
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
   std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
@@ -1805,25 +1797,25 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL url = m_ciscoRemotePartyID;
-  if (url.IsEmpty()) {
-    url = m_dialog.GetRemoteURI();
-    url.Sanitise(SIPURL::ExternalURI);
+  SIPURL remote = m_ciscoRemotePartyID;
+  if (remote.IsEmpty()) {
+    remote = m_dialog.GetRemoteURI();
+    remote.Sanitise(SIPURL::ExternalURI);
   }
+  remotePartyName = remote.GetDisplayName();
 
-  remotePartyNumber = m_dialog.GetRequestURI().GetUserName();
+  remotePartyNumber = remote.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
 
-  PString user = url.GetUserName();
-  if (OpalIsE164(user))
-    remotePartyNumber = user;
-  else
-    remotePartyNumber.MakeEmpty();
-
-  remotePartyName = url.GetDisplayName();
+  remotePartyAddress = remote.AsString();
+  remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
-    remotePartyName = remotePartyNumber.IsEmpty() ? url.GetUserName() : url.AsString();
+    remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
+
+  SIPURL request = m_dialog.GetRequestURI();
+  request.Sanitise(SIPURL::ExternalURI);
+  remotePartyURL = request.AsString();
 }
 
 
@@ -2457,16 +2449,14 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
+  m_referInProgress = state != "terminated";
   info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", state != "terminated" || code < 200
-                        ? "progress" : (code < 300 ? "success" : "failed"));
+  info.SetAt("result", m_referInProgress ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info))
     return;
-
-  m_referInProgress = false;
 
   // Release the connection
   if (IsReleased())
@@ -3279,7 +3269,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
     return true;
 
   PTRACE(2, "SIP\tCould not send tone '" << tone << "' via INFO.");
-  return OpalConnection::SendUserInputTone(tone, duration);
+  return OpalRTPConnection::SendUserInputTone(tone, duration);
 }
 
 
@@ -3350,11 +3340,10 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
 
 #endif
 
-void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
+void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    PTRACE(3, "SIP\tSending PictureFastUpdate");
     SIPInfo::Params params(ApplicationMediaControlXMLKey,
                            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
                            "<media_control>"
@@ -3366,13 +3355,10 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
                             "</vc_primitive>"
                            "</media_control>");
     SendINFO(params);
-#if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
-#endif
   }
-  else
 #endif
-    OpalRTPConnection::OnMediaCommand(command, extra);
+
+  OpalRTPConnection::OnMediaCommand(command, sessionID);
 }
 
 
@@ -3380,6 +3366,9 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT extra)
 
 PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 {
+  // Must always send OK, even if not OK
+  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+
 #if OPAL_PTLIB_EXPAT
 
   PXML xml;
@@ -3401,21 +3390,18 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 
 #endif // OPAL_PTLIB_EXPAT
 
-  {
-    SendVideoUpdatePicture();
-    request.SendResponse(*transport, SIP_PDU::Successful_OK);
-  }
+    SendVideoUpdatePicture(0, 0);
   else {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
-    SIP_PDU response(request, SIP_PDU::Failure_Undecipherable);
-    response.SetEntityBody(
-      "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-      "<media_control>\n"
-      "  <general_error>\n"
-      "  Unable to parse XML request\n"
-      "   </general_error>\n"
-      "</media_control>\n");
-    request.SendResponse(*transport, response);
+    // Error is sent in separate INFO message as per RFC5168
+    SIPInfo::Params params(ApplicationMediaControlXMLKey,
+                           "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                           "<media_control>"
+                             "<general_error>"
+                               "Unable to parse XML request"
+                             "</general_error>"
+                           "</media_control>");
+    SendINFO(params);
   }
 
   return true;

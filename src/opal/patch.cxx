@@ -236,6 +236,8 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+    if (sink->primaryCodec == NULL || sink->secondaryCodec == NULL)
+      return false;
 
     PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
@@ -727,6 +729,11 @@ bool OpalMediaPatch::Sink::CannotTranscodeFrame(OpalTranscoder & codec, RTP_Data
 {
   RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
 
+  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) {
+    frame.SetPayloadType(codec.GetPayloadType(false));
+    return true;
+  }
+
   if (!codec.AcceptComfortNoise()) {
     if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
       PTRACE(4, "Patch\tRemoving comfort noise frame with payload type " << pt);
@@ -752,11 +759,6 @@ bool OpalMediaPatch::Sink::CannotTranscodeFrame(OpalTranscoder & codec, RTP_Data
     PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt << " - should be " << codec.GetPayloadType(true));
     frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
     frame.SetPayloadType(codec.GetPayloadType(true)); // Reset pt so if get silence frames from jitter buffer, they don't cause errors
-    return true;
-  }
-
-  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) {
-    frame.SetPayloadType(codec.GetPayloadType(false));
     return true;
   }
 
@@ -813,7 +815,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     bool forceIFrame = false;
     bool s = RateControlExceeded(forceIFrame);
     if (forceIFrame)
-      stream->ExecuteCommand(OpalVideoUpdatePicture2(sourceFrame.GetSequenceNumber(), sourceFrame.GetTimestamp()));
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
     if (s) {
       if (secondaryCodec == NULL) {
         bool wasIFrame = false;

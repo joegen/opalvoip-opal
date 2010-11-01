@@ -652,6 +652,9 @@ OpalPluginTranscoder::~OpalPluginTranscoder()
 
 bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 {
+  if (context == NULL)
+    return false;
+
   PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
 
   char ** options = fmt.GetOptions().ToCharArray(false);
@@ -663,6 +666,9 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 
 bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  if (context == NULL)
+    return false;
+
   OpalPluginControl cmd(codecDef, command.GetName());
   return cmd.Call(command.GetPlugInData(), command.GetPlugInSize(), context) > 0;
 }
@@ -739,6 +745,9 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    BYTE * output,
                                                    PINDEX & created)
 {
+  if (context == NULL)
+    return false;
+
   // Note updateMutex should already be locked at this point.
 
   unsigned int fromLen = consumed;
@@ -754,7 +763,7 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
 
 PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 { 
-  if (codecDef == NULL)
+  if (codecDef == NULL || context == NULL)
     return false;
 
   unsigned length;
@@ -822,6 +831,9 @@ PBoolean OpalPluginStreamedAudioTranscoder::ExecuteCommand(const OpalMediaComman
 
 int OpalPluginStreamedAudioTranscoder::ConvertOne(int from) const
 {
+  if (context == NULL)
+    return false;
+
   // Note updateMutex should already be locked at this point.
 
   unsigned int fromLen = sizeof(from);
@@ -840,7 +852,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastVideoFastUpdate(0)
+  , m_lastVideoPictureLoss(0)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -872,6 +884,9 @@ PBoolean OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & comm
 
 PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
+  if (context == NULL)
+    return false;
+
   PWaitAndSignal mutex(updateMutex);
   return isEncoder ? EncodeFrames(src, dstList) : DecodeFrames(src, dstList);
 }
@@ -1007,14 +1022,13 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
     PTimeInterval tick = PTimer::Tick();
-    // Don't send lots of consecutive VideoFastUpdate commands
-    if (tick - m_lastVideoFastUpdate < 2000)
-      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
+    // Don't send lots of consecutive OpalVideoPictureLoss commands
+    if (tick - m_lastVideoPictureLoss < 2000)
+      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent OpalVideoPictureLoss was sent.");
     else {
-      m_lastVideoFastUpdate = PTimer::Tick();
-      OpalVideoUpdatePicture2 updatePictureCommand(src.GetSequenceNumber(), src.GetTimestamp());
-      NotifyCommand(updatePictureCommand);
-      PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
+      m_lastVideoPictureLoss = PTimer::Tick();
+      NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
+      PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame.");
     }
   }
 
@@ -1171,6 +1185,9 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
     virtual PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
     {
+      if (context == NULL)
+        return false;
+
       PWaitAndSignal mutex(updateMutex);
 
       dstList.RemoveAll();

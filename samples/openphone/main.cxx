@@ -56,6 +56,7 @@
 
 #include <opal/transcoders.h>
 #include <opal/ivr.h>
+#include <opal/opalmixer.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
 #include <ptclib/pstun.h>
@@ -98,6 +99,10 @@ typedef  stringstream tstringstream;
 #endif
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
+
+
+#define CONFERENCE_NAME "conference"
+
 
 // Definitions of the configuration file section and key names
 
@@ -325,6 +330,8 @@ static const char * const DefaultRoutes[] = {
 enum {
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
+  ID_CONFERENCE_MENU_BASE,
+  ID_CONFERENCE_MENU_TOP = ID_CONFERENCE_MENU_BASE+999,
   ID_TRANSFER_MENU_BASE,
   ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
   ID_AUDIO_DEVICE_MENU_BASE,
@@ -540,6 +547,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,ID_RETRIEVE_MENU_TOP, MyManager::OnRetrieve)
   EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
+  EVT_MENU_RANGE(ID_CONFERENCE_MENU_BASE,ID_CONFERENCE_MENU_TOP, MyManager::OnConference)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
   EVT_MENU(XRCID("MenuSendAudioFile"),   MyManager::OnSendAudioFile)
@@ -592,6 +600,9 @@ MyManager::MyManager()
 #endif
 #if OPAL_IVR
   , ivrEP(NULL)
+#endif
+#if OPAL_HAS_MIXER
+  , m_mcuEP(NULL)
 #endif
   , m_autoAnswer(false)
   , m_ForwardingTimeout(30)
@@ -767,6 +778,11 @@ bool MyManager::Initialise()
   ivrEP = new OpalIVREndPoint(*this);
 #endif
 
+#if OPAL_HAS_MIXER
+  m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+  m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
+#endif
+
 #if OPAL_FAX
   m_faxEP = new MyFaxEndPoint(*this);
 #endif
@@ -834,7 +850,7 @@ bool MyManager::Initialise()
   if (config->Read(RTPPortBaseKey, &value1) && config->Read(RTPPortMaxKey, &value2))
     SetRtpIpPorts(value1, value2);
   if (config->Read(RTPTOSKey, &value1))
-    SetRtpIpTypeofService(value1);
+    SetMediaTypeOfService(value1);
   if (config->Read(MaxRtpPayloadSizeKey, &value1))
     SetMaxRtpPayloadSize(value1);
   config->Read(NATRouterKey, &m_NATRouter);
@@ -1442,8 +1458,9 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
-    menubar->Enable(it->m_retrieveMenuId, m_activeCall == NULL);
-    menubar->Enable(it->m_transferMenuId, m_activeCall != NULL);
+    menubar->Enable(it->m_retrieveMenuId,   m_activeCall == NULL);
+    menubar->Enable(it->m_conferenceMenuId, m_activeCall != NULL);
+    menubar->Enable(it->m_transferMenuId,   m_activeCall != NULL);
   }
 
   int count = m_speedDials->GetSelectedItemCount();
@@ -1516,6 +1533,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
+  menubar->Enable(XRCID("SubMenuConference"), !m_callsOnHold.empty());
 }
 
 
@@ -2215,6 +2233,11 @@ void MyManager::OnClearedCall(OpalCall & call)
   config->SetPath(GeneralGroup);
   config->DeleteEntry(CurrentSIPConnectionKey);
 #endif // OPAL_SIP
+
+#if OPAL_HAS_MIXER
+  if (m_mcuEP != NULL && m_mcuEP->GetConnectionCount() == 1)
+    m_mcuEP->ShutDown();
+#endif // OPAL_HAS_MIXER
 }
 
 
@@ -2376,9 +2399,11 @@ bool MyManager::HasHandset() const
 MyManager::CallsOnHold::CallsOnHold(OpalCall & call)
   : m_call(&call, PSafeReference)
 {
-  static int lastMenuId = ID_RETRIEVE_MENU_BASE;
-  m_retrieveMenuId = lastMenuId++;
-  m_transferMenuId = m_retrieveMenuId + (ID_TRANSFER_MENU_BASE - ID_RETRIEVE_MENU_BASE);
+  static int lastMenuId;
+  m_retrieveMenuId   = lastMenuId + ID_RETRIEVE_MENU_BASE;
+  m_conferenceMenuId = lastMenuId + ID_CONFERENCE_MENU_BASE;
+  m_transferMenuId   = lastMenuId + ID_TRANSFER_MENU_BASE;
+  lastMenuId++;
 }
 
 
@@ -2386,7 +2411,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
 {
   m_callsOnHold.push_back(call);
 
-  PwxString otherParty = call.GetPartyA();
+  PwxString otherParty = call.IsNetworkOriginated() ? call.GetPartyA() : call.GetPartyB();
 
   wxMenuBar * menubar = GetMenuBar();
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuRetrieve"));
@@ -2396,11 +2421,25 @@ void MyManager::AddCallOnHold(OpalCall & call)
   if (item->IsSeparator())
     menu->Delete(item);
 
+  item = menubar->FindItem(XRCID("SubMenuConference"));
+  menu = PAssertNULL(item)->GetSubMenu();
+  PAssertNULL(menu)->Append(m_callsOnHold.back().m_conferenceMenuId, otherParty);
+  item = menu->FindItemByPosition(0);
+  if (item->IsSeparator())
+    menu->Delete(item);
+
   item = menubar->FindItem(XRCID("SubMenuTransfer"));
   menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_transferMenuId, otherParty);
 
   OnHoldChanged(call.GetToken(), true);
+
+  if (!m_switchHoldToken.IsEmpty()) {
+    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReadWrite);
+    if (call != NULL)
+      call->Retrieve();
+    m_switchHoldToken.MakeEmpty();
+  }
 }
 
 
@@ -2418,6 +2457,13 @@ bool MyManager::RemoveCallOnHold(const PString & token)
   wxMenuBar * menubar = GetMenuBar();
   wxMenu * menu;
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(it->m_retrieveMenuId, &menu);
+  if (PAssert(menu != NULL && item != NULL, PLogicError)) {
+    if (m_callsOnHold.size() == 1)
+      menu->AppendSeparator();
+    menu->Delete(item);
+  }
+
+  item = menubar->FindItem(it->m_conferenceMenuId, &menu);
   if (PAssert(menu != NULL && item != NULL, PLogicError)) {
     if (m_callsOnHold.size() == 1)
       menu->AppendSeparator();
@@ -2458,7 +2504,8 @@ void MyManager::SendUserInput(char tone)
 
 void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
+  if (connection.IsNetworkConnection())
+    LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
 }
 
@@ -2512,6 +2559,39 @@ void MyManager::OnRetrieve(wxCommandEvent& theEvent)
       }
     }
   }
+}
+
+
+void MyManager::OnConference(wxCommandEvent& theEvent)
+{
+  if (PAssert(m_activeCall != NULL, PLogicError)) {
+    for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
+      if (theEvent.GetId() == it->m_conferenceMenuId) {
+        AddToConference(*it->m_call);
+        return;
+      }
+    }
+  }
+}
+
+
+void MyManager::AddToConference(OpalCall & call)
+{
+  if (m_activeCall != NULL) {
+    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
+    m_activeCall->Transfer("mcu:"CONFERENCE_NAME, connection);
+    LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
+    PString pc = "pc:*";
+    if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
+      pc += ";OPAL-AutoStart=video:no";
+    SetUpCall(pc, "mcu:"CONFERENCE_NAME);
+    m_activeCall.SetNULL();
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
+  call.Transfer("mcu:"CONFERENCE_NAME, connection);
+  call.Retrieve();
+  LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 }
 
 
@@ -3575,7 +3655,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(UDPPortMax, m_manager.GetUDPPortMax());
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
-  INIT_FIELD(RTPTOS, m_manager.GetRtpIpTypeofService());
+  INIT_FIELD(RTPTOS, m_manager.GetMediaTypeOfService());
   INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
 
   m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("NoNATUsed"));
@@ -4028,7 +4108,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
-  SAVE_FIELD(RTPTOS, m_manager.SetRtpIpTypeofService);
+  SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
   SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
   m_manager.m_NATHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
   config->Write(NATHandlingKey, m_manager.m_NATHandling);
@@ -5652,6 +5732,7 @@ const int VU_UPDATE_TIMER_ID = 1000;
 BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
   EVT_BUTTON(XRCID("Hold"), InCallPanel::OnHoldRetrieve)
+  EVT_BUTTON(XRCID("Conference"), InCallPanel::OnConference)
   EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
   EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
@@ -5679,9 +5760,10 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   : CallPanelBase(manager, token, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
-  , m_SwitchingHold(false)
 {
   m_Hold = FindWindowByNameAs<wxButton>(this, wxT("Hold"));
+  m_Conference = FindWindowByNameAs<wxButton>(this, wxT("Conference"));
+  m_Conference->Enable(!m_manager.m_callsOnHold.empty());
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, wxT("SpeakerHandset"));
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, wxT("SpeakerMute"));
   m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, wxT("MicrophoneMute"));
@@ -5757,13 +5839,9 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
-  bool anyCallsOnHols = !m_manager.m_callsOnHold.empty();
-  if (onHold && m_SwitchingHold && anyCallsOnHols)
-    m_manager.m_callsOnHold.front().m_call->Retrieve();
-  m_SwitchingHold = false;
-
-  m_Hold->SetLabel(anyCallsOnHols ? wxT("Retrieve") : wxT("Hold"));
+  m_Hold->SetLabel(onHold ? wxT("Retrieve") : wxT("Hold"));
   m_Hold->Enable(true);
+  m_Conference->Enable(!onHold && !m_manager.m_callsOnHold.empty());
 }
 
 
@@ -5775,11 +5853,14 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
   if (call->IsOnHold()) {
     PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReadWrite);
-    if (activeCall == NULL)
-      call->Retrieve();
+    if (activeCall == NULL) {
+      if (!call->Retrieve())
+        return;
+    }
     else {
-      m_SwitchingHold = true;
-      activeCall->Hold();
+      m_manager.m_switchHoldToken = m_token;
+      if (!activeCall->Hold())
+        return;
     }
   }
   else {
@@ -5789,6 +5870,13 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
   m_Hold->SetLabel(wxT("In Progress"));
   m_Hold->Enable(false);
+}
+
+
+void InCallPanel::OnConference(wxCommandEvent & /*event*/)
+{
+  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken())
+    m_manager.AddToConference(*m_manager.m_callsOnHold.front().m_call);
 }
 
 

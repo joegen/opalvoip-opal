@@ -238,24 +238,40 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
     return;
 
 #if OPAL_VIDEO
-  switch (type.GetTag()) {
-    case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture :
+  switch (type.GetTag())
+  {
+    case H245_MiscellaneousCommand_type::e_videoFreezePicture :
+      mediaStream->ExecuteCommand(OpalVideoFreezePicture());
+      break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture:
       mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
       break;
 
     case H245_MiscellaneousCommand_type::e_videoFastUpdateGOB :
-      {
-        const H245_MiscellaneousCommand_type_videoFastUpdateGOB & vfuGOB = type;
-        mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuGOB.m_firstGOB, -1, vfuGOB.m_numberOfGOBs));
-      }
+    case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
+      mediaStream->ExecuteCommand(OpalVideoPictureLoss());
       break;
 
-    case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
-      {
-        const H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB = type;
-        mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuMB.m_firstGOB, vfuMB.m_firstMB, vfuMB.m_numberOfMBs));
-      }
+    case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
+      mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
       break;
+
+    default:
+      break;
+  }
+#endif
+}
+
+
+void H323Channel::OnMediaCommand(OpalMediaCommand & command)
+{
+#if OPAL_VIDEO
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    H323ControlPDU pdu;
+    pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
+    connection.WriteControlPDU(pdu);
+    return;
   }
 #endif
 }
@@ -394,86 +410,6 @@ void H323UnidirectionalChannel::InternalClose()
   }
 
   H323Channel::InternalClose();
-}
-
-
-void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & type)
-{
-  H323Channel::OnMiscellaneousCommand(type);
-
-  if (mediaStream == NULL)
-    return;
-
-#if OPAL_VIDEO
-  switch (type.GetTag())
-  {
-    case H245_MiscellaneousCommand_type::e_videoFreezePicture :
-      mediaStream->ExecuteCommand(OpalVideoFreezePicture());
-      break;
-
-    case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture:
-      mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
-      break;
-
-    case H245_MiscellaneousCommand_type::e_videoFastUpdateGOB :
-    {
-      const H245_MiscellaneousCommand_type_videoFastUpdateGOB & fuGOB = type;
-      mediaStream->ExecuteCommand(OpalVideoUpdatePicture(fuGOB.m_firstGOB, -1, fuGOB.m_numberOfGOBs));
-    }
-    break;
-
-    case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
-    {
-      const H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB = type;
-      mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuMB.HasOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstGOB) ? (int)vfuMB.m_firstGOB : -1,
-                                                         vfuMB.HasOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstMB)  ? (int)vfuMB.m_firstMB  : -1,
-                                                         vfuMB.m_numberOfMBs));
-    }
-    break;
-
-    case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
-      mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
-      break;
-    default:
-      break;
-  }
-#endif
-}
-
-
-void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command)
-{
-#if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    H323ControlPDU pdu;
-    const OpalVideoUpdatePicture & updatePicture = (const OpalVideoUpdatePicture &)command;
-
-    if (updatePicture.GetNumBlocks() <= 0)
-      pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
-    else if (updatePicture.GetFirstMB() < 0) {
-      H245_MiscellaneousCommand_type_videoFastUpdateGOB & fuGOB = 
-            pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdateGOB).m_type;
-      fuGOB.m_firstGOB = updatePicture.GetFirstGOB();
-      fuGOB.m_numberOfGOBs = updatePicture.GetNumBlocks();
-    }
-    else {
-      H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB =
-            pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdateMB).m_type;
-      if (updatePicture.GetFirstGOB() >= 0) {
-        vfuMB.IncludeOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstGOB);
-        vfuMB.m_firstGOB = updatePicture.GetFirstGOB();
-      }
-      if (updatePicture.GetFirstMB() >= 0) {
-        vfuMB.IncludeOptionalField(H245_MiscellaneousCommand_type_videoFastUpdateMB::e_firstMB);
-        vfuMB.m_firstMB = updatePicture.GetFirstMB();
-      }
-      vfuMB.m_numberOfMBs = updatePicture.GetNumBlocks();
-    }
-
-    connection.WriteControlPDU(pdu);
-    return;
-  }
-#endif
 }
 
 
