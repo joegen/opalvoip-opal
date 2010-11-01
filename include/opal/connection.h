@@ -1773,6 +1773,7 @@ class OpalConnection : public PSafeObject
 #if OPAL_AEC
     OpalEchoCanceler    * echoCanceler;
 #endif
+    OpalMediaFormat       m_filterMediaFormat;
 
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
