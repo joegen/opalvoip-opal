@@ -248,7 +248,8 @@ class OpalMediaPatch : public PObject
     /**Called from the associated patch thread */
     virtual void Main();
     bool DispatchFrame(RTP_DataFrame & frame);
-        
+    bool EnableJitterBuffer();
+
     OpalMediaStream & source;
 
     class Sink : public PObject {
