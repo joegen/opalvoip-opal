@@ -1064,6 +1064,26 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 }
 
 
+bool OpalMixerMediaStream::EnableJitterBuffer(bool enab) const
+{
+  if (IsSource())
+    return false;
+
+  unsigned minJitter, maxJitter;
+
+  if (enab) {
+    minJitter = connection.GetMinAudioJitterDelay();
+    maxJitter = connection.GetMaxAudioJitterDelay();
+  }
+  else {
+    minJitter = 0;
+    maxJitter = 0;
+  }
+
+  return m_node->SetJitterBufferSize(GetID(), minJitter, maxJitter);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
@@ -1206,10 +1226,6 @@ bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
   if (stream->IsSink())
     return m_audioMixer.AddStream(stream->GetID());
 
-  OpalConnection & connection = stream->GetConnection();
-  m_audioMixer.SetJitterBufferSize(stream->GetID(),
-                                   connection.GetMinAudioJitterDelay(),
-                                   connection.GetMaxAudioJitterDelay());
   m_audioMixer.m_outputStreams.Append(stream);
   return true;
 }

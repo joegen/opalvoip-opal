@@ -190,6 +190,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
     source.SetDataSize(packetSize, packetTime);
     sinkStream->SetDataSize(packetSize, packetTime);
     PTRACE(3, "Patch\tAdded direct media stream sink " << *sinkStream);
+    EnableJitterBuffer();
     return true;
   }
 
@@ -258,6 +259,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
   }
 
   source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
+  EnableJitterBuffer();
   return true;
 }
 
@@ -515,17 +517,29 @@ bool OpalMediaPatch::OnStartMediaPatch()
   if (source.IsSynchronous())
     return false;
 
+  return EnableJitterBuffer();
+}
+
+
+bool OpalMediaPatch::EnableJitterBuffer()
+{
   PReadWaitAndSignal mutex(inUse);
 
-  if (m_bypassToPatch == NULL) {
-    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-      if (s->stream->IsSynchronous()) {
-        source.EnableJitterBuffer();
-        return false;
-      }
+  bool enab = m_bypassToPatch == NULL;
+
+  PList<Sink>::iterator s;
+  for (s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->stream->EnableJitterBuffer(enab)) {
+      source.EnableJitterBuffer(false);
+      return false;
     }
   }
-	
+
+  for (s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->stream->IsSynchronous() && source.EnableJitterBuffer(enab))
+      return false;
+  }
+
   return true;
 }
 
@@ -622,11 +636,11 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   if (m_videoDecoder)
     source.ExecuteCommand(OpalVideoUpdatePicture());
   else
-    source.EnableJitterBuffer(m_bypassToPatch == NULL);
+    EnableJitterBuffer();
 
   m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
 #else
-  source.EnableJitterBuffer(m_bypassToPatch == NULL);
+  EnableJitterBuffer();
   m_bypassActive = m_bypassToPatch != NULL;
 #endif
 
