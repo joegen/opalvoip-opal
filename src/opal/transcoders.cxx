@@ -111,6 +111,8 @@ void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
 {
   if (commandNotifier != PNotifier())
     commandNotifier(const_cast<OpalMediaCommand &>(command), m_sessionID);
+  else
+    PTRACE(4, "Opal\tNo command notifier available for transcoder " << this);
 }
 
 

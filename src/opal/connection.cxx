@@ -1153,7 +1153,7 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
     stream->ExecuteCommand(OpalVideoUpdatePicture());
   else
     stream->ExecuteCommand(OpalVideoPictureLoss());
-  PTRACE(3, "OpalCon\tUpdate video picture (I-frame) requested in video stream " << *stream);
+  PTRACE(3, "OpalCon\tUpdate video picture (I-Frame) requested in video stream " << *stream);
 
   return true;
 }
