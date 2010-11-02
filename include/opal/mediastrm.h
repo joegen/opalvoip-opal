@@ -311,10 +311,12 @@ class OpalMediaStream : public PSafeObject
     virtual PBoolean RequiresPatchThread() const; // For backward compatibility
 
     /**Enable jitter buffer for the media stream.
+       Returns true if a jitter buffer is enabled/disabled. Returns false if
+       no jitter buffer exists for the media stream.
 
-       The default behaviour does nothing.
+       The default behaviour does nothing and returns false.
       */
-    virtual void EnableJitterBuffer(bool enab = true) const;
+    virtual bool EnableJitterBuffer(bool enab = true) const;
   //@}
 
   /**@name Member variable access */
@@ -609,10 +611,13 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual PBoolean RequiresPatchThread() const;
 
     /**Enable jitter buffer for the media stream.
+       Returns true if a jitter buffer is enabled/disabled. Returns false if
+       no jitter buffer exists for the media stream.
 
-       The default behaviour does nothing.
+       The default behaviour sets the RTP_Session jitter buffer size according
+       to the connection parameters, then returns true.
       */
-    virtual void EnableJitterBuffer(bool enab = true) const;
+    virtual bool EnableJitterBuffer(bool enab = true) const;
 
     /**Set the patch thread that is using this stream.
       */
