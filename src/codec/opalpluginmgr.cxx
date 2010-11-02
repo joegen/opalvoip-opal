@@ -824,7 +824,6 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastVideoFastUpdate(0)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -992,15 +991,14 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   }
 
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
-    PTimeInterval tick = PTimer::Tick();
     // Don't send lots of consecutive VideoFastUpdate commands
-    if (tick - m_lastVideoFastUpdate < 2000)
+    if (m_videoFastUpdateTimer.IsRunning())
       PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent VideoUpdatePicture was sent.");
     else {
-      m_lastVideoFastUpdate = PTimer::Tick();
+      PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       OpalVideoUpdatePicture2 updatePictureCommand(src.GetSequenceNumber(), src.GetTimestamp());
       NotifyCommand(updatePictureCommand);
-      PTRACE(3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
+      m_videoFastUpdateTimer.SetInterval(0, 2);
     }
   }
 
@@ -1029,7 +1027,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
         if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
           m_keyFrames++;
-          PTRACE(5, "OpalPlugin\tVideo decoder returned I-frame");
+          PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame");
         }
       }
     }

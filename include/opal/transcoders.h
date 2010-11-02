@@ -314,7 +314,7 @@ class OpalTranscoder : public OpalMediaFormatPair
     /// Notify command notifier of command
     void NotifyCommand(
       OpalMediaCommand & command
-    ) const { if (commandNotifier != PNotifier()) commandNotifier(command, m_sessionID); }
+    ) const;
 
     /// Get session ID for the transcoder (from OpalMediaStream)
     unsigned GetSessionID() const { return m_sessionID; }
