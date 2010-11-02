@@ -1068,7 +1068,7 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, int firstGOB, in
   
   OpalVideoUpdatePicture updatePictureCommand(firstGOB, firstMB, numBlocks);
   stream->ExecuteCommand(updatePictureCommand);
-  PTRACE(3, "OpalCon\tUpdate video picture (I-frame) requested in video stream " << *stream);
+  PTRACE(3, "OpalCon\tUpdate video picture (I-Frame) requested in video stream " << *stream);
 
   return true;
 }
