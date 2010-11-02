@@ -148,9 +148,6 @@ void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
   if (!LockReadWrite())
     return;
 
-  if (mediaPatch != NULL)
-    mediaPatch->SetCommandNotifier(notifier, IsSink());
-
   commandNotifier = notifier;
 
   UnlockReadWrite();
