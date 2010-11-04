@@ -2177,6 +2177,8 @@ void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
       PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
       m_tabs->AddPage(new InCallPanel(*this, token, m_tabs), title, true);
     }
+    else
+      RemoveCallOnHold(token);
   }
 }
 
@@ -5763,7 +5765,6 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
 {
   m_Hold = FindWindowByNameAs<wxButton>(this, wxT("Hold"));
   m_Conference = FindWindowByNameAs<wxButton>(this, wxT("Conference"));
-  m_Conference->Enable(!m_manager.m_callsOnHold.empty());
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, wxT("SpeakerHandset"));
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, wxT("SpeakerMute"));
   m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, wxT("MicrophoneMute"));
@@ -5771,6 +5772,8 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, wxT("MicrophoneVolume"));
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, wxT("SpeakerGauge"));
   m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, wxT("MicrophoneGauge"));
+
+  OnHoldChanged(false);
 
   m_vuTimer.Start(250);
 
@@ -5839,9 +5842,15 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
+  if (PAssertNULL(call) == NULL)
+    return;
+
+  bool notConferenced = call->GetConnectionAs<OpalMixerConnection>() == NULL;
+
   m_Hold->SetLabel(onHold ? wxT("Retrieve") : wxT("Hold"));
-  m_Hold->Enable(true);
-  m_Conference->Enable(!onHold && !m_manager.m_callsOnHold.empty());
+  m_Hold->Enable(notConferenced);
+  m_Conference->Enable(!onHold && !m_manager.m_callsOnHold.empty() && notConferenced);
 }
 
 
@@ -5875,8 +5884,11 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnConference(wxCommandEvent & /*event*/)
 {
-  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken())
+  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken()) {
     m_manager.AddToConference(*m_manager.m_callsOnHold.front().m_call);
+    m_Conference->Enable(false);
+    m_Hold->Enable(false);
+  }
 }
 
 
