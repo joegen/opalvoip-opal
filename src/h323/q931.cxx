@@ -572,6 +572,46 @@ void Q931::RemoveIE(InformationElementCodes ie)
 }
 
 
+void Q931::SetBearerCapabilities(const PString & str)
+{
+  InformationTransferCapability capability = TransferSpeech;
+  unsigned transferRate = 1; // 64kbps
+  unsigned codingStandard = 0; // ITU-T standardized coding
+  unsigned userInfoLayer1 = 5; // Recommendations H.221 and H.242
+
+  if (str.FindSpan("0123456789ABCDEFabcdef") == P_MAX_INDEX) {
+    PINDEX byteCount = str.GetLength()/2;
+    if (byteCount >= 2) {
+      PBYTEArray data(byteCount);
+      for (PINDEX i = 0; i < byteCount; ++i)
+        data[i] = (BYTE)str.Mid(i*2, 2).AsUnsigned(16);
+      SetIE(BearerCapabilityIE, data);
+      return;
+    }
+  }
+
+  PStringArray caps = str.Tokenise(',');
+  switch (caps.GetSize()) {
+    default :
+      userInfoLayer1 = caps[3].AsUnsigned();
+    case 3 :
+      codingStandard = caps[2].AsUnsigned();
+    case 2 :
+      transferRate = caps[1].AsUnsigned();
+    case 1 :
+      if (caps[0] *= "speech")
+        capability = TransferSpeech;
+      else if (caps[0] *= "digital")
+        capability = TransferUnrestrictedDigital;
+      else
+        capability = (Q931::InformationTransferCapability)caps[0].AsUnsigned();
+    case 0 :
+      break;
+  }
+  SetBearerCapabilities(capability, transferRate, codingStandard, userInfoLayer1);
+}
+
+
 void Q931::SetBearerCapabilities(InformationTransferCapability capability,
                                  unsigned transferRate,
                                  unsigned codingStandard,
