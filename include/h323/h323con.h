@@ -114,6 +114,11 @@ class H460_FeatureSet;
 #endif
 
 
+/**OpalConnection::StringOption key to an . Default true.
+  */
+#define OPAL_OPT_Q931_BEARER_CAPS "Q931-Bearer-Caps"
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class represents a particular H323 connection between two endpoints.
