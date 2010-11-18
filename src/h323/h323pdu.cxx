@@ -460,18 +460,6 @@ PString H323GetRTPPacketization(const H245_RTPPayloadType & rtpPacketization)
 }
 
 
-bool H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloadType & rtpPacketization)
-{
-  PString mediaPacketization = H323GetRTPPacketization(rtpPacketization);
-  if (mediaPacketization.IsEmpty())
-    return false;
-  
-  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), mediaPacketization);
-  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization.Left(mediaPacketization.Find(',')));
-  return true;
-}
-
-
 PString H323GetCapabilityIdentifier(const H245_CapabilityIdentifier & capId)
 {
   switch (capId.GetTag()) {
