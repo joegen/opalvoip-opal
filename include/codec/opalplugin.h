@@ -60,11 +60,14 @@ extern "C" {
 #endif
 #define PWLIB_PLUGIN_API_VERSION 1
 
-#define  PLUGIN_CODEC_VERSION           1    // initial version
+#define  PLUGIN_CODEC_VERSION_FIRST     1    // initial version
 #define  PLUGIN_CODEC_VERSION_WIDEBAND  2    // added wideband
 #define  PLUGIN_CODEC_VERSION_VIDEO     3    // added video
 #define  PLUGIN_CODEC_VERSION_FAX       4    // added fax
 #define  PLUGIN_CODEC_VERSION_OPTIONS   5    // added options handling
+#define  PLUGIN_CODEC_VERSION_INTERSECT 6    // added media option intersection merge functionality
+
+#define  PLUGIN_CODEC_VERSION PLUGIN_CODEC_VERSION_INTERSECT // Always latest version
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
