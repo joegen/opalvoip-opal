@@ -1343,7 +1343,7 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
   }
 
   unsigned int count;
-  PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
+  PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
   if (codecs == NULL || count == 0) {
     PTRACE(1, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
     return;
@@ -1392,7 +1392,7 @@ void OpalPluginCodecManager::RegisterStaticCodec(
       PluginCodec_GetCodecFunction getCodecFn)
 {
   unsigned int count;
-  PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
+  PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION);
   if (codecs == NULL || count == 0) {
     PTRACE(1, "OpalPlugin\tStatic codec " << name << " contains no codec definitions");
     return;
