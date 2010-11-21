@@ -121,7 +121,7 @@ void CodecTest::Main()
       PluginCodec_GetCodecFunction getCodecs;
       if (plugin.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
         unsigned count = 0;
-        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
+        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
         while (count > 0) {
           PString name(codecs->descr);
           if (codecNames.GetStringsIndex(name) == P_MAX_INDEX)
