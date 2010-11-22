@@ -513,10 +513,6 @@ bool H323SetRTPPacketization(
 PString H323GetRTPPacketization(
   const H245_RTPPayloadType & rtpPacketization
 );
-bool H323GetRTPPacketization(
-  OpalMediaFormat & mediaFormat,
-  const H245_RTPPayloadType & rtpPacketization
-);
 
 PString H323GetCapabilityIdentifier(
   const H245_CapabilityIdentifier & capId
