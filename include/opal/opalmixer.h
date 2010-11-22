@@ -928,6 +928,15 @@ class OpalMixerMediaStream : public OpalMediaStream
        then threading is from the mixer class.
       */
     virtual PBoolean RequiresPatchThread() const;
+
+    /**Enable jitter buffer for the media stream.
+       Returns true if a jitter buffer is enabled/disabled. Returns false if
+       no jitter buffer exists for the media stream.
+
+       The default behaviour sets the mixer jitter buffer size according
+       to the connection parameters, then returns true.
+      */
+    virtual bool EnableJitterBuffer(bool enab = true) const;
   //@}
 
   /**@name Member variable access */
@@ -1019,6 +1028,18 @@ class OpalMixerNode : public PSafeObject
       unsigned sessionID,                 ///< Session ID to bypass, 0 indicates all
       OpalConnection * connection = NULL  ///< Just deleted connection
     );
+
+    /**Sets the size of the jitter buffer to be used by the specified stream
+       in this mixer. A mixer defaults to not having any jitter buffer enabled.
+
+       If either jitter delay parameter is zero, it destroys the jitter buffer
+       attached to this mixer.
+      */
+    bool SetJitterBufferSize(
+      const OpalBaseMixer::Key_T & key, ///< key for mixer stream
+      unsigned minJitterDelay,          ///<  Minimum jitter buffer delay in RTP timestamp units
+      unsigned maxJitterDelay           ///<  Maximum jitter buffer delay in RTP timestamp units
+    ) { return m_audioMixer.SetJitterBufferSize(key, minJitterDelay, maxJitterDelay); }
 
     /**Write data to mixer.
       */

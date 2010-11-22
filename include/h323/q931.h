@@ -154,6 +154,9 @@ class Q931 : public PObject
       unsigned codingStandard = 0,  ///<  0 = ITU-T standardized coding
       unsigned userInfoLayer1 = 5   ///<  5 = Recommendations H.221 and H.242
     );
+    void SetBearerCapabilities(
+      const PString & caps  ///< String of comma separated integers or hex for all cap bytes
+    );
 
     PBoolean GetBearerCapabilities(
       InformationTransferCapability & capability, ///< Bearer cability enum

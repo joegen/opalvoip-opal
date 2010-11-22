@@ -1973,16 +1973,15 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   }
 
   // Search the capability set and see if we have video capability
-  PBoolean hasVideoOrData = PFalse;
+  const char * bearerCaps = "Speech,1"; // TransferSpeech, 1 x 64k bearer
   for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
     if (!PIsDescendant(&localCapabilities[i], H323AudioCapability) &&
         !PIsDescendant(&localCapabilities[i], H323_UserInputCapability)) {
-      hasVideoOrData = PTrue;
+      bearerCaps = "Digital,6"; // Unrestricted digital, 384 kbps (6 bearers)
       break;
     }
   }
-  if (hasVideoOrData)
-    setupPDU.GetQ931().SetBearerCapabilities(Q931::TransferUnrestrictedDigital, 6);
+  setupPDU.GetQ931().SetBearerCapabilities(m_stringOptions(OPAL_OPT_Q931_BEARER_CAPS, bearerCaps));
 
   if (!OnSendSignalSetup(setupPDU))
     return EndedByNoAccept;

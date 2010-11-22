@@ -47,6 +47,7 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <codec/rfc2833.h>
+#include <codec/g711codec.h>
 #include <codec/vidcodec.h>
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
@@ -229,7 +230,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
   , m_sendInBandDTMF(true)
-  , m_installedInBandDTMF(false)
   , m_emittedInBandDTMF(0)
 #endif
   , m_dtmfSendNotifier(PCREATE_NOTIFIER(OnSendInBandDTMF))
@@ -878,22 +878,24 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     OnStopRecording(patch);
 #endif
 
-    if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), OpalPCM16)) {
+    if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), m_filterMediaFormat)) {
       PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
     }
 
 #if OPAL_AEC
-    if (echoCanceler && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
-                                                              : echoCanceler->GetSendHandler(), OpalPCM16)) {
+    if (echoCanceler != NULL && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
+                                                  : echoCanceler->GetSendHandler(), m_filterMediaFormat)) {
       PTRACE(4, "OpalCon\tRemoved echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
 
 #if OPAL_PTLIB_DTMF
-    if (patch->RemoveFilter(m_dtmfDetectNotifier, OPAL_PCM16)) {
+    if (patch->RemoveFilter(m_dtmfDetectNotifier, OpalPCM16)) {
       PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this << ", patch " << patch);
     }
-    patch->RemoveFilter(m_dtmfSendNotifier, OPAL_PCM16);
+    if (!m_dtmfSendFormat.IsEmpty() && patch->RemoveFilter(m_dtmfSendNotifier, m_dtmfSendFormat)) {
+      PTRACE(4, "OpalCon\tRemoved DTMF send filter on connection " << *this << ", patch " << patch);
+    }
 #endif
   }
 
@@ -918,7 +920,7 @@ void OpalConnection::OnStartRecording(OpalMediaPatch * patch)
     return;
   }
 
-  patch->AddFilter(m_recordAudioNotifier, OPAL_PCM16);
+  patch->AddFilter(m_recordAudioNotifier, OpalPCM16);
 #if OPAL_VIDEO
   patch->AddFilter(m_recordVideoNotifier, OPAL_YUV420P);
 #endif
@@ -934,7 +936,7 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
 
   ownerCall.OnStopRecording(MakeRecordingKey(*patch));
 
-  patch->RemoveFilter(m_recordAudioNotifier, OPAL_PCM16);
+  patch->RemoveFilter(m_recordAudioNotifier, OpalPCM16);
 #if OPAL_VIDEO
   patch->RemoveFilter(m_recordVideoNotifier, OPAL_YUV420P);
 #endif
@@ -949,35 +951,52 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 
   OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
-  if (mediaFormat.GetEncodingName()[0] != '\0')
+  if (mediaFormat.IsTransportable())
     mediaFormat = patch.GetSink()->GetMediaFormat();
 
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    if (isSource && silenceDetector != NULL) {
-      silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
-      PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
-    }
+    if (!mediaFormat.IsTransportable()) {
+      m_filterMediaFormat = mediaFormat;
+
+      if (isSource && silenceDetector != NULL) {
+        silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
+        patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
+        PTRACE(4, "OpalCon\tAdded silence detect filter on connection " << *this << ", patch " << patch);
+      }
+
 #if OPAL_AEC
-    if (echoCanceler) {
-      echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
-      echoCanceler->SetClockRate(mediaFormat.GetClockRate());
-      patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
-                               : echoCanceler->GetSendHandler(), mediaFormat);
-      PTRACE(4, "OpalCon\tAdded echo canceler filter on connection " << *this << ", patch " << patch);
-    }
+      if (echoCanceler) {
+        echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
+        echoCanceler->SetClockRate(mediaFormat.GetClockRate());
+        patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
+                                 : echoCanceler->GetSendHandler(), mediaFormat);
+        PTRACE(4, "OpalCon\tAdded echo canceler filter on connection " << *this << ", patch " << patch);
+      }
 #endif
+    }
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      patch.AddFilter(m_dtmfDetectNotifier, mediaFormat);
-      PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
+      if (mediaFormat != OpalPCM16)
+        PTRACE(3, "OpalCon\tCould not add detect DTMF filter for " << mediaFormat
+               << " on connection " << *this << ", patch " << patch);
+      else {
+        patch.AddFilter(m_dtmfDetectNotifier, OpalPCM16);
+        PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
+      }
     }
 
     if (m_sendInBandDTMF && !isSource) {
-      m_installedInBandDTMF = true;
-      patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
-      PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
+      if (mediaFormat != OpalPCM16 &&
+          mediaFormat != OpalG711_ULAW_64K &&
+          mediaFormat != OpalG711_ALAW_64K)
+        PTRACE(3, "OpalCon\tCould not add send DTMF filter for " << mediaFormat
+               << " on connection " << *this << ", patch " << patch);
+      else {
+        m_dtmfSendFormat = mediaFormat;
+        patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
+        PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
+      }
     }
 #endif
   }
@@ -1127,7 +1146,7 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
     stream->ExecuteCommand(OpalVideoUpdatePicture());
   else
     stream->ExecuteCommand(OpalVideoPictureLoss());
-  PTRACE(3, "OpalCon\tUpdate video picture (I-frame) requested in video stream " << *stream);
+  PTRACE(3, "OpalCon\tUpdate video picture (I-Frame) requested in video stream " << *stream);
 
   return true;
 }
@@ -1236,15 +1255,41 @@ PBoolean OpalConnection::SendUserInputString(const PString & value)
 #if OPAL_PTLIB_DTMF
 PBoolean OpalConnection::SendUserInputTone(char tone, unsigned duration)
 {
-  if (!m_installedInBandDTMF)
+  if (m_dtmfSendFormat.IsEmpty())
     return false;
 
   if (duration <= 0)
     duration = PDTMFEncoder::DefaultToneLen;
 
   PTRACE(3, "OPAL\tSending in-band DTMF tone '" << tone << "', duration=" << duration);
+
+  PDTMFEncoder dtmfSamples;
+  dtmfSamples.AddTone(tone, duration);
+  PINDEX size = dtmfSamples.GetSize();
+
   m_inBandMutex.Wait();
-  m_inBandDTMF.AddTone(tone, duration);
+
+  switch (m_dtmfSendFormat.GetPayloadType()) {
+    case RTP_DataFrame::PCMU :
+      if (m_inBandDTMF.SetSize(size)) {
+        for (PINDEX i = 0; i < size; ++i)
+          m_inBandDTMF[i] = (BYTE)Opal_PCM_G711_uLaw::ConvertSample(dtmfSamples[i]);
+      }
+      break;
+
+    case RTP_DataFrame::PCMA :
+      if (m_inBandDTMF.SetSize(size)) {
+        for (PINDEX i = 0; i < size; ++i)
+          m_inBandDTMF[i] = (BYTE)Opal_PCM_G711_ALaw::ConvertSample(dtmfSamples[i]);
+      }
+      break;
+
+    default :
+      size *= sizeof(short);
+      if (m_inBandDTMF.SetSize(size))
+        memcpy(m_inBandDTMF.GetPointer(), dtmfSamples, size);
+  }
+
   m_inBandMutex.Signal();
 
   return true;
@@ -1332,15 +1377,15 @@ void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, INT)
   // Can't do the usual LockReadWrite() as deadlocks
   m_inBandMutex.Wait();
 
-  PINDEX bytes = (m_inBandDTMF.GetSize() - m_emittedInBandDTMF)*sizeof(short);
+  PINDEX bytes = m_inBandDTMF.GetSize() - m_emittedInBandDTMF;
   if (bytes > frame.GetPayloadSize())
     bytes = frame.GetPayloadSize();
   memcpy(frame.GetPayloadPtr(), &m_inBandDTMF[m_emittedInBandDTMF], bytes);
 
-  m_emittedInBandDTMF += bytes/sizeof(short);
+  m_emittedInBandDTMF += bytes;
 
   if (m_emittedInBandDTMF >= m_inBandDTMF.GetSize()) {
-    PTRACE(4, "OPAL\tSent in-band DTMF tone, " << m_inBandDTMF.GetSize() << " samples");
+    PTRACE(4, "OPAL\tSent in-band DTMF tone, " << m_inBandDTMF.GetSize() << " bytes");
     m_inBandDTMF.SetSize(0);
     m_emittedInBandDTMF = 0;
   }

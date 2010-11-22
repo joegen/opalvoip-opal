@@ -1794,6 +1794,7 @@ class OpalConnection : public PSafeObject
 #if OPAL_AEC
     OpalEchoCanceler    * echoCanceler;
 #endif
+    OpalMediaFormat       m_filterMediaFormat;
 
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
@@ -1812,12 +1813,12 @@ class OpalConnection : public PSafeObject
     PNotifier    m_dtmfDetectNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
 
-    bool         m_sendInBandDTMF;
-    bool         m_installedInBandDTMF;
-    PDTMFEncoder m_inBandDTMF;
-    PINDEX       m_emittedInBandDTMF;
-    PMutex       m_inBandMutex;
-    PNotifier    m_dtmfSendNotifier;
+    bool            m_sendInBandDTMF;
+    OpalMediaFormat m_dtmfSendFormat;
+    PBYTEArray      m_inBandDTMF;
+    PINDEX          m_emittedInBandDTMF;
+    PMutex          m_inBandMutex;
+    PNotifier       m_dtmfSendNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
 

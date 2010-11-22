@@ -384,7 +384,7 @@ void DisplayPlugInInfo(const PString & name, const PPluginModuleManager::PluginL
         return;
       }
       unsigned int count;
-      PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
+      PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
       if (codecs == NULL || count == 0) {
         cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
         return;
