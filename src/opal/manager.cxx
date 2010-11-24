@@ -125,6 +125,14 @@ unsigned OpalGetBuildNumber()
 
 
 OpalProductInfo::OpalProductInfo()
+  : t35CountryCode(0)
+  , t35Extension(0)
+  , manufacturerCode(0)
+{
+}
+
+
+OpalProductInfo::OpalProductInfo(bool)
   : vendor(PProcess::Current().GetManufacturer())
   , name(PProcess::Current().GetName())
   , version(PProcess::Current().GetVersion())
@@ -139,9 +147,10 @@ OpalProductInfo::OpalProductInfo()
     name.Delete(pos, 1);
 }
 
+
 OpalProductInfo & OpalProductInfo::Default()
 {
-  static OpalProductInfo instance;
+  static OpalProductInfo instance(true);
   return instance;
 }
 
@@ -149,15 +158,32 @@ OpalProductInfo & OpalProductInfo::Default()
 PCaselessString OpalProductInfo::AsString() const
 {
   PStringStream str;
-  str << name << '\t' << version << '\t';
-  if (t35CountryCode != 0 && manufacturerCode != 0) {
-    str << (unsigned)t35CountryCode;
-    if (t35Extension != 0)
-      str << '.' << (unsigned)t35Extension;
-    str << '/' << manufacturerCode;
-  }
-  str << '\t' << vendor;
+  str << *this;
   return str;
+}
+
+
+ostream & operator<<(ostream & strm, const OpalProductInfo & info)
+{
+  if (info.name.IsEmpty() &&
+      info.version.IsEmpty() &&
+      info.vendor.IsEmpty() &&
+      info.t35CountryCode == 0 &&
+      info.manufacturerCode == 0)
+    return strm;
+
+  strm << info.name << '\t' << info.version << '\t';
+
+  if (info.t35CountryCode != 0 && info.manufacturerCode != 0) {
+    strm << (unsigned)info.t35CountryCode;
+    if (info.t35Extension != 0)
+      strm << '.' << (unsigned)info.t35Extension;
+    strm << '/' << info.manufacturerCode;
+  }
+
+  strm << '\t' << info.vendor;
+
+  return strm;
 }
 
 

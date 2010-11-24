@@ -869,7 +869,8 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
-    bool sending = !m_holdFromRemote && sendStream != NULL && sendStream->IsOpen();
+    bool sending = (!m_holdFromRemote || remoteProductInfo.vendor == "broadworks")
+                                   && sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
@@ -1809,25 +1810,17 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     transport->SetInterface(transaction.GetInterface());
   }
 
-  // Save the sessions etc we are actually using of all the forked INVITES sent
-  if (response.GetSDP(*this) != NULL)
-    m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
-
   responseMIME.GetProductInfo(remoteProductInfo);
 
-  // Do PRACK after all the dialog completion parts above.
-  if (statusCode > 100 && statusCode < 200 && responseMIME.GetRequire().Contains("100rel")) {
-    PString rseq = responseMIME.GetString("RSeq");
-    if (rseq.IsEmpty()) {
-      PTRACE(2, "SIP\tReliable (100rel) response has no RSeq field.");
-    }
-    else if (rseq.AsUnsigned() <= m_prackSequenceNumber) {
-      PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
-    }
-    else {
-      SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
-      prack->SetInterface(transaction.GetInterface()); // Make sure same as response
-      prack->Start();
+  // Save the sessions etc we are actually using of all the forked INVITES sent
+  SDPSessionDescription * sdp = response.GetSDP(*this);
+  if (sdp != NULL) {
+    m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+    if (remoteProductInfo.vendor.IsEmpty() && remoteProductInfo.name.IsEmpty()) {
+      if (sdp->GetSessionName() != "-")
+        remoteProductInfo.name = sdp->GetSessionName();
+      if (sdp->GetUserName() != "-")
+        remoteProductInfo.vendor = sdp->GetUserName();
     }
   }
 }
