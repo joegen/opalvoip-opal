@@ -843,7 +843,8 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
-    bool sending = !m_holdFromRemote && sendStream != NULL && sendStream->IsOpen();
+    bool sending = (!m_holdFromRemote || remoteProductInfo.vendor == "broadworks")
+                                   && sendStream != NULL && sendStream->IsOpen();
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
@@ -1716,11 +1717,19 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     transport->SetInterface(transaction.GetInterface());
   }
 
-  // Save the sessions etc we are actually using of all the forked INVITES sent
-  if (response.GetSDP(*this) != NULL)
-    m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
-
   responseMIME.GetProductInfo(remoteProductInfo);
+
+  // Save the sessions etc we are actually using of all the forked INVITES sent
+  SDPSessionDescription * sdp = response.GetSDP(*this);
+  if (sdp != NULL) {
+    m_rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+    if (remoteProductInfo.vendor.IsEmpty() && remoteProductInfo.name.IsEmpty()) {
+      if (sdp->GetSessionName() != "-")
+        remoteProductInfo.name = sdp->GetSessionName();
+      if (sdp->GetUserName() != "-")
+        remoteProductInfo.vendor = sdp->GetUserName();
+    }
+  }
 }
 
 
