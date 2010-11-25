@@ -55,15 +55,15 @@ void ConfOPAL::Main()
 
   PArgList & args = GetArguments();
 
-  if (!args.Parse(m_manager->GetArgumentSpec() +
-                  "a-attendant:"
-                  "c-cli:"
-                  "m-moderator:"
-                  "n-name:"
-                  "s-size:"
-                  "V-no-video."
-                  "-pass-thru.", false) ||
-       args.HasOption('h')) {
+  args.Parse(m_manager->GetArgumentSpec() +
+             "a-attendant:"
+             "c-cli:"
+             "m-moderator:"
+             "n-name:"
+             "s-size:"
+             "V-no-video."
+             "-pass-thru.", false);
+  if (args.HasOption('h')) {
     cerr << "usage: " << GetFile().GetTitle() << " [ options ] [ name ]\n"
             "\n"
             "Available options are:\n"
@@ -418,9 +418,18 @@ void MyMixerEndPoint::CmdConfRecord(PCLI::Arguments & args, INT)
     return;
 
   PFilePath path = args[1];
-  if (!PFile::Access(path, PFile::WriteOnly)) {
-    args.WriteError() << "Cannot write to file \"" << path << '"' << endl;
-    return;
+  if (PFile::Exists(path)) {
+    if (!PFile::Access(path, PFile::WriteOnly)) {
+      args.WriteError() << "Cannot overwrite file \"" << path << '"' << endl;
+      return;
+    }
+  }
+  else {
+    PDirectory dir = path.GetDirectory();
+    if (!PFile::Access(dir, PFile::WriteOnly)) {
+      args.WriteError() << "Cannot write to directory \"" << dir << '"' << endl;
+      return;
+    }
   }
 
   PString token;
