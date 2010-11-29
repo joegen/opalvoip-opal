@@ -73,6 +73,23 @@ class SIPEndPoint;
   */
 #define OPAL_OPT_INITIAL_OFFER "Initial-Offer"
 
+/**OpalConnection::StringOption key to a string for a regular expression to
+   match the product information, which if matching the remote system, will
+   indicate the remote does not support asymmetric hold as required by the
+   standard.
+   
+   This fault is when SDP sendonly is sent (us putting them on hold), and
+   they reply inactive, which implies them putting us on hold. When we
+   subsequently send recvonly to release our hold to them, they continue to
+   send inactive, and hold is never released.
+
+   Note the OpalProductInfo vendor, name & version strings are concatenated
+   before comparison with the regular expression.
+
+   Defaults to empty string.
+  */
+#define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
+
 /**OpalConnection::StringOption key to a string representing the precise SDP
    to be included in the INVITE offer. No media streams are opened or any
    checks whstsoever made on the string. It is simply included as the body of
