@@ -61,6 +61,8 @@ class SIPEndPoint;
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
 #define SIP_HEADER_CONTACT     SIP_HEADER_PREFIX"Contact"
 
+#define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
+
 
 /////////////////////////////////////////////////////////////////////////
 
