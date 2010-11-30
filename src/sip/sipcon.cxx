@@ -866,8 +866,13 @@ bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
-    bool sending = (!m_holdFromRemote || remoteProductInfo.vendor == "broadworks")
-                                   && sendStream != NULL && sendStream->IsOpen();
+    bool sending = sendStream != NULL && sendStream->IsOpen();
+    if (sending && m_holdFromRemote) {
+      // OK we have (possibly) asymmetric hold, check if remote supports it.
+      PString regex = m_connStringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
+      if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
+        sending = false;
+    }
     OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
