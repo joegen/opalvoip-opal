@@ -432,7 +432,8 @@ void SIPConnection::OnReleased()
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
     PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
-    transaction->WaitForTermination();
+    while (!transaction->IsTerminated())
+      PThread::Sleep(100);
     m_pendingTransactions.Remove(transaction);
   }
 
@@ -846,7 +847,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     bool sending = sendStream != NULL && sendStream->IsOpen();
     if (sending && m_holdFromRemote) {
       // OK we have (possibly) asymmetric hold, check if remote supports it.
-      PString regex = m_stringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
+      PString regex = m_connStringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
       if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
         sending = false;
     }
