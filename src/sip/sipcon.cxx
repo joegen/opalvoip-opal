@@ -3325,7 +3325,7 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
     return transaction->Start();
 
   m_responses[transaction->GetTransactionID()] = reply;
-  transaction->WaitForTermination();
+  transaction->WaitForCompletion();
   return !transaction->IsFailed();
 }
 
@@ -3342,7 +3342,7 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
     return transaction->Start();
 
   m_responses[transaction->GetTransactionID()] = reply;
-  transaction->WaitForTermination();
+  transaction->WaitForCompletion();
   return !transaction->IsFailed();
 }
 
