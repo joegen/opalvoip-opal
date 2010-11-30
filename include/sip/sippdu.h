@@ -847,7 +847,7 @@ class SIPTransaction : public SIP_PDU
     bool IsCanceled()   const { return m_state == Cancelling || m_state == Terminated_Cancelled || m_state == Terminated_Aborted; }
     bool IsTerminated() const { return m_state >= Terminated_Success; }
 
-    void WaitForTermination();
+    void WaitForCompletion();
     PBoolean Cancel();
     void Abort();
 
@@ -895,7 +895,7 @@ class SIPTransaction : public SIP_PDU
     unsigned   m_retry;
     PTimer     m_retryTimer;
     PTimer     m_completionTimer;
-    PSyncPoint m_terminated;
+    PSyncPoint m_completed;
 
     PString              m_localInterface;
     OpalTransportAddress m_remoteAddress;
