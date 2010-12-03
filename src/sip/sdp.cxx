@@ -1557,7 +1557,7 @@ OpalMediaFormatList SDPSessionDescription::GetMediaFormats() const
 static void SanitiseName(PString & str)
 {
   PINDEX i = 0;
-  while (i < str.GetSize()) {
+  while (i < str.GetLength()) {
     if (isprint(str[i]))
       ++i;
     else
