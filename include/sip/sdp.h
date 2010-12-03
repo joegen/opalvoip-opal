@@ -311,11 +311,11 @@ class SDPSessionDescription : public PObject
     PString Encode() const;
     bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
 
-    void SetSessionName(const PString & v) { sessionName = v; }
-    PString GetSessionName() const         { return sessionName; }
+    void SetSessionName(const PString & v);
+    PString GetSessionName() const { return sessionName; }
 
-    void SetUserName(const PString & v)    { ownerUsername = v; }
-    PString GetUserName() const            { return ownerUsername; }
+    void SetUserName(const PString & v);
+    PString GetUserName() const { return ownerUsername; }
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
