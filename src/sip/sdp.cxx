@@ -1621,24 +1621,20 @@ static void SanitiseName(PString & str)
 
 void SDPSessionDescription::SetSessionName(const PString & v)
 {
-  if (v.IsEmpty())
+  sessionName = v;
+  SanitiseName(sessionName);
+  if (sessionName.IsEmpty())
     sessionName = '-';
-  else {
-    sessionName = v;
-    SanitiseName(sessionName);
-  }
 }
 
 
 void SDPSessionDescription::SetUserName(const PString & v)
 {
-  if (v.IsEmpty())
+  ownerUsername = v;
+  SanitiseName(ownerUsername);
+  ownerUsername.Replace(' ', '_', true);
+  if (ownerUsername.IsEmpty())
     ownerUsername = '-';
-  else {
-    ownerUsername = v;
-    SanitiseName(ownerUsername);
-    ownerUsername.Replace(' ', '_', true);
-  }
 }
 
 
