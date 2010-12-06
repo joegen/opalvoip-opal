@@ -327,10 +327,10 @@ bool SIPConnection::GarbageCollection()
      from OnRelease() causing a crash in the transaction processing. */
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
-    PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
     if (!transaction->IsTerminated())
       return false;
 
+    PTRACE(4, "SIP\tRemoved terminated transaction, id=" << transaction->GetTransactionID());
     m_pendingTransactions.Remove(transaction);
   }
 
@@ -1826,6 +1826,22 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
         remoteProductInfo.name = sdp->GetSessionName();
       if (sdp->GetUserName() != "-")
         remoteProductInfo.vendor = sdp->GetUserName();
+    }
+  }
+
+  // Do PRACK after all the dialog completion parts above.
+  if (statusCode > 100 && statusCode < 200 && responseMIME.GetRequire().Contains("100rel")) {
+    PString rseq = responseMIME.GetString("RSeq");
+    if (rseq.IsEmpty()) {
+      PTRACE(2, "SIP\tReliable (100rel) response has no RSeq field.");
+    }
+    else if (rseq.AsUnsigned() <= m_prackSequenceNumber) {
+      PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
+    }
+    else {
+      SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
+      prack->SetInterface(transaction.GetInterface()); // Make sure same as response
+      prack->Start();
     }
   }
 }
