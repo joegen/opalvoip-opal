@@ -2344,13 +2344,6 @@
                                                     <size>64, 8d</size>
                                                     <selection>1</selection>
                                                     <content>
-                                                        <item>SQCIF</item>
-                                                        <item>QCIF</item>
-                                                        <item>CIF</item>
-                                                        <item>CIF4</item>
-                                                        <item>CIF16</item>
-                                                        <item>320x240</item>
-                                                        <item>640x480</item>
                                                     </content>
                                                 </object>
                                             </object>
@@ -2447,13 +2440,6 @@
                                                     <size>64, 11d</size>
                                                     <selection>1</selection>
                                                     <content>
-                                                        <item>SQCIF</item>
-                                                        <item>QCIF</item>
-                                                        <item>CIF</item>
-                                                        <item>CIF4</item>
-                                                        <item>CIF16</item>
-                                                        <item>320x240</item>
-                                                        <item>640x480</item>
                                                     </content>
                                                 </object>
                                             </object>
@@ -2471,13 +2457,6 @@
                                                     <size>64, 11d</size>
                                                     <selection>1</selection>
                                                     <content>
-                                                        <item>SQCIF</item>
-                                                        <item>QCIF</item>
-                                                        <item>CIF</item>
-                                                        <item>CIF4</item>
-                                                        <item>CIF16</item>
-                                                        <item>320x240</item>
-                                                        <item>640x480</item>
                                                     </content>
                                                 </object>
                                             </object>
@@ -2670,13 +2649,6 @@
                                             <size>64, 11d</size>
                                             <selection>1</selection>
                                             <content>
-                                                <item>SQCIF</item>
-                                                <item>QCIF</item>
-                                                <item>CIF</item>
-                                                <item>CIF4</item>
-                                                <item>CIF16</item>
-                                                <item>320x240</item>
-                                                <item>640x480</item>
                                             </content>
                                         </object>
                                     </object>
