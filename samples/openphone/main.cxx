@@ -3793,12 +3793,24 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != false);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
 
+  PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
-  FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoGrabFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
+
   m_VideoMinFrameSize = m_manager.m_VideoMinFrameSize;
-  FindWindowByName(VideoMinFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoMinFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
+
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
-  FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoMaxFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
 
   m_videoGrabDevice = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -3828,7 +3840,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
-  FindWindowByName(VideoRecordingSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoRecordingSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
 
   choice = FindWindowByNameAs<wxChoice>(this, AudioRecordingFormatKey);
   PWAVFileFormatByFormatFactory::KeyList_T wavFileFormats = PWAVFileFormatByFormatFactory::GetKeyList();
@@ -4627,8 +4642,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     return;
   }
 
-  wxRect box(0, 0, grabberArgs.width, grabberArgs.height);
-  box = box.CentreIn(GetRect());
+  wxRect box(GetRect().GetBottomLeft(), wxSize(grabberArgs.width, grabberArgs.height));
 
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i", box.GetLeft(), box.GetTop());
