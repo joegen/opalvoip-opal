@@ -1548,13 +1548,6 @@
                                                 <object class="wxComboBox" name="VideoGrabFrameSize" base="EditComboBox">
                                                     <selection>1</selection>
                                                     <choices>
-                                                        <choice>SQCIF</choice>
-                                                        <choice>QCIF</choice>
-                                                        <choice>CIF</choice>
-                                                        <choice>CIF4</choice>
-                                                        <choice>CIF16</choice>
-                                                        <choice>320x240</choice>
-                                                        <choice>640x480</choice>
                                                     </choices>
                                                     <size>64, 8d</size>
                                                 </object>
@@ -1680,13 +1673,6 @@
                                                 <object class="wxComboBox" name="VideoMinFrameSize" base="EditComboBox">
                                                     <selection>1</selection>
                                                     <choices>
-                                                        <choice>SQCIF</choice>
-                                                        <choice>QCIF</choice>
-                                                        <choice>CIF</choice>
-                                                        <choice>CIF4</choice>
-                                                        <choice>CIF16</choice>
-                                                        <choice>320x240</choice>
-                                                        <choice>640x480</choice>
                                                     </choices>
                                                     <size>64, 11d</size>
                                                 </object>
@@ -1707,13 +1693,6 @@
                                                 <object class="wxComboBox" name="VideoMaxFrameSize" base="EditComboBox">
                                                     <selection>1</selection>
                                                     <choices>
-                                                        <choice>SQCIF</choice>
-                                                        <choice>QCIF</choice>
-                                                        <choice>CIF</choice>
-                                                        <choice>CIF4</choice>
-                                                        <choice>CIF16</choice>
-                                                        <choice>320x240</choice>
-                                                        <choice>640x480</choice>
                                                     </choices>
                                                     <size>64, 11d</size>
                                                 </object>
@@ -1929,13 +1908,6 @@
                                         <object class="wxComboBox" name="VideoRecordingSize" base="EditComboBox">
                                             <selection>1</selection>
                                             <choices>
-                                                <choice>SQCIF</choice>
-                                                <choice>QCIF</choice>
-                                                <choice>CIF</choice>
-                                                <choice>CIF4</choice>
-                                                <choice>CIF16</choice>
-                                                <choice>320x240</choice>
-                                                <choice>640x480</choice>
                                             </choices>
                                             <size>64, 11d</size>
                                         </object>
