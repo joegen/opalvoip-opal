@@ -6078,6 +6078,10 @@ STATISTICS_FIELD_BEG(RxAudio, Overruns)
   value.sprintf(m_printFormat, statistics.m_packetOverruns);
 STATISTICS_FIELD_END(RxAudio, Overruns)
 
+STATISTICS_FIELD_BEG(RxAudio, JitterDelay)
+  value.sprintf(m_printFormat, statistics.m_jitterBufferDelay);
+STATISTICS_FIELD_END(RxAudio, JitterDelay)
+
 STATISTICS_FIELD_BEG(TxAudio, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
 STATISTICS_FIELD_END(TxAudio, Bandwidth)
