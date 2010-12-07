@@ -19,7 +19,7 @@
  *
  * The Initial Developer of the Original Code is Derek J Smithies
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Robert Jongbloed.
  *
  * $Revision$
  * $Author$
@@ -49,6 +49,8 @@
 #endif
 
 
+typedef map<DWORD, DWORD> JitterProfileMap;
+
 /////////////////////////////////////////////////////////////////////////////
 /**we use this class primarily to access variables in the OpalJitterBuffer*/
 class JesterJitterBuffer : public OpalJitterBuffer
@@ -57,13 +59,8 @@ class JesterJitterBuffer : public OpalJitterBuffer
  public:
     JesterJitterBuffer();
 
-    ~JesterJitterBuffer();
-
-    /**Report the target jitter time, which is the current delay */
-    DWORD GetTargetJitterTime() { return targetJitterTime; }
-
-    /**Report the current jitter depth */
-    PINDEX GetCurrentDepth() { return jitterBuffer.GetSize(); }
+    PINDEX GetCurrentDepth() const { return m_frames.size(); }
+    DWORD GetAverageFrameTime() const { return m_averageFrameTime; }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -83,37 +80,38 @@ class JesterProcess : public PProcess
 #ifdef DOC_PLUS_PLUS
     /**Generate the Udp packets that we could have read from the internet. In
        other words, place packets in the jitter buffer. */
-    virtual void GenerateUdpPackets(PThread &, INT);
+    virtual void GeneratePackets(PThread &, INT);
 #else
-    PDECLARE_NOTIFIER(PThread, JesterProcess, GenerateUdpPackets);
+    PDECLARE_NOTIFIER(PThread, JesterProcess, GeneratePackets);
 #endif
 
 #ifdef DOC_PLUS_PLUS
     /**Read in the Udp packets (from the output of the jitter buffer), that we
        could have read from the internet. In other words, extract packets from
        the jitter buffer. */
-    virtual void ConsumeUdpPackets(PThread &, INT);
+    virtual void ConsumePackets(PThread &, INT);
 #else
-    PDECLARE_NOTIFIER(PThread, JesterProcess, ConsumeUdpPackets);
+    PDECLARE_NOTIFIER(PThread, JesterProcess, ConsumePackets);
 #endif
+
+    void Report();
+    bool GenerateFrame(RTP_DataFrame & frame);
 
     /**Handle user input, which is keys to describe the status of the program,
        while the different loops run. The program will not finish until this
        method is completed.*/
     void ManageUserInput();
-    
-    /**Name of the sound device we will write audio to. If not specified, this
-       program will write to
-       PSoundChannel::GetDefaultDevice(PSoundChannel::Player) */
-    PString audioDevice;
-    
+
     /**The number of bytes of data in each simulated RTP_DataFrame */
-    PINDEX bytesPerBlock;
+    PINDEX m_bytesPerBlock;
 
     /**Flag to indicate if we do, or do not, simulate silence suppression. If
        PTrue, we do silence suppresion and send packets in bursts of onnnn,
        nothing, onnn, nothing..*/
-    PBoolean silenceSuppression;
+    bool m_silenceSuppression;
+
+    /**Flag to indicate if we do, or do not, simulate dropped packets.*/
+    bool m_dropPackets;
 
     /**Flag to indicate if we do, or do not fiddle with the operaiton of
        silence suppression function. When doing silence suppression, the start
@@ -122,37 +120,38 @@ class JesterProcess : public PProcess
        suppressed. This flag therefore tests the operation of the jitter
        buffer, to see if it copes with the dropping of the first packet in
        each voice stream */
-    PBoolean markerSuppression;
-
-    /**min size of the jitter buffer in ms */
-    PINDEX minJitterSize;
-
-    /**max size of the jitter buffer - time units is ms */
-    PINDEX maxJitterSize;
+    bool m_markerSuppression;
 
     /**A descendant of the OpalJitterBuffer, which means we have the minimum
        of code to write to test OpalJitterBuffer. Further, we can now access
        variables in the OpalJitterBuffer */
-    JesterJitterBuffer jitterBuffer;
+    JesterJitterBuffer m_jitterBuffer;
 
     /**The sound channel that we will write audio to*/
-    PSoundChannel player;
+    PSoundChannel m_player;
 
     /**Name of the wavfile containing the audio we will read in */
-    PString wavFile;
+    PWAVFile m_wavFile;
 
-    /**the current index that the generate thread is on (or iteration count) */
-    PINDEX generateIndex;
-
-    /**the current index that the consume thread is on (or iteration count) */
-    PINDEX consumeIndex;
+    /**Maximum generated jitter */
+    JitterProfileMap m_generateJitter;
 
     /**the timestamp, as used by the generate thread */
-    DWORD generateTimestamp;
+    DWORD m_generateTimestamp;
 
-    /**the timestamp, as used by the consume thread */
-    DWORD consumeTimestamp;
+    /**the sequence number, as used by the generate thread */
+    WORD m_generateSequenceNumber;
 
+    /**The timestamp the jitter buffer consumer is expecting */
+    DWORD m_expectedTimestamp;
+
+    /** Flag for running the test */
+    bool m_keepRunning;
+
+    bool  m_lastFrameWasSilence;
+    DWORD m_talkBurstTimestamp;
+    DWORD m_lastSilentTimestamp;
+    DWORD m_lastGeneratedJitter;
 };
 
 
