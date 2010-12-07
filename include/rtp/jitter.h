@@ -92,15 +92,11 @@ class OpalJitterBuffer : public PSafeObject
       PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
 
-    /** Reset jitter buffer.
-        Jitter buffer is cleared and "restocked" from input data.
-      */
-    void Reset() { m_resetJitterBufferNow = true; }
-
     /**Write data frame from the RTP channel.
       */
     virtual PBoolean WriteData(
-      const RTP_DataFrame & frame   ///< Frame to feed into jitter buffer
+      const RTP_DataFrame & frame,   ///< Frame to feed into jitter buffer
+      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet arrival
     );
 
     /**Read a data frame from the jitter buffer.
@@ -108,81 +104,71 @@ class OpalJitterBuffer : public PSafeObject
        with zero payload size is returned.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame   ///<  Frame to extract from jitter buffer
+      RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
+      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet removal
     );
 
     /**Get current delay for jitter buffer.
       */
-    DWORD GetJitterTime() const { return currentJitterTime; }
+    DWORD GetCurrentJitterDelay() const { return m_currentJitterDelay; }
 
     /**Get time units.
       */
-    unsigned GetTimeUnits() const { return timeUnits; }
+    unsigned GetTimeUnits() const { return m_timeUnits; }
     
     /**Get total number received packets too late to go into jitter buffer.
       */
-    DWORD GetPacketsTooLate() const { return packetsTooLate; }
+    DWORD GetPacketsTooLate() const { return m_packetsTooLate; }
 
     /**Get total number received packets that overran the jitter buffer.
       */
-    DWORD GetBufferOverruns() const { return bufferOverruns; }
+    DWORD GetBufferOverruns() const { return m_bufferOverruns; }
 
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */
-    DWORD GetMaxConsecutiveMarkerBits() const { return maxConsecutiveMarkerBits; }
+    DWORD GetMaxConsecutiveMarkerBits() const { return m_maxConsecutiveMarkerBits; }
 
     /**Set maximum consecutive marker bits before buffer starts to ignore them.
       */
-    void SetMaxConsecutiveMarkerBits(DWORD max) { maxConsecutiveMarkerBits = max; }
+    void SetMaxConsecutiveMarkerBits(DWORD max) { m_maxConsecutiveMarkerBits = max; }
   //@}
 
   protected:
-    class Entry : public RTP_DataFrame
-    {
-      public:
-        Entry(PINDEX sz) : RTP_DataFrame(0, sz) { }
-        PTimeInterval tick;
-    };
-    OpalJitterBuffer::Entry * GetAvailableEntry();
-    void InternalWriteData(OpalJitterBuffer::Entry * availableEntry);
+    unsigned m_timeUnits;
+    PINDEX   m_packetSize;
+    DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
+    DWORD    m_maxJitterDelay;      ///< Maximum jitter delay in timestamp units
+    DWORD    m_jitterGrowTime;      ///< Amaint to increase jitter delay by when get "late" packet
+    DWORD    m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
+                                    ///< consistently filled before shrinking
+    DWORD    m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
+    DWORD    m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
+    DWORD    m_slenceShrinkTime;    ///< Amount to shrink jitter delay by if consistently silent
 
-    DWORD         minJitterTime;
-    DWORD         maxJitterTime;
-    unsigned      timeUnits;
-    PINDEX        bufferSize;
-    DWORD         maxConsecutiveMarkerBits;
+    DWORD    m_currentJitterDelay;
+    DWORD    m_packetsTooLate;
+    DWORD    m_bufferOverruns;
+    DWORD    m_consecutiveMarkerBits;
+    DWORD    m_maxConsecutiveMarkerBits;
 
-    DWORD         currentJitterTime;
-    DWORD         packetsTooLate;
-    unsigned      bufferOverruns;
-    unsigned      consecutiveBufferOverruns;
-    DWORD         consecutiveMarkerBits;
-    bool          markerWarning;
-    PTimeInterval consecutiveEarlyPacketStartTime;
-    DWORD         lastWriteTimestamp;
-    PTimeInterval lastWriteTick;
-    DWORD         jitterCalc;
-    DWORD         targetJitterTime;
-    unsigned      jitterCalcPacketCount;
-    bool          m_resetJitterBufferNow;
+    DWORD    m_averageFrameTime;
+    DWORD    m_lastTimestamp;
+    DWORD    m_bufferFilledTime;
+    DWORD    m_bufferEmptiedTime;
+    int      m_timestampDelta;
 
-    struct FrameQueue : public PList<Entry>
-    {
-      FrameQueue() { DisallowDeleteObjects(); }
-      ~FrameQueue() { AllowDeleteObjects(); }
-    };
-    FrameQueue freeFrames;
-    FrameQueue jitterBuffer;
-    Entry * GetNewest(bool pop);
-    Entry * GetOldest(bool pop);
+    enum {
+      e_SynchronisationStart,
+      e_SynchronisationFill,
+      e_SynchronisationShrink,
+      e_SynchronisationDone
+    } m_synchronisationState;
 
-    Entry * currentFrame;    // storage of current frame
+    typedef std::map<DWORD, RTP_DataFrame> FrameMap;
+    FrameMap m_frames;
+    PMutex   m_bufferMutex;
 
-    PMutex bufferMutex;
-    bool   preBuffering;
-    bool   firstReadData;
-
-    RTP_JitterBufferAnalyser * analyser;
+    RTP_JitterBufferAnalyser * m_analyser;
 };
 
 
@@ -260,7 +246,7 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
 
  protected:
    /**This class extracts data from the outside world by reading from this session variable */
-   RTP_Session & session;
+   RTP_Session & m_session;
 };
 
 #endif // OPAL_RTP_JITTER_H
