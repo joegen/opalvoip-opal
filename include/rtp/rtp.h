@@ -356,6 +356,7 @@ class OpalMediaStatistics : public PObject
     // Audio
     unsigned m_averageJitter;
     unsigned m_maximumJitter;
+    unsigned m_jitterBufferDelay;
 
     // Video
     unsigned m_totalFrames;
@@ -516,6 +517,7 @@ class RTP_Session : public PObject
        the SetJitterBufferSize() function.
       */
     unsigned GetJitterBufferSize() const;
+    unsigned GetJitterBufferDelay() const { return GetJitterBufferSize()/GetJitterTimeUnits(); }
     
     /**Get current time units of the jitter buffer.
      */

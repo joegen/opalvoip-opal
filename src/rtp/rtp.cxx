@@ -490,6 +490,7 @@ OpalMediaStatistics::OpalMediaStatistics()
     // Audio
   , m_averageJitter(0)
   , m_maximumJitter(0)
+  , m_jitterBufferDelay(0)
 
     // Video
   , m_totalFrames(0)
@@ -777,7 +778,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
 unsigned RTP_Session::GetJitterBufferSize() const
 {
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
-  return jitter != NULL ? jitter->GetJitterTime() : 0;
+  return jitter != NULL ? jitter->GetCurrentJitterDelay() : 0;
 }
 
 
@@ -1339,6 +1340,7 @@ void RTP_Session::GetStatistics(OpalMediaStatistics & statistics, bool receiver)
   statistics.m_maximumPacketTime = receiver ? GetMaximumReceiveTime() : GetMaximumSendTime();
   statistics.m_averageJitter     = receiver ? GetAvgJitterTime()      : GetJitterTimeOnRemote();
   statistics.m_maximumJitter     = receiver ? GetMaxJitterTime()      : 0;
+  statistics.m_jitterBufferDelay = receiver ? GetJitterBufferDelay()  : 0;
 }
 #endif
 
