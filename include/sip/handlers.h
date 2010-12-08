@@ -244,6 +244,8 @@ protected:
   SIPDialogContext         m_dialog;
   bool                     m_unconfirmed;
   SIPEventPackageHandler * m_packageHandler;
+
+  SIP_PDU                  * m_previousResponse;
 };
 
 
