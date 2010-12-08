@@ -415,7 +415,7 @@ void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::
   static PCaselessString dm  ("urn:ietf:params:xml:ns:pidf:data-model|");
   static const int rpidLen = rpid.GetLength();
 
-  PXMLElement * person = xml.GetElement(dm + "person");
+  PXMLElement * person = rootElement->GetElement(dm + "person");
   if (person != NULL) {
     PXMLElement * activities = person->GetElement(rpid + "activities");
     if (activities != NULL) {
@@ -423,9 +423,9 @@ void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::
         if (!activities->GetElement(i)->IsElement())
           continue;
         PString name(((PXMLElement *)activities->GetElement(i))->GetName());
-        if (name.GetLength() < (rpidLen+1) || !(name.Left(rpidLen) *= rpid) || (name[rpidLen] != '|'))
+        if (name.GetLength() < (rpidLen+1) || !(name.Left(rpidLen) *= rpid) || (name[rpidLen-1] != '|'))
           continue;
-        SIPPresenceInfo::State state = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpidLen+1));
+        SIPPresenceInfo::State state = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpidLen));
         if (state == SIPPresenceInfo::NoPresence)
           continue;
         if ((info.m_activities.GetSize() == 0) && (info.m_state == SIPPresenceInfo::Available))
