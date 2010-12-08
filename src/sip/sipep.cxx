@@ -1371,6 +1371,8 @@ bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 
 void SIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 {
+  PTRACE(4, "SIP\tReceived presence for entity '" << info.m_entity << "' using old API");
+
   // For backward compatibility
   switch (info.m_state) {
     case OpalPresenceInfo::Available :

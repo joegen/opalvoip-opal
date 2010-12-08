@@ -67,6 +67,25 @@ static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs(
 
 static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 
+//
+// declare URL schemes needed to access different SIP presence modes
+// Can't use RegisterAs to make these all "sip" point to the PURLScheme 
+// instance due to order of static initialisation issues
+
+
+#define DECLARE_SIPURLScheme(tag, s) \
+class SIPURLScheme_##s : public PURLLegacyScheme \
+{ \
+  public: \
+    SIPURLScheme_##s() \
+      : PURLLegacyScheme(tag, PTrue,  PTrue,  PTrue,  PFalse, PFalse,  PTrue,  PTrue,  PFalse, PFalse, PFalse, 5060) \
+    { } \
+}; \
+  static PFactory<PURLScheme>::Worker<SIPURLScheme_##s> s##_Factory(tag, true); \
+
+DECLARE_SIPURLScheme("sip-local", sip_local);
+DECLARE_SIPURLScheme("sip-xcap",  sip_xcap);
+DECLARE_SIPURLScheme("sip-oma",   sip_oma);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,6 +132,13 @@ SIP_Presentity::~SIP_Presentity()
 {
 }
 
+void SIP_Presentity::SetAOR(const PURL & aor)
+{
+  PFactory<PURLScheme>::KeyMap_T & keyMap = PFactory<PURLScheme>::GetKeyMap();
+  m_aor = aor;
+  if (keyMap.find(aor.GetScheme()) != keyMap.end())
+    m_aor.SetScheme("sip");
+}
 
 bool SIP_Presentity::SetDefaultPresentity(const PString & prefix)
 {
@@ -156,36 +182,15 @@ bool SIP_Presentity::Close()
 
 //////////////////////////////////////////////////////////////
 
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPLocal_Presentity, Internal_SubscribeToPresence);
+
 SIPLocal_Presentity::~SIPLocal_Presentity()
 {
   Close();
 }
 
 
-//////////////////////////////////////////////////////////////
-
-const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "xcap_root";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "xcap_auth_id";   return s; }
-const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "xcap_password";  return s; }
-const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "xcap_auid";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "xcap_authfile";  return s; }
-const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "xcap_buddylist"; return s; }
-
-SIPXCAP_Presentity::SIPXCAP_Presentity()
-{
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
-  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "buddylist");
-}
-
-
-SIPXCAP_Presentity::~SIPXCAP_Presentity()
-{
-  Close();
-}
-
-
-bool SIPXCAP_Presentity::Open()
+bool SIPLocal_Presentity::Open()
 {
   if (!SIP_Presentity::Open())
     return false;
@@ -202,19 +207,28 @@ bool SIPXCAP_Presentity::Open()
     }
     else
 #endif
-      if (m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey)) 
-        m_presenceServer.Parse(m_attributes.Get(SIP_Presentity::DefaultPresenceServerKey), m_endpoint->GetDefaultSignalPort());
+    {
+      PTRACE(3, "SIPPres\tSRV lookup for '" << m_aor.GetHostName() << "_pres._sip' failed");
+      PString defServer;
+      if (
+          m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey) && 
+          !(defServer = m_attributes.Get(SIP_Presentity::DefaultPresenceServerKey)).IsEmpty()
+          )
+        m_presenceServer.Parse(defServer, m_endpoint->GetDefaultSignalPort());
       else
         m_presenceServer.Parse(m_aor.GetHostName(), m_aor.GetPort());
-
-    // set presence server
-    m_attributes.Set(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
+    }
   }
 
   if (!m_presenceServer.GetAddress().IsValid()) {
     PTRACE(1, "SIPPres\tUnable to lookup hostname for '" << m_presenceServer.GetAddress() << '\'');
     return false;
   }
+
+  // set presence server
+  m_attributes.Set(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
+
+  PTRACE(3, "SIPPres\tUsing " << m_presenceServer.GetAddress() << " as presence server for " << m_aor);
 
   m_watcherSubscriptionAOR.MakeEmpty();
 
@@ -226,8 +240,7 @@ bool SIPXCAP_Presentity::Open()
   return true;
 }
 
-
-bool SIPXCAP_Presentity::Close()
+bool SIPLocal_Presentity::Close()
 {
   if (!IsOpen())
     return false;
@@ -264,201 +277,7 @@ bool SIPXCAP_Presentity::Close()
   return SIP_Presentity::Close();
 }
 
-
-OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIPXCAP_Presentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPXCAP_Presentity, Internal_SubscribeToPresence);
-OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIPXCAP_Presentity, Internal_AuthorisationRequest);
-OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPXCAP_Presentity, Internal_SubscribeToWatcherInfo);
-
-
-void SIPXCAP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
-{
-
-  if (cmd.m_unsubscribe) {
-    if (m_watcherSubscriptionAOR.IsEmpty()) {
-      PTRACE(3, "SIPPres\tAlredy unsubscribed presence watcher for " << m_aor);
-      return;
-    }
-
-    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe for own presence watcher");
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR);
-    return;
-  }
-
-  PString aorStr = m_aor.AsString();
-  PTRACE(3, "SIPPres\t'" << aorStr << "' sending subscribe for own presence.watcherinfo");
-
-  // subscribe to the presence.winfo event on the presence server
-  SIPSubscribe::Params param(SIPSubscribe::Presence | SIPSubscribe::Watcher);
-  param.m_contentType      = "application/watcherinfo+xml";
-  param.m_localAddress     = aorStr;
-  param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceServer.AsString() + ";transport=tcp";
-  param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
-  param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
-  param.m_expire           = GetExpiryTime();
-  param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-  param.m_onNotify         = PCREATE_NOTIFIER2(OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
-
-  m_endpoint->Subscribe(param, m_watcherSubscriptionAOR);
-}
-
-
-void SIPXCAP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
-{
-   if (status.m_reason == SIP_PDU::Information_Trying)
-    return;
-
-  OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
-  info.m_target = info.m_entity = m_aor.AsString();
-
-  m_notificationMutex.Wait();
-
-  if (status.m_reason/100 == 4)
-    info.m_state = OpalPresenceInfo::Forbidden;
-  else if (status.m_reason/100 != 2) 
-    info.m_state = OpalPresenceInfo::InternalError;
-
-  OnPresenceChange(info);
-
-  if (!status.m_wasSubscribing)
-    m_watcherSubscriptionAOR.MakeEmpty();
-
-  m_notificationMutex.Signal();
-}
-
-
-void SIPXCAP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
-{
-  static PXML::ValidationInfo const WatcherValidation[] = {
-    { PXML::RequiredNonEmptyAttribute,  "id"  },
-    { PXML::RequiredAttributeWithValue, "status",  { "pending\nactive\nwaiting\nterminated" } },
-    { PXML::RequiredAttributeWithValue, "event",   { "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" } },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const WatcherListValidation[] = {
-    { PXML::RequiredNonEmptyAttribute,  "resource" },
-    { PXML::RequiredAttributeWithValue, "package", { "presence" } },
-
-    { PXML::Subtree,                    "watcher", { WatcherValidation } , 0 },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const WatcherInfoValidation[] = {
-    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:watcherinfo" },
-    { PXML::ElementName,                "watcherinfo", },
-    { PXML::RequiredNonEmptyAttribute,  "version"},
-    { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
-
-    { PXML::Subtree,                    "watcher-list", { WatcherListValidation }, 0 },
-    { PXML::EndOfValidationList }
-  };
-
-  PXML xml;
-  if (!ParseAndValidateXML(status, xml, WatcherInfoValidation))
-    return;
-
-  // send 200 OK now, and flag caller NOT to send the response
-  status.SendResponse(SIP_PDU::Successful_OK);
-
-  PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo");
-
-  PXMLElement * rootElement = xml.GetRootElement();
-
-  int version = rootElement->GetAttribute("version").AsUnsigned();
-
-  PWaitAndSignal mutex(m_notificationMutex);
-
-  // check version number
-  bool sendRefresh = false;
-  if (m_watcherInfoVersion < 0)
-    m_watcherInfoVersion = version;
-  else {
-    sendRefresh = version != m_watcherInfoVersion+1;
-    version = m_watcherInfoVersion;
-  }
-
-  // if this is a full list of watcher info, we can empty out our pending lists
-  if (rootElement->GetAttribute("state") *= "full") {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list");
-    m_watcherAorById.clear();
-  }
-
-  // go through list of watcher information
-  PINDEX watcherListIndex = 0;
-  PXMLElement * watcherList;
-  while ((watcherList = rootElement->GetElement("watcher-list", watcherListIndex++)) != NULL) {
-    PINDEX watcherIndex = 0;
-    PXMLElement * watcher;
-    while ((watcher = watcherList->GetElement("watcher", watcherIndex++)) != NULL)
-      OnReceivedWatcherStatus(watcher);
-  }
-
-  // send refresh, if needed
-  if (sendRefresh) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo without out of sequence version");
-    // TODO
-  }
-}
-
-
-void SIPXCAP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
-{
-  PString id     = watcher->GetAttribute("id");
-  PString status = watcher->GetAttribute("status");
-
-  AuthorisationRequest authreq;
-  authreq.m_presentity = watcher->GetData().Trim();
-
-  StringMap::iterator existingAOR = m_watcherAorById.find(id);
-
-  // save pending subscription status from this user
-  if (status == "pending") {
-    if (existingAOR != m_watcherAorById.end()) {
-      PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << authreq.m_presentity << "' for access to presence information");
-    } 
-    else {
-      m_watcherAorById[id] = authreq.m_presentity;
-      PTRACE(3, "SIPPres\t'" << authreq.m_presentity << "' has requested access to presence information of '" << m_aor << '\'');
-      OnAuthorisationRequest(authreq);
-    }
-  }
-  else {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' has received event '" << watcher->GetAttribute("event")
-           << "', status '" << status << "', for '" << authreq.m_presentity << '\'');
-  }
-}
-
-
-void SIPXCAP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
-{
-  PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
-
-  SIPPresenceInfo sipPresence(GetID());
-  sipPresence.m_entity = m_aor.AsString();
-  sipPresence.m_presenceAgent = m_presenceServer.AsString();
-  sipPresence.m_state = cmd.m_state;
-  sipPresence.m_note = cmd.m_note;
-
-  if (m_publishedTupleId.IsEmpty())
-    m_publishedTupleId = sipPresence.m_tupleId;
-  else
-    sipPresence.m_tupleId = m_publishedTupleId;
-
-  m_endpoint->PublishPresence(sipPresence,
-            cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
-}
-
-
-unsigned SIPXCAP_Presentity::GetExpiryTime() const
-{
-  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
-  return ttl > 0 ? ttl : 300;
-}
-
-
-void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
+void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
 {
   if (cmd.m_subscribe) {
     if (m_presenceIdByAor.find(cmd.m_presentity) != m_presenceIdByAor.end()) {
@@ -501,8 +320,7 @@ void SIPXCAP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPrese
   }
 }
 
-
-void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+void SIPLocal_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
   if (status.m_reason == SIP_PDU::Information_Trying)
     return;
@@ -523,7 +341,7 @@ void SIPXCAP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, con
 }
 
 
-void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
   static PXML::ValidationInfo const StatusValidation[] = {
     { PXML::RequiredElement,            "basic" },
@@ -623,6 +441,215 @@ void SIPXCAP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::N
   m_notificationMutex.Wait();
   OnPresenceChange(info);
   m_notificationMutex.Signal();
+}
+
+
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIPLocal_Presentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIPLocal_Presentity, Internal_AuthorisationRequest);
+OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPLocal_Presentity, Internal_SubscribeToWatcherInfo);
+
+
+void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
+{
+
+  if (cmd.m_unsubscribe) {
+    if (m_watcherSubscriptionAOR.IsEmpty()) {
+      PTRACE(3, "SIPPres\tAlredy unsubscribed presence watcher for " << m_aor);
+      return;
+    }
+
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe for own presence watcher");
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR);
+    return;
+  }
+
+  PString aorStr = m_aor.AsString();
+  PTRACE(3, "SIPPres\t'" << aorStr << "' sending subscribe for own presence.watcherinfo");
+
+  // subscribe to the presence.winfo event on the presence server
+  SIPSubscribe::Params param(SIPSubscribe::Presence | SIPSubscribe::Watcher);
+  param.m_contentType      = "application/watcherinfo+xml";
+  param.m_localAddress     = aorStr;
+  param.m_addressOfRecord  = aorStr;
+  param.m_remoteAddress    = m_presenceServer.AsString() + ";transport=tcp";
+  param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
+  param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
+  param.m_expire           = GetExpiryTime();
+  param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+  param.m_onNotify         = PCREATE_NOTIFIER2(OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+
+  m_endpoint->Subscribe(param, m_watcherSubscriptionAOR);
+}
+
+
+void SIPLocal_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+{
+   if (status.m_reason == SIP_PDU::Information_Trying)
+    return;
+
+  OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
+  info.m_target = info.m_entity = m_aor.AsString();
+
+  m_notificationMutex.Wait();
+
+  if (status.m_reason/100 == 4)
+    info.m_state = OpalPresenceInfo::Forbidden;
+  else if (status.m_reason/100 != 2) 
+    info.m_state = OpalPresenceInfo::InternalError;
+
+  OnPresenceChange(info);
+
+  if (!status.m_wasSubscribing)
+    m_watcherSubscriptionAOR.MakeEmpty();
+
+  m_notificationMutex.Signal();
+}
+
+
+void SIPLocal_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+{
+  static PXML::ValidationInfo const WatcherValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "id"  },
+    { PXML::RequiredAttributeWithValue, "status",  { "pending\nactive\nwaiting\nterminated" } },
+    { PXML::RequiredAttributeWithValue, "event",   { "subscribe\napproved\ndeactivated\nprobation\nrejected\ntimeout\ngiveup" } },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const WatcherListValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "resource" },
+    { PXML::RequiredAttributeWithValue, "package", { "presence" } },
+
+    { PXML::Subtree,                    "watcher", { WatcherValidation } , 0 },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const WatcherInfoValidation[] = {
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:watcherinfo" },
+    { PXML::ElementName,                "watcherinfo", },
+    { PXML::RequiredNonEmptyAttribute,  "version"},
+    { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
+
+    { PXML::Subtree,                    "watcher-list", { WatcherListValidation }, 0 },
+    { PXML::EndOfValidationList }
+  };
+
+  PXML xml;
+  if (!ParseAndValidateXML(status, xml, WatcherInfoValidation))
+    return;
+
+  // send 200 OK now, and flag caller NOT to send the response
+  status.SendResponse(SIP_PDU::Successful_OK);
+
+  PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo");
+
+  PXMLElement * rootElement = xml.GetRootElement();
+
+  int version = rootElement->GetAttribute("version").AsUnsigned();
+
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  // check version number
+  bool sendRefresh = false;
+  if (m_watcherInfoVersion < 0)
+    m_watcherInfoVersion = version;
+  else {
+    sendRefresh = version != m_watcherInfoVersion+1;
+    version = m_watcherInfoVersion;
+  }
+
+  // if this is a full list of watcher info, we can empty out our pending lists
+  if (rootElement->GetAttribute("state") *= "full") {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list");
+    m_watcherAorById.clear();
+  }
+
+  // go through list of watcher information
+  PINDEX watcherListIndex = 0;
+  PXMLElement * watcherList;
+  while ((watcherList = rootElement->GetElement("watcher-list", watcherListIndex++)) != NULL) {
+    PINDEX watcherIndex = 0;
+    PXMLElement * watcher;
+    while ((watcher = watcherList->GetElement("watcher", watcherIndex++)) != NULL)
+      OnReceivedWatcherStatus(watcher);
+  }
+
+  // send refresh, if needed
+  if (sendRefresh) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo without out of sequence version");
+    // TODO
+  }
+}
+
+
+void SIPLocal_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
+{
+  PString id     = watcher->GetAttribute("id");
+  PString status = watcher->GetAttribute("status");
+
+  AuthorisationRequest authreq;
+  authreq.m_presentity = watcher->GetData().Trim();
+
+  StringMap::iterator existingAOR = m_watcherAorById.find(id);
+
+  // save pending subscription status from this user
+  if (status == "pending") {
+    if (existingAOR != m_watcherAorById.end()) {
+      PTRACE(3, "SIPPres\t'" << m_aor << "' received followup to request from '" << authreq.m_presentity << "' for access to presence information");
+    } 
+    else {
+      m_watcherAorById[id] = authreq.m_presentity;
+      PTRACE(3, "SIPPres\t'" << authreq.m_presentity << "' has requested access to presence information of '" << m_aor << '\'');
+      OnAuthorisationRequest(authreq);
+    }
+  }
+  else {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' has received event '" << watcher->GetAttribute("event")
+           << "', status '" << status << "', for '" << authreq.m_presentity << '\'');
+  }
+}
+
+
+void SIPLocal_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
+{
+  PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
+
+  SIPPresenceInfo sipPresence(GetID());
+  sipPresence.m_entity = m_aor.AsString();
+  sipPresence.m_presenceAgent = m_presenceServer.AsString();
+  sipPresence.m_state = cmd.m_state;
+  sipPresence.m_note = cmd.m_note;
+
+  if (m_publishedTupleId.IsEmpty())
+    m_publishedTupleId = sipPresence.m_tupleId;
+  else
+    sipPresence.m_tupleId = m_publishedTupleId;
+
+  m_endpoint->PublishPresence(sipPresence,
+            cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
+}
+
+
+unsigned SIPLocal_Presentity::GetExpiryTime() const
+{
+  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
+  return ttl > 0 ? ttl : 300;
+}
+
+
+//////////////////////////////////////////////////////////////
+
+const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "xcap_root";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "xcap_auth_id";   return s; }
+const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "xcap_password";  return s; }
+const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "xcap_auid";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "xcap_authfile";  return s; }
+const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "xcap_buddylist"; return s; }
+
+SIPXCAP_Presentity::SIPXCAP_Presentity()
+{
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
+  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
+  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "buddylist");
 }
 
 

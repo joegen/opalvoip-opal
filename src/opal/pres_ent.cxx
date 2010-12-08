@@ -157,6 +157,12 @@ OpalPresentity::~OpalPresentity()
 }
 
 
+void OpalPresentity::SetAOR(const PURL & aor)
+{
+  m_aor = aor;
+}
+
+
 OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url, const PString & scheme)
 {
   OpalPresentity * presEntity = PFactory<OpalPresentity>::CreateInstance(scheme.IsEmpty() ? url.GetScheme() : scheme);
@@ -164,7 +170,7 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
     return NULL;
 
   presEntity->m_manager = &manager;
-  presEntity->m_aor = url;
+  presEntity->SetAOR(url);
 
   return presEntity;
 }
@@ -205,6 +211,9 @@ bool OpalPresentity::SetPresenceAuthorisation(const PURL & presentity, Authorisa
 
 bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PString & note)
 {
+  m_localState     = state;
+  m_localStateNote = note;
+
   OpalSetLocalPresenceCommand * cmd = CreateCommand<OpalSetLocalPresenceCommand>();
   if (cmd == NULL)
     return false;
@@ -215,6 +224,13 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
   return true;
 }
 
+bool OpalPresentity::GetLocalPresence(OpalPresenceInfo::State & state, PString & note)
+{
+  state = m_localState;
+  note  = m_localStateNote;
+
+  return true;
+}
 
 bool OpalPresentity::SendMessageTo(const OpalIM & message)
 {
