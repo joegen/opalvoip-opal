@@ -808,24 +808,21 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_parameters(params)
   , m_unconfirmed(true)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
+  , m_previousResponse(NULL)
 {
   callID = m_dialog.GetCallID();
 
   m_parameters.m_proxyAddress = m_proxy.AsString();
 
-  if (m_parameters.m_contentType.IsEmpty()) {
-    SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
-    if (packageHandler != NULL) {
-      m_parameters.m_contentType = packageHandler->GetContentType();
-      delete packageHandler;
-    }
-  }
+  if (m_parameters.m_contentType.IsEmpty() && (m_packageHandler != NULL))
+    m_parameters.m_contentType = m_packageHandler->GetContentType();
 }
 
 
 SIPSubscribeHandler::~SIPSubscribeHandler()
 {
   delete m_packageHandler;
+  delete m_previousResponse;
 }
 
 
@@ -980,20 +977,34 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   SIPMIMEInfo & requestMIME = request.GetMIME();
 
-  SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
+  // If we received this NOTIFY before, send the previous response
+  if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
+
+    // duplicate CSEQ but no previous response? That's unpossible!
+    if (m_previousResponse == NULL)
+      return request.SendResponse(*m_transport, SIP_PDU::Failure_InternalServerError, &endpoint);
+
+    PTRACE(3, "SIP\tReceived duplicate NOTIFY");
+    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
+  }
+
+  // remove last response
+  delete m_previousResponse;
+  m_previousResponse = new SIP_PDU(request, SIP_PDU::Failure_BadRequest);
 
   PStringToString subscriptionStateInfo;
   PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
   if (subscriptionState.IsEmpty()) {
     PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
-    response.SetInfo("No Subscription-State field");
-    return request.SendResponse(*m_transport, response, &endpoint);
+    m_previousResponse->SetInfo("No Subscription-State field");
+    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
   }
 
   // Check the susbscription state
   if (subscriptionState == "terminated") {
     PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
-    request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
+    m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
+    request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
     if (GetState() != Unsubscribing)
       ShutDown();
     else {
@@ -1003,49 +1014,52 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return true;
   }
 
-  // If we received a NOTIFY before
-  if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
-    PTRACE(3, "SIP\tReceived duplicate NOTIFY");
-    return request.SendResponse(*m_transport, SIP_PDU::Successful_OK, &endpoint);
-  }
-
   PString requestEvent = requestMIME.GetEvent();
   if (m_parameters.m_eventPackage != requestEvent) {
     PTRACE(2, "SIP\tNOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
-    response.SetStatusCode(SIP_PDU::Failure_BadEvent);
-    response.GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
-    return request.SendResponse(*m_transport, response, &endpoint);
+    m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadEvent);
+    m_previousResponse->GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
+    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
   }
 
   // Check any Requires field
   PCaselessString require = requestMIME.GetRequire();
   if (!require.IsEmpty() && !(m_parameters.m_eventList && require == "eventlist")) {
     PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << require << '"');
-    response.SetStatusCode(SIP_PDU::Failure_BadExtension);
-    response.GetMIME().SetAt("Unsupported", require);
-    response.SetInfo("Unsupported Require");
-    return request.SendResponse(*m_transport, response, &endpoint);
+    m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadExtension);
+    m_previousResponse->GetMIME().SetAt("Unsupported", require);
+    m_previousResponse->SetInfo("Unsupported Require");
+    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
   }
 
   // check the ContentType
   if (!m_parameters.m_contentType.IsEmpty()) {
     PCaselessString requestContentType = requestMIME.GetContentType();
-    if (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX &&
-          !(m_parameters.m_eventList && requestContentType == "multipart/related")) {
+    if (
+        (
+          m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX && 
+          !(m_parameters.m_eventList && requestContentType == "multipart/related")
+        )
+        ||
+        (
+         (m_packageHandler != NULL) && 
+         m_packageHandler->ValidateContentType(requestContentType, requestMIME)
+        )
+      ) {
       PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
              << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
-      response.SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-      response.GetMIME().SetAt("Accept", m_parameters.m_contentType);
-      response.SetInfo("Unsupported Content-Type");
-      return request.SendResponse(*m_transport, response, &endpoint);
+      m_previousResponse->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+      m_previousResponse->GetMIME().SetAt("Accept", m_parameters.m_contentType);
+      m_previousResponse->SetInfo("Unsupported Content-Type");
+      return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
     }
   }
 
   // Check if we know how to deal with this event
   if (m_packageHandler == NULL && m_parameters.m_onNotify.IsNULL()) {
     PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
-    response.SetStatusCode(SIP_PDU::Failure_InternalServerError);
-    return request.SendResponse(*m_transport, response, &endpoint);
+    m_previousResponse->SetStatusCode(SIP_PDU::Failure_InternalServerError);
+    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
   }
 
   // Adjust timeouts if state is a go
@@ -1060,7 +1074,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   PMultiPartList parts;
   if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
-    sendResponse = DispatchNOTIFY(request, response);
+    sendResponse = DispatchNOTIFY(request, *m_previousResponse);
   else {
     // If GetMultiParts() returns true there as at least one part and that
     // part must be the meta list, guranteed by DecodeMultiPartList()
@@ -1069,8 +1083,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     // First part is always Meta Information
     if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
       PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
-      response.SetInfo("No Resource List Meta-Information");
-      return request.SendResponse(*m_transport, response, &endpoint);
+      m_previousResponse->SetInfo("No Resource List Meta-Information");
+      return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
     }
 
 #if P_EXPAT
@@ -1078,12 +1092,12 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     if (!xml.Load(iter->m_textBody)) {
       PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
                 "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
-      response.SetInfo("Bad Resource List Meta-Information");
-      return request.SendResponse(*m_transport, response, &endpoint);
+      m_previousResponse->SetInfo("Bad Resource List Meta-Information");
+      return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
     }
 
     if (parts.GetSize() == 1)
-      response.SetStatusCode(SIP_PDU::Successful_OK);
+      m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
     else {
       while (++iter != parts.end()) {
         SIP_PDU pdu(request.GetMethod());
@@ -1113,7 +1127,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
           }
         }
 
-        if (DispatchNOTIFY(pdu, response))
+        if (DispatchNOTIFY(pdu, *m_previousResponse))
           sendResponse = false;
       }
     }
@@ -1130,22 +1144,29 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   }
 
   if (sendResponse)
-    request.SendResponse(*m_transport, response, &endpoint);
+    request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
   return true;
 }
 
 
 bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
 {
+  if (!m_parameters.m_onNotify.IsNULL()) {
+    PTRACE(4, "SIP\tCalling NOTIFY callback for AOR \"" << m_addressOfRecord << "\"");
+    SIPSubscribe::NotifyCallbackInfo status(endpoint, *m_transport, request, response);
+    m_parameters.m_onNotify(*this, status);
+    return status.m_sendResponse;
+  }
+
   if (m_packageHandler != NULL) {
+    PTRACE(4, "SIP\tCalling package NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
     if (m_packageHandler->OnReceivedNOTIFY(*this, request))
       response.SetStatusCode(SIP_PDU::Successful_OK);
     return true;
   }
 
-  SIPSubscribe::NotifyCallbackInfo status(endpoint, *m_transport, request, response);
-  m_parameters.m_onNotify(*this, status);
-  return status.m_sendResponse;
+  PTRACE(2, "SIP\tNo NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
+  return true;
 }
 
 
@@ -1205,6 +1226,86 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 ///////////////////////////////////////////////////////////////////////////////
 
 #if P_EXPAT
+
+class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
+{
+  virtual PCaselessString GetContentType() const
+  {
+    return "application/pidf+xml";
+  }
+
+  bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
+  { 
+    return type.IsEmpty() && (mime.GetContentLength() == 0);
+  }
+
+  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  {
+    PTRACE(4, "SIP\tProcessing presence NOTIFY using old API");
+
+    // support old API 
+    SIPURL from = request.GetMIME().GetFrom();
+    from.Sanitise(SIPURL::ExternalURI);
+
+    SIPURL to = request.GetMIME().GetTo();
+    to.Sanitise(SIPURL::ExternalURI);
+
+    SIPPresenceInfo info;
+    info.m_entity = from.AsString();
+    info.m_target = to.AsString();
+
+    // Check for empty body, if so then is OK, just a ping ...
+    if (request.GetEntityBody().IsEmpty()) {
+      handler.GetEndPoint().OnPresenceInfoReceived(info);
+      return true;
+    }
+
+    PXML xml;
+    if (!xml.Load(request.GetEntityBody()))
+      return false;
+
+    PXMLElement * rootElement = xml.GetRootElement();
+    if (rootElement == NULL || rootElement->GetName() != "presence")
+      return false;
+
+    PXMLElement * tupleElement = rootElement->GetElement("tuple");
+    if (tupleElement == NULL)
+      return false;
+
+    PXMLElement * statusElement = tupleElement->GetElement("status");
+    if (statusElement == NULL)
+      return false;
+
+    PXMLElement * basicElement = statusElement->GetElement("basic");
+    if (basicElement != NULL) {
+      PCaselessString value = basicElement->GetData();
+      if (value == "open")
+        info.m_state = SIPPresenceInfo::Available;
+      else if (value == "closed")
+        info.m_state = SIPPresenceInfo::NoPresence;
+      else
+        info.m_state = SIPPresenceInfo::Unchanged;
+    }
+
+    PXMLElement * noteElement = statusElement->GetElement("note");
+    if (!noteElement)
+      noteElement = rootElement->GetElement("note");
+    if (!noteElement)
+      noteElement = tupleElement->GetElement("note");
+    if (noteElement)
+      info.m_note = noteElement->GetData();
+
+    PXMLElement * contactElement = tupleElement->GetElement("contact");
+    if (contactElement != NULL)
+      info.m_contact = contactElement->GetData();
+
+    handler.GetEndPoint().OnPresenceInfoReceived(info);
+    return true;
+  }
+};
+
+static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
+
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {

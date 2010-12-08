@@ -273,6 +273,14 @@ class OpalPresentity : public PSafeObject
       const PString & note = PString::Empty()   ///< Additional note attached to the state change
     );
 
+    /** Get our presence state
+    */
+    virtual bool GetLocalPresence(
+      OpalPresenceInfo::State & state, 
+      PString & note
+    );
+
+
     /** Low level function to create a command.
         As commands have protocol specific implementations, we use a factory
         to create them.
@@ -495,6 +503,14 @@ class OpalPresentity : public PSafeObject
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
+    /// Used to set the AOR after the presentity is created
+    //
+    //  This override allows the descendant class to convert the internal URL into a real AOR,
+    //  usually by changing the scheme
+    virtual void SetAOR(
+      const PURL & aor
+    );
+
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
 
@@ -511,6 +527,8 @@ class OpalPresentity : public PSafeObject
     PAtomicInteger::IntegerType m_idNumber;
 
     bool m_temporarilyUnavailable;
+    OpalPresenceInfo::State m_localState;      ///< our presentity state
+    PString m_localStateNote;                  ///< Additional note attached to the 
 };
 
 
