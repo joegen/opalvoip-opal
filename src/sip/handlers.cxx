@@ -1038,18 +1038,12 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   if (!m_parameters.m_contentType.IsEmpty()) {
     PCaselessString requestContentType = requestMIME.GetContentType();
     if (
-        (
-          m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX && 
-          !(m_parameters.m_eventList && requestContentType == "multipart/related")
-        )
-        ||
-        (
-         (m_packageHandler != NULL) && 
-         m_packageHandler->ValidateContentType(requestContentType, requestMIME)
-        )
-      ) {
+        (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX) && 
+        !(m_parameters.m_eventList && (requestContentType == "multipart/related")) &&
+        !((m_packageHandler != NULL) && m_packageHandler->ValidateContentType(requestContentType, requestMIME))
+        ) {
       PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
-             << requestContentType << "\", expecting \"" << m_parameters.m_contentType << '"');
+             << requestContentType << "\", expecting \"" << m_parameters.m_contentType << "\" or multipart/related or other validated type");
       m_previousResponse->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
       m_previousResponse->GetMIME().SetAt("Accept", m_parameters.m_contentType);
       m_previousResponse->SetInfo("Unsupported Content-Type");
