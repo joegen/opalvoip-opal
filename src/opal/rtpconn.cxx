@@ -91,6 +91,13 @@ OpalRTPConnection::~OpalRTPConnection()
 }
 
 
+void OpalRTPConnection::OnReleased()
+{
+  m_rtpSessions.ReleaseSession(0);
+  OpalConnection::OnReleased();
+}
+
+
 unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bool isSource)
 {
   unsigned nextSessionId = m_rtpSessions.GetNextSessionID();
@@ -248,7 +255,7 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 }
 
 
-void OpalRTPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* = PFalse */)
+void OpalRTPConnection::ReleaseSession(unsigned sessionID)
 {
 #ifdef HAS_LIBZRTP
   //check is security mode ZRTP
@@ -266,7 +273,7 @@ void OpalRTPConnection::ReleaseSession(unsigned sessionID, PBoolean clearAll/* =
   printf("release session %i\n", sessionID);
 #endif
 
-  m_rtpSessions.ReleaseSession(sessionID, clearAll);
+  m_rtpSessions.ReleaseSession(sessionID);
 }
 
 
@@ -482,6 +489,8 @@ void OpalRTPMediaSession::Close()
 {
   if (rtpSession != NULL) {
     PTRACE(3, "RTP\tDeleting session " << rtpSession->GetSessionID());
+    if (rtpSession->GetPacketsReceived() > 0 || rtpSession->GetPacketsSent() > 0)
+      rtpSession->SendBYE();
     rtpSession->Close(PTrue);
     rtpSession->SetJitterBufferSize(0, 0);
     delete rtpSession;
@@ -536,16 +545,7 @@ OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & other
 
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
-  PWaitAndSignal mutex(m_mutex);
-
-  if (sessions.IsUnique()) {
-    while (sessions.GetSize() > 0) {
-      PINDEX id = sessions.GetKeyAt(0);
-      PTRACE(3, "RTP\tClosing session " << id);
-      sessions[id].Close();
-      sessions.RemoveAt(id);
-    }
-  }
+  ReleaseSession(0);
 
   m_connection.m_allSessions.remove(this);
 }
@@ -596,8 +596,21 @@ void OpalRTPSessionManager::AddMediaSession(OpalMediaSession * mediaSession, con
 }
 
 
-void OpalRTPSessionManager::ReleaseSession(unsigned PTRACE_PARAM(sessionID), PBoolean /*clearAll*/)
+void OpalRTPSessionManager::ReleaseSession(unsigned sessionID)
 {
+  if (sessionID == 0) {
+    PWaitAndSignal mutex(m_mutex);
+
+    if (sessions.IsUnique()) {
+      while (sessions.GetSize() > 0) {
+        PINDEX id = sessions.GetKeyAt(0);
+        PTRACE(3, "RTP\tClosing session " << id);
+        sessions[id].Close();
+        sessions.RemoveAt(id);
+      }
+    }
+  }
+
   PTRACE(3, "RTP\tReleasing session " << sessionID);
 }
 
