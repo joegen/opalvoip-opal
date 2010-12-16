@@ -504,6 +504,9 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   context.IncrementCSeq(1000000);
 
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
+  if (transport.get() == NULL)
+    return true; // Can't create transport, so remote host uncontactable, assume dialog cleared.
+
   PSafePtr<SIPTransaction> byeTransaction = new SIPBye(*this, *transport, context);
   byeTransaction->WaitForCompletion();
   return !byeTransaction->IsFailed();
