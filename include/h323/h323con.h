@@ -1728,13 +1728,6 @@ class H323Connection : public OpalRTPConnection
                   RTP_QOS * rtpqos = NULL
     );
 
-    /**Release the session. If the session ID is not being used any more any
-       clients via the UseSession() function, then the session is deleted.
-     */
-    virtual void ReleaseSession(
-      unsigned sessionID
-    );
-
     /**Callback from the RTP session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been

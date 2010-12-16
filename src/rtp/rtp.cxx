@@ -672,30 +672,15 @@ void RTP_Session::SendBYE()
   }
 
   RTP_ControlFrame report;
+  InsertReportPacket(report);
 
-  // if any packets sent, put in a non-zero report 
-  // else put in a zero report
-  if (packetsSent != 0 || rtcpPacketsSent != 0) 
-    InsertReportPacket(report);
-  else {
-    // Send empty RR as nothing has happened
-    report.StartNewPacket();
-    report.SetPayloadType(RTP_ControlFrame::e_ReceiverReport);
-    report.SetPayloadSize(4);  // length is SSRC 
-    report.SetCount(0);
-
-    // add the SSRC to the start of the payload
-    BYTE * payload = report.GetPayloadPtr();
-    *(PUInt32b *)payload = syncSourceOut;
-    report.EndPacket();
-  }
-
-  const char * reasonStr = "session ending";
+  static char const ReasonStr[] = "Session ended";
+  static size_t ReasonLen = sizeof(ReasonStr);
 
   // insert BYE
   report.StartNewPacket();
   report.SetPayloadType(RTP_ControlFrame::e_Goodbye);
-  report.SetPayloadSize(4+1+strlen(reasonStr));  // length is SSRC + reasonLen + reason
+  report.SetPayloadSize(4+1+ReasonLen);  // length is SSRC + ReasonLen + reason
 
   BYTE * payload = report.GetPayloadPtr();
 
@@ -704,8 +689,8 @@ void RTP_Session::SendBYE()
   *(PUInt32b *)payload = syncSourceOut;
 
   // insert reason
-  payload[4] = (BYTE)strlen(reasonStr);
-  memcpy((char *)(payload+5), reasonStr, payload[4]);
+  payload[4] = (BYTE)ReasonLen;
+  memcpy((char *)(payload+5), ReasonStr, ReasonLen);
 
   report.EndPacket();
   WriteControl(report);
@@ -1229,26 +1214,36 @@ void RTP_Session::SaveOutOfOrderPacket(RTP_DataFrame & frame)
 
 PBoolean RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
 {
+  report.StartNewPacket();
+
   // No packets sent yet, so only set RR
   if (packetsSent == 0) {
 
     // Send RR as we are not transmitting
-    report.StartNewPacket();
     report.SetPayloadType(RTP_ControlFrame::e_ReceiverReport);
-    report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
-    report.SetCount(1);
-    BYTE * payload = report.GetPayloadPtr();
 
-    // add the SSRC to the start of the payload
-    *(PUInt32b *)payload = syncSourceOut;
+    // if no packets received, put in an empty report
+    if (packetsReceived == 0) {
+      report.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC 
+      report.SetCount(0);
 
-    // add the RR after the SSRC
-    AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)(payload+4));
+      // add the SSRC to the start of the payload
+      *(PUInt32b *)report.GetPayloadPtr() = syncSourceOut;
+    }
+    else {
+      report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
+      report.SetCount(1);
+      BYTE * payload = report.GetPayloadPtr();
+
+      // add the SSRC to the start of the payload
+      *(PUInt32b *)payload = syncSourceOut;
+
+      // add the RR after the SSRC
+      AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)(payload+sizeof(PUInt32b)));
+    }
   }
-  else
-  {
+  else {
     // send SR and RR
-    report.StartNewPacket();
     report.SetPayloadType(RTP_ControlFrame::e_SenderReport);
     report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::SenderReport));  // length is SSRC of packet sender plus SR
     report.SetCount(0);
@@ -1307,7 +1302,6 @@ PBoolean RTP_Session::SendReport()
   }
 
   RTP_ControlFrame report;
-
   InsertReportPacket(report);
 
   // Add the SDES part to compound RTCP packet
@@ -1898,8 +1892,6 @@ void RTP_UDP::Reopen(PBoolean reading)
 
 bool RTP_UDP::Close(PBoolean reading)
 {
-  //SendBYE();
-
   if (reading) {
     {
       PWaitAndSignal mutex(dataMutex);
@@ -2386,6 +2378,8 @@ void RTP_Session::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 
   // Create packet
   RTP_ControlFrame request;
+  InsertReportPacket(request);
+
   request.StartNewPacket();
 
   if (rfc2032) {
@@ -2421,6 +2415,8 @@ void RTP_Session::SendTemporalSpatialTradeOff(unsigned tradeOff)
   PTRACE(3, "RTP\tSession " << sessionID << ", SendTemporalSpatialTradeOff " << tradeOff);
 
   RTP_ControlFrame request;
+  InsertReportPacket(request);
+
   request.StartNewPacket();
   request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
   request.SetFbType(RTP_ControlFrame::e_TemporalSpatialTradeOffRequest, sizeof(RTP_ControlFrame::FbTSTO));
