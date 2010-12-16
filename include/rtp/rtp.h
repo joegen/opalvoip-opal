@@ -913,8 +913,9 @@ class RTP_Session : public PObject
 
     void AddFilter(const PNotifier & filter);
 
-  protected:
     virtual void SendBYE();
+
+  protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
 

@@ -4807,12 +4807,6 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
 }
 
 
-void H323Connection::ReleaseSession(unsigned sessionID)
-{
-  m_rtpSessions.ReleaseSession(sessionID);
-}
-
-
 void H323Connection::OnRTPStatistics(const RTP_Session & session) const
 {
   endpoint.OnRTPStatistics(*this, session);
