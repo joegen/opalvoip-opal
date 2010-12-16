@@ -196,9 +196,8 @@ class OpalRTPSessionManager : public PObject
 
     /**Release the session.
      */
-    void ReleaseSession(
-      unsigned sessionID,    ///<  Session ID to release.
-      PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
+    virtual void ReleaseSession(
+      unsigned sessionID     ///<  Session ID to release, 0 indicates all
     );
 
     /**Get a session for the specified ID.
@@ -267,6 +266,26 @@ class OpalRTPConnection : public OpalConnection
      */
     ~OpalRTPConnection();
 
+    /**Clean up the termination of the connection.
+       This function can do any internal cleaning up and waiting on background
+       threads that may be using the connection object.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedConnection() function. This function may be called without
+       that function being called. For example if SetUpConnection() was used
+       but the call never completed.
+
+       Classes that override this function should make sure they call the
+       ancestor version for correct operation.
+
+       An application will not typically call this function as it is used by
+       the OpalManager during a release of the connection.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnReleased();
+  //@}
+
 
   /**@name RTP Session Management */
   //@{
@@ -312,8 +331,7 @@ class OpalRTPConnection : public OpalConnection
     /**Release the session.
      */
     virtual void ReleaseSession(
-      unsigned sessionID,    ///<  RTP session number
-      PBoolean clearAll = PFalse  ///<  Clear all sessions
+      unsigned sessionID     ///<  RTP session number, 0 indicates all
     );
 
     /**Create and open a new RTP session.
