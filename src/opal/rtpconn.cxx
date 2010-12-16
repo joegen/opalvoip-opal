@@ -93,8 +93,8 @@ OpalRTPConnection::~OpalRTPConnection()
 
 void OpalRTPConnection::OnReleased()
 {
-  m_rtpSessions.ReleaseSession(0);
   OpalConnection::OnReleased();
+  m_rtpSessions.ReleaseSession(0);
 }
 
 
