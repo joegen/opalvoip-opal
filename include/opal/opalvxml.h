@@ -66,13 +66,6 @@ class OpalVXMLSession : public PVXMLSession
     virtual void OnEndSession();
     virtual void OnTransfer(const PString & destination, bool bridged);
 
-    virtual PWAVFile * CreateWAVFile(
-      const PFilePath & fn,
-      PFile::OpenMode mode,
-      int opts,
-      unsigned fmt
-    );
-
   protected:
     OpalIVRConnection & m_connection;
 };
