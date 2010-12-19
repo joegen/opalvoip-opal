@@ -163,7 +163,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opal.lib ptlib.lib"
+				AdditionalDependencies="opals.lib ptlib.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
@@ -253,7 +253,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opald.lib ptlibd.lib"
+				AdditionalDependencies="opalsd.lib ptlibd.lib"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -289,12 +289,12 @@
 	</Configurations>
 	<References>
 		<ProjectReference
-			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
-			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
+			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+			RelativePathToProject=".\src\win32\opal_lib_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 	</References>
 	<Files>

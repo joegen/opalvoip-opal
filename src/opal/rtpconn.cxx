@@ -84,6 +84,20 @@ OpalRTPConnection::~OpalRTPConnection()
 }
 
 
+void OpalRTPConnection::OnReleased()
+{
+  OpalConnection::OnReleased();
+
+  for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(it->second);
+    if (rtp != NULL && (rtp->GetPacketsSent() != 0 || rtp->GetPacketsReceived() != 0))
+      rtp->SendBYE();
+    delete it->second;
+  }
+  m_sessions.clear();
+}
+
+
 unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bool isSource)
 {
   unsigned nextSessionId = 1;

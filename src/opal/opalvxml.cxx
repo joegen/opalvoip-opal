@@ -84,12 +84,6 @@ void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
 }
 
 
-PWAVFile * OpalVXMLSession::CreateWAVFile(const PFilePath & fn, PFile::OpenMode mode, int opts, unsigned fmt)
-{ 
-  return new OpalWAVFile(fn, mode, opts, fmt); 
-}
-
-
 #endif // #if OPAL_PTLIB_EXPAT
 
 

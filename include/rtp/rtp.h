@@ -403,6 +403,7 @@ class OpalRTPSession : public OpalMediaSession
        the SetJitterBufferSize() function.
       */
     unsigned GetJitterBufferSize() const;
+    unsigned GetJitterBufferDelay() const { return GetJitterBufferSize()/GetJitterTimeUnits(); }
     
     /**Get current time units of the jitter buffer.
      */
@@ -773,8 +774,9 @@ class OpalRTPSession : public OpalMediaSession
 
     void AddFilter(const PNotifier & filter);
 
-  protected:
     virtual void SendBYE();
+
+  protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     bool InsertReportPacket(RTP_ControlFrame & report);
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);

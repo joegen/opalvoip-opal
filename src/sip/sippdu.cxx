@@ -2678,15 +2678,15 @@ PBoolean SIPTransaction::Start()
 }
 
 
-void SIPTransaction::WaitForTermination()
+void SIPTransaction::WaitForCompletion()
 {
-  if (IsTerminated())
+  if (IsCompleted())
     return;
 
   if (m_state == NotStarted)
     Start();
 
-  m_terminated.Wait();
+  m_completed.Wait();
 }
 
 
@@ -2804,6 +2804,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
       m_state = Completed;
       m_statusCode = response.GetStatusCode();
+      m_completed.Signal();
     }
 
     if (m_connection != NULL)
@@ -2965,7 +2966,7 @@ void SIPTransaction::SetTerminated(States newState)
       m_connection->OnTransactionFailed(*this);
   }
 
-  m_terminated.Signal();
+  m_completed.Signal();
 }
 
 

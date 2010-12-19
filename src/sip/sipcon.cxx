@@ -325,10 +325,10 @@ bool SIPConnection::GarbageCollection()
      from OnRelease() causing a crash in the transaction processing. */
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_pendingTransactions.GetAt(0, PSafeReference)) != NULL) {
-    PTRACE(4, "SIP\tAwaiting transaction completion, id=" << transaction->GetTransactionID());
     if (!transaction->IsTerminated())
       return false;
 
+    PTRACE(4, "SIP\tRemoved terminated transaction, id=" << transaction->GetTransactionID());
     m_pendingTransactions.Remove(transaction);
   }
 
@@ -806,7 +806,13 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-    bool sending = !m_holdFromRemote && sendStream != NULL && sendStream->IsOpen();
+    bool sending = sendStream != NULL && sendStream->IsOpen();
+    if (sending && m_holdFromRemote) {
+      // OK we have (possibly) asymmetric hold, check if remote supports it.
+      PString regex = m_stringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
+      if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
+        sending = false;
+    }
     OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
     bool recving = recvStream != NULL && recvStream->IsOpen();
     if (sending) {
@@ -1771,11 +1777,19 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     transport->SetInterface(transaction.GetInterface());
   }
 
-  // Save the sessions etc we are actually using of all the forked INVITES sent
-  if (response.GetSDP(*this) != NULL)
-    m_sessions = ((SIPInvite &)transaction).m_sessions;
-
   responseMIME.GetProductInfo(remoteProductInfo);
+
+  // Save the sessions etc we are actually using of all the forked INVITES sent
+  SDPSessionDescription * sdp = response.GetSDP(*this);
+  if (sdp != NULL) {
+    m_sessions = ((SIPInvite &)transaction).m_sessions;
+    if (remoteProductInfo.vendor.IsEmpty() && remoteProductInfo.name.IsEmpty()) {
+      if (sdp->GetSessionName() != "-")
+        remoteProductInfo.name = sdp->GetSessionName();
+      if (sdp->GetUserName() != "-")
+        remoteProductInfo.vendor = sdp->GetUserName();
+    }
+  }
 
   // Do PRACK after all the dialog completion parts above.
   if (statusCode > 100 && statusCode < 200 && responseMIME.GetRequire().Contains("100rel")) {
@@ -3285,7 +3299,7 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
     return transaction->Start();
 
   m_responses[transaction->GetTransactionID()] = reply;
-  transaction->WaitForTermination();
+  transaction->WaitForCompletion();
   return !transaction->IsFailed();
 }
 
@@ -3302,7 +3316,7 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
     return transaction->Start();
 
   m_responses[transaction->GetTransactionID()] = reply;
-  transaction->WaitForTermination();
+  transaction->WaitForCompletion();
   return !transaction->IsFailed();
 }
 

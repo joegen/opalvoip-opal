@@ -857,7 +857,7 @@ class SIPTransaction : public SIP_PDU
     bool IsCanceled()   const { return m_state == Cancelling || m_state == Terminated_Cancelled || m_state == Terminated_Aborted; }
     bool IsTerminated() const { return m_state >= Terminated_Success; }
 
-    void WaitForTermination();
+    void WaitForCompletion();
     PBoolean Cancel();
     void Abort();
 
@@ -906,7 +906,7 @@ class SIPTransaction : public SIP_PDU
     unsigned   m_retry;
     PTimer     m_retryTimer;
     PTimer     m_completionTimer;
-    PSyncPoint m_terminated;
+    PSyncPoint m_completed;
 
     PString              m_localInterface;
     OpalTransportAddress m_remoteAddress;
@@ -1167,6 +1167,7 @@ class SIPEventPackageHandler
 public:
   virtual ~SIPEventPackageHandler() { }
   virtual PCaselessString GetContentType() const = 0;
+  virtual bool ValidateContentType(const PString & /*type*/, const SIPMIMEInfo & /*mime*/) { return false; }
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
 };

@@ -138,11 +138,13 @@ void SIPEndPoint::ShutDown()
     PThread::Sleep(100);
   }
 
-  // Clean up transactions still in progress, waiting for them to complete.
+  // Clean up transactions still in progress, waiting for them to terminate.
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
-    transaction->WaitForTermination();
-    transactions.RemoveAt(transaction->GetTransactionID());
+    if (transaction->IsTerminated())
+      transactions.RemoveAt(transaction->GetTransactionID());
+    else
+      PThread::Sleep(100);
   }
 
   // Now shut down listeners and aggregators
@@ -502,8 +504,11 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
   context.IncrementCSeq(1000000);
 
   std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
+  if (transport.get() == NULL)
+    return true; // Can't create transport, so remote host uncontactable, assume dialog cleared.
+
   PSafePtr<SIPTransaction> byeTransaction = new SIPBye(*this, *transport, context);
-  byeTransaction->WaitForTermination();
+  byeTransaction->WaitForCompletion();
   return !byeTransaction->IsFailed();
 }
 
@@ -1399,6 +1404,8 @@ bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 
 void SIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
 {
+  PTRACE(4, "SIP\tReceived presence for entity '" << info.m_entity << "' using old API");
+
   // For backward compatibility
   switch (info.m_state) {
     case OpalPresenceInfo::Available :
