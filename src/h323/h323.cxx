@@ -195,8 +195,6 @@ H323Connection::H323Connection(OpalCall & call,
     remotePartyAddress = alias + '@' + address;
   }
 
-  remoteProductInfo.name.MakeEmpty();
-
   /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
   localAliasNames = ep.GetAliasNames();
   

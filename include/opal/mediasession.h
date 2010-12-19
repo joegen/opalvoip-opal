@@ -71,6 +71,7 @@ class OpalMediaStatistics : public PObject
     // Audio
     unsigned m_averageJitter;
     unsigned m_maximumJitter;
+    unsigned m_jitterBufferDelay;
 
     // Video
     unsigned m_totalFrames;

@@ -1585,6 +1585,37 @@ OpalMediaFormatList SDPSessionDescription::GetMediaFormats() const
 }
 
 
+static void SanitiseName(PString & str)
+{
+  PINDEX i = 0;
+  while (i < str.GetLength()) {
+    if (isprint(str[i]))
+      ++i;
+    else
+      str.Delete(i, 1);
+  }
+}
+
+
+void SDPSessionDescription::SetSessionName(const PString & v)
+{
+  sessionName = v;
+  SanitiseName(sessionName);
+  if (sessionName.IsEmpty())
+    sessionName = '-';
+}
+
+
+void SDPSessionDescription::SetUserName(const PString & v)
+{
+  ownerUsername = v;
+  SanitiseName(ownerUsername);
+  ownerUsername.Replace(' ', '_', true);
+  if (ownerUsername.IsEmpty())
+    ownerUsername = '-';
+}
+
+
 #endif // OPAL_SIP
 
 // End of file ////////////////////////////////////////////////////////////////

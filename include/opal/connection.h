@@ -312,15 +312,20 @@ class OpalProductInfo
 
     static OpalProductInfo & Default();
 
+    friend ostream & operator<<(ostream & strm, const OpalProductInfo & info);
     PCaselessString AsString() const;
 
-    PString vendor;
-    PString name;
-    PString version;
-    PString comments;
-    BYTE    t35CountryCode;
-    BYTE    t35Extension;
-    WORD    manufacturerCode;
+    PCaselessString vendor;
+    PCaselessString name;
+    PCaselessString version;
+    PCaselessString comments;
+
+    BYTE t35CountryCode;
+    BYTE t35Extension;
+    WORD manufacturerCode;
+
+  private:
+    OpalProductInfo(bool);
 };
 
 
