@@ -374,6 +374,11 @@ class OpalPresentity : public PSafeObject
       PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
+      PFilePath m_iconFile;   /**< If non-empty, indicate file to copy icon/avatar.
+                                   Note the extension may be modified to indicate the
+                                   type of the image file (jpg, gif or png) */
+      PURL m_homePage;        ///< Home page for buddy
+
       PString m_contentType;  ///< MIME type code for XML
       PString m_rawXML;       ///< Raw XML of buddy list entry
     };
@@ -472,11 +477,11 @@ class OpalPresentity : public PSafeObject
     virtual BuddyStatus UnsubscribeBuddyListEx();
     virtual bool UnsubscribeBuddyList()
     { return UnsubscribeBuddyListEx() == BuddyStatus_OK; }
-
-    virtual PString GetID() const;
   //@}
   
   
+  /**@name Instant Messaging */
+  //@{
     virtual bool SendMessageTo(
       const OpalIM & message
     );
@@ -497,19 +502,22 @@ class OpalPresentity : public PSafeObject
     void SetReceivedMessageNotifier(
       const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
     );
+  //@}
+
+    /** Used to set the AOR after the presentity is created
+        This override allows the descendant class to convert the internal URL into a real AOR,
+        usually by changing the scheme.
+      */
+    virtual void SetAOR(
+      const PURL & aor
+    );
 
     void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
-    /// Used to set the AOR after the presentity is created
-    //
-    //  This override allows the descendant class to convert the internal URL into a real AOR,
-    //  usually by changing the scheme
-    virtual void SetAOR(
-      const PURL & aor
-    );
+    virtual PString GetID() const;
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
