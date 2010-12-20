@@ -12,8 +12,11 @@
 /* celt */
 #undef HAVE_CELT
 
-/* celt 0.5.0 or later found */
-#undef HAVE_CELT_0_5_0_OR_LATER
+/* celt 0.4 or sooner found */
+#undef HAVE_CELT_0_4_OR_SOONER
+
+/* celt 0.5.0 or 0.6.0 found */
+#undef HAVE_CELT_0_5_0_OR_0_6_0
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
