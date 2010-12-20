@@ -1638,15 +1638,24 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
     PIPSocket::Address bindingAddress = localAddress;
     if (natMethod != NULL && natMethod->IsAvailable(localAddress)) {
       switch (natMethod->GetRTPSupport()) {
+        case PNatMethod::RTPIfSendMedia :
+          /* This NAT variant will work if we send something out through the
+             NAT port to "open" it so packets can then flow inward. We set
+             this flag to make that happen as soon as we get the remotes IP
+             address and port to send to.
+            */
+          localHasNAT = true;
+          // Then do case for full cone support and create STUN sockets
+
         case PNatMethod::RTPSupported :
           if (natMethod->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
-            PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created RTP/RTCP socket pair.");
+            PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
             dataSocket->GetLocalAddress(localAddress, localDataPort);
             controlSocket->GetLocalAddress(localAddress, localControlPort);
           }
           else {
             PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
-                   << " could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
+                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
             if (natMethod->CreateSocket(dataSocket, localAddress) && natMethod->CreateSocket(controlSocket, localAddress)) {
               dataSocket->GetLocalAddress(localAddress, localDataPort);
               controlSocket->GetLocalAddress(localAddress, localControlPort);
@@ -1657,22 +1666,18 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
               dataSocket = NULL;
               controlSocket = NULL;
               PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
-                     << " could not create RTP sockets individually either, using normal sockets.");
+                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
             }
           }
           break;
 
-        case PNatMethod::RTPIfSendMedia :
-          /* We canot use NAT traversal method (e.g. STUN) to create sockets
-             as the NAT router will then not let us talk to the real RTP
-             destination. All we can so is bind to the local interface, which
-             telling the remote our address is the external address of the
-             NATrouter, and hope the remote is tolerant enough of things like
-             non adjacent RTP/RTCP ports etc. */
-          localHasNAT = natMethod->GetInterfaceAddress(bindingAddress);
-          break;
-
         default :
+          /* We canot use NAT traversal method (e.g. STUN) to create sockets
+             in the remaining modes as the NAT router will then not let us
+             talk to the real RTP destination. All we can so is bind to the
+             local interface the NAT is on and hope the NAT router is doing
+             something sneaky like symmetric port forwarding. */
+          natMethod->GetInterfaceAddress(bindingAddress);
           break;
       }
     }
