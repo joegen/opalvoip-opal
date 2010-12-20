@@ -877,9 +877,41 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
 
   buddy.m_presentity = element->GetAttribute("uri");
 
-  PXMLElement * displayName = element->GetElement("display-name");
+  PXMLElement * displayName = element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:display-name");
   if (displayName != NULL)
     buddy.m_displayName = displayName->GetData();
+
+  PXMLElement * homePage = element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:homepage");
+  if (homePage != NULL)
+    buddy.m_homePage = homePage->GetData();
+
+  if (!buddy.m_iconFile.IsEmpty()) {
+    PXMLElement * iconElement = element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:icon");
+    if (iconElement != NULL) {
+      PURL url(iconElement->GetData());
+      PFilePath iconFile = url.AsFilePath();
+      if (!iconFile.IsEmpty()) {
+        buddy.m_iconFile.SetType(iconFile.GetType());
+        PFile::Copy(iconFile, buddy.m_iconFile);
+      }
+      else {
+        PHTTPClient http;
+        PMIMEInfo outMIME, replyMIME;
+        PBYTEArray body;
+        if (http.GetDocument(url, outMIME, replyMIME) && http.ReadContentBody(replyMIME, body)) {
+          const PStringArray & path = url.GetPath();
+          PString filename = path[path.GetSize()-1];
+          PINDEX dot = filename.FindLast('.');
+          if (dot != P_MAX_INDEX)
+            buddy.m_iconFile.SetType(filename.Mid(dot));
+
+          PFile out;
+          if (out.Open(buddy.m_iconFile, PFile::WriteOnly))
+            out.Write(body, body.GetSize());
+        }
+      }
+    }
+  }
 
   buddy.m_contentType = "application/resource-lists+xml";
   buddy.m_rawXML = element->AsString();
