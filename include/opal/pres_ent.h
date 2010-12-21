@@ -374,11 +374,24 @@ class OpalPresentity : public PSafeObject
       PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
-      PFilePath m_iconFile;   /**< If non-empty, indicate file to copy icon/avatar.
-                                   Note the extension may be modified to indicate the
-                                   type of the image file (jpg, gif or png) */
-      PURL m_homePage;        ///< Home page for buddy
+      // RFC4482 contact fields
+      PURL    m_vCard;        /**< vCard for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:text/x-vcard,xxxxx
+                                   as per RFC2397 */
+      PURL    m_icon;         /**< The icon/avatar/photo for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:image/jpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_map;          /**< The map reference for the buddy. This is may be URL
+                                   to a GIS system or an image file similar to m_icon */
+      PURL    m_sound;        /**< The sound relating to the buddy. This is
+                                   either a URI pointing to the sound, or the sound
+                                   itself in the form: "data:audio/mpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_homePage;     ///< Home page for buddy
 
+      // Extra field for protocol dependent "get out of gaol" card
       PString m_contentType;  ///< MIME type code for XML
       PString m_rawXML;       ///< Raw XML of buddy list entry
     };
