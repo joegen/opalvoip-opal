@@ -569,6 +569,11 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
 {
   if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "SIP\tReceived disabled/missing media description for " << mediaType);
+
+    /* Some remotes return all of the media detail (a= lines) in SDP even though
+       port is zero indicating the media is not to be used. So don't return these
+       bogus media formats from SDP to the "remote media format list". */
+    m_remoteFormatList.Remove(PString('@')+mediaType);
     return false;
   }
 
@@ -2567,10 +2572,19 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
   m_holdFromRemote = sdp->IsHold();
 
   OpalMediaFormatList localFormatList = GetLocalMediaFormats();
+  unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
+
   bool ok = false;
-  for (PINDEX i = 0; i < sdp->GetMediaDescriptions().GetSize(); ++i) {
-    if (OnReceivedAnswerSDPSession(*sdp, i+1, localFormatList))
+  for (unsigned session = 1; session <= sessionCount; ++session) {
+    if (OnReceivedAnswerSDPSession(*sdp, session, localFormatList))
       ok = true;
+    else {
+      OpalMediaStreamPtr stream;
+      if ((stream = GetMediaStream(session, false)) != NULL)
+        stream->Close();
+      if ((stream = GetMediaStream(session, true)) != NULL)
+        stream->Close();
+    }
   }
 
   m_answerFormatList.RemoveAll();
@@ -2594,19 +2608,6 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp,
 
   OpalMediaType mediaType = mediaDescription->GetMediaType();
   
-  if (mediaDescription->GetPort() == 0) {
-    PTRACE(2, "SIP\tDisabled/missing SDP media description for " << mediaType);
-
-    OpalMediaStreamPtr stream = GetMediaStream(rtpSessionId, false);
-    if (stream != NULL)
-      stream->Close();
-
-    stream = GetMediaStream(rtpSessionId, true);
-    if (stream != NULL)
-      stream->Close();
-
-    return false;
-  }
   PTRACE(4, "SIP\tProcessing received SDP media description for " << mediaType);
 
   /* Get the media the remote has answered to our offer. Remove the media
