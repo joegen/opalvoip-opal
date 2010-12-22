@@ -1172,7 +1172,7 @@ class SIPEventPackageHandler
 public:
   virtual ~SIPEventPackageHandler() { }
   virtual PCaselessString GetContentType() const = 0;
-  virtual bool ValidateContentType(const PString & /*type*/, const SIPMIMEInfo & /*mime*/) { return false; }
+  virtual bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime);
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
 };
