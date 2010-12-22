@@ -3109,7 +3109,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
-    if (info == NULL) {
+    if (info != NULL) {
       SIPURL speedDialURL(sdInfo->m_StateURL.p_str());
       if (incomingURL == speedDialURL) {
         PwxString status = info->m_note;
