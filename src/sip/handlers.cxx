@@ -1165,6 +1165,10 @@ bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
   return true;
 }
 
+bool SIPEventPackageHandler::ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
+{ 
+  return type.IsEmpty() && (mime.GetContentLength() == 0);
+}
 
 class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 {
@@ -1228,11 +1232,6 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
   virtual PCaselessString GetContentType() const
   {
     return "application/pidf+xml";
-  }
-
-  bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
-  { 
-    return type.IsEmpty() && (mime.GetContentLength() == 0);
   }
 
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
