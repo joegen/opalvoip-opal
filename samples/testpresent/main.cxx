@@ -68,6 +68,7 @@ class TestPresEnt : public PProcess
 
   private:
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdCreate);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdList);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdUnsubscribeToPresence);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
@@ -76,6 +77,7 @@ class TestPresEnt : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyAdd);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyRemove);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddySusbcribe);
+    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdDelay);
     PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdQuit);
 
     MyManager * m_manager;
@@ -120,7 +122,8 @@ void TestPresEnt::AddPresentity(PArgList & args)
     presentity->GetAttributes().Set(SIP_Presentity::AuthNameKey,            args.GetOptionString('a'));
   if (args.HasOption('p'))
     presentity->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,        args.GetOptionString('p'));
-  presentity->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, m_presenceAgent);
+  if (!m_presenceAgent.IsEmpty())
+    presentity->GetAttributes().Set(SIP_Presentity::DefaultPresenceServerKey, m_presenceAgent);
   presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapRootKey,          m_xcapRoot);
   if (!m_xcapAuthID)
     presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapAuthIdKey,      m_xcapAuthID);
@@ -144,6 +147,7 @@ void TestPresEnt::Main()
 #define URL_OPTIONS "a-auth-id:" \
                     "p-password:"
   args.Parse("h-help."
+             "f-file:"
              "L-listener:"
              "P-presence-agent:"
 #if PTRACING
@@ -157,6 +161,7 @@ void TestPresEnt::Main()
              "X-xcap-server:"
              "-xcap-auth-id:"
              "-xcap-password:"
+             "-proxy:"
              URL_OPTIONS);
 
 #if PTRACING
@@ -169,6 +174,8 @@ void TestPresEnt::Main()
     cerr << "usage: " << GetFile().GetTitle() << " [ global-options ] { [ url-options ] url } ...\n"
             "\n"
             "Available global options are:\n"
+            "  -proxy URL                   : set outbound proxy.\n"
+            "  -f or --file filename        : name of script file to execute.\n"
             "  -L or --listener addr        : set listener address:port.\n"
             "  -T or --translation addr     : set NAT translation address.\n"
             "  -S or --stun addr            : set STUN server address.\n"
@@ -196,8 +203,20 @@ void TestPresEnt::Main()
   if (args.HasOption('T'))
     m_manager->SetTranslationHost(args.GetOptionString('T'));
 
-  if (args.HasOption('S'))
+  PString listeners = args.GetOptionString('L');
+
+  if (args.HasOption('S')) {
+    cout << "Executing STUN lookup..." << flush;
     m_manager->SetSTUNServer(args.GetOptionString('S'));
+    PSTUNClient * stun = m_manager->GetSTUNClient();
+    if (stun != NULL)
+      cout << stun->GetNatTypeName();
+    else
+      cout << "(unknown)";
+    cout << "...done" << endl;
+    if ((stun != NULL) && (stun->GetNatType() != PSTUNClient::OpenNat))
+      listeners = "udp$*:*";
+  }
 
   m_presenceAgent = args.GetOptionString('P');
   m_xcapRoot = args.GetOptionString('X');
@@ -205,18 +224,29 @@ void TestPresEnt::Main()
   m_xcapPassword = args.GetOptionString("xcap-password");
 
   SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-  if (!sip->StartListeners(args.GetOptionString('L').Lines())) {
+  if (!sip->StartListeners(listeners)) {
     cerr << "Could not start SIP listeners." << endl;
     return;
   }
 
-  do {
-    AddPresentity(args);
-  } while (args.Parse(URL_OPTIONS));
+  if (args.HasOption("proxy"))
+    sip->SetProxy(args.GetOptionString("proxy"));
 
-  if (m_presentities.GetSize() == 0) {
-    cerr << "error: no presentities available" << endl;
+  PTextFile scriptFile;
+  if (args.HasOption('f') && !scriptFile.Open(args.GetOptionString('f'))) {
+    cerr << "error: cannot open script file '" << args.GetOptionString('f') << "'" << endl;
     return;
+  }
+
+  if (args.GetCount() != 0) {
+    do {
+      AddPresentity(args);
+    } while (args.Parse(URL_OPTIONS));
+
+    if (m_presentities.GetSize() == 0) {
+      cerr << "error: no presentities available" << endl;
+      return;
+    }
   }
 
   PCLIStandard cli;
@@ -224,6 +254,8 @@ void TestPresEnt::Main()
   cli.SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
                  "Create presentity.",
                  "[ -p ] <url>");
+  cli.SetCommand("list", PCREATE_NOTIFIER(CmdList),
+                 "List presentities.");
   cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
                  "Subscribe to presence state for presentity.",
                  "<url-watcher> <url-watched>");
@@ -248,10 +280,39 @@ void TestPresEnt::Main()
   cli.SetCommand("buddy subscribe", PCREATE_NOTIFIER(CmdBuddySusbcribe),
                  "Susbcribe to all URIs in the buddy list for presentity.",
                  "<presentity>");
+  cli.SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
+                  "Delay for n seconds",
+                  "secs");
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
                   "Quit command line interpreter, note quitting from console also shuts down application.");
 
-  cli.Start(false); // Do not spawn thread, wait till end of input
+  // create the foreground context
+  PCLI::Context * cliContext = cli.StartForeground();
+  if (cliContext == NULL)
+    return;
+
+  // if there is a script file, process commands
+  if (scriptFile.IsOpen()) {
+    cout << "Running script '" << scriptFile.GetFilePath() << "'" << endl;
+    for (;;) {
+      PString line;
+      if (!scriptFile.ReadLine(line))
+        break;
+      line = line.Trim();
+      if (line.GetLength() > 0) {
+        if ((line[0] != '#') && (line[0] != ';') && ((line.GetLength() < 2) || (line[0] != '/') || (line[1] != '/'))) {
+          cout << "Running command '" << line << "'" << endl;
+          if (!cliContext->ProcessInput(line)) {
+            cerr << "error: error occurred while processing script" << endl;
+            return;
+          }
+        }
+      }
+    }
+    cout << "Script complete" << endl;
+  }
+
+  cli.RunContext(cliContext); // Do not spawn thread, wait till end of input
 
   cout << "\nExiting ..." << endl;
 }
@@ -267,6 +328,23 @@ void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
     AddPresentity(args);
 }
 
+
+void TestPresEnt::CmdList(PCLI::Arguments & args, INT)
+{
+  PINDEX i;
+  for (i = 0; i < m_presentities.GetSize(); ++i) {
+    PString key = m_presentities.GetKeyAt(i);
+    OpalPresentity & presentity = m_presentities[key];
+    OpalPresenceInfo::State state;
+    PString note;
+    presentity.GetLocalPresence(state, note);
+    cout << key << " "
+         << presentity.GetAOR() << " "
+         << OpalPresenceInfo::AsString(state) << " "
+         << note
+         << endl;
+  }
+}
 
 void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
 {
@@ -394,6 +472,15 @@ void TestPresEnt::CmdBuddySusbcribe(PCLI::Arguments & args, INT)
 }
 
 
+void TestPresEnt::CmdDelay(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  int delay = args[0].AsInteger();
+  PThread::Sleep(delay * 1000);
+}
+
+
 void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
 {
   args.GetContext().Stop();
@@ -415,7 +502,7 @@ void TestPresEnt::PresenceChange(OpalPresentity & presentity, const OpalPresence
     cout << " received presence change from " << info.m_entity;
   else
     cout << " changed locally";
-  cout << " to " << info.m_state << endl;
+  cout << " to " << info.AsString() << endl;
 }
 
 
