@@ -1586,12 +1586,6 @@ OpalMediaFormatList SDPSessionDescription::GetMediaFormats() const
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); ++i) {
     SDPMediaDescription & mediaDescription = mediaDescriptions[i];
 
-    /* Some remotes return all of the media detail (a= lines) in SDP even though
-       port is zero indicating the media is not to be used. So don't return these
-       bogus media formats from SDP to the "remote media format list". */ 
-    if (mediaDescription.GetPort() == 0)
-      continue;
-
     formatList += mediaDescription.GetMediaFormats();
 
     // Find the payload type and capabilities used for telephone-event, if present

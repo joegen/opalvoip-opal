@@ -594,6 +594,11 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
 {
   if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "SIP\tReceived disabled/missing media description for " << mediaType);
+
+    /* Some remotes return all of the media detail (a= lines) in SDP even though
+       port is zero indicating the media is not to be used. So don't return these
+       bogus media formats from SDP to the "remote media format list". */
+    m_remoteFormatList.Remove(PString('@')+mediaType);
     return false;
   }
 
