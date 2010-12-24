@@ -848,7 +848,15 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
   if (offerOpenMediaStreamOnly) {
+    OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
     OpalMediaStreamPtr sendStream = GetMediaStream(rtpSessionId, false);
+    if (recvStream != NULL)
+      localMedia->AddMediaFormat(*localFormatList.FindFormat(recvStream->GetMediaFormat()));
+    else if (sendStream != NULL)
+      localMedia->AddMediaFormat(sendStream->GetMediaFormat());
+    else
+      localMedia->AddMediaFormats(localFormatList, mediaType);
+
     bool sending = sendStream != NULL && sendStream->IsOpen();
     if (sending && m_holdFromRemote) {
       // OK we have (possibly) asymmetric hold, check if remote supports it.
@@ -856,20 +864,17 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
       if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
         sending = false;
     }
-    OpalMediaStreamPtr recvStream = GetMediaStream(rtpSessionId, true);
-    bool recving = recvStream != NULL && recvStream->IsOpen();
-    if (sending) {
-      localMedia->AddMediaFormat(sendStream->GetMediaFormat());
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::SendOnly : (recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly));
-    }
-    else if (recving) {
-      localMedia->AddMediaFormat(recvStream->GetMediaFormat());
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
-    }
-    else {
-      localMedia->AddMediaFormats(localFormatList, mediaType);
+    bool recving = m_holdToRemote < eHoldOn && recvStream != NULL && recvStream->IsOpen();
+
+    if (sending && recving)
+      localMedia->SetDirection(SDPMediaDescription::SendRecv);
+    if (recving)
+      localMedia->SetDirection(SDPMediaDescription::RecvOnly);
+    else if (sending)
+      localMedia->SetDirection(SDPMediaDescription::SendOnly);
+    else
       localMedia->SetDirection(SDPMediaDescription::Inactive);
-    }
+
 #if PAUSE_WITH_EMPTY_ADDRESS
     if (m_holdToRemote >= eHoldOn) {
       OpalTransportAddress addr = localMedia->GetTransportAddress();
