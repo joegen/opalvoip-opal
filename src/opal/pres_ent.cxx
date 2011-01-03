@@ -40,11 +40,9 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
-const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "auth_password";     return s; }
-const PString & OpalPresentity::FullNameKey()        { static const PString s = "full_name";         return s; }
-const PString & OpalPresentity::SchemeKey()          { static const PString s = "scheme";            return s; }
-const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
+const PString & OpalPresentity::AuthNameKey()        { static const PString s = "Auth ID";       return s; }
+const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "Auth Password"; return s; }
+const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "Time to Live";  return s; }
 
 
 PString OpalPresenceInfo::AsString() const
@@ -153,7 +151,6 @@ OpalPresentity::OpalPresentity()
 
 OpalPresentity::~OpalPresentity()
 {
-  m_manager->RemovePresentity(m_aor);
 }
 
 
