@@ -1825,6 +1825,13 @@ void OpalManager::OnApplyStringOptions(OpalConnection &, OpalConnection::StringO
 
 PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
 {
+  if (presentity.IsEmpty())
+    return NULL;
+
+  PSafePtr<OpalPresentity> oldPresentity = m_presentities.FindWithLock(presentity, PSafeReadWrite);
+  if (oldPresentity != NULL)
+    return oldPresentity;
+
   OpalPresentity * newPresentity = OpalPresentity::Create(*this, presentity);
   if (newPresentity == NULL)
     return NULL;

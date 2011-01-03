@@ -73,6 +73,7 @@ class wxListCtrl;
 class wxListEvent;
 class wxNotebook;
 class wxGrid;
+class wxGridEvent;
 class wxConfigBase;
 class wxImageList;
 
@@ -687,6 +688,20 @@ class OptionsDialog : public wxDialog
     PwxString m_AudioRecordingFormat;
     int       m_VideoRecordingMode;
     PwxString m_VideoRecordingSize;
+
+    ////////////////////////////////////////
+    // Presence fields
+    wxListCtrl * m_Presentities;
+    wxGrid     * m_PresentityAttributes;
+    wxButton   * m_AddPresentity;
+    wxButton   * m_RemovePresentity;
+    void AddPresentity(wxCommandEvent & event);
+    void RemovePresentity(wxCommandEvent & event);
+    void SelectedPresentity(wxListEvent & event);
+    void DeselectedPresentity(wxListEvent & event);
+    void EditedPresentity(wxListEvent & event);
+    bool FillPresentityAttributes(OpalPresentity * presentity);
+    void ChangedPresentityAttribute(wxGridEvent & event);
 
     ////////////////////////////////////////
     // Codec fields

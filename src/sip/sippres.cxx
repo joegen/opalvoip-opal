@@ -56,8 +56,8 @@
 #include <ptclib/pxml.h>
 #include <ptclib/random.h>
 
-const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "default_presence_server"; return s; }
-const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "presence_server";         return s; }
+const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "Default Presence Server"; return s; }
+const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "Presence Server";         return s; }
 
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIPLocal_Presentity, "sip-local", false);
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIPXCAP_Presentity,  "sip-xcap", false);
@@ -187,6 +187,18 @@ OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPLocal_Presentity, Intern
 SIPLocal_Presentity::~SIPLocal_Presentity()
 {
   Close();
+}
+
+
+PStringArray SIPLocal_Presentity::GetAttributeNames() const
+{
+  PStringArray names;
+  names.AppendString(SIP_Presentity::AuthNameKey());
+  names.AppendString(SIP_Presentity::AuthPasswordKey());
+  names.AppendString(SIP_Presentity::PresenceServerKey());
+  names.AppendString(SIP_Presentity::DefaultPresenceServerKey());
+  names.AppendString(SIP_Presentity::TimeToLiveKey());
+  return names;
 }
 
 
@@ -638,18 +650,34 @@ unsigned SIPLocal_Presentity::GetExpiryTime() const
 
 //////////////////////////////////////////////////////////////
 
-const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "xcap_root";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "xcap_auth_id";   return s; }
-const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "xcap_password";  return s; }
-const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "xcap_auid";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "xcap_authfile";  return s; }
-const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "xcap_buddylist"; return s; }
+const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "XCAP Root";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "XCAP Auth ID";   return s; }
+const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "XCAP Password";  return s; }
+const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "XCAP AUID";      return s; }
+const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "XCAP AuthFile";  return s; }
+const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "XCAP BuddyList"; return s; }
 
 SIPXCAP_Presentity::SIPXCAP_Presentity()
 {
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
   m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "buddylist");
+}
+
+
+PStringArray SIPXCAP_Presentity::GetAttributeNames() const
+{
+  PStringArray names;
+  names.AppendString(SIP_Presentity::AuthNameKey());
+  names.AppendString(SIP_Presentity::AuthPasswordKey());
+  names.AppendString(SIPXCAP_Presentity::XcapRootKey());
+  names.AppendString(SIPXCAP_Presentity::XcapAuthIdKey());
+  names.AppendString(SIPXCAP_Presentity::XcapPasswordKey());
+  names.AppendString(SIPXCAP_Presentity::XcapAuthAuidKey());
+  names.AppendString(SIPXCAP_Presentity::XcapAuthFileKey());
+  names.AppendString(SIPXCAP_Presentity::XcapBuddyListKey());
+  names.AppendString(SIP_Presentity::TimeToLiveKey());
+  return names;
 }
 
 
