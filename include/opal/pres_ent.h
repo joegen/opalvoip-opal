@@ -195,10 +195,11 @@ class OpalPresentity : public PSafeObject
     ///< Get the attributes for this presentity.
     Attributes & GetAttributes() { return m_attributes; }
 
+    ///< Get all attribute names for this presentity class.
+    virtual PStringArray GetAttributeNames() const = 0;
+
     static const PString & AuthNameKey();         ///< Key for authentication name attribute
     static const PString & AuthPasswordKey();     ///< Key for authentication password attribute
-    static const PString & FullNameKey();         ///< Key for full name attribute
-    static const PString & SchemeKey();           ///< Key for scheme used attribute
     static const PString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
 
     /** Get the address-of-record for the presentity.

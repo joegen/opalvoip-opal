@@ -249,7 +249,16 @@ class SIPLocal_Presentity : public SIP_Presentity
     PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
 
   public:
+    SIPLocal_Presentity() { }
+    SIPLocal_Presentity(const SIPLocal_Presentity & other) : SIP_Presentity(other) { }
+    ~SIPLocal_Presentity();
+
+    PObject * Clone() const { return new SIPLocal_Presentity(*this); }
+
     /**@name Overrides from OpalPresentity */
+    ///< Get all attribute names for this presentity class.
+    virtual PStringArray GetAttributeNames() const;
+
     virtual bool Open();
     virtual bool Close();
 
@@ -259,8 +268,6 @@ class SIPLocal_Presentity : public SIP_Presentity
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
 
-    ~SIPLocal_Presentity();
-  
     void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
     unsigned GetExpiryTime() const;
@@ -285,6 +292,11 @@ class SIPXCAP_Presentity : public SIP_Presentity
     PCLASSINFO(SIPXCAP_Presentity, SIP_Presentity);
 
   public:
+    SIPXCAP_Presentity();
+    SIPXCAP_Presentity(const SIPXCAP_Presentity & other) : SIP_Presentity(other) { }
+
+    PObject * Clone() const { return new SIPXCAP_Presentity(*this); }
+
     static const PString & XcapRootKey();
     static const PString & XcapAuthIdKey();
     static const PString & XcapPasswordKey();
@@ -292,7 +304,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     static const PString & XcapAuthFileKey();
     static const PString & XcapBuddyListKey();
 
-    SIPXCAP_Presentity();
+    virtual PStringArray GetAttributeNames() const;
 
     virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
     virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
@@ -325,6 +337,9 @@ class SIPOMA_Presentity : public SIPXCAP_Presentity
 
   public:
     SIPOMA_Presentity();
+    SIPOMA_Presentity(const SIPOMA_Presentity & other) : SIPXCAP_Presentity(other) { }
+
+    PObject * Clone() const { return new SIPOMA_Presentity(*this); }
 
   protected:
     virtual void InitRuleSet(PXML & xml);
