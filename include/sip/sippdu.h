@@ -1161,7 +1161,7 @@ class SIPEventPackageHandler
 public:
   virtual ~SIPEventPackageHandler() { }
   virtual PCaselessString GetContentType() const = 0;
-  virtual bool ValidateContentType(const PString & /*type*/, const SIPMIMEInfo & /*mime*/) { return false; }
+  virtual bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime);
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
 };
@@ -1258,9 +1258,10 @@ class SIPMessage : public SIPTransaction
         m_expire = 5000;
       }
 
-      PCaselessString m_contentType;
-      PString         m_id;
-      PString         m_body;
+      PCaselessString             m_contentType;
+      PString                     m_id;
+      PString                     m_body;
+      PAtomicInteger::IntegerType m_messageId;
     };
 
     SIPMessage(
