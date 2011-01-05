@@ -5777,6 +5777,7 @@ void IMDialog::SendCurrentText()
   PwxString text = m_enteredText->GetValue();
   m_enteredText->SetValue(wxT(""));
 
+/*
   PSafePtr<OpalConnection> conn = m_manager->GetPCSSEP().GetConnectionWithLock(m_connId);
   if (conn != NULL) {
     RTP_DataFrameList frames = conn->GetRFC4103Context(0).ConvertToFrames("text/plain", T140String(text));
@@ -5785,6 +5786,7 @@ void IMDialog::SendCurrentText()
   }
 
   AddTextToScreen(text, true);
+*/
 }
 
 
