@@ -1683,7 +1683,7 @@ class OpalConnection : public PSafeObject
 
 #endif
 
-#if OPAL_HAS_IM
+#if 0 //OPAL_HAS_IM
     /**
       * Called to transmit an IM to the other connection in the call
       */

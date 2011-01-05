@@ -324,6 +324,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual void OnExpireTimeout(PTimer &, INT);
+  virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 
   const PString & GetLocalAddress() const { return m_parameters.m_localAddress; }
   const PString & GetIdentifier() const { return m_parameters.m_id; }

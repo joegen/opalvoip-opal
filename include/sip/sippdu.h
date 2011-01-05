@@ -1269,9 +1269,10 @@ class SIPMessage : public SIPTransaction
         m_expire = 5000;
       }
 
-      PCaselessString m_contentType;
-      PString         m_id;
-      PString         m_body;
+      PCaselessString             m_contentType;
+      PString                     m_id;
+      PString                     m_body;
+      PAtomicInteger::IntegerType m_messageId;
     };
 
     SIPMessage(
