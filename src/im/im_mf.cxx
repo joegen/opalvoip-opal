@@ -294,9 +294,9 @@ OpalIM::OpalIM()
 //////////////////////////////////////////////////////////////////////////////////////////
 
 OpalIMContext::OpalIMContext()
-  : m_manager(NULL)
+  : m_incomingMessageNotifier(NULL)
+  , m_manager(NULL)
   , m_currentOutgoingMessage(NULL)
-  , m_incomingMessageNotifier(NULL)
 { 
   m_id = OpalGloballyUniqueID().AsString();
 }
@@ -440,7 +440,7 @@ OpalIMContext::SentStatus OpalIMContext::InternalSend()
   if (m_connection.SetSafetyMode(PSafeReadWrite)) {
     delete m_currentOutgoingMessage;
     PTRACE(3, "OpalIMContext\tConnection to '" << m_attributes.Get("remote") << "' has been removed");
-    m_connection = NULL;
+    m_connection.SetNULL();
     return SentConnectionClosed;
   }
 

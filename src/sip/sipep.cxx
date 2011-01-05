@@ -1343,7 +1343,7 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
   if (!message.m_conversationId.IsEmpty()) {
     handler = activeSIPHandlers.FindSIPHandlerByCallID(message.m_conversationId, PSafeReference);
     if ((handler != NULL) && !(handler->GetAddressOfRecord().AsString() *= message.m_from))
-      handler = NULL;
+      handler.SetNULL();
   }
   else {
     handler = activeSIPHandlers.FindSIPHandlerByUrl(message.m_to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReference);
