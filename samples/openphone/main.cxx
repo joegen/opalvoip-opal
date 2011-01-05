@@ -3914,7 +3914,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_PresentityAttributes = FindWindowByNameAs<wxGrid>(this, wxT("PresentityAttributes"));
   m_PresentityAttributes->Disable();
   m_PresentityAttributes->CreateGrid(0, 1);
-  m_PresentityAttributes->SetColLabelValue(0, wxT("Attribute Vlaue"));
+  m_PresentityAttributes->SetColLabelValue(0, wxT("Attribute Value"));
   m_PresentityAttributes->SetColLabelSize(wxGRID_AUTOSIZE);
   m_PresentityAttributes->AutoSizeColLabelSize(0);
   m_PresentityAttributes->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
@@ -4305,7 +4305,9 @@ bool OptionsDialog::TransferDataFromWindow()
       activePresentity->Open();
     }
 
-    activePresentities.RemoveAt(activePresentities.GetValuesIndex(aor.p_str()));
+    PINDEX pos = activePresentities.GetValuesIndex(aor.p_str());
+    if (pos != P_MAX_INDEX)
+      activePresentities.RemoveAt(pos);
   }
   for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
     m_manager.RemovePresentity(*it);
