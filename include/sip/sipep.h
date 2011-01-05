@@ -674,13 +674,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual PBoolean Message(
       OpalIM & message
     );
+    OpalIMContext::SentStatus SendMESSAGE(
+      OpalIM & message
+    );
 
-    /**Callback called when a message sent by the endpoint didn't reach
-     * its destination or when the proxy or remote endpoint returns
-     * an error code.
+    /**Callback called when a message completes in any manner
      */
-    virtual void OnMessageFailed(
-      const SIPURL & messageUrl,
+    virtual void OnMESSAGECompleted(
+      const SIPMessage::Params & params,
       SIP_PDU::StatusCodes reason
     );
 
@@ -933,10 +934,6 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     virtual void OnStartTransaction(SIPConnection & conn, SIPTransaction & transaction);
 
-#if OPAL_HAS_SIPIM
-    virtual OpalSIPIMManager & GetSIPIMManager() { return m_sipIMManager; }
-#endif
-
     void UpdateHandlerIndexes(SIPHandler * handler) { activeSIPHandlers.Update(handler); }
 
   protected:
@@ -1037,15 +1034,12 @@ class SIPEndPoint : public OpalRTPEndPoint
     friend void InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry);
     friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
 
-#if OPAL_HAS_SIPIM
-    OpalSIPIMManager m_sipIMManager;
-#endif
-
     bool m_disableTrying;
 
     P_REMOVE_VIRTUAL_VOID(OnReceivedIntervalTooBrief(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
+    P_REMOVE_VIRTUAL_VOID(OnMessageFailed(const SIPURL &, SIP_PDU::StatusCodes));
 
   public:
     struct ConnectionlessMessageInfo {

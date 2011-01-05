@@ -297,7 +297,7 @@ class OpalManager : public PObject
     virtual PString GetNextToken(char prefix);
   //@}
 
-  /**@name Presence & Instant Messaging management */
+  /**@name Presence management */
   //@{
     /**Add a presentity.
        If the presentity is already present, a new one is not added, and the
@@ -325,8 +325,11 @@ class OpalManager : public PObject
     virtual bool RemovePresentity(
       const PString & presentity  ///< Presentity URI
     );
+  //@}
 
-    /**Send text message
+  /**@name Instant Messaging management */
+  //@{
+    /**Send an IM to a remote party.
      */
     virtual PBoolean Message(
       const PString & to, 
@@ -348,6 +351,7 @@ class OpalManager : public PObject
     virtual void OnMessageReceived(
       const OpalIM & message
     );
+
   //@}
 
   /**@name Connection management */
@@ -1596,6 +1600,15 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnStartMediaPatch(const OpalMediaPatch &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
+
+
+#ifdef OPAL_HAS_IM
+  public:
+    OpalIMManager & GetIMManager() { return m_imManager; }
+
+  protected:
+    OpalIMManager m_imManager;
+#endif
 };
 
 

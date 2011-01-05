@@ -437,8 +437,9 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
     T140String t140(incomingMSRP.m_body);
     RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString(PHTTP::ContentTypeTag, "text/plain"), t140);
     OpalMediaFormat fmt(m_rfc4103Context.m_mediaFormat);
-    for (PINDEX i = 0; i < frames.GetSize(); ++i)
-      connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
+    for (PINDEX i = 0; i < frames.GetSize(); ++i) {
+      //connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
+    }
   }
   else {
     PTRACE(3, "MSRP\tMediaStream " << *this << " receiving unknown MSRP message");
