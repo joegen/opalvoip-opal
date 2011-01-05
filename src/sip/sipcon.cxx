@@ -251,6 +251,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_switchedToFaxMode(false)
 #endif
   , releaseMethod(ReleaseWithNothing)
+//  , m_messageContext(NULL)
 {
   synchronousOnRelease = false;
 
@@ -3267,16 +3268,23 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
-  PString contentType = pdu.GetMIME().GetContentType();
-  if (contentType.IsEmpty())
-    contentType = "text/plain";
-#if OPAL_HAS_IM
-  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(contentType, pdu.GetEntityBody());
+  OpalIM * im = new OpalIM;
+  const SIPMIMEInfo & mime = pdu.GetMIME();
 
-  for (PINDEX i = 0; i < frames.GetSize(); ++i)
-    OnReceiveExternalIM(OpalT140, (RTP_IMFrame &)frames[i]);
-#endif
-  pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
+  im->m_from  = mime.GetFrom();
+  im->m_to    = mime.GetTo();
+
+  im->m_conversationId = PString("sip_") + mime.GetCallID();
+
+  // populate the message type
+  im->m_mimeType = mime.GetContentType();
+  if (im->m_mimeType.IsEmpty())
+    im->m_mimeType = "text/plain";
+
+  // dispatch the message
+  bool stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, PSafePtr<OpalConnection>(this));
+
+  pdu.SendResponse(*transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_BadRequest);
 }
 
 
@@ -3373,7 +3381,7 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 }
 
 
-#if OPAL_HAS_IM
+#if 0 // OPAL_HAS_IM
 
 bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_IMFrame & body)
 {

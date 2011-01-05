@@ -74,10 +74,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
   , m_highPriorityMonitor(*this, HighPriority)
   , m_lowPriorityMonitor(*this, LowPriority)
-
-#if OPAL_HAS_SIPIM
-  , m_sipIMManager(*this)
-#endif
   , m_disableTrying(true)
 
 #ifdef _MSC_VER
@@ -934,15 +930,33 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   // handle a MESSAGE received outside the context of a call
   PTRACE(3, "SIP\tReceived MESSAGE outside the context of a call");
 
-  if (m_onConnectionlessMessage.IsNULL()) {
-    pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
-    return true;
+  // if there is a callback, assume that the application knows what it is doing
+  if (!m_onConnectionlessMessage.IsNULL()) {
+    ConnectionlessMessageInfo info(transport, pdu);
+    m_onConnectionlessMessage(*this, info);
+    return info.m_status;
   }
 
-  ConnectionlessMessageInfo info(transport, pdu);
-  m_onConnectionlessMessage(*this, info);
+  SIPMIMEInfo & mime  = pdu.GetMIME();
 
-  return info.m_status;
+  SIPURL from(mime.GetFrom());
+  from.Sanitise(SIPURL::FromURI);
+
+  SIPURL to(mime.GetTo());
+  to.Sanitise(SIPURL::ToURI);
+
+  OpalIM * message    = new OpalIM();
+  message->m_to       = to.AsString();
+  message->m_from     = from.AsString();
+  message->m_mimeType = mime.GetContentType();
+  message->m_toAddr   = transport.GetLastReceivedAddress();
+  message->m_fromAddr = transport.GetRemoteAddress();
+  message->m_body     = pdu.GetEntityBody();
+
+  bool stat = manager.GetIMManager().OnIncomingMessage(message);
+
+  pdu.SendResponse(transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_NotAcceptableHere, this);
+  return true;
 }
 
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
@@ -1295,36 +1309,122 @@ PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PStri
 }
 
 
-PBoolean SIPEndPoint::Message(OpalIM & message)
+bool SIPEndPoint::Message(OpalIM & message)
 {
-  if (message.m_conversationId.IsEmpty()) 
-    message.m_conversationId = SIPTransaction::GenerateCallID();
+  OpalIMContext::SentStatus status = SendMESSAGE(message);
+  return (status == OpalIMContext::SentOK) || (status == OpalIMContext::SentPending);
+}
 
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(message.m_to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReadWrite);
 
-  if (handler != NULL) {
-    handler->SetBody(message.m_body);
+OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
+{
+  // This function is assumed to be used by applications that don't 
+  // know about OpalIMContext, and therefore, have no knowledge of
+  // how to link individual messages into a conversation using the id
+  // 
+  // As such, we use the "from" and "to" fields to identify which
+  // existing conversation this message belongs to (if any) so
+  // that the same Call-ID can be used for each transmission.
+  // Without this, each message could appear as a seperate conversation
+  //
+  // But if the conversation ID *is* set, ignore all of this and
+  // assume the application knows what it is doing.
+  //
+
+  // don't send empty MESSAGE because some clients barf (cough...X-Lite...cough)
+  if (message.m_body.IsEmpty() && (message.m_body *= "text/plain"))
+    return OpalIMContext::SentOK;
+
+  //
+  // if conversation ID has been set, assume the handler with the matching call ID is correct if the destination is the same, else create a new conversation
+  // if no conversation ID has been set, see if the destination AOR exists and use that handler (and it's call ID)
+  // 
+  PSafePtr<SIPHandler> handler;
+  if (!message.m_conversationId.IsEmpty()) {
+    handler = activeSIPHandlers.FindSIPHandlerByCallID(message.m_conversationId, PSafeReference);
+    if ((handler != NULL) && !(handler->GetAddressOfRecord().AsString() *= message.m_from))
+      handler = NULL;
   }
   else {
-    SIPMessage::Params params;
-    params.m_localAddress    = message.m_from.AsString();
-    params.m_addressOfRecord = params.m_localAddress;
-    params.m_remoteAddress   = message.m_to.AsString();
-    params.m_id              = message.m_conversationId;
-    params.m_contentType     = message.m_mimeType;
-    params.m_body            = message.m_body;
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(message.m_to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReference);
+    if (handler == NULL)
+      message.m_conversationId = OpalGloballyUniqueID().AsString();
+    else
+      message.m_conversationId = handler->GetCallID();
+  }
 
+  SIPMessage::Params params;
+  params.m_id              = message.m_conversationId;
+  params.m_messageId       = message.m_messageId;
+  params.m_localAddress    = message.m_from.AsString();
+  params.m_addressOfRecord = params.m_localAddress;
+  params.m_remoteAddress   = message.m_to.AsString();
+  params.m_contentType     = message.m_mimeType;
+  params.m_body            = message.m_body;
+
+  // create the handler if required
+  if (handler == NULL) {
     handler = new SIPMessageHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
 
+  SIPMIMEInfo & mime = handler->m_mime;
+  mime.SetContentType(message.m_mimeType);
+  handler->SetBody(message.m_body);
+
   if (!handler->ActivateState(SIPHandler::Subscribing))
-    return false;
+    return OpalIMContext::SentNoTransport;
 
-  message.m_from           = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
-  message.m_conversationId = ((SIPMessageHandler *)&*handler)->GetIdentifier();
+  // and the from address as well
+  if (message.m_from.IsEmpty())
+    message.m_from = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
 
-  return true;
+  return OpalIMContext::SentPending;
+}
+
+
+void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params & params, SIP_PDU::StatusCodes reason)
+{
+  // not possible, but let's be paranoid
+  if (params.m_id.IsEmpty()) {
+    PTRACE(2, "SIP\tHow did a MESSAGE get sent without an ID?");
+    return;
+  }
+
+  PTRACE(4, "SIP\tFinal status of message in conversation '" << params.m_id << "' received - " << reason);
+
+  OpalIMContext::SentStatus status;
+  int reasonClass = ((int)reason)/100;
+  switch (reason) {
+    case SIP_PDU::Successful_OK:
+      status = OpalIMContext::SentOK;
+      break;
+    case SIP_PDU::Successful_Accepted:
+      status = OpalIMContext::SentAccepted;
+      break;
+    case SIP_PDU::Failure_RequestTimeout:
+      status = OpalIMContext::SentNoAnswer;
+      break;
+    default:
+      switch (reasonClass) {
+        case 2:
+          status = OpalIMContext::SentOK;
+          break;
+        case 3:
+          status = OpalIMContext::SentFailedGeneric;
+          break;
+        default:
+          status = OpalIMContext::SentFailedGeneric;
+          break;
+      }
+  }
+
+  OpalIMManager & mgr = manager.GetIMManager();
+
+  OpalIMContext::MessageSentInfo info;
+  info.messageId = params.m_messageId;
+  info.status    = status;
+  mgr.AddWork(new OpalIMManager::MessageSent_Work(mgr, params.m_id, info));
 }
 
 
@@ -1437,13 +1537,6 @@ void SIPEndPoint::SendNotifyDialogInfo(const SIPDialogNotification & info)
 {
   Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), info);
 }
-
-
-void SIPEndPoint::OnMessageFailed(const SIPURL & /* messageUrl */,
-          SIP_PDU::StatusCodes /* reason */)
-{
-}
-
 
 void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & username,

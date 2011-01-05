@@ -51,6 +51,7 @@
 #endif
 
 #if OPAL_HAS_IM
+#include <im/sipim.h>
 #include <im/rfc4103.h>
 #endif
 
@@ -566,8 +567,8 @@ class SIPConnection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIPURL & /*from*/, const SIP_PDU & /*pdu*/));
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIP_PDU & /*pdu*/));
 
-#if OPAL_HAS_IM
-    virtual bool TransmitExternalIM(
+#if 0 // OPAL_HAS_IM
+     virtual bool TransmitExternalIM(
       const OpalMediaFormat & format, 
       RTP_IMFrame & body
     );
@@ -712,6 +713,10 @@ class SIPConnection : public OpalRTPConnection
     bool SetRemoteMediaFormats(SDPSessionDescription * sdp);
 
     std::map<std::string, SIP_PDU *> m_responses;
+
+#if OPAL_HAS_IM
+    PSafePtr<OpalSIPIMContext> m_imContext;
+#endif
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
