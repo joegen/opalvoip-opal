@@ -374,10 +374,10 @@ class OpalMediaOptionValue : public OpalMediaOption
         strm.setstate(ios::badbit);
     }
 
-    static __inline bool Intersect(bool a, bool b)         { return a && b; }
-    static __inline bool Intersect(int a, int b)           { return a & b; }
-    static __inline bool Intersect(unsigned a, unsigned b) { return a & b; }
-    static __inline bool Intersect(double a, double b)     { return std::min(a, b); }
+    static __inline bool     Intersect(bool     a, bool     b) { return a && b; }
+    static __inline int      Intersect(int      a, int      b) { return a & b; }
+    static __inline unsigned Intersect(unsigned a, unsigned b) { return a & b; }
+    static __inline double   Intersect(double   a, double   b) { return std::min(a, b); }
 
     virtual bool Merge(const OpalMediaOption & option)
     {
