@@ -137,6 +137,7 @@ class OpalPresentity : public PSafeObject
   protected:
     /// Construct the presentity class
     OpalPresentity();
+    OpalPresentity(const OpalPresentity & other);
 
   public:
     ~OpalPresentity();
@@ -547,6 +548,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
   protected:
     /// Construct the presentity class that uses a command thread.
     OpalPresentityWithCommandThread();
+    OpalPresentityWithCommandThread(const OpalPresentityWithCommandThread & other);
 
   public:
     /** Destory the presentity class that uses a command thread.
