@@ -301,7 +301,7 @@ void TestPresEnt::Main()
       line = line.Trim();
       if (line.GetLength() > 0) {
         if ((line[0] != '#') && (line[0] != ';') && ((line.GetLength() < 2) || (line[0] != '/') || (line[1] != '/'))) {
-          cout << "Running command '" << line << "'" << endl;
+          cout << line << endl;
           if (!cliContext->ProcessInput(line)) {
             cerr << "error: error occurred while processing script" << endl;
             return;
@@ -311,6 +311,8 @@ void TestPresEnt::Main()
     }
     cout << "Script complete" << endl;
   }
+
+  scriptFile.Close();
 
   cli.RunContext(cliContext); // Do not spawn thread, wait till end of input
 
