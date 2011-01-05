@@ -233,12 +233,14 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     static bool SetDefaultPresentity(
       const PString & prefix
     );
-
-    SIP_Presentity();
+    static PString GetDefaultPresentity();
 
     void SetAOR(const PURL & aor);
 
-  protected:    
+  protected:
+    SIP_Presentity(const char * subScheme);
+
+    const char *  m_subScheme;
     SIPEndPoint * m_endpoint;
     int           m_watcherInfoVersion;
 };
@@ -249,7 +251,7 @@ class SIPLocal_Presentity : public SIP_Presentity
     PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
 
   public:
-    SIPLocal_Presentity() { }
+    SIPLocal_Presentity();
     SIPLocal_Presentity(const SIPLocal_Presentity & other) : SIP_Presentity(other) { }
     ~SIPLocal_Presentity();
 

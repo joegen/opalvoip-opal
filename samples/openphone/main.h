@@ -180,14 +180,14 @@ class MyFaxEndPoint : public OpalFaxEndPoint
 class PresenceDialog : public wxDialog
 {
   public:
-    PresenceDialog(MyManager * manager, SIPEndPoint & sipEP);
+    PresenceDialog(MyManager * manager);
 
   private:
     bool TransferDataFromWindow();
 
-    SIPEndPoint & m_sipEP;
-    PwxString     m_address;
-    PwxString     m_status;
+    MyManager & m_manager;
+    PwxString   m_address;
+    PwxString   m_status;
 
     DECLARE_EVENT_TABLE()
 };
@@ -695,6 +695,7 @@ class OptionsDialog : public wxDialog
     wxGrid     * m_PresentityAttributes;
     wxButton   * m_AddPresentity;
     wxButton   * m_RemovePresentity;
+    PwxString    m_DefaultSipPresentity;
     void AddPresentity(wxCommandEvent & event);
     void RemovePresentity(wxCommandEvent & event);
     void SelectedPresentity(wxListEvent & event);

@@ -59,11 +59,15 @@
 const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "Default Presence Server"; return s; }
 const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "Presence Server";         return s; }
 
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPLocal_Presentity, "sip-local", false);
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPXCAP_Presentity,  "sip-xcap", false);
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPOMA_Presentity,   "sip-oma", false);
+const char SIP_Local_Scheme[] = "sip-local";
+const char SIP_XCAP_Scheme[]  = "sip-xcap";
+const char SIP_OMA_Scheme[]   = "sip-oma";
 
-static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs("sip", "sip-oma");
+PFACTORY_CREATE(PFactory<OpalPresentity>, SIPLocal_Presentity, SIP_Local_Scheme, false);
+PFACTORY_CREATE(PFactory<OpalPresentity>, SIPXCAP_Presentity,  SIP_XCAP_Scheme, false);
+PFACTORY_CREATE(PFactory<OpalPresentity>, SIPOMA_Presentity,   SIP_OMA_Scheme, false);
+
+static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs("sip", SIP_OMA_Scheme);
 
 static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 
@@ -83,9 +87,9 @@ class SIPURLScheme_##s : public PURLLegacyScheme \
 }; \
   static PFactory<PURLScheme>::Worker<SIPURLScheme_##s> s##_Factory(tag, true); \
 
-DECLARE_SIPURLScheme("sip-local", sip_local);
-DECLARE_SIPURLScheme("sip-xcap",  sip_xcap);
-DECLARE_SIPURLScheme("sip-oma",   sip_oma);
+DECLARE_SIPURLScheme(SIP_Local_Scheme, sip_local);
+DECLARE_SIPURLScheme(SIP_XCAP_Scheme,  sip_xcap);
+DECLARE_SIPURLScheme(SIP_OMA_Scheme,   sip_oma);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,8 +115,9 @@ static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML 
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-SIP_Presentity::SIP_Presentity()
-  : m_endpoint(NULL)
+SIP_Presentity::SIP_Presentity(const char * subScheme)
+  : m_subScheme(subScheme)
+  , m_endpoint(NULL)
   , m_watcherInfoVersion(-1)
 {
 }
@@ -137,6 +142,20 @@ bool SIP_Presentity::SetDefaultPresentity(const PString & prefix)
 
   PTRACE(1, "SIPPres\tCannot set default 'sip' presentity handler to '" << prefix << '\'');
   return false;
+}
+
+
+PString SIP_Presentity::GetDefaultPresentity()
+{
+  PString str;
+
+  OpalPresentity * presentity = PFactory<OpalPresentity>::CreateInstance("sip");
+  if (presentity != NULL) {
+    str = dynamic_cast<SIP_Presentity *>(presentity)->m_subScheme;
+    delete presentity;
+  }
+
+  return str;
 }
 
 
@@ -173,6 +192,12 @@ bool SIP_Presentity::Close()
 //////////////////////////////////////////////////////////////
 
 OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPLocal_Presentity, Internal_SubscribeToPresence);
+
+SIPLocal_Presentity::SIPLocal_Presentity()
+  : SIP_Presentity(SIP_Local_Scheme)
+{
+}
+
 
 SIPLocal_Presentity::~SIPLocal_Presentity()
 {
@@ -648,6 +673,7 @@ const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s 
 const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "XCAP BuddyList"; return s; }
 
 SIPXCAP_Presentity::SIPXCAP_Presentity()
+  : SIP_Presentity(SIP_XCAP_Scheme)
 {
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
@@ -1121,6 +1147,7 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::SubscribeBuddyListEx(PINDEX & nu
 
 SIPOMA_Presentity::SIPOMA_Presentity()
 {
+  m_subScheme = SIP_OMA_Scheme;
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "org.openmobilealliance.pres-rules");
   m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "pres-rules");
   m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "oma_buddylist");
