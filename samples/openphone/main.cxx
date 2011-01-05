@@ -58,6 +58,7 @@
 #include <opal/transcoders.h>
 #include <opal/ivr.h>
 #include <opal/opalmixer.h>
+#include <sip/sippres.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
 #include <ptclib/pstun.h>
@@ -196,6 +197,7 @@ DEF_FIELD(FaxAutoAnswerMode);
 
 static const wxChar PresenceGroup[] = wxT("/Presence");
 DEF_FIELD(PresenceAOR);
+DEF_FIELD(DefaultSipPresentity);
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
@@ -965,6 +967,9 @@ bool MyManager::Initialise()
   ////////////////////////////////////////
   // Presence fields
   config->SetPath(PresenceGroup);
+  if (config->Read(DefaultSipPresentityKey, &str))
+    SIP_Presentity::SetDefaultPresentity(str);
+
   int presIndex = 0;
   for (;;) {
     wxString groupName;
@@ -1670,7 +1675,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 
 void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
-  PresenceDialog dlg(this, *sipEP);
+  PresenceDialog dlg(this);
   dlg.ShowModal();
 }
 
@@ -3919,6 +3924,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_PresentityAttributes->AutoSizeColLabelSize(0);
   m_PresentityAttributes->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
 
+  choice = FindWindowByNameAs<wxChoice>(this, wxT("DefaultSipPresentity"));
+  choice->SetValidator(wxGenericValidator(&m_DefaultSipPresentity));
+  m_DefaultSipPresentity = SIP_Presentity::GetDefaultPresentity();
+
   ////////////////////////////////////////
   // Codec fields
   m_AddCodec = FindWindowByNameAs<wxButton>(this, wxT("AddCodec"));
@@ -4311,6 +4320,9 @@ bool OptionsDialog::TransferDataFromWindow()
   }
   for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
     m_manager.RemovePresentity(*it);
+
+  config->SetPath(PresenceGroup);
+  SAVE_FIELD(DefaultSipPresentity, SIP_Presentity::SetDefaultPresentity);
 
   ////////////////////////////////////////
   // Codec fields
@@ -5421,8 +5433,8 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 BEGIN_EVENT_TABLE(PresenceDialog, wxDialog)
 END_EVENT_TABLE()
 
-PresenceDialog::PresenceDialog(MyManager * manager, SIPEndPoint & sipEP)
-  : m_sipEP(sipEP)
+PresenceDialog::PresenceDialog(MyManager * manager)
+  : m_manager(*manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("PresenceDialog"));
 
@@ -5431,7 +5443,7 @@ PresenceDialog::PresenceDialog(MyManager * manager, SIPEndPoint & sipEP)
 
   wxChoice * addresses = FindWindowByNameAs<wxChoice>(this, wxT("PresenceAddress"));
   addresses->SetValidator(wxGenericValidator(&m_address));
-  PStringList presences = m_sipEP.GetPublications(SIPSubscribe::Presence);
+  PStringList presences = manager->GetPresentities();
   if (presences.IsEmpty()) {
     addresses->Disable();
     states->Disable();
@@ -5450,16 +5462,18 @@ bool PresenceDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
-  SIPPresenceInfo info;
-  info.m_entity = m_address.p_str();
-  if (m_status == "Invisible")
-    info.m_state = OpalPresenceInfo::NoPresence;
-  else {
-    info.m_state = OpalPresenceInfo::Available;
-    info.m_note = m_status.p_str();
+  PSafePtr<OpalPresentity> presentity = m_manager.GetPresentity(m_address.p_str());
+  if (presentity == NULL) {
+    wxMessageBox(wxT("Presentity disappeared!"));
+    return false;
   }
 
-  m_sipEP.PublishPresence(info);
+  OpalPresenceInfo::State state = OpalPresenceInfo::FromString(m_status);
+  if (state != OpalPresenceInfo::InternalError)
+    presentity->SetLocalPresence(state);
+  else
+    presentity->SetLocalPresence(OpalPresenceInfo::Available, m_status.p_str());
+
   return true;
 }
 
