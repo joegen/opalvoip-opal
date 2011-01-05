@@ -100,24 +100,14 @@ static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML 
     return false;
   }
 
-  PStringStream err;
-
-  // load the XML
-  if (!xml.Load(body, PXML::WithNS))
-    err << "XML parse";
-  else if (!xml.Validate(validator))
-    err << "XML validation";
-  else
+  PString error;
+  if (xml.LoadAndValidate(body, validator, error, PXML::WithNS))
     return true;
 
-  err << " error\n"
-         "Error at line " << xml.GetErrorLine() << ", column " << xml.GetErrorColumn() << '\n'
-      << xml.GetErrorString() << '\n';
-  status.m_response.SetEntityBody(err);
-  PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << err);
+  status.m_response.SetEntityBody(error);
+  PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << error);
   return false;
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -202,13 +192,13 @@ bool SIPLocal_Presentity::Open()
 #if P_DNS
     PIPSocketAddressAndPortVector addrs;
     if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
-      PTRACE(1, "SIPPres\tSRV lookup for '" << m_aor.GetHostName() << "_pres._sip' succeeded");
+      PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
       m_presenceServer = addrs[0];
     }
     else
 #endif
     {
-      PTRACE(3, "SIPPres\tSRV lookup for '" << m_aor.GetHostName() << "_pres._sip' failed");
+      PTRACE(3, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
       PString defServer;
       if (
           m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey) && 
@@ -472,7 +462,7 @@ void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCo
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
   param.m_remoteAddress    = m_presenceServer.AsString() + ";transport=tcp";
-  param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, aorStr);
+  param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
   param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);

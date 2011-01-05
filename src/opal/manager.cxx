@@ -206,6 +206,9 @@ OpalManager::OpalManager()
 #ifdef OPAL_ZRTP
   , zrtpEnabled(false)
 #endif
+#ifdef OPAL_HAS_IM
+  , m_imManager(*this)
+#endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
@@ -1722,6 +1725,7 @@ PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 void OpalManager::GarbageCollection()
 {
   m_presentities.DeleteObjectsToBeRemoved();
+  m_imManager.GarbageCollection();
 
   bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
@@ -1858,15 +1862,17 @@ PBoolean OpalManager::Message(const PURL & to, const PString & type, const PStri
 }
 
 
-PBoolean OpalManager::Message(OpalIM & message)
+bool OpalManager::Message(OpalIM & message)
 {
-  PString scheme(message.m_to.GetScheme());
-  for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
-    if (scheme *= it->GetPrefixName())
-      return it->Message(message);
-  }
+  PSafePtr<OpalIMContext> context = m_imManager.FindContextForMessageWithLock(message);
+  if (context == NULL)
+    context = OpalIMContext::Create(*this, message.m_from, message.m_to);
+  if (context == NULL)
+    return false;
 
-  return false;
+  OpalIMContext::SentStatus stat = context->Send(new OpalIM(message));
+
+  return (stat == OpalIMContext::SentOK) || (stat == OpalIMContext::SentPending);
 }
 
 
