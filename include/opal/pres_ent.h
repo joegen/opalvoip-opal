@@ -38,6 +38,7 @@
 #include <ptlib/safecoll.h>
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
+#include <ptclib/vcard.h>
 
 #include <im/im.h>
 
@@ -374,8 +375,9 @@ class OpalPresentity : public PSafeObject
       PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
-      // RFC4482 contact fields
-      PURL    m_vCard;        /**< vCard for the buddy. This is
+      // RFC4482 contact fields, note most of these are duplicated
+      // in the vCard structure
+      PvCard  m_vCard;        /**< vCard for the buddy. This is
                                    either a URI pointing to the image, or the image
                                    itself in the form: "data:text/x-vcard,xxxxx
                                    as per RFC2397 */
