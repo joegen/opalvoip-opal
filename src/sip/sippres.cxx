@@ -56,6 +56,7 @@
 #include <ptclib/pxml.h>
 #include <ptclib/random.h>
 
+
 const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "Default Presence Server"; return s; }
 const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "Presence Server";         return s; }
 
@@ -925,8 +926,14 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
   if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:display-name")) != NULL)
     buddy.m_displayName = itemElement->GetData();
 
-  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:card")) != NULL)
-    buddy.m_vCard = itemElement->GetData();
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:card")) != NULL) {
+    PURL url;
+    if (url.Parse(itemElement->GetData())) {
+      PString str;
+      if (url.LoadResource(str))
+        buddy.m_vCard.Parse(str);
+    }
+  }
 
   if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:icon")) != NULL)
     buddy.m_icon = itemElement->GetData();
