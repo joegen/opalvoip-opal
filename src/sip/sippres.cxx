@@ -921,9 +921,24 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
 
   buddy.m_presentity = element->GetAttribute("uri");
 
-  PXMLElement * displayName = element->GetElement("display-name");
-  if (displayName != NULL)
-    buddy.m_displayName = displayName->GetData();
+  PXMLElement * itemElement;
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:display-name")) != NULL)
+    buddy.m_displayName = itemElement->GetData();
+
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:card")) != NULL)
+    buddy.m_vCard = itemElement->GetData();
+
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:icon")) != NULL)
+    buddy.m_icon = itemElement->GetData();
+
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:map")) != NULL)
+    buddy.m_map = itemElement->GetData();
+
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:sound")) != NULL)
+    buddy.m_sound = itemElement->GetData();
+
+  if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:homepage")) != NULL)
+    buddy.m_homePage = itemElement->GetData();
 
   buddy.m_contentType = "application/resource-lists+xml";
   buddy.m_rawXML = element->AsString();
