@@ -552,10 +552,10 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
       } 
       else if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {
         PTRACE(2, "MSRP\tUnable to resolve MSRP URL hostname '" << remoteURL << "' ");
-        return false;
+        return NULL;
       }
 #else
-      return false;
+      return NULL;
 #endif
     }
   }
