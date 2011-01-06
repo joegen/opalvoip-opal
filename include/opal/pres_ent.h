@@ -376,6 +376,24 @@ class OpalPresentity : public PSafeObject
       PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
+      // RFC4482 contact fields
+      PURL    m_vCard;        /**< vCard for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:text/x-vcard,xxxxx
+                                   as per RFC2397 */
+      PURL    m_icon;         /**< The icon/avatar/photo for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:image/jpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_map;          /**< The map reference for the buddy. This is may be URL
+                                   to a GIS system or an image file similar to m_icon */
+      PURL    m_sound;        /**< The sound relating to the buddy. This is
+                                   either a URI pointing to the sound, or the sound
+                                   itself in the form: "data:audio/mpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_homePage;     ///< Home page for buddy
+
+      // Extra field for protocol dependent "get out of gaol" card
       PString m_contentType;  ///< MIME type code for XML
       PString m_rawXML;       ///< Raw XML of buddy list entry
     };
@@ -474,11 +492,11 @@ class OpalPresentity : public PSafeObject
     virtual BuddyStatus UnsubscribeBuddyListEx();
     virtual bool UnsubscribeBuddyList()
     { return UnsubscribeBuddyListEx() == BuddyStatus_OK; }
-
-    virtual PString GetID() const;
   //@}
   
   
+  /**@name Instant Messaging */
+  //@{
     virtual bool SendMessageTo(
       const OpalIM & message
     );
@@ -499,19 +517,22 @@ class OpalPresentity : public PSafeObject
     void SetReceivedMessageNotifier(
       const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
     );
+  //@}
+
+    /** Used to set the AOR after the presentity is created
+        This override allows the descendant class to convert the internal URL into a real AOR,
+        usually by changing the scheme.
+      */
+    virtual void SetAOR(
+      const PURL & aor
+    );
 
     void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
-    /// Used to set the AOR after the presentity is created
-    //
-    //  This override allows the descendant class to convert the internal URL into a real AOR,
-    //  usually by changing the scheme
-    virtual void SetAOR(
-      const PURL & aor
-    );
+    virtual PString GetID() const;
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
