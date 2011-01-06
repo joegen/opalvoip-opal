@@ -906,7 +906,11 @@ AC_DEFUN([OPAL_FIND_SPANDSP],
          [
           saved_LIBS="$LIBS"
           LIBS="$LIBS -lspandsp"
-          AC_CHECK_LIB(spandsp, fax_free, [opal_spandsp=yes], [opal_spandsp=no])
+          AC_CHECK_LIB(spandsp, fax_free,
+              [
+                  AC_CHECK_LIB(spandsp, t38_core_get_logging_state, [opal_spandsp=yes], [opal_spandsp=no])
+              ],
+              [opal_spandsp=no])
           LIBS=$saved_LIBS
           if test "x${opal_spandsp}" = "xyes"; then
               SPANDSP_LIBS="-lspandsp"
