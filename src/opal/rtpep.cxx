@@ -133,8 +133,12 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
               "remote RTP port " << remotePort << " not peviously remembered, searching.");
 
-    // Not already cached so search all RTP connections for if it is there
-    for (PSafePtr<OpalRTPConnection> connection(connectionsActive, PSafeReadOnly, true); connection != NULL; ++connection) {
+    /* Not already cached so search all RTP connections for if it is there
+       To avoid deadlocks take a snapshot of the active list at an instant
+       of time and iterate over that. The other connection MUST already be
+       there or it isn't a hairpinned call. */
+    ConnectionDict snapshot(connectionsActive);
+    for (PSafePtr<OpalRTPConnection> connection(snapshot, PSafeReadOnly); connection != NULL; ++connection) {
       if (connection->FindSessionByLocalPort(remotePort) != NULL) {
         PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
                   "remembering remote RTP port " << remotePort << " on connection " << *connection);

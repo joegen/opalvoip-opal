@@ -1522,7 +1522,7 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
             resized->width = width;
             resized->height = height;
             PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
-                                          header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                            header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
                                           0, 0, width, height,
                                           width, height, OPAL_VIDEO_FRAME_DATA_PTR(resized),
                                           PVideoFrameInfo::eScale);
