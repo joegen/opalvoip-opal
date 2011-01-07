@@ -73,6 +73,7 @@ class wxListCtrl;
 class wxListEvent;
 class wxNotebook;
 class wxGrid;
+class wxGridEvent;
 class wxConfigBase;
 class wxImageList;
 
@@ -179,14 +180,14 @@ class MyFaxEndPoint : public OpalFaxEndPoint
 class PresenceDialog : public wxDialog
 {
   public:
-    PresenceDialog(MyManager * manager, SIPEndPoint & sipEP);
+    PresenceDialog(MyManager * manager);
 
   private:
     bool TransferDataFromWindow();
 
-    SIPEndPoint & m_sipEP;
-    PwxString     m_address;
-    PwxString     m_status;
+    MyManager & m_manager;
+    PwxString   m_address;
+    PwxString   m_status;
 
     DECLARE_EVENT_TABLE()
 };
@@ -687,6 +688,21 @@ class OptionsDialog : public wxDialog
     PwxString m_AudioRecordingFormat;
     int       m_VideoRecordingMode;
     PwxString m_VideoRecordingSize;
+
+    ////////////////////////////////////////
+    // Presence fields
+    wxListCtrl * m_Presentities;
+    wxGrid     * m_PresentityAttributes;
+    wxButton   * m_AddPresentity;
+    wxButton   * m_RemovePresentity;
+    PwxString    m_DefaultSipPresentity;
+    void AddPresentity(wxCommandEvent & event);
+    void RemovePresentity(wxCommandEvent & event);
+    void SelectedPresentity(wxListEvent & event);
+    void DeselectedPresentity(wxListEvent & event);
+    void EditedPresentity(wxListEvent & event);
+    bool FillPresentityAttributes(OpalPresentity * presentity);
+    void ChangedPresentityAttribute(wxGridEvent & event);
 
     ////////////////////////////////////////
     // Codec fields

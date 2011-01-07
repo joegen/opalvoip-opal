@@ -297,7 +297,7 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
   }
 
-#if OPAL_HAS_IM
+#if 0 // OPAL_HAS_IM
   m_rfc4103Context[0].SetMediaFormat(OpalT140);
   m_rfc4103Context[1].SetMediaFormat(OpalT140);
 #endif
@@ -1746,7 +1746,7 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
 }
 
 
-#if OPAL_HAS_IM
+#if 0 //OPAL_HAS_IM
 
 bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_IMFrame & frame)
 {

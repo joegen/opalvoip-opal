@@ -251,6 +251,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_switchedToFaxMode(false)
 #endif
   , releaseMethod(ReleaseWithNothing)
+//  , m_messageContext(NULL)
 {
   synchronousOnRelease = false;
 
@@ -594,6 +595,11 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
 {
   if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "SIP\tReceived disabled/missing media description for " << mediaType);
+
+    /* Some remotes return all of the media detail (a= lines) in SDP even though
+       port is zero indicating the media is not to be used. So don't return these
+       bogus media formats from SDP to the "remote media format list". */
+    m_remoteFormatList.Remove(PString('@')+mediaType);
     return false;
   }
 
@@ -805,7 +811,15 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
   if (offerOpenMediaStreamOnly) {
+    OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
     OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
+    if (recvStream != NULL)
+      localMedia->AddMediaFormat(*localFormatList.FindFormat(recvStream->GetMediaFormat()));
+    else if (sendStream != NULL)
+      localMedia->AddMediaFormat(sendStream->GetMediaFormat());
+    else
+      localMedia->AddMediaFormats(localFormatList, mediaType);
+
     bool sending = sendStream != NULL && sendStream->IsOpen();
     if (sending && m_holdFromRemote) {
       // OK we have (possibly) asymmetric hold, check if remote supports it.
@@ -813,20 +827,17 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
       if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
         sending = false;
     }
-    OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-    bool recving = recvStream != NULL && recvStream->IsOpen();
-    if (sending) {
-      localMedia->AddMediaFormat(sendStream->GetMediaFormat());
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::SendOnly : (recving ? SDPMediaDescription::SendRecv : SDPMediaDescription::SendOnly));
-    }
-    else if (recving) {
-      localMedia->AddMediaFormat(recvStream->GetMediaFormat());
-      localMedia->SetDirection(m_holdToRemote >= eHoldOn ? SDPMediaDescription::Inactive : SDPMediaDescription::RecvOnly);
-    }
-    else {
-      localMedia->AddMediaFormats(localFormatList, mediaType);
+    bool recving = m_holdToRemote < eHoldOn && recvStream != NULL && recvStream->IsOpen();
+
+    if (sending && recving)
+      localMedia->SetDirection(SDPMediaDescription::SendRecv);
+    if (recving)
+      localMedia->SetDirection(SDPMediaDescription::RecvOnly);
+    else if (sending)
+      localMedia->SetDirection(SDPMediaDescription::SendOnly);
+    else
       localMedia->SetDirection(SDPMediaDescription::Inactive);
-    }
+
 #if PAUSE_WITH_EMPTY_ADDRESS
     if (m_holdToRemote >= eHoldOn) {
       OpalTransportAddress addr = localMedia->GetTransportAddress();
@@ -1238,7 +1249,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 {
   if (m_holdFromRemote && !isSource) {
     PTRACE(3, "SIP\tCannot start media stream as are currently in HOLD by remote.");
-    return false;
+    return NULL;
   }
 
   // Make sure stream is symmetrical, if codec changed, close and re-open it
@@ -3215,16 +3226,23 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
-  PString contentType = pdu.GetMIME().GetContentType();
-  if (contentType.IsEmpty())
-    contentType = "text/plain";
-#if OPAL_HAS_IM
-  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(contentType, pdu.GetEntityBody());
+  OpalIM * im = new OpalIM;
+  const SIPMIMEInfo & mime = pdu.GetMIME();
 
-  for (PINDEX i = 0; i < frames.GetSize(); ++i)
-    OnReceiveExternalIM(OpalT140, (RTP_IMFrame &)frames[i]);
-#endif
-  pdu.SendResponse(*transport, SIP_PDU::Successful_OK);
+  im->m_from  = mime.GetFrom();
+  im->m_to    = mime.GetTo();
+
+  im->m_conversationId = PString("sip_") + mime.GetCallID();
+
+  // populate the message type
+  im->m_mimeType = mime.GetContentType();
+  if (im->m_mimeType.IsEmpty())
+    im->m_mimeType = "text/plain";
+
+  // dispatch the message
+  bool stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, PSafePtr<OpalConnection>(this));
+
+  pdu.SendResponse(*transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_BadRequest);
 }
 
 
@@ -3321,7 +3339,7 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 }
 
 
-#if OPAL_HAS_IM
+#if 0 // OPAL_HAS_IM
 
 bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_IMFrame & body)
 {

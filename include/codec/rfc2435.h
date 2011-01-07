@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 24184 $
- * $Author: csoutheren $
- * $Date: 2010-04-05 23:50:26 -0700 (Mon, 05 Apr 2010) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef OPAL_CODEC_RFC2435_H

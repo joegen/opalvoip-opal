@@ -23,9 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 22858 $
- * $Author: csoutheren $
- * $Date: 2009-06-12 22:50:19 +1000 (Fri, 12 Jun 2009) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef OPAL_IM_PRES_ENT_H
@@ -38,6 +38,7 @@
 #include <ptlib/safecoll.h>
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
+#include <ptclib/vcard.h>
 
 #include <im/im.h>
 
@@ -137,6 +138,7 @@ class OpalPresentity : public PSafeObject
   protected:
     /// Construct the presentity class
     OpalPresentity();
+    OpalPresentity(const OpalPresentity & other);
 
   public:
     ~OpalPresentity();
@@ -195,10 +197,11 @@ class OpalPresentity : public PSafeObject
     ///< Get the attributes for this presentity.
     Attributes & GetAttributes() { return m_attributes; }
 
+    ///< Get all attribute names for this presentity class.
+    virtual PStringArray GetAttributeNames() const = 0;
+
     static const PString & AuthNameKey();         ///< Key for authentication name attribute
     static const PString & AuthPasswordKey();     ///< Key for authentication password attribute
-    static const PString & FullNameKey();         ///< Key for full name attribute
-    static const PString & SchemeKey();           ///< Key for scheme used attribute
     static const PString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
 
     /** Get the address-of-record for the presentity.
@@ -374,6 +377,25 @@ class OpalPresentity : public PSafeObject
       PURL    m_presentity;   ///< Typicall URI address-of-record
       PString m_displayName;  ///< Human readable name
 
+      // RFC4482 contact fields, note most of these are duplicated
+      // in the vCard structure
+      PvCard  m_vCard;        /**< vCard for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:text/x-vcard,xxxxx
+                                   as per RFC2397 */
+      PURL    m_icon;         /**< The icon/avatar/photo for the buddy. This is
+                                   either a URI pointing to the image, or the image
+                                   itself in the form: "data:image/jpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_map;          /**< The map reference for the buddy. This is may be URL
+                                   to a GIS system or an image file similar to m_icon */
+      PURL    m_sound;        /**< The sound relating to the buddy. This is
+                                   either a URI pointing to the sound, or the sound
+                                   itself in the form: "data:audio/mpeg;base64,xxxxx
+                                   as per RFC2397 */
+      PURL    m_homePage;     ///< Home page for buddy
+
+      // Extra field for protocol dependent "get out of gaol" card
       PString m_contentType;  ///< MIME type code for XML
       PString m_rawXML;       ///< Raw XML of buddy list entry
     };
@@ -472,11 +494,11 @@ class OpalPresentity : public PSafeObject
     virtual BuddyStatus UnsubscribeBuddyListEx();
     virtual bool UnsubscribeBuddyList()
     { return UnsubscribeBuddyListEx() == BuddyStatus_OK; }
-
-    virtual PString GetID() const;
   //@}
   
   
+  /**@name Instant Messaging */
+  //@{
     virtual bool SendMessageTo(
       const OpalIM & message
     );
@@ -497,19 +519,22 @@ class OpalPresentity : public PSafeObject
     void SetReceivedMessageNotifier(
       const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
     );
+  //@}
+
+    /** Used to set the AOR after the presentity is created
+        This override allows the descendant class to convert the internal URL into a real AOR,
+        usually by changing the scheme.
+      */
+    virtual void SetAOR(
+      const PURL & aor
+    );
 
     void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
     void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
-    /// Used to set the AOR after the presentity is created
-    //
-    //  This override allows the descendant class to convert the internal URL into a real AOR,
-    //  usually by changing the scheme
-    virtual void SetAOR(
-      const PURL & aor
-    );
+    virtual PString GetID() const;
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
@@ -546,6 +571,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
   protected:
     /// Construct the presentity class that uses a command thread.
     OpalPresentityWithCommandThread();
+    OpalPresentityWithCommandThread(const OpalPresentityWithCommandThread & other);
 
   public:
     /** Destory the presentity class that uses a command thread.
@@ -710,4 +736,3 @@ PFACTORY_LOAD(SIPOMA_Presentity);
 
 
 #endif  // OPAL_IM_PRES_ENT_H
-

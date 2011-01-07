@@ -1165,6 +1165,10 @@ bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
   return true;
 }
 
+bool SIPEventPackageHandler::ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
+{ 
+  return type.IsEmpty() && (mime.GetContentLength() == 0);
+}
 
 class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 {
@@ -1228,11 +1232,6 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
   virtual PCaselessString GetContentType() const
   {
     return "application/pidf+xml";
-  }
-
-  bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
-  { 
-    return type.IsEmpty() && (mime.GetContentLength() == 0);
   }
 
   virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
@@ -1807,7 +1806,8 @@ PString SIPPresenceInfo::AsXML() const
     xml << "    <note>" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
   }
 
-  xml << "  </tuple>\r\n";
+  xml << "    <timestamp>" << PTime().AsString(PTime::RFC3339) << "</timestamp>\r\n"
+         "  </tuple>\r\n";
   if (!m_personId.IsEmpty() && (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0))) {
     xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
            "    <rpid:activities>\r\n";
@@ -1840,6 +1840,7 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   , m_parameters(params)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
+  callID = params.m_id;   // make sure the transation uses the conversation ID, so we can track it
   SetState(Subscribed);
 }
 
@@ -1864,8 +1865,8 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 
 void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 {
-  endpoint.OnMessageFailed(GetAddressOfRecord(), reason);
   SIPHandler::OnFailed(reason);
+  endpoint.OnMESSAGECompleted(m_parameters, reason);
 }
 
 
@@ -1874,8 +1875,15 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
   PSafeLockReadWrite lock(*this);
   if (lock.IsLocked())
     SetState(Unavailable);
+  endpoint.OnMESSAGECompleted(m_parameters, SIP_PDU::Failure_RequestTimeout);
 }
 
+
+void SIPMessageHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+{
+  SIPHandler::OnReceivedOK(transaction, response);
+  endpoint.OnMESSAGECompleted(m_parameters, SIP_PDU::Successful_OK);
+}
 
 /////////////////////////////////////////////////////////////////////////
 

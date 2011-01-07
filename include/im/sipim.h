@@ -37,9 +37,10 @@
 #include <opal/manager.h>
 #include <opal/mediastrm.h>
 #include <opal/mediatype.h>
+#include <opal/mediatype.h>
 #include <im/im.h>
 #include <sip/sdp.h>
-
+#include <sip/sippdu.h>
 
 #if OPAL_HAS_SIPIM
 
@@ -94,21 +95,26 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
 ////////////////////////////////////////////////////////////////////////////
 
-class SIPEndPoint;
-class SIP_PDU;
-class SIPConnection;
-
-class OpalSIPIMManager : public PObject
+class OpalSIPIMContext : public OpalConnectionIMContext
 {
   public:
-    OpalSIPIMManager(SIPEndPoint & endpoint);
-    void OnReceivedMessage(const SIP_PDU & pdu);
+    OpalSIPIMContext();
 
   protected:
-    SIPEndPoint & m_endpoint;
-    PMutex m_mutex;
-};
+    virtual SentStatus InternalSendOutsideCall(OpalIM * message);
+    virtual SentStatus InternalSendInsideCall(OpalIM * message);
 
+    virtual bool OnIncomingIM(OpalIM & message);
+    void OnCompositionIndicationTimeout();
+
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnCompositionTimerExpire);
+
+    void PopulateParams(SIPMessage::Params & params, OpalIM & message);
+
+    PTimer m_rxCompositionTimeout;
+
+    RFC4103Context m_rfc4103Context;
+};
 
 
 ////////////////////////////////////////////////////////////////////////////
