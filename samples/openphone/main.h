@@ -158,7 +158,6 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
     MyManager & m_manager;
 };
@@ -524,9 +523,7 @@ class RegistrationInfo
       Register,
       SubscribeMWI,
       SubcribePresence,
-      SubscribeMLA,
-      PublishPresence,
-      WatchPresence
+      SubscribeMLA
     };
 
     RegistrationInfo();
@@ -1091,8 +1088,8 @@ class MyManager : public wxFrame, public OpalManager
 
     ConversationMapType conversationMap;
 
-    bool SubscribePresence(wxString & uri);
-    void OnPresenceInfoReceived(const SIPPresenceInfo & info);
+    bool SubscribeBuddy(const PString & presentity, const PString & uri);
+    PDECLARE_PresenceChangeNotifier(MyManager, OnPresenceChange);
 #endif
 
 #if OPAL_CAPI
