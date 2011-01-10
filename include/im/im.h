@@ -125,6 +125,7 @@ class OpalIMContext : public PSafeObject
       SentConnectionClosed,
       SentNoTransport,
       SentNoAnswer,
+      SentDestinationUnknown,
       SentFailedGeneric,
     };
 
@@ -177,10 +178,11 @@ class OpalIMContext : public PSafeObject
 
     // start of internal functions
 
-    PString GetID() const        { return m_id; }
-    PString GetKey() const       { return m_key; }
-    PString GetLocalURL() const  { return m_localURL; }
-    PString GetRemoteURL() const { return m_remoteURL; }
+    PString GetID() const          { return m_id; }
+    void SetID(const PString & id) { m_id = id; }
+    PString GetKey() const         { return m_key; }
+    PString GetLocalURL() const    { return m_localURL; }
+    PString GetRemoteURL() const   { return m_remoteURL; }
 
   /**@name Attributes */
   //@{
@@ -293,7 +295,9 @@ class OpalIMManager : public PObject
 
     PSafePtr<OpalIMContext> FindContextForMessageWithLock(OpalIM & im, OpalConnection * conn = NULL);
 
-    typedef PNotifierTemplate<OpalIMContext *> NewConversationNotifier;
+    typedef PNotifierTemplate<OpalIMContext &> NewConversationNotifier;
+    #define PDECLARE_NewConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMManager, cls, fn, OpalIMContext &)
+    #define PCREATE_NewConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMContext &)
 
     class NewConversationCallBack : public PObject {
       public:
@@ -393,6 +397,7 @@ class OpalIMManager : public PObject
         MessageQueue m_cmdQueue;
     };
 
+    PTime m_lastGarbageCollection;
     OpalManager & m_manager;
     typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
     ContextsByConversationId m_contextsByConversationId;
