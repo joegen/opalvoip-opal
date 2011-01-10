@@ -982,6 +982,7 @@ bool MyManager::Initialise()
     if (config->Read(PresenceAORKey, &aor) && !aor.empty()) {
       PSafePtr<OpalPresentity> presentity = AddPresentity(aor);
       if (presentity != NULL) {
+        presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(OnPresenceChange));
         long idx;
         PwxString name;
         if (config->GetFirstEntry(name, idx)) {
@@ -1205,7 +1206,7 @@ bool MyManager::Initialise()
   int count = m_speedDials->GetItemCount();
   for (int i = 0; i < count; i++) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(i);
-    if (info != NULL && SubscribePresence(info->m_StateURL))
+    if (info != NULL && SubscribeBuddy(info->m_StateURL, info->m_Address))
       m_speedDials->SetItem(i, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   }
 #endif // OPAL_SIP
@@ -1979,11 +1980,14 @@ void MyManager::EditSpeedDial(int index, bool newItem)
   if (info->m_StateURL != dlg.m_StateURL) {
     m_speedDials->SetItemImage(index, Icon_Unknown);
 
-    if (!info->m_StateURL.empty())
-      sipEP->Unsubscribe(SIPSubscribe::Presence, info->m_StateURL);
+    if (!info->m_StateURL.empty()) {
+      PSafePtr<OpalPresentity> presentity = GetPresentity(info->m_StateURL);
+      if (presentity != NULL)
+        presentity->DeleteBuddy(info->m_Address);
+    }
 
     if (!dlg.m_StateURL.empty())
-      SubscribePresence(dlg.m_StateURL);
+      SubscribeBuddy(dlg.m_StateURL, dlg.m_Address);
   }
 #endif // OPAL_SIP
 
@@ -3112,59 +3116,60 @@ IMDialog * MyManager::GetOrCreateConversation(const ReceivedMessageInfo & messag
 }
 
 
-void MyManager::OnPresenceInfoReceived(const SIPPresenceInfo & info)
+void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info)
 {
-  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new SIPPresenceInfo(info));
+  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new OpalPresenceInfo(info));
 }
 
 
-bool MyManager::SubscribePresence(wxString & uri)
+bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
 {
   if (uri.IsEmpty())
     return false;
 
-  SIPSubscribe::Params params(SIPSubscribe::Presence);
-  params.m_addressOfRecord = PwxString(uri).p_str();
-  params.m_expire = 300;
-
-  PString aor;
-  if (!sipEP->Subscribe(params, aor)) {
-    LogWindow << "SIP Subscribe failed for " << params.m_addressOfRecord << endl;
+  PSafePtr<OpalPresentity> presentity = GetPresentity(aor);
+  if (presentity == NULL) {
+    LogWindow << "Presentity missing for " << aor << endl;
     return false;
   }
 
-  LogWindow << "SIP Subscribe started for " << aor << endl;
-  uri = PwxString(aor);
+  OpalPresentity::BuddyInfo buddy;
+  buddy.m_presentity = uri;
+  if (!presentity->SetBuddy(buddy))
+    return false;
+
+  if (!presentity->SubscribeToPresence(aor))
+    return false;
+
+  LogWindow << "Presentity " << aor << " monitoring buddy " << uri << endl;
   return true;
 }
 
 
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
-  SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_entity << ": " << *info << endl;
-
-  SIPURL incomingURL(info->m_entity);
+  OpalPresenceInfo * info = (OpalPresenceInfo *)theEvent.GetClientData();
+  LogWindow << "Presence NOTIFY received for " << info->m_entity << endl;
 
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
     if (info != NULL) {
       SIPURL speedDialURL(sdInfo->m_StateURL.p_str());
-      if (incomingURL == speedDialURL) {
+      if (info->m_entity == speedDialURL) {
         PwxString status = info->m_note;
 
         IconStates icon;
         switch (info->m_state) {
-          case SIPPresenceInfo::NoPresence :
+          case OpalPresenceInfo::NoPresence :
             icon = Icon_Absent;
             break;
 
-          case SIPPresenceInfo::Busy :
+          case OpalPresenceInfo::Busy :
             icon = Icon_Busy;
             break;
 
-          case SIPPresenceInfo::Away :
+          case OpalPresenceInfo::Away :
             icon = Icon_Absent;
             break;
 
@@ -3415,21 +3420,6 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       }
       break;
 
-    case PublishPresence : {
-      m_aor = m_User.p_str();
-      if (m_aor.Find('@') == P_MAX_INDEX && !m_Domain.IsEmpty())
-        m_aor += '@' + m_Domain.p_str();
-
-      SIPPresenceInfo param;
-      param.m_entity        = m_aor;
-      param.m_state         = SIPPresenceInfo::Available;
-      param.m_contact       = m_Contact.p_str();
-      param.m_presenceAgent = m_Domain.p_str();
-
-      status = sipEP.PublishPresence(param, m_TimeToLive) ? 0 : 2;
-      break;
-    }
-
     default :
       if (sipEP.IsSubscribed(EventPackageMapping[m_Type], m_aor, true))
         status = 0;
@@ -3452,9 +3442,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
     "Register",
     "MWI subscribe",
     "Presence subscribe",
-    "Appearance subscribe",
-    "Presence publish",
-    "Presence watcher"
+    "Appearance subscribe"
   };
   LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
   return status != 2;
@@ -3466,22 +3454,10 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
   if (!m_Active || m_aor.IsEmpty())
     return false;
 
-  switch (m_Type) {
-    case Register :
-      sipEP.Unregister(m_aor);
-      break;
-
-    case PublishPresence : {
-      SIPPresenceInfo info;
-      info.m_entity = m_aor;
-      info.m_state = SIPPresenceInfo::NoPresence;
-      sipEP.PublishPresence(info);
-      break;
-    }
-
-    default :
-      sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
-  }
+  if (m_Type == Register)
+    sipEP.Unregister(m_aor);
+  else
+    sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
 
   m_aor.MakeEmpty();
   return true;
@@ -6671,7 +6647,12 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
   m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialAddress"));
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
-  FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialStateURL"))->SetValidator(wxGenericValidator(&m_StateURL));
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("SpeedDialStateURL"));
+  choice->SetValidator(wxGenericValidator(&m_StateURL));
+  choice->Append(wxString());
+  PStringList presentities = manager->GetPresentities();
+  for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
+    choice->Append(PwxString(*it));
 
   FindWindowByName(wxT("SpeedDialDescription"))->SetValidator(wxGenericValidator(&m_Description));
 
@@ -6908,11 +6889,6 @@ void MySIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & info)
     default :
       break;
   }
-}
-
-void MySIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
-{
-  m_manager.OnPresenceInfoReceived(info);
 }
 
 #endif // OPAL_SIP
