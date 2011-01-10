@@ -264,7 +264,10 @@ static PFactory<OpalIMContext>::Worker<OpalSIPIMContext> static_OpalSIPContext("
 OpalSIPIMContext::OpalSIPIMContext()
 {
   m_attributes.Set("rx-composition-indication-state",   "idle");
-  m_rxCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnCompositionTimerExpire));
+  m_attributes.Set("tx-composition-indication-state",   "idle");
+  m_rxCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionTimerExpire));
+  m_txCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionTimerExpire));
+  m_txIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxIdleTimerExpire));
 }
 
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, OpalIM & message)
@@ -273,6 +276,7 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, OpalIM & mess
   params.m_addressOfRecord = params.m_localAddress;
   params.m_remoteAddress   = message.m_to.AsString();
   params.m_id              = message.m_conversationId;
+  params.m_messageId       = message.m_messageId;
 
   switch (message.m_type) {
     case OpalIM::CompositionIndication_Idle:    // RFC 3994
@@ -282,16 +286,15 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, OpalIM & mess
         params.m_contentType = "application/im-iscomposing+xml";
         params.m_body = "<?xml version='1.0' encoding='UTF-8'?>\n"
                         "<isComposing xmlns='urn:ietf:params:xml:ns:im-iscomposing'\n"
-                        "  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\n"
-                        "    <state>";
+                        "  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\n";
 
-        params.m_body += toActive ? "idle" : "active";
+        params.m_body += PString("    <state>") + (toActive ? "active" : "idle") + "</state>\n";
 
-        params.m_body += "</state>\n"
-                         //"    <lastactive>2010-12-31T14:38:42Z</lastactive>\n"
-                         //"    <contenttype>text/html</contenttype>\n"
-                         //"    <refresh>60</refresh>\n"
-                         "</isComposing>\n";
+        // DO NOT ENABLE THIS BECAUSE XLite barfs on it
+        //params.m_body += PString("    <lastactive>") + PTime().AsString(PTime::RFC3339) + "</lastactive>\n";
+
+        params.m_body +=         "    <refresh>60</refresh>\n"
+                         "</isComposing>";
       }
       break;
 
@@ -309,18 +312,25 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, OpalIM & mess
 
 OpalIMContext::SentStatus OpalSIPIMContext::InternalSendOutsideCall(OpalIM * message)
 {
+  ResetTimers(*message);
+
   SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
   if (ep == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM without SIP endpoint");
     return SentNoTransport;
   }
 
-  return ep->SendMESSAGE(*message);
+  SIPMessage::Params params;
+  PopulateParams(params, *message);
+
+  return ep->SendMESSAGE(params);
 }
 
 
 OpalIMContext::SentStatus OpalSIPIMContext::InternalSendInsideCall(OpalIM * message)
 {
+  ResetTimers(*message);
+
   PSafePtr<SIPConnection> conn = PSafePtrCast<OpalConnection, SIPConnection>(m_connection);
   if (conn == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM on non-SIP connection");
@@ -332,6 +342,16 @@ OpalIMContext::SentStatus OpalSIPIMContext::InternalSendInsideCall(OpalIM * mess
 
   PSafePtr<SIPTransaction> transaction = new SIPMessage(*conn, params);
   return transaction->Start() ? SentOK : SentFailedGeneric;  
+}
+
+
+void OpalSIPIMContext::ResetTimers(OpalIM & message)
+{
+  if (message.m_type == OpalIM::Text) {
+    m_txCompositionTimeout.Stop(true);
+    m_txIdleTimeout.Stop(true);
+    m_attributes.Set("tx-composition-indication-state", "idle");
+  }
 }
 
 static PXML::ValidationInfo const CompositionIndicationValidation[] = {
@@ -384,13 +404,15 @@ bool OpalSIPIMContext::OnIncomingIM(OpalIM & message)
     return true;
   }
 
-  m_attributes.Set("rx-composition-indication-state", "idle");
+  // receipt of text always indicated idle
   m_rxCompositionTimeout.Stop(true);
+  OnCompositionIndicationTimeout();
 
+  // forward the text
   return OpalIMContext::OnIncomingIM(message);
 }
 
-void OpalSIPIMContext::OnCompositionTimerExpire(PTimer &, INT)
+void OpalSIPIMContext::OnRxCompositionTimerExpire(PTimer &, INT)
 {
   m_manager->GetIMManager().OnCompositionIndicationTimeout(GetID());
 }
@@ -404,6 +426,50 @@ void OpalSIPIMContext::OnCompositionIndicationTimeout()
 }
 
 
+/*
+OpalIMContext::SentStatus OpalSIPIMContext::SendText(bool active)
+{
+  m_txCompositionTimeout.Stop(true);
+  m_txIdleTimeout.Stop(true);
+  m_attributes.Set("tx-composition-indication-state", "idle");
+}
+*/
+
+OpalIMContext::SentStatus OpalSIPIMContext::SendCompositionIndication(bool active)
+{
+  bool currentState = !(m_attributes.Get("tx-composition-indication-state", "idle") == "idle");
+
+  if (active == currentState)
+    return OpalIMContext::SentOK;
+
+  if (active) {
+    m_attributes.Set("tx-composition-indication-state", "active");
+    m_txCompositionTimeout = 1000 * 60;
+    m_txIdleTimeout = 1000 * 15;
+
+  }
+  else {
+    m_txCompositionTimeout.Stop(true);
+    m_txIdleTimeout.Stop(true);
+  }
+
+  return OpalIMContext::SendCompositionIndication(active);
+}
+
+
+void OpalSIPIMContext::OnTxCompositionTimerExpire(PTimer &, INT)
+{
+  OpalIMContext::SendCompositionIndication(true);
+  m_txCompositionTimeout.SetMilliSeconds(1000 * 60);
+}
+
+void OpalSIPIMContext::OnTxIdleTimerExpire(PTimer &, INT)
+{
+  m_txCompositionTimeout.Stop(true);
+  OpalIMContext::SendCompositionIndication(false);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif // OPAL_HAS_SIPIM
+
