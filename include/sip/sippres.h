@@ -214,7 +214,6 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     PCLASSINFO(SIP_Presentity, OpalPresentityWithCommandThread);
 
   public:
-    static const PString & DefaultPresenceServerKey();
     static const PString & PresenceServerKey();
 
     ~SIP_Presentity();
@@ -237,12 +236,31 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
 
     void SetAOR(const PURL & aor);
 
+    void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
+    void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
+    void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
+    unsigned GetExpiryTime() const;
+
   protected:
     SIP_Presentity(const char * subScheme);
 
-    const char *  m_subScheme;
-    SIPEndPoint * m_endpoint;
-    int           m_watcherInfoVersion;
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+    virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
+
+    const char            * m_subScheme;
+    SIPEndPoint           * m_endpoint;
+    PIPSocketAddressAndPort m_presenceServer;
+    PString                 m_watcherSubscriptionAOR;
+    int                     m_watcherInfoVersion;
+    PString                 m_publishedTupleId;
+
+    typedef std::map<PString, PString> StringMap;
+    StringMap m_presenceIdByAor;
+    StringMap m_watcherAorById;
+    StringMap m_presenceAorById;
 };
 
 
@@ -261,31 +279,12 @@ class SIPLocal_Presentity : public SIP_Presentity
     ///< Get all attribute names for this presentity class.
     virtual PStringArray GetAttributeNames() const;
 
-    virtual bool Open();
-    virtual bool Close();
-
-    void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
-
-    void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
-    void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
-    unsigned GetExpiryTime() const;
+    virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
+    virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
+    virtual BuddyStatus DeleteBuddyListEx();
 
   protected:
-    virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
-
-    PIPSocketAddressAndPort m_presenceServer;
-    PString                 m_watcherSubscriptionAOR;
-
-    PString       m_publishedTupleId;
-
-    typedef std::map<PString, PString> StringMap;
-    StringMap m_presenceIdByAor;
-    StringMap m_watcherAorById;
-    StringMap m_presenceAorById;
+    BuddyList m_buddies;
 };
 
 
