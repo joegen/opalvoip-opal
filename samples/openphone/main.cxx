@@ -998,7 +998,7 @@ bool MyManager::Initialise()
           } while (config->GetNextEntry(name, idx));
         }
         if (presentity->Open())
-          LogWindow << "Establishing presence for " << aor << endl;
+          LogWindow << "Establishing presence for identity " << aor << endl;
       }
     }
 
@@ -3184,12 +3184,12 @@ void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info
 
 bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
 {
-  if (uri.IsEmpty())
+  if (aor.IsEmpty() || uri.IsEmpty())
     return false;
 
   PSafePtr<OpalPresentity> presentity = GetPresentity(aor);
   if (presentity == NULL) {
-    LogWindow << "Presentity missing for " << aor << endl;
+    LogWindow << "Presence identity missing for " << aor << endl;
     return false;
   }
 
@@ -3201,7 +3201,7 @@ bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
   if (!presentity->SubscribeToPresence(aor))
     return false;
 
-  LogWindow << "Presentity " << aor << " monitoring buddy " << uri << endl;
+  LogWindow << "Presence identity " << aor << " monitoring buddy " << uri << endl;
   return true;
 }
 
@@ -4889,7 +4889,7 @@ void OptionsDialog::EditedPresentity(wxListEvent & evt)
       return;
     }
 
-    wxMessageBox(wxT("Cannot create presentity ")+newAOR);
+    wxMessageBox(wxT("Cannot create presence identity ")+newAOR);
   }
 
   if (oldAOR == NewPresenceStr)
@@ -5500,7 +5500,7 @@ bool PresenceDialog::TransferDataFromWindow()
 
   PSafePtr<OpalPresentity> presentity = m_manager.GetPresentity(m_address.p_str());
   if (presentity == NULL) {
-    wxMessageBox(wxT("Presentity disappeared!"));
+    wxMessageBox(wxT("Presence identity disappeared!"));
     return false;
   }
 
