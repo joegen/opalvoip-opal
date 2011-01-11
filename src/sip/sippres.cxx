@@ -57,8 +57,7 @@
 #include <ptclib/random.h>
 
 
-const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "Default Presence Server"; return s; }
-const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "Presence Server";         return s; }
+const PString & SIP_Presentity::PresenceServerKey() { static const PString s = "Presence Server"; return s; }
 
 const char SIP_Local_Scheme[] = "sip-local";
 const char SIP_XCAP_Scheme[]  = "sip-xcap";
@@ -116,6 +115,12 @@ static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML 
 
 //////////////////////////////////////////////////////////////////////////////////////
 
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIP_Presentity, Internal_AuthorisationRequest);
+OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIP_Presentity, Internal_SubscribeToWatcherInfo);
+
+
 SIP_Presentity::SIP_Presentity(const char * subScheme)
   : m_subScheme(subScheme)
   , m_endpoint(NULL)
@@ -171,7 +176,41 @@ bool SIP_Presentity::Open()
     return false;
   }
 
+  // find presence server for Presentity as per RFC 3861
+  // if not found, look for default presence server setting
+  // if none, use hostname portion of domain name
+  PString presenceServer = m_attributes.Get(PresenceServerKey);
+  if (presenceServer.IsEmpty()) {
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
+      PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
+      m_presenceServer = addrs[0];
+    }
+    else
+#endif
+    {
+      PTRACE(4, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
+      if (!m_presenceServer.Parse(m_aor.GetHostName(), m_aor.GetPort())) {
+        PTRACE(3, "SIPPres\tCould not detemine Presence Server from aor \"" << m_aor << '"');
+        return false;
+      }
+    }
+  }
+  else if (!m_presenceServer.Parse(presenceServer)) {
+    PTRACE(3, "SIPPres\tCould not parse Presence Server \"" << presenceServer << '"');
+    return false;
+  }
+
+  PTRACE(3, "SIPPres\tUsing " << m_presenceServer << " as presence server for " << m_aor);
+
+  m_watcherSubscriptionAOR.MakeEmpty();
   m_watcherInfoVersion = -1;
+
+  StartThread();
+
+  // subscribe to presence watcher infoformation
+  SendCommand(CreateCommand<SIPWatcherInfoCommand>());
 
   return true;
 }
@@ -184,91 +223,6 @@ bool SIP_Presentity::IsOpen() const
 
 
 bool SIP_Presentity::Close()
-{
-  m_endpoint = NULL;
-  return true;
-}
-
-
-//////////////////////////////////////////////////////////////
-
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPLocal_Presentity, Internal_SubscribeToPresence);
-
-SIPLocal_Presentity::SIPLocal_Presentity()
-  : SIP_Presentity(SIP_Local_Scheme)
-{
-}
-
-
-SIPLocal_Presentity::~SIPLocal_Presentity()
-{
-  Close();
-}
-
-
-PStringArray SIPLocal_Presentity::GetAttributeNames() const
-{
-  PStringArray names;
-  names.AppendString(SIP_Presentity::AuthNameKey());
-  names.AppendString(SIP_Presentity::AuthPasswordKey());
-  names.AppendString(SIP_Presentity::PresenceServerKey());
-  names.AppendString(SIP_Presentity::DefaultPresenceServerKey());
-  names.AppendString(SIP_Presentity::TimeToLiveKey());
-  return names;
-}
-
-
-bool SIPLocal_Presentity::Open()
-{
-  if (!SIP_Presentity::Open())
-    return false;
-
-  // find presence server for Presentity as per RFC 3861
-  // if not found, look for default presence server setting
-  // if none, use hostname portion of domain name
-  if (!m_attributes.Has(SIP_Presentity::PresenceServerKey)) {
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
-      PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
-      m_presenceServer = addrs[0];
-    }
-    else
-#endif
-    {
-      PTRACE(3, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
-      PString defServer;
-      if (
-          m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey) && 
-          !(defServer = m_attributes.Get(SIP_Presentity::DefaultPresenceServerKey)).IsEmpty()
-          )
-        m_presenceServer.Parse(defServer, m_endpoint->GetDefaultSignalPort());
-      else
-        m_presenceServer.Parse(m_aor.GetHostName(), m_aor.GetPort());
-    }
-  }
-
-  if (!m_presenceServer.GetAddress().IsValid()) {
-    PTRACE(1, "SIPPres\tUnable to lookup hostname for '" << m_presenceServer.GetAddress() << '\'');
-    return false;
-  }
-
-  // set presence server
-  m_attributes.Set(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
-
-  PTRACE(3, "SIPPres\tUsing " << m_presenceServer.GetAddress() << " as presence server for " << m_aor);
-
-  m_watcherSubscriptionAOR.MakeEmpty();
-
-  StartThread();
-
-  // subscribe to presence watcher infoformation
-  SendCommand(CreateCommand<SIPWatcherInfoCommand>());
-
-  return true;
-}
-
-bool SIPLocal_Presentity::Close()
 {
   if (!IsOpen())
     return false;
@@ -302,10 +256,12 @@ bool SIPLocal_Presentity::Close()
 
   m_notificationMutex.Signal();
 
-  return SIP_Presentity::Close();
+  m_endpoint = NULL;
+  return true;
 }
 
-void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
+
+void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
 {
   if (cmd.m_subscribe) {
     if (m_presenceIdByAor.find(cmd.m_presentity) != m_presenceIdByAor.end()) {
@@ -348,7 +304,8 @@ void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPres
   }
 }
 
-void SIPLocal_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+
+void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
   if (status.m_reason == SIP_PDU::Information_Trying)
     return;
@@ -369,7 +326,7 @@ void SIPLocal_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, co
 }
 
 
-void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
   static PXML::ValidationInfo const StatusValidation[] = {
     { PXML::RequiredElement,            "basic" },
@@ -472,12 +429,7 @@ void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::
 }
 
 
-OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIPLocal_Presentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIPLocal_Presentity, Internal_AuthorisationRequest);
-OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPLocal_Presentity, Internal_SubscribeToWatcherInfo);
-
-
-void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
+void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
 {
 
   if (cmd.m_unsubscribe) {
@@ -510,7 +462,7 @@ void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCo
 }
 
 
-void SIPLocal_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
    if (status.m_reason == SIP_PDU::Information_Trying)
     return;
@@ -534,7 +486,7 @@ void SIPLocal_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &,
 }
 
 
-void SIPLocal_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
   static PXML::ValidationInfo const WatcherValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id"  },
@@ -609,7 +561,7 @@ void SIPLocal_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscrib
 }
 
 
-void SIPLocal_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
+void SIP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
   PString id     = watcher->GetAttribute("id");
   PString status = watcher->GetAttribute("status");
@@ -637,7 +589,7 @@ void SIPLocal_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 }
 
 
-void SIPLocal_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
+void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
@@ -652,15 +604,60 @@ void SIPLocal_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceC
   else
     sipPresence.m_tupleId = m_publishedTupleId;
 
-  m_endpoint->PublishPresence(sipPresence,
-            cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
+  m_endpoint->PublishPresence(sipPresence, cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
 }
 
 
-unsigned SIPLocal_Presentity::GetExpiryTime() const
+unsigned SIP_Presentity::GetExpiryTime() const
 {
   int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
   return ttl > 0 ? ttl : 300;
+}
+
+
+//////////////////////////////////////////////////////////////
+
+SIPLocal_Presentity::SIPLocal_Presentity()
+  : SIP_Presentity(SIP_Local_Scheme)
+{
+}
+
+
+SIPLocal_Presentity::~SIPLocal_Presentity()
+{
+  Close();
+}
+
+
+PStringArray SIPLocal_Presentity::GetAttributeNames() const
+{
+  PStringArray names;
+  names.AppendString(AuthNameKey());
+  names.AppendString(AuthPasswordKey());
+  names.AppendString(PresenceServerKey());
+  names.AppendString(TimeToLiveKey());
+  return names;
+}
+
+
+OpalPresentity::BuddyStatus SIPLocal_Presentity::GetBuddyListEx(BuddyList & buddies)
+{
+  buddies = m_buddies;
+  return BuddyStatus_OK;
+}
+
+
+OpalPresentity::BuddyStatus SIPLocal_Presentity::SetBuddyListEx(const BuddyList & buddies)
+{
+  m_buddies = buddies;
+  return BuddyStatus_OK;
+}
+
+
+OpalPresentity::BuddyStatus SIPLocal_Presentity::DeleteBuddyListEx()
+{
+  m_buddies.clear();
+  return BuddyStatus_OK;
 }
 
 
