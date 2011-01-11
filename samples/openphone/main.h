@@ -132,17 +132,10 @@ class MySIPEndPoint : public SIPEndPoint
 
   private:
     virtual void OnRegistrationStatus(
-      const PString & aor,
-      PBoolean wasRegistering,
-      PBoolean reRegistering,
-      SIP_PDU::StatusCodes reason
+      const RegistrationStatus & status
     );
     virtual void OnSubscriptionStatus(
-      const PString & eventPackage,
-      const SIPURL & uri,
-      bool wasSubscribing,
-      bool reSubscribing,
-      SIP_PDU::StatusCodes reason
+      const SubscriptionStatus & status
     );
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
