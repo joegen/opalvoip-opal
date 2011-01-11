@@ -3079,6 +3079,7 @@ bool MyManager::StartGatekeeper()
 
 
 #if OPAL_SIP
+
 void MyManager::StartRegistrations()
 {
   if (sipEP == NULL)
@@ -3110,6 +3111,7 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
   }
 }
 
+#endif // OPAL_SIP
 
 
 IMDialog * MyManager::GetOrCreateIMDialog(const PString & conversationId, const PString & from, const PString & to)
@@ -3176,12 +3178,6 @@ void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
   }
 }
 
-void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info)
-{
-  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new OpalPresenceInfo(info));
-}
-
-
 bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
 {
   if (aor.IsEmpty() || uri.IsEmpty())
@@ -3198,7 +3194,7 @@ bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
   if (!presentity->SetBuddy(buddy))
     return false;
 
-  if (!presentity->SubscribeToPresence(aor))
+  if (!presentity->SubscribeToPresence(uri))
     return false;
 
   LogWindow << "Presence identity " << aor << " monitoring buddy " << uri << endl;
@@ -3206,10 +3202,15 @@ bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
 }
 
 
+void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info)
+{
+  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new OpalPresenceInfo(info));
+}
+
+
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
   OpalPresenceInfo * info = (OpalPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_entity << endl;
 
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
@@ -3217,6 +3218,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
     if (info != NULL) {
       SIPURL speedDialURL(sdInfo->m_StateURL.p_str());
       if (info->m_entity == speedDialURL) {
+        LogWindow << "Presence notification received for " << info->m_entity << endl;
         PwxString status = info->m_note;
 
         IconStates icon;
@@ -3257,8 +3259,6 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
 
   delete info;
 }
-
-#endif // OPAL_SIP
 
 
 bool MyManager::AdjustVideoFormats()
@@ -6881,14 +6881,11 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 }
 
 
-void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
-                                         PBoolean wasRegistering,
-                                         PBoolean reRegistering,
-                                         SIP_PDU::StatusCodes reason)
+void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
-  SIPEndPoint::OnRegistrationStatus(aor, wasRegistering, reRegistering, reason);
+  SIPEndPoint::OnRegistrationStatus(status);
 
-  switch (reason) {
+  switch (status.m_reason) {
     default:
       break;
 
@@ -6897,15 +6894,18 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       return;
 
     case SIP_PDU::Successful_OK :
-      if (reRegistering)
+      if (status.m_reRegistering)
         return;
   }
 
+  SIPURL aor = status.m_addressofRecord;
+  aor.Sanitise(SIPURL::ExternalURI);
+
   LogWindow << "SIP ";
-  if (!wasRegistering)
+  if (!status.m_wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
-  switch (reason) {
+  switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
       break;
@@ -6915,23 +6915,20 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       break;
 
     default :
-      LogWindow << "failed (" << reason << ')';
+      LogWindow << "failed (" << status.m_reason << ')';
   }
   LogWindow << '.' << endl;
 
-  if (!wasRegistering)
+  if (!status.m_wasRegistering)
     m_manager.StartRegistrations();
 }
 
 
-void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
-                                         const SIPURL & uri,
-                                         bool wasSubscribing,
-                                         bool reSubscribing,
-                                         SIP_PDU::StatusCodes reason)
+void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
 {
-  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
-  switch (reason) {
+  SIPEndPoint::OnSubscriptionStatus(status);
+
+  switch (status.m_reason) {
     default:
       break;
     case SIP_PDU::Failure_UnAuthorised :
@@ -6939,15 +6936,18 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
       return;
 
     case SIP_PDU::Successful_OK :
-      if (reSubscribing)
+      if (status.m_reSubscribing)
         return;
   }
 
+  SIPURL uri = status.m_addressofRecord;
+  uri.Sanitise(SIPURL::ExternalURI);
+
   LogWindow << "SIP ";
-  if (!wasSubscribing)
+  if (!status.m_wasSubscribing)
     LogWindow << "un";
-  LogWindow << "subscription of " << uri << " to " << eventPackage << " events ";
-  switch (reason) {
+  LogWindow << "subscription of " << uri << " to " << status.m_handler->GetEventPackage() << " events ";
+  switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
       break;
@@ -6957,11 +6957,11 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
       break;
 
     default :
-      LogWindow << "failed (" << reason << ')';
+      LogWindow << "failed (" << status.m_reason << ')';
   }
   LogWindow << '.' << endl;
 
-  if (!wasSubscribing)
+  if (!status.m_wasSubscribing)
     m_manager.StartRegistrations();
 }
 
