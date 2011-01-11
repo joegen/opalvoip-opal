@@ -516,8 +516,10 @@ void SIPURL::Sanitise(UsageContext context)
 
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
-    if (key.NumCompare("OPAL-") == EqualTo)
+    if (key.NumCompare("OPAL-") == EqualTo) {
       paramVars.RemoveAt(key);
+      --i; // Allow for ++ in for loop
+    }
   }
 
   if (context != ContactURI && context != ExternalURI)
