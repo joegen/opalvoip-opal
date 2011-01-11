@@ -61,7 +61,9 @@
 class MyManager;
 
 class OpalLineEndPoint;
+class OpalCapiEndPoint;
 class OpalIVREndPoint;
+class OpalMixerEndPoint;
 class OpalFaxEndPoint;
 
 class wxSplitterWindow;
@@ -71,7 +73,9 @@ class wxListCtrl;
 class wxListEvent;
 class wxNotebook;
 class wxGrid;
+class wxGridEvent;
 class wxConfigBase;
+class wxImageList;
 
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -86,11 +90,13 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     MyManager & m_manager;
 
+/*
     bool TransmitExternalIM(
       OpalConnection & conn, 
       const OpalMediaFormat & format, 
       RTP_IMFrame & frame
     );
+*/
 
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
@@ -98,19 +104,6 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 class IMDialog;
-
-struct ReceivedMessageInfo {
-  ReceivedMessageInfo(const std::string & connId_, const OpalMediaFormat & fmt_)
-    : m_connId(connId_), m_mediaFormat(fmt_) { }
-
-  std::string m_connId;
-  OpalMediaFormat m_mediaFormat;
-  PURL    m_localURL;
-  PURL    m_remoteURL;
-  PString m_remoteName;
-  PString m_contentType;
-  PString m_body;
-};
 
 struct PresenceInfo {
   PString entity;
@@ -139,22 +132,14 @@ class MySIPEndPoint : public SIPEndPoint
 
   private:
     virtual void OnRegistrationStatus(
-      const PString & aor,
-      PBoolean wasRegistering,
-      PBoolean reRegistering,
-      SIP_PDU::StatusCodes reason
+      const RegistrationStatus & status
     );
     virtual void OnSubscriptionStatus(
-      const PString & eventPackage,
-      const SIPURL & uri,
-      bool wasSubscribing,
-      bool reSubscribing,
-      SIP_PDU::StatusCodes reason
+      const SubscriptionStatus & status
     );
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
     MyManager & m_manager;
 };
@@ -176,14 +161,14 @@ class MyFaxEndPoint : public OpalFaxEndPoint
 class PresenceDialog : public wxDialog
 {
   public:
-    PresenceDialog(MyManager * manager, SIPEndPoint & sipEP);
+    PresenceDialog(MyManager * manager);
 
   private:
     bool TransferDataFromWindow();
 
-    SIPEndPoint & m_sipEP;
-    PwxString     m_address;
-    PwxString     m_status;
+    MyManager & m_manager;
+    PwxString   m_address;
+    PwxString   m_status;
 
     DECLARE_EVENT_TABLE()
 };
@@ -266,7 +251,8 @@ class CallIMDialog : public wxDialog
     void OnAddressChange(wxCommandEvent & event);
 
     wxComboBox * m_AddressCtrl;
-    wxButton   * m_ok;
+    wxButton   * m_sessionOK;
+    wxButton   * m_pageOK;
 
     DECLARE_EVENT_TABLE()
 };
@@ -275,37 +261,41 @@ class IMDialog : public wxDialog
 {
   public:
     IMDialog(MyManager * manager, 
-     const std::string & callId,
- const OpalMediaFormat & m_format,
+         const PString & conversationId,
+ const OpalMediaFormat & format,
          const PString & localName, 
             const PURL & remoteAddress, 
          const PString & remoteName);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
+    void SetCompositionIndication(bool idle);
 
-    std::string m_connId;
+    PString m_conversationId;
 
   private:
     void OnSend(wxCommandEvent & event);
     void OnTextEnter(wxCommandEvent & event);
+    void OnText(wxCommandEvent & event);
     void OnCloseWindow(wxCloseEvent &event);
 
     void SendCurrentText();
+    void SendCompositionIndicationChanged();
 
+    OpalMediaFormat m_mediaFormat;
     MyManager * m_manager;
     PURL m_remoteAddress;
 
     wxString m_them;
     PString m_us;
     PString m_remoteAddrStr;
-    OpalMediaFormat m_mediaFormat;
 
     wxTextCtrl * m_enteredText;
     wxTextCtrl * m_textArea;
     wxTextAttr   m_defaultStyle;
     wxTextAttr   m_ourStyle;
     wxTextAttr   m_theirStyle;
+    wxStaticText * m_compositionIndication;
 
     DECLARE_EVENT_TABLE()
 };
@@ -436,6 +426,7 @@ class InCallPanel : public CallPanelBase
   private:
     void OnHangUp(wxCommandEvent & event);
     void OnHoldRetrieve(wxCommandEvent & event);
+    void OnConference(wxCommandEvent & event);
     void OnSpeakerMute(wxCommandEvent & event);
     void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
@@ -459,6 +450,7 @@ class InCallPanel : public CallPanelBase
     void UpdateStatistics();
 
     wxButton  * m_Hold;
+    wxButton  * m_Conference;
     wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
     wxCheckBox* m_MicrophoneMute;
@@ -469,7 +461,6 @@ class InCallPanel : public CallPanelBase
     wxTimer     m_vuTimer;
     unsigned    m_updateStatistics;
     bool        m_FirstTime;
-    bool        m_SwitchingHold;
 
     StatisticsPage m_pages[NumPages];
 
@@ -477,16 +468,22 @@ class InCallPanel : public CallPanelBase
 };
 
 
-class SpeedDialDialog : public wxDialog
+struct SpeedDialInfo
+{
+  PwxString m_Name;
+  PwxString m_Number;
+  PwxString m_Address;
+  PwxString m_StateURL;
+  PwxString m_Description;
+
+  bool operator<(const SpeedDialInfo & info) const { return m_Name < info.m_Name; }
+};
+
+
+class SpeedDialDialog : public wxDialog, public SpeedDialInfo
 {
   public:
-    SpeedDialDialog(MyManager *parent);
-
-    wxString m_Name;
-    wxString m_Number;
-    wxString m_Address;
-    wxString m_StateURL;
-    wxString m_Description;
+    SpeedDialDialog(MyManager *parent, const SpeedDialInfo & info);
 
   private:
     void OnChange(wxCommandEvent & event);
@@ -513,9 +510,7 @@ class RegistrationInfo
       Register,
       SubscribeMWI,
       SubcribePresence,
-      SubscribeMLA,
-      PublishPresence,
-      WatchPresence
+      SubscribeMLA
     };
 
     RegistrationInfo();
@@ -679,6 +674,21 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoRecordingSize;
 
     ////////////////////////////////////////
+    // Presence fields
+    wxListCtrl * m_Presentities;
+    wxGrid     * m_PresentityAttributes;
+    wxButton   * m_AddPresentity;
+    wxButton   * m_RemovePresentity;
+    PwxString    m_DefaultSipPresentity;
+    void AddPresentity(wxCommandEvent & event);
+    void RemovePresentity(wxCommandEvent & event);
+    void SelectedPresentity(wxListEvent & event);
+    void DeselectedPresentity(wxListEvent & event);
+    void EditedPresentity(wxListEvent & event);
+    bool FillPresentityAttributes(OpalPresentity * presentity);
+    void ChangedPresentityAttribute(wxGridEvent & event);
+
+    ////////////////////////////////////////
     // Codec fields
     wxButton     * m_AddCodec;
     wxButton     * m_RemoveCodec;
@@ -740,6 +750,7 @@ class OptionsDialog : public wxDialog
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
     int       m_LineAppearanceCode;
+    int       m_SIPUserInputMode;
 
     wxListCtrl * m_Registrations;
     int          m_SelectedRegistration;
@@ -922,6 +933,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnStateChange(wxCommandEvent & event);
     void OnStreamsChanged(wxCommandEvent &);
     void OnRxMessage(wxCommandEvent &);
+    void OnRxCompositionIndicationChanged(wxCommandEvent &);
     void OnPresence(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
@@ -950,6 +962,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnOptions(wxCommandEvent& event);
     void OnRequestHold(wxCommandEvent& event);
     void OnRetrieve(wxCommandEvent& event);
+    void OnConference(wxCommandEvent& event);
     void OnTransfer(wxCommandEvent& event);
     void OnStartRecording(wxCommandEvent& event);
     void OnStopRecording(wxCommandEvent& event);
@@ -977,6 +990,12 @@ class MyManager : public wxFrame, public OpalManager
 
     bool CanDoFax() const;
     bool CanDoIM() const;
+
+    IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & from, const PString & to);
+
+    PDECLARE_NewConversationNotifier(MyManager, OnNewConversation);
+    PDECLARE_IncomingIMNotifier(MyManager, OnIncomingIM);
+    PDECLARE_CompositionIndicationChangedNotifier(MyManager, OnCompositionIndicationChanged);
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -1015,9 +1034,13 @@ class MyManager : public wxFrame, public OpalManager
     wxNotebook       * m_tabs;
     wxTextCtrl       * m_logWindow;
     wxListCtrl       * m_speedDials;
+    bool               m_speedDialDetail;
     wxImageList      * m_imageListNormal;
     wxImageList      * m_imageListSmall;
     wxDataFormat       m_ClipboardFormat;
+
+    set<SpeedDialInfo> m_speedDialInfo;
+    SpeedDialInfo * GetSelectedSpeedDial(int previous = -1) const;
 
     MyPCSSEndPoint   * pcssEP;
     OpalLineEndPoint * potsEP;
@@ -1048,19 +1071,25 @@ class MyManager : public wxFrame, public OpalManager
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
 
-    typedef std::map<std::string, IMDialog *> ConversationMapType;
-    PMutex conversationMapMutex;
+    // cannot use PDictionary as IMDialog is not descended from PObject
+    typedef std::map<std::string, IMDialog *> IMDialogMap;
+    IMDialogMap m_imDialogMap;
+    PMutex m_imDialogMapMutex;
 
-    IMDialog * GetOrCreateConversation(const ReceivedMessageInfo & messageInfo);
+    bool SubscribeBuddy(const PString & presentity, const PString & uri);
+    PDECLARE_PresenceChangeNotifier(MyManager, OnPresenceChange);
+#endif
 
-    ConversationMapType conversationMap;
-
-    bool SubscribePresence(wxString & uri);
-    void OnPresenceInfoReceived(const SIPPresenceInfo & info);
+#if OPAL_CAPI
+    OpalCapiEndPoint  * capiEP;
 #endif
 
 #if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
+#endif
+
+#if OPAL_HAS_MIXER
+    OpalMixerEndPoint * m_mcuEP;
 #endif
 
 #if OPAL_FAX
@@ -1128,6 +1157,7 @@ class MyManager : public wxFrame, public OpalManager
       const PString & token,
       bool onHold
     );
+    void AddToConference(OpalCall & call);
 
     struct CallsOnHold {
       CallsOnHold() { }
@@ -1135,9 +1165,11 @@ class MyManager : public wxFrame, public OpalManager
 
       PSafePtr<OpalCall> m_call;
       int                m_retrieveMenuId;
+      int                m_conferenceMenuId;
       int                m_transferMenuId;
     };
     list<CallsOnHold>    m_callsOnHold;
+    PString              m_switchHoldToken;
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;

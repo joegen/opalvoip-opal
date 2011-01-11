@@ -40,11 +40,9 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-const PString & OpalPresentity::AuthNameKey()        { static const PString s = "auth_name";         return s; }
-const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "auth_password";     return s; }
-const PString & OpalPresentity::FullNameKey()        { static const PString s = "full_name";         return s; }
-const PString & OpalPresentity::SchemeKey()          { static const PString s = "scheme";            return s; }
-const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "time_to_live";      return s; }
+const PString & OpalPresentity::AuthNameKey()        { static const PString s = "Auth ID";       return s; }
+const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "Auth Password"; return s; }
+const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "Time to Live";  return s; }
 
 
 PString OpalPresenceInfo::AsString() const
@@ -124,19 +122,26 @@ PString OpalPresenceInfo::AsString(State state)
 
 OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString)
 {
-  if (stateString *= "Unchanged")
-    return OpalPresenceInfo::Unchanged;
+  if (stateString.IsEmpty() || (stateString *= "Unchanged"))
+    return Unchanged;
+
   if (stateString *= "Available")
-    return OpalPresenceInfo::Available;
+    return Available;
+
   if (stateString *= "Unavailable")
-    return OpalPresenceInfo::Unavailable;
+    return Unavailable;
+
+  if ((stateString *= "Invisible") ||
+      (stateString *= "Offline") ||
+      (stateString *= "NoPresence"))
+    return NoPresence;
 
   for (size_t k = 0; k < sizeof(ExtendedNames)/sizeof(ExtendedNames[0]); ++k) {
     if (stateString *= ExtendedNames[k]) 
-      return (OpalPresenceInfo::State)(ExtendedBase + k);
+      return (State)(ExtendedBase + k);
   }
 
-  return NoPresence;
+  return InternalError;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -148,12 +153,24 @@ OpalPresentity::OpalPresentity()
   : m_manager(NULL)
   , m_idNumber(g_idNumber++)
   , m_temporarilyUnavailable(false)
+  , m_localState(OpalPresenceInfo::NoPresence)
 {
 }
 
+
+OpalPresentity::OpalPresentity(const OpalPresentity & other)
+  : PSafeObject(other)
+  , m_manager(other.m_manager)
+  , m_attributes(other.m_attributes)
+  , m_idNumber(g_idNumber++)
+  , m_temporarilyUnavailable(false)
+  , m_localState(OpalPresenceInfo::NoPresence)
+{
+}
+
+
 OpalPresentity::~OpalPresentity()
 {
-  m_manager->RemovePresentity(m_aor);
 }
 
 
@@ -495,6 +512,16 @@ OPAL_DEFINE_COMMAND(OpalSendMessageToCommand,        OpalPresentity, Internal_Se
 
 OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
   : m_threadRunning(false)
+  , m_queueRunning(false)
+  , m_thread(NULL)
+{
+}
+
+
+OpalPresentityWithCommandThread::OpalPresentityWithCommandThread(
+                           const OpalPresentityWithCommandThread & other)
+  : OpalPresentity(other)
+  , m_threadRunning(false)
   , m_queueRunning(false)
   , m_thread(NULL)
 {

@@ -481,7 +481,7 @@ PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
 {
   if (!OpalMediaFormat(TIFF_File_FormatName).IsValid()) {
     PTRACE(1, "TIFF File format not valid! Missing plugin?");
-    return false;
+    return NULL;
   }
 
   PINDEX prefixLength = remoteParty.Find(':');
