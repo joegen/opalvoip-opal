@@ -676,6 +676,9 @@ class SIPEndPoint : public OpalRTPEndPoint
     OpalIMContext::SentStatus SendMESSAGE(
       OpalIM & message
     );
+    OpalIMContext::SentStatus SendMESSAGE(
+      SIPMessage::Params & params
+    );
 
     /**Callback called when a message completes in any manner
      */
