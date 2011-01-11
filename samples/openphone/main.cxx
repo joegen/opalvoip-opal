@@ -47,6 +47,7 @@
 #include <wx/image.h>
 #include <wx/imaglist.h>
 #include <wx/listctrl.h>
+#include <wx/grid.h>
 #include <wx/spinctrl.h>
 #include <wx/splitter.h>
 #include <wx/valgen.h>
@@ -56,7 +57,10 @@
 
 #include <opal/transcoders.h>
 #include <opal/ivr.h>
+#include <opal/opalmixer.h>
+#include <sip/sippres.h>
 #include <lids/lidep.h>
+//#include <lids/capi_ep.h>
 #include <ptclib/pstun.h>
 #include <codec/vidcodec.h>
 #include <ptclib/pwavfile.h>
@@ -97,6 +101,10 @@ typedef  stringstream tstringstream;
 #endif
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
+
+
+#define CONFERENCE_NAME "conference"
+
 
 // Definitions of the configuration file section and key names
 
@@ -187,6 +195,10 @@ DEF_FIELD(FaxStationIdentifier);
 DEF_FIELD(FaxReceiveDirectory);
 DEF_FIELD(FaxAutoAnswerMode);
 
+static const wxChar PresenceGroup[] = wxT("/Presence");
+DEF_FIELD(PresenceAOR);
+DEF_FIELD(DefaultSipPresentity);
+
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
 
@@ -220,6 +232,7 @@ DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
+DEF_FIELD(SIPUserInputMode);
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -323,6 +336,8 @@ static const char * const DefaultRoutes[] = {
 enum {
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
+  ID_CONFERENCE_MENU_BASE,
+  ID_CONFERENCE_MENU_TOP = ID_CONFERENCE_MENU_BASE+999,
   ID_TRANSFER_MENU_BASE,
   ID_TRANSFER_MENU_TOP = ID_TRANSFER_MENU_BASE+999,
   ID_AUDIO_DEVICE_MENU_BASE,
@@ -338,6 +353,8 @@ enum {
   ID_CLEARED,
   ID_STREAMS_CHANGED,
   ID_RX_MESSAGE,
+  ID_NEW_CONVERSATION,
+  ID_RX_COMP_IND_CHANGED,
   ID_PRESENCE_MESSAGE,
   ID_IMPAGE,
   ID_IMSESSION,
@@ -363,6 +380,9 @@ DEFINE_EVENT_TYPE(wxEvtCleared)
 
 DECLARE_EVENT_TYPE(wxEvtRxMessage, -1)
 DEFINE_EVENT_TYPE(wxEvtRxMessage)
+
+DECLARE_EVENT_TYPE(wxCompIndChangedMessage, -1)
+DEFINE_EVENT_TYPE(wxCompIndChangedMessage)
 
 DECLARE_EVENT_TYPE(wxPresenceMessage, -1)
 DEFINE_EVENT_TYPE(wxPresenceMessage)
@@ -510,8 +530,9 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 
   EVT_MENU_OPEN(MyManager::OnAdjustMenus)
 
-  EVT_MENU(XRCID("MenuQuit"),            MyManager::OnMenuQuit)
-  EVT_MENU(XRCID("MenuAbout"),           MyManager::OnMenuAbout)
+  EVT_MENU(wxID_EXIT,                    MyManager::OnMenuQuit)
+  EVT_MENU(wxID_ABOUT,                   MyManager::OnMenuAbout)
+  EVT_MENU(wxID_PREFERENCES,             MyManager::OnOptions)
   EVT_MENU(XRCID("MenuCall"),            MyManager::OnMenuCall)
   EVT_MENU(XRCID("MenuCallLastDialed"),  MyManager::OnMenuCallLastDialed)
   EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
@@ -533,11 +554,11 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuCopy"),            MyManager::OnCopySpeedDial)
   EVT_MENU(XRCID("MenuPaste"),           MyManager::OnPasteSpeedDial)
   EVT_MENU(XRCID("MenuDelete"),          MyManager::OnDeleteSpeedDial)
-  EVT_MENU(XRCID("MenuOptions"),         MyManager::OnOptions)
   EVT_MENU(XRCID("MenuHold"),            MyManager::OnRequestHold)
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,ID_RETRIEVE_MENU_TOP, MyManager::OnRetrieve)
   EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
+  EVT_MENU_RANGE(ID_CONFERENCE_MENU_BASE,ID_CONFERENCE_MENU_TOP, MyManager::OnConference)
   EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
   EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
   EVT_MENU(XRCID("MenuSendAudioFile"),   MyManager::OnSendAudioFile)
@@ -559,22 +580,26 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
 
-  EVT_COMMAND(ID_LOG_MESSAGE,      wxEvtLogMessage,     MyManager::OnLogMessage)
-  EVT_COMMAND(ID_RINGING,          wxEvtRinging,        MyManager::OnEvtRinging)
-  EVT_COMMAND(ID_ESTABLISHED,      wxEvtEstablished,    MyManager::OnEvtEstablished)
-  EVT_COMMAND(ID_ON_HOLD,          wxEvtOnHold,         MyManager::OnEvtOnHold)
-  EVT_COMMAND(ID_CLEARED,          wxEvtCleared,        MyManager::OnEvtCleared)
-  EVT_COMMAND(ID_STREAMS_CHANGED,  wxEvtStreamsChanged, MyManager::OnStreamsChanged)
-  EVT_COMMAND(ID_RX_MESSAGE,       wxEvtRxMessage,      MyManager::OnRxMessage)
-  EVT_COMMAND(ID_PRESENCE_MESSAGE, wxPresenceMessage,   MyManager::OnPresence)
+  EVT_COMMAND(ID_LOG_MESSAGE,         wxEvtLogMessage,         MyManager::OnLogMessage)
+  EVT_COMMAND(ID_RINGING,             wxEvtRinging,            MyManager::OnEvtRinging)
+  EVT_COMMAND(ID_ESTABLISHED,         wxEvtEstablished,        MyManager::OnEvtEstablished)
+  EVT_COMMAND(ID_ON_HOLD,             wxEvtOnHold,             MyManager::OnEvtOnHold)
+  EVT_COMMAND(ID_CLEARED,             wxEvtCleared,            MyManager::OnEvtCleared)
+  EVT_COMMAND(ID_STREAMS_CHANGED,     wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
+  EVT_COMMAND(ID_RX_MESSAGE,          wxEvtRxMessage,          MyManager::OnRxMessage)
+  EVT_COMMAND(ID_RX_COMP_IND_CHANGED, wxCompIndChangedMessage, MyManager::OnRxCompositionIndicationChanged)
+  
+  EVT_COMMAND(ID_PRESENCE_MESSAGE, wxPresenceMessage,    MyManager::OnPresence)
   
 END_EVENT_TABLE()
+
 
 MyManager::MyManager()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
   , m_speedDials(NULL)
+  , m_speedDialDetail(false)
   , pcssEP(NULL)
   , potsEP(NULL)
 #if OPAL_H323
@@ -583,8 +608,14 @@ MyManager::MyManager()
 #if OPAL_SIP
   , sipEP(NULL)
 #endif
+#if OPAL_CAPI
+  , capiEP(NULL)
+#endif
 #if OPAL_IVR
   , ivrEP(NULL)
+#endif
+#if OPAL_HAS_MIXER
+  , m_mcuEP(NULL)
 #endif
   , m_autoAnswer(false)
   , m_ForwardingTimeout(30)
@@ -710,7 +741,7 @@ bool MyManager::Initialise()
   // Speed dial window - icons for each speed dial
   int view;
   if (!config->Read(ActiveViewKey, &view) || view < 0 || view >= e_NumViews)
-    view = e_ViewList;
+    view = e_ViewDetails;
   static const wxChar * const ViewMenuNames[e_NumViews] = {
     wxT("ViewLarge"), wxT("ViewSmall"), wxT("ViewList"), wxT("ViewDetails")
   };
@@ -752,8 +783,17 @@ bool MyManager::Initialise()
   sipEP = new MySIPEndPoint(*this);
 #endif
 
+#if OPAL_CAPI
+  capiEP = new OpalCapiEndPoint(*this);
+#endif
+
 #if OPAL_IVR
   ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+#if OPAL_HAS_MIXER
+  m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+  m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
 #endif
 
 #if OPAL_FAX
@@ -932,6 +972,41 @@ bool MyManager::Initialise()
 #endif
 
   ////////////////////////////////////////
+  // Presence fields
+  config->SetPath(PresenceGroup);
+  if (config->Read(DefaultSipPresentityKey, &str))
+    SIP_Presentity::SetDefaultPresentity(str);
+
+  int presIndex = 0;
+  for (;;) {
+    wxString groupName;
+    groupName.sprintf(wxT("%04u"), presIndex);
+    if (!config->HasGroup(groupName))
+      break;
+
+    config->SetPath(groupName);
+    PwxString aor;
+    if (config->Read(PresenceAORKey, &aor) && !aor.empty()) {
+      PSafePtr<OpalPresentity> presentity = AddPresentity(aor);
+      if (presentity != NULL) {
+        presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(OnPresenceChange));
+        long idx;
+        PwxString name;
+        if (config->GetFirstEntry(name, idx)) {
+          do {
+            presentity->GetAttributes().Set(name, PwxString(config->Read(name)));
+          } while (config->GetNextEntry(name, idx));
+        }
+        if (presentity->Open())
+          LogWindow << "Establishing presence for identity " << aor << endl;
+      }
+    }
+
+    config->SetPath(wxT(".."));
+    presIndex++;
+  }
+
+  ////////////////////////////////////////
   // Codec fields
   {
     OpalMediaFormatList mediaFormats;
@@ -1007,9 +1082,9 @@ bool MyManager::Initialise()
   }
 
 #if PTRACING
-  {
+  if (PTrace::CanTrace(4)) {
     OpalMediaFormatList mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
     traceStream << "OpenPhone\tRegistered media formats:\n";
     for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
       mediaFormats[i].PrintOptions(traceStream);
@@ -1107,6 +1182,9 @@ bool MyManager::Initialise()
   if (config->Read(LineAppearanceCodeKey, &value1))
     sipEP->SetDefaultAppearanceCode(value1);
 
+  if (config->Read(SIPUserInputModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
+    sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)value1);
+
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
 
@@ -1133,15 +1211,17 @@ bool MyManager::Initialise()
   StartRegistrations();
 
   int count = m_speedDials->GetItemCount();
-  wxListItem item;
-  item.m_mask = wxLIST_MASK_TEXT;
-  item.m_col = e_StateUrlColumn;
-  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-    if (m_speedDials->GetItem(item) && SubscribePresence(item.m_text))
-      m_speedDials->SetItem(item);
+  for (int i = 0; i < count; i++) {
+    SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(i);
+    if (info != NULL && SubscribeBuddy(info->m_StateURL, info->m_Address))
+      m_speedDials->SetItem(i, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   }
 #endif // OPAL_SIP
 
+
+#if OPAL_CAPI
+  capiEP->OpenControllers();
+#endif
 
   ////////////////////////////////////////
   // Routing fields
@@ -1164,7 +1244,16 @@ bool MyManager::Initialise()
 
   AdjustVideoFormats();
 
+  GetIMManager().AddNotifier(PCREATE_NewConversationNotifier(OnNewConversation), "*");
+
+  LogWindow << "Ready ..." << endl;
   return true;
+}
+
+void MyManager::OnNewConversation(OpalIMManager &, OpalIMContext & context)
+{
+  context.SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
+  context.SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
 }
 
 
@@ -1286,27 +1375,29 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
                                 wxDefaultPosition, wxSize(512, 128),
                                 ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
-  if (view != e_ViewDetails) {
+  m_speedDialDetail = view == e_ViewDetails;
+  if (m_speedDialDetail) {
+    int width;
+    static const wxChar * const titles[e_NumColumns] = {
+      wxT("Name"),
+      wxT("Status"),
+      wxT("Number"),
+      wxT("Address"),
+      wxT("State URL"),
+      wxT("Description")
+    };
+    
+    for (int i = 0; i < e_NumColumns; i++) {
+      m_speedDials->InsertColumn(i, titles[i]);
+      wxString key;
+      key.sprintf(ColumnWidthKey, i);
+      if (config->Read(key, &width))
+        m_speedDials->SetColumnWidth(i, width);
+    }    
+  }
+  else {
     m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
     m_speedDials->SetImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
-  }
-
-  int width;
-  static const wxChar * const titles[e_NumColumns] = {
-    wxT("Name"),
-    wxT("Status"),
-    wxT("Number"),
-    wxT("Address"),
-    wxT("State URL"),
-    wxT("Description")
-  };
-
-  for (int i = 0; i < e_NumColumns; i++) {
-    m_speedDials->InsertColumn(i, titles[i]);
-    wxString key;
-    key.sprintf(ColumnWidthKey, i);
-    if (config->Read(key, &width))
-      m_speedDials->SetColumnWidth(i, width);
   }
 
   // Now either replace the tab or set it for the first time
@@ -1319,22 +1410,30 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
 
   // Read the speed dials from the configuration
   config->SetPath(SpeedDialsGroup);
-  wxString groupName;
+  SpeedDialInfo info;
   long groupIndex;
-  if (config->GetFirstGroup(groupName, groupIndex)) {
+  if (config->GetFirstGroup(info.m_Name, groupIndex)) {
     do {
-      config->SetPath(groupName);
-      wxString number, address, stateURL, description;
-      if (config->Read(SpeedDialAddressKey, &address) && !address.empty()) {
-        int pos = m_speedDials->InsertItem(INT_MAX, groupName);
-        m_speedDials->SetItem(pos, e_NumberColumn, config->Read(SpeedDialNumberKey));
-        m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
-        m_speedDials->SetItem(pos, e_AddressColumn, address);
-        m_speedDials->SetItem(pos, e_StateUrlColumn, config->Read(SpeedDialStateUrlKey));
-        m_speedDials->SetItem(pos, e_DescriptionColumn, config->Read(SpeedDialDescriptionKey));
+      config->SetPath(info.m_Name);
+      if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
+        config->Read(SpeedDialNumberKey, &info.m_Number);
+        config->Read(SpeedDialStateUrlKey, &info.m_StateURL);
+        config->Read(SpeedDialDescriptionKey, &info.m_Description);
+
+        int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
+        m_speedDials->SetItemData(pos, (intptr_t)&*m_speedDialInfo.insert(info).first);
+        m_speedDials->SetItemImage(pos, Icon_Unknown);
+
+        if (m_speedDialDetail) {
+          m_speedDials->SetItem(pos, e_NumberColumn, info.m_Number);
+          m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
+          m_speedDials->SetItem(pos, e_AddressColumn, info.m_Address);
+          m_speedDials->SetItem(pos, e_StateUrlColumn, info.m_StateURL);
+          m_speedDials->SetItem(pos, e_DescriptionColumn, info.m_Description);
+        }
       }
       config->SetPath(wxT(".."));
-    } while (config->GetNextGroup(groupName, groupIndex));
+    } while (config->GetNextGroup(info.m_Name, groupIndex));
   }
 }
 
@@ -1356,12 +1455,14 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameWidthKey, w);
   config->Write(MainFrameHeightKey, h);
 
-  for (int i = 0; i < e_NumColumns; i++) {
-    wxString key;
-    key.sprintf(ColumnWidthKey, i);
-    config->Write(key, m_speedDials->GetColumnWidth(i));
+  if (m_speedDialDetail) {
+    for (int i = 0; i < e_NumColumns; i++) {
+      wxString key;
+      key.sprintf(ColumnWidthKey, i);
+      config->Write(key, m_speedDials->GetColumnWidth(i));
+    }
   }
-
+  
   potsEP = NULL;
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
@@ -1413,8 +1514,9 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
-    menubar->Enable(it->m_retrieveMenuId, m_activeCall == NULL);
-    menubar->Enable(it->m_transferMenuId, m_activeCall != NULL);
+    menubar->Enable(it->m_retrieveMenuId,   m_activeCall == NULL);
+    menubar->Enable(it->m_conferenceMenuId, m_activeCall != NULL);
+    menubar->Enable(it->m_transferMenuId,   m_activeCall != NULL);
   }
 
   int count = m_speedDials->GetSelectedItemCount();
@@ -1487,6 +1589,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
+  menubar->Enable(XRCID("SubMenuConference"), !m_callsOnHold.empty());
 }
 
 
@@ -1501,14 +1604,14 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
   tstringstream text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
-           "Copyright © 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+           "Copyright ï¿½ 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
            "\n"
            "This application may be used for any purpose so long as it is not sold "
            "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
            " disguised or hidden in any way.\n"
            "\n"
            "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n";
-  wxMessageDialog dialog(this, text.str(), wxT("About ..."), wxOK);
+  wxMessageDialog dialog(this, text.str().c_str(), wxT("About ..."), wxOK);
   dialog.ShowModal();
 }
 
@@ -1533,31 +1636,26 @@ void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
 }
 
 
+SpeedDialInfo * MyManager::GetSelectedSpeedDial(int previous) const
+{
+  int idx = m_speedDials->GetNextItem(previous, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  return idx < 0 ? NULL : (SpeedDialInfo *)m_speedDials->GetItemData(idx);
+}
+
+
 void MyManager::OnCallSpeedDialAudio(wxCommandEvent & /*event*/)
 {
-  wxListItem item;
-  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  if (item.m_itemId < 0)
-    return;
-
-  item.m_col = e_AddressColumn;
-  item.m_mask = wxLIST_MASK_TEXT;
-  if (m_speedDials->GetItem(item))
-    MakeCall(item.m_text);
+  SpeedDialInfo * info = GetSelectedSpeedDial();
+  if (info != NULL)
+    MakeCall(info->m_Address);
 }
 
 
 void MyManager::OnCallSpeedDialHandset(wxCommandEvent & /*event*/)
-{
-  wxListItem item;
-  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  if (item.m_itemId < 0)
-    return;
-
-  item.m_col = e_AddressColumn;
-  item.m_mask = wxLIST_MASK_TEXT;
-  if (m_speedDials->GetItem(item))
-    MakeCall(item.m_text, "pots:*");
+{  
+  SpeedDialInfo * info = GetSelectedSpeedDial();
+  if (info != NULL)
+    MakeCall(info->m_Address, "pots:*");
 }
 
 
@@ -1577,6 +1675,7 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
   }
 }
 
+                                  
 void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 {
   CallIMDialog dlg(this);
@@ -1592,13 +1691,14 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 
 void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
-  PresenceDialog dlg(this, *sipEP);
+  PresenceDialog dlg(this);
   dlg.ShowModal();
 }
 
 
 void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
 {
+#if 0
   if (m_activeCall != NULL) {
     PSafePtr<OpalPCSSConnection> pcss = m_activeCall->GetConnectionAs<OpalPCSSConnection>(0, PSafeReference);
     if (pcss != NULL) {
@@ -1628,46 +1728,48 @@ void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
       }
     }
   }
+#endif
 }
 
 
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
-#if 0
-  wxListItem item;
-  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  if (item.m_itemId < 0)
-    return;
+  SpeedDialInfo * info = GetSelectedSpeedDial();
+  if (info != NULL) {
+    PString fromAddr = info->m_StateURL; 
+    PString toAddr   = info->m_Address;
+    IMDialog * dialog;
+    {
+      PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, fromAddr, toAddr);
+      if (imContext == NULL) {
+        wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(toAddr), wxT("Error"));
+        return;
+      }
+      PString conversationId = imContext->GetID();
+      dialog = GetOrCreateIMDialog(conversationId, fromAddr, toAddr);
+      {
+        PWaitAndSignal m(m_imDialogMapMutex);
+        m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
+      }
+      imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
+      imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
 
-  item.m_col = e_AddressColumn;
-  item.m_mask = wxLIST_MASK_TEXT;
-  if (m_speedDials->GetItem(item)) {
-    PString addr(item.m_text);
-    PWaitAndSignal m(conversationMapMutex);
-    IMDialog * dialog = new IMDialog(this, "", addr, "");
-    conversationMap.insert(ConversationMapType::value_type(addr, dialog));
+    }
     dialog->Show();
   }
-#endif
 }
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 {
-  wxListItem item;
-  item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  if (item.m_itemId < 0)
-    return;
-
-  item.m_col = e_AddressColumn;
-  item.m_mask = wxLIST_MASK_TEXT;
-  if (m_speedDials->GetItem(item)) {
+  SpeedDialInfo * info = GetSelectedSpeedDial();
+  if (info != NULL) {
     wxFileDialog faxDlg(this,
                         wxT("Send FAX file"),
                         wxEmptyString,
                         wxEmptyString,
                         wxT("*.tif"));
     if (faxDlg.ShowModal() == wxID_OK)
-      MakeCall(item.m_text, wxString(wxT("t38:")) + faxDlg.GetPath());
+      MakeCall(info->m_Address, wxString(wxT("t38:")) + faxDlg.GetPath());
   }
 }
 
@@ -1704,10 +1806,13 @@ static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const wxChar * 
 
 void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
 {
-  wxString groupName = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
+  SpeedDialInfo info;
+  info.m_Name = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
 
-  int pos = m_speedDials->InsertItem(INT_MAX, groupName);
-  m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
+  int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
+  m_speedDials->SetItemData(pos, (intptr_t)&*m_speedDialInfo.insert(info).first);
+  if (m_speedDialDetail)
+    m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   EditSpeedDial(pos, true);
 }
 
@@ -1759,36 +1864,19 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
     return;
 
   wxString tabbedText;
-
-  wxListItem item;
-  item.m_itemId = -1;
-  while ((item.m_itemId = m_speedDials->GetNextItem(item.m_itemId, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
-    item.m_mask = wxLIST_MASK_TEXT;
-    item.m_col = e_NameColumn;
-    if (m_speedDials->GetItem(item)) {
-      tabbedText += item.m_text;
-      tabbedText += '\t';
-
-      item.m_col = e_NumberColumn;
-      if (m_speedDials->GetItem(item))
-        tabbedText += item.m_text;
-      tabbedText += '\t';
-
-      item.m_col = e_AddressColumn;
-      if (m_speedDials->GetItem(item))
-        tabbedText += item.m_text;
-      tabbedText += '\t';
-
-      item.m_col = e_DescriptionColumn;
-      if (m_speedDials->GetItem(item))
-        tabbedText += item.m_text;
-      tabbedText += '\t';
-
-      item.m_col = e_StateUrlColumn; // Must be at end to be backward compatible
-      if (m_speedDials->GetItem(item))
-        tabbedText += item.m_text;
-      tabbedText += wxT("\r\n");
-    }
+  int pos = -1;
+  SpeedDialInfo * info;
+  while ((info = GetSelectedSpeedDial(pos)) != NULL) {
+    tabbedText += info->m_Name;
+    tabbedText += '\t';
+    tabbedText += info->m_Number;
+    tabbedText += '\t';
+    tabbedText += info->m_Address;
+    tabbedText += '\t';
+    tabbedText += info->m_Description;
+    tabbedText += '\t';
+    tabbedText += info->m_StateURL;
+    tabbedText += wxT("\r\n");
   }
 
   // Want pure text so can copy to notepad or something, and our built
@@ -1816,24 +1904,27 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
         wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
         while (tabbedLines.HasMoreTokens()) {
           wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
-          wxString name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
-          wxString number = tabbedText.GetNextToken();
-          wxString address = tabbedText.GetNextToken();
-          wxString description = tabbedText.GetNextToken();
-          wxString stateURL = tabbedText.GetNextToken();
+          SpeedDialInfo info;
+          info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
+          info.m_Number = tabbedText.GetNextToken();
+          info.m_Address = tabbedText.GetNextToken();
+          info.m_Description = tabbedText.GetNextToken();
+          info.m_StateURL = tabbedText.GetNextToken();
 
-          int pos = m_speedDials->InsertItem(INT_MAX, name);
-          m_speedDials->SetItem(pos, e_NumberColumn, number);
-          m_speedDials->SetItem(pos, e_AddressColumn, address);
-          m_speedDials->SetItem(pos, e_StateUrlColumn, stateURL);
-          m_speedDials->SetItem(pos, e_DescriptionColumn, description);
+          int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
+          if (m_speedDialDetail) {
+            m_speedDials->SetItem(pos, e_NumberColumn, info.m_Number);
+            m_speedDials->SetItem(pos, e_AddressColumn, info.m_Address);
+            m_speedDials->SetItem(pos, e_StateUrlColumn, info.m_StateURL);
+            m_speedDials->SetItem(pos, e_DescriptionColumn, info.m_Description);
+          }
 
           config->SetPath(SpeedDialsGroup);
-          config->SetPath(name);
-          config->Write(SpeedDialNumberKey, number);
-          config->Write(SpeedDialAddressKey, address);
-          config->Write(SpeedDialStateUrlKey, stateURL);
-          config->Write(SpeedDialDescriptionKey, description);
+          config->SetPath(info.m_Name);
+          config->Write(SpeedDialNumberKey, info.m_Number);
+          config->Write(SpeedDialAddressKey, info.m_Address);
+          config->Write(SpeedDialStateUrlKey, info.m_StateURL);
+          config->Write(SpeedDialDescriptionKey, info.m_Description);
         }
       }
     }
@@ -1854,16 +1945,13 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
   if (dlg.ShowModal() != wxID_YES)
     return;
 
-  wxListItem item;
-  while ((item.m_itemId = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
-    item.m_mask = wxLIST_MASK_TEXT;
-    item.m_col = e_NameColumn;
-    if (m_speedDials->GetItem(item)) {
-      wxConfigBase * config = wxConfig::Get();
-      config->SetPath(SpeedDialsGroup);
-      config->DeleteGroup(item.m_text);
-      m_speedDials->DeleteItem(item.m_itemId);
-    }
+  SpeedDialInfo * info;
+  while ((info = GetSelectedSpeedDial()) != NULL) {
+    wxConfigBase * config = wxConfig::Get();
+    config->SetPath(SpeedDialsGroup);
+    config->DeleteGroup(info->m_Name);
+    m_speedDials->DeleteItem(m_speedDials->FindItem(-1, info->m_Name, true));
+    m_speedDialInfo.erase(*info);
   }
 }
 
@@ -1878,15 +1966,9 @@ void MyManager::OnSashPositioned(wxSplitterEvent& event)
 
 void MyManager::OnSpeedDialActivated(wxListEvent& event)
 {
-  wxListItem item;
-  item.m_itemId = event.GetIndex();
-  if (item.m_itemId < 0)
-    return;
-
-  item.m_col = e_AddressColumn;
-  item.m_mask = wxLIST_MASK_TEXT;
-  if (m_speedDials->GetItem(item))
-    MakeCall(item.m_text);
+  SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(event.GetIndex());
+  if (info != NULL)
+    MakeCall(info->m_Address);
 }
 
 
@@ -1913,85 +1995,43 @@ void MyManager::OnRightClick(wxListEvent& event)
 
 void MyManager::EditSpeedDial(int index, bool newItem)
 {
-  if (index < 0)
-    return;
-
-  wxListItem item;
-  item.m_itemId = index;
-  item.m_mask = wxLIST_MASK_TEXT;
-
-  item.m_col = e_NameColumn;
-  if (!m_speedDials->GetItem(item))
+  SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+  if (info == NULL)
     return;
 
   // Should display a menu, but initially just allow editing
-  SpeedDialDialog dlg(this);
-
-  wxString originalName = dlg.m_Name = item.m_text;
-
-  item.m_col = e_NumberColumn;
-  if (m_speedDials->GetItem(item))
-    dlg.m_Number = item.m_text;
-
-  item.m_col = e_AddressColumn;
-  if (m_speedDials->GetItem(item))
-    dlg.m_Address = item.m_text;
-
-  item.m_col = e_StateUrlColumn;
-  if (m_speedDials->GetItem(item))
-    dlg.m_StateURL = item.m_text;
-  PwxString originalURL = dlg.m_StateURL;
-
-  item.m_col = e_DescriptionColumn;
-  if (m_speedDials->GetItem(item))
-    dlg.m_Description = item.m_text;
-
+  SpeedDialDialog dlg(this, *info);
   if (dlg.ShowModal() == wxID_CANCEL) {
     if (newItem)
-      m_speedDials->DeleteItem(item);
+      m_speedDials->DeleteItem(index);
     return;
   }
 
 #if OPAL_SIP
-  if (originalURL != dlg.m_StateURL) {
-    m_speedDials->SetItemImage(item, Icon_Unknown);
+  if (info->m_StateURL != dlg.m_StateURL) {
+    m_speedDials->SetItemImage(index, Icon_Unknown);
 
-    if (!originalURL.empty())
-      sipEP->Unsubscribe(SIPSubscribe::Presence, originalURL);
+    if (!info->m_StateURL.empty()) {
+      PSafePtr<OpalPresentity> presentity = GetPresentity(info->m_StateURL);
+      if (presentity != NULL)
+        presentity->DeleteBuddy(info->m_Address.p_str());
+    }
 
     if (!dlg.m_StateURL.empty())
-      SubscribePresence(dlg.m_StateURL);
+      SubscribeBuddy(dlg.m_StateURL, dlg.m_Address);
   }
 #endif // OPAL_SIP
 
-  item.m_col = e_NameColumn;
-  item.m_text = dlg.m_Name;
-  m_speedDials->SetItem(item);
-
-  item.m_col = e_NumberColumn;
-  item.m_text = dlg.m_Number;
-  m_speedDials->SetItem(item);
-
-  item.m_col = e_AddressColumn;
-  item.m_text = dlg.m_Address;
-  m_speedDials->SetItem(item);
-
-  item.m_col = e_StateUrlColumn;
-  item.m_text = dlg.m_StateURL;
-  m_speedDials->SetItem(item);
-
-  item.m_col = e_DescriptionColumn;
-  item.m_text = dlg.m_Description;
-  m_speedDials->SetItem(item);
-
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(SpeedDialsGroup);
-  config->DeleteGroup(originalName);
+  config->DeleteGroup(info->m_Name);
   config->SetPath(dlg.m_Name);
   config->Write(SpeedDialNumberKey, dlg.m_Number);
   config->Write(SpeedDialAddressKey, dlg.m_Address);
   config->Write(SpeedDialStateUrlKey, dlg.m_StateURL);
   config->Write(SpeedDialDescriptionKey, dlg.m_Description);
+  
+  *info = dlg;
 }
 
 
@@ -2004,11 +2044,9 @@ bool MyManager::HasSpeedDialName(const wxString & name) const
 bool MyManager::HasSpeedDialNumber(const wxString & number, const wxString & ignore) const
 {
   int count = m_speedDials->GetItemCount();
-  wxListItem item;
-  item.m_mask = wxLIST_MASK_TEXT;
-  item.m_col = e_NumberColumn;
-  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-    if (m_speedDials->GetItem(item) && item.m_text == number && item.m_text != ignore)
+  for (int index = 0; index < count; index++) {
+    SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+    if (info != NULL && info->m_Number == number && info->m_Number != ignore)
       return true;
   }
 
@@ -2214,6 +2252,8 @@ void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
       PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
       m_tabs->AddPage(new InCallPanel(*this, token, m_tabs), title, true);
     }
+    else
+      RemoveCallOnHold(token);
   }
 }
 
@@ -2270,6 +2310,11 @@ void MyManager::OnClearedCall(OpalCall & call)
   config->SetPath(GeneralGroup);
   config->DeleteEntry(CurrentSIPConnectionKey);
 #endif // OPAL_SIP
+
+#if OPAL_HAS_MIXER
+  if (m_mcuEP != NULL && m_mcuEP->GetConnectionCount() == 1)
+    m_mcuEP->ShutDown();
+#endif // OPAL_HAS_MIXER
 }
 
 
@@ -2417,9 +2462,11 @@ bool MyManager::HasHandset() const
 MyManager::CallsOnHold::CallsOnHold(OpalCall & call)
   : m_call(&call, PSafeReference)
 {
-  static int lastMenuId = ID_RETRIEVE_MENU_BASE;
-  m_retrieveMenuId = lastMenuId++;
-  m_transferMenuId = m_retrieveMenuId + (ID_TRANSFER_MENU_BASE - ID_RETRIEVE_MENU_BASE);
+  static int lastMenuId;
+  m_retrieveMenuId   = lastMenuId + ID_RETRIEVE_MENU_BASE;
+  m_conferenceMenuId = lastMenuId + ID_CONFERENCE_MENU_BASE;
+  m_transferMenuId   = lastMenuId + ID_TRANSFER_MENU_BASE;
+  lastMenuId++;
 }
 
 
@@ -2427,7 +2474,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
 {
   m_callsOnHold.push_back(call);
 
-  PwxString otherParty = call.GetPartyA();
+  PwxString otherParty = call.IsNetworkOriginated() ? call.GetPartyA() : call.GetPartyB();
 
   wxMenuBar * menubar = GetMenuBar();
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuRetrieve"));
@@ -2437,11 +2484,25 @@ void MyManager::AddCallOnHold(OpalCall & call)
   if (item->IsSeparator())
     menu->Delete(item);
 
+  item = menubar->FindItem(XRCID("SubMenuConference"));
+  menu = PAssertNULL(item)->GetSubMenu();
+  PAssertNULL(menu)->Append(m_callsOnHold.back().m_conferenceMenuId, otherParty);
+  item = menu->FindItemByPosition(0);
+  if (item->IsSeparator())
+    menu->Delete(item);
+
   item = menubar->FindItem(XRCID("SubMenuTransfer"));
   menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_transferMenuId, otherParty);
 
   OnHoldChanged(call.GetToken(), true);
+
+  if (!m_switchHoldToken.IsEmpty()) {
+    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReadWrite);
+    if (call != NULL)
+      call->Retrieve();
+    m_switchHoldToken.MakeEmpty();
+  }
 }
 
 
@@ -2459,6 +2520,13 @@ bool MyManager::RemoveCallOnHold(const PString & token)
   wxMenuBar * menubar = GetMenuBar();
   wxMenu * menu;
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(it->m_retrieveMenuId, &menu);
+  if (PAssert(menu != NULL && item != NULL, PLogicError)) {
+    if (m_callsOnHold.size() == 1)
+      menu->AppendSeparator();
+    menu->Delete(item);
+  }
+
+  item = menubar->FindItem(it->m_conferenceMenuId, &menu);
   if (PAssert(menu != NULL && item != NULL, PLogicError)) {
     if (m_callsOnHold.size() == 1)
       menu->AppendSeparator();
@@ -2499,7 +2567,8 @@ void MyManager::SendUserInput(char tone)
 
 void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
+  if (connection.IsNetworkConnection())
+    LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
 }
 
@@ -2553,6 +2622,39 @@ void MyManager::OnRetrieve(wxCommandEvent& theEvent)
       }
     }
   }
+}
+
+
+void MyManager::OnConference(wxCommandEvent& theEvent)
+{
+  if (PAssert(m_activeCall != NULL, PLogicError)) {
+    for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
+      if (theEvent.GetId() == it->m_conferenceMenuId) {
+        AddToConference(*it->m_call);
+        return;
+      }
+    }
+  }
+}
+
+
+void MyManager::AddToConference(OpalCall & call)
+{
+  if (m_activeCall != NULL) {
+    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
+    m_activeCall->Transfer("mcu:"CONFERENCE_NAME, connection);
+    LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
+    PString pc = "pc:*";
+    if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
+      pc += ";OPAL-AutoStart=video:no";
+    SetUpCall(pc, "mcu:"CONFERENCE_NAME);
+    m_activeCall.SetNULL();
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
+  call.Transfer("mcu:"CONFERENCE_NAME, connection);
+  call.Retrieve();
+  LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 }
 
 
@@ -2798,37 +2900,28 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
     input += digit;
 
     int count = m_speedDials->GetItemCount();
-    wxListItem item;
-    item.m_mask = wxLIST_MASK_TEXT;
-    item.m_col = e_NumberColumn;
-    for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-      if (!m_speedDials->GetItem(item))
+    for (int index = 0; index < count; index++) {
+      SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+      if (info == NULL)
         continue;
 
-      size_t specialCharPos = item.m_text.find_first_of(wxT("-+"));
+      size_t specialCharPos = info->m_Number.find_first_of(wxT("-+"));
       if (specialCharPos == wxString::npos) {
-        if (input  != item.m_text)
+        if (input  != info->m_Number)
           continue;
       }
       else {
-        if (digit != "#" || item.m_text.compare(0, specialCharPos, input) != 0)
+        if (digit != "#" || info->m_Number.compare(0, specialCharPos, input) != 0)
           continue;
-        if (item.m_text[specialCharPos] == '-')
+        if (info->m_Number[specialCharPos] == '-')
           input.Remove(0, specialCharPos);    // Using '-' so strip the prefix off
         input.Remove(input.length()-1, 1); // Also get rid of the '#' at the end
       }
 
-      item.m_col = e_AddressColumn;
-      if (!m_speedDials->GetItem(item))
-        continue;
-
-      PwxString address = item.m_text;
+      PwxString address = info->m_Address;
       address.Replace(wxT("<dn>"), input);
 
-      item.m_col = e_NameColumn;
-      m_speedDials->GetItem(item);
-
-      LogWindow << "Calling \"" << item.m_text << "\" using \"" << address << '"' << endl;
+      LogWindow << "Calling \"" << info->m_Name << "\" using \"" << address << '"' << endl;
       return address;
     }
 
@@ -2972,6 +3065,7 @@ bool MyManager::StartGatekeeper()
 
 
 #if OPAL_SIP
+
 void MyManager::StartRegistrations()
 {
   if (sipEP == NULL)
@@ -3003,98 +3097,127 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
   }
 }
 
+#endif // OPAL_SIP
+
+
+IMDialog * MyManager::GetOrCreateIMDialog(const PString & conversationId, const PString & from, const PString & to)
+{
+  PWaitAndSignal m(m_imDialogMapMutex);
+  IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
+  IMDialog * dialog = NULL;
+  if (r != m_imDialogMap.end())
+    dialog = r->second;
+  else if (!from.IsEmpty() && !to.IsEmpty()) {
+    dialog = new IMDialog(this, conversationId, "", from, to, "");
+    {
+      PWaitAndSignal m(m_imDialogMapMutex);
+      m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
+    }
+    dialog->Show();
+  }
+
+  return dialog;
+}
+
+
+void MyManager::OnIncomingIM(OpalIMContext &, const OpalIM & im)
+{
+  OpalIM * opalIM = new OpalIM(im);
+  PostEvent(wxEvtRxMessage, ID_RX_MESSAGE, PString::Empty(), opalIM);
+}
 
 void MyManager::OnRxMessage(wxCommandEvent & theEvent)
 {
-  ReceivedMessageInfo * info = (ReceivedMessageInfo*)theEvent.GetClientData();
+  OpalIM * im = (OpalIM *)theEvent.GetClientData();
+  LogWindow << "Received IM from " << (im->m_fromName.IsEmpty() ? im->m_fromAddr : im->m_fromName) << endl;
+  IMDialog * dialog = GetOrCreateIMDialog(im->m_conversationId, im->m_from, im->m_to);
+  dialog->AddTextToScreen(PwxString((const char *)im->m_body), false);
 
-  IMDialog * dialog = GetOrCreateConversation(*info);
-  dialog->AddTextToScreen(PwxString((const char *)info->m_body), false);
-
-  LogWindow << "Received page mode IM from " << info->m_remoteURL << endl;
-
-  delete(info);
+  delete im;
 }
 
 
-IMDialog * MyManager::GetOrCreateConversation(const ReceivedMessageInfo & messageInfo)
+void MyManager::OnCompositionIndicationChanged(OpalIMContext & context, const PString &)
 {
-  ConversationMapType::iterator r = conversationMap.find(messageInfo.m_connId);
-  if (r != conversationMap.end()) 
-    return r->second;
-
-  PString remote(messageInfo.m_remoteURL.AsString());
-  PString localName(messageInfo.m_localURL.GetUserName());
-  if (localName.IsEmpty())
-    localName = messageInfo.m_localURL.AsString();
-
-  IMDialog * dialog = new IMDialog(this, 
-                                   messageInfo.m_connId, 
-                                   messageInfo.m_mediaFormat,
-                                   localName, 
-                                   messageInfo.m_remoteURL, 
-                                   messageInfo.m_remoteName);
-  conversationMap.insert(ConversationMapType::value_type(messageInfo.m_connId, dialog));
-  dialog->Show();
-  return conversationMap.find(messageInfo.m_connId)->second;
+  PostEvent(wxCompIndChangedMessage, ID_RX_COMP_IND_CHANGED, context.GetID(), NULL);
 }
 
-
-void MyManager::OnPresenceInfoReceived(const SIPPresenceInfo & info)
+void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
 {
-  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new SIPPresenceInfo(info));
+  PString conversationId = theEvent.GetString();
+  bool idle;
+  PString from, to;
+  {
+    PSafePtr<OpalIMContext> context = GetIMManager().FindContextByIdWithLock(conversationId);
+    if (context == NULL) {
+      LogWindow << "Received composition indication for unknown conversation " << conversationId << endl;
+      return;
+    }
+    idle = !(context->GetAttributes().Get("rx-composition-indication-state", "idle") *= "active");
+    from = context->GetRemoteURL();
+    to   = context->GetLocalURL();
+  }
+  IMDialog * dialog = GetOrCreateIMDialog(conversationId, from, to);
+  if (dialog != NULL) {
+    dialog->SetCompositionIndication(idle);
+    LogWindow << "Composition " << (idle ? "idle" : "busy") << endl;
+  }
 }
 
-
-bool MyManager::SubscribePresence(wxString & uri)
+bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
 {
-  if (uri.IsEmpty())
+  if (aor.IsEmpty() || uri.IsEmpty())
     return false;
 
-  SIPSubscribe::Params params(SIPSubscribe::Presence);
-  params.m_addressOfRecord = PwxString(uri).p_str();
-  params.m_expire = 300;
-
-  PString aor;
-  if (!sipEP->Subscribe(params, aor)) {
-    LogWindow << "SIP Subscribe failed for " << params.m_addressOfRecord << endl;
+  PSafePtr<OpalPresentity> presentity = GetPresentity(aor);
+  if (presentity == NULL) {
+    LogWindow << "Presence identity missing for " << aor << endl;
     return false;
   }
 
-  LogWindow << "SIP Subscribe started for " << aor << endl;
-  uri = PwxString(aor);
+  OpalPresentity::BuddyInfo buddy;
+  buddy.m_presentity = uri;
+  if (!presentity->SetBuddy(buddy))
+    return false;
+
+  if (!presentity->SubscribeToPresence(uri))
+    return false;
+
+  LogWindow << "Presence identity " << aor << " monitoring buddy " << uri << endl;
   return true;
+}
+
+
+void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info)
+{
+  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new OpalPresenceInfo(info));
 }
 
 
 void MyManager::OnPresence(wxCommandEvent & theEvent)
 {
-  SIPPresenceInfo * info = (SIPPresenceInfo *)theEvent.GetClientData();
-  LogWindow << "Presence NOTIFY received for " << info->m_entity << ": " << *info << endl;
-
-  SIPURL incomingURL(info->m_entity);
+  OpalPresenceInfo * info = (OpalPresenceInfo *)theEvent.GetClientData();
 
   int count = m_speedDials->GetItemCount();
-  wxListItem item;
-  item.m_mask = wxLIST_MASK_TEXT;
-  item.m_col = e_StateUrlColumn;
-  for (item.m_itemId = 0; item.m_itemId < count; item.m_itemId++) {
-    if (m_speedDials->GetItem(item)) {
-      SIPURL speedDialURL(PwxString(item.m_text).p_str());
-      if (incomingURL == speedDialURL) {
+  for (int index = 0; index < count; index++) {
+    SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+    if (info != NULL) {
+      SIPURL speedDialURL(sdInfo->m_StateURL.p_str());
+      if (info->m_entity == speedDialURL) {
+        LogWindow << "Presence notification received for " << info->m_entity << endl;
         PwxString status = info->m_note;
 
         IconStates icon;
         switch (info->m_state) {
-          case SIPPresenceInfo::NoPresence :
+          case OpalPresenceInfo::NoPresence :
             icon = Icon_Absent;
             break;
 
-          case SIPPresenceInfo::Busy :
+          case OpalPresenceInfo::Busy :
             icon = Icon_Busy;
             break;
 
-          case SIPPresenceInfo::Away :
+          case OpalPresenceInfo::Away :
             icon = Icon_Absent;
             break;
 
@@ -3108,11 +3231,13 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
             break;
         }
 
-        m_speedDials->SetItemImage(item.m_itemId, icon);
+        m_speedDials->SetItemImage(index, icon);
 
-        if (status.IsEmpty())
-          status = IconStatusNames[icon];
-        m_speedDials->SetItem(item.m_itemId, e_StatusColumn, status);
+        if (m_speedDialDetail) {
+          if (status.IsEmpty())
+            status = IconStatusNames[icon];
+          m_speedDials->SetItem(index, e_StatusColumn, status);
+        }
         break;
       }
     }
@@ -3120,8 +3245,6 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
 
   delete info;
 }
-
-#endif // OPAL_SIP
 
 
 bool MyManager::AdjustVideoFormats()
@@ -3343,21 +3466,6 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       }
       break;
 
-    case PublishPresence : {
-      m_aor = m_User.p_str();
-      if (m_aor.Find('@') == P_MAX_INDEX && !m_Domain.IsEmpty())
-        m_aor += '@' + m_Domain.p_str();
-
-      SIPPresenceInfo param;
-      param.m_entity        = m_aor;
-      param.m_state         = SIPPresenceInfo::Available;
-      param.m_contact       = m_Contact.p_str();
-      param.m_presenceAgent = m_Domain.p_str();
-
-      status = sipEP.PublishPresence(param, m_TimeToLive) ? 0 : 2;
-      break;
-    }
-
     default :
       if (sipEP.IsSubscribed(EventPackageMapping[m_Type], m_aor, true))
         status = 0;
@@ -3380,9 +3488,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
     "Register",
     "MWI subscribe",
     "Presence subscribe",
-    "Appearance subscribe",
-    "Presence publish",
-    "Presence watcher"
+    "Appearance subscribe"
   };
   LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
   return status != 2;
@@ -3394,22 +3500,10 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
   if (!m_Active || m_aor.IsEmpty())
     return false;
 
-  switch (m_Type) {
-    case Register :
-      sipEP.Unregister(m_aor);
-      break;
-
-    case PublishPresence : {
-      SIPPresenceInfo info;
-      info.m_entity = m_aor;
-      info.m_state = SIPPresenceInfo::NoPresence;
-      sipEP.PublishPresence(info);
-      break;
-    }
-
-    default :
-      sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
-  }
+  if (m_Type == Register)
+    sipEP.Unregister(m_aor);
+  else
+    sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
 
   m_aor.MakeEmpty();
   return true;
@@ -3514,6 +3608,15 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Fax fields
   EVT_BUTTON(XRCID("FaxBrowseReceiveDirectory"), OptionsDialog::BrowseFaxDirectory)
+
+  ////////////////////////////////////////
+  // Presence fields
+  EVT_BUTTON(XRCID("AddPresentity"), OptionsDialog::AddPresentity)
+  EVT_BUTTON(XRCID("RemovePresentity"), OptionsDialog::RemovePresentity)
+  EVT_LIST_ITEM_SELECTED(XRCID("Presentities"), OptionsDialog::SelectedPresentity)
+  EVT_LIST_ITEM_DESELECTED(XRCID("Presentities"), OptionsDialog::DeselectedPresentity)
+  EVT_LIST_END_LABEL_EDIT(XRCID("Presentities"), OptionsDialog::EditedPresentity)
+  EVT_GRID_CMD_CELL_CHANGE(XRCID("PresentityAttributes"), OptionsDialog::ChangedPresentityAttribute)
 
   ////////////////////////////////////////
   // Codec fields
@@ -3761,12 +3864,24 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != false);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
 
+  PStringArray knownSizes ;//= PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
-  FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoGrabFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
+
   m_VideoMinFrameSize = m_manager.m_VideoMinFrameSize;
-  FindWindowByName(VideoMinFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoMinFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
+
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
-  FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoMaxFrameSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
 
   m_videoGrabDevice = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -3796,12 +3911,44 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
-  FindWindowByName(VideoRecordingSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+  choice = FindWindowByNameAs<wxChoice>(this, VideoRecordingSizeKey);
+  choice->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+  for (i = 0; i < knownSizes.GetSize(); ++i)
+    choice->Append(PwxString(knownSizes[i]));
 
   choice = FindWindowByNameAs<wxChoice>(this, AudioRecordingFormatKey);
   PWAVFileFormatByFormatFactory::KeyList_T wavFileFormats = PWAVFileFormatByFormatFactory::GetKeyList();
   for (PWAVFileFormatByFormatFactory::KeyList_T::iterator iterFmt = wavFileFormats.begin(); iterFmt != wavFileFormats.end(); ++iterFmt)
     choice->Append(PwxString(*iterFmt));
+
+  ////////////////////////////////////////
+  // Presence fields
+
+  m_Presentities = FindWindowByNameAs<wxListCtrl>(this, wxT("Presentities"));
+  m_Presentities->InsertColumn(0, _T("Address"));
+  PStringArray presentities = m_manager.GetPresentities();
+  for (i = 0; i < presentities.GetSize(); ++i) {
+    long pos = m_Presentities->InsertItem(INT_MAX, PwxString(presentities[i]));
+    m_Presentities->SetItemPtrData(pos, (wxUIntPtr)m_manager.GetPresentity(presentities[i])->Clone());
+  }
+  m_Presentities->SetColumnWidth(0, wxLIST_AUTOSIZE_USEHEADER);
+
+  m_AddPresentity = FindWindowByNameAs<wxButton>(this, wxT("AddPresentity"));
+
+  m_RemovePresentity = FindWindowByNameAs<wxButton>(this, wxT("RemovePresentity"));
+  m_RemovePresentity->Disable();
+
+  m_PresentityAttributes = FindWindowByNameAs<wxGrid>(this, wxT("PresentityAttributes"));
+  m_PresentityAttributes->Disable();
+  m_PresentityAttributes->CreateGrid(0, 1);
+  m_PresentityAttributes->SetColLabelValue(0, wxT("Attribute Value"));
+  m_PresentityAttributes->SetColLabelSize(wxGRID_AUTOSIZE);
+  m_PresentityAttributes->AutoSizeColLabelSize(0);
+  m_PresentityAttributes->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+
+  choice = FindWindowByNameAs<wxChoice>(this, wxT("DefaultSipPresentity"));
+  choice->SetValidator(wxGenericValidator(&m_DefaultSipPresentity));
+  m_DefaultSipPresentity = SIP_Presentity::GetDefaultPresentity();
 
   ////////////////////////////////////////
   // Codec fields
@@ -3818,10 +3965,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
     tstringstream details;
-    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat;
+    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
-    m_allCodecs->Append(details.str(), &*mm);
+    m_allCodecs->Append(details.str().c_str(), &*mm);
 
     PwxString str(mm->mediaFormat);
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
@@ -3885,7 +4032,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_Aliases->Append(PwxString(aliases[i]));
 
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
-  if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
+  if (m_DTMFSendMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_DTMFSendMode = OpalConnection::SendUserInputAsString;
 #if OPAL_450
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
@@ -3913,6 +4060,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SIPProxyUsername, m_manager.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, m_manager.sipEP->GetProxy().GetPassword());
   INIT_FIELD(LineAppearanceCode, m_manager.sipEP->GetDefaultAppearanceCode());
+  INIT_FIELD(SIPUserInputMode, m_manager.sipEP->GetSendUserInputMode());
+  if (m_SIPUserInputMode >= OpalConnection::SendUserInputAsProtocolDefault)
+    m_SIPUserInputMode = OpalConnection::SendUserInputAsInlineRFC2833;
+  m_SIPUserInputMode--; // No SendUserInputAsQ931 mode, so decrement
 
   m_SelectedRegistration = INT_MAX;
 
@@ -4006,7 +4157,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
 OptionsDialog::~OptionsDialog()
 {
-  for (int i = 0; i < m_Registrations->GetItemCount(); ++i)
+  long i;
+  for (i = 0; i < m_Presentities->GetItemCount(); ++i)
+    delete (OpalPresentity *)m_Presentities->GetItemData(i);
+  for (i = 0; i < m_Registrations->GetItemCount(); ++i)
     delete (RegistrationInfo *)m_Registrations->GetItemData(i);
 }
 
@@ -4157,6 +4311,42 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   ////////////////////////////////////////
+  // Presence fields
+  PStringList activePresentities = m_manager.GetPresentities();
+  config->DeleteGroup(PresenceGroup);
+  for (int item = 0; item < m_Presentities->GetItemCount(); ++item) {
+    PwxString aor = m_Presentities->GetItemText(item);
+
+    wxString group;
+    group.sprintf(wxT("%s/%04u"), PresenceGroup, item);
+    config->SetPath(group);
+    config->Write(PresenceAORKey, aor);
+
+    OpalPresentity * presentity = (OpalPresentity *)m_Presentities->GetItemData(item);
+    PStringArray attributeNames = presentity->GetAttributeNames();
+    for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
+      PwxString name = attributeNames[i];
+      if (presentity->GetAttributes().Has(name))
+        config->Write(name, PwxString(presentity->GetAttributes().Get(name)));
+    }
+
+    PSafePtr<OpalPresentity> activePresentity = m_manager.AddPresentity(aor);
+    if (activePresentity != NULL) {
+      activePresentity->GetAttributes() = presentity->GetAttributes();
+      activePresentity->Open();
+    }
+
+    PINDEX pos = activePresentities.GetValuesIndex(aor.p_str());
+    if (pos != P_MAX_INDEX)
+      activePresentities.RemoveAt(pos);
+  }
+  for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
+    m_manager.RemovePresentity(*it);
+
+  config->SetPath(PresenceGroup);
+  SAVE_FIELD(DefaultSipPresentity, SIP_Presentity::SetDefaultPresentity);
+
+  ////////////////////////////////////////
   // Codec fields
   MyMediaList::iterator mm;
   for (mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm)
@@ -4278,6 +4468,8 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
   config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
   SAVE_FIELD(LineAppearanceCode, m_manager.sipEP->SetDefaultAppearanceCode);
+  m_manager.sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)(m_SIPUserInputMode+1));
+  config->Write(SIPUserInputModeKey, m_SIPUserInputMode+1);
 
   RegistrationList newRegistrations;
 
@@ -4298,7 +4490,6 @@ bool OptionsDialog::TransferDataFromWindow()
       group.sprintf(wxT("%s/%04u"), RegistrarGroup, registrationIndex++);
       config->SetPath(group);
       iterReg->Write(*config);
-
     }
 
     m_manager.ReplaceRegistrations(newRegistrations);
@@ -4590,8 +4781,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     return;
   }
 
-  wxRect box(0, 0, grabberArgs.width, grabberArgs.height);
-  box = box.CentreIn(GetRect());
+  wxRect box(GetRect().GetBottomLeft(), wxSize(grabberArgs.width, grabberArgs.height));
 
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i", box.GetLeft(), box.GetTop());
@@ -4629,6 +4819,118 @@ void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
     m_FaxReceiveDirectory = dlg.GetPath();
     FindWindowByNameAs<wxTextCtrl>(this, wxT("FaxReceiveDirectory"))->SetLabel(m_FaxReceiveDirectory);
   }
+}
+
+
+////////////////////////////////////////
+// Presence fields
+
+static const wxChar NewPresenceStr[] = wxT("<new presence>");
+
+void OptionsDialog::AddPresentity(wxCommandEvent & /*event*/)
+{
+  long pos = m_Presentities->InsertItem(INT_MAX, NewPresenceStr);
+  if (pos >= 0)
+    m_Presentities->EditLabel(pos);
+}
+
+
+void OptionsDialog::RemovePresentity(wxCommandEvent & /*event*/)
+{
+  long index = m_Presentities->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (index < 0)
+    return;
+
+  delete (OpalPresentity *)m_Presentities->GetItemData(index);
+  m_Presentities->DeleteItem(index);
+  FillPresentityAttributes(NULL);
+}
+
+
+void OptionsDialog::SelectedPresentity(wxListEvent & evt)
+{
+  PwxString aor = evt.GetText();
+  if (aor != NewPresenceStr)
+    FillPresentityAttributes((OpalPresentity *)evt.GetItem().m_data);
+}
+
+
+void OptionsDialog::DeselectedPresentity(wxListEvent & /*event*/)
+{
+  FillPresentityAttributes(NULL);
+}
+
+
+void OptionsDialog::EditedPresentity(wxListEvent & evt)
+{
+  long index = evt.GetIndex();
+  wxString oldAOR = m_Presentities->GetItemText(index);
+  PwxString newAOR = evt.GetText();
+
+  if (!evt.IsEditCancelled() && !newAOR.IsEmpty() && newAOR != oldAOR) {
+    OpalPresentity * presentity = OpalPresentity::Create(m_manager, newAOR.p_str());
+    if (FillPresentityAttributes(presentity)) {
+      delete (OpalPresentity *)m_Presentities->GetItemData(index);
+      m_Presentities->SetItemPtrData(index, (wxUIntPtr)presentity);
+      return;
+    }
+
+    wxMessageBox(wxT("Cannot create presence identity ")+newAOR);
+  }
+
+  if (oldAOR == NewPresenceStr)
+    RemovePresentity(evt);
+  else
+    evt.Veto();
+}
+
+
+static char DefaultAttributeValue[] = "<<default>>";
+
+bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
+{
+  if (presentity == NULL) {
+    int rows = m_PresentityAttributes->GetNumberRows();
+    if (rows > 0)
+      m_PresentityAttributes->DeleteRows(0, rows);
+    m_PresentityAttributes->Disable();
+    m_RemovePresentity->Disable();
+    return false;
+  }
+
+  m_RemovePresentity->Enable();
+  m_PresentityAttributes->Enable();
+
+  PStringArray attributeNames = presentity->GetAttributeNames();
+  m_PresentityAttributes->InsertRows(0, attributeNames.GetSize());
+  for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
+    PwxString name = attributeNames[i];
+    PwxString value = presentity->GetAttributes().Get(name, DefaultAttributeValue);
+    m_PresentityAttributes->SetRowLabelValue(i, name);
+    m_PresentityAttributes->SetCellValue(value, i, 0);
+  }
+  m_PresentityAttributes->SetRowLabelSize(wxGRID_AUTOSIZE);
+  m_PresentityAttributes->SetColSize(0, m_PresentityAttributes->GetSize().GetWidth() -
+                                        m_PresentityAttributes->GetRowLabelSize() - 8);
+
+  return true;
+}
+
+
+void OptionsDialog::ChangedPresentityAttribute(wxGridEvent & evt)
+{
+  long index = m_Presentities->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (index < 0)
+    return;
+
+  OpalPresentity * presentity = (OpalPresentity *)m_Presentities->GetItemData(index);
+
+  PwxString name = m_PresentityAttributes->GetRowLabelValue(evt.GetRow());
+  PwxString value = m_PresentityAttributes->GetCellValue(evt.GetRow(), 0);
+  if (value != DefaultAttributeValue)
+    presentity->GetAttributes().Set(name, value);
+  else if (presentity->GetAttributes().Has(name))
+    presentity->GetAttributes().RemoveAt(name);
 }
 
 
@@ -5153,8 +5455,8 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 BEGIN_EVENT_TABLE(PresenceDialog, wxDialog)
 END_EVENT_TABLE()
 
-PresenceDialog::PresenceDialog(MyManager * manager, SIPEndPoint & sipEP)
-  : m_sipEP(sipEP)
+PresenceDialog::PresenceDialog(MyManager * manager)
+  : m_manager(*manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("PresenceDialog"));
 
@@ -5163,7 +5465,7 @@ PresenceDialog::PresenceDialog(MyManager * manager, SIPEndPoint & sipEP)
 
   wxChoice * addresses = FindWindowByNameAs<wxChoice>(this, wxT("PresenceAddress"));
   addresses->SetValidator(wxGenericValidator(&m_address));
-  PStringList presences = m_sipEP.GetPublications(SIPSubscribe::Presence);
+  PStringList presences = manager->GetPresentities();
   if (presences.IsEmpty()) {
     addresses->Disable();
     states->Disable();
@@ -5182,16 +5484,18 @@ bool PresenceDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
-  SIPPresenceInfo info;
-  info.m_entity = m_address.p_str();
-  if (m_status == "Invisible")
-    info.m_state = OpalPresenceInfo::NoPresence;
-  else {
-    info.m_state = OpalPresenceInfo::Available;
-    info.m_note = m_status.p_str();
+  PSafePtr<OpalPresentity> presentity = m_manager.GetPresentity(m_address.p_str());
+  if (presentity == NULL) {
+    wxMessageBox(wxT("Presence identity disappeared!"));
+    return false;
   }
 
-  m_sipEP.PublishPresence(info);
+  OpalPresenceInfo::State state = OpalPresenceInfo::FromString(m_status);
+  if (state != OpalPresenceInfo::InternalError)
+    presentity->SetLocalPresence(state);
+  else
+    presentity->SetLocalPresence(OpalPresenceInfo::Available, m_status.p_str());
+
   return true;
 }
 
@@ -5394,6 +5698,8 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
 
 void CallDialog::OnOK(wxCommandEvent &)
 {
+  TransferDataFromWindow();
+
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentCallsGroup);
   config->SetPath(RecentCallsGroup);
@@ -5426,16 +5732,17 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_BUTTON(XRCID("Send"), IMDialog::OnSend)
   EVT_TEXT_ENTER(XRCID("EnteredText"), IMDialog::OnTextEnter)
+  EVT_TEXT(XRCID("EnteredText"), IMDialog::OnText)
   EVT_CLOSE(IMDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 IMDialog::IMDialog(MyManager * manager, 
-           const std::string & connId,
+               const PString & conversationId,
        const OpalMediaFormat & m_format,
                const PString & localName, 
                   const PURL & remoteAddress, 
                const PString & remoteName)
-  : m_connId(connId) 
+  : m_conversationId(conversationId) 
   , m_mediaFormat(m_format)
   , m_manager(manager)
   , m_remoteAddress(remoteAddress)
@@ -5474,18 +5781,18 @@ IMDialog::IMDialog(MyManager * manager,
   m_enteredText = FindWindowByNameAs<wxTextCtrl>(this, wxT("EnteredText"));
   m_enteredText->SetFocus();
 
+  m_compositionIndication = FindWindowByNameAs<wxStaticText>(this, wxT("CompositionIndication"));
+
   m_defaultStyle = m_textArea->GetDefaultStyle();
   m_ourStyle = m_defaultStyle;
   m_theirStyle = m_defaultStyle;
   m_ourStyle.SetTextColour(*wxRED);
   m_theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
-
-  manager->conversationMap.insert(MyManager::ConversationMapType::value_type(m_connId, this));
 }
 
 IMDialog::~IMDialog()
 {
-  m_manager->conversationMap.erase(m_connId);
+//  m_manager->conversationMap.erase(m_connId);
 }
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
@@ -5503,22 +5810,58 @@ void IMDialog::OnTextEnter(wxCommandEvent & WXUNUSED(event))
   SendCurrentText();
 }
 
+void IMDialog::OnText(wxCommandEvent & WXUNUSED(event))
+{
+  SendCompositionIndicationChanged();
+}
 
 void IMDialog::SendCurrentText()
 {
   PwxString text = m_enteredText->GetValue();
   m_enteredText->SetValue(wxT(""));
-
-  PSafePtr<OpalConnection> conn = m_manager->GetPCSSEP().GetConnectionWithLock(m_connId);
-  if (conn != NULL) {
-    RTP_DataFrameList frames = conn->GetRFC4103Context(0).ConvertToFrames("text/plain", T140String(text));
-    for (PINDEX i = 0; i < frames.GetSize(); ++i) 
-      conn->OnReceiveExternalIM(m_mediaFormat, (RTP_IMFrame &)frames[i]);
-  }
-
   AddTextToScreen(text, true);
+
+  PSafePtr<OpalIMContext> imContext = m_manager->GetIMManager().FindContextByIdWithLock(m_conversationId);
+  if (imContext == NULL)
+    AddTextToScreen(wxT("closed"), false);
+  else {
+    OpalIM * im = new OpalIM;
+    im->m_body     = text;
+    im->m_mimeType = "text/plain";
+    im->m_from     = m_us;
+    im->m_to       = m_remoteAddress;
+
+    switch (imContext->Send(im)) {
+      case OpalIMContext::SentOK:
+      case OpalIMContext::SentPending:
+      case OpalIMContext::SentAccepted:
+        break;
+      case OpalIMContext::SentConnectionClosed:
+        AddTextToScreen(wxT("connection closed"), false);
+        break;
+      default:
+        AddTextToScreen(wxT("failed"), false);
+        break;
+    }
+  }
 }
 
+
+void IMDialog::SendCompositionIndicationChanged()
+{
+  PSafePtr<OpalIMContext> imContext = m_manager->GetIMManager().FindContextByIdWithLock(m_conversationId);
+  if (imContext != NULL)
+    imContext->SendCompositionIndication(true);
+}
+
+
+void IMDialog::SetCompositionIndication(bool idle)
+{
+  if (idle)
+    m_compositionIndication->SetLabel(wxT(""));
+  else
+    m_compositionIndication->SetLabel(wxString(m_them) + wxT(" is typing"));
+}
 
 void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 {
@@ -5557,9 +5900,11 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("ID_IMSESSION"));
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("ID_IMPAGE"));
-  m_ok->Disable();
+  m_sessionOK = FindWindowByNameAs<wxButton>(this, wxT("ID_IMSESSION"));
+  m_sessionOK->Disable();
+
+  m_pageOK = FindWindowByNameAs<wxButton>(this, wxT("ID_IMPAGE"));
+  m_pageOK->Disable();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
@@ -5613,7 +5958,7 @@ void CallIMDialog::OnOK(int code)
 void CallIMDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 {
   TransferDataFromWindow();
-  m_ok->Enable(!m_Address.IsEmpty());
+  m_pageOK->Enable(!m_Address.IsEmpty());
 }
 
 
@@ -5695,6 +6040,7 @@ const int VU_UPDATE_TIMER_ID = 1000;
 BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
   EVT_BUTTON(XRCID("Hold"), InCallPanel::OnHoldRetrieve)
+  EVT_BUTTON(XRCID("Conference"), InCallPanel::OnConference)
   EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
   EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
@@ -5722,9 +6068,9 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   : CallPanelBase(manager, token, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
-  , m_SwitchingHold(false)
 {
   m_Hold = FindWindowByNameAs<wxButton>(this, wxT("Hold"));
+  m_Conference = FindWindowByNameAs<wxButton>(this, wxT("Conference"));
   m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, wxT("SpeakerHandset"));
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, wxT("SpeakerMute"));
   m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, wxT("MicrophoneMute"));
@@ -5732,6 +6078,8 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, wxT("MicrophoneVolume"));
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, wxT("SpeakerGauge"));
   m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, wxT("MicrophoneGauge"));
+
+  OnHoldChanged(false);
 
   m_vuTimer.Start(250);
 
@@ -5800,13 +6148,15 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
-  bool anyCallsOnHols = !m_manager.m_callsOnHold.empty();
-  if (onHold && m_SwitchingHold && anyCallsOnHols)
-    m_manager.m_callsOnHold.front().m_call->Retrieve();
-  m_SwitchingHold = false;
+  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
+  if (PAssertNULL(call) == NULL)
+    return;
 
-  m_Hold->SetLabel(anyCallsOnHols ? wxT("Retrieve") : wxT("Hold"));
-  m_Hold->Enable(true);
+  bool notConferenced = call->GetConnectionAs<OpalMixerConnection>() == NULL;
+
+  m_Hold->SetLabel(onHold ? wxT("Retrieve") : wxT("Hold"));
+  m_Hold->Enable(notConferenced);
+  m_Conference->Enable(!onHold && !m_manager.m_callsOnHold.empty() && notConferenced);
 }
 
 
@@ -5818,11 +6168,14 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
   if (call->IsOnHold()) {
     PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReadWrite);
-    if (activeCall == NULL)
-      call->Retrieve();
+    if (activeCall == NULL) {
+      if (!call->Retrieve())
+        return;
+    }
     else {
-      m_SwitchingHold = true;
-      activeCall->Hold();
+      m_manager.m_switchHoldToken = m_token;
+      if (!activeCall->Hold())
+        return;
     }
   }
   else {
@@ -5832,6 +6185,16 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
   m_Hold->SetLabel(wxT("In Progress"));
   m_Hold->Enable(false);
+}
+
+
+void InCallPanel::OnConference(wxCommandEvent & /*event*/)
+{
+  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken()) {
+    m_manager.AddToConference(*m_manager.m_callsOnHold.front().m_call);
+    m_Conference->Enable(false);
+    m_Hold->Enable(false);
+  }
 }
 
 
@@ -6350,8 +6713,9 @@ BEGIN_EVENT_TABLE(SpeedDialDialog, wxDialog)
   EVT_TEXT(XRCID("SpeedDialAddress"), SpeedDialDialog::OnChange)
 END_EVENT_TABLE()
 
-SpeedDialDialog::SpeedDialDialog(MyManager * manager)
-  : m_manager(*manager)
+SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info)
+  : SpeedDialInfo(info)
+  , m_manager(*manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("SpeedDialDialog"));
 
@@ -6366,7 +6730,12 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager)
   m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialAddress"));
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
-  FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialStateURL"))->SetValidator(wxGenericValidator(&m_StateURL));
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("SpeedDialStateURL"));
+  choice->SetValidator(wxGenericValidator(&m_StateURL));
+  choice->Append(wxString());
+  PStringList presentities = manager->GetPresentities();
+  for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
+    choice->Append(PwxString(*it));
 
   FindWindowByName(wxT("SpeedDialDescription"))->SetValidator(wxGenericValidator(&m_Description));
 
@@ -6440,6 +6809,7 @@ PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & co
   return NULL;
 }
 
+#if 0
 bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
 {
   ReceivedMessageInfo * info  = new ReceivedMessageInfo((const char *)conn.GetToken(), format);
@@ -6468,6 +6838,8 @@ bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFo
   return true;
 }
 
+#endif
+
 #if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -6495,14 +6867,11 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 }
 
 
-void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
-                                         PBoolean wasRegistering,
-                                         PBoolean reRegistering,
-                                         SIP_PDU::StatusCodes reason)
+void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
-  SIPEndPoint::OnRegistrationStatus(aor, wasRegistering, reRegistering, reason);
+  SIPEndPoint::OnRegistrationStatus(status);
 
-  switch (reason) {
+  switch (status.m_reason) {
     default:
       break;
 
@@ -6511,15 +6880,18 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       return;
 
     case SIP_PDU::Successful_OK :
-      if (reRegistering)
+      if (status.m_reRegistering)
         return;
   }
 
+  SIPURL aor = status.m_addressofRecord;
+  aor.Sanitise(SIPURL::ExternalURI);
+
   LogWindow << "SIP ";
-  if (!wasRegistering)
+  if (!status.m_wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
-  switch (reason) {
+  switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
       break;
@@ -6529,23 +6901,20 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       break;
 
     default :
-      LogWindow << "failed (" << reason << ')';
+      LogWindow << "failed (" << status.m_reason << ')';
   }
   LogWindow << '.' << endl;
 
-  if (!wasRegistering)
+  if (!status.m_wasRegistering)
     m_manager.StartRegistrations();
 }
 
 
-void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
-                                         const SIPURL & uri,
-                                         bool wasSubscribing,
-                                         bool reSubscribing,
-                                         SIP_PDU::StatusCodes reason)
+void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
 {
-  SIPEndPoint::OnSubscriptionStatus(eventPackage, uri, wasSubscribing, reSubscribing, reason);
-  switch (reason) {
+  SIPEndPoint::OnSubscriptionStatus(status);
+
+  switch (status.m_reason) {
     default:
       break;
     case SIP_PDU::Failure_UnAuthorised :
@@ -6553,15 +6922,18 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
       return;
 
     case SIP_PDU::Successful_OK :
-      if (reSubscribing)
+      if (status.m_reSubscribing)
         return;
   }
 
+  SIPURL uri = status.m_addressofRecord;
+  uri.Sanitise(SIPURL::ExternalURI);
+
   LogWindow << "SIP ";
-  if (!wasSubscribing)
+  if (!status.m_wasSubscribing)
     LogWindow << "un";
-  LogWindow << "subscription of " << uri << " to " << eventPackage << " events ";
-  switch (reason) {
+  LogWindow << "subscription of " << uri << " to " << status.m_handler->GetEventPackage() << " events ";
+  switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
       break;
@@ -6571,11 +6943,11 @@ void MySIPEndPoint::OnSubscriptionStatus(const PString & eventPackage,
       break;
 
     default :
-      LogWindow << "failed (" << reason << ')';
+      LogWindow << "failed (" << status.m_reason << ')';
   }
   LogWindow << '.' << endl;
 
-  if (!wasSubscribing)
+  if (!status.m_wasSubscribing)
     m_manager.StartRegistrations();
 }
 
@@ -6603,11 +6975,6 @@ void MySIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & info)
     default :
       break;
   }
-}
-
-void MySIPEndPoint::OnPresenceInfoReceived(const SIPPresenceInfo & info)
-{
-  m_manager.OnPresenceInfoReceived(info);
 }
 
 #endif // OPAL_SIP

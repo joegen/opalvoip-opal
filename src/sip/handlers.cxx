@@ -1804,7 +1804,8 @@ PString SIPPresenceInfo::AsXML() const
     xml << "    <note>" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
   }
 
-  xml << "  </tuple>\r\n";
+  xml << "    <timestamp>" << PTime().AsString(PTime::RFC3339) << "</timestamp>\r\n"
+         "  </tuple>\r\n";
   if (!m_personId.IsEmpty() && (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0))) {
     xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
            "    <rpid:activities>\r\n";

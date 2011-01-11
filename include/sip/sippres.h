@@ -214,7 +214,6 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     PCLASSINFO(SIP_Presentity, OpalPresentityWithCommandThread);
 
   public:
-    static const PString & DefaultPresenceServerKey();
     static const PString & PresenceServerKey();
 
     ~SIP_Presentity();
@@ -233,45 +232,30 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     static bool SetDefaultPresentity(
       const PString & prefix
     );
-
-    SIP_Presentity();
+    static PString GetDefaultPresentity();
 
     void SetAOR(const PURL & aor);
 
-  protected:    
-    SIPEndPoint * m_endpoint;
-    int           m_watcherInfoVersion;
-};
-
-
-class SIPLocal_Presentity : public SIP_Presentity
-{
-    PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
-
-  public:
-    /**@name Overrides from OpalPresentity */
-    virtual bool Open();
-    virtual bool Close();
-
     void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIPLocal_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
-
-    ~SIPLocal_Presentity();
-  
     void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
     void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
     unsigned GetExpiryTime() const;
 
   protected:
+    SIP_Presentity(const char * subScheme);
+
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
     virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
 
+    const char *  m_subScheme;
+    SIPEndPoint * m_endpoint;
     PIPSocketAddressAndPort m_presenceServer;
     PString                 m_watcherSubscriptionAOR;
-
-    PString       m_publishedTupleId;
+    int           m_watcherInfoVersion;
+    PString                 m_publishedTupleId;
 
     typedef std::map<PString, PString> StringMap;
     StringMap m_presenceIdByAor;
@@ -280,11 +264,40 @@ class SIPLocal_Presentity : public SIP_Presentity
 };
 
 
+class SIPLocal_Presentity : public SIP_Presentity
+{
+    PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
+
+  public:
+    SIPLocal_Presentity();
+    SIPLocal_Presentity(const SIPLocal_Presentity & other) : SIP_Presentity(other) { }
+    ~SIPLocal_Presentity();
+
+    PObject * Clone() const { return new SIPLocal_Presentity(*this); }
+
+    /**@name Overrides from OpalPresentity */
+    ///< Get all attribute names for this presentity class.
+    virtual PStringArray GetAttributeNames() const;
+
+    virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
+    virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
+    virtual BuddyStatus DeleteBuddyListEx();
+
+  protected:
+    BuddyList m_buddies;
+};
+
+
 class SIPXCAP_Presentity : public SIP_Presentity
 {
     PCLASSINFO(SIPXCAP_Presentity, SIP_Presentity);
 
   public:
+    SIPXCAP_Presentity();
+    SIPXCAP_Presentity(const SIPXCAP_Presentity & other) : SIP_Presentity(other) { }
+
+    PObject * Clone() const { return new SIPXCAP_Presentity(*this); }
+
     static const PString & XcapRootKey();
     static const PString & XcapAuthIdKey();
     static const PString & XcapPasswordKey();
@@ -292,7 +305,7 @@ class SIPXCAP_Presentity : public SIP_Presentity
     static const PString & XcapAuthFileKey();
     static const PString & XcapBuddyListKey();
 
-    SIPXCAP_Presentity();
+    virtual PStringArray GetAttributeNames() const;
 
     virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
     virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
@@ -325,6 +338,9 @@ class SIPOMA_Presentity : public SIPXCAP_Presentity
 
   public:
     SIPOMA_Presentity();
+    SIPOMA_Presentity(const SIPOMA_Presentity & other) : SIPXCAP_Presentity(other) { }
+
+    PObject * Clone() const { return new SIPOMA_Presentity(*this); }
 
   protected:
     virtual void InitRuleSet(PXML & xml);

@@ -1233,7 +1233,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 {
   if (m_holdFromRemote && !isSource) {
     PTRACE(3, "SIP\tCannot start media stream as are currently in HOLD by remote.");
-    return false;
+    return NULL;
   }
 
   // Make sure stream is symmetrical, if codec changed, close and re-open it

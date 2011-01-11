@@ -300,6 +300,9 @@ class OpalManager : public PObject
   /**@name Presence management */
   //@{
     /**Add a presentity.
+       If the presentity is already present, a new one is not added, and the
+       existing instance is returned.
+
        Returns a Read/Write locked pointer to presentity.
       */
     virtual PSafePtr<OpalPresentity> AddPresentity(
