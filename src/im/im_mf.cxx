@@ -289,6 +289,7 @@ OpalIM::OpalIM()
   : m_type(Text)
   , m_messageId(m_messageIdCounter++)
 {
+  PTRACE(3, "OpalIM\tcreate new IM");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -473,7 +474,7 @@ void OpalIMContext::InternalOnMessageSent(const MessageSentInfo & info)
     return;
   }
   if (m_currentOutgoingMessage->m_messageId != info.messageId) {
-    PTRACE(2, "OpalIMContext\tReceived sent confirmation for wrong message");
+    PTRACE(2, "OpalIMContext\tReceived sent confirmation for wrong message - " << m_currentOutgoingMessage->m_messageId << " instead of " << info.messageId);
     m_outgoingMessagesMutex.Signal();
     return;
   }

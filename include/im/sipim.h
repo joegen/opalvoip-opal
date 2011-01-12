@@ -108,6 +108,8 @@ class OpalSIPIMContext : public OpalConnectionIMContext
 
     virtual SentStatus SendCompositionIndication(bool active = true);
 
+    static void PopulateParams(SIPMessage::Params & params, OpalIM & message);
+
   protected:
     virtual SentStatus InternalSendOutsideCall(OpalIM * message);
     virtual SentStatus InternalSendInsideCall(OpalIM * message);
@@ -120,8 +122,6 @@ class OpalSIPIMContext : public OpalConnectionIMContext
     PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnRxCompositionTimerExpire);
     PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxCompositionTimerExpire);
     PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxIdleTimerExpire);
-
-    void PopulateParams(SIPMessage::Params & params, OpalIM & message);
 
     PTimer m_rxCompositionTimeout;
     PTimer m_txCompositionTimeout;

@@ -1353,6 +1353,8 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
     return OpalIMContext::SentOK;
 
   SIPMessage::Params params;
+
+  /*
   params.m_id              = message.m_conversationId;
   params.m_messageId       = message.m_messageId;
   params.m_localAddress    = message.m_from.AsString();
@@ -1360,6 +1362,8 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
   params.m_remoteAddress   = message.m_to.AsString();
   params.m_contentType     = message.m_mimeType;
   params.m_body            = message.m_body;
+  */
+  OpalSIPIMContext::PopulateParams(params, message);
 
   OpalIMContext::SentStatus stat = SendMESSAGE(params);
 
@@ -1395,10 +1399,15 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
   }
 
 
-  // create the handler if required
+  // create or update the handler if required
   if (handler == NULL) {
     handler = new SIPMessageHandler(*this, params);
     activeSIPHandlers.Append(handler);
+  }
+
+  {
+    PSafePtr<SIPMessageHandler> messageHandler = PSafePtrCast<SIPHandler, SIPMessageHandler>(handler);
+    messageHandler->SetMessageId(params.m_messageId);
   }
 
   SIPMIMEInfo & mime = handler->m_mime;
