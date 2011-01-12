@@ -679,7 +679,6 @@ class OptionsDialog : public wxDialog
     wxGrid     * m_PresentityAttributes;
     wxButton   * m_AddPresentity;
     wxButton   * m_RemovePresentity;
-    PwxString    m_DefaultSipPresentity;
     void AddPresentity(wxCommandEvent & event);
     void RemovePresentity(wxCommandEvent & event);
     void SelectedPresentity(wxListEvent & event);
@@ -995,7 +994,7 @@ class MyManager : public wxFrame, public OpalManager
     bool CanDoFax() const;
     bool CanDoIM() const;
 
-    IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & from, const PString & to);
+    IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & local, const PString & remote);
 
     PDECLARE_NewConversationNotifier(MyManager, OnNewConversation);
     PDECLARE_IncomingIMNotifier(MyManager, OnIncomingIM);

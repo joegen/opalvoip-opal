@@ -209,95 +209,29 @@ class SIPWatcherInfoCommand : public OpalPresentityCommand {
 };
 
 
+/** Class of the SIP presence systems.
+  */
 class SIP_Presentity : public OpalPresentityWithCommandThread
 {
     PCLASSINFO(SIP_Presentity, OpalPresentityWithCommandThread);
 
   public:
-    static const PString & PresenceServerKey();
-
+    SIP_Presentity();
+    SIP_Presentity(const SIP_Presentity & other);
     ~SIP_Presentity();
 
-    virtual bool Open();
-    virtual bool IsOpen() const;
-    virtual bool Close();
+    virtual PObject * Clone() const { return new SIP_Presentity(*this); }
 
-    SIPEndPoint & GetEndpoint() { return *m_endpoint; }
+    enum SubProtocol {
+      // Note order is important
+      e_PeerToPeer,
+      e_WithAgent,
+      e_XCAP,
+      e_OMA
+    };
 
-    /** Set the default presentity class for "sip" scheme.
-        When OpalPresentity::Create() is called with a URI containing the
-        "sip" scheme several different preentity protocols could be used.
-        This determines which: e.g. "sip-local", "sip-xcap", "sip-oma".
-        */
-    static bool SetDefaultPresentity(
-      const PString & prefix
-    );
-    static PString GetDefaultPresentity();
-
-    void SetAOR(const PURL & aor);
-
-    void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
-    void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
-    void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
-    unsigned GetExpiryTime() const;
-
-  protected:
-    SIP_Presentity(const char * subScheme);
-
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
-    virtual void OnReceivedWatcherStatus(PXMLElement * watcher);
-
-    const char            * m_subScheme;
-    SIPEndPoint           * m_endpoint;
-    PIPSocketAddressAndPort m_presenceServer;
-    PString                 m_watcherSubscriptionAOR;
-    int                     m_watcherInfoVersion;
-    PString                 m_publishedTupleId;
-
-    typedef std::map<PString, PString> StringMap;
-    StringMap m_presenceIdByAor;
-    StringMap m_watcherAorById;
-    StringMap m_presenceAorById;
-};
-
-
-class SIPLocal_Presentity : public SIP_Presentity
-{
-    PCLASSINFO(SIPLocal_Presentity, SIP_Presentity);
-
-  public:
-    SIPLocal_Presentity();
-    SIPLocal_Presentity(const SIPLocal_Presentity & other) : SIP_Presentity(other) { }
-    ~SIPLocal_Presentity();
-
-    PObject * Clone() const { return new SIPLocal_Presentity(*this); }
-
-    /**@name Overrides from OpalPresentity */
-    ///< Get all attribute names for this presentity class.
-    virtual PStringArray GetAttributeNames() const;
-
-    virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
-    virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
-    virtual BuddyStatus DeleteBuddyListEx();
-
-  protected:
-    BuddyList m_buddies;
-};
-
-
-class SIPXCAP_Presentity : public SIP_Presentity
-{
-    PCLASSINFO(SIPXCAP_Presentity, SIP_Presentity);
-
-  public:
-    SIPXCAP_Presentity();
-    SIPXCAP_Presentity(const SIPXCAP_Presentity & other) : SIP_Presentity(other) { }
-
-    PObject * Clone() const { return new SIPXCAP_Presentity(*this); }
-
+    static const PString & SubProtocolKey();
+    static const PString & PresenceAgentKey();
     static const PString & XcapRootKey();
     static const PString & XcapAuthIdKey();
     static const PString & XcapPasswordKey();
@@ -307,6 +241,9 @@ class SIPXCAP_Presentity : public SIP_Presentity
 
     virtual PStringArray GetAttributeNames() const;
 
+    virtual bool Open();
+    virtual bool IsOpen() const;
+    virtual bool Close();
     virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
     virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
     virtual BuddyStatus DeleteBuddyListEx();
@@ -314,36 +251,45 @@ class SIPXCAP_Presentity : public SIP_Presentity
     virtual BuddyStatus SetBuddyEx(const BuddyInfo & buddy);
     virtual BuddyStatus DeleteBuddyEx(const PURL & presentity);
     virtual BuddyStatus SubscribeBuddyListEx(PINDEX & successful, bool subscribe = true);
-  //@}
+
+    SIPEndPoint & GetEndpoint() { return *m_endpoint; }
+
+    void Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd);
+    void Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd);
+    void Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd);
+    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
+
+    unsigned GetExpiryTime() const;
 
   protected:
-    virtual void InitRuleSet(PXML & xml);
-
-    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+    void OnReceivedWatcherStatus(PXMLElement * watcher);
     bool ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd);
+    void InitRootXcap(XCAPClient & xcap);
     void InitBuddyXcap(
       XCAPClient & xcap,
       const PString & entryName = PString::Empty(),
       const PString & listName = PString::Empty()
     );
 
+    SIPEndPoint           * m_endpoint;
+    SubProtocol             m_subProtocol;
+    PIPSocketAddressAndPort m_presenceAgent;
+    PString                 m_watcherSubscriptionAOR;
+    int                     m_watcherInfoVersion;
+    PString                 m_publishedTupleId;
+
     typedef std::map<PString, PString> StringMap;
+    StringMap m_watcherAorById;
+    StringMap m_presenceIdByAor;
+    StringMap m_presenceAorById;
     StringMap m_authorisationIdByAor;
-};
 
-
-class SIPOMA_Presentity : public SIPXCAP_Presentity
-{
-    PCLASSINFO(SIPOMA_Presentity, SIPXCAP_Presentity);
-
-  public:
-    SIPOMA_Presentity();
-    SIPOMA_Presentity(const SIPOMA_Presentity & other) : SIPXCAP_Presentity(other) { }
-
-    PObject * Clone() const { return new SIPOMA_Presentity(*this); }
-
-  protected:
-    virtual void InitRuleSet(PXML & xml);
+  private:
+    void operator=(const SIP_Presentity &) { }
 };
 
 

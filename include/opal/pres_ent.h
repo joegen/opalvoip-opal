@@ -176,26 +176,8 @@ class OpalPresentity : public PSafeObject
 
   /**@name Attributes */
   //@{
-    /**Dictionary of attributes associated with this presentity.
-      */
-    class Attributes :  public PStringToString
-    {
-      public:
-        /// Determine of the attribute exists.
-        virtual bool Has(const PString &   key   ) const { return Contains(key  ); }
-        virtual bool Has(const PString & (*key)()) const { return Contains(key()); }
-
-        /// Get the attribute value.
-        virtual PString Get(const PString &   key   , const PString & deflt = PString::Empty()) const { return (*this)(key  , deflt); }
-                PString Get(const PString & (*key)(), const PString & deflt = PString::Empty()) const { return (*this)(key(), deflt); }
-
-        /// Set the attribute value.
-        virtual void Set(const PString &   key   , const PString & value) { SetAt(key  , value); }
-                void Set(const PString & (*key)(), const PString & value) { SetAt(key(), value); }
-    };
-
     ///< Get the attributes for this presentity.
-    Attributes & GetAttributes() { return m_attributes; }
+    PStringOptions & GetAttributes() { return m_attributes; }
 
     ///< Get all attribute names for this presentity class.
     virtual PStringArray GetAttributeNames() const = 0;
@@ -529,9 +511,6 @@ class OpalPresentity : public PSafeObject
       const PURL & aor
     );
 
-    void Internal_SendLocalPresence   (const OpalSetLocalPresenceCommand & cmd);
-    void Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand & cmd);
-    void Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd);
     void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
 
     virtual PString GetID() const;
@@ -542,7 +521,7 @@ class OpalPresentity : public PSafeObject
     OpalManager        * m_manager;
     PGloballyUniqueID    m_guid;
     PURL                 m_aor;
-    Attributes           m_attributes;
+    PStringOptions       m_attributes;
 
     AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;
     PresenceChangeNotifier       m_onPresenceChangeNotifier;
@@ -675,7 +654,7 @@ class OpalPresentityCommand {
     public: virtual void Process(OpalPresentity & presentity) { dynamic_cast<entity &>(presentity).func(*this); } \
   }; \
   static PFactory<OpalPresentityCommand>::Worker<entity##_##command> \
-  s_entity##_##command(PDefaultPFactoryKey(entity::Class())+typeid(command).name())
+  s_##entity##_##command(PDefaultPFactoryKey(entity::Class())+typeid(command).name())
 
 
 /** Command for subscribing to the status of another presentity.
@@ -729,9 +708,7 @@ class OpalSendMessageToCommand : public OpalPresentityCommand
 
 // Include concrete classes here so the factories are initialised
 #if OPAL_SIP && OPAL_PTLIB_EXPAT
-PFACTORY_LOAD(SIPLocal_Presentity);
-PFACTORY_LOAD(SIPXCAP_Presentity);
-PFACTORY_LOAD(SIPOMA_Presentity);
+PFACTORY_LOAD(SIP_Presentity);
 #endif
 
 
