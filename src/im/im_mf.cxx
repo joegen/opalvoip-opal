@@ -615,12 +615,14 @@ OpalPresentityIMContext::OpalPresentityIMContext()
 
 OpalIMManager::OpalIMManager(OpalManager & manager)
   : m_manager(manager)
+  , m_deleting(false)
 {
 }
 
 
 OpalIMManager::~OpalIMManager()
 {
+  m_deleting = true;
 }
 
 
@@ -648,6 +650,9 @@ void OpalIMManager::AddContext(PSafePtr<OpalIMContext> imContext)
 
 void OpalIMManager::RemoveContext(OpalIMContext * context)
 {
+  if (m_deleting)
+    return;
+
   PString key = context->GetKey();
   PString id = context->GetID();
 
