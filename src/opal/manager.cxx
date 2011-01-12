@@ -207,7 +207,7 @@ OpalManager::OpalManager()
   , zrtpEnabled(false)
 #endif
 #ifdef OPAL_HAS_IM
-  , m_imManager(*this)
+  , m_imManager(NULL)
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
@@ -239,6 +239,8 @@ OpalManager::OpalManager()
   SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
+  m_imManager = new OpalIMManager(*this);
+
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
   PTRACE(4, "OpalMan\tCreated manager.");
@@ -264,6 +266,7 @@ OpalManager::~OpalManager()
 
   delete stun;
   delete interfaceMonitor;
+  delete m_imManager;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
 }
@@ -1725,7 +1728,7 @@ PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 void OpalManager::GarbageCollection()
 {
   m_presentities.DeleteObjectsToBeRemoved();
-  m_imManager.GarbageCollection();
+  m_imManager->GarbageCollection();
 
   bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
@@ -1871,7 +1874,7 @@ PBoolean OpalManager::Message(const PURL & to, const PString & type, const PStri
 
 bool OpalManager::Message(OpalIM & message)
 {
-  PSafePtr<OpalIMContext> context = m_imManager.FindContextForMessageWithLock(message);
+  PSafePtr<OpalIMContext> context = m_imManager->FindContextForMessageWithLock(message);
   if (context == NULL)
     context = OpalIMContext::Create(*this, message.m_from, message.m_to);
   if (context == NULL)

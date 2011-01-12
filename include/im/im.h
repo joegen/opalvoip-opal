@@ -381,6 +381,7 @@ class OpalIMManager : public PObject
 
     PTime m_lastGarbageCollection;
     OpalManager & m_manager;
+    bool m_deleting;
     typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
     ContextsByConversationId m_contextsByConversationId;
 
