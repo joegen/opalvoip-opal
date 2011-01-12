@@ -620,6 +620,17 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
     return false;
   }
 
+  // Check if we have already received this command (have a transaction)
+  {
+    PString id = pdu->GetTransactionID();
+    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
+    if (transaction != NULL) {
+      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
+      transaction->Send(transport, *pdu);
+      return false;
+    }
+  }
+
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
       pdu->AdjustVia(transport);   // // Adjust the Via list
@@ -953,15 +964,18 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   message->m_fromAddr = transport.GetRemoteAddress();
   message->m_body     = pdu.GetEntityBody();
 
-  bool stat = manager.GetIMManager().OnIncomingMessage(message);
-
-  pdu.SendResponse(transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_NotAcceptableHere, this);
+  SIPResponse * response = new SIPResponse(*this, manager.GetIMManager().OnIncomingMessage(message)
+                                                       ? SIP_PDU::Successful_OK
+                                                       : SIP_PDU::Failure_NotAcceptableHere);
+  response->Send(transport, pdu);
   return true;
 }
 
+
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
 {
-  pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
+  SIPResponse * response = new SIPResponse(*this, SIP_PDU::Successful_OK);
+  response->Send(transport, pdu);
   return true;
 }
 
