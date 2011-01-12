@@ -144,6 +144,7 @@ OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString
   return InternalError;
 }
 
+
 ///////////////////////////////////////////////////////////////////////
 
 static PAtomicInteger::IntegerType g_idNumber = 1;
@@ -472,18 +473,6 @@ PString OpalPresentity::GetID() const
 }
 
 
-void OpalPresentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand &)
-{
-}
-
-void OpalPresentity::Internal_SubscribeToPresence (const OpalSubscribeToPresenceCommand &)
-{
-}
-
-void OpalPresentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand &)
-{
-}
-
 void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd)
 {
   OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
@@ -502,10 +491,7 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
 }
 
 
-OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     OpalPresentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  OpalPresentity, Internal_SubscribeToPresence);
-OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, OpalPresentity, Internal_AuthorisationRequest);
-OPAL_DEFINE_COMMAND(OpalSendMessageToCommand,        OpalPresentity, Internal_SendMessageToCommand);
+OPAL_DEFINE_COMMAND(OpalSendMessageToCommand, OpalPresentity, Internal_SendMessageToCommand);
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -197,7 +197,6 @@ DEF_FIELD(FaxAutoAnswerMode);
 
 static const wxChar PresenceGroup[] = wxT("/Presence");
 DEF_FIELD(PresenceAOR);
-DEF_FIELD(DefaultSipPresentity);
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
@@ -974,9 +973,6 @@ bool MyManager::Initialise()
   ////////////////////////////////////////
   // Presence fields
   config->SetPath(PresenceGroup);
-  if (config->Read(DefaultSipPresentityKey, &str))
-    SIP_Presentity::SetDefaultPresentity(str);
-
   int presIndex = 0;
   for (;;) {
     wxString groupName;
@@ -1489,10 +1485,13 @@ bool MyManager::CanDoFax() const
 #endif
 }
 
+
 bool MyManager::CanDoIM() const
 {
-  return true;
+  SpeedDialInfo * info = GetSelectedSpeedDial();
+  return info != NULL && !info->m_StateURL.IsEmpty();
 }
+
 
 void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
@@ -1735,29 +1734,31 @@ void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
-  if (info != NULL) {
-    PString fromAddr = info->m_StateURL; 
-    PString toAddr   = info->m_Address;
-    IMDialog * dialog;
-    {
-      PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, fromAddr, toAddr);
-      if (imContext == NULL) {
-        wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(toAddr), wxT("Error"));
-        return;
-      }
-      PString conversationId = imContext->GetID();
-      dialog = GetOrCreateIMDialog(conversationId, fromAddr, toAddr);
-      {
-        PWaitAndSignal m(m_imDialogMapMutex);
-        m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
-      }
-      imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
-      imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
+  if (info == NULL)
+    return;
 
+  PString fromAddr = info->m_StateURL;
+  if (fromAddr.IsEmpty())
+    return;
+
+  PString toAddr = info->m_Address;
+  PString conversationId;
+  {
+    PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, fromAddr, toAddr);
+    if (imContext == NULL) {
+      wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(toAddr), wxT("Error"));
+      return;
     }
-    dialog->Show();
+
+    imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
+    imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
+    conversationId = imContext->GetID();
   }
+
+  IMDialog * dialog = GetOrCreateIMDialog(conversationId, fromAddr, toAddr);
+  dialog->Show();
 }
+
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 {
@@ -3100,21 +3101,24 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 #endif // OPAL_SIP
 
 
-IMDialog * MyManager::GetOrCreateIMDialog(const PString & conversationId, const PString & from, const PString & to)
+IMDialog * MyManager::GetOrCreateIMDialog(const PString & conversationId,
+                                          const PString & local,
+                                          const PString & remote)
 {
   PWaitAndSignal m(m_imDialogMapMutex);
   IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
-  IMDialog * dialog = NULL;
   if (r != m_imDialogMap.end())
-    dialog = r->second;
-  else if (!from.IsEmpty() && !to.IsEmpty()) {
-    dialog = new IMDialog(this, conversationId, "", from, to, "");
-    {
-      PWaitAndSignal m(m_imDialogMapMutex);
-      m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
-    }
-    dialog->Show();
+    return r->second;
+
+  if (local.IsEmpty() || remote.IsEmpty())
+    return NULL;
+
+  IMDialog * dialog = new IMDialog(this, conversationId, "", local, remote, "");
+  {
+    PWaitAndSignal m(m_imDialogMapMutex);
+    m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
   }
+  dialog->Show();
 
   return dialog;
 }
@@ -3130,7 +3134,7 @@ void MyManager::OnRxMessage(wxCommandEvent & theEvent)
 {
   OpalIM * im = (OpalIM *)theEvent.GetClientData();
   LogWindow << "Received IM from " << (im->m_fromName.IsEmpty() ? im->m_fromAddr : im->m_fromName) << endl;
-  IMDialog * dialog = GetOrCreateIMDialog(im->m_conversationId, im->m_from, im->m_to);
+  IMDialog * dialog = GetOrCreateIMDialog(im->m_conversationId, im->m_to, im->m_from);
   dialog->AddTextToScreen(PwxString((const char *)im->m_body), false);
 
   delete im;
@@ -3157,7 +3161,7 @@ void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
     from = context->GetRemoteURL();
     to   = context->GetLocalURL();
   }
-  IMDialog * dialog = GetOrCreateIMDialog(conversationId, from, to);
+  IMDialog * dialog = GetOrCreateIMDialog(conversationId, to, from);
   if (dialog != NULL) {
     dialog->SetCompositionIndication(idle);
     LogWindow << "Composition " << (idle ? "idle" : "busy") << endl;
@@ -3946,10 +3950,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_PresentityAttributes->AutoSizeColLabelSize(0);
   m_PresentityAttributes->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
 
-  choice = FindWindowByNameAs<wxChoice>(this, wxT("DefaultSipPresentity"));
-  choice->SetValidator(wxGenericValidator(&m_DefaultSipPresentity));
-  m_DefaultSipPresentity = SIP_Presentity::GetDefaultPresentity();
-
   ////////////////////////////////////////
   // Codec fields
   m_AddCodec = FindWindowByNameAs<wxButton>(this, wxT("AddCodec"));
@@ -4342,9 +4342,6 @@ bool OptionsDialog::TransferDataFromWindow()
   }
   for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
     m_manager.RemovePresentity(*it);
-
-  config->SetPath(PresenceGroup);
-  SAVE_FIELD(DefaultSipPresentity, SIP_Presentity::SetDefaultPresentity);
 
   ////////////////////////////////////////
   // Codec fields
