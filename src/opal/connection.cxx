@@ -1661,26 +1661,6 @@ bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_IMF
 #endif
 
 
-bool OpalConnection::StringOptions::GetBoolean(const char * key, bool dflt) const
-{
-  PString * value = GetAt(key);
-  if (value == NULL)
-    return dflt;
-
-  return value->IsEmpty() || (*value *= "true") || (*value *= "yes") || value->AsInteger() != 0;
-}
-
-
-long OpalConnection::StringOptions::GetInteger(const char * key, long dflt) const
-{
-  PString * value = GetAt(key);
-  if (value == NULL)
-    return dflt;
-
-  return value->AsInteger();
-}
-
-
 void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
 {
   PStringToString params = url.GetParamVars();
