@@ -117,18 +117,18 @@ void TestPresEnt::AddPresentity(PArgList & args)
   presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
   presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
 
-  presentity->GetAttributes().Set(OpalPresentity::TimeToLiveKey,         "1200");
+  presentity->GetAttributes().Set(OpalPresentity::TimeToLiveKey,      "1200");
   if (args.HasOption('a'))
-    presentity->GetAttributes().Set(SIP_Presentity::AuthNameKey,         args.GetOptionString('a'));
+    presentity->GetAttributes().Set(SIP_Presentity::AuthNameKey,      args.GetOptionString('a'));
   if (args.HasOption('p'))
-    presentity->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,     args.GetOptionString('p'));
+    presentity->GetAttributes().Set(SIP_Presentity::AuthPasswordKey,  args.GetOptionString('p'));
   if (!m_presenceAgent.IsEmpty())
-    presentity->GetAttributes().Set(SIP_Presentity::PresenceServerKey,   m_presenceAgent);
-  presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapRootKey,       m_xcapRoot);
+    presentity->GetAttributes().Set(SIP_Presentity::PresenceAgentKey, m_presenceAgent);
+  presentity->GetAttributes().Set(SIP_Presentity::XcapRootKey,        m_xcapRoot);
   if (!m_xcapAuthID)
-    presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapAuthIdKey,   m_xcapAuthID);
+    presentity->GetAttributes().Set(SIP_Presentity::XcapAuthIdKey,    m_xcapAuthID);
   if (!m_xcapPassword)
-    presentity->GetAttributes().Set(SIPXCAP_Presentity::XcapPasswordKey, m_xcapPassword);
+    presentity->GetAttributes().Set(SIP_Presentity::XcapPasswordKey,  m_xcapPassword);
 
   if (presentity->Open()) {
     m_presentities.SetAt(psprintf("#%u", m_presentities.GetSize()/2+1),    presentity);
