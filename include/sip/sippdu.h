@@ -590,6 +590,9 @@ class SIP_PDU : public PSafeObject
       SIPConnection & connection,
       const OpalTransport & transport
     );
+    void InitialiseHeaders(
+      const SIP_PDU & request
+    );
 
     /**Add and populate Route header following the given routeSet.
       If first route is strict, exchange with URI.
@@ -634,12 +637,12 @@ class SIP_PDU : public PSafeObject
       SIPEndPoint * endpoint = NULL,
       const char * contact = NULL,
       const char * extra = NULL
-    );
+    ) const;
     bool SendResponse(
       OpalTransport & transport,
       SIP_PDU & response,
       SIPEndPoint * endpoint = NULL
-    );
+    ) const;
 
     /** Construct the PDU string to output.
         Returns the total length of the PDU.
@@ -904,6 +907,26 @@ class SIPTransaction : public SIP_PDU
 
 #define OPAL_PROXY_PARAM    "OPAL-proxy"
 #define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
+
+
+/////////////////////////////////////////////////////////////////////////
+// SIPResponse
+
+/** When we receive a command, we need a transaction to send repeated responses.
+ */
+class SIPResponse : public SIPTransaction
+{
+    PCLASSINFO(SIPResponse, SIPTransaction);
+  public:
+    SIPResponse(
+      SIPEndPoint   & endpoint,
+      StatusCodes code
+    );
+
+    virtual SIPTransaction * CreateDuplicate() const;
+
+    bool Send(OpalTransport & transport, const SIP_PDU & command);
+};
 
 
 /////////////////////////////////////////////////////////////////////////
