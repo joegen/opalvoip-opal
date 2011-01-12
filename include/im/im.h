@@ -186,26 +186,8 @@ class OpalIMContext : public PSafeObject
 
   /**@name Attributes */
   //@{
-    /**Dictionary of attributes associated with this presentity.
-      */
-    class Attributes :  public PStringToString
-    {
-      public:
-        /// Determine of the attribute exists.
-        virtual bool Has(const PString &   key   ) const { return Contains(key  ); }
-        virtual bool Has(const PString & (*key)()) const { return Contains(key()); }
-
-        /// Get the attribute value.
-        virtual PString Get(const PString &   key   , const PString & deflt = PString::Empty()) const { return (*this)(key  , deflt); }
-                PString Get(const PString & (*key)(), const PString & deflt = PString::Empty()) const { return (*this)(key(), deflt); }
-
-        /// Set the attribute value.
-        virtual void Set(const PString &   key   , const PString & value) { SetAt(key  , value); }
-                void Set(const PString & (*key)(), const PString & value) { SetAt(key(), value); }
-    };
-
     ///< Get the attributes for this presentity.
-    Attributes & GetAttributes() { return m_attributes; }
+    PStringOptions & GetAttributes() { return m_attributes; }
 
     virtual bool OnNewIncomingIM();
 
@@ -231,8 +213,8 @@ class OpalIMContext : public PSafeObject
     MessageSentNotifier                  m_messageSentNotifier;
     CompositionIndicationChangedNotifier m_compositionIndicationChangedNotifier;
 
-    OpalManager * m_manager;
-    Attributes    m_attributes;
+    OpalManager  * m_manager;
+    PStringOptions m_attributes;
 
     PSafePtr<OpalConnection> m_connection;
     PSafePtr<OpalPresentity> m_presentity;
