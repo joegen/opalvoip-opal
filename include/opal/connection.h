@@ -455,41 +455,9 @@ class OpalConnection : public PSafeObject
       SendDTMFMask                 = 0x0c00
     };
 
-    class StringOptions : public PStringToString 
+    class StringOptions : public PStringOptions 
     {
       public:
-        // Make sure the key set in a StringOptions is caseless
-        PBoolean SetAt(const char * key, const PString & data)
-        {
-          return PStringToString::SetAt(PCaselessString(key), data);
-        }
-        PBoolean SetAt(const PString & key, const PString & data)
-        {
-          return PStringToString::SetAt(PCaselessString(key), data);
-        }
-        PBoolean SetAt(const PCaselessString & key, const PString & data)
-        {
-          return PStringToString::SetAt(key, data);
-        }
-
-        bool GetBoolean(
-          const char * key,
-          bool dflt = false
-        ) const;
-        bool GetBoolean(
-          const PString & key,
-          bool dflt = false
-        ) const { return GetBoolean((const char *)key, dflt); }
-
-        long GetInteger(
-          const char * key,
-          long dflt = 0
-        ) const;
-        long GetInteger(
-          const PString & key,
-          long dflt = 0
-        ) const { return GetInteger((const char *)key, dflt); }
-
         /** Extract the parameters that start with "OPAL-XXX" from the URL and
             insert into the string options dictionary. The parameters are
             removed from the URL.
