@@ -1678,13 +1678,8 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 {
   CallIMDialog dlg(this);
-  int result = dlg.ShowModal();
-
-  if (result == ID_IMPAGE) {
-  }
-
-  if (result == ID_IMSESSION) {
-  }
+  if (dlg.ShowModal())
+    GetOrCreateIMDialog(PString::Empty(), dlg.m_Presentity, dlg.m_Address);
 }
 
 
@@ -1734,29 +1729,8 @@ void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
-  if (info == NULL)
-    return;
-
-  PString fromAddr = info->m_StateURL;
-  if (fromAddr.IsEmpty())
-    return;
-
-  PString toAddr = info->m_Address;
-  PString conversationId;
-  {
-    PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, fromAddr, toAddr);
-    if (imContext == NULL) {
-      wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(toAddr), wxT("Error"));
-      return;
-    }
-
-    imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
-    imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
-    conversationId = imContext->GetID();
-  }
-
-  IMDialog * dialog = GetOrCreateIMDialog(conversationId, fromAddr, toAddr);
-  dialog->Show();
+  if (info != NULL && !info->m_StateURL.IsEmpty() && !info->m_Address.IsEmpty())
+    GetOrCreateIMDialog(PString::Empty(), info->m_StateURL, info->m_Address);
 }
 
 
@@ -3115,23 +3089,42 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 #endif // OPAL_SIP
 
 
-IMDialog * MyManager::GetOrCreateIMDialog(const PString & conversationId,
+IMDialog * MyManager::GetOrCreateIMDialog(const PString & previousConversationId,
                                           const PString & local,
                                           const PString & remote)
 {
-  PWaitAndSignal m(m_imDialogMapMutex);
-  IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
-  if (r != m_imDialogMap.end())
-    return r->second;
-
   if (local.IsEmpty() || remote.IsEmpty())
     return NULL;
 
-  IMDialog * dialog = new IMDialog(this, conversationId, "", local, remote, "");
-  {
-    PWaitAndSignal m(m_imDialogMapMutex);
-    m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
+  PString conversationId = previousConversationId;
+  if (conversationId.IsEmpty()) {
+    PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, local, remote);
+    if (imContext == NULL) {
+      wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(remote), wxT("Error"));
+      return NULL;
+    }
+
+    imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
+    imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
+    conversationId = imContext->GetID();
   }
+
+  {
+    PWaitAndSignal mutex(m_imDialogMapMutex);
+
+    IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
+    if (r != m_imDialogMap.end())
+      return r->second;
+  }
+
+  IMDialog * dialog = new IMDialog(this, conversationId, "", local, remote, "");
+
+  {
+    m_imDialogMapMutex.Wait();
+    m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
+    m_imDialogMapMutex.Signal();
+  }
+
   dialog->Show();
 
   return dialog;
@@ -5902,20 +5895,16 @@ void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallIMDialog, wxDialog)
-  EVT_BUTTON(XRCID("ID_IMPAGE"),    CallIMDialog::OnPage)
-  EVT_BUTTON(XRCID("ID_IMSESSION"), CallIMDialog::OnSession)
-  EVT_TEXT(XRCID("Address"), CallIMDialog::OnAddressChange)
+  EVT_CHOICE(XRCID("Presentity"), CallIMDialog::OnChanged)
+  EVT_TEXT(XRCID("Address"), CallIMDialog::OnChanged)
 END_EVENT_TABLE()
 
 CallIMDialog::CallIMDialog(MyManager * manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
-  m_sessionOK = FindWindowByNameAs<wxButton>(this, wxT("ID_IMSESSION"));
-  m_sessionOK->Disable();
-
-  m_pageOK = FindWindowByNameAs<wxButton>(this, wxT("ID_IMPAGE"));
-  m_pageOK->Disable();
+  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok->Disable();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
@@ -5931,18 +5920,14 @@ CallIMDialog::CallIMDialog(MyManager * manager)
         m_AddressCtrl->AppendString(address);
     } while (config->GetNextEntry(entryName, entryIndex));
   }
+
+  PStringList presentities = manager->GetPresentities();
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("Presentity"));
+  for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
+    choice->Append(PwxString(*it));
+  choice->SetValidator(wxGenericValidator(&m_Presentity));
 }
 
-
-void CallIMDialog::OnPage(wxCommandEvent &)
-{
-  OnOK(ID_IMPAGE);
-}
-
-void CallIMDialog::OnSession(wxCommandEvent &)
-{
-  OnOK(ID_IMSESSION);
-}
 
 void CallIMDialog::OnOK(int code)
 {
@@ -5966,10 +5951,10 @@ void CallIMDialog::OnOK(int code)
 }
 
 
-void CallIMDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
+void CallIMDialog::OnChanged(wxCommandEvent & WXUNUSED(event))
 {
   TransferDataFromWindow();
-  m_pageOK->Enable(!m_Address.IsEmpty());
+  m_ok->Enable(!m_Presentity.IsEmpty() && !m_Address.IsEmpty());
 }
 
 
