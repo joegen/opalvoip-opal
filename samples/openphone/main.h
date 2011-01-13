@@ -471,7 +471,7 @@ struct SpeedDialInfo
   PwxString m_Name;
   PwxString m_Number;
   PwxString m_Address;
-  PwxString m_StateURL;
+  PwxString m_Presentity;
   PwxString m_Description;
 
   bool operator<(const SpeedDialInfo & info) const { return m_Name < info.m_Name; }
@@ -1010,8 +1010,11 @@ class MyManager : public wxFrame, public OpalManager
       SpeedDialViews view
     );
     void EditSpeedDial(
+      int index
+    );
+    bool UpdateSpeedDial(
       int index,
-      bool newItem
+      const SpeedDialInfo & info
     );
 
     enum {
@@ -1019,7 +1022,7 @@ class MyManager : public wxFrame, public OpalManager
       e_StatusColumn,
       e_NumberColumn,
       e_AddressColumn,
-      e_StateUrlColumn,
+      e_PresentityColumn,
       e_DescriptionColumn,
       e_NumColumns
     };
@@ -1077,7 +1080,7 @@ class MyManager : public wxFrame, public OpalManager
     IMDialogMap m_imDialogMap;
     PMutex m_imDialogMapMutex;
 
-    bool SubscribeBuddy(const PString & presentity, const PString & uri);
+    bool MonitorPresence(const PString & presentity, const PString & uri, bool start);
     PDECLARE_PresenceChangeNotifier(MyManager, OnPresenceChange);
 #endif
 
