@@ -1092,7 +1092,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   // See if we need to do a session switcharoo, but must be after stream closing
   if (previousSession != NULL) {
-    mediaSession->AttachTransport(previousSession->DetachTransport());
+    OpalMediaSession::Transport transport = previousSession->DetachTransport();
+    mediaSession->AttachTransport(transport);
     m_sessions[sessionId] = mediaSession;
     delete previousSession;
   }

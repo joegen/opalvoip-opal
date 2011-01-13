@@ -620,6 +620,17 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
     return false;
   }
 
+  // Check if we have already received this command (have a transaction)
+  {
+    PString id = pdu->GetTransactionID();
+    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
+    if (transaction != NULL) {
+      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
+      transaction->Send(transport, *pdu);
+      return false;
+    }
+  }
+
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
       pdu->AdjustVia(transport);   // // Adjust the Via list
@@ -953,15 +964,18 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   message->m_fromAddr = transport.GetRemoteAddress();
   message->m_body     = pdu.GetEntityBody();
 
-  bool stat = manager.GetIMManager().OnIncomingMessage(message);
-
-  pdu.SendResponse(transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_NotAcceptableHere, this);
+  SIPResponse * response = new SIPResponse(*this, manager.GetIMManager().OnIncomingMessage(message)
+                                                       ? SIP_PDU::Successful_OK
+                                                       : SIP_PDU::Failure_NotAcceptableHere);
+  response->Send(transport, pdu);
   return true;
 }
 
+
 bool SIPEndPoint::OnReceivedOPTIONS(OpalTransport & transport, SIP_PDU & pdu)
 {
-  pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
+  SIPResponse * response = new SIPResponse(*this, SIP_PDU::Successful_OK);
+  response->Send(transport, pdu);
   return true;
 }
 
@@ -1331,53 +1345,77 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
   // assume the application knows what it is doing.
   //
 
+  if (message.m_to.IsEmpty())
+    return OpalIMContext::SentDestinationUnknown;
+
   // don't send empty MESSAGE because some clients barf (cough...X-Lite...cough)
   if (message.m_body.IsEmpty() && (message.m_body *= "text/plain"))
     return OpalIMContext::SentOK;
 
+  SIPMessage::Params params;
+
+  /*
+  params.m_id              = message.m_conversationId;
+  params.m_messageId       = message.m_messageId;
+  params.m_localAddress    = message.m_from.AsString();
+  params.m_addressOfRecord = message.m_from.AsString();
+  params.m_remoteAddress   = message.m_to.AsString();
+  params.m_contentType     = message.m_mimeType;
+  params.m_body            = message.m_body;
+  */
+  OpalSIPIMContext::PopulateParams(params, message);
+
+  OpalIMContext::SentStatus stat = SendMESSAGE(params);
+
+  // conversation ID may have been changed
+  message.m_conversationId = params.m_id;
+
+  // set the from address as well
+  //if (message.m_from.IsEmpty())
+  //  message.m_from = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
+
+  return stat;
+}
+
+
+OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
+{
   //
   // if conversation ID has been set, assume the handler with the matching call ID is correct if the destination is the same, else create a new conversation
   // if no conversation ID has been set, see if the destination AOR exists and use that handler (and it's call ID)
   // 
   PSafePtr<SIPHandler> handler;
-  if (!message.m_conversationId.IsEmpty()) {
-    handler = activeSIPHandlers.FindSIPHandlerByCallID(message.m_conversationId, PSafeReference);
-    if ((handler != NULL) && !(handler->GetAddressOfRecord().AsString() *= message.m_from))
+  if (!params.m_id.IsEmpty()) {
+    handler = activeSIPHandlers.FindSIPHandlerByCallID(params.m_id, PSafeReference);
+    if ((handler != NULL) && !(handler->GetAddressOfRecord().AsString() *= params.m_localAddress))
       handler.SetNULL();
   }
   else {
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(message.m_to.AsString(), SIP_PDU::Method_MESSAGE, PSafeReference);
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_remoteAddress, SIP_PDU::Method_MESSAGE, PSafeReference);
     if (handler == NULL)
-      message.m_conversationId = OpalGloballyUniqueID().AsString();
+      params.m_id = OpalGloballyUniqueID().AsString();
     else
-      message.m_conversationId = handler->GetCallID();
+      params.m_id = handler->GetCallID();
   }
 
-  SIPMessage::Params params;
-  params.m_id              = message.m_conversationId;
-  params.m_messageId       = message.m_messageId;
-  params.m_localAddress    = message.m_from.AsString();
-  params.m_addressOfRecord = params.m_localAddress;
-  params.m_remoteAddress   = message.m_to.AsString();
-  params.m_contentType     = message.m_mimeType;
-  params.m_body            = message.m_body;
 
-  // create the handler if required
+  // create or update the handler if required
   if (handler == NULL) {
     handler = new SIPMessageHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
 
+  {
+    PSafePtr<SIPMessageHandler> messageHandler = PSafePtrCast<SIPHandler, SIPMessageHandler>(handler);
+    messageHandler->SetMessageId(params.m_messageId);
+  }
+
   SIPMIMEInfo & mime = handler->m_mime;
-  mime.SetContentType(message.m_mimeType);
-  handler->SetBody(message.m_body);
+  mime.SetContentType(params.m_contentType);
+  handler->SetBody(params.m_body);
 
   if (!handler->ActivateState(SIPHandler::Subscribing))
     return OpalIMContext::SentNoTransport;
-
-  // and the from address as well
-  if (message.m_from.IsEmpty())
-    message.m_from = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
 
   return OpalIMContext::SentPending;
 }
@@ -1422,6 +1460,7 @@ void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params & params, SIP_PDU:
   OpalIMManager & mgr = manager.GetIMManager();
 
   OpalIMContext::MessageSentInfo info;
+
   info.messageId = params.m_messageId;
   info.status    = status;
   mgr.AddWork(new OpalIMManager::MessageSent_Work(mgr, params.m_id, info));

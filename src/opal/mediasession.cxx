@@ -106,7 +106,7 @@ bool OpalMediaSession::Open(const OpalTransportAddress &)
 }
 
 
-bool OpalMediaSession::Close(bool reading)
+bool OpalMediaSession::Close(bool /*reading*/)
 {
   return true;
 }

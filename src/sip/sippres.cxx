@@ -57,40 +57,24 @@
 #include <ptclib/random.h>
 
 
-const PString & SIP_Presentity::DefaultPresenceServerKey() { static const PString s = "Default Presence Server"; return s; }
-const PString & SIP_Presentity::PresenceServerKey()        { static const PString s = "Presence Server";         return s; }
+PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
 
-const char SIP_Local_Scheme[] = "sip-local";
-const char SIP_XCAP_Scheme[]  = "sip-xcap";
-const char SIP_OMA_Scheme[]   = "sip-oma";
+const PString & SIP_Presentity::SubProtocolKey()   { static const PString s = "Sub-Protocol";   return s; }
+const PString & SIP_Presentity::PresenceAgentKey() { static const PString s = "Presence Agent"; return s; }
+const PString & SIP_Presentity::XcapRootKey()      { static const PString s = "XCAP Root";      return s; }
+const PString & SIP_Presentity::XcapAuthIdKey()    { static const PString s = "XCAP Auth ID";   return s; }
+const PString & SIP_Presentity::XcapPasswordKey()  { static const PString s = "XCAP Password";  return s; }
+const PString & SIP_Presentity::XcapAuthAuidKey()  { static const PString s = "XCAP AUID";      return s; }
+const PString & SIP_Presentity::XcapAuthFileKey()  { static const PString s = "XCAP AuthFile";  return s; }
+const PString & SIP_Presentity::XcapBuddyListKey() { static const PString s = "XCAP BuddyList"; return s; }
 
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPLocal_Presentity, SIP_Local_Scheme, false);
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPXCAP_Presentity,  SIP_XCAP_Scheme, false);
-PFACTORY_CREATE(PFactory<OpalPresentity>, SIPOMA_Presentity,   SIP_OMA_Scheme, false);
-
-static bool sip_default_PresentityWorker = PFactory<OpalPresentity>::RegisterAs("sip", SIP_OMA_Scheme);
+OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
+OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
+OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIP_Presentity, Internal_SubscribeToWatcherInfo);
+OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIP_Presentity, Internal_AuthorisationRequest);
 
 static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 
-//
-// declare URL schemes needed to access different SIP presence modes
-// Can't use RegisterAs to make these all "sip" point to the PURLScheme 
-// instance due to order of static initialisation issues
-
-
-#define DECLARE_SIPURLScheme(tag, s) \
-class SIPURLScheme_##s : public PURLLegacyScheme \
-{ \
-  public: \
-    SIPURLScheme_##s() \
-      : PURLLegacyScheme(tag, PTrue,  PTrue,  PTrue,  PFalse, PFalse,  PTrue,  PTrue,  PFalse, PFalse, PFalse, 5060) \
-    { } \
-}; \
-  static PFactory<PURLScheme>::Worker<SIPURLScheme_##s> s##_Factory(tag, true); \
-
-DECLARE_SIPURLScheme(SIP_Local_Scheme, sip_local);
-DECLARE_SIPURLScheme(SIP_XCAP_Scheme,  sip_xcap);
-DECLARE_SIPURLScheme(SIP_OMA_Scheme,   sip_oma);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,9 +100,19 @@ static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML 
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-SIP_Presentity::SIP_Presentity(const char * subScheme)
-  : m_subScheme(subScheme)
-  , m_endpoint(NULL)
+
+SIP_Presentity::SIP_Presentity()
+  : m_endpoint(NULL)
+  , m_subProtocol(e_OMA)
+  , m_watcherInfoVersion(-1)
+{
+  m_attributes.Set(SubProtocolKey, "OMA");
+}
+
+
+SIP_Presentity::SIP_Presentity(const SIP_Presentity & other)
+  : OpalPresentityWithCommandThread(other)
+  , m_endpoint(other.m_endpoint)
   , m_watcherInfoVersion(-1)
 {
 }
@@ -126,37 +120,25 @@ SIP_Presentity::SIP_Presentity(const char * subScheme)
 
 SIP_Presentity::~SIP_Presentity()
 {
-}
-
-void SIP_Presentity::SetAOR(const PURL & aor)
-{
-  PFactory<PURLScheme>::KeyMap_T & keyMap = PFactory<PURLScheme>::GetKeyMap();
-  m_aor = aor;
-  if (keyMap.find(aor.GetScheme()) != keyMap.end())
-    m_aor.SetScheme("sip");
-}
-
-bool SIP_Presentity::SetDefaultPresentity(const PString & prefix)
-{
-  if (PFactory<OpalPresentity>::RegisterAs("sip", prefix))
-    return true;
-
-  PTRACE(1, "SIPPres\tCannot set default 'sip' presentity handler to '" << prefix << '\'');
-  return false;
+  Close();
 }
 
 
-PString SIP_Presentity::GetDefaultPresentity()
+PStringArray SIP_Presentity::GetAttributeNames() const
 {
-  PString str;
-
-  OpalPresentity * presentity = PFactory<OpalPresentity>::CreateInstance("sip");
-  if (presentity != NULL) {
-    str = dynamic_cast<SIP_Presentity *>(presentity)->m_subScheme;
-    delete presentity;
-  }
-
-  return str;
+  PStringArray names;
+  names.AppendString(SubProtocolKey());
+  names.AppendString(PresenceAgentKey());
+  names.AppendString(AuthNameKey());
+  names.AppendString(AuthPasswordKey());
+  names.AppendString(XcapRootKey());
+  names.AppendString(XcapAuthIdKey());
+  names.AppendString(XcapPasswordKey());
+  names.AppendString(XcapAuthAuidKey());
+  names.AppendString(XcapAuthFileKey());
+  names.AppendString(XcapBuddyListKey());
+  names.AppendString(TimeToLiveKey());
+  return names;
 }
 
 
@@ -171,7 +153,62 @@ bool SIP_Presentity::Open()
     return false;
   }
 
+  PCaselessString subProto = m_attributes.Get(SubProtocolKey);
+  if (subProto == "PeerToPeer")
+    m_subProtocol = e_PeerToPeer;
+  else if (subProto == "Agent")
+    m_subProtocol = e_WithAgent;
+  else if (subProto == "XCAP")
+    m_subProtocol = e_XCAP;
+  else if (subProto == "OMA")
+    m_subProtocol = e_OMA;
+  else {
+    PTRACE(1, "SIPPres\tUnknown sub-protocol \"" << subProto << '"');
+    return false;
+  }
+
+  if (m_subProtocol == e_PeerToPeer) {
+    m_presenceAgent.SetPort(0); // Make invalid
+    PTRACE(3, "SIPPres\tUsing peer to peer mode for " << m_aor);
+  }
+  else {
+    // find presence server for Presentity as per RFC 3861
+    // if not found, look for default presence server setting
+    // if none, use hostname portion of domain name
+    PString agent = m_attributes.Get(PresenceAgentKey);
+    if (agent.IsEmpty()) {
+#if P_DNS
+      PIPSocketAddressAndPortVector addrs;
+      if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
+        PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
+        m_presenceAgent = addrs[0];
+      }
+      else
+#endif
+      {
+        PTRACE(4, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
+        if (!m_presenceAgent.Parse(m_aor.GetHostName(), m_aor.GetPort())) {
+          PTRACE(3, "SIPPres\tCould not determine Presence Server from aor \"" << m_aor << '"');
+          return false;
+        }
+      }
+    }
+    else {
+      if (!m_presenceAgent.Parse(agent)) {
+        PTRACE(3, "SIPPres\tCould not parse Presence Server \"" << agent << '"');
+        return false;
+      }
+    }
+    PTRACE(3, "SIPPres\tUsing " << m_presenceAgent << " as presence server for " << m_aor);
+  }
+
+  m_watcherSubscriptionAOR.MakeEmpty();
   m_watcherInfoVersion = -1;
+
+  StartThread();
+
+  // subscribe to presence watcher infoformation
+  SendCommand(CreateCommand<SIPWatcherInfoCommand>());
 
   return true;
 }
@@ -184,91 +221,6 @@ bool SIP_Presentity::IsOpen() const
 
 
 bool SIP_Presentity::Close()
-{
-  m_endpoint = NULL;
-  return true;
-}
-
-
-//////////////////////////////////////////////////////////////
-
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIPLocal_Presentity, Internal_SubscribeToPresence);
-
-SIPLocal_Presentity::SIPLocal_Presentity()
-  : SIP_Presentity(SIP_Local_Scheme)
-{
-}
-
-
-SIPLocal_Presentity::~SIPLocal_Presentity()
-{
-  Close();
-}
-
-
-PStringArray SIPLocal_Presentity::GetAttributeNames() const
-{
-  PStringArray names;
-  names.AppendString(SIP_Presentity::AuthNameKey());
-  names.AppendString(SIP_Presentity::AuthPasswordKey());
-  names.AppendString(SIP_Presentity::PresenceServerKey());
-  names.AppendString(SIP_Presentity::DefaultPresenceServerKey());
-  names.AppendString(SIP_Presentity::TimeToLiveKey());
-  return names;
-}
-
-
-bool SIPLocal_Presentity::Open()
-{
-  if (!SIP_Presentity::Open())
-    return false;
-
-  // find presence server for Presentity as per RFC 3861
-  // if not found, look for default presence server setting
-  // if none, use hostname portion of domain name
-  if (!m_attributes.Has(SIP_Presentity::PresenceServerKey)) {
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
-      PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
-      m_presenceServer = addrs[0];
-    }
-    else
-#endif
-    {
-      PTRACE(3, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
-      PString defServer;
-      if (
-          m_attributes.Has(SIP_Presentity::DefaultPresenceServerKey) && 
-          !(defServer = m_attributes.Get(SIP_Presentity::DefaultPresenceServerKey)).IsEmpty()
-          )
-        m_presenceServer.Parse(defServer, m_endpoint->GetDefaultSignalPort());
-      else
-        m_presenceServer.Parse(m_aor.GetHostName(), m_aor.GetPort());
-    }
-  }
-
-  if (!m_presenceServer.GetAddress().IsValid()) {
-    PTRACE(1, "SIPPres\tUnable to lookup hostname for '" << m_presenceServer.GetAddress() << '\'');
-    return false;
-  }
-
-  // set presence server
-  m_attributes.Set(SIP_Presentity::PresenceServerKey, m_presenceServer.AsString());
-
-  PTRACE(3, "SIPPres\tUsing " << m_presenceServer.GetAddress() << " as presence server for " << m_aor);
-
-  m_watcherSubscriptionAOR.MakeEmpty();
-
-  StartThread();
-
-  // subscribe to presence watcher infoformation
-  SendCommand(CreateCommand<SIPWatcherInfoCommand>());
-
-  return true;
-}
-
-bool SIPLocal_Presentity::Close()
 {
   if (!IsOpen())
     return false;
@@ -302,10 +254,12 @@ bool SIPLocal_Presentity::Close()
 
   m_notificationMutex.Signal();
 
-  return SIP_Presentity::Close();
+  m_endpoint = NULL;
+  return true;
 }
 
-void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
+
+void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceCommand & cmd)
 {
   if (cmd.m_subscribe) {
     if (m_presenceIdByAor.find(cmd.m_presentity) != m_presenceIdByAor.end()) {
@@ -320,7 +274,8 @@ void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPres
 
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
-    param.m_remoteAddress   = m_presenceServer.AsString()+";transport=tcp";
+    if (m_subProtocol != e_PeerToPeer)
+      param.m_remoteAddress = m_presenceAgent.AsString()+";transport=tcp";
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
@@ -348,7 +303,8 @@ void SIPLocal_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPres
   }
 }
 
-void SIPLocal_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+
+void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
   if (status.m_reason == SIP_PDU::Information_Trying)
     return;
@@ -369,7 +325,7 @@ void SIPLocal_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, co
 }
 
 
-void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
   static PXML::ValidationInfo const StatusValidation[] = {
     { PXML::RequiredElement,            "basic" },
@@ -472,13 +428,19 @@ void SIPLocal_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::
 }
 
 
-OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIPLocal_Presentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIPLocal_Presentity, Internal_AuthorisationRequest);
-OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIPLocal_Presentity, Internal_SubscribeToWatcherInfo);
-
-
-void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
+unsigned SIP_Presentity::GetExpiryTime() const
 {
+  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
+  return ttl > 0 ? ttl : 300;
+}
+
+
+void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand & cmd)
+{
+  if (m_subProtocol == e_PeerToPeer) {
+    PTRACE(3, "SIPPres\tRequires agent to do watcher, aor=" << m_aor);
+    return;
+  }
 
   if (cmd.m_unsubscribe) {
     if (m_watcherSubscriptionAOR.IsEmpty()) {
@@ -499,7 +461,7 @@ void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCo
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceServer.AsString() + ";transport=tcp";
+  param.m_remoteAddress    = m_presenceAgent.AsString() + ";transport=tcp";
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
@@ -510,7 +472,7 @@ void SIPLocal_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCo
 }
 
 
-void SIPLocal_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
+void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
    if (status.m_reason == SIP_PDU::Information_Trying)
     return;
@@ -534,7 +496,7 @@ void SIPLocal_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &,
 }
 
 
-void SIPLocal_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
   static PXML::ValidationInfo const WatcherValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id"  },
@@ -609,7 +571,7 @@ void SIPLocal_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscrib
 }
 
 
-void SIPLocal_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
+void SIP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 {
   PString id     = watcher->GetAttribute("id");
   PString status = watcher->GetAttribute("status");
@@ -637,13 +599,14 @@ void SIPLocal_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 }
 
 
-void SIPLocal_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
+void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
   SIPPresenceInfo sipPresence(GetID());
   sipPresence.m_entity = m_aor.AsString();
-  sipPresence.m_presenceAgent = m_presenceServer.AsString();
+  if (m_subProtocol != e_PeerToPeer)
+    sipPresence.m_presenceAgent = m_presenceAgent.AsString();
   sipPresence.m_state = cmd.m_state;
   sipPresence.m_note = cmd.m_note;
 
@@ -652,53 +615,14 @@ void SIPLocal_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceC
   else
     sipPresence.m_tupleId = m_publishedTupleId;
 
-  m_endpoint->PublishPresence(sipPresence,
-            cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
+  if (m_subProtocol != e_PeerToPeer)
+    m_endpoint->PublishPresence(sipPresence, cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
+  else
+    m_endpoint->Notify(SIPURL(m_aor.AsString()), SIPSubscribe::Presence, sipPresence.AsXML());
 }
 
 
-unsigned SIPLocal_Presentity::GetExpiryTime() const
-{
-  int ttl = m_attributes.Get(OpalPresentity::TimeToLiveKey, "300").AsInteger();
-  return ttl > 0 ? ttl : 300;
-}
-
-
-//////////////////////////////////////////////////////////////
-
-const PString & SIPXCAP_Presentity::XcapRootKey()      { static const PString s = "XCAP Root";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthIdKey()    { static const PString s = "XCAP Auth ID";   return s; }
-const PString & SIPXCAP_Presentity::XcapPasswordKey()  { static const PString s = "XCAP Password";  return s; }
-const PString & SIPXCAP_Presentity::XcapAuthAuidKey()  { static const PString s = "XCAP AUID";      return s; }
-const PString & SIPXCAP_Presentity::XcapAuthFileKey()  { static const PString s = "XCAP AuthFile";  return s; }
-const PString & SIPXCAP_Presentity::XcapBuddyListKey() { static const PString s = "XCAP BuddyList"; return s; }
-
-SIPXCAP_Presentity::SIPXCAP_Presentity()
-  : SIP_Presentity(SIP_XCAP_Scheme)
-{
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "index");
-  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "buddylist");
-}
-
-
-PStringArray SIPXCAP_Presentity::GetAttributeNames() const
-{
-  PStringArray names;
-  names.AppendString(SIP_Presentity::AuthNameKey());
-  names.AppendString(SIP_Presentity::AuthPasswordKey());
-  names.AppendString(SIPXCAP_Presentity::XcapRootKey());
-  names.AppendString(SIPXCAP_Presentity::XcapAuthIdKey());
-  names.AppendString(SIPXCAP_Presentity::XcapPasswordKey());
-  names.AppendString(SIPXCAP_Presentity::XcapAuthAuidKey());
-  names.AppendString(SIPXCAP_Presentity::XcapAuthFileKey());
-  names.AppendString(SIPXCAP_Presentity::XcapBuddyListKey());
-  names.AppendString(SIP_Presentity::TimeToLiveKey());
-  return names;
-}
-
-
-bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd)
+bool SIP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd)
 {
   PString ruleId = m_authorisationIdByAor[cmd.m_presentity];
 
@@ -759,16 +683,22 @@ bool SIPXCAP_Presentity::ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisati
 }
 
 
-void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
+void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRequestCommand & cmd)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to do authorisation, aor=" << m_aor);
+    return;
+  }
+
   XCAPClient xcap;
-  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
-  xcap.SetApplicationUniqueID(m_attributes.Get(SIPXCAP_Presentity::XcapAuthAuidKey)); // As per RFC5025/9.1
+  InitRootXcap(xcap);
+  xcap.SetApplicationUniqueID(m_attributes.Get(XcapAuthAuidKey,
+                m_subProtocol == e_OMA ? "org.openmobilealliance.pres-rules" : "pres-rules")); // As per RFC5025/9.1
   xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
   xcap.SetUserIdentifier(m_aor.AsString());             // As per RFC5025/9.7
-  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
-                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
-  xcap.SetFilename(m_attributes.Get(SIPXCAP_Presentity::XcapAuthFileKey));
+  xcap.SetAuthenticationInfo(m_attributes.Get(XcapAuthIdKey, m_attributes.Get(AuthNameKey, xcap.GetUserIdentifier())),
+                             m_attributes.Get(XcapPasswordKey, m_attributes.Get(AuthPasswordKey)));
+  xcap.SetFilename(m_attributes.Get(XcapAuthFileKey, m_subProtocol == e_OMA ? "pres-rules" : "index"));
 
   // See if we can use teh quick method
   if (m_authorisationIdByAor.find(cmd.m_presentity) != m_authorisationIdByAor.end()) {
@@ -789,7 +719,49 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
     }
 
     // No whole document, create a fresh one
-    InitRuleSet(xml);
+    xml.SetOptions(PXML::NoOptions);
+    element = xml.SetRootElement("cr:ruleset");
+    element->SetAttribute("xmlns:pr", "urn:ietf:params:xml:ns:pres-rules");
+    element->SetAttribute("xmlns:cr", "urn:ietf:params:xml:ns:common-policy");
+
+    element = element->AddElement("rule", "id", "presence_allow_own");
+
+    element->AddElement("cr:conditions")->AddElement("cr:identity")->AddElement("cr:one")->SetAttribute("id", m_aor.AsString());
+    element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
+    element = element->AddElement("cr:transformations");
+    element->AddElement("pr:provide-services")->AddElement("pr:all-services");
+    element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
+    element->AddElement("pr:provide-all-attributes");
+    if (m_subProtocol == e_OMA) {
+      PXMLElement * root = xml.GetRootElement();
+      root->SetAttribute("xmlns:ocp", "urn:oma:xml:xdm:common-policy");
+
+      element = root->AddElement("cr:rule", "id", "wp_prs_block_anonymous");
+      element->AddElement("cr:conditions")->AddElement("ocp:anonymous-request");
+      element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
+
+      element = root->AddElement("cr:rule", "id", "wp_prs_unlisted");
+      element->AddElement("cr:conditions")->AddElement("ocp:other-identity");
+      element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationConfirming]);
+
+      // Use an xcap object to calculate horrible URL
+      XCAPClient xcap;
+      InitBuddyXcap(xcap, PString::Empty(), "oma_grantedcontacts");
+
+      element = root->AddElement("cr:rule", "id", "wp_prs_grantedcontacts");
+      element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
+      element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
+      element = element->AddElement("cr:transformations");
+      element->AddElement("pr:provide-services")->AddElement("pr:all-services");
+      element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
+      element->AddElement("pr:provide-all-attributes");
+
+      InitBuddyXcap(xcap, PString::Empty(), "oma_blockedcontacts");
+
+      element = root->AddElement("cr:rule", "id", "wp_prs_blockedcontacts");
+      element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
+      element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
+    }
 
     if (!xcap.PutXml(xml)) {
       PTRACE(2, "SIPPres\tCould not add new rule file for '" << m_aor << "\'\n"
@@ -863,38 +835,30 @@ void SIPXCAP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationRe
 }
 
 
-void SIPXCAP_Presentity::InitRuleSet(PXML & xml)
+void SIP_Presentity::InitRootXcap(XCAPClient & xcap)
 {
-  xml.SetOptions(PXML::NoOptions);
-  PXMLElement * element = xml.SetRootElement("cr:ruleset");
-  element->SetAttribute("xmlns:pr", "urn:ietf:params:xml:ns:pres-rules");
-  element->SetAttribute("xmlns:cr", "urn:ietf:params:xml:ns:common-policy");
-
-  element = element->AddElement("rule", "id", "presence_allow_own");
-
-  element->AddElement("cr:conditions")->AddElement("cr:identity")->AddElement("cr:one")->SetAttribute("id", m_aor.AsString());
-  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
-  element = element->AddElement("cr:transformations");
-  element->AddElement("pr:provide-services")->AddElement("pr:all-services");
-  element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
-  element->AddElement("pr:provide-all-attributes");
+  PString root = m_attributes.Get(XcapRootKey);
+  if (root.IsEmpty())
+    root = "http:" + m_presenceAgent.AsString() + '/';
+  xcap.SetRoot(root);
 }
 
 
-void SIPXCAP_Presentity::InitBuddyXcap(XCAPClient & xcap, const PString & entryName, const PString & listName)
+void SIP_Presentity::InitBuddyXcap(XCAPClient & xcap, const PString & entryName, const PString & listName)
 {
-  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
+  InitRootXcap(xcap);
   xcap.SetApplicationUniqueID("resource-lists");            // As per RFC5025/9.1
   xcap.SetContentType("application/resource-lists+xml");    // As per RFC5025/9.4
   xcap.SetUserIdentifier(m_aor.AsString());                 // As per RFC5025/9.7
-  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
-                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+  xcap.SetAuthenticationInfo(m_attributes.Get(XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
+                             m_attributes.Get(XcapPasswordKey, m_attributes.Get(AuthPasswordKey)));
   xcap.SetFilename("index");
 
   XCAPClient::NodeSelector node;
   node.SetNamespace("urn:ietf:params:xml:ns:resource-lists");
   node.AddElement("resource-lists");
-  node.AddElement("list", "name", listName.IsEmpty() ? m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey) : listName);
+  node.AddElement("list", "name", listName.IsEmpty() ? m_attributes.Get(XcapBuddyListKey,
+                                        m_subProtocol == e_OMA ? "oma_buddylist" : "buddylist") : listName);
 
   if (!entryName.IsEmpty())
     node.AddElement("entry", "uri", entryName);
@@ -985,8 +949,13 @@ static bool RecursiveGetBuddyList(OpalPresentity::BuddyList & buddies, XCAPClien
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyListEx(BuddyList & buddies)
+OpalPresentity::BuddyStatus SIP_Presentity::GetBuddyListEx(BuddyList & buddies)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   XCAPClient xcap;
   InitBuddyXcap(xcap);
   if (RecursiveGetBuddyList(buddies, xcap, xcap.BuildURL()) ||
@@ -998,13 +967,19 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyListEx(BuddyList & buddi
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyListEx(const BuddyList & buddies)
+OpalPresentity::BuddyStatus SIP_Presentity::SetBuddyListEx(const BuddyList & buddies)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   PXML xml(PXML::FragmentOnly);
 
+  PString buddyListKey = m_subProtocol == e_OMA ? "oma_buddylist" : "buddylist";
   PXMLElement * root = xml.SetRootElement("list");
   root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
-  root->SetAttribute("name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+  root->SetAttribute("name", m_attributes.Get(XcapBuddyListKey, buddyListKey));
 
   for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
     root->AddChild(BuddyInfoToXML(*it, root));
@@ -1021,7 +996,7 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyListEx(const BuddyList &
     root = xml.SetRootElement("resource-lists");
     root->SetAttribute("xmlns", "urn:ietf:params:xml:ns:resource-lists");
 
-    PXMLElement * listElement = root->AddElement("list", "name", m_attributes.Get(SIPXCAP_Presentity::XcapBuddyListKey));
+    PXMLElement * listElement = root->AddElement("list", "name", m_attributes.Get(XcapBuddyListKey, buddyListKey));
 
     for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
       listElement->AddChild(BuddyInfoToXML(*it, listElement));
@@ -1038,8 +1013,13 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyListEx(const BuddyList &
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyListEx()
+OpalPresentity::BuddyStatus SIP_Presentity::DeleteBuddyListEx()
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   XCAPClient xcap;
   InitBuddyXcap(xcap);
 
@@ -1052,8 +1032,13 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyListEx()
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyEx(BuddyInfo & buddy)
+OpalPresentity::BuddyStatus SIP_Presentity::GetBuddyEx(BuddyInfo & buddy)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   XCAPClient xcap;
   InitBuddyXcap(xcap, buddy.m_presentity);
 
@@ -1065,8 +1050,13 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::GetBuddyEx(BuddyInfo & buddy)
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyEx(const BuddyInfo & buddy)
+OpalPresentity::BuddyStatus SIP_Presentity::SetBuddyEx(const BuddyInfo & buddy)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   if (buddy.m_presentity.IsEmpty())
     return BuddyStatus_GenericFailure;
 
@@ -1092,8 +1082,13 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::SetBuddyEx(const BuddyInfo & bud
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyEx(const PURL & presentity)
+OpalPresentity::BuddyStatus SIP_Presentity::DeleteBuddyEx(const PURL & presentity)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   XCAPClient xcap;
   InitBuddyXcap(xcap, presentity);
 
@@ -1106,16 +1101,21 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::DeleteBuddyEx(const PURL & prese
 }
 
 
-OpalPresentity::BuddyStatus SIPXCAP_Presentity::SubscribeBuddyListEx(PINDEX & numSuccessful, bool subscribe)
+OpalPresentity::BuddyStatus SIP_Presentity::SubscribeBuddyListEx(PINDEX & numSuccessful, bool subscribe)
 {
+  if (m_subProtocol < e_XCAP) {
+    PTRACE(4, "SIPPres\tRequires XCAP to have buddies, aor=" << m_aor);
+    return BuddyStatus_ListFeatureNotImplemented;
+  }
+
   PXML xml;
   XCAPClient xcap;
-  xcap.SetRoot(m_attributes.Get(SIPXCAP_Presentity::XcapRootKey));
+  InitRootXcap(xcap);
   xcap.SetApplicationUniqueID("rls-services");
   xcap.SetContentType("application/rls-services+xml");
   xcap.SetUserIdentifier(m_aor.AsString());
-  xcap.SetAuthenticationInfo(m_attributes.Get(SIPXCAP_Presentity::XcapAuthIdKey, m_attributes.Get(OpalPresentity::AuthNameKey, xcap.GetUserIdentifier())),
-                             m_attributes.Get(SIPXCAP_Presentity::XcapPasswordKey, m_attributes.Get(OpalPresentity::AuthPasswordKey)));
+  xcap.SetAuthenticationInfo(m_attributes.Get(XcapAuthIdKey, m_attributes.Get(AuthNameKey, xcap.GetUserIdentifier())),
+                             m_attributes.Get(XcapPasswordKey, m_attributes.Get(AuthPasswordKey)));
   xcap.SetFilename("index");
 
   PString serviceURI = xcap.GetUserIdentifier() + ";pres-list=oma_buddylist";
@@ -1162,52 +1162,6 @@ OpalPresentity::BuddyStatus SIPXCAP_Presentity::SubscribeBuddyListEx(PINDEX & nu
          << xcap.GetLastResponseCode() << ' '  << xcap.GetLastResponseInfo());
 
   return OpalPresentity::SubscribeBuddyListEx(numSuccessful, subscribe); // Do individual subscribes
-}
-
-
-//////////////////////////////////////////////////////////////
-
-SIPOMA_Presentity::SIPOMA_Presentity()
-{
-  m_subScheme = SIP_OMA_Scheme;
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthAuidKey,  "org.openmobilealliance.pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapAuthFileKey,  "pres-rules");
-  m_attributes.Set(SIPXCAP_Presentity::XcapBuddyListKey, "oma_buddylist");
-}
-
-
-void SIPOMA_Presentity::InitRuleSet(PXML & xml)
-{
-  SIPXCAP_Presentity::InitRuleSet(xml);
-
-  PXMLElement * root = xml.GetRootElement();
-  root->SetAttribute("xmlns:ocp", "urn:oma:xml:xdm:common-policy");
-
-  PXMLElement * element = root->AddElement("cr:rule", "id", "wp_prs_block_anonymous");
-  element->AddElement("cr:conditions")->AddElement("ocp:anonymous-request");
-  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
-
-  element = root->AddElement("cr:rule", "id", "wp_prs_unlisted");
-  element->AddElement("cr:conditions")->AddElement("ocp:other-identity");
-  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationConfirming]);
-
-  // Use an xcap object to calculate horrible URL
-  XCAPClient xcap;
-  InitBuddyXcap(xcap, PString::Empty(), "oma_grantedcontacts");
-
-  element = root->AddElement("cr:rule", "id", "wp_prs_grantedcontacts");
-  element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
-  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationPermitted]);
-  element = element->AddElement("cr:transformations");
-  element->AddElement("pr:provide-services")->AddElement("pr:all-services");
-  element->AddElement("pr:provide-persons")->AddElement("pr:all-persons");
-  element->AddElement("pr:provide-all-attributes");
-
-  InitBuddyXcap(xcap, PString::Empty(), "oma_blockedcontacts");
-
-  element = root->AddElement("cr:rule", "id", "wp_prs_blockedcontacts");
-  element->AddElement("cr:conditions")->AddElement("ocp:external-list")->AddElement("ocp:entry", "anc", xcap.BuildURL().AsString());
-  element->AddElement("cr:actions")->AddElement("pr:sub-handling", AuthNames[AuthorisationDenied]);
 }
 
 
@@ -1321,6 +1275,10 @@ void XCAPClient::NodeSelector::AddToURL(PURL & uri) const
   // dictionary element at key value empty string
   uri.SetQueryVar(PString::Empty(), query);
 }
+
+
+//////////////////////////////////////////////////////////////
+
 
 
 #endif // P_EXPAT && OPAL_SIP

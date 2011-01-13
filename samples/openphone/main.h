@@ -90,11 +90,13 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 
     MyManager & m_manager;
 
+/*
     bool TransmitExternalIM(
       OpalConnection & conn, 
       const OpalMediaFormat & format, 
       RTP_IMFrame & frame
     );
+*/
 
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
@@ -102,19 +104,6 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 class IMDialog;
-
-struct ReceivedMessageInfo {
-  ReceivedMessageInfo(const std::string & connId_, const OpalMediaFormat & fmt_)
-    : m_connId(connId_), m_mediaFormat(fmt_) { }
-
-  std::string m_connId;
-  OpalMediaFormat m_mediaFormat;
-  PURL    m_localURL;
-  PURL    m_remoteURL;
-  PString m_remoteName;
-  PString m_contentType;
-  PString m_body;
-};
 
 struct PresenceInfo {
   PString entity;
@@ -143,22 +132,14 @@ class MySIPEndPoint : public SIPEndPoint
 
   private:
     virtual void OnRegistrationStatus(
-      const PString & aor,
-      PBoolean wasRegistering,
-      PBoolean reRegistering,
-      SIP_PDU::StatusCodes reason
+      const RegistrationStatus & status
     );
     virtual void OnSubscriptionStatus(
-      const PString & eventPackage,
-      const SIPURL & uri,
-      bool wasSubscribing,
-      bool reSubscribing,
-      SIP_PDU::StatusCodes reason
+      const SubscriptionStatus & status
     );
     virtual void OnDialogInfoReceived(
       const SIPDialogNotification & info  ///< Information on dialog state change
     );
-    virtual void OnPresenceInfoReceived(const SIPPresenceInfo & info);
 
     MyManager & m_manager;
 };
@@ -270,7 +251,8 @@ class CallIMDialog : public wxDialog
     void OnAddressChange(wxCommandEvent & event);
 
     wxComboBox * m_AddressCtrl;
-    wxButton   * m_ok;
+    wxButton   * m_sessionOK;
+    wxButton   * m_pageOK;
 
     DECLARE_EVENT_TABLE()
 };
@@ -279,23 +261,26 @@ class IMDialog : public wxDialog
 {
   public:
     IMDialog(MyManager * manager, 
-     const std::string & callId,
- const OpalMediaFormat & m_format,
+         const PString & conversationId,
+ const OpalMediaFormat & format,
          const PString & localName, 
             const PURL & remoteAddress, 
          const PString & remoteName);
     ~IMDialog();
 
     void AddTextToScreen(const wxString & text, bool fromUs);
+    void SetCompositionIndication(bool idle);
 
-    std::string m_connId;
+    PString m_conversationId;
 
   private:
     void OnSend(wxCommandEvent & event);
     void OnTextEnter(wxCommandEvent & event);
+    void OnText(wxCommandEvent & event);
     void OnCloseWindow(wxCloseEvent &event);
 
     void SendCurrentText();
+    void SendCompositionIndicationChanged();
 
     OpalMediaFormat m_mediaFormat;
     MyManager * m_manager;
@@ -310,6 +295,7 @@ class IMDialog : public wxDialog
     wxTextAttr   m_defaultStyle;
     wxTextAttr   m_ourStyle;
     wxTextAttr   m_theirStyle;
+    wxStaticText * m_compositionIndication;
 
     DECLARE_EVENT_TABLE()
 };
@@ -524,9 +510,7 @@ class RegistrationInfo
       Register,
       SubscribeMWI,
       SubcribePresence,
-      SubscribeMLA,
-      PublishPresence,
-      WatchPresence
+      SubscribeMLA
     };
 
     RegistrationInfo();
@@ -695,7 +679,6 @@ class OptionsDialog : public wxDialog
     wxGrid     * m_PresentityAttributes;
     wxButton   * m_AddPresentity;
     wxButton   * m_RemovePresentity;
-    PwxString    m_DefaultSipPresentity;
     void AddPresentity(wxCommandEvent & event);
     void RemovePresentity(wxCommandEvent & event);
     void SelectedPresentity(wxListEvent & event);
@@ -953,6 +936,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnStateChange(wxCommandEvent & event);
     void OnStreamsChanged(wxCommandEvent &);
     void OnRxMessage(wxCommandEvent &);
+    void OnRxCompositionIndicationChanged(wxCommandEvent &);
     void OnPresence(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
@@ -1009,6 +993,12 @@ class MyManager : public wxFrame, public OpalManager
 
     bool CanDoFax() const;
     bool CanDoIM() const;
+
+    IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & local, const PString & remote);
+
+    PDECLARE_NewConversationNotifier(MyManager, OnNewConversation);
+    PDECLARE_IncomingIMNotifier(MyManager, OnIncomingIM);
+    PDECLARE_CompositionIndicationChangedNotifier(MyManager, OnCompositionIndicationChanged);
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -1084,15 +1074,13 @@ class MyManager : public wxFrame, public OpalManager
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
 
-    typedef std::map<std::string, IMDialog *> ConversationMapType;
-    PMutex conversationMapMutex;
+    // cannot use PDictionary as IMDialog is not descended from PObject
+    typedef std::map<std::string, IMDialog *> IMDialogMap;
+    IMDialogMap m_imDialogMap;
+    PMutex m_imDialogMapMutex;
 
-    IMDialog * GetOrCreateConversation(const ReceivedMessageInfo & messageInfo);
-
-    ConversationMapType conversationMap;
-
-    bool SubscribePresence(wxString & uri);
-    void OnPresenceInfoReceived(const SIPPresenceInfo & info);
+    bool SubscribeBuddy(const PString & presentity, const PString & uri);
+    PDECLARE_PresenceChangeNotifier(MyManager, OnPresenceChange);
 #endif
 
 #if OPAL_CAPI

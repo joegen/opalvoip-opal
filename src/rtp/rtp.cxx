@@ -2152,7 +2152,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & /*frame*/)
 {
   return SendReport() ? e_IgnorePacket : e_AbortTransport;
 }

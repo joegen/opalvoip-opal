@@ -320,6 +320,7 @@ public:
   SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);
 
   virtual void SetBody(const PString & body) { m_parameters.m_body = body; }
+  virtual void SetMessageId(PAtomicInteger::IntegerType id) { m_parameters.m_messageId = id; }
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed(SIP_PDU::StatusCodes);
