@@ -259,7 +259,7 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 }
 
 
-bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * session)
+bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 {
   return true;
 }

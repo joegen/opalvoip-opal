@@ -516,8 +516,10 @@ void SIPURL::Sanitise(UsageContext context)
 
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
-    if (key.NumCompare("OPAL-") == EqualTo)
+    if (key.NumCompare("OPAL-") == EqualTo) {
       paramVars.RemoveAt(key);
+      --i; // Allow for ++ in for loop
+    }
   }
 
   if (context != ContactURI && context != ExternalURI)
@@ -1651,19 +1653,10 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
                  const SDPSessionDescription * sdp)
   : m_method(NumMethods)
   , m_statusCode(code)
-  , m_versionMajor(request.GetVersionMajor())
-  , m_versionMinor(request.GetVersionMinor())
   , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
   , m_usePeerTransportAddress(false)
 {
-  // add mandatory fields to response (RFC 2543, 11.2)
-  const SIPMIMEInfo & requestMIME = request.GetMIME();
-  m_mime.SetTo(requestMIME.GetTo());
-  m_mime.SetFrom(requestMIME.GetFrom());
-  m_mime.SetCallID(requestMIME.GetCallID());
-  m_mime.SetCSeq(requestMIME.GetCSeq());
-  m_mime.SetVia(requestMIME.GetVia());
-  m_mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
+  InitialiseHeaders(request);
 
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
@@ -1806,6 +1799,22 @@ void SIP_PDU::InitialiseHeaders(SIPConnection & connection,
 }
 
 
+void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
+{
+  m_versionMajor = request.GetVersionMajor();
+  m_versionMinor = request.GetVersionMinor();
+
+  // add mandatory fields to response (RFC 2543, 11.2)
+  const SIPMIMEInfo & requestMIME = request.GetMIME();
+  m_mime.SetTo(requestMIME.GetTo());
+  m_mime.SetFrom(requestMIME.GetFrom());
+  m_mime.SetCallID(requestMIME.GetCallID());
+  m_mime.SetCSeq(requestMIME.GetCSeq());
+  m_mime.SetVia(requestMIME.GetVia());
+  m_mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
+}
+
+
 bool SIP_PDU::SetRoute(const PStringList & set)
 {
   PStringList routeSet = set;
@@ -1904,14 +1913,18 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 }
 
 
-bool SIP_PDU::SendResponse(OpalTransport & transport, StatusCodes code, SIPEndPoint * endpoint, const char * contact, const char * extra)
+bool SIP_PDU::SendResponse(OpalTransport & transport,
+                           StatusCodes code,
+                           SIPEndPoint * endpoint,
+                           const char * contact,
+                           const char * extra) const
 {
   SIP_PDU response(*this, code, contact, extra);
   return SendResponse(transport, response, endpoint);
 }
 
 
-bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEndPoint * endpoint)
+bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEndPoint * endpoint) const
 {
   OpalTransportAddress newAddress;
 
@@ -3085,6 +3098,40 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
   return strm;
 }
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+SIPResponse::SIPResponse(SIPEndPoint & endpoint, StatusCodes code)
+  : SIPTransaction(NumMethods, endpoint, *(OpalTransport *)NULL)
+{
+  m_statusCode = code;
+}
+
+
+SIPTransaction * SIPResponse::CreateDuplicate() const
+{
+  return new SIPResponse(*this);
+}
+
+
+bool SIPResponse::Send(OpalTransport & transport, const SIP_PDU & command)
+{
+  if (m_state == NotStarted) {
+    InitialiseHeaders(command);
+
+    m_endpoint.AddTransaction(this);
+
+    m_state = Completed;
+  }
+
+  m_completionTimer = m_endpoint.GetPduCleanUpTimeout();
+  PTRACE(4, "SIP\tResponse transaction timer set " << m_completionTimer);
+
+  // Do not use internal m_transport as is dummy
+  command.SendResponse(transport, *this, &m_endpoint);
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////

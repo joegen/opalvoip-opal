@@ -100,6 +100,10 @@ class OpalSIPIMContext : public OpalConnectionIMContext
   public:
     OpalSIPIMContext();
 
+    virtual SentStatus SendCompositionIndication(bool active = true);
+
+    static void PopulateParams(SIPMessage::Params & params, OpalIM & message);
+
   protected:
     virtual SentStatus InternalSendOutsideCall(OpalIM * message);
     virtual SentStatus InternalSendInsideCall(OpalIM * message);
@@ -107,11 +111,15 @@ class OpalSIPIMContext : public OpalConnectionIMContext
     virtual bool OnIncomingIM(OpalIM & message);
     void OnCompositionIndicationTimeout();
 
-    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnCompositionTimerExpire);
+    void ResetTimers(OpalIM & message);
 
-    void PopulateParams(SIPMessage::Params & params, OpalIM & message);
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnRxCompositionTimerExpire);
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxCompositionTimerExpire);
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxIdleTimerExpire);
 
     PTimer m_rxCompositionTimeout;
+    PTimer m_txCompositionTimeout;
+    PTimer m_txIdleTimeout;
 
     RFC4103Context m_rfc4103Context;
 };

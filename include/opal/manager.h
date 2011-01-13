@@ -1595,10 +1595,10 @@ class OpalManager : public PObject
 
 #ifdef OPAL_HAS_IM
   public:
-    OpalIMManager & GetIMManager() { return m_imManager; }
+    OpalIMManager & GetIMManager() { return *m_imManager; }
 
   protected:
-    OpalIMManager m_imManager;
+    OpalIMManager * m_imManager;
 #endif
 };
 
