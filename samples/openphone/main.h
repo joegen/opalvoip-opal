@@ -242,17 +242,15 @@ class CallIMDialog : public wxDialog
   public:
     CallIMDialog(MyManager * manager);
 
+    PwxString m_Presentity;
     PwxString m_Address;
 
   private:
     void OnOK(int code);
-    void OnPage(wxCommandEvent & event);
-    void OnSession(wxCommandEvent & event);
-    void OnAddressChange(wxCommandEvent & event);
+    void OnChanged(wxCommandEvent & event);
 
+    wxButton   * m_ok;
     wxComboBox * m_AddressCtrl;
-    wxButton   * m_sessionOK;
-    wxButton   * m_pageOK;
 
     DECLARE_EVENT_TABLE()
 };
