@@ -266,7 +266,8 @@ DEF_FIELD(TraceOptions);
 
 static const wxChar SpeedDialsGroup[] = wxT("/Speed Dials");
 static const wxChar SpeedDialAddressKey[] = wxT("Address");
-static const wxChar SpeedDialStateUrlKey[] = wxT("State URL");
+static const wxChar SpeedDialStateURLKey[] = wxT("State URL");
+static const wxChar SpeedDialPresentityKey[] = wxT("Presentity");
 static const wxChar SpeedDialNumberKey[] = wxT("Number");
 static const wxChar SpeedDialDescriptionKey[] = wxT("Description");
 
@@ -993,8 +994,8 @@ bool MyManager::Initialise()
             presentity->GetAttributes().Set(name, PwxString(config->Read(name)));
           } while (config->GetNextEntry(name, idx));
         }
-        if (presentity->Open())
-          LogWindow << "Establishing presence for identity " << aor << endl;
+        LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
+                  << " presence for identity " << aor << endl;
       }
     }
 
@@ -1209,7 +1210,7 @@ bool MyManager::Initialise()
   int count = m_speedDials->GetItemCount();
   for (int i = 0; i < count; i++) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(i);
-    if (info != NULL && SubscribeBuddy(info->m_StateURL, info->m_Address))
+    if (info != NULL && MonitorPresence(info->m_Presentity, info->m_Address, true))
       m_speedDials->SetItem(i, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   }
 #endif // OPAL_SIP
@@ -1379,7 +1380,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       wxT("Status"),
       wxT("Number"),
       wxT("Address"),
-      wxT("State URL"),
+      wxT("Presence Id"),
       wxT("Description")
     };
     
@@ -1413,20 +1414,10 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       config->SetPath(info.m_Name);
       if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
         config->Read(SpeedDialNumberKey, &info.m_Number);
-        config->Read(SpeedDialStateUrlKey, &info.m_StateURL);
+        if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
+          config->Read(SpeedDialStateURLKey, &info.m_Presentity);
         config->Read(SpeedDialDescriptionKey, &info.m_Description);
-
-        int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
-        m_speedDials->SetItemData(pos, (intptr_t)&*m_speedDialInfo.insert(info).first);
-        m_speedDials->SetItemImage(pos, Icon_Unknown);
-
-        if (m_speedDialDetail) {
-          m_speedDials->SetItem(pos, e_NumberColumn, info.m_Number);
-          m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
-          m_speedDials->SetItem(pos, e_AddressColumn, info.m_Address);
-          m_speedDials->SetItem(pos, e_StateUrlColumn, info.m_StateURL);
-          m_speedDials->SetItem(pos, e_DescriptionColumn, info.m_Description);
-        }
+        UpdateSpeedDial(INT_MAX, info);
       }
       config->SetPath(wxT(".."));
     } while (config->GetNextGroup(info.m_Name, groupIndex));
@@ -1489,7 +1480,7 @@ bool MyManager::CanDoFax() const
 bool MyManager::CanDoIM() const
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
-  return info != NULL && !info->m_StateURL.IsEmpty();
+  return info != NULL && !info->m_Presentity.IsEmpty();
 }
 
 
@@ -1729,8 +1720,8 @@ void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
-  if (info != NULL && !info->m_StateURL.IsEmpty() && !info->m_Address.IsEmpty())
-    GetOrCreateIMDialog(PString::Empty(), info->m_StateURL, info->m_Address);
+  if (info != NULL && !info->m_Presentity.IsEmpty() && !info->m_Address.IsEmpty())
+    GetOrCreateIMDialog(PString::Empty(), info->m_Presentity, info->m_Address);
 }
 
 
@@ -1783,12 +1774,7 @@ void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
 {
   SpeedDialInfo info;
   info.m_Name = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
-
-  int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
-  m_speedDials->SetItemData(pos, (intptr_t)&*m_speedDialInfo.insert(info).first);
-  if (m_speedDialDetail)
-    m_speedDials->SetItem(pos, e_StatusColumn, IconStatusNames[Icon_Unknown]);
-  EditSpeedDial(pos, true);
+  EditSpeedDial(INT_MAX);
 }
 
 
@@ -1822,7 +1808,7 @@ void MyManager::OnViewDetails(wxCommandEvent& event)
 
 void MyManager::OnEditSpeedDial(wxCommandEvent& WXUNUSED(event))
 {
-  EditSpeedDial(m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED), false);
+  EditSpeedDial(m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED));
 }
 
 
@@ -1850,7 +1836,7 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
     tabbedText += '\t';
     tabbedText += info->m_Description;
     tabbedText += '\t';
-    tabbedText += info->m_StateURL;
+    tabbedText += info->m_Presentity;
     tabbedText += wxT("\r\n");
   }
 
@@ -1884,22 +1870,16 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
           info.m_Number = tabbedText.GetNextToken();
           info.m_Address = tabbedText.GetNextToken();
           info.m_Description = tabbedText.GetNextToken();
-          info.m_StateURL = tabbedText.GetNextToken();
+          info.m_Presentity = tabbedText.GetNextToken();
 
-          int pos = m_speedDials->InsertItem(INT_MAX, info.m_Name);
-          if (m_speedDialDetail) {
-            m_speedDials->SetItem(pos, e_NumberColumn, info.m_Number);
-            m_speedDials->SetItem(pos, e_AddressColumn, info.m_Address);
-            m_speedDials->SetItem(pos, e_StateUrlColumn, info.m_StateURL);
-            m_speedDials->SetItem(pos, e_DescriptionColumn, info.m_Description);
+          if (UpdateSpeedDial(INT_MAX, info)) {
+            config->SetPath(SpeedDialsGroup);
+            config->SetPath(info.m_Name);
+            config->Write(SpeedDialNumberKey, info.m_Number);
+            config->Write(SpeedDialAddressKey, info.m_Address);
+            config->Write(SpeedDialPresentityKey, info.m_Presentity);
+            config->Write(SpeedDialDescriptionKey, info.m_Description);
           }
-
-          config->SetPath(SpeedDialsGroup);
-          config->SetPath(info.m_Name);
-          config->Write(SpeedDialNumberKey, info.m_Number);
-          config->Write(SpeedDialAddressKey, info.m_Address);
-          config->Write(SpeedDialStateUrlKey, info.m_StateURL);
-          config->Write(SpeedDialDescriptionKey, info.m_Description);
         }
       }
     }
@@ -1968,45 +1948,71 @@ void MyManager::OnRightClick(wxListEvent& event)
 }
 
 
-void MyManager::EditSpeedDial(int index, bool newItem)
+void MyManager::EditSpeedDial(int index)
 {
-  SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
-  if (info == NULL)
-    return;
+  SpeedDialInfo * info;
+  SpeedDialInfo newEntry;
+  if (index == INT_MAX)
+    info = &newEntry;
+  else {
+    info = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+    if (info == NULL)
+      return;
+  }
 
   // Should display a menu, but initially just allow editing
   SpeedDialDialog dlg(this, *info);
-  if (dlg.ShowModal() == wxID_CANCEL) {
-    if (newItem)
-      m_speedDials->DeleteItem(index);
+  if (dlg.ShowModal() == wxID_CANCEL)
     return;
+
+  if (info->m_Presentity != dlg.m_Presentity) {
+    if (!info->m_Presentity.empty())
+      MonitorPresence(info->m_Presentity, dlg.m_Address, false);
+
+    if (!dlg.m_Presentity.empty())
+      MonitorPresence(dlg.m_Presentity, dlg.m_Address, true);
   }
 
-#if OPAL_SIP
-  if (info->m_StateURL != dlg.m_StateURL) {
-    m_speedDials->SetItemImage(index, Icon_Unknown);
-
-    if (!info->m_StateURL.empty()) {
-      PSafePtr<OpalPresentity> presentity = GetPresentity(info->m_StateURL);
-      if (presentity != NULL)
-        presentity->DeleteBuddy(info->m_Address);
-    }
-
-    if (!dlg.m_StateURL.empty())
-      SubscribeBuddy(dlg.m_StateURL, dlg.m_Address);
-  }
-#endif // OPAL_SIP
-
-  wxConfigBase * config = wxConfig::Get();
-  config->SetPath(SpeedDialsGroup);
-  config->DeleteGroup(info->m_Name);
-  config->SetPath(dlg.m_Name);
-  config->Write(SpeedDialNumberKey, dlg.m_Number);
-  config->Write(SpeedDialAddressKey, dlg.m_Address);
-  config->Write(SpeedDialStateUrlKey, dlg.m_StateURL);
-  config->Write(SpeedDialDescriptionKey, dlg.m_Description);
-  
   *info = dlg;
+
+  if (UpdateSpeedDial(index, dlg)) {
+    wxConfigBase * config = wxConfig::Get();
+    config->SetPath(SpeedDialsGroup);
+    if (!info->m_Name.IsEmpty())
+      config->DeleteGroup(info->m_Name);
+    config->SetPath(dlg.m_Name);
+    config->Write(SpeedDialNumberKey, dlg.m_Number);
+    config->Write(SpeedDialAddressKey, dlg.m_Address);
+    config->Write(SpeedDialPresentityKey, dlg.m_Presentity);
+    config->Write(SpeedDialDescriptionKey, dlg.m_Description);
+  }
+}
+
+
+bool MyManager::UpdateSpeedDial(int index, const SpeedDialInfo & info)
+{
+  if (index != INT_MAX)
+    m_speedDials->SetItem(index, e_NameColumn, info.m_Name);
+  else {
+    std::pair<set<SpeedDialInfo>::iterator, bool> result = m_speedDialInfo.insert(info);
+    if (!result.second)
+      return false;
+
+    index = m_speedDials->InsertItem(INT_MAX, info.m_Name);
+    m_speedDials->SetItemData(index, (intptr_t)&*result.first);
+  }
+
+  m_speedDials->SetItemImage(index, Icon_Unknown);
+
+  if (m_speedDialDetail) {
+    m_speedDials->SetItem(index, e_NumberColumn, info.m_Number);
+    m_speedDials->SetItem(index, e_StatusColumn, IconStatusNames[Icon_Unknown]);
+    m_speedDials->SetItem(index, e_AddressColumn, info.m_Address);
+    m_speedDials->SetItem(index, e_PresentityColumn, info.m_Presentity);
+    m_speedDials->SetItem(index, e_DescriptionColumn, info.m_Description);
+  }
+
+  return true;
 }
 
 
@@ -3175,7 +3181,7 @@ void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
   }
 }
 
-bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
+bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool start)
 {
   if (aor.IsEmpty() || uri.IsEmpty())
     return false;
@@ -3186,15 +3192,22 @@ bool MyManager::SubscribeBuddy(const PString & aor, const PString & uri)
     return false;
   }
 
-  OpalPresentity::BuddyInfo buddy;
-  buddy.m_presentity = uri;
-  if (!presentity->SetBuddy(buddy))
-    return false;
+  if (start) {
+    OpalPresentity::BuddyInfo buddy;
+    buddy.m_presentity = uri;
+    presentity->SetBuddy(buddy);
 
-  if (!presentity->SubscribeToPresence(uri))
-    return false;
+    if (!presentity->SubscribeToPresence(uri))
+      return false;
 
-  LogWindow << "Presence identity " << aor << " monitoring buddy " << uri << endl;
+    LogWindow << "Presence identity " << aor << " monitoring " << uri << endl;
+  }
+  else {
+    presentity->UnsubscribeFromPresence(uri);
+    presentity->DeleteBuddy(uri);
+    LogWindow << "Presence identity " << aor << " no longer monitoring " << uri << endl;
+  }
+
   return true;
 }
 
@@ -3213,7 +3226,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
     if (info != NULL) {
-      SIPURL speedDialURL(sdInfo->m_StateURL.p_str());
+      SIPURL speedDialURL(sdInfo->m_Address.p_str());
       if (info->m_entity == speedDialURL) {
         LogWindow << "Presence notification received for " << info->m_entity << endl;
         PwxString status = info->m_note;
@@ -4340,7 +4353,8 @@ bool OptionsDialog::TransferDataFromWindow()
     PSafePtr<OpalPresentity> activePresentity = m_manager.AddPresentity(aor);
     if (activePresentity != NULL) {
       activePresentity->GetAttributes() = presentity->GetAttributes();
-      activePresentity->Open();
+      LogWindow << (activePresentity->Open() ? "Establishing" : "Could not establish")
+                << " presence for identity " << aor << endl;
     }
 
     PINDEX pos = activePresentities.GetValuesIndex(aor.p_str());
@@ -6727,7 +6741,7 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
   wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("SpeedDialStateURL"));
-  choice->SetValidator(wxGenericValidator(&m_StateURL));
+  choice->SetValidator(wxGenericValidator(&m_Presentity));
   choice->Append(wxString());
   PStringList presentities = manager->GetPresentities();
   for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
