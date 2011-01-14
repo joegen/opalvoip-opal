@@ -256,6 +256,7 @@ OpalSIPIMContext::OpalSIPIMContext()
 {
   m_attributes.Set("rx-composition-indication-state",   "idle");
   m_attributes.Set("tx-composition-indication-state",   "idle");
+  m_attributes.Set("acceptable-content-types",          "text/plain\ntext/html\napplication/im-iscomposing+xml");
   m_rxCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionTimerExpire));
   m_txCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionTimerExpire));
   m_txIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxIdleTimerExpire));
@@ -359,14 +360,14 @@ static PXML::ValidationInfo const CompositionIndicationValidation[] = {
 
 
 
-bool OpalSIPIMContext::OnIncomingIM(OpalIM & message)
+OpalIMContext::SentStatus OpalSIPIMContext::OnIncomingIM(OpalIM & message)
 {
   if (message.m_mimeType == "application/im-iscomposing+xml") {
     PXML xml;
     PString error;
     if (!xml.LoadAndValidate(message.m_body, CompositionIndicationValidation, error, PXML::WithNS)) {
       PTRACE(2, "OpalSIPIMContext\tXML error: " << error);
-      return false;
+      return SentInvalidContent;
     }
     PString state = "idle";
     int timeout = 15;
@@ -381,7 +382,7 @@ bool OpalSIPIMContext::OnIncomingIM(OpalIM & message)
 
     if (state == m_attributes.Get("rx-composition-indication-state")) {
       PTRACE(2, "OpalSIPIMContext\tcomposition indication refreshed");
-      return true;
+      return SentOK;
     }
     m_attributes.Set("rx-composition-indication-state", state);
 
@@ -392,7 +393,7 @@ bool OpalSIPIMContext::OnIncomingIM(OpalIM & message)
 
     OnCompositionIndicationChanged(state);
 
-    return true;
+    return SentOK;
   }
 
   // receipt of text always indicated idle

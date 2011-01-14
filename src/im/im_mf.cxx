@@ -522,9 +522,22 @@ OpalIM * OpalIMContext::GetIncomingMessage()
 }
 
 
-void OpalIMContext::AddIncomingIM(OpalIM * message)
+bool OpalIMContext::AddIncomingIM(OpalIM * message)
 {
   m_incomingMessages.Append(message);
+  return CheckContentType(message->m_mimeType);
+}
+
+
+bool OpalIMContext::CheckContentType(const PString & contentType) const
+{
+  return GetContentTypes().GetStringsIndex(contentType) != P_MAX_INDEX;
+}
+
+
+PStringArray OpalIMContext::GetContentTypes() const
+{
+  return GetAttributes().Get("acceptable-content-types", "text/plain").Lines();
 }
 
 
@@ -550,6 +563,7 @@ void OpalIMContext::OnCompositionIndicationTimeout()
 {
 }
 
+
 void OpalIMContext::SetIncomingIMNotifier(const IncomingIMNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
@@ -557,7 +571,7 @@ void OpalIMContext::SetIncomingIMNotifier(const IncomingIMNotifier & notifier)
 }
 
 
-bool OpalIMContext::OnIncomingIM(OpalIM & message)
+OpalIMContext::SentStatus OpalIMContext::OnIncomingIM(OpalIM & message)
 {
   PWaitAndSignal mutex(m_notificationMutex);
 
@@ -567,7 +581,7 @@ bool OpalIMContext::OnIncomingIM(OpalIM & message)
   if (!m_incomingMessageNotifier.IsNULL())
     m_incomingMessageNotifier(*this, message);
 
-  return true;
+  return OpalIMContext::SentPending;
 }
 
 
@@ -802,13 +816,15 @@ PSafePtr<OpalIMContext> OpalIMManager::FindContextForMessageWithLock(OpalIM & im
 }
 
 
-bool OpalIMManager::OnIncomingMessage(OpalIM * im, PSafePtr<OpalConnection> conn)
+OpalIMContext::SentStatus OpalIMManager::OnIncomingMessage(OpalIM * im, PString & conversationId, PSafePtr<OpalConnection> conn)
 {
   PSafePtr<OpalIMContext> context = FindContextForMessageWithLock(*im, conn);
 
+  bool contentTypeOK = false;
+
   // if context found, add message to it
   if (context != NULL)
-    context->AddIncomingIM(im);
+    contentTypeOK = context->AddIncomingIM(im);
   else {
 
     // create a context based on the connection
@@ -820,7 +836,7 @@ bool OpalIMManager::OnIncomingMessage(OpalIM * im, PSafePtr<OpalConnection> conn
     if (context == NULL) {
       PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << im->m_from);
       delete im;
-      return false;
+      return OpalIMContext::SentNoTransport;
     }
 
     // set message conversation ID to the correct (new) value
@@ -830,16 +846,27 @@ bool OpalIMManager::OnIncomingMessage(OpalIM * im, PSafePtr<OpalConnection> conn
     context->m_connection = conn;
 
     // save the first message
-    context->AddIncomingIM(im);
+    contentTypeOK = context->AddIncomingIM(im);
 
     // queue work for processing, using the conversation ID as the key
     PTRACE(3, "OpalIM\tAdding new conversation work for conversation " << im->m_conversationId);
     m_imThreadPool.AddWork(new NewConversation_Work(*this, im->m_conversationId));
   }
 
-  PTRACE(3, "OpalIM\tAdding new message work for conversation " << im->m_conversationId);
-  m_imThreadPool.AddWork(new NewIncomingIM_Work(*this, im->m_conversationId));
-  return true;
+  // return conversation ID
+  conversationId = context->GetID();
+
+  // check if content type was OK before "im" is given to the worker thread
+  OpalIMContext::SentStatus stat = OpalIMContext::SentPending;
+  if (!contentTypeOK)  {
+    PTRACE(3, "OpalIM\tContent type '" << im->m_mimeType << "' not acceptable for conversation " << im->m_conversationId);
+    stat = OpalIMContext::SentUnacceptableContent;
+  }
+
+  PTRACE(3, "OpalIM\tAdding new message work for conversation " << conversationId);
+  m_imThreadPool.AddWork(new NewIncomingIM_Work(*this, conversationId));
+
+  return stat;
 }
 
 

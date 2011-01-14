@@ -944,17 +944,52 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   SIPURL to(mime.GetTo());
   to.Sanitise(SIPURL::ToURI);
 
-  OpalIM * message    = new OpalIM();
-  message->m_to       = to.AsString();
-  message->m_from     = from.AsString();
-  message->m_mimeType = mime.GetContentType();
-  message->m_toAddr   = transport.GetLastReceivedAddress();
-  message->m_fromAddr = transport.GetRemoteAddress();
-  message->m_body     = pdu.GetEntityBody();
+  OpalIMManager & imManager = manager.GetIMManager();
+  OpalIMContext::SentStatus status;
+  PString conversationId;
+  {
+    OpalIM * message    = new OpalIM();
+    message->m_to       = to.AsString();
+    message->m_from     = from.AsString();
+    message->m_mimeType = mime.GetContentType();
+    message->m_toAddr   = transport.GetLastReceivedAddress();
+    message->m_fromAddr = transport.GetRemoteAddress();
+    message->m_body     = pdu.GetEntityBody();
+    status = imManager.OnIncomingMessage(message, conversationId);
+  }
 
-  SIPResponse * response = new SIPResponse(*this, manager.GetIMManager().OnIncomingMessage(message)
-                                                       ? SIP_PDU::Successful_OK
-                                                       : SIP_PDU::Failure_NotAcceptableHere);
+  SIPResponse * response = new SIPResponse(*this, SIP_PDU::Failure_BadRequest);
+
+  switch (status ) {
+    case OpalIMContext::SentOK:
+    case OpalIMContext::SentPending:
+      response->SetStatusCode(SIP_PDU::Successful_Accepted);
+      break;
+
+    case OpalIMContext::SentUnacceptableContent:
+      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+
+      // urrgh - complicated process to get the content types...
+      {
+        PStringArray contentTypes;
+        {
+          PSafePtr<OpalIMContext> context = imManager.FindContextByIdWithLock(conversationId, PSafeReadOnly);
+          if (context != NULL)
+            contentTypes = context->GetContentTypes();
+        }
+        if (contentTypes.GetSize() != 0) {
+          PStringStream strm;
+          strm << setfill(',') << contentTypes;
+          response->GetMIME().SetAccept(strm);
+        }
+      }
+      break;
+
+    default:
+      response->SetStatusCode(SIP_PDU::Failure_BadRequest);
+      break;
+  }
+
   response->Send(transport, pdu);
   return true;
 }
@@ -1323,16 +1358,6 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
     return OpalIMContext::SentOK;
 
   SIPMessage::Params params;
-
-  /*
-  params.m_id              = message.m_conversationId;
-  params.m_messageId       = message.m_messageId;
-  params.m_localAddress    = message.m_from.AsString();
-  params.m_addressOfRecord = message.m_from.AsString();
-  params.m_remoteAddress   = message.m_to.AsString();
-  params.m_contentType     = message.m_mimeType;
-  params.m_body            = message.m_body;
-  */
   OpalSIPIMContext::PopulateParams(params, message);
 
   OpalIMContext::SentStatus stat = SendMESSAGE(params);
