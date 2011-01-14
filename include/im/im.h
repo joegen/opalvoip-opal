@@ -121,7 +121,8 @@ class OpalIMContext : public PSafeObject
       SentOK,
       SentPending,
       SentAccepted,
-      SentIllegalContent,
+      SentUnacceptableContent,
+      SentInvalidContent,
       SentConnectionClosed,
       SentNoTransport,
       SentNoAnswer,
@@ -152,7 +153,7 @@ class OpalIMContext : public PSafeObject
 
     /// Called when an incoming message arrives for this context
     /// Default implementation calls IncomingIMNotifier, if set, else returns true
-    virtual bool OnIncomingIM(OpalIM & message);
+    virtual SentStatus OnIncomingIM(OpalIM & message);
 
     typedef PNotifierTemplate<const OpalIM &> IncomingIMNotifier;
     #define PDECLARE_IncomingIMNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, const OpalIM &)
@@ -176,6 +177,9 @@ class OpalIMContext : public PSafeObject
       const CompositionIndicationChangedNotifier & notifier   ///< Notifier to be called by OnIncomingIM()
     );
 
+    virtual bool CheckContentType(const PString & contentType) const;
+    virtual PStringArray GetContentTypes() const;
+
     // start of internal functions
 
     PString GetID() const          { return m_id; }
@@ -188,10 +192,11 @@ class OpalIMContext : public PSafeObject
   //@{
     ///< Get the attributes for this presentity.
     PStringOptions & GetAttributes() { return m_attributes; }
+    const PStringOptions & GetAttributes() const { return m_attributes; }
 
     virtual bool OnNewIncomingIM();
 
-    virtual void AddIncomingIM(OpalIM * message);
+    virtual bool AddIncomingIM(OpalIM * message);
 
     virtual void OnCompositionIndicationTimeout();
 
@@ -256,7 +261,7 @@ class OpalIMManager : public PObject
 
     class IM_Work;
 
-    bool OnIncomingMessage(OpalIM * im, PSafePtr<OpalConnection> conn = NULL);
+    OpalIMContext::SentStatus OnIncomingMessage(OpalIM * im, PString & conversationId, PSafePtr<OpalConnection> conn = NULL);
     void OnCompositionIndicationTimeout(const PString & conversationId);
 
     void AddContext(PSafePtr<OpalIMContext> context);
