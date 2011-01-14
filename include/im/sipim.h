@@ -114,7 +114,7 @@ class OpalSIPIMContext : public OpalConnectionIMContext
     virtual SentStatus InternalSendOutsideCall(OpalIM * message);
     virtual SentStatus InternalSendInsideCall(OpalIM * message);
 
-    virtual bool OnIncomingIM(OpalIM & message);
+    virtual SentStatus OnIncomingIM(OpalIM & message);
     void OnCompositionIndicationTimeout();
 
     void ResetTimers(OpalIM & message);
