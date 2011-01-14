@@ -2899,6 +2899,8 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
+// TODO: debug when we need connection based MESSAGE
+#if 0
   OpalIM * im = new OpalIM;
   const SIPMIMEInfo & mime = pdu.GetMIME();
 
@@ -2913,9 +2915,13 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
     im->m_mimeType = "text/plain";
 
   // dispatch the message
-  bool stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, PSafePtr<OpalConnection>(this));
+  OpalIMContext::SentStatus stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, conversationId, PSafePtr<OpalConnection>(this));
 
   pdu.SendResponse(*transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_BadRequest);
+
+#endif
+
+  pdu.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
 }
 
 
