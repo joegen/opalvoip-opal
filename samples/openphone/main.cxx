@@ -837,7 +837,7 @@ bool MyManager::Initialise()
 
   config->Read(AudioRecordingModeKey, &m_recordingOptions.m_stereo);
   if (config->Read(AudioRecordingFormatKey, &str))
-    m_recordingOptions.m_audioFormat = str;
+    m_recordingOptions.m_audioFormat = str.p_str();
   value1 = m_recordingOptions.m_videoMixing;
   if (config->Read(VideoRecordingModeKey, &value1) && value1 >= 0 && value1 < OpalRecordManager::NumVideoMixingModes)
     m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode)value1;
@@ -991,7 +991,7 @@ bool MyManager::Initialise()
         PwxString name;
         if (config->GetFirstEntry(name, idx)) {
           do {
-            presentity->GetAttributes().Set(name, PwxString(config->Read(name)));
+            presentity->GetAttributes().Set(name.p_str(), PwxString(config->Read(name)));
           } while (config->GetNextEntry(name, idx));
         }
         LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
@@ -1362,7 +1362,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
 
-  config->Write(ActiveViewKey, view);
+  config->Write(ActiveViewKey, (int)view);
 
   static DWORD const ListCtrlStyle[e_NumViews] = {
     wxLC_ICON, wxLC_SMALL_ICON, wxLC_LIST, wxLC_REPORT
@@ -1530,7 +1530,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   for (id = ID_AUDIO_DEVICE_MENU_BASE; id <= ID_AUDIO_DEVICE_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
-      item->Check(item->GetLabel() == deviceName);
+      item->Check(item->GetItemLabelText() == deviceName);
   }
 
   bool hasStartVideo = false;
@@ -1562,14 +1562,14 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   for (id = ID_AUDIO_CODEC_MENU_BASE; id <= ID_AUDIO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
-      item->Check(item->GetLabel() == audioFormat);
+      item->Check(item->GetItemLabelText() == audioFormat);
   }
 
   menubar->Enable(XRCID("SubMenuVideo"), !videoFormat.IsEmpty() && m_activeCall != NULL);
   for (id = ID_VIDEO_CODEC_MENU_BASE; id <= ID_VIDEO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
-      item->Check(item->GetLabel() == videoFormat);
+      item->Check(item->GetItemLabelText() == videoFormat);
   }
 
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
@@ -2067,7 +2067,7 @@ void MyManager::AnswerCall()
     m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
-    m_incomingToken.MakeEmpty();
+    m_incomingToken.clear();
   }
 }
 
@@ -2077,7 +2077,7 @@ void MyManager::RejectCall()
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
     pcssEP->RejectIncomingConnection(m_incomingToken);
-    m_incomingToken.MakeEmpty();
+    m_incomingToken.clear();
   }
 }
 
@@ -2093,7 +2093,7 @@ void MyManager::HangUpCall()
 
 void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 {
-  m_incomingToken = PwxString(theEvent.GetString());
+  m_incomingToken = theEvent.GetString();
   PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadOnly);
   if (!PAssert(call != NULL, PLogicError))
     return;
@@ -2136,7 +2136,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
     m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
-    m_incomingToken.MakeEmpty();
+    m_incomingToken.clear();
   }
   else {
     AnswerPanel * answerPanel = new AnswerPanel(*this, m_incomingToken, m_tabs);
@@ -2496,7 +2496,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
     PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReadWrite);
     if (call != NULL)
       call->Retrieve();
-    m_switchHoldToken.MakeEmpty();
+    m_switchHoldToken.clear();
   }
 }
 
@@ -2740,13 +2740,13 @@ void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 
 void MyManager::OnAudioDevicePreset(wxCommandEvent & theEvent)
 {
-  m_activeCall->Transfer("pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()));
+  m_activeCall->Transfer("pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()));
 }
 
 
 void MyManager::OnNewCodec(wxCommandEvent& theEvent)
 {
-  OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetLabel()).p_str());
+  OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()).p_str());
   if (mediaFormat.IsValid()) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
     if (connection != NULL) {
@@ -3017,7 +3017,7 @@ void MyManager::OnForwardingTimeout(PTimer &, INT)
   else
     LogWindow << "Could not forward \"" << call->GetPartyB() << "\" to \"" << m_ForwardingAddress << '"' << endl;
 
-  m_incomingToken.MakeEmpty();
+  m_incomingToken.clear();
 }
 
 
@@ -3161,7 +3161,7 @@ void MyManager::OnCompositionIndicationChanged(OpalIMContext & context, const PS
 
 void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
 {
-  PString conversationId = theEvent.GetString();
+  PwxString conversationId = theEvent.GetString();
   bool idle;
   PString from, to;
   {
@@ -3444,7 +3444,7 @@ bool RegistrationInfo::Read(wxConfigBase & config)
 
 void RegistrationInfo::Write(wxConfigBase & config)
 {
-  config.Write(RegistrationTypeKey, m_Type);
+  config.Write(RegistrationTypeKey, (int)m_Type);
   config.Write(RegistrarUsedKey, m_Active);
   config.Write(RegistrarUsernameKey, m_User);
   config.Write(RegistrarDomainKey, m_Domain);
@@ -3452,7 +3452,7 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarAuthIDKey, m_AuthID);
   config.Write(RegistrarPasswordKey, m_Password);
   config.Write(RegistrarTimeToLiveKey, m_TimeToLive);
-  config.Write(RegistrarCompatibilityKey, m_Compatibility);
+  config.Write(RegistrarCompatibilityKey, (int)m_Compatibility);
 }
 
 // these must match the drop-down box on the Registration/Subcription dialog box
@@ -3728,7 +3728,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Networking fields
 #if OPAL_H323
   int bandwidth = m_manager.h323EP->GetInitialBandwidth();
-  m_Bandwidth.sprintf(bandwidth%10 == 0 ? wxT("%u") : wxT("%u.%u"), bandwidth/10, bandwidth%10);
+  if (bandwidth%10 == 0)
+    m_Bandwidth.sprintf(wxT("%u"), bandwidth/10);
+  else
+    m_Bandwidth.sprintf(wxT("%u.%u"), bandwidth/10, bandwidth%10);
   FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
   int bandwidthClass;
   if (bandwidth <= 144)
@@ -3985,7 +3988,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
     tstringstream details;
-    details << mm->mediaFormat.GetMediaType() << ": " << mm->mediaFormat.GetName();
+    details << mm->mediaFormat.GetMediaType().c_str() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
     m_allCodecs->Append(details.str().c_str(), &*mm);
@@ -4230,7 +4233,7 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
-  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = );
+  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = (PString));
   SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
   PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
                              m_manager.m_recordingOptions.m_videoWidth,
@@ -4345,9 +4348,9 @@ bool OptionsDialog::TransferDataFromWindow()
     OpalPresentity * presentity = (OpalPresentity *)m_Presentities->GetItemData(item);
     PStringArray attributeNames = presentity->GetAttributeNames();
     for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
-      PwxString name = attributeNames[i];
+      PString name = attributeNames[i];
       if (presentity->GetAttributes().Has(name))
-        config->Write(name, PwxString(presentity->GetAttributes().Get(name)));
+        config->Write(PwxString(name), PwxString(presentity->GetAttributes().Get(name)));
     }
 
     PSafePtr<OpalPresentity> activePresentity = m_manager.AddPresentity(aor);
@@ -4609,7 +4612,7 @@ void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
                                     m_RingSoundFileName,
                                     wxT(".wav"),
                                     wxT("WAV files (*.wav)|*.wav"),
-                                    wxOPEN|wxFILE_MUST_EXIST);
+                                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
   if (!newFile.empty()) {
     m_RingSoundFileName = newFile;
     TransferDataToWindow();
@@ -4922,9 +4925,9 @@ bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
   PStringArray attributeNames = presentity->GetAttributeNames();
   m_PresentityAttributes->InsertRows(0, attributeNames.GetSize());
   for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
-    PwxString name = attributeNames[i];
+    PString name = attributeNames[i];
     PwxString value = presentity->GetAttributes().Get(name, DefaultAttributeValue);
-    m_PresentityAttributes->SetRowLabelValue(i, name);
+    m_PresentityAttributes->SetRowLabelValue(i, PwxString(name));
     m_PresentityAttributes->SetCellValue(value, i, 0);
   }
   m_PresentityAttributes->SetRowLabelSize(wxGRID_AUTOSIZE);
@@ -4943,7 +4946,7 @@ void OptionsDialog::ChangedPresentityAttribute(wxGridEvent & evt)
 
   OpalPresentity * presentity = (OpalPresentity *)m_Presentities->GetItemData(index);
 
-  PwxString name = m_PresentityAttributes->GetRowLabelValue(evt.GetRow());
+  PString name = PwxString(m_PresentityAttributes->GetRowLabelValue(evt.GetRow()));
   PwxString value = m_PresentityAttributes->GetCellValue(evt.GetRow(), 0);
   if (value != DefaultAttributeValue)
     presentity->GetAttributes().Set(name, value);
@@ -5844,7 +5847,7 @@ void IMDialog::SendCurrentText()
     AddTextToScreen(wxT("closed"), false);
   else {
     OpalIM * im = new OpalIM;
-    im->m_body     = text;
+    im->m_body     = text.p_str();
     im->m_mimeType = "text/plain";
     im->m_from     = m_us;
     im->m_to       = PwxString(m_remoteAddress);
