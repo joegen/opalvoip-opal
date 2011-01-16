@@ -1148,7 +1148,7 @@ class MyManager : public wxFrame, public OpalManager
     void StopRingSound();
     void UpdateAudioDevices();
 
-    PString            m_incomingToken;
+    PwxString          m_incomingToken;
     PSafePtr<OpalCall> m_activeCall;
 
     void AddCallOnHold(
@@ -1173,7 +1173,7 @@ class MyManager : public wxFrame, public OpalManager
       int                m_transferMenuId;
     };
     list<CallsOnHold>    m_callsOnHold;
-    PString              m_switchHoldToken;
+    PwxString            m_switchHoldToken;
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;
