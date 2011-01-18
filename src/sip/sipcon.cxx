@@ -242,7 +242,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
-  , m_prackMode(ep.GetDefaultPRACKMode())
+  , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
   , m_responseRetryCount(0)

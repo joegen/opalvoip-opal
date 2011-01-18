@@ -69,6 +69,13 @@ class SIPEndPoint;
   */
 #define OPAL_OPT_REFER_SUB       "Refer-Sub"
 
+/**OpalConnection::StringOption key to an integer indicating the the mode
+   for the reliable provisional response system. See PRACKMode for more
+   information. Default is from SIPEndPoint::GetDefaultPRACKMode() which
+   in turn defaults to e_prackSupported.
+  */
+#define OPAL_OPT_PRACK_MODE      "PRACK-Mode"
+
 /**OpalConnection::StringOption key to a boolean indicating that we should
    make initial SDP offer. Default true.
   */
@@ -532,6 +539,7 @@ class SIPConnection : public OpalRTPConnection
     const SIPDialogContext & GetDialog() const { return m_dialog; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
+    /// Mode for reliable provisional responses.
     enum PRACKMode {
       e_prackDisabled,  /**< Do not use PRACK if remote asks for 100rel in Supported
                              field, refuse call with 420 Bad Extension if 100rel is
