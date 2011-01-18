@@ -29,6 +29,11 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "console_mgr.h"
+#endif
+
 #include <opal/console_mgr.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
