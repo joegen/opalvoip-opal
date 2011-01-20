@@ -355,6 +355,8 @@ void OpalSIPIMContext::ResetTimers(OpalIM & message)
   }
 }
 
+#if P_EXPAT
+
 static PXML::ValidationInfo const CompositionIndicationValidation[] = {
   { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:im-iscomposing" },
   { PXML::ElementName,                "isComposing", },
@@ -367,11 +369,12 @@ static PXML::ValidationInfo const CompositionIndicationValidation[] = {
   { PXML::EndOfValidationList }
 };
 
-
+#endif
 
 OpalIMContext::SentStatus OpalSIPIMContext::OnIncomingIM(OpalIM & message)
 {
   if (message.m_mimeType == "application/im-iscomposing+xml") {
+#if P_EXPAT
     PXML xml;
     PString error;
     if (!xml.LoadAndValidate(message.m_body, CompositionIndicationValidation, error, PXML::WithNS)) {
@@ -403,6 +406,10 @@ OpalIMContext::SentStatus OpalSIPIMContext::OnIncomingIM(OpalIM & message)
     OnCompositionIndicationChanged(state);
 
     return SentOK;
+#else
+    PTRACE(2, "OpalSIPIMContext\tunsupported content type");
+    return SentInvalidContent;
+#endif
   }
 
   // receipt of text always indicated idle
