@@ -1133,7 +1133,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       pdu.GetMIME().AddMIME(iter->m_mime);
       pdu.SetEntityBody(iter->m_textBody);
 
-      if (!DispatchNOTIFY(pdu, response))
+      if (DispatchNOTIFY(pdu, *m_previousResponse))
         sendResponse = false;
     }
 #endif
