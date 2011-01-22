@@ -39,6 +39,8 @@
 #ifndef __H264_X264_H__
 #define __H264_X264_H__ 1
 
+#define __STDC_CONSTANT_MACROS
+
 #include "plugin-config.h"
 
 #include <stdarg.h>
