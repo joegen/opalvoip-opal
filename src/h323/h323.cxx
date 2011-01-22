@@ -387,13 +387,17 @@ void H323Connection::OnReleased()
   // Unblock sync points
   digitsWaitFlag.Signal();
 
-  // Clean up any fast start "pending" channels we may have running.
-  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
-    channel->Close();
-  fastStartChannels.RemoveAll();
+  if (LockReadWrite()) {
+    // Clean up any fast start "pending" channels we may have running.
+    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+      channel->Close();
+    fastStartChannels.RemoveAll();
 
-  // Dispose of all the logical channels
-  logicalChannels->RemoveAll();
+    // Dispose of all the logical channels
+    logicalChannels->RemoveAll();
+
+    UnlockReadWrite();
+  }
 
   if (endSessionNeeded) {
     // Calculate time since we sent the end session command so we do not actually
@@ -3211,12 +3215,14 @@ bool H323Connection::OnH239PresentationIndication(unsigned PTRACE_PARAM(logicalC
 
 H323Channel * H323Connection::GetLogicalChannel(unsigned number, PBoolean fromRemote) const
 {
+  PSafeLockReadWrite mutex(*this);
   return logicalChannels->FindChannel(number, fromRemote);
 }
 
 
 H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRemote) const
 {
+  PSafeLockReadWrite mutex(*this);
   return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
 }
 
@@ -3408,6 +3414,7 @@ PBoolean H323Connection::IsMediaOnHold() const
 
 PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
 {
+  PSafeLockReadWrite mutex(*this);
   if (IsMediaOnHold()) {
     if (PAssertNULL(newChannel) == NULL)
       return NULL;
@@ -3604,6 +3611,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
 bool H323Connection::SendCapabilitySet(PBoolean empty)
 {
+  PSafeLockReadWrite mutex(*this);
   if (!capabilityExchangeProcedure->Start(PTrue, empty))
     return false;
 
@@ -3614,7 +3622,8 @@ bool H323Connection::SendCapabilitySet(PBoolean empty)
 
 bool H323Connection::IsSendingCapabilitySet()
 {
-    return capabilityExchangeProcedure->IsSendingCapabilities();
+  PSafeLockReadOnly mutex(*this);
+  return capabilityExchangeProcedure->IsSendingCapabilities();
 }
 
 
@@ -4000,6 +4009,8 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 
 bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 {
+  PSafeLockReadWrite mutex(*this);
+
   // For a channel, this gets called twice. The first time we send CLC to remote
   // The second time is after CLC Ack or a timeout occurs, then we call the ancestor
   // function to clean up the media stream.
@@ -4209,6 +4220,8 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
                                         unsigned sessionID,
                                         H323Channel::Directions dir)
 {
+  PSafeLockReadWrite mutex(*this);
+
   switch (fastStartState) {
     default : // FastStartDisabled
       if (dir == H323Channel::IsReceiver)
@@ -4522,6 +4535,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 
 void H323Connection::CloseLogicalChannel(unsigned number, PBoolean fromRemote)
 {
+  PSafeLockReadWrite mutex(*this);
   if (connectionState != ShuttingDownConnection)
     logicalChannels->Close(number, fromRemote);
 }
@@ -4535,6 +4549,7 @@ void H323Connection::CloseLogicalChannelNumber(const H323ChannelNumber & number)
 
 void H323Connection::CloseAllLogicalChannels(PBoolean fromRemote)
 {
+  PSafeLockReadWrite mutex(*this);
   for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
     H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
     H323Channel * channel = negChannel.GetChannel();
@@ -4576,6 +4591,7 @@ void H323Connection::OnLogicalChannelJitter(H323Channel * channel,
 
 unsigned H323Connection::GetBandwidthUsed() const
 {
+  PSafeLockReadOnly mutex(*this);
   unsigned used = 0;
 
   for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
@@ -4592,6 +4608,8 @@ unsigned H323Connection::GetBandwidthUsed() const
 
 PBoolean H323Connection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean force)
 {
+  PSafeLockReadWrite mutex(*this);
+
   unsigned used = GetBandwidthUsed();
   if (used > newBandwidth) {
     if (!force)
@@ -4846,12 +4864,14 @@ PString H323Connection::GetSessionCodecNames(unsigned sessionID) const
 
 PBoolean H323Connection::RequestModeChange(const PString & newModes)
 {
+  PSafeLockReadWrite mutex(*this);
   return requestModeProcedure->StartRequest(newModes);
 }
 
 
 PBoolean H323Connection::RequestModeChange(const H245_ArrayOf_ModeDescription & newModes)
 {
+  PSafeLockReadWrite mutex(*this);
   return requestModeProcedure->StartRequest(newModes);
 }
 

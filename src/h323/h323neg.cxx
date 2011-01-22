@@ -78,8 +78,6 @@ H245NegMasterSlaveDetermination::H245NegMasterSlaveDetermination(H323EndPoint & 
 
 PBoolean H245NegMasterSlaveDetermination::Start(PBoolean renegotiate)
 {
-  PWaitAndSignal wait(mutex);
-
   if (state != e_Idle) {
     PTRACE(3, "H245\tMasterSlaveDetermination already in progress");
     return PTrue;
@@ -110,8 +108,6 @@ PBoolean H245NegMasterSlaveDetermination::Restart()
 
 void H245NegMasterSlaveDetermination::Stop()
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tStopping MasterSlaveDetermination: state=" << state);
 
   if (state == e_Idle)
@@ -124,8 +120,6 @@ void H245NegMasterSlaveDetermination::Stop()
 
 PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveDetermination & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived MasterSlaveDetermination: state=" << state);
 
   if (state == e_Incoming) {
@@ -182,8 +176,6 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
 
 PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterminationAck & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived MasterSlaveDeterminationAck: state=" << state);
 
   if (state == e_Idle)
@@ -220,8 +212,6 @@ PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterm
 
 PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDeterminationReject & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived MasterSlaveDeterminationReject: state=" << state);
 
   switch (state) {
@@ -249,8 +239,6 @@ PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDet
 
 PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDeterminationRelease & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived MasterSlaveDeterminationRelease: state=" << state);
 
   if (state == e_Idle)
@@ -266,8 +254,6 @@ PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDe
 
 void H245NegMasterSlaveDetermination::HandleTimeout(PTimer &, INT)
 {
-  PWaitAndSignal wait(mutex);
-
   if (state == e_Idle)
     return;
 
@@ -321,8 +307,6 @@ H245NegTerminalCapabilitySet::H245NegTerminalCapabilitySet(H323EndPoint & end,
 
 PBoolean H245NegTerminalCapabilitySet::Start(PBoolean renegotiate, PBoolean empty)
 {
-  PWaitAndSignal wait(mutex);
-
   if (state == e_InProgress) {
     PTRACE(2, "H245\tTerminalCapabilitySet already in progress: outSeq=" << outSequenceNumber);
     return PTrue;
@@ -348,8 +332,6 @@ PBoolean H245NegTerminalCapabilitySet::Start(PBoolean renegotiate, PBoolean empt
 
 void H245NegTerminalCapabilitySet::Stop(PBoolean dec)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tStopping TerminalCapabilitySet: state=" << state);
 
   if (state == e_Idle)
@@ -370,22 +352,17 @@ void H245NegTerminalCapabilitySet::Stop(PBoolean dec)
 
 PBoolean H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilitySet & pdu)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tReceived TerminalCapabilitySet:"
                      " state=" << state <<
                      " pduSeq=" << pdu.m_sequenceNumber <<
                      " inSeq=" << inSequenceNumber);
 
   if (pdu.m_sequenceNumber == inSequenceNumber) {
-    mutex.Signal();
     PTRACE(2, "H245\tIgnoring TerminalCapabilitySet, already received sequence number");
     return PTrue;  // Already had this one
   }
 
   inSequenceNumber = pdu.m_sequenceNumber;
-
-  mutex.Signal();
 
   H323Capabilities remoteCapabilities(connection, pdu);
 
@@ -411,8 +388,6 @@ PBoolean H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabil
 
 PBoolean H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySetAck & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived TerminalCapabilitySetAck:"
                      " state=" << state <<
                      " pduSeq=" << pdu.m_sequenceNumber <<
@@ -433,8 +408,6 @@ PBoolean H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySe
 
 PBoolean H245NegTerminalCapabilitySet::HandleReject(const H245_TerminalCapabilitySetReject & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived TerminalCapabilitySetReject:"
                      " state=" << state <<
                      " pduSeq=" << pdu.m_sequenceNumber <<
@@ -455,8 +428,6 @@ PBoolean H245NegTerminalCapabilitySet::HandleReject(const H245_TerminalCapabilit
 
 PBoolean H245NegTerminalCapabilitySet::HandleRelease(const H245_TerminalCapabilitySetRelease & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived TerminalCapabilityRelease: state=" << state);
 
   receivedCapabilites = PFalse;
@@ -467,8 +438,6 @@ PBoolean H245NegTerminalCapabilitySet::HandleRelease(const H245_TerminalCapabili
 
 void H245NegTerminalCapabilitySet::HandleTimeout(PTimer &, INT)
 {
-  PWaitAndSignal wait(mutex);
-
   if (state == e_Idle)
     return;
 
@@ -522,24 +491,13 @@ H245NegLogicalChannel::~H245NegLogicalChannel()
   replyTimer.Stop();
   PThread::Yield(); // Do this to avoid possible race condition with timer
 
-  mutex.Wait();
   delete channel;
-  mutex.Signal();
 }
 
 
 PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
                                  unsigned sessionID,
                                  unsigned replacementFor)
-{
-  PWaitAndSignal wait(mutex);
-  return OpenWhileLocked(capability, sessionID, replacementFor);
-}
-
-
-PBoolean H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
-                                            unsigned sessionID,
-                                            unsigned replacementFor)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
     PTRACE(2, "H245\tOpen of channel currently in negotiations: " << channelNumber);
@@ -606,13 +564,6 @@ PBoolean H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capabilit
 
 
 PBoolean H245NegLogicalChannel::Close()
-{
-  PWaitAndSignal wait(mutex);
-  return CloseWhileLocked();
-}
-
-
-PBoolean H245NegLogicalChannel::CloseWhileLocked()
 {
   PTRACE(3, "H245\tClosing channel: " << channelNumber << ", state=" << state);
 
@@ -687,9 +638,7 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
     }
   }
 
-  if (ok)
-    mutex.Signal();
-  else {
+  if (!ok) {
     reply.BuildOpenLogicalChannelReject(channelNumber, cause);
     Release();
   }
@@ -700,8 +649,6 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
 
 PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived open channel ack: " << channelNumber << ", state=" << state);
 
   switch (state) {
@@ -714,7 +661,7 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
 
       if (!channel->OnReceivedAckPDU(pdu)) {
         if (connection.GetRemoteProductInfo().name != "Cisco IOS")
-          return CloseWhileLocked();
+          return Close();
         PTRACE(4, "H245\tWorkaround for Cisco bug, cannot close channel on illegal ack or it hangs up on you.");
         return true;
       }
@@ -729,7 +676,7 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
       if (!channel->Start())
-        return CloseWhileLocked();
+        return Close();
 
     default :
       break;
@@ -741,8 +688,6 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
 
 PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived open channel confirm: " << channelNumber << ", state=" << state);
 
   switch (state) {
@@ -758,7 +703,7 @@ PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelC
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
       if (!channel->Start())
-        return CloseWhileLocked();
+        return Close();
 
     default :
       break;
@@ -770,13 +715,10 @@ PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelC
 
 PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject & pdu)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tReceived open channel reject: " << channelNumber << ", state=" << state);
 
   switch (state) {
     case e_Released :
-      mutex.Signal();
       return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
                                                "Reject unknown channel");
     case e_Established :
@@ -794,7 +736,6 @@ PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject
       break;
 
     default :
-      mutex.Signal();
       break;
   }
 
@@ -804,8 +745,6 @@ PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject
 
 PBoolean H245NegLogicalChannel::HandleClose(const H245_CloseLogicalChannel & /*pdu*/)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tReceived close channel: " << channelNumber << ", state=" << state);
 
   //if (pdu.m_source.GetTag() == H245_CloseLogicalChannel_source::e_user)
@@ -821,8 +760,6 @@ PBoolean H245NegLogicalChannel::HandleClose(const H245_CloseLogicalChannel & /*p
 
 PBoolean H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck & /*pdu*/)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tReceived close channel ack: " << channelNumber << ", state=" << state);
 
   switch (state) {
@@ -835,7 +772,6 @@ PBoolean H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck
       break;
 
     default :
-      mutex.Signal();
       break;
   }
 
@@ -845,8 +781,6 @@ PBoolean H245NegLogicalChannel::HandleCloseAck(const H245_CloseLogicalChannelAck
 
 PBoolean H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClose & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived request close channel: " << channelNumber << ", state=" << state);
 
   if (state != e_Established)
@@ -879,14 +813,10 @@ PBoolean H245NegLogicalChannel::HandleRequestClose(const H245_RequestChannelClos
 
 PBoolean H245NegLogicalChannel::HandleRequestCloseAck(const H245_RequestChannelCloseAck & /*pdu*/)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tReceived request close ack channel: " << channelNumber << ", state=" << state);
 
   if (state == e_AwaitingResponse)
     Release();  // Other end says close OK, so do so.
-  else
-    mutex.Signal();
 
   return PTrue;
 }
@@ -894,8 +824,6 @@ PBoolean H245NegLogicalChannel::HandleRequestCloseAck(const H245_RequestChannelC
 
 PBoolean H245NegLogicalChannel::HandleRequestCloseReject(const H245_RequestChannelCloseReject & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived request close reject channel: " << channelNumber << ", state=" << state);
 
   // Other end refused close, so go back to still having channel open
@@ -908,8 +836,6 @@ PBoolean H245NegLogicalChannel::HandleRequestCloseReject(const H245_RequestChann
 
 PBoolean H245NegLogicalChannel::HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & /*pdu*/)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tReceived request close release channel: " << channelNumber << ", state=" << state);
 
   // Other end refused close, so go back to still having channel open
@@ -921,8 +847,6 @@ PBoolean H245NegLogicalChannel::HandleRequestCloseRelease(const H245_RequestChan
 
 void H245NegLogicalChannel::HandleTimeout(PTimer &, INT)
 {
-  mutex.Wait();
-
   PTRACE(3, "H245\tTimeout on open channel: " << channelNumber << ", state=" << state);
 
   H323ControlPDU reply;
@@ -938,7 +862,6 @@ void H245NegLogicalChannel::HandleTimeout(PTimer &, INT)
       break;
 
     case e_Released :
-      mutex.Signal();
       return;
 
     default :
@@ -955,7 +878,6 @@ void H245NegLogicalChannel::Release()
   state = e_Released;
   H323Channel * chan = channel;
   channel = NULL;
-  mutex.Signal();
 
   replyTimer.Stop(false);
 
@@ -1000,9 +922,7 @@ H245NegLogicalChannels::H245NegLogicalChannels(H323EndPoint & end,
 
 void H245NegLogicalChannels::Add(H323Channel & channel)
 {
-  mutex.Wait();
   channels.SetAt(channel.GetNumber(), new H245NegLogicalChannel(endpoint, connection, channel));
-  mutex.Signal();
 }
 
 
@@ -1010,14 +930,10 @@ PBoolean H245NegLogicalChannels::Open(const H323Capability & capability,
                                   unsigned sessionID,
                                   unsigned replacementFor)
 {
-  mutex.Wait();
-
   lastChannelNumber++;
 
   H245NegLogicalChannel * negChan = new H245NegLogicalChannel(endpoint, connection, lastChannelNumber);
   channels.SetAt(lastChannelNumber, negChan);
-
-  mutex.Signal();
 
   return negChan->Open(capability, sessionID, replacementFor);
 }
@@ -1039,18 +955,12 @@ PBoolean H245NegLogicalChannels::HandleOpen(const H245_OpenLogicalChannel & pdu)
   H323ChannelNumber chanNum(pdu.m_forwardLogicalChannelNumber, PTrue);
   H245NegLogicalChannel * chan;
 
-  mutex.Wait();
-
   if (channels.Contains(chanNum))
     chan = &channels[chanNum];
   else {
     chan = new H245NegLogicalChannel(endpoint, connection, chanNum);
     channels.SetAt(chanNum, chan);
   }
-
-  chan->mutex.Wait();
-
-  mutex.Signal();
 
   return chan->HandleOpen(pdu);
 }
@@ -1157,7 +1067,6 @@ PBoolean H245NegLogicalChannels::HandleRequestCloseRelease(const H245_RequestCha
 
 H323ChannelNumber H245NegLogicalChannels::GetNextChannelNumber()
 {
-  PWaitAndSignal wait(mutex);
   lastChannelNumber++;
   return lastChannelNumber;
 }
@@ -1165,18 +1074,13 @@ H323ChannelNumber H245NegLogicalChannels::GetNextChannelNumber()
 
 H323Channel * H245NegLogicalChannels::GetChannelAt(PINDEX i)
 {
-  mutex.Wait();
-  H323Channel * chan =  channels.GetDataAt(i).GetChannel();
-  mutex.Signal();
-  return chan;
+  return channels.GetDataAt(i).GetChannel();
 }
 
 
 H323Channel * H245NegLogicalChannels::FindChannel(unsigned channelNumber,
                                                   PBoolean fromRemote)
 {
-  PWaitAndSignal wait(mutex);
-
   H323ChannelNumber chanNum(channelNumber, fromRemote);
 
   if (channels.Contains(chanNum))
@@ -1188,7 +1092,6 @@ H323Channel * H245NegLogicalChannels::FindChannel(unsigned channelNumber,
 
 H245NegLogicalChannel & H245NegLogicalChannels::GetNegLogicalChannelAt(PINDEX i)
 {
-  PWaitAndSignal wait(mutex);
   return channels.GetDataAt(i);
 }
 
@@ -1197,20 +1100,13 @@ H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned c
                                                                       PBoolean fromRemote)
 {
   H323ChannelNumber chanNum(channelNumber, fromRemote);
-
-  mutex.Wait();
-  H245NegLogicalChannel * channel = channels.GetAt(chanNum);
-  mutex.Signal();
-
-  return channel;
+  return channels.GetAt(chanNum);
 }
 
 
 H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId,
                                                            PBoolean fromRemote)
 {
-  PWaitAndSignal wait(mutex);
-
   PINDEX i;
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (i = 0; i < GetSize(); i++) {
@@ -1229,15 +1125,11 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
 
 void H245NegLogicalChannels::RemoveAll()
 {
-  PWaitAndSignal wait(mutex);
-
   for (PINDEX i = 0; i < channels.GetSize(); i++) {
     H245NegLogicalChannel & neg = channels.GetDataAt(i);
-    neg.mutex.Wait();
     H323Channel * channel = neg.GetChannel();
     if (channel != NULL)
       channel->Close();
-    neg.mutex.Signal();
   }
 
   channels.RemoveAll();
@@ -1419,8 +1311,6 @@ H245NegRoundTripDelay::H245NegRoundTripDelay(H323EndPoint & end, H323Connection 
 
 PBoolean H245NegRoundTripDelay::StartRequest()
 {
-  PWaitAndSignal wait(mutex);
-
   replyTimer = endpoint.GetRoundTripDelayTimeout();
   sequenceNumber = (sequenceNumber + 1)%256;
   awaitingResponse = PTrue;
@@ -1440,8 +1330,6 @@ PBoolean H245NegRoundTripDelay::StartRequest()
 
 PBoolean H245NegRoundTripDelay::HandleRequest(const H245_RoundTripDelayRequest & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tStarted round trip delay: seq=" << sequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
@@ -1453,8 +1341,6 @@ PBoolean H245NegRoundTripDelay::HandleRequest(const H245_RoundTripDelayRequest &
 
 PBoolean H245NegRoundTripDelay::HandleResponse(const H245_RoundTripDelayResponse & pdu)
 {
-  PWaitAndSignal wait(mutex);
-
   PTimeInterval tripEndTime = PTimer::Tick();
 
   PTRACE(3, "H245\tHandling round trip delay: seq=" << sequenceNumber
@@ -1473,8 +1359,6 @@ PBoolean H245NegRoundTripDelay::HandleResponse(const H245_RoundTripDelayResponse
 
 void H245NegRoundTripDelay::HandleTimeout(PTimer &, INT)
 {
-  PWaitAndSignal wait(mutex);
-
   PTRACE(3, "H245\tTimeout on round trip delay: seq=" << sequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
