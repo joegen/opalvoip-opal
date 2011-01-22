@@ -67,7 +67,6 @@ class H245Negotiator : public PObject
     H323EndPoint   & endpoint;
     H323Connection & connection;
     PTimer           replyTimer;
-    PMutex           mutex;
 };
 
 
@@ -195,12 +194,6 @@ class H245NegLogicalChannel : public H245Negotiator
     bool IsEstablished() const { return state == e_Established; }
 
   protected:
-    virtual PBoolean OpenWhileLocked(
-      const H323Capability & capability,
-      unsigned sessionID,
-      unsigned replacementFor = 0
-    );
-    virtual PBoolean CloseWhileLocked();
     virtual void Release();
 
 
