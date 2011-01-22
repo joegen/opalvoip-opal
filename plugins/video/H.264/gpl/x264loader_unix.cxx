@@ -38,6 +38,9 @@ X264Library::~X264Library()
   }
 }
 
+#define str(x)	#x
+#define xstr(x)	str(x)
+
 bool X264Library::Load()
 {
   if (_isLoaded)
@@ -53,7 +56,8 @@ bool X264Library::Load()
     return false;
   }
 
-  if (!GetFunction("x264_encoder_open", (Function &)Xx264_encoder_open)) {
+  if (!GetFunction("x264_encoder_open", (Function &)Xx264_encoder_open) &&
+  	!GetFunction(xstr(x264_encoder_open), (Function &)Xx264_encoder_open)) {
     TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_open");
     return false;
   }
