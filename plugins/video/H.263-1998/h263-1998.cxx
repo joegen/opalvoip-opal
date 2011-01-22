@@ -221,7 +221,8 @@ H263_Base_EncoderContext::H263_Base_EncoderContext(const char * _prefix)
 
 H263_Base_EncoderContext::~H263_Base_EncoderContext()
 {
-  free(_inputFrameBuffer);
+  if (_inputFrameBuffer != NULL)
+    free(_inputFrameBuffer);
 }
 
 bool H263_Base_EncoderContext::Open(CodecID codecId)
@@ -517,8 +518,10 @@ H263_RFC2190_EncoderContext::~H263_RFC2190_EncoderContext()
 
   CloseCodec();
 
-  av_free(_context);
-  av_free(_inputFrame);
+  if (_context != NULL)
+    av_free(_context);
+  if (_inputFrame != NULL)
+    av_free(_inputFrame);
 
   TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
@@ -770,8 +773,10 @@ H263_RFC2429_EncoderContext::~H263_RFC2429_EncoderContext()
   if (_txH263PFrame)
     delete _txH263PFrame;
 
-  av_free(_context);
-  av_free(_inputFrame);
+  if (_context != NULL)
+    av_free(_context);
+  if (_inputFrame != NULL)
+    av_free(_inputFrame);
 
   TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
@@ -951,8 +956,10 @@ H263_Base_DecoderContext::~H263_Base_DecoderContext()
 {
   CloseCodec();
 
-  av_free(_context);
-  av_free(_outputFrame);
+  if (_context != NULL)
+    av_free(_context);
+  if (_outputFrame != NULL)
+    av_free(_outputFrame);
 }
 
 bool H263_Base_DecoderContext::OpenCodec()
