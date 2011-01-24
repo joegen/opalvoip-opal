@@ -387,6 +387,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       m_timestampDelta = oldestFrame->first - playOutTimestamp;
       requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
       m_synchronisationState = e_SynchronisationFill;
+      PTRACE(5, "Jitter\tSynchronising   : ts=" << requiredTimestamp << " (" << playOutTimestamp << ')');
       // Do next state
 
     case e_SynchronisationFill :
