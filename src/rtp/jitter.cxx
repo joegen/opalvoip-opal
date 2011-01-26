@@ -359,7 +359,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   /* Check for buffer full (or nearly so) and count them. If full for a while
      then it is time to reduce the size of the jitter buffer */
-  if (m_averageFrameTime == 0 || m_frames.size() < m_currentJitterDelay/m_averageFrameTime)
+  if (m_averageFrameTime == 0 || m_frames.size() == 1 || m_frames.size() < m_currentJitterDelay/m_averageFrameTime)
     m_bufferFilledTime = playOutTimestamp;
   else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
     m_bufferFilledTime = playOutTimestamp;
