@@ -1427,11 +1427,8 @@ void SIPMIMEInfo::GetAlertInfo(PString & info, int & appearance)
 
 void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
 {
-  if (appearance < 0) {
-    if (info.IsEmpty())
-      RemoveAt("Alert-Info");
-    else
-      SetAt("Alert-Info", info);
+  if (appearance < 0 && info.IsEmpty()) {
+    RemoveAt("Alert-Info");
     return;
   }
 
@@ -1440,7 +1437,9 @@ void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
     str << info;
   else
     str << '<' << info << '>';
-  str << ";appearance=" << appearance;
+
+  if (appearance >= 0)
+    str << ";appearance=" << appearance;
 
   SetAt("Alert-Info", str);
 }
