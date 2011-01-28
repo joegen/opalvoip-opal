@@ -282,7 +282,8 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   if (m_consecutiveMarkerBits < m_maxConsecutiveMarkerBits) {
     if (frame.GetMarker()) {
       PTRACE(3, "Jitter\tStart talk burst: ts=" << timestamp);
-      m_synchronisationState = e_SynchronisationStart;
+      if (m_synchronisationState == e_SynchronisationDone)
+        m_synchronisationState = e_SynchronisationStart;
       m_consecutiveMarkerBits++;
     }
     else
@@ -311,7 +312,8 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     if (newFrameTime > 4800000) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
              << m_lastTimestamp << " to " << timestamp << ", resynching");
-      m_synchronisationState = e_SynchronisationStart;
+      if (m_synchronisationState == e_SynchronisationDone)
+        m_synchronisationState = e_SynchronisationStart;
       return true;
     }
 
@@ -379,6 +381,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   // Get the oldest packet
   FrameMap::iterator oldestFrame = m_frames.begin();
+  PAssert(oldestFrame != m_frames.end(), PLogicError);
 
   // Check current buffer state and act accordingly
   switch (m_synchronisationState) {
@@ -413,6 +416,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
         m_frames.erase(oldestFrame);
         ++m_bufferOverruns;
         oldestFrame = m_frames.begin();
+        PAssert(oldestFrame != m_frames.end(), PLogicError);
       }
 
       m_synchronisationState = e_SynchronisationDone;
@@ -444,6 +448,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
         requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
 
         oldestFrame = m_frames.begin();
+        PAssert(oldestFrame != m_frames.end(), PLogicError);
       }
   }
 
