@@ -233,6 +233,18 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   m_currentJitterDelay = minJitterDelay;
   m_packetSize         = packetSize;
 
+  PTRACE(3, "Jitter\tDelays set to " << *this);
+
+  Reset();
+
+  m_bufferMutex.Signal();
+}
+
+
+void OpalJitterBuffer::Reset()
+{
+  m_bufferMutex.Wait();
+
   m_packetsTooLate        = 0;
   m_bufferOverruns        = 0;
   m_consecutiveMarkerBits = 0;
@@ -246,8 +258,6 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   m_synchronisationState = e_SynchronisationStart;
 
   m_frames.clear();
-
-  PTRACE(3, "Jitter\tDelays set to " << *this);
 
   m_bufferMutex.Signal();
 }
@@ -311,15 +321,16 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
        Not likely! */
     if (newFrameTime > 4800000) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
-             << m_lastTimestamp << " to " << timestamp << ", resynching");
-      if (m_synchronisationState == e_SynchronisationDone)
-        m_synchronisationState = e_SynchronisationStart;
+              << m_lastTimestamp << " to " << timestamp << ", resynching");
+      Reset();
+      m_frames[timestamp] = frame;
       return true;
     }
 
-    if (m_averageFrameTime == 0 || m_averageFrameTime > newFrameTime)
+    if (m_averageFrameTime == 0 || m_averageFrameTime > newFrameTime) {
       m_averageFrameTime = newFrameTime;
-
+      PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime);
+    }
   }
   m_lastTimestamp = timestamp;
 
