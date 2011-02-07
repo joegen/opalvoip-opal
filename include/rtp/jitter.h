@@ -92,6 +92,10 @@ class OpalJitterBuffer : public PSafeObject
       PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
 
+    /**Reset jitter buffer.
+      */
+    void Reset();
+
     /**Write data frame from the RTP channel.
       */
     virtual PBoolean WriteData(

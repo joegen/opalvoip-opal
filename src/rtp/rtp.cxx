@@ -1048,6 +1048,12 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << hex << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn << dec);
         return e_IgnorePacket; // Non fatal error, just ignore
       }
+
+      JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
+      if (jitter != NULL) {
+        jitter->Reset();
+        PTRACE(4, "RTP\tSession " << sessionID << ", jitter buffer reset due to SSRC change.");
+      }
     }
 
     WORD sequenceNumber = frame.GetSequenceNumber();
