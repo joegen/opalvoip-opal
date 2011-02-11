@@ -295,10 +295,7 @@ public:
 
   ~PProcess_C()
   {
-#if PTRACING
     PTRACE(3, "OpalC\tShut Down.");
-    PTrace::SetStream(NULL);
-#endif
   }
 
 private:
