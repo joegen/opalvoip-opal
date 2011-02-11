@@ -1053,30 +1053,37 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 
 PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
-  /* For efficiency reasons we will not accept a packet size that is too small.
-     We move it up to the next even multiple, which has a danger of the remote not
-     sending an even number of our multiplier. */
-  const unsigned BufferTimeMilliseconds = 10;
-  PINDEX bufferSize = BufferTimeMilliseconds*mediaFormat.GetClockRate()/1000*sizeof(short);
+  PINDEX frameSize = frameTime*sizeof(short);
+  unsigned frameMilliseconds = frameTime*1000/mediaFormat.GetClockRate();
 
-  // Calculate sound buffers from global system settings
-  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+BufferTimeMilliseconds-1)/BufferTimeMilliseconds;
+  /* For efficiency reasons we will not accept a packet size that is too small.
+     We move it up to the next even multiple of the minimum, which has a danger
+     of the remote not sending an even number of our multiplier, but 10ms seems
+     universally done by everyone out there. */
+  const unsigned MinBufferTimeMilliseconds = 10;
+  if (frameMilliseconds < MinBufferTimeMilliseconds) {
+    PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
+    frameSize = minFrameCount*frameTime*sizeof(short);
+    frameMilliseconds = minFrameCount*frameTime*1000/mediaFormat.GetClockRate();
+  }
+
+  // Quantise dataSize up to multiple of the frame time
+  PINDEX frameCount = (dataSize+frameSize-1)/frameSize;
+  dataSize = frameCount*frameSize;
+
+  // Calculate number of sound buffers from global system settings
+  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
   if (soundChannelBuffers < m_soundChannelBuffers)
     soundChannelBuffers = m_soundChannelBuffers;
 
-  // Quantise dataSize up to multiple of the frame time
-  PINDEX frameSize = frameTime*sizeof(short);
-  dataSize = (dataSize+frameSize-1)/frameSize * frameSize;
-
-  // Calculte buffers needed for the data we require and increase buffers if required
-  PINDEX dataBuffersNeeded = (dataSize+bufferSize-1)/bufferSize;
-  if (soundChannelBuffers < dataBuffersNeeded)
-    soundChannelBuffers = dataBuffersNeeded;
+  // Increase sound buffers if negotiated maximum larger than global settings
+  if (soundChannelBuffers < frameCount)
+    soundChannelBuffers = frameCount;
 
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << ", buffer size set to " << bufferSize << " and " << soundChannelBuffers << " buffers.");
+         << dataSize << ", buffer size set to " << frameSize << " and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize, frameTime) &&
-         ((PSoundChannel *)m_channel)->SetBuffers(bufferSize, soundChannelBuffers);
+         ((PSoundChannel *)m_channel)->SetBuffers(frameSize, soundChannelBuffers);
 }
 
 
