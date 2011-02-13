@@ -310,36 +310,44 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 
   if (size == 0) {
-    IncrementTimestamp(1);
-    packet.SetTimestamp(timestamp);
     PINDEX dummy;
-    return WriteData(NULL, 0, dummy);
-  }
-
-  marker = packet.GetMarker();
-  const BYTE * ptr = packet.GetPayloadPtr();
-
-  while (size > 0) {
-    unsigned oldTimestamp = timestamp;
-
-    PINDEX written;
-    if (!WriteData(ptr, size, written) || (written == 0)) {
-      PTRACE(2, "Media\tWritePacket failed with written " << written);
+    if (!InternalWriteData(NULL, 0, dummy))
       return false;
+  }
+  else {
+    marker = packet.GetMarker();
+    const BYTE * ptr = packet.GetPayloadPtr();
+
+    while (size > 0) {
+      PINDEX written;
+      if (!InternalWriteData(ptr, size, written))
+        return false;
+      size -= written;
+      ptr += written;
     }
 
-    // If the Write() function did not change the timestamp then use the default
-    // method of fixed frame times and sizes.
-    if (oldTimestamp == timestamp)
-      IncrementTimestamp(size);
-
-    size -= written;
-    ptr += written;
+    PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
   }
 
-  PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
-
   packet.SetTimestamp(timestamp);
+
+  return true;
+}
+
+
+bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written)
+{
+  unsigned oldTimestamp = timestamp;
+
+  if (!WriteData(data, length, written) || written == 0) {
+    PTRACE(2, "Media\tWriteData failed, written=" << written);
+    return false;
+  }
+
+  // If the Write() function did not change the timestamp then use the default
+  // method of fixed frame times and sizes.
+  if (oldTimestamp == timestamp)
+    IncrementTimestamp(written);
 
   return true;
 }
