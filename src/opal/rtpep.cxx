@@ -108,6 +108,8 @@ bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
 
 bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 {
+  PWaitAndSignal mutex(inUseFlag);
+
   RTP_UDP * rtp = GetRTPFromStream(stream);
   if (rtp == NULL)
     return false;
@@ -122,54 +124,34 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   }
 
   WORD localPort = rtp->GetLocalDataPort();
-  std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
-              m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(localPort, connection));
-  PTRACE_IF(4, insertResult.second, "RTPEp\tSession " << stream.GetSessionID() << ", "
-            "remembering local RTP port " << localPort << " on connection " << connection);
+  LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalPort.find(localPort);
+  if (!PAssert(itLocal != m_connectionsByRtpLocalPort.end(), PLogicError))
+    return false;
 
   WORD remotePort = rtp->GetRemoteDataPort();
-  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(remotePort);
-  if (it == m_connectionsByRtpLocalPort.end()) {
-    PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
-              "remote RTP port " << remotePort << " not peviously remembered, searching.");
-
-    /* Not already cached so search all RTP connections for if it is there
-       To avoid deadlocks take a snapshot of the active list at an instant
-       of time and iterate over that. The other connection MUST already be
-       there or it isn't a hairpinned call. */
-    ConnectionDict snapshot(connectionsActive);
-    for (PSafePtr<OpalRTPConnection> connection(snapshot, PSafeReadOnly); connection != NULL; ++connection) {
-      if (connection->FindSessionByLocalPort(remotePort) != NULL) {
-        PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
-                  "remembering remote RTP port " << remotePort << " on connection " << *connection);
-        it = m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(remotePort, *connection)).first;
-        break;
-      }
-    }
-    if (it == m_connectionsByRtpLocalPort.end()) {
-      PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
-                "remote RTP port " << remotePort << " not this process.");
-      return false;
-    }
+  LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalPort.find(remotePort);
+  if (itRemote == m_connectionsByRtpLocalPort.end()) {
+    PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
+              "remote RTP port " << remotePort << " not this process.");
+    return false;
   }
+
+  bool result;
+  bool cached = itRemote->second.m_previousResult >= 0;
+  if (cached)
+    result = itRemote->second.m_previousResult != 0;
   else {
-    PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
-              "remote RTP port " << remotePort << " already remembered.");
-  }
-
-  bool notCached = it->second.m_previousResult < 0;
-  if (notCached) {
-    it->second.m_previousResult = OnLocalRTP(connection, it->second.m_connection, rtp->GetSessionID(), true);
-    if (insertResult.second)
-      insertResult.first->second.m_previousResult = it->second.m_previousResult;
+    result = OnLocalRTP(connection, itRemote->second.m_connection, rtp->GetSessionID(), true);
+    itLocal->second.m_previousResult = result;
+    itRemote->second.m_previousResult = result;
   }
 
   PTRACE(3, "RTPEp\tSession " << stream.GetSessionID() << ", "
             "RTP ports " << localPort << " and " << remotePort
-         << ' ' << (notCached ? "flagged" : "cached") << " as "
-         << (it->second.m_previousResult != 0 ? "bypassed" : "normal"));
+         << ' ' << (cached ? "cached" : "flagged") << " as "
+         << (result ? "bypassed" : "normal"));
 
-  return it->second.m_previousResult != 0;
+  return result;
 }
 
 
@@ -178,16 +160,18 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rt
   if (rtp == NULL)
     return;
 
+  PWaitAndSignal mutex(inUseFlag);
+
   LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
-  if (it == m_connectionsByRtpLocalPort.end())
+  if (it == m_connectionsByRtpLocalPort.end() || it->second.m_previousResult < 0)
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-            "local RTP port " << it->first << " removed.");
-  m_connectionsByRtpLocalPort.erase(it);
+            "local RTP port " << it->first << " cache cleared.");
+  it->second.m_previousResult = -1;
 
   it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
-  if (it == m_connectionsByRtpLocalPort.end())
+  if (it == m_connectionsByRtpLocalPort.end() || it->second.m_previousResult < 0)
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
@@ -195,3 +179,24 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rt
   it->second.m_previousResult = -1;
   OnLocalRTP(connection, it->second.m_connection, rtp->GetSessionID(), false);
 }
+
+
+void OpalRTPEndPoint::SetConnectionByRtpLocalPort(RTP_Session * session, OpalConnection * connection)
+{
+  RTP_UDP * rtp = dynamic_cast<RTP_UDP *>(session);
+  if (rtp == NULL)
+    return;
+
+  WORD localPort = rtp->GetLocalDataPort();
+  inUseFlag.Wait();
+  if (connection == NULL)
+    m_connectionsByRtpLocalPort.erase(localPort);
+  else {
+    std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
+                m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(localPort, *connection));
+    PTRACE_IF(4, insertResult.second, "RTPEp\tSession " << rtp->GetSessionID() << ", "
+              "remembering local RTP port " << localPort << " on connection " << *connection);
+  }
+  inUseFlag.Signal();
+}
+
