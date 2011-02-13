@@ -122,6 +122,10 @@ class JesterProcess : public PProcess
        each voice stream */
     bool m_markerSuppression;
 
+    /**Difference in milliseconds between generation and playback.
+      */
+    int m_startTimeDelta;
+
     /**A descendant of the OpalJitterBuffer, which means we have the minimum
        of code to write to test OpalJitterBuffer. Further, we can now access
        variables in the OpalJitterBuffer */
@@ -143,7 +147,7 @@ class JesterProcess : public PProcess
     WORD m_generateSequenceNumber;
 
     /**The timestamp the jitter buffer consumer is expecting */
-    DWORD m_expectedTimestamp;
+    DWORD m_playbackTimestamp;
 
     /** Flag for running the test */
     bool m_keepRunning;

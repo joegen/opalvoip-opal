@@ -76,9 +76,9 @@ JesterJitterBuffer::JesterJitterBuffer()
 
 JesterProcess::JesterProcess()
   : PProcess("Derek Smithies Code Factory", "Jester", 1, 1, ReleaseCode, 0)
-  , m_generateTimestamp(1000000)
+  , m_generateTimestamp(0)
   , m_generateSequenceNumber(0)
-  , m_expectedTimestamp(2000000)
+  , m_playbackTimestamp(0)
   , m_keepRunning(true)
   , m_lastFrameWasSilence(true)
   , m_talkBurstTimestamp(0)
@@ -94,9 +94,12 @@ void JesterProcess::Main()
   PArgList & args = GetArguments();
   args.Parse(
     "a-audiodevice:"
+    "D-start-delta:"
     "d-drop."
     "j-jitter:"
     "g-generate:"
+    "I-init-play-ts:"
+    "i-init-gen-ts:"
     "s-silence."
     "S-size:"
     "h-help."
@@ -122,6 +125,9 @@ void JesterProcess::Main()
             "  -g --generate profile : amount of jitter to simulate (see below)\n"
             "  -S --size max         : size of each RTP packet in ms\n"
             "  -m --marker           : turn some of the marker bits off, that indicate speech bursts\n"
+            "  -D --start-delta n    : Start delta time between generator and playback (ms)\n"
+            "  -I --init-play-ts n   : Initial timestamp value for generator\n"
+            "  -i --init-gen-ts n    : Initial timestamp value for playback\n"
 #if PTRACING
             "  -t --trace            : Enable trace, use multiple times for more detail.\n"
             "  -o --output           : File for trace output, default is stderr.\n"
@@ -182,6 +188,9 @@ void JesterProcess::Main()
   m_dropPackets = args.HasOption('d');
   m_markerSuppression = args.HasOption('m');
   m_bytesPerBlock = args.GetOptionString('S', "20").AsUnsigned()*SAMPLES_PER_MILLISECOND*2;
+  m_startTimeDelta = args.GetOptionString('D', "0").AsInteger();
+  m_generateTimestamp = args.GetOptionString('i', "0").AsUnsigned();
+  m_playbackTimestamp = args.GetOptionString('I', "0").AsUnsigned();
 
   m_generateJitter[0] = 20;
   PStringArray profile = args.GetOptionString('g', "0=100").Tokenise(',',false);
@@ -223,7 +232,7 @@ void JesterProcess::Main()
   if (args.HasOption('R')) {
     RTP_DataFrame readFrame(m_bytesPerBlock);
     PTimeInterval genTick;
-    PTimeInterval outTick = 10;
+    PTimeInterval outTick = m_startTimeDelta;
     DWORD initialTimestamp = m_generateTimestamp;
     while (m_generateSequenceNumber < 4000) {
       while (genTick < outTick) {
@@ -256,7 +265,7 @@ void JesterProcess::Main()
         }
       }
 
-      readFrame.SetTimestamp(m_expectedTimestamp);
+      readFrame.SetTimestamp(m_playbackTimestamp);
       if (!m_jitterBuffer.ReadData(readFrame, outTick))
         break;
 
@@ -266,9 +275,9 @@ void JesterProcess::Main()
                 "sz=" << readFrame.GetPayloadSize());
       outTick += m_bytesPerBlock/SAMPLES_PER_MILLISECOND/2;
       if (readFrame.GetPayloadSize() != 0)
-        m_expectedTimestamp = readFrame.GetTimestamp() + readFrame.GetPayloadSize()/2;
+        m_playbackTimestamp = readFrame.GetTimestamp() + readFrame.GetPayloadSize()/2;
       else
-        m_expectedTimestamp += m_bytesPerBlock/2;
+        m_playbackTimestamp += m_bytesPerBlock/2;
     }
   }
   else {
@@ -296,8 +305,11 @@ void JesterProcess::Main()
 }
 
 
-void JesterProcess::GeneratePackets(PThread &, INT )
+void JesterProcess::GeneratePackets(PThread &, INT)
 {
+  if (m_startTimeDelta > 0)
+    PThread::Sleep(m_startTimeDelta);
+
   PTimeInterval startTick = PTimer::Tick();
   DWORD initialTimestamp = m_generateTimestamp;
 
@@ -353,7 +365,7 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame)
   frame.SetPayloadType(RTP_DataFrame::L16_Mono);
   frame.SetSequenceNumber(++m_generateSequenceNumber);
   frame.SetTimestamp(m_generateTimestamp);
-  frame.SetMarker(m_lastFrameWasSilence);
+  frame.SetMarker(m_lastFrameWasSilence && (!m_markerSuppression || (m_generateSequenceNumber&1) == 0));
 
   if (m_lastFrameWasSilence) {
     PTRACE(3, "Jester\tBegin talk burst: ts=" << setw(5) << m_generateTimestamp);
@@ -373,6 +385,9 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame)
 
 void JesterProcess::ConsumePackets(PThread &, INT)
 {
+  if (m_startTimeDelta < 0)
+    PThread::Sleep(-m_startTimeDelta);
+
   RTP_DataFrame readFrame(0, m_bytesPerBlock);
   PBYTEArray silence(m_bytesPerBlock);
 
@@ -392,17 +407,17 @@ void JesterProcess::ConsumePackets(PThread &, INT)
                 "Jester\tPacket was not correctly written to audio device.");
 
       oldTimestamp = readFrame.GetTimestamp();
-      m_expectedTimestamp = oldTimestamp + bytesInPacket/2;
+      m_playbackTimestamp = oldTimestamp + bytesInPacket/2;
     }
     else {
       m_player.Write(silence, m_bytesPerBlock);
-      oldTimestamp = m_expectedTimestamp;
-      m_expectedTimestamp += m_bytesPerBlock/2;
+      oldTimestamp = m_playbackTimestamp;
+      m_playbackTimestamp += m_bytesPerBlock/2;
     }
     PTRACE(5, "Jester\tWritten " << (bytesInPacket > 0 ? "audio" : "silence") << " to sound device, "
               " ts=" << oldTimestamp << ", real=" << writeTime.GetElapsed() << 's');
 
-    readFrame.SetTimestamp(m_expectedTimestamp);
+    readFrame.SetTimestamp(m_playbackTimestamp);
   }
 
   PTRACE(3, "Jester\tEnd of consume packets ");
