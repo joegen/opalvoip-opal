@@ -138,6 +138,8 @@ class OpalJitterBuffer : public PSafeObject
   //@}
 
   protected:
+    DWORD CalculateRequiredTimestamp(DWORD playOutTimestamp) const;
+
     unsigned m_timeUnits;
     PINDEX   m_packetSize;
     DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units

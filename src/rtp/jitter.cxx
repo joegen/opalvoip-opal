@@ -235,6 +235,10 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
 
   PTRACE(3, "Jitter\tDelays set to " << *this);
 
+  m_packetsTooLate        = 0;
+  m_bufferOverruns        = 0;
+  m_consecutiveMarkerBits = 0;
+
   Reset();
 
   m_bufferMutex.Signal();
@@ -244,10 +248,6 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
 void OpalJitterBuffer::Reset()
 {
   m_bufferMutex.Wait();
-
-  m_packetsTooLate        = 0;
-  m_bufferOverruns        = 0;
-  m_consecutiveMarkerBits = 0;
 
   m_averageFrameTime  = 0;
   m_lastTimestamp     = UINT_MAX;
@@ -276,31 +276,22 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   }
 
 
-  // Add to buffer
-  pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
-  if (!result.second) {
-    PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
-    return false;
-  }
-
-  ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-
-
   /*Deal with naughty systems that send continuous marker bits, thus we
     cannot use it to determine start of talk burst, and the need to refill
     the jitter buffer */
   if (m_consecutiveMarkerBits < m_maxConsecutiveMarkerBits) {
     if (frame.GetMarker()) {
       PTRACE(3, "Jitter\tStart talk burst: ts=" << timestamp);
-      if (m_synchronisationState == e_SynchronisationDone)
-        m_synchronisationState = e_SynchronisationStart;
       m_consecutiveMarkerBits++;
+      Reset();
+      // Have been told there is explicit silence by marker, take opportunity
+      // to reduce the current jitter delay.
+      m_currentJitterDelay -= (m_currentJitterDelay-m_minJitterDelay)/2;
     }
     else
       m_consecutiveMarkerBits = 0;
   }
   else {
-    result.first->second.SetMarker(false);
     if (m_consecutiveMarkerBits == m_maxConsecutiveMarkerBits) {
       PTRACE(2, "Jitter\tEvery packet has Marker bit, ignoring them from this client!");
       m_consecutiveMarkerBits++;
@@ -323,18 +314,32 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
       Reset();
-      m_frames[timestamp] = frame;
-      return true;
     }
-
-    if (m_averageFrameTime == 0 || m_averageFrameTime > newFrameTime) {
+    else if (m_averageFrameTime == 0 || m_averageFrameTime > newFrameTime) {
       m_averageFrameTime = newFrameTime;
       PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime);
     }
   }
   m_lastTimestamp = timestamp;
 
+
+  // Add to buffer
+  pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
+  if (!result.second) {
+    PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
+    return false;
+  }
+
+  ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
+
   return true;
+}
+
+
+DWORD OpalJitterBuffer::CalculateRequiredTimestamp(DWORD playOutTimestamp) const
+{
+  DWORD timestamp = playOutTimestamp + m_timestampDelta;
+  return timestamp > m_currentJitterDelay ? (timestamp - m_currentJitterDelay) : 0;
 }
 
 
@@ -347,7 +352,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   // Now we get the timestamp the caller wants
   DWORD playOutTimestamp = frame.GetTimestamp();
-  DWORD requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
+  DWORD requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
 
   if (m_frames.empty()) {
     /*We ran the buffer down to empty, so have no data to play, play silence.
@@ -399,7 +404,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
     case e_SynchronisationStart :
       /* First packet of talk burst, re-calculate the timestamp delta */
       m_timestampDelta = oldestFrame->first - playOutTimestamp;
-      requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
+      requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
       m_synchronisationState = e_SynchronisationFill;
       PTRACE(5, "Jitter\tSynchronising   : ts=" << requiredTimestamp << " (" << playOutTimestamp << ')');
       // Do next state
@@ -421,7 +426,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       break;
 
     case e_SynchronisationShrink :
-      requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
+      requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
       if (requiredTimestamp >= oldestFrame->first + m_averageFrameTime) {
         ANALYSE(Out, oldestFrame->first, "Shrink");
         m_frames.erase(oldestFrame);
@@ -456,7 +461,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
           return true;
         }
 
-        requiredTimestamp = playOutTimestamp + m_timestampDelta - m_currentJitterDelay;
+        requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
 
         oldestFrame = m_frames.begin();
         PAssert(oldestFrame != m_frames.end(), PLogicError);
@@ -562,7 +567,8 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
     } while (frame.GetSize() == 0);
 
     m_bufferMutex.Wait();
-    WriteData(frame);
+    if (!WriteData(frame))
+      break;
   }
 
   m_bufferMutex.Signal();
