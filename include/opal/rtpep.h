@@ -138,6 +138,8 @@ class OpalRTPEndPoint : public OpalEndPoint
 
     // Check for local RTP connection. Internal function.
     void CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp);
+
+    void SetConnectionByRtpLocalPort(RTP_Session * rtp, OpalConnection * connection);
   //@}
 
   protected:
