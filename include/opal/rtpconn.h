@@ -124,6 +124,8 @@ class OpalRTPMediaSession : public OpalMediaSession
 
     PObject * Clone() const { return new OpalRTPMediaSession(*this); }
 
+    void Open(RTP_Session * rtpSession);
+
     virtual void Close();
 
     virtual bool IsActive() const { return rtpSession != NULL; }
@@ -146,6 +148,9 @@ class OpalRTPMediaSession : public OpalMediaSession
       PBoolean isSource
     );
 
+    RTP_Session * GetSession() const { return rtpSession; }
+
+  protected:
     RTP_Session * rtpSession;    // RTP session
 };
 
@@ -207,13 +212,6 @@ class OpalRTPSessionManager : public PObject
     ) const;
     OpalMediaSession * GetMediaSession(
       unsigned sessionID
-    ) const;
-
-    /**Find an RTP session for the specified local port.
-       If there is no session, NULL is returned.
-      */
-    virtual RTP_UDP * FindSessionByLocalPort(
-      WORD port    ///< Local port number
     ) const;
 
     /**Change the sessionID for an existing session.
@@ -304,13 +302,6 @@ class OpalRTPConnection : public OpalConnection
     ) const;
     virtual OpalMediaSession * GetMediaSession(
       unsigned sessionID    ///<  RTP session number
-    ) const;
-
-    /**Find an RTP session for the specified local port.
-       If there is no session, NULL is returned.
-      */
-    virtual RTP_UDP * FindSessionByLocalPort(
-      WORD port    ///< Local port number
     ) const;
 
     /**Use an RTP session for the specified ID.
@@ -506,8 +497,6 @@ class OpalRTPConnection : public OpalConnection
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
-    list<OpalRTPSessionManager *> m_allSessions; // Note this must be before m_rtpSessions
-
     OpalRTPSessionManager m_rtpSessions;
     OpalRFC2833Proto * rfc2833Handler;
 #if OPAL_T38_CAPABILITY
@@ -522,8 +511,6 @@ class OpalRTPConnection : public OpalConnection
     PMutex zrtpConnInfoMutex;
     OpalZRTPConnectionInfo * zrtpConnInfo;
 #endif
-
-  friend class OpalRTPSessionManager;
 };
 
 
