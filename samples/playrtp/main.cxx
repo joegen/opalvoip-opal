@@ -31,6 +31,7 @@
 #include "precompile.h"
 #include "main.h"
 
+#include <rtp/pcapfile.h>
 #include <ptlib/vconvert.h>
 #include <ptlib/pipechan.h>
 
@@ -43,383 +44,8 @@ const int g_extraHeight = 35;
 
 ///////////////////////////////////////////////////////////////////////
 
-
-struct pcap_hdr_s { 
-  DWORD magic_number;   /* magic number */
-  WORD  version_major;  /* major version number */
-  WORD  version_minor;  /* minor version number */
-  DWORD thiszone;       /* GMT to local correction */
-  DWORD sigfigs;        /* accuracy of timestamps */
-  DWORD snaplen;        /* max length of captured packets, in octets */
-  DWORD network;        /* data link type */
-} pcap_hdr;
-
-struct pcaprec_hdr_s { 
-    DWORD ts_sec;         /* timestamp seconds */
-    DWORD ts_usec;        /* timestamp microseconds */
-    DWORD incl_len;       /* number of octets of packet saved in file */
-    DWORD orig_len;       /* actual length of packet */
-} pcaprec_hdr;
-
-
-template <typename T> const T & Get(const PBYTEArray & p, PINDEX off)
-{
-  return *(const T *)(((const BYTE *)p)+off);
-}
-
-
-void Reverse(char * ptr, size_t sz)
-{
-  char * top = ptr+sz-1;
-  while (ptr < top) {
-    char t = *ptr;
-    *ptr = *top;
-    *top = t;
-    ptr++;
-    top--;
-  }
-}
-
-#define REVERSE(p) Reverse((char *)p, sizeof(p))
-
-
-///////////////////////////////////////////////////////////////////////
-
-class PCAPFile
-{
-  private:
-    PFile      m_file;
-    pcap_hdr_s m_fileHeader;
-    bool       m_otherEndian;
-    PBYTEArray m_rawPacket;
-
-    PIPSocket::Address m_srcIP;
-    PIPSocket::Address m_dstIP;
-
-    PBYTEArray m_fragments;
-    bool       m_fragmentated;
-
-    WORD m_srcPort;
-    WORD m_dstPort;
-
-  public:
-    friend ostream & operator<<(ostream & strm, const PCAPFile & pcap)
-    {
-      return strm << "PCAP v" << pcap.m_fileHeader.version_major << '.' << pcap.m_fileHeader.version_minor
-                  << " file \"" << pcap.m_file.GetFilePath() << '"';
-    }
-
-
-    bool Open(const PFilePath & filename)
-    {
-      if (!m_file.Open(filename, PFile::ReadOnly)) {
-        cout << "Could not open file \"" << filename << '"' << endl;
-        return false;
-      }
-
-      if (!m_file.Read(&m_fileHeader, sizeof(m_fileHeader))) {
-        cout << "Could not read header from \"" << filename << '"' << endl;
-        return false;
-      }
-
-      if (m_fileHeader.magic_number == 0xa1b2c3d4)
-        m_otherEndian = false;
-      else if (m_fileHeader.magic_number == 0xd4c3b2a1)
-        m_otherEndian = true;
-      else {
-        cout << "File \"" << filename << "\" is not a PCAP file, bad magic number." << endl;
-        return false;
-      }
-
-      if (m_otherEndian) {
-        REVERSE(m_fileHeader.version_major);
-        REVERSE(m_fileHeader.version_minor);
-        REVERSE(m_fileHeader.thiszone);
-        REVERSE(m_fileHeader.sigfigs);
-        REVERSE(m_fileHeader.snaplen);
-        REVERSE(m_fileHeader.network);
-      }
-
-      if (GetNetworkLayerHeaderSize() == 0) {
-        cout << "Unsupported Data Link Layer " << m_fileHeader.network << " in file \"" << filename << '"' << endl;
-        return false;
-      }
-
-      return true;
-    }
-
-
-    bool IsEndOfFile() const
-    {
-      return m_file.IsEndOfFile();
-    }
-
-
-    PINDEX GetNetworkLayerHeaderSize()
-    {
-      switch (m_fileHeader.network) {
-        case 1 : // DLT_EN10MB - Ethernet (10Mb)
-          return 14;
-
-        case 113 : // DLT_LINUX_SLL - Linux cooked sockets
-          return 16;
-      }
-
-      return 0;
-    }
-
-    bool ReadRawPacket(PBYTEArray & payload)
-    {
-      m_fragmentated = false;
-
-      pcaprec_hdr_s recordHeader;
-      if (!m_file.Read(&recordHeader, sizeof(recordHeader))) {
-        cout << "Truncated file \"" << m_file.GetFilePath() << '"' << endl;
-        return false;
-      }
-
-      if (m_otherEndian) {
-        REVERSE(recordHeader.ts_sec);
-        REVERSE(recordHeader.ts_usec);
-        REVERSE(recordHeader.incl_len);
-        REVERSE(recordHeader.orig_len);
-      }
-
-      if (!m_file.Read(m_rawPacket.GetPointer(recordHeader.incl_len), recordHeader.incl_len)) {
-        cout << "Truncated file \"" << m_file.GetFilePath() << '"' << endl;
-        return false;
-      }
-
-      payload.Attach(m_rawPacket, recordHeader.incl_len);
-      return true;
-    }
-
-
-    int GetDataLink(PBYTEArray & payload)
-    {
-      PBYTEArray dataLink;
-      if (!ReadRawPacket(dataLink))
-        return false;
-
-      PINDEX headerLength = GetNetworkLayerHeaderSize();
-      payload.Attach(&dataLink[headerLength], dataLink.GetSize()-headerLength);
-      return Get<PUInt16b>(dataLink, headerLength-2); // Next protocol layer
-    }
-
-
-    int GetIP(PBYTEArray & payload)
-    {
-      PBYTEArray ip;
-      if (GetDataLink(ip) != 0x800) // IPv4
-        return -1;
-
-      PINDEX headerLength = (ip[0]&0xf)*4; // low 4 bits in DWORDS, is this in bytes
-      payload.Attach(&ip[headerLength], ip.GetSize()-headerLength);
-
-      m_srcIP = PIPSocket::Address(4, ip+12);
-      m_dstIP = PIPSocket::Address(4, ip+16);
-
-      // Check for fragmentation
-      bool isFragment = (ip[6] & 0x20) != 0;
-      int fragmentOffset = (((ip[6]&0x1f)<<8)+ip[7])*8;
-      PINDEX fragmentsSize = m_fragments.GetSize();
-      if (isFragment || fragmentsSize > 0) {
-        if (fragmentsSize != fragmentOffset) {
-          cout << "Missing IP fragment in \"" << m_file.GetFilePath() << '"' << endl;
-          m_fragments.SetSize(0);
-          return -1;
-        }
-
-        m_fragments.Concatenate(payload);
-
-        if (isFragment)
-          return -1;
-
-        payload = m_fragments;
-        m_fragments.SetSize(0);
-        m_fragmentated = true;
-      }
-
-      return ip[9]; // Next protocol layer
-    }
-
-
-    const PIPSocket::Address & GetSrcIP() const { return m_srcIP; }
-    const PIPSocket::Address & GetDstIP() const { return m_dstIP; }
-    unsigned IsFragmentated() const { return m_fragmentated; }
-
-
-
-    int GetUDP(PBYTEArray & payload)
-    {
-      PBYTEArray udp;
-      if (GetIP(udp) != 0x11)
-        return -1;
-
-      if (udp.GetSize() < 8)
-        return -1;
-
-      m_srcPort = Get<PUInt16b>(udp, 0);
-      m_dstPort = Get<PUInt16b>(udp, 2);
-
-      int payloadLength = udp.GetSize() - 8;
-      payload.Attach(&udp[8], payloadLength);
-      return payloadLength;
-    }
-
-    WORD GetSrcPort() const { return m_srcPort; }
-    WORD GetDstPort() const { return m_dstPort; }
-
-
-    int GetRTP(RTP_DataFrame & rtp)
-    {
-      int packetLength = GetUDP(rtp);
-      if (packetLength < 0)
-        return -1;
-
-      if (!rtp.SetPacketSize(packetLength))
-        return -1;
-
-      if (rtp.GetVersion() != 2)
-        return -1;
-
-      return rtp.GetPayloadType();
-    }
-};
-
-
-struct DiscoveredRTPInfo {
-  DiscoveredRTPInfo()
-  { 
-    m_found[0] = m_found[1] = false;
-    m_ssrc_matches[0] = m_ssrc_matches[1] = 0;
-    m_seq_matches[0]  = m_seq_matches[1]  = 0;
-    m_ts_matches[0]   = m_ts_matches[1]   = 0;
-    m_index[0] = m_index[1] = 0;
-  }
-
-  PIPSocketAddressAndPort m_addr[2];
-  RTP_DataFrame::PayloadTypes m_payload[2];
-  bool m_found[2];
-
-  DWORD m_ssrc[2];
-  WORD  m_seq[2];
-  DWORD m_ts[2];
-
-  unsigned m_ssrc_matches[2];
-  unsigned m_seq_matches[2];
-  unsigned m_ts_matches[2];
-
-  RTP_DataFrame * m_firstFrame[2];
-
-  PString m_type[2];
-  PString m_format[2];
-
-  size_t m_index[2];
-};
-
-typedef std::map<std::string, DiscoveredRTPInfo> DiscoveredRTPMap;
-DiscoveredRTPMap discoveredRTPMap;
-
-
-bool IdentifyMediaType(const RTP_DataFrame & rtp, PString & type, PString & format)
-{
-  OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-
-  RTP_DataFrame::PayloadTypes pt = rtp.GetPayloadType();
-
-  type   = "Unknown";
-  format = "Unknown";
-
-  // look for known audio types
-  if (pt <= RTP_DataFrame::Cisco_CN) {
-    OpalMediaFormatList::const_iterator r;
-    if ((r = formats.FindFormat(pt, OpalMediaFormat::AudioClockRate)) != formats.end()) {
-      type   = r->GetMediaType();
-      format = r->GetName();
-      return true;
-    }
-    return false;
-  }
-
-  // look for known video types
-  if (pt <= RTP_DataFrame::LastKnownPayloadType) {
-    OpalMediaFormatList::const_iterator r;
-    if ((r = formats.FindFormat(pt, OpalMediaFormat::VideoClockRate)) != formats.end()) {
-      type   = r->GetMediaType();
-      format = r->GetName();
-      return true;
-    }
-    return false;
-  }
-
-  // try and identify media by inspection
-  const BYTE * data = rtp.GetPayloadPtr();
-
-  // xxx00111 01000010 xxxx0000 - H.264
-  if (rtp.GetPayloadSize() > 6 && (data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0) {
-    type = OpalMediaType::Video();
-    OpalMediaFormatList::const_iterator r = formats.FindFormat("*h.264*");
-    if (r != formats.end())
-      format = r->GetName();
-  }
-
-  // 0x00 0x00 0x1b - MPEG4
-  else if (rtp.GetPayloadSize() > 6 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
-    type = OpalMediaType::Video();
-    OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
-    if (r != formats.end())
-      format = r->GetName();
-  }
-
-  else
-    cout << hex << (int)data[0] << ' ' << (int)data[1] << ' ' << (int)data[2] << dec << endl;
-
-  return false;
-}
-
-void DisplaySessions(bool show = true)
-{
-  // display matches
-  DiscoveredRTPMap::iterator r;
-  int index = 1;
-  for (r = discoveredRTPMap.begin(); r != discoveredRTPMap.end(); ++r) {
-    DiscoveredRTPInfo & info = r->second;
-    for (int dir = 0; dir < 2; ++dir) {
-      if (info.m_found[dir]) {
-#if 0
-        if (info.m_seq_matches[dir] > 5 &&
-            info.m_ts_matches[dir] > 5 &&
-            info.m_ssrc_matches[dir] > 5) {
-#endif
-      {
-          info.m_index[dir] = index++;
-          PString type, format;
-          IdentifyMediaType(*info.m_firstFrame[dir], info.m_type[dir], info.m_format[dir]);
-
-          if (show) {
-            if (info.m_payload[dir] != info.m_firstFrame[dir]->GetPayloadType()) {
-              cout << "Mismatched payload types" << endl;
-            }
-            cout << info.m_index[dir] << " : " << info.m_addr[dir].AsString() 
-                                      << " -> " << info.m_addr[1-dir].AsString() 
-                                      << ", " << info.m_payload[dir] 
-                                      << " " << info.m_type[dir]
-                                      << " " << info.m_format[dir] << endl;
-          }
-        }
-      }
-    }
-  }
-}
-
-
 PlayRTP::PlayRTP()
   : PProcess("OPAL Audio/Video Codec Tester", "PlayRTP", 1, 0, ReleaseCode, 0)
-  , m_srcIP(PIPSocket::GetDefaultIpAny())
-  , m_dstIP(PIPSocket::GetDefaultIpAny())
-  , m_srcPort(0)
-  , m_dstPort(0)
   , m_transcoder(NULL)
   , m_player(NULL)
   , m_display(NULL)
@@ -539,118 +165,74 @@ void PlayRTP::Main()
     cout << "Set option \"" << optionName << "\" to \"" << valueStr << "\" in \"" << mediaFormat << '"' << endl;
   }
 
+  OpalPCAPFile pcap;
+  if (!pcap.Open(args[0]))
+    return;
+
   if (args.HasOption('f')) {
-    Find(args[0]);
-    if (discoveredRTPMap.size() == 0) {
+    OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
+    if (!pcap.DiscoverRTP(discoveredRTPMap)) {
       cerr << "error: no RTP sessions found" << endl;
       return;
     }
-    cout << "Found " << discoveredRTPMap.size() << " sessions:\n" << endl;
-    DisplaySessions();
+    cout << "Found " << discoveredRTPMap.size() << " sessions:\n" << discoveredRTPMap << endl;
     return;
   }
 
-  if (!args.HasOption('m')) {
-    Find(args[0]);
-    if (discoveredRTPMap.size() == 0) {
-      cerr << "error: no RTP sessions found - please use -m/-S/-D option to specify session manually" << endl;
+  PStringArray mappings = args.GetOptionString('m').Lines();
+  for (PINDEX i = 0; i < mappings.GetSize(); i++) {
+    const PString & mapping = mappings[i];
+    PINDEX equal = mapping.Find('=');
+    if (equal == P_MAX_INDEX) {
+      cout << "Invalid syntax for mapping \"" << mapping << '"' << endl;
+      continue;
+    }
+
+    RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)mapping.Left(equal).AsUnsigned();
+    if (pt > RTP_DataFrame::MaxPayloadType) {
+      cout << "Invalid payload type for mapping \"" << mapping << '"' << endl;
+      continue;
+    }
+
+    OpalMediaFormat mf = mapping.Mid(equal+1);
+    if (!mf.IsTransportable()) {
+      cout << "Invalid media format for mapping \"" << mapping << '"' << endl;
+      continue;
+    }
+
+    pcap.SetPayloadMap(pt, mf);
+  }
+
+  if (args.HasOption('S') || args.HasOption('D') || args.HasOption('s') || args.HasOption('d')) {
+    pcap.SetFilterSrcIP(args.GetOptionString('S', PIPSocket::GetDefaultIpAny().AsString()));
+    pcap.SetFilterDstIP(args.GetOptionString('D', PIPSocket::GetDefaultIpAny().AsString()));
+    pcap.SetFilterSrcPort(PIPSocket::GetPortByService("udp", args.GetOptionString('s')));
+    pcap.SetFilterDstPort(PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000")));
+  }
+  else {
+    OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
+    if (!pcap.DiscoverRTP(discoveredRTPMap)) {
+      cerr << "error: no RTP sessions found - please use -S/-D/-s/-d option to specify session manually" << endl;
       return;
     }
 
-    PString selected = args.GetOptionString("session");
-    size_t num;
-    if (!selected.IsEmpty()) {
-      DisplaySessions(false);
-      num = atoi(selected);
-      if (num <= 0 || num > discoveredRTPMap.size()*2) {
-        cout << "Session " << num << " is not valid" << endl;
+    if (args.HasOption("session")) {
+      if (!pcap.SetFilters(discoveredRTPMap, args.GetOptionString("session").AsUnsigned())) {
+        cout << "Preselected session " << args.GetOptionString("session") << " not valid" << endl;
         return;
       }
     }
     else {
-      cout << "Select one of the following sessions:\n" << endl;
-      DisplaySessions();
-
+      cout << "Select one of the following sessions:\n" << discoveredRTPMap << endl;
       for (;;) {
         cout << "Select (1-" << discoveredRTPMap.size()*2 << ") ? " << flush;
-        PString line;
-        cin >> line;
-        line = line.Trim();
-        num = line.AsUnsigned();
-        if (num > 0 && num <= discoveredRTPMap.size()*2)
+        size_t selected;
+        cin >> selected;
+        if (pcap.SetFilters(discoveredRTPMap, selected))
           break;
-        cout << "Session " << num << " is not valid" << endl;
+        cout << "Session " << selected << " is not valid" << endl;
       }
     }
-
-    DiscoveredRTPMap::iterator r;
-    bool found = false;
-    for (r = discoveredRTPMap.begin(); r != discoveredRTPMap.end(); ++r) {
-      DiscoveredRTPInfo & info = r->second;
-      if (info.m_index[0] == num) {
-        OpalMediaFormat mf = info.m_format[0];
-        mf.SetPayloadType(info.m_payload[0]);
-        m_payloadType2mediaFormat[info.m_payload[0]] = mf;
-        m_srcIP = info.m_addr[0].GetAddress();
-        m_dstIP = info.m_addr[1].GetAddress();
-        m_srcPort = info.m_addr[0].GetPort();
-        m_dstPort = info.m_addr[1].GetPort();
-        found = true;
-      }
-      else if (info.m_index[1] == num) {
-        OpalMediaFormat mf = info.m_format[1];
-        mf.SetPayloadType(info.m_payload[1]);
-        m_payloadType2mediaFormat[info.m_payload[1]] = mf;
-        m_srcIP = info.m_addr[1].GetAddress();
-        m_dstIP = info.m_addr[0].GetAddress();
-        m_srcPort = info.m_addr[1].GetPort();
-        m_dstPort = info.m_addr[0].GetPort();
-        found = true;
-      }
-    }
-    if (!found) {
-      cout << "Session " << num << " not valid" << endl;
-      return;
-    }
-  }
-
-  else {
-    OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    for (PINDEX i = 0; i < list.GetSize(); i++) {
-      if (list[i].GetPayloadType() < RTP_DataFrame::DynamicBase)
-        m_payloadType2mediaFormat[list[i].GetPayloadType()] = list[i];
-    }
-
-    PStringArray mappings = args.GetOptionString('m').Lines();
-    for (PINDEX i = 0; i < mappings.GetSize(); i++) {
-      const PString & mapping = mappings[i];
-      PINDEX equal = mapping.Find('=');
-      if (equal == P_MAX_INDEX) {
-        cout << "Invalid syntax for mapping \"" << mapping << '"' << endl;
-        continue;
-      }
-
-      RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)mapping.Left(equal).AsUnsigned();
-      if (pt > RTP_DataFrame::MaxPayloadType) {
-        cout << "Invalid payload type for mapping \"" << mapping << '"' << endl;
-        continue;
-      }
-
-      OpalMediaFormat mf = mapping.Mid(equal+1);
-      if (!mf.IsTransportable()) {
-        cout << "Invalid media format for mapping \"" << mapping << '"' << endl;
-        continue;
-      }
-
-      mf.SetPayloadType(pt);
-      m_payloadType2mediaFormat[pt] = mf;
-    }
-
-    m_srcIP = args.GetOptionString('S', m_srcIP.AsString());
-    m_dstIP = args.GetOptionString('D', m_dstIP.AsString());
-
-    m_srcPort = PIPSocket::GetPortByService("udp", args.GetOptionString('s'));
-    m_dstPort = PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000"));
   }
 
   if (args.HasOption('E')) {
@@ -659,11 +241,6 @@ void PlayRTP::Main()
       return;
     }
     m_eventLog << "Event log created " << PTime().AsString() << " from " << args[0] << endl;
-    m_eventLog << "Decoding following streams from " << m_srcIP << ":" << m_srcPort << " to " << m_dstIP << ":" << m_dstPort << endl;
-    for (std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat>::iterator r = m_payloadType2mediaFormat.begin(); r != m_payloadType2mediaFormat.end(); ++r) {
-      m_eventLog << "  " << r->second << ", payload type " << (unsigned int)r->second.GetPayloadType() << endl;
-    }
-    m_eventLog << endl;
   }
 
   m_singleStep = args.HasOption('p');
@@ -771,151 +348,14 @@ void PlayRTP::Main()
     cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << m_display->GetDeviceName() << "\" opened." << endl;
 
-  for (PINDEX i = 0; i < args.GetCount(); i++)
-    Play(args[i]);
-}
+  Play(pcap);
 
-
-void PlayRTP::Find(const PFilePath & filename)
-{
-  PCAPFile pcap;
-
-  if (!pcap.Open(filename))
-    return;
-
-  cout << "Analysing " << pcap << endl;
-
-  while (!pcap.IsEndOfFile()) {
-    RTP_DataFrame rtp;
-    if (pcap.GetRTP(rtp) < 0)
-      continue;
-
-    // determine if reverse or forward session
-    bool dir = pcap.GetSrcIP() >  pcap.GetDstIP() ||
-              (pcap.GetSrcIP() == pcap.GetDstIP() && pcap.GetSrcPort() > pcap.GetDstPort()) ? 1 : 0;
-
-    ostringstream keyStrm;
-    if (dir == 0)
-      keyStrm << pcap.GetSrcIP() << ':' << pcap.GetSrcPort() << '|' << pcap.GetDstIP() << ':' << pcap.GetDstPort();
-    else
-      keyStrm << pcap.GetDstIP() << ':' << pcap.GetDstPort() << '|' << pcap.GetSrcIP() << ':' << pcap.GetSrcPort();
-    string key = keyStrm.str();
-
-    // see if we have identified this potential session before
-    DiscoveredRTPMap::iterator r;
-    if ((r = discoveredRTPMap.find(key)) == discoveredRTPMap.end()) {
-      DiscoveredRTPInfo info;
-      info.m_addr[dir].SetAddress(pcap.GetSrcIP());
-      info.m_addr[dir].SetPort(pcap.GetSrcPort());
-      info.m_addr[1 - dir].SetAddress(pcap.GetDstIP());
-      info.m_addr[1 - dir].SetPort(pcap.GetDstPort());
-
-      info.m_payload[dir]  = rtp.GetPayloadType();
-      info.m_seq[dir]      = rtp.GetSequenceNumber();
-      info.m_ts[dir]       = rtp.GetTimestamp();
-
-      info.m_ssrc[dir]     = rtp.GetSyncSource();
-      info.m_seq[dir]      = rtp.GetSequenceNumber();
-      info.m_ts[dir]       = rtp.GetTimestamp();
-
-      info.m_found[dir]    = true;
-
-      info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
-
-      discoveredRTPMap.insert(DiscoveredRTPMap::value_type(key, info));
-    }
-    else {
-      DiscoveredRTPInfo & info = r->second;
-      if (info.m_found[dir]) {
-        WORD seq = rtp.GetSequenceNumber();
-        DWORD ts = rtp.GetTimestamp();
-        DWORD ssrc = rtp.GetSyncSource();
-        if (info.m_ssrc[dir] == ssrc)
-          ++info.m_ssrc_matches[dir];
-        if ((info.m_seq[dir]+1) == seq)
-          ++info.m_seq_matches[dir];
-        info.m_seq[dir] = seq;
-        if ((info.m_ts[dir]+1) < ts)
-          ++info.m_ts_matches[dir];
-        info.m_ts[dir] = ts;
-      }
-      else {
-        info.m_addr[dir].SetAddress(pcap.GetSrcIP());
-        info.m_addr[dir].SetPort(pcap.GetSrcPort());
-        info.m_addr[1 - dir].SetAddress(pcap.GetDstIP());
-        info.m_addr[1 - dir].SetPort(pcap.GetDstPort());
-
-        info.m_payload[dir]  = rtp.GetPayloadType();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
-
-        info.m_ssrc[dir]     = rtp.GetSyncSource();
-        info.m_seq[dir]      = rtp.GetSequenceNumber();
-        info.m_ts[dir]       = rtp.GetTimestamp();
-
-        info.m_found[dir]    = true;
-
-        info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
-      }
-    }
-  }
-
-  // display matches
-  DiscoveredRTPMap::iterator r = discoveredRTPMap.begin();
-  while (r != discoveredRTPMap.end()) {
-    DiscoveredRTPInfo & info = r->second;
-    if (
-        (info.m_found[0] && (
-         info.m_seq_matches[0] > 5 ||
-         info.m_ts_matches[0] > 5 ||
-         info.m_ssrc_matches[0] > 5
-         )
-         ) 
-         ||
-        (info.m_found[1] && (
-         info.m_seq_matches[1] > 5 ||
-         info.m_ts_matches[1] > 5 ||
-         info.m_ssrc_matches[1] > 5
-         )
-         ) 
-         )
-    {
-        ++r;
-    }
-    else {
-      discoveredRTPMap.erase(r);
-      r = discoveredRTPMap.begin();
-    }
+  for (PINDEX i = 1; i < args.GetCount(); i++) {
+    if (pcap.Open(args[i]))
+      Play(pcap);
   }
 }
 
-#if 0
-
-static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frameHeight, BYTE * frame, const char * text)
-{
-  BYTE * output  = frame + ((y * frameWidth) + x) * 3/2;
-  unsigned uoffs = (frameWidth * frameHeight) / 4;
-
-  while (*text != '\0') {
-    const PVideoFont::LetterData * letter = PVideoFont::GetLetterData(*text++);
-    if (letter != NULL) {
-      for (PINDEX y = 0; y < PVideoFont::MAX_L_HEIGHT; ++y) {
-        BYTE * outputLine0 = output + (y+0) * frameWidth*2;
-        BYTE * outputLine1 = outputLine0 + frameWidth;
-        const char * line;
-        for (line = letter->line[y]; *line != '\0'; ++line) {
-          outputLine0[0]       = outputLine0[1]       = outputLine1[0]       = outputLine1[1]       = (*line == ' ') ? 16 : 240;
-          outputLine0[uoffs*2] = outputLine0[uoffs*3] = outputLine1[uoffs*2] = outputLine1[uoffs*3] = 0x80;
-          outputLine0 += 2;
-          outputLine1 += 2;
-        }
-      }
-      output += 1 + strlen(letter->line[0]) * 2;
-    }
-  }
-}
-
-#else
 
 static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frameHeight, BYTE * frame, const char * text)
 {
@@ -941,16 +381,10 @@ static void DrawText(unsigned x, unsigned y, unsigned frameWidth, unsigned frame
   }
 }
 
-#endif
 
-
-void PlayRTP::Play(const PFilePath & filename)
+void PlayRTP::Play(OpalPCAPFile & pcap)
 {
-  PCAPFile pcap;
-  if (!pcap.Open(filename))
-    return;
-
-  cout << "Playing " << pcap << endl;
+  cout << "Playing " << pcap.GetFilePath() << endl;
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
@@ -974,19 +408,6 @@ void PlayRTP::Play(const PFilePath & filename)
     if (pcap.GetRTP(rtp) < 0)
       continue;
 
-    if (!m_srcIP.IsAny() && m_srcIP != pcap.GetSrcIP())
-      continue; // Not specified source IP address
-
-    if (!m_dstIP.IsAny() && m_dstIP != pcap.GetDstIP())
-      continue; // Not specified destination IP address
-
-    // Check UDP ports
-    if (m_srcPort != 0 && m_srcPort != pcap.GetSrcPort())
-      continue;
-
-    if (m_dstPort != 0 && m_dstPort != pcap.GetDstPort())
-      continue;
-
     unsigned thisSequenceNumber = rtp.GetSequenceNumber();
     if (nextSequenceNumber != 0 && thisSequenceNumber != nextSequenceNumber)
       cout << "Received SN=" << thisSequenceNumber << ", expected SN=" << nextSequenceNumber << endl;
@@ -994,23 +415,23 @@ void PlayRTP::Play(const PFilePath & filename)
 
     if (rtpStreamPayloadType != rtp.GetPayloadType()) {
       if (rtpStreamPayloadType != RTP_DataFrame::IllegalPayloadType) {
-        cout << "Payload type changed in mid file \"" << filename << '"' << endl;
+        cout << "Payload type changed in mid file \"" << pcap.GetFilePath() << '"' << endl;
         continue;
       }
       rtpStreamPayloadType = rtp.GetPayloadType();
     }
 
     if (m_transcoder == NULL) {
-      if (m_payloadType2mediaFormat.find(rtpStreamPayloadType) == m_payloadType2mediaFormat.end()) {
+      OpalMediaFormat srcFmt = pcap.GetMediaFormat(rtp);
+      if (!srcFmt.IsValid()) {
         if (lastUnsupportedPayloadType != rtpStreamPayloadType) {
-          cout << "Unsupported Payload Type " << rtpStreamPayloadType << " in file \"" << filename << '"' << endl;
+          cout << "Unsupported Payload Type " << rtpStreamPayloadType << " in file \"" << pcap.GetFilePath() << '"' << endl;
           lastUnsupportedPayloadType = rtpStreamPayloadType;
         }
         rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
         continue;
       }
 
-      OpalMediaFormat srcFmt = m_payloadType2mediaFormat[rtpStreamPayloadType];
       OpalMediaFormat dstFmt;
       if (srcFmt.GetMediaType() == OpalMediaType::Audio()) {
         dstFmt = OpalPCM16;
@@ -1026,17 +447,17 @@ void PlayRTP::Play(const PFilePath & filename)
         m_display->Start();
       }
       else {
-        cout << "Unsupported Media Type " << srcFmt.GetMediaType() << " in file \"" << filename << '"' << endl;
+        cout << "Unsupported Media Type " << srcFmt.GetMediaType() << " in file \"" << pcap.GetFilePath() << '"' << endl;
         return;
       }
 
       m_transcoder = OpalTranscoder::Create(srcFmt, dstFmt);
       if (m_transcoder == NULL) {
-        cout << "No transcoder for " << srcFmt << " in file \"" << filename << '"' << endl;
+        cout << "No transcoder for " << srcFmt << " in file \"" << pcap.GetFilePath() << '"' << endl;
         return;
       }
 
-      cout << "Decoding " << srcFmt << " from file \"" << filename << '"' << endl;
+      cout << "Decoding " << srcFmt << " from file \"" << pcap.GetFilePath() << '"' << endl;
       m_transcoder->SetCommandNotifier(PCREATE_NOTIFIER(OnTranscoderCommand));
       lastTimeStamp = rtp.GetTimestamp();
     }
@@ -1086,7 +507,7 @@ void PlayRTP::Play(const PFilePath & filename)
       if (m_info > 1)
         cout << m_packetCount << ','
              << PTimer::Tick().GetMilliSeconds() << ','
-             << pcaprec_hdr.ts_sec << '.' << setfill('0') << setw(6) << pcaprec_hdr.ts_usec << setfill(' ') << ',';
+             << pcap.GetPacketTime().AsString(PTime::EpochTime) << ',';
       cout << "0x" << hex << rtp.GetSyncSource() << dec << ',' << rtp.GetSequenceNumber() << ',' << rtp.GetTimestamp();
       if (m_info > 1)
         cout << ',' << rtp.GetMarker() << ',' << rtp.GetPayloadType() << ',' << rtp.GetPayloadSize();
@@ -1098,7 +519,7 @@ void PlayRTP::Play(const PFilePath & filename)
     m_vfu = false;
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
-      cout << "Error decoding file \"" << filename << '"' << endl;
+      cout << "Error decoding file \"" << pcap.GetFilePath() << '"' << endl;
       return;
     }
 

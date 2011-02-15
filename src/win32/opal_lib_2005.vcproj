@@ -8630,6 +8630,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\rtp\pcapfile.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\rtp\rtp.cxx"
 					>
 					<FileConfiguration
@@ -10816,6 +10820,10 @@
 				>
 				<File
 					RelativePath="..\..\include\rtp\jitter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\pcapfile.h"
 					>
 				</File>
 				<File
