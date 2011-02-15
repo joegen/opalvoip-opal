@@ -32,6 +32,9 @@
 #include <ptclib/pvidfile.h>
 
 
+class OpalPCAPFile;
+
+
 class PlayRTP : public PProcess
 {
   PCLASSINFO(PlayRTP, PProcess)
@@ -41,18 +44,10 @@ class PlayRTP : public PProcess
     ~PlayRTP();
 
     virtual void Main();
-    void Play(const PFilePath & filename);
-    void Find(const PFilePath & filename);
+    void Play(OpalPCAPFile & pcap);
 
     PDECLARE_NOTIFIER(OpalMediaCommand, PlayRTP, OnTranscoderCommand);
 
-    std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
-
-    PIPSocket::Address m_srcIP;
-    PIPSocket::Address m_dstIP;
-
-    WORD m_srcPort;
-    WORD m_dstPort;
     bool m_singleStep;
     int  m_info;
     bool m_extendedInfo;
