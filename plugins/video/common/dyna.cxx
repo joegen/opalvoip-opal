@@ -41,6 +41,7 @@
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
+#pragma warning(disable:4101)
 #endif
 
 #ifndef PATH_SEP
