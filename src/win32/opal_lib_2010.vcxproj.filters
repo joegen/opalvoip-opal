@@ -468,6 +468,9 @@
     <ClCompile Include="..\rtp\jitter.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
+    <ClCompile Include="..\rtp\pcapfile.cxx">
+      <Filter>Source Files\RTP</Filter>
+    </ClCompile>
     <ClCompile Include="..\rtp\rtp.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
@@ -792,6 +795,9 @@
       <Filter>Header Files\SIP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\rtp\jitter.h">
+      <Filter>Header Files\RTP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\rtp\pcapfile.h">
       <Filter>Header Files\RTP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\rtp\rtp.h">

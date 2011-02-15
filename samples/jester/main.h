@@ -40,6 +40,7 @@
 
 #include <rtp/jitter.h>
 #include <rtp/rtp.h>
+#include <rtp/pcapfile.h>
 
 #include <ptclib/delaychan.h>
 #include <ptclib/random.h>
@@ -95,7 +96,7 @@ class JesterProcess : public PProcess
 #endif
 
     void Report();
-    bool GenerateFrame(RTP_DataFrame & frame);
+    bool GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay);
 
     /**Handle user input, which is keys to describe the status of the program,
        while the different loops run. The program will not finish until this
@@ -142,9 +143,11 @@ class JesterProcess : public PProcess
 
     /**the timestamp, as used by the generate thread */
     DWORD m_generateTimestamp;
+    DWORD m_initialTimestamp;
 
     /**the sequence number, as used by the generate thread */
     WORD m_generateSequenceNumber;
+    WORD m_maxSequenceNumber;
 
     /**The timestamp the jitter buffer consumer is expecting */
     DWORD m_playbackTimestamp;
@@ -156,6 +159,10 @@ class JesterProcess : public PProcess
     DWORD m_talkBurstTimestamp;
     DWORD m_lastSilentTimestamp;
     DWORD m_lastGeneratedJitter;
+    PTimeInterval m_initialTick;
+
+    OpalPCAPFile m_pcap;
+    PTime        m_lastFrameTime;
 };
 
 
