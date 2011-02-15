@@ -993,6 +993,7 @@ class MyManager : public wxFrame, public OpalManager
     bool CanDoIM() const;
 
     IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & local, const PString & remote);
+    void RemoveIMDialog(IMDialog * dialog);
 
     PDECLARE_NewConversationNotifier(MyManager, OnNewConversation);
     PDECLARE_IncomingIMNotifier(MyManager, OnIncomingIM);
