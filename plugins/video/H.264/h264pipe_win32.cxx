@@ -25,15 +25,12 @@
 
  */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "h264pipe_win32.h"
 
-#ifdef _MSC_VER
-#include "../common/rtpframe.h"
-#include "../common/trace.h"
-#else
 #include "rtpframe.h"
 #include "trace.h"
-#endif
 
 #include <string.h>
 #include <stdio.h>

@@ -39,7 +39,9 @@
 #ifndef __H264_X264_H__
 #define __H264_X264_H__ 1
 
+#ifndef _MSC_VER
 #include "plugin-config.h"
+#endif
 
 #include <stdarg.h>
 #include <codec/opalplugin.h>

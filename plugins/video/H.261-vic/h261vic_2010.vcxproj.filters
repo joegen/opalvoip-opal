@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{aaac29fe-d451-4f84-83ff-ce3278147fce}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="VIC Files">
+      <UniqueIdentifier>{9c88dfc2-83b7-4b18-97d4-53c10f9311f3}</UniqueIdentifier>
+      <Extensions>.c</Extensions>
+    </Filter>
+    <Filter Include="VIC Files\C Files">
+      <UniqueIdentifier>{21465eac-90f0-44d1-b0cf-290aa84fd3c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VIC Files\CXX Files">
+      <UniqueIdentifier>{b15c7d68-04e4-4b57-a35d-4f0a607895ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VIC Files\H Files">
+      <UniqueIdentifier>{6fdec4f0-075b-419c-9851-af6acc7efc50}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="h261vic.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\trace.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\bv.c">
+      <Filter>VIC Files\C Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\huffcode.c">
+      <Filter>VIC Files\C Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\dct.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\encoder-h261.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\p64.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\p64encoder.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\transmitter.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vic\vid_coder.cxx">
+      <Filter>VIC Files\CXX Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\trace.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\bsd-endian.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\config.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\dct.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\encoder-h261.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\grabber.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\p64-huff.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\p64.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\p64encoder.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\transmitter.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vic\vid_coder.h">
+      <Filter>VIC Files\H Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -37,7 +37,9 @@
 
 #include "h264-x264.h"
 
+#ifndef _MSC_VER
 #include "plugin-config.h"
+#endif
 
 #ifdef WIN32
 #include "h264pipe_win32.h"
@@ -45,16 +47,9 @@
 #include "h264pipe_unix.h"
 #endif
 
-#ifdef _MSC_VER
- #include "../common/dyna.h"
- #include "../common/trace.h"
- #include "shared/rtpframe.h"
-#else
- #include "dyna.h"
- #include "trace.h"
- #include "rtpframe.h"
-#endif
-
+#include "dyna.h"
+#include "trace.h"
+#include "rtpframe.h"
 
 #include <stdlib.h>
 #if defined(_WIN32) || defined(_WIN32_WCE)

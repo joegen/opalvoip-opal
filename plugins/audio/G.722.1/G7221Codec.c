@@ -74,7 +74,6 @@ static struct PluginCodec_information licenseInfo =
 
 #include "G722-1/defs.h"
 
-extern "C" {
 
 #define FORMAT_NAME_G722_1_24K  "G.722.1-24k"   // text decription and mediaformat name
 #define FORMAT_NAME_G722_1_32K  "G.722.1-32k"
@@ -496,6 +495,5 @@ static struct PluginCodec_Definition G7221CodecDefn[] =
 
 PLUGIN_CODEC_IMPLEMENT_ALL(G7221, G7221CodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
 
-}
 
 /////////////////////////////////////////////////////////////////////////////

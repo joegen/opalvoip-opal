@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{b2700b18-56ad-47e1-a196-7a1ac2df991f}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Include Files">
+      <UniqueIdentifier>{371adf5b-6a33-4568-91a2-de094e224029}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="h263-1998.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h263pframe.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rfc2190.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\trace.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="h263-1998.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h263pframe.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rfc2190.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
