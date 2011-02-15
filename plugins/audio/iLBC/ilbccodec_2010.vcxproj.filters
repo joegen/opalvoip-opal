@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8c6f8f19-6cce-4af1-9462-c7002be92e13}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="iLBC">
+      <UniqueIdentifier>{1ed00798-c1e5-4ca0-8e32-8b4a77ba8a05}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ilbccodec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\anaFilter.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\constants.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\createCB.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\doCPLC.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\enhancer.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\filter.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\FrameClassify.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\gainquant.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\getCBvec.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\helpfun.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\hpInput.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\hpOutput.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\iCBConstruct.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\iCBSearch.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\iLBC_decode.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\iLBC_encode.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\LPCdecode.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\LPCencode.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\lsf.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\packing.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\StateConstructW.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\StateSearchW.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+    <ClCompile Include="iLBC\syntFilter.c">
+      <Filter>iLBC</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

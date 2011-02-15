@@ -29,14 +29,13 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
+#ifndef _MSC_VER
 #include "plugin-config.h"
+#endif
 
 #include "h264frame.h"
-#ifdef _MSC_VER
- #include "../../common/trace.h"
-#else
- #include "trace.h"
-#endif
+#include "trace.h"
+
 #include <stdlib.h>
 #include <string.h>
 
