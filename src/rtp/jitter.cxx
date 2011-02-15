@@ -117,7 +117,7 @@ const unsigned JitterRoundingGuardBits = 4;
           while (ix < inPos && (ox >= outPos || in[ix].time < out[ox].time)) {
             strm << "In\t"
                  << in[ix].time << '\t'
-                 << (in[ix].time - in[ix-1].time) << "\t"
+                 << (int)(in[ix].time - in[ix-1].time) << "\t"
                     "\t"
                  << in[ix].extra << "\t"
                     "\t"
@@ -136,7 +136,7 @@ const unsigned JitterRoundingGuardBits = 4;
             strm << "Out\t"
                  << out[ox].time << "\t"
                     "\t"
-                 << (out[ox].time - out[ox-1].time) << "\t"
+                 << (int)(out[ox].time - out[ox-1].time) << "\t"
                     "\t"
                  << out[ox].extra << "\t"
                     "\t"
@@ -153,8 +153,8 @@ const unsigned JitterRoundingGuardBits = 4;
           while (ix < inPos && ox < outPos && in[ix].time == out[ox].time) {
             strm << "I/O\t"
                  << in[ix].time << '\t'
-                 << (in[ix].time - in[ix-1].time) << '\t'
-                 << (out[ox].time - out[ox-1].time) << '\t'
+                 << (int)(in[ix].time - in[ix-1].time) << '\t'
+                 << (int)(out[ox].time - out[ox-1].time) << '\t'
                  << in[ix].extra << '\t'
                  << out[ox].extra << '\t'
                  << in[ix].depth << '\t'
@@ -189,7 +189,8 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
   , m_jitterShrinkPeriod(2000*units) // 2 seconds @ 8kHz
   , m_jitterShrinkTime(5*units) // 5 milliseconds @ 8kHz
   , m_silenceShrinkPeriod(5000*units) // 5 seconds @ 8kHz
-  , m_slenceShrinkTime(20*units) // 20 milliseconds @ 8kHz
+  , m_silenceShrinkTime(20*units) // 20 milliseconds @ 8kHz
+  , m_jitterDriftPeriod(500*units) // 0.5 second @ 8kHz
   , m_maxConsecutiveMarkerBits(10)
 #ifdef NO_ANALYSER
   , m_analyser(NULL)
@@ -252,6 +253,7 @@ void OpalJitterBuffer::Reset()
   m_averageFrameTime  = 0;
   m_lastTimestamp     = UINT_MAX;
   m_bufferFilledTime  = 0;
+  m_bufferLowTime     = 0;
   m_bufferEmptiedTime = 0;
   m_timestampDelta    = 0;
 
@@ -281,12 +283,14 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     the jitter buffer */
   if (m_consecutiveMarkerBits < m_maxConsecutiveMarkerBits) {
     if (frame.GetMarker()) {
-      PTRACE(3, "Jitter\tStart talk burst: ts=" << timestamp);
       m_consecutiveMarkerBits++;
       Reset();
+
       // Have been told there is explicit silence by marker, take opportunity
       // to reduce the current jitter delay.
       m_currentJitterDelay -= (m_currentJitterDelay-m_minJitterDelay)/2;
+      PTRACE(3, "Jitter\tStart talk burst: ts=" << timestamp << ", "
+                "decreasing delay to " << m_currentJitterDelay);
     }
     else
       m_consecutiveMarkerBits = 0;
@@ -356,16 +360,19 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   if (m_frames.empty()) {
     /*We ran the buffer down to empty, so have no data to play, play silence.
-      THis happens if packet is too late or completely missing. A too late
+      This happens if packet is too late or completely missing. A too late
       packet will be picked up by later code.
      */
     PTRACE_IF(6, m_synchronisationState == e_SynchronisationDone,
               "Jitter\tBuffer is empty : ts=" << requiredTimestamp << " (" << playOutTimestamp << ')');
     ANALYSE(Out, requiredTimestamp, "Empty");
 
-    if (m_currentJitterDelay != m_minJitterDelay &&
+    if (m_currentJitterDelay > m_minJitterDelay &&
               (playOutTimestamp - m_bufferEmptiedTime) > m_silenceShrinkPeriod) {
-      m_currentJitterDelay -= m_slenceShrinkTime;
+      if (m_currentJitterDelay < m_silenceShrinkTime)
+        m_currentJitterDelay = m_minJitterDelay;
+      else
+        m_currentJitterDelay -= m_silenceShrinkTime;
       PTRACE(4, "Jitter\tLong silence    : ts=" << requiredTimestamp << " (" << playOutTimestamp << "),"
                 " decreasing delay to " << m_currentJitterDelay);
       m_bufferEmptiedTime = playOutTimestamp;
@@ -375,9 +382,27 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
   }
   m_bufferEmptiedTime = playOutTimestamp;
 
+  size_t framesInBuffer = m_averageFrameTime > 0 ? m_currentJitterDelay/m_averageFrameTime : 2;
+  if (framesInBuffer < 2)
+    framesInBuffer = 2;
+
+  /* Check for buffer low (less than half full) for prologed period, then that generally
+     means we have a sample clock drift problem, that is we have a clock of 8.01kHz and
+     the remote has 7.99kHz so gradually the buffer drains as we take things out faster
+     than they arrive. */
+  if (m_frames.size() > framesInBuffer/2)
+    m_bufferLowTime = playOutTimestamp;
+  else if ((playOutTimestamp - m_bufferLowTime) > m_jitterDriftPeriod) {
+    m_bufferLowTime = playOutTimestamp;
+    PTRACE(4, "Jitter\tClock underrun  : ts=" << requiredTimestamp << " (" << playOutTimestamp << ')');
+    m_timestampDelta -= m_averageFrameTime;
+    ANALYSE(Out, requiredTimestamp, "Drift");
+    return true;
+  }
+
   /* Check for buffer full (or nearly so) and count them. If full for a while
      then it is time to reduce the size of the jitter buffer */
-  if (m_averageFrameTime == 0 || m_frames.size() == 1 || m_frames.size() < m_currentJitterDelay/m_averageFrameTime)
+  if (m_frames.size() < framesInBuffer)
     m_bufferFilledTime = playOutTimestamp;
   else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
     m_bufferFilledTime = playOutTimestamp;
@@ -386,14 +411,26 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       PTRACE(4, "Jitter\tPackets on time : ts=" << requiredTimestamp << " (" << playOutTimestamp << "),"
                 " cannot decrease delay past " << m_currentJitterDelay);
     else {
-      m_currentJitterDelay -= m_jitterShrinkTime;
-      if (m_currentJitterDelay < m_minJitterDelay)
+      if (m_currentJitterDelay < m_jitterShrinkTime)
         m_currentJitterDelay = m_minJitterDelay;
+      else
+        m_currentJitterDelay -= m_jitterShrinkTime;
       PTRACE(4, "Jitter\tPackets on time : ts=" << requiredTimestamp << " (" << playOutTimestamp << "),"
                 " decreasing delay to " << m_currentJitterDelay);
       m_synchronisationState = e_SynchronisationShrink;
     }
   }
+
+  /* Check for buffer overfull due to clock mismatch. It is possible for the remote
+     to have a clock of 8.01kHz and the receiver 7.99kHz so gradually the remote
+     sends more data than we take out over time, gradually building up in the
+     jitter buffer. So, drop a frame every now and then. */
+  if (m_frames.size() > framesInBuffer+1) {
+    PTRACE(4, "Jitter\tClock overrun   : ts=" << requiredTimestamp << " (" << playOutTimestamp << ')');
+    m_timestampDelta += m_averageFrameTime;
+    m_synchronisationState = e_SynchronisationShrink;
+  }
+
 
   // Get the oldest packet
   FrameMap::iterator oldestFrame = m_frames.begin();
