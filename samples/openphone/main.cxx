@@ -3119,10 +3119,14 @@ IMDialog * MyManager::GetOrCreateIMDialog(const PString & previousConversationId
     PWaitAndSignal mutex(m_imDialogMapMutex);
 
     IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
-    if (r != m_imDialogMap.end())
+    if (r != m_imDialogMap.end()) {
+      PTRACE(3, "Using existing IMDialog");
+      r->second->Show();
       return r->second;
+    }
   }
 
+  PTRACE(3, "Creating new IMDialog");
   IMDialog * dialog = new IMDialog(this, conversationId, "", local, remote, "");
 
   {
@@ -3136,6 +3140,12 @@ IMDialog * MyManager::GetOrCreateIMDialog(const PString & previousConversationId
   return dialog;
 }
 
+void MyManager::RemoveIMDialog(IMDialog * dialog)
+{
+  m_imDialogMapMutex.Wait();
+  m_imDialogMap.erase(std::string((const char *)dialog->m_conversationId));
+  m_imDialogMapMutex.Signal();
+}
 
 void MyManager::OnIncomingIM(OpalIMContext &, const OpalIM & im)
 {
@@ -3148,7 +3158,10 @@ void MyManager::OnRxMessage(wxCommandEvent & theEvent)
   OpalIM * im = (OpalIM *)theEvent.GetClientData();
   LogWindow << "Received IM from " << (im->m_fromName.IsEmpty() ? im->m_fromAddr : im->m_fromName) << endl;
   IMDialog * dialog = GetOrCreateIMDialog(im->m_conversationId, im->m_to, im->m_from);
-  dialog->AddTextToScreen(PwxString((const char *)im->m_body), false);
+  if (dialog == NULL)
+    LogWindow << "No window for received IM" << endl;
+  else
+    dialog->AddTextToScreen(PwxString((const char *)im->m_body), false);
 
   delete im;
 }
@@ -3175,7 +3188,9 @@ void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
     to   = context->GetLocalURL();
   }
   IMDialog * dialog = GetOrCreateIMDialog(conversationId, to, from);
-  if (dialog != NULL) {
+  if (dialog == NULL) {
+    LogWindow << "No window for received composition idle message" << endl;
+  } else {
     dialog->SetCompositionIndication(idle);
     LogWindow << "Composition " << (idle ? "idle" : "busy") << endl;
   }
@@ -5813,7 +5828,7 @@ IMDialog::IMDialog(MyManager * manager,
 
 IMDialog::~IMDialog()
 {
-//  m_manager->conversationMap.erase(m_connId);
+  m_manager->RemoveIMDialog(this);
 }
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
