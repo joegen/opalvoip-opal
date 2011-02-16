@@ -30,6 +30,10 @@
 
 #include <codec/opalplugin.h>
 
+#ifdef strcasecmp
+#undef strcasecmp // Gets defined in VoIPCodecs/inttypes.h
+#endif
+
 #include "VoIPCodecs/inttypes.h"
 #include "VoIPCodecs/g722.h"
 

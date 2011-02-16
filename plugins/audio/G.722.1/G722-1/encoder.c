@@ -1010,7 +1010,7 @@ Word16 vector_huffman(Word16 category,
 	 *  The next two lines are new to Release 1.2 
 	 */
      
-	mytemp = acca & 0x3;
+    mytemp = (Word16)(acca & 0x3);
     acca = L_shr(acca,2);
 
     inv_of_step_size_times_std_dev = extract_l(acca);
