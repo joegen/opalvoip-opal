@@ -38,7 +38,7 @@
 #endif
 
 #include <rtp/rtp.h>
-#include < opal/mediafmt.h>
+#include <opal/mediafmt.h>
 
 
 /**Class for a reading RTP from an Ethernet Capture (PCAP) file.
