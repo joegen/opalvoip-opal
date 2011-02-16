@@ -310,36 +310,44 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   }
 
   if (size == 0) {
-    IncrementTimestamp(1);
-    packet.SetTimestamp(timestamp);
     PINDEX dummy;
-    return WriteData(NULL, 0, dummy);
-  }
-
-  marker = packet.GetMarker();
-  const BYTE * ptr = packet.GetPayloadPtr();
-
-  while (size > 0) {
-    unsigned oldTimestamp = timestamp;
-
-    PINDEX written;
-    if (!WriteData(ptr, size, written) || (written == 0)) {
-      PTRACE(2, "Media\tWritePacket failed with written " << written);
+    if (!InternalWriteData(NULL, 0, dummy))
       return false;
+  }
+  else {
+    marker = packet.GetMarker();
+    const BYTE * ptr = packet.GetPayloadPtr();
+
+    while (size > 0) {
+      PINDEX written;
+      if (!InternalWriteData(ptr, size, written))
+        return false;
+      size -= written;
+      ptr += written;
     }
 
-    // If the Write() function did not change the timestamp then use the default
-    // method of fixed frame times and sizes.
-    if (oldTimestamp == timestamp)
-      IncrementTimestamp(size);
-
-    size -= written;
-    ptr += written;
+    PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
   }
 
-  PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
-
   packet.SetTimestamp(timestamp);
+
+  return true;
+}
+
+
+bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written)
+{
+  unsigned oldTimestamp = timestamp;
+
+  if (!WriteData(data, length, written) || written == 0) {
+    PTRACE(2, "Media\tWriteData failed, written=" << written);
+    return false;
+  }
+
+  // If the Write() function did not change the timestamp then use the default
+  // method of fixed frame times and sizes.
+  if (oldTimestamp == timestamp)
+    IncrementTimestamp(written);
 
   return true;
 }
@@ -1051,30 +1059,37 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 
 PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
-  /* For efficiency reasons we will not accept a packet size that is too small.
-     We move it up to the next even multiple, which has a danger of the remote not
-     sending an even number of our multiplier. */
-  const unsigned BufferTimeMilliseconds = 10;
-  PINDEX bufferSize = BufferTimeMilliseconds*mediaFormat.GetClockRate()/1000*sizeof(short);
+  PINDEX frameSize = frameTime*sizeof(short);
+  unsigned frameMilliseconds = frameTime*1000/mediaFormat.GetClockRate();
 
-  // Calculate sound buffers from global system settings
-  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+BufferTimeMilliseconds-1)/BufferTimeMilliseconds;
+  /* For efficiency reasons we will not accept a packet size that is too small.
+     We move it up to the next even multiple of the minimum, which has a danger
+     of the remote not sending an even number of our multiplier, but 10ms seems
+     universally done by everyone out there. */
+  const unsigned MinBufferTimeMilliseconds = 10;
+  if (frameMilliseconds < MinBufferTimeMilliseconds) {
+    PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
+    frameSize = minFrameCount*frameTime*sizeof(short);
+    frameMilliseconds = minFrameCount*frameTime*1000/mediaFormat.GetClockRate();
+  }
+
+  // Quantise dataSize up to multiple of the frame time
+  PINDEX frameCount = (dataSize+frameSize-1)/frameSize;
+  dataSize = frameCount*frameSize;
+
+  // Calculate number of sound buffers from global system settings
+  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
   if (soundChannelBuffers < m_soundChannelBuffers)
     soundChannelBuffers = m_soundChannelBuffers;
 
-  // Quantise dataSize up to multiple of the frame time
-  PINDEX frameSize = frameTime*sizeof(short);
-  dataSize = (dataSize+frameSize-1)/frameSize * frameSize;
-
-  // Calculte buffers needed for the data we require and increase buffers if required
-  PINDEX dataBuffersNeeded = (dataSize+bufferSize-1)/bufferSize;
-  if (soundChannelBuffers < dataBuffersNeeded)
-    soundChannelBuffers = dataBuffersNeeded;
+  // Increase sound buffers if negotiated maximum larger than global settings
+  if (soundChannelBuffers < frameCount)
+    soundChannelBuffers = frameCount;
 
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << ", buffer size set to " << bufferSize << " and " << soundChannelBuffers << " buffers.");
+         << dataSize << ", buffer size set to " << frameSize << " and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize, frameTime) &&
-         ((PSoundChannel *)m_channel)->SetBuffers(bufferSize, soundChannelBuffers);
+         ((PSoundChannel *)m_channel)->SetBuffers(frameSize, soundChannelBuffers);
 }
 
 

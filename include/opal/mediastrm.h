@@ -359,6 +359,7 @@ class OpalMediaStream : public PSafeObject
 
   protected:
     void IncrementTimestamp(PINDEX size);
+    bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
 
     OpalConnection & connection;
     unsigned         sessionID;

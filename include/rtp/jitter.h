@@ -92,6 +92,10 @@ class OpalJitterBuffer : public PSafeObject
       PINDEX packetSize = 2048 ///<  Max RTP packet size
     );
 
+    /**Reset jitter buffer.
+      */
+    void Reset();
+
     /**Write data frame from the RTP channel.
       */
     virtual PBoolean WriteData(
@@ -134,6 +138,8 @@ class OpalJitterBuffer : public PSafeObject
   //@}
 
   protected:
+    DWORD CalculateRequiredTimestamp(DWORD playOutTimestamp) const;
+
     unsigned m_timeUnits;
     PINDEX   m_packetSize;
     DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
@@ -143,7 +149,8 @@ class OpalJitterBuffer : public PSafeObject
                                     ///< consistently filled before shrinking
     DWORD    m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
     DWORD    m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
-    DWORD    m_slenceShrinkTime;    ///< Amount to shrink jitter delay by if consistently silent
+    DWORD    m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
+    DWORD    m_jitterDriftPeriod;
 
     DWORD    m_currentJitterDelay;
     DWORD    m_packetsTooLate;
@@ -154,6 +161,7 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_averageFrameTime;
     DWORD    m_lastTimestamp;
     DWORD    m_bufferFilledTime;
+    DWORD    m_bufferLowTime;
     DWORD    m_bufferEmptiedTime;
     int      m_timestampDelta;
 
