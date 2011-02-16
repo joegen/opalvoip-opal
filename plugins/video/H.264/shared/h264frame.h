@@ -118,11 +118,7 @@ const static struct h264_resolution {
 #ifndef LICENCE_MPL
 extern "C"
 {
-#ifdef _MSC_VER
-  #include "x264/x264.h"
-#else
-  #include <x264.h>
-#endif
+  #include "x264.h"
 }
 #endif
 

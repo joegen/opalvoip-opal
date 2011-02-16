@@ -15,8 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\USB"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -107,8 +107,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\USB"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"

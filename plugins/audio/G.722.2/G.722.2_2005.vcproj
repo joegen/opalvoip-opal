@@ -15,8 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)\G.722.2"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>
@@ -45,7 +45,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -63,7 +63,6 @@
 				OutputFile="$(OutDir)\G7222_ptplugin.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="0"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
@@ -97,8 +96,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="$(OutDir)\G.722.2"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -130,7 +129,7 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(IntDir)$(TargetName).pdb"
 				WarningLevel="3"
 				DebugInformationFormat="0"
 			/>
@@ -148,6 +147,7 @@
 				OutputFile="$(OutDir)\G7222_ptplugin.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="false"
+				ProgramDatabaseFile="$(IntDir)$(TargetName).pdb"
 				SubSystem="0"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
