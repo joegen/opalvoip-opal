@@ -390,7 +390,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
      means we have a sample clock drift problem, that is we have a clock of 8.01kHz and
      the remote has 7.99kHz so gradually the buffer drains as we take things out faster
      than they arrive. */
-  if (m_frames.size() > framesInBuffer/2)
+  if (m_bufferLowTime == 0 && m_frames.size() > framesInBuffer/2)
     m_bufferLowTime = playOutTimestamp;
   else if ((playOutTimestamp - m_bufferLowTime) > m_jitterDriftPeriod) {
     m_bufferLowTime = playOutTimestamp;
@@ -402,7 +402,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   /* Check for buffer full (or nearly so) and count them. If full for a while
      then it is time to reduce the size of the jitter buffer */
-  if (m_frames.size() < framesInBuffer)
+  if (m_bufferFilledTime == 0 || m_frames.size() < framesInBuffer)
     m_bufferFilledTime = playOutTimestamp;
   else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
     m_bufferFilledTime = playOutTimestamp;
