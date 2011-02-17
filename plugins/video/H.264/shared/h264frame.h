@@ -153,25 +153,25 @@ public:
 #endif
   void SetMaxPayloadSize (uint16_t maxPayloadSize) 
   {
-    _maxPayloadSize = maxPayloadSize;
+    m_maxPayloadSize = maxPayloadSize;
   }
-  void SetTimestamp (uint64_t timestamp) 
+  void SetTimestamp (uint32_t timestamp) 
   {
-    _timestamp = timestamp;
+    m_timestamp = timestamp;
   }
   bool GetRTPFrame (RTPFrame & frame, unsigned int & flags);
   bool HasRTPFrames ()
   {
-    if (_currentNAL < _numberOfNALsInFrame) return true; else return false;
+    return m_currentNAL < m_numberOfNALsInFrame;
   }
 
   bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
   uint8_t* GetFramePtr ()
   {
-    return (_encodedFrame);
+    return m_encodedFrame;
   }
   uint32_t GetFrameSize () {
-    return (_encodedFrameLen);
+    return m_encodedFrameLen;
   }
   bool IsSync ();
   
@@ -183,25 +183,26 @@ private:
   bool DeencapsulateSTAP (RTPFrame & frame, unsigned int & flags);
   void AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
   bool IsStartCode (const uint8_t *positionInFrame);
-    // general stuff
-  uint64_t _timestamp;
-  uint16_t _maxPayloadSize;
-  uint8_t* _encodedFrame;
-  uint32_t _encodedFrameLen;
 
-  h264_nal_t* _NALs;
-  uint32_t _numberOfNALsInFrame;
-  uint32_t _currentNAL; 
-  uint32_t _numberOfNALsReserved;
+    // general stuff
+  uint32_t m_timestamp;
+  uint16_t m_maxPayloadSize;
+  uint8_t* m_encodedFrame;
+  uint32_t m_encodedFrameLen;
+
+  h264_nal_t* m_NALs;
+  uint32_t m_numberOfNALsInFrame;
+  uint32_t m_currentNAL; 
+  uint32_t m_numberOfNALsReserved;
   
   // for encapsulation
-  uint32_t _currentNALFURemainingLen;
-  uint8_t* _currentNALFURemainingDataPtr;
-  uint8_t  _currentNALFUHeader0;
-  uint8_t  _currentNALFUHeader1;
+  uint32_t m_currentNALFURemainingLen;
+  uint8_t* m_currentNALFURemainingDataPtr;
+  uint8_t  m_currentNALFUHeader0;
+  uint8_t  m_currentNALFUHeader1;
 
   // for deencapsulation
-  uint16_t _currentFU;
+  uint16_t m_currentFU;
 };
 
 #endif /* __H264FRAME_H__ */

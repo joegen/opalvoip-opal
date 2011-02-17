@@ -1,3 +1,35 @@
+Building and installing FFmpeg on Linux
+=======================================
+
+If you have a package for you favourite distribution, use that, the configure
+script should find it. If not, and this is likely, as you need the development
+version, not just the ffmpeg binary program, which i sthe most common, then
+you need to get the tar ball and compile.
+
+
+The following is known to work, download the following:
+
+    http://www.ffmpeg.org/releases/ffmpeg-0.6.1.tar.bz2
+
+and do the usual:
+
+    tar xf ffmpeg-0.6.1.tar.bz2
+    cd ffmpeg-0.6.1
+    ./configure
+    make
+    sudo make install
+
+As the above installs by default into /usr/local, it is advisable to add:
+
+  export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+into your .profile.
+
+
+Go to the OPAL directory and re-execute ./configure and make.
+
+
+
 Building and installing FFmpeg on Windows
 =========================================
 
@@ -7,41 +39,36 @@ pain.
 Seriously. Many have tried and failed.
 
 The best way to use FFMpeg on Windows is to use a precompiled shared library
-version from the Unoffical FFmpeg Win32 Build site
-http://ffmpeg.arrozcru.org/builds/
+version from the Unoffical FFmpeg Win32 Build site:
 
-The recommended version is r16537, which is also available to download from
-http://www.opalvoip.org/bin/ffmpeg-r16537-gpl-lshared-win32.tar.bz2
+    http://ffmpeg.arrozcru.org/autobuilds/
 
-If you simply must compile it yourself, then read on below...
+As a rule use the latest snapshot, but there are never any guarantees. All
+I can say is at time of writing the following worked:
 
+    ffmpeg-r26400-swscale-r32676-mingw32-shared.7z
+    ffmpeg-r26400-swscale-r32676-mingw32-shared-dev.7z
 
-Using a precompiled version of FFmpeg
--------------------------------------
+The first archive contains the DLL's, copy th e following:
 
-   * Download and unpack the pre-compiled tarball into
+    avcodec-*.dll
+    avutil-*.dll
+    avcore-*.dll
+
+to the C:\PTLib_Plugins directory. Or whereever you have installed the
+OPAL plug-ins.
+
+The second archive is unpacked into:
+
         ...\opal\plugins\video\common\ffmpeg
 
-   * Copy the contents of ...\opal\plugins\video\H.263=1998\ffmpeg\bin to
-     C:\PTLib_PlugIns
-
-   * Compile the H.263-1998 project in the Opal plugins solution
+You can then compile the H.263-1998 and MPEG4 projects in the OPAL plugins
+solution. The H.264 takes a little more effort, see it's ReadMe.txt file.
 
 
-For hard-core fanatics only.
-----------------------------
+If you really need to make patches to the code, so need to build from source,
+start at http://ffmpeg.arrozcru.org/wiki/ and keep working at it, hard ...
 
-FFmpeg can only be built on Windows using the Msys+MingW toolchain. The FFMpeg
-on Windows Wiki gives detailed instructions on how to do this.
 
-IMPORTANT: You will need to add "c:\msys" to the
-           VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS environment variable to
-           avoid Opal configure from attempting to use the new header files.
 
-Note 1: If you experience a "hang" while running the "./configure" for FFmpeg,
-        try opening the Task Manager and killing the "lvprcsrv.exe" process.
-        This is apparently a known issue when compiling with the MingW
-        toolchain.
-
-Note 2: If the compile fails with errors relating to "vfw", add the
-        "--disable-devices" option when confguring FFmpeg.
+                                   _o0o_

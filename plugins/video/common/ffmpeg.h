@@ -49,6 +49,8 @@
 #if defined(_WIN32) || defined(_WIN32_WCE)
   #include <windows.h>
   #include <malloc.h>
+  #undef min
+  #undef max
   #define STRCMPI  _strcmpi
 #else
   #include <semaphore.h>

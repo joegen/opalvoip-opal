@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="h264-x264"
+	Name="H.264 (x264) Video Codec"
 	ProjectGUID="{4D3EE295-5953-498D-AEDF-9C8792AB5723}"
 	RootNamespace="h264-x264"
 	>
@@ -26,8 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Creating x264 configuration."
-				CommandLine="echo #define X264_BIT_DEPTH 8 &gt; x264/x264_config.h&#x0D;&#x0A;echo #define X264_GPL 1 &gt;&gt; x264/x264_config.h&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -79,7 +78,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h264-x264_ptplugin.dll"
+				OutputFile="$(OutDir)/h264_x264_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
@@ -123,8 +122,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Creating x264 configuration."
-				CommandLine="echo #define X264_BIT_DEPTH 8 &gt; x264/x264_config.h&#x0D;&#x0A;echo #define X264_GPL 1 &gt;&gt; x264/x264_config.h&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -175,7 +173,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="wsock32.lib"
-				OutputFile="$(OutDir)/h264-x264_ptplugin.dll"
+				OutputFile="$(OutDir)/h264_x264_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -206,6 +204,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copying codec and debug information to plug in directory"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

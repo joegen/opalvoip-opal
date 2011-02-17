@@ -56,7 +56,10 @@
 // Plugin specific
 #define _CRT_SECURE_NO_DEPRECATE
 
+#ifndef _MSC_VER
 #include "plugin-config.h"
+#endif
+
 
 #include <codec/opalplugin.h>
 
@@ -217,7 +220,7 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_DEBUG: severity = 4; break;
       default:           severity = 4; break;
     }
-    snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
+    strcpy(buffer, "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
@@ -293,46 +296,46 @@ class MPEG4EncoderContext
     void ResetBitCounter(int spread);
 
     // Modifiable quantization factor.  Defaults to -0.8
-    float _iQuantFactor;
+    float m_iQuantFactor;
 
     // Max VBV buffer size in bits.
-    unsigned _maxBufferSize;
+    unsigned m_maxBufferSize;
 
     // Interval in seconds between forced IFrame updates if enabled
-    int _keyframeUpdatePeriod;
+    int m_keyframeUpdatePeriod;
 
 
     // Modifiable upper limit for bits/s transferred
-    int _bitRateHighLimit;
+    int m_bitRateHighLimit;
 
     // Frames per second.  Defaults to 24.
-    int _targetFPS;
+    int m_targetFPS;
     
     // packet sizes generating in RtpCallback
-    deque<unsigned> _packetSizes;
-    unsigned _lastPktOffset;
+    deque<unsigned> m_packetSizes;
+    unsigned m_lastPktOffset;
 
     // raw and encoded frame buffers
-    BYTE * _encFrameBuffer;
-    unsigned int _encFrameLen;
-    BYTE * _rawFrameBuffer;
-    unsigned int _rawFrameLen;
+    BYTE * m_encFrameBuffer;
+    unsigned int m_encFrameLen;
+    BYTE * m_rawFrameBuffer;
+    unsigned int m_rawFrameLen;
 
     // codec, context and picture
-    AVCodec        *_avcodec;
-    AVCodecContext *_avcontext;
-    AVFrame        *_avpicture;
+    AVCodec        * m_avcodec;
+    AVCodecContext * m_avcontext;
+    AVFrame        * m_avpicture;
 
     // encoding and frame settings
-    unsigned _videoTSTO;
-    int _videoQMin; // dynamic video quality min/max limits, 1..31
+    unsigned m_videoTSTO;
+    int m_videoQMin; // dynamic video quality min/max limits, 1..31
 
-    int _frameNum;
-    unsigned int _frameWidth;
-    unsigned int _frameHeight;
+    int m_frameNum;
+    unsigned int m_frameWidth;
+    unsigned int m_frameHeight;
 
-    unsigned long _lastTimeStamp;
-    bool _isIFrame;
+    unsigned long m_lastTimeStamp;
+    bool m_isIFrame;
 
     enum StdSize { 
       SQCIF, 
@@ -373,35 +376,35 @@ class MPEG4EncoderContext
 //
 
 MPEG4EncoderContext::MPEG4EncoderContext() 
-:   _encFrameBuffer(NULL),
-    _rawFrameBuffer(NULL), 
-    _avcodec(NULL),
-    _avcontext(NULL),
-    _avpicture(NULL)
+:   m_encFrameBuffer(NULL),
+    m_rawFrameBuffer(NULL), 
+    m_avcodec(NULL),
+    m_avcontext(NULL),
+    m_avpicture(NULL)
 { 
 
   // Some sane default video settings
-  _targetFPS = 24;
-  _videoQMin = 2;
-  _videoTSTO = 10;
-  _iQuantFactor = -0.8f;
-  _maxBufferSize = 112 * 16384;
+  m_targetFPS = 24;
+  m_videoQMin = 2;
+  m_videoTSTO = 10;
+  m_iQuantFactor = -0.8f;
+  m_maxBufferSize = 112 * 16384;
 
-  _keyframeUpdatePeriod = 0; 
+  m_keyframeUpdatePeriod = 0; 
 
-  _frameNum = 0;
-  _lastPktOffset = 0;
+  m_frameNum = 0;
+  m_lastPktOffset = 0;
   
-  _isIFrame = false;
+  m_isIFrame = false;
 
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
   }
 
   // Default frame size.  These may change after encoder_set_options
-  _frameWidth  = CIF_WIDTH;
-  _frameHeight = CIF_HEIGHT;
-  _rawFrameLen = (_frameWidth * _frameHeight * 3) / 2;
+  m_frameWidth  = CIF_WIDTH;
+  m_frameHeight = CIF_HEIGHT;
+  m_rawFrameLen = (m_frameWidth * m_frameHeight * 3) / 2;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -414,13 +417,13 @@ MPEG4EncoderContext::~MPEG4EncoderContext()
   if (FFMPEGLibraryInstance.IsLoaded()) {
     CloseCodec();
   }
-  if (_rawFrameBuffer) {
-    delete[] _rawFrameBuffer;
-    _rawFrameBuffer = NULL;
+  if (m_rawFrameBuffer) {
+    delete[] m_rawFrameBuffer;
+    m_rawFrameBuffer = NULL;
   }
-  if (_encFrameBuffer) {
-    delete[] _encFrameBuffer;
-    _encFrameBuffer = NULL;
+  if (m_encFrameBuffer) {
+    delete[] m_encFrameBuffer;
+    m_encFrameBuffer = NULL;
   }
 }
 
@@ -431,87 +434,87 @@ MPEG4EncoderContext::~MPEG4EncoderContext()
 //
 
 int MPEG4EncoderContext::GetFrameBytes() {
-    return _frameWidth * _frameHeight;
+    return m_frameWidth * m_frameHeight;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _iQuantFactor.  This may be called from 
+// Setter function for m_iQuantFactor.  This may be called from 
 // encoder_set_options if the "IQuantFactor" real option has been passed 
 //
 
 void MPEG4EncoderContext::SetIQuantFactor(float newFactor) {
-    _iQuantFactor = newFactor;
+    m_iQuantFactor = newFactor;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _keyframeUpdatePeriod.  This is called from 
+// Setter function for m_keyframeUpdatePeriod.  This is called from 
 // encoder_set_options if the "Keyframe Update Period" integer option is passed
 
 void MPEG4EncoderContext::SetKeyframeUpdatePeriod(int interval) {
-    _keyframeUpdatePeriod = interval;
+    m_keyframeUpdatePeriod = interval;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _maxBitRateLimit. This is called from encoder_set_options
+// Setter function for m_maxBitRateLimit. This is called from encoder_set_options
 // if the "MaxBitrate" integer option is passed 
 
 void MPEG4EncoderContext::SetMaxBitrate(int max) {
-    _bitRateHighLimit = max;
+    m_bitRateHighLimit = max;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _targetFPS. This is called from encoder_set_options
+// Setter function for m_targetFPS. This is called from encoder_set_options
 // if the "FPS" integer option is passed 
 
 void MPEG4EncoderContext::SetFPS(int frameTime) {
-    _targetFPS = (MPEG4_CLOCKRATE / frameTime);
+    m_targetFPS = (MPEG4_CLOCKRATE / frameTime);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _frameWidth. This is called from encoder_set_options
+// Setter function for m_frameWidth. This is called from encoder_set_options
 // when the "Frame Width" integer option is passed 
 
 void MPEG4EncoderContext::SetFrameWidth(int width) {
-    _frameWidth = width;
+    m_frameWidth = width;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _frameHeight. This is called from encoder_set_options
+// Setter function for m_frameHeight. This is called from encoder_set_options
 // when the "Frame Height" integer option is passed 
 
 void MPEG4EncoderContext::SetFrameHeight(int height) {
-    _frameHeight = height;
+    m_frameHeight = height;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _videoQMin. This is called from encoder_set_options
+// Setter function for m_videoQMin. This is called from encoder_set_options
 // when the "Minimum Quality" integer option is passed
 
 void MPEG4EncoderContext::SetQMin(int qmin) {
-    _videoQMin = qmin;
+    m_videoQMin = qmin;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _videoQMax. This is called from encoder_set_options
+// Setter function for m_videoQMax. This is called from encoder_set_options
 // when the "Maximum Quality" integer option is passed 
 
 void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
-    _videoTSTO = tsto;
+    m_videoTSTO = tsto;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _frameHeight. This is called from encoder_set_options
+// Setter function for m_frameHeight. This is called from encoder_set_options
 // when the "Encoding Quality" integer option is passed 
 
 void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
@@ -526,7 +529,7 @@ void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
     TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
     return;
   }
-  _maxBufferSize = mpeg4_profile_levels[i].maxBufferSize * 16384;
+  m_maxBufferSize = mpeg4_profile_levels[i].maxBufferSize * 16384;
 
 
 }
@@ -546,13 +549,13 @@ void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
 
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
 void MPEG4EncoderContext::ResetBitCounter(int spread) {
-    MpegEncContext *s = (MpegEncContext *) _avcontext->priv_data;
+    MpegEncContext *s = (MpegEncContext *) m_avcontext->priv_data;
     int64_t wanted_bits
         = int64_t(s->bit_rate * double(s->picture_number)
-                  * av_q2d(_avcontext->time_base));
+                  * av_q2d(m_avcontext->time_base));
     s->total_bits += (wanted_bits - s->total_bits) / int64_t(spread);
 
-    double want_buffer = double(_avcontext->rc_buffer_size / 2);
+    double want_buffer = double(m_avcontext->rc_buffer_size / 2);
     s->rc_context.buffer_index
         += (want_buffer - s->rc_context.buffer_index) / double(spread);
 }
@@ -565,69 +568,69 @@ void MPEG4EncoderContext::ResetBitCounter(int spread) {
 //
 
 void MPEG4EncoderContext::SetStaticEncodingParams(){
-    _avcontext->pix_fmt = PIX_FMT_YUV420P;
-    _avcontext->mb_decision = FF_MB_DECISION_SIMPLE;    // high quality off
-    _avcontext->rtp_payload_size = 750;                 // ffh263 uses 750
-    _avcontext->rtp_callback = &MPEG4EncoderContext::RtpCallback;
+    m_avcontext->pix_fmt = PIX_FMT_YUV420P;
+    m_avcontext->mb_decision = FF_MB_DECISION_SIMPLE;    // high quality off
+    m_avcontext->rtp_payload_size = 750;                 // ffh263 uses 750
+    m_avcontext->rtp_callback = &MPEG4EncoderContext::RtpCallback;
 
     // Reduce the difference in quantization between frames.
-    _avcontext->qblur = 0.3;
+    m_avcontext->qblur = 0.3f;
     // default is tex^qComp; 1 is constant bitrate
-    _avcontext->rc_eq = (char*) "1";
+    m_avcontext->rc_eq = (char*) "1";
     //avcontext->rc_eq = "tex^qComp";
     // These ones technically could be dynamic, I think
-    _avcontext->rc_min_rate = 0;
+    m_avcontext->rc_min_rate = 0;
     // This is set to 0 in ffmpeg.c, the command-line utility.
-    _avcontext->rc_initial_cplx = 0.0f;
+    m_avcontext->rc_initial_cplx = 0.0f;
 
     // And this is set to 1.
     // It seems to affect how aggressively the library will raise and lower
     // quantization to keep bandwidth constant. Except it's in reference to
     // the "vbv buffer", not bits per second, so nobody really knows how
     // it works.
-    _avcontext->rc_buffer_aggressivity = 1.0f;
+    m_avcontext->rc_buffer_aggressivity = 1.0f;
 
     // Ratecontrol buffer size, in bits. Usually 0.5-1 second worth.
     // 224 kbyte is what VLC uses, and it seems to fix the quantization pulse (at Level 5)
-    _avcontext->rc_buffer_size = _maxBufferSize;
+    m_avcontext->rc_buffer_size = m_maxBufferSize;
 
     // In MEncoder this defaults to 1/4 buffer size, but in ffmpeg.c it
     // defaults to 3/4. I think the buffer is supposed to stabilize at
     // about half full. Note that setting this after avcodec_open() has
     // no effect.
-    _avcontext->rc_initial_buffer_occupancy = _avcontext->rc_buffer_size * 1/2;
+    m_avcontext->rc_initial_buffer_occupancy = m_avcontext->rc_buffer_size * 1/2;
 
     // Defaults to -0.8, which is good for high bandwidth and not negative
     // enough for low bandwidth.
-    _avcontext->i_quant_factor = _iQuantFactor;
-    _avcontext->i_quant_offset = 0.0;
+    m_avcontext->i_quant_factor = m_iQuantFactor;
+    m_avcontext->i_quant_offset = 0.0;
 
     // Set our initial target FPS, gop_size and create throttler
-    _avcontext->time_base.num = 1;
-    _avcontext->time_base.den = _targetFPS;
+    m_avcontext->time_base.num = 1;
+    m_avcontext->time_base.den = m_targetFPS;
 
     // Number of frames for a group of pictures
-    if (_keyframeUpdatePeriod == 0)
-      _avcontext->gop_size = _targetFPS * 8;
+    if (m_keyframeUpdatePeriod == 0)
+      m_avcontext->gop_size = m_targetFPS * 8;
     else
-      _avcontext->gop_size = _keyframeUpdatePeriod;
+      m_avcontext->gop_size = m_keyframeUpdatePeriod;
     
-    _avpicture->quality = _videoQMin;
+    m_avpicture->quality = m_videoQMin;
 
 #ifdef USE_ORIG
-    _avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
-    _avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
+    m_avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
+    m_avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
 #else
-    _avcontext->max_b_frames=0; /*don't use b frames*/
-    _avcontext->flags|=CODEC_FLAG_AC_PRED;
-    _avcontext->flags|=CODEC_FLAG_H263P_UMV;
+    m_avcontext->max_b_frames=0; /*don't use b frames*/
+    m_avcontext->flags|=CODEC_FLAG_AC_PRED;
+    m_avcontext->flags|=CODEC_FLAG_H263P_UMV;
     /*c->flags|=CODEC_FLAG_QPEL;*/ /*don't enable this one: this forces profile_level to advanced simple profile */
-    _avcontext->flags|=CODEC_FLAG_4MV;
-    _avcontext->flags|=CODEC_FLAG_GMC;
-    _avcontext->flags|=CODEC_FLAG_LOOP_FILTER;
-    _avcontext->flags|=CODEC_FLAG_H263P_SLICE_STRUCT;
+    m_avcontext->flags|=CODEC_FLAG_4MV;
+    m_avcontext->flags|=CODEC_FLAG_GMC;
+    m_avcontext->flags|=CODEC_FLAG_LOOP_FILTER;
+    m_avcontext->flags|=CODEC_FLAG_H263P_SLICE_STRUCT;
 #endif
-    _avcontext->opaque = this;              // for use in RTP callback
+    m_avcontext->opaque = this;              // for use in RTP callback
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -640,33 +643,33 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
     // If no bitrate limit is set, max out at 3 mbit
     // Use 75% of available bandwidth so not as many frames are dropped
     unsigned bitRate
-        = (_bitRateHighLimit ? 3*_bitRateHighLimit/4 : MPEG4_BITRATE);
-    _avcontext->bit_rate = bitRate;
+        = (m_bitRateHighLimit ? 3*m_bitRateHighLimit/4 : MPEG4_BITRATE);
+    m_avcontext->bit_rate = bitRate;
 
     // In ffmpeg this is the tolerance over the entire file. We reset the
     // bit counter toward the expected value a little bit every frame,
     // so this probably needs to be readjusted.
-    _avcontext->bit_rate_tolerance = bitRate;
+    m_avcontext->bit_rate_tolerance = bitRate;
 
     // The rc_* values affect the quantizer. Not even sure what bit_rate does.
-    _avcontext->rc_max_rate = bitRate;
+    m_avcontext->rc_max_rate = bitRate;
 
     // Update the quantization factor
-    _avcontext->i_quant_factor = _iQuantFactor;
+    m_avcontext->i_quant_factor = m_iQuantFactor;
 
     // Set full-frame min/max quantizers.
     // Note: mb_qmin, mb_max don't seem to be used in the libavcodec code.
 
-    _avcontext->qmin = _videoQMin;
-    _avcontext->qmax = round ( (double)(31 - _videoQMin) / 31 * _videoTSTO + _videoQMin);
-    _avcontext->qmax = std::min( _avcontext->qmax, 31);
+    m_avcontext->qmin = m_videoQMin;
+    m_avcontext->qmax = round ( (double)(31 - m_videoQMin) / 31 * m_videoTSTO + m_videoQMin);
+    m_avcontext->qmax = std::min( m_avcontext->qmax, 31);
 
     // Lagrange multipliers - this is how the context defaults do it:
-    _avcontext->lmin = _avcontext->qmin * FF_QP2LAMBDA;
-    _avcontext->lmax = _avcontext->qmax * FF_QP2LAMBDA;
+    m_avcontext->lmin = m_avcontext->qmin * FF_QP2LAMBDA;
+    m_avcontext->lmax = m_avcontext->qmax * FF_QP2LAMBDA;
 
     // If framesize has changed or is not yet initialized, fix it up
-    if((unsigned)_avcontext->width != _frameWidth || (unsigned)_avcontext->height != _frameHeight) {
+    if((unsigned)m_avcontext->width != m_frameWidth || (unsigned)m_avcontext->height != m_frameHeight) {
         ResizeEncodingFrame(restartOnResize);
     }
 }
@@ -677,8 +680,8 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
 //
 
 void MPEG4EncoderContext::ResizeEncodingFrame(bool restartCodec) {
-    _avcontext->width = _frameWidth;
-    _avcontext->height = _frameHeight;
+    m_avcontext->width = m_frameWidth;
+    m_avcontext->height = m_frameHeight;
 
     // Restart to force avcodec to use the new frame sizes
     if (restartCodec) {
@@ -686,28 +689,28 @@ void MPEG4EncoderContext::ResizeEncodingFrame(bool restartCodec) {
         OpenCodec();
     }
 
-    _rawFrameLen = (_frameWidth * _frameHeight * 3) / 2;
-    if (_rawFrameBuffer)
+    m_rawFrameLen = (m_frameWidth * m_frameHeight * 3) / 2;
+    if (m_rawFrameBuffer)
     {
-        delete[] _rawFrameBuffer;
+        delete[] m_rawFrameBuffer;
     }
-    _rawFrameBuffer = new BYTE[_rawFrameLen + FF_INPUT_BUFFER_PADDING_SIZE];
+    m_rawFrameBuffer = new BYTE[m_rawFrameLen + FF_INPUT_BUFFER_PADDING_SIZE];
 
-    if (_encFrameBuffer)
+    if (m_encFrameBuffer)
     {
-        delete[] _encFrameBuffer;
+        delete[] m_encFrameBuffer;
     }
-    _encFrameLen = _rawFrameLen/2;         // assume at least 50% compression...
-    _encFrameBuffer = new BYTE[_encFrameLen];
+    m_encFrameLen = m_rawFrameLen/2;         // assume at least 50% compression...
+    m_encFrameBuffer = new BYTE[m_encFrameLen];
 
     // Clear the back padding
-    memset(_rawFrameBuffer + _rawFrameLen, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-    const unsigned fsz = _frameWidth * _frameHeight;
-    _avpicture->data[0] = _rawFrameBuffer;              // luminance
-    _avpicture->data[1] = _rawFrameBuffer + fsz;        // first chroma channel
-    _avpicture->data[2] = _avpicture->data[1] + fsz/4;  // second
-    _avpicture->linesize[0] = _frameWidth;
-    _avpicture->linesize[1] = _avpicture->linesize[2] = _frameWidth/2;
+    memset(m_rawFrameBuffer + m_rawFrameLen, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+    const unsigned fsz = m_frameWidth * m_frameHeight;
+    m_avpicture->data[0] = m_rawFrameBuffer;              // luminance
+    m_avpicture->data[1] = m_rawFrameBuffer + fsz;        // first chroma channel
+    m_avpicture->data[2] = m_avpicture->data[1] + fsz/4;  // second
+    m_avpicture->linesize[0] = m_frameWidth;
+    m_avpicture->linesize[1] = m_avpicture->linesize[2] = m_frameWidth/2;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -717,33 +720,33 @@ void MPEG4EncoderContext::ResizeEncodingFrame(bool restartCodec) {
 
 bool MPEG4EncoderContext::OpenCodec()
 {
-  _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
-  if (_avcontext == NULL) {
+  m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
+  if (m_avcontext == NULL) {
     TRACE(1, "MPEG4\tEncoder\tFailed to allocate context for encoder");
     return false;
   }
 
-  _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
-  if (_avpicture == NULL) {
+  m_avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
+  if (m_avpicture == NULL) {
     TRACE(1, "MPEG4\tEncoder\tFailed to allocate frame for encoder");
     return false;
   }
 
-  if((_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
+  if((m_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
     TRACE(1, "MPEG4\tEncoder\tCodec not found for encoder");
     return false;
   }
 
   // debugging flags
   if (Trace::CanTraceUserPlane(4)) {
-    _avcontext->debug |= FF_DEBUG_RC;
-    _avcontext->debug |= FF_DEBUG_PICT_INFO;
-    _avcontext->debug |= FF_DEBUG_MV;
+    m_avcontext->debug |= FF_DEBUG_RC;
+    m_avcontext->debug |= FF_DEBUG_PICT_INFO;
+    m_avcontext->debug |= FF_DEBUG_MV;
   }
   
   SetStaticEncodingParams();
   SetDynamicEncodingParams(false);    // don't force a restart, it's not open
-  if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0)
+  if (FFMPEGLibraryInstance.AvcodecOpen(m_avcontext, m_avcodec) < 0)
   {
     TRACE(1, "MPEG4\tEncoder\tCould not open codec");
     return false;
@@ -758,22 +761,22 @@ bool MPEG4EncoderContext::OpenCodec()
 
 void MPEG4EncoderContext::CloseCodec()
 {
-  if (_avcontext != NULL) {
-    if(_avcontext->codec != NULL)
-      FFMPEGLibraryInstance.AvcodecClose(_avcontext);
-    FFMPEGLibraryInstance.AvcodecFree(_avcontext);
-    _avcontext = NULL;
+  if (m_avcontext != NULL) {
+    if(m_avcontext->codec != NULL)
+      FFMPEGLibraryInstance.AvcodecClose(m_avcontext);
+    FFMPEGLibraryInstance.AvcodecFree(m_avcontext);
+    m_avcontext = NULL;
   }
-  if (_avpicture != NULL) {
-    FFMPEGLibraryInstance.AvcodecFree(_avpicture);
-    _avpicture = NULL;
+  if (m_avpicture != NULL) {
+    FFMPEGLibraryInstance.AvcodecFree(m_avpicture);
+    m_avpicture = NULL;
   }
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // This is called after an Favcodec_encode_frame() call.  This populates the 
-// _packetSizes deque with offsets, no greated than max_rtp which we will use
+// m_packetSizes deque with offsets, no greated than max_rtp which we will use
 // to create RTP packets.
 //
 
@@ -781,7 +784,7 @@ void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void * /*data*/
                                       int size, int /*num_mb*/)
 {
   MPEG4EncoderContext *c = static_cast<MPEG4EncoderContext *>(priv_data->opaque);
-  c->_packetSizes.push_back(size);
+  c->m_packetSizes.push_back(size);
 }
 		    
 /////////////////////////////////////////////////////////////////////////////
@@ -808,85 +811,85 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     // create the video frame header from the source and update video size
     PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
-    _frameWidth  = header->width;
-    _frameHeight = header->height;
+    m_frameWidth  = header->width;
+    m_frameHeight = header->height;
 
-    if (_packetSizes.empty()) {
-        if (_avcontext == NULL) {
+    if (m_packetSizes.empty()) {
+        if (m_avcontext == NULL) {
             OpenCodec();
         }
         else {
             // set our dynamic parameters, restart the codec if we need to
             SetDynamicEncodingParams(true);
         }
-        _lastTimeStamp = srcRTP.GetTimestamp();
-        _lastPktOffset = 0; 
+        m_lastTimeStamp = srcRTP.GetTimestamp();
+        m_lastPktOffset = 0; 
 
         // generate the raw picture
-        memcpy(_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), _rawFrameLen);
+        memcpy(m_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), m_rawFrameLen);
 
         // Should the next frame be an I-Frame?
-        if ((flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
+        if ((flags & PluginCodec_CoderForceIFrame) || (m_frameNum == 0))
         {
-            _avpicture->pict_type = FF_I_TYPE;
+            m_avpicture->pict_type = FF_I_TYPE;
         }
         else // No IFrame requested, let avcodec decide what to do
         {
-            _avpicture->pict_type = 0;
+            m_avpicture->pict_type = 0;
         }
 
         // Encode a frame
         int total = FFMPEGLibraryInstance.AvcodecEncodeVideo
-                            (_avcontext, _encFrameBuffer, _encFrameLen,
-                             _avpicture);
+                            (m_avcontext, m_encFrameBuffer, m_encFrameLen,
+                             m_avpicture);
 
 
         if (total > 0) {
-            _frameNum++; // increment the number of frames encoded
+            m_frameNum++; // increment the number of frames encoded
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
             ResetBitCounter(8); // Fix ffmpeg rate control
 #endif
-	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, total );
+	    m_isIFrame = mpeg4IsIframe(m_encFrameBuffer, total );
         }
     }
 
     flags = 0;
 
-    if (_isIFrame)
+    if (m_isIFrame)
       flags |= PluginCodec_ReturnCoderIFrame;
 
     // get the next packet
-    if (_packetSizes.size() == 0) 
+    if (m_packetSizes.size() == 0) 
 
       dstLen = 0;
 
     else {
 
-      unsigned pktLen = _packetSizes.front();
-      _packetSizes.pop_front();
+      unsigned pktLen = m_packetSizes.front();
+      m_packetSizes.pop_front();
 
       // if too large, split it
       unsigned maxRtpSize = dstLen - dstRTP.GetHeaderSize();
       if (pktLen > maxRtpSize) {
-          _packetSizes.push_front(pktLen - maxRtpSize);
+          m_packetSizes.push_front(pktLen - maxRtpSize);
           pktLen = maxRtpSize;
       }
 
       dstRTP.SetPayloadSize(pktLen); 
 
       // Copy the encoded data from the buffer into the outgoign RTP 
-      memcpy(dstRTP.GetPayloadPtr(), &_encFrameBuffer[_lastPktOffset], pktLen);
-      _lastPktOffset += pktLen;
+      memcpy(dstRTP.GetPayloadPtr(), &m_encFrameBuffer[m_lastPktOffset], pktLen);
+      m_lastPktOffset += pktLen;
 
       // If there are no more packet sizes left, we've reached the last packet
       // for the frame, set the marker bit and flags
-      if (_packetSizes.empty()) {
+      if (m_packetSizes.empty()) {
           dstRTP.SetMarker(true);
           flags |= PluginCodec_ReturnCoderLastFrame;
       }
 
       // set timestamp and adjust dstLen to include header size
-      dstRTP.SetTimestamp(_lastTimeStamp);
+      dstRTP.SetTimestamp(m_lastTimeStamp);
 
       dstLen = dstRTP.GetHeaderSize() + pktLen;
 
@@ -1085,7 +1088,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 // This is assuming the second param is the context...
 static int encoder_set_options(
       const PluginCodec_Definition * , 
-      void * _context, 
+      void * m_context, 
       const char * , 
       void *parm, 
       unsigned *parmLen )
@@ -1093,7 +1096,7 @@ static int encoder_set_options(
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
 
-  MPEG4EncoderContext * context = (MPEG4EncoderContext *)_context;
+  MPEG4EncoderContext * context = (MPEG4EncoderContext *)m_context;
   // Scan the options passed in and check for:
   // 1) "Frame Width" sets the encoding frame width
   // 2) "Frame Height" sets the encoding frame height
@@ -1148,28 +1151,28 @@ static int encoder_set_options(
 }
 
 static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/,
-                            void * _context)
+                            void * m_context)
 {
-  MPEG4EncoderContext * context = (MPEG4EncoderContext *)_context;
+  MPEG4EncoderContext * context = (MPEG4EncoderContext *)m_context;
   delete context;
 }
 
 static int codec_encoder(const struct PluginCodec_Definition * , 
-                                           void * _context,
+                                           void * m_context,
                                      const void * from, 
                                        unsigned * fromLen,
                                            void * to,         
                                        unsigned * toLen,
                                    unsigned int * flags)
 {
-  MPEG4EncoderContext * context = (MPEG4EncoderContext *)_context;
+  MPEG4EncoderContext * context = (MPEG4EncoderContext *)m_context;
   return context->EncodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen,
                                *flags);
 }
 
-static int encoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void *_context, const char *, void *, unsigned *)
+static int encoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void *m_context, const char *, void *, unsigned *)
 {
-  MPEG4EncoderContext * context = (MPEG4EncoderContext *)_context;
+  MPEG4EncoderContext * context = (MPEG4EncoderContext *)m_context;
   return context->GetFrameBytes() * 3 / 2;
 }
 
@@ -1216,25 +1219,25 @@ class MPEG4DecoderContext
     void SetDynamicDecodingParams(bool restartOnResize);
     void ResizeDecodingFrame(bool restartCodec);
 
-    BYTE * _encFrameBuffer;
-    unsigned int _encFrameLen;
+    BYTE * m_encFrameBuffer;
+    unsigned int m_encFrameLen;
 
-    AVCodec        *_avcodec;
-    AVCodecContext *_avcontext;
-    AVFrame        *_avpicture;
+    AVCodec        *m_avcodec;
+    AVCodecContext *m_avcontext;
+    AVFrame        *m_avpicture;
 
-    int _frameNum;
+    int m_frameNum;
 
-    bool _doError;
-    int _keyRefreshThresh;
+    bool m_doError;
+    int m_keyRefreshThresh;
 
-    bool _disableResize;
+    bool m_disableResize;
 
-    unsigned _lastPktOffset;
-    unsigned int _frameWidth;
-    unsigned int _frameHeight;
+    unsigned m_lastPktOffset;
+    unsigned int m_frameWidth;
+    unsigned int m_frameHeight;
 
-    bool _gotAGoodFrame;
+    bool m_gotAGoodFrame;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1244,23 +1247,23 @@ class MPEG4DecoderContext
 //
 
 MPEG4DecoderContext::MPEG4DecoderContext() 
-:   _encFrameBuffer(NULL),
-    _frameNum(0),
-    _doError(true),
-    _keyRefreshThresh(1),
-    _disableResize(false),
-    _lastPktOffset(0),
-    _frameWidth(0),
-    _frameHeight(0)
+:   m_encFrameBuffer(NULL),
+    m_frameNum(0),
+    m_doError(true),
+    m_keyRefreshThresh(1),
+    m_disableResize(false),
+    m_lastPktOffset(0),
+    m_frameWidth(0),
+    m_frameHeight(0)
 {
   if (!FFMPEGLibraryInstance.IsLoaded()) {
     return;
   }
 
   // Default frame sizes.  These may change after decoder_set_options is called
-  _frameWidth  = CIF_WIDTH;
-  _frameHeight = CIF_HEIGHT;
-  _gotAGoodFrame = true;
+  m_frameWidth  = CIF_WIDTH;
+  m_frameHeight = CIF_HEIGHT;
+  m_gotAGoodFrame = true;
 
   OpenCodec();
 }
@@ -1275,9 +1278,9 @@ MPEG4DecoderContext::~MPEG4DecoderContext()
   if (FFMPEGLibraryInstance.IsLoaded()) {
     CloseCodec();
   }
-  if(_encFrameBuffer) {
-    delete[] _encFrameBuffer;
-    _encFrameBuffer = NULL;
+  if(m_encFrameBuffer) {
+    delete[] m_encFrameBuffer;
+    m_encFrameBuffer = NULL;
   }
 }
 
@@ -1288,7 +1291,7 @@ MPEG4DecoderContext::~MPEG4DecoderContext()
 //
 
 int MPEG4DecoderContext::GetFrameBytes() {
-    return _frameWidth * _frameHeight;
+    return m_frameWidth * m_frameHeight;
 }
 
 
@@ -1300,7 +1303,7 @@ int MPEG4DecoderContext::GetFrameBytes() {
 //
 
 void MPEG4DecoderContext::SetErrorRecovery(bool error) {
-    _doError = error;
+    m_doError = error;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1310,7 +1313,7 @@ void MPEG4DecoderContext::SetErrorRecovery(bool error) {
 //
 
 void MPEG4DecoderContext::SetErrorThresh(int thresh) {
-    _keyRefreshThresh = thresh;
+    m_keyRefreshThresh = thresh;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1320,26 +1323,26 @@ void MPEG4DecoderContext::SetErrorThresh(int thresh) {
 //
 
 void MPEG4DecoderContext::SetDisableResize(bool disable) {
-    _disableResize = disable;
+    m_disableResize = disable;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _frameWidth. This is called from decoder_set_options
+// Setter function for m_frameWidth. This is called from decoder_set_options
 // when the "Frame Width" integer option is passed 
 
 void MPEG4DecoderContext::SetFrameWidth(int width) {
-    _frameWidth = width;
+    m_frameWidth = width;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Setter function for _frameHeight. This is called from decoder_set_options
+// Setter function for m_frameHeight. This is called from decoder_set_options
 // when the "Frame Height" integer option is passed 
 
 void MPEG4DecoderContext::SetFrameHeight(int height) {
-    _frameHeight = height;
+    m_frameHeight = height;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1348,9 +1351,9 @@ void MPEG4DecoderContext::SetFrameHeight(int height) {
 //
 
 void MPEG4DecoderContext::SetStaticDecodingParams() {
-    _avcontext->flags |= CODEC_FLAG_4MV; 
-    _avcontext->flags |= CODEC_FLAG_PART;
-    _avcontext->workaround_bugs = 0; // no workaround for buggy implementations
+    m_avcontext->flags |= CODEC_FLAG_4MV; 
+    m_avcontext->flags |= CODEC_FLAG_PART;
+    m_avcontext->workaround_bugs = 0; // no workaround for buggy implementations
 }
 
 
@@ -1360,10 +1363,10 @@ void MPEG4DecoderContext::SetStaticDecodingParams() {
 //
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
 bool MPEG4DecoderContext::DecoderError(int threshold) {
-    if (_doError) {
+    if (m_doError) {
         int errors = 0;
-        MpegEncContext *s = (MpegEncContext *) _avcontext->priv_data;
-        if (s->error_count && _avcontext->coded_frame->pict_type == FF_I_TYPE) {
+        MpegEncContext *s = (MpegEncContext *) m_avcontext->priv_data;
+        if (s->error_count && m_avcontext->coded_frame->pict_type == FF_I_TYPE) {
             const uint8_t badflags = AC_ERROR | DC_ERROR | MV_ERROR;
             for (int i = 0; i < s->mb_num && errors < threshold; ++i) {
                 if (s->error_status_table[s->mb_index2xy[i]] & badflags)
@@ -1383,7 +1386,7 @@ bool MPEG4DecoderContext::DecoderError(int threshold) {
 //
 
 void MPEG4DecoderContext::SetDynamicDecodingParams(bool restartOnResize) {
-    if (_frameWidth != (unsigned)_avcontext->width || _frameHeight != (unsigned)_avcontext->height)
+    if (m_frameWidth != (unsigned)m_avcontext->width || m_frameHeight != (unsigned)m_avcontext->height)
     {
         ResizeDecodingFrame(restartOnResize);
     }
@@ -1395,15 +1398,15 @@ void MPEG4DecoderContext::SetDynamicDecodingParams(bool restartOnResize) {
 //
 
 void MPEG4DecoderContext::ResizeDecodingFrame(bool restartCodec) {
-    _avcontext->width = _frameWidth;
-    _avcontext->height = _frameHeight;
-    unsigned _rawFrameLen = (_frameWidth * _frameHeight * 3) / 2;
-    if (_encFrameBuffer)
+    m_avcontext->width = m_frameWidth;
+    m_avcontext->height = m_frameHeight;
+    unsigned m_rawFrameLen = (m_frameWidth * m_frameHeight * 3) / 2;
+    if (m_encFrameBuffer)
     {
-        delete[] _encFrameBuffer;
+        delete[] m_encFrameBuffer;
     }
-    _encFrameLen = _rawFrameLen/2;         // assume at least 50% compression...
-    _encFrameBuffer = new BYTE[_encFrameLen];
+    m_encFrameLen = m_rawFrameLen/2;         // assume at least 50% compression...
+    m_encFrameBuffer = new BYTE[m_encFrameLen];
     // Restart to force avcodec to use the new frame sizes
     if (restartCodec) {
         CloseCodec();
@@ -1418,28 +1421,28 @@ void MPEG4DecoderContext::ResizeDecodingFrame(bool restartCodec) {
 
 bool MPEG4DecoderContext::OpenCodec()
 {
-    if ((_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
+    if ((m_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
         TRACE(1, "MPEG4\tDecoder\tCodec not found for encoder");
         return false;
     }
         
-    _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
-    if (_avcontext == NULL) {
+    m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
+    if (m_avcontext == NULL) {
         TRACE(1, "MPEG4\tDecoder\tFailed to allocate context for encoder");
         return false;
     }
 
-    _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
-    if (_avpicture == NULL) {
+    m_avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
+    if (m_avpicture == NULL) {
         TRACE(1, "MPEG4\tDecoder\tFailed to allocate frame for decoder");
         return false;
     }
 
-    _avcontext->codec = NULL;
+    m_avcontext->codec = NULL;
 
     SetStaticDecodingParams();
     SetDynamicDecodingParams(false);    // don't force a restart, it's not open
-    if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0) {
+    if (FFMPEGLibraryInstance.AvcodecOpen(m_avcontext, m_avcodec) < 0) {
         TRACE(1, "MPEG4\tDecoder\tFailed to open MPEG4 decoder");
         return false;
     }
@@ -1454,15 +1457,15 @@ bool MPEG4DecoderContext::OpenCodec()
 
 void MPEG4DecoderContext::CloseCodec()
 {
-  if (_avcontext != NULL) {
-    if(_avcontext->codec != NULL)
-      FFMPEGLibraryInstance.AvcodecClose(_avcontext);
-    FFMPEGLibraryInstance.AvcodecFree(_avcontext);
-    _avcontext = NULL;
+  if (m_avcontext != NULL) {
+    if(m_avcontext->codec != NULL)
+      FFMPEGLibraryInstance.AvcodecClose(m_avcontext);
+    FFMPEGLibraryInstance.AvcodecFree(m_avcontext);
+    m_avcontext = NULL;
   }
-  if(_avpicture != NULL) {
-    FFMPEGLibraryInstance.AvcodecFree(_avpicture);    
-    _avpicture = NULL;
+  if(m_avpicture != NULL) {
+    FFMPEGLibraryInstance.AvcodecFree(m_avpicture);    
+    m_avpicture = NULL;
   }
 }
 
@@ -1489,13 +1492,13 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
     int srcPayloadSize = srcRTP.GetPayloadSize();
     SetDynamicDecodingParams(true); // Adjust dynamic settings, restart allowed
     
-    // Don't exceed buffer limits.  _encFrameLen set by ResizeDecodingFrame
-    if(_lastPktOffset + srcPayloadSize < _encFrameLen)
+    // Don't exceed buffer limits.  m_encFrameLen set by ResizeDecodingFrame
+    if(m_lastPktOffset + srcPayloadSize < m_encFrameLen)
     {
         // Copy the payload data into the buffer and update the offset
-        memcpy(_encFrameBuffer + _lastPktOffset, srcRTP.GetPayloadPtr(),
+        memcpy(m_encFrameBuffer + m_lastPktOffset, srcRTP.GetPayloadPtr(),
                srcPayloadSize);
-        _lastPktOffset += srcPayloadSize;
+        m_lastPktOffset += srcPayloadSize;
     }
     else {
 
@@ -1510,55 +1513,55 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
         // throw the data away and ask for an IFrame
         TRACE(1, "MPEG4\tDecoder\tWaiting for an I-Frame");
-        _lastPktOffset = 0;
-        flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
-        _gotAGoodFrame = false;
+        m_lastPktOffset = 0;
+        flags = (m_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+        m_gotAGoodFrame = false;
         return 1;
     }
 
     // decode the frame if we got the marker packet
     int got_picture = 0;
     if (srcRTP.GetMarker()) {
-        _frameNum++;
+        m_frameNum++;
         int len = FFMPEGLibraryInstance.AvcodecDecodeVideo
-                        (_avcontext, _avpicture, &got_picture,
-                         _encFrameBuffer, _lastPktOffset);
+                        (m_avcontext, m_avpicture, &got_picture,
+                         m_encFrameBuffer, m_lastPktOffset);
 
         if (len >= 0 && got_picture) {
 #ifdef LIBAVCODEC_HAVE_SOURCE_DIR
-            if (DecoderError(_keyRefreshThresh)) {
+            if (DecoderError(m_keyRefreshThresh)) {
                 // ask for an IFrame update, but still show what we've got
-                flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
-                _gotAGoodFrame = false;
+                flags = (m_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+                m_gotAGoodFrame = false;
             }
 #endif
-            TRACE_UP(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
+            TRACE_UP(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << m_avcontext->width << "x" << m_avcontext->height);
             // If the decoding size changes on us, we can catch it and resize
-            if (!_disableResize
-                && (_frameWidth != (unsigned)_avcontext->width
-                   || _frameHeight != (unsigned)_avcontext->height))
+            if (!m_disableResize
+                && (m_frameWidth != (unsigned)m_avcontext->width
+                   || m_frameHeight != (unsigned)m_avcontext->height))
             {
                 // Set the decoding width to what avcodec says it is
-                _frameWidth  = _avcontext->width;
-                _frameHeight = _avcontext->height;
+                m_frameWidth  = m_avcontext->width;
+                m_frameHeight = m_avcontext->height;
                 // Set dynamic settings (framesize), restart as needed
                 SetDynamicDecodingParams(true);
                 return true;
             }
 
             // it's stride time
-            int frameBytes = (_frameWidth * _frameHeight * 3) / 2;
+            int frameBytes = (m_frameWidth * m_frameHeight * 3) / 2;
             PluginCodec_Video_FrameHeader * header
                 = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
             header->x = header->y = 0;
-            header->width = _frameWidth;
-            header->height = _frameHeight;
+            header->width = m_frameWidth;
+            header->height = m_frameHeight;
             unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
             for (int i=0; i<3; i ++) {
-                unsigned char *srcData = _avpicture->data[i];
-                int dst_stride = i ? _frameWidth >> 1 : _frameWidth;
-                int src_stride = _avpicture->linesize[i];
-                int h = i ? _frameHeight >> 1 : _frameHeight;
+                unsigned char *srcData = m_avpicture->data[i];
+                int dst_stride = i ? m_frameWidth >> 1 : m_frameWidth;
+                int src_stride = m_avpicture->linesize[i];
+                int h = i ? m_frameHeight >> 1 : m_frameHeight;
                 if (src_stride==dst_stride) {
                     memcpy(dstData, srcData, dst_stride*h);
                     dstData += dst_stride*h;
@@ -1580,15 +1583,15 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             dstRTP.SetMarker(true);
             dstLen = dstRTP.GetFrameLen();
             flags = PluginCodec_ReturnCoderLastFrame;
-            _gotAGoodFrame = true;
+            m_gotAGoodFrame = true;
         }
         else {
             TRACE(1, "MPEG4\tDecoder\tDecoded "<< len << " bytes without getting a Picture..."); 
             // decoding error, ask for an IFrame update
-            flags = (_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
-            _gotAGoodFrame = false;
+            flags = (m_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
+            m_gotAGoodFrame = false;
         }
-        _lastPktOffset = 0;
+        m_lastPktOffset = 0;
     }
     return true;
 }
@@ -1607,7 +1610,7 @@ static void * create_decoder(const struct PluginCodec_Definition *)
 // This is assuming the second param is the context...
 static int decoder_set_options(
       const struct PluginCodec_Definition *, 
-      void * _context , 
+      void * m_context , 
       const char *, 
       void * parm, 
       unsigned * parmLen)
@@ -1615,7 +1618,7 @@ static int decoder_set_options(
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
 
-  MPEG4DecoderContext * context = (MPEG4DecoderContext *)_context;
+  MPEG4DecoderContext * context = (MPEG4DecoderContext *)m_context;
 
   // This checks if any of the following options have been passed:
   // 1) get the "Frame Width" media format parameter and let the decoder know
@@ -1644,27 +1647,27 @@ static int decoder_set_options(
   return 1;
 }
 
-static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
+static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * m_context)
 {
-  MPEG4DecoderContext * context = (MPEG4DecoderContext *)_context;
+  MPEG4DecoderContext * context = (MPEG4DecoderContext *)m_context;
   delete context;
 }
 
 static int codec_decoder(const struct PluginCodec_Definition *, 
-                                           void * _context,
+                                           void * m_context,
                                      const void * from, 
                                        unsigned * fromLen,
                                            void * to,         
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  MPEG4DecoderContext * context = (MPEG4DecoderContext *)_context;
+  MPEG4DecoderContext * context = (MPEG4DecoderContext *)m_context;
   return context->DecodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
 }
 
-static int decoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void * _context, const char *, void *, unsigned *)
+static int decoder_get_output_data_size(const PluginCodec_Definition * /*codec*/, void * m_context, const char *, void *, unsigned *)
 {
-  MPEG4DecoderContext * context = (MPEG4DecoderContext *) _context;
+  MPEG4DecoderContext * context = (MPEG4DecoderContext *) m_context;
   return sizeof(PluginCodec_Video_FrameHeader) + (context->GetFrameBytes() * 3 / 2);
 }
 

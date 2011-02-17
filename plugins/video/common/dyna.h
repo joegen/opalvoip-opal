@@ -54,26 +54,26 @@ class DynaLink
     typedef void (*Function)();
 
     DynaLink()
-    { _hDLL = NULL; }
+    { m_hDLL = NULL; }
 
     ~DynaLink()
     { Close(); }
 
     virtual bool IsLoaded() const
-    { return _hDLL != NULL; }
+    { return m_hDLL != NULL; }
 
     virtual bool Open(const char *name);
     bool InternalOpen(const char * dir, const char *name);
     virtual void Close();
     bool GetFunction(const char * name, Function & func);
     
-    char _codecString [32];
+    char m_codecString [32];
 
   protected:
 #if defined(_WIN32)
-    HINSTANCE _hDLL;
+    HINSTANCE m_hDLL;
 #else
-    void * _hDLL;
+    void * m_hDLL;
 #endif /* _WIN32 */
 };
 
@@ -112,11 +112,11 @@ class FFMPEGLibrary
     CriticalSection processLock;
 
   protected:
-    DynaLink libAvcodec;
-    DynaLink libAvutil;
+    DynaLink m_libAvcodec;
+    DynaLink m_libAvutil;
 
-    CodecID _codec;
-    char _codecString [32];
+    CodecID m_codec;
+    char m_codecString[32];
 
     void (*Favcodec_init)(void);
     AVCodec *Favcodec_h263_encoder;
@@ -146,7 +146,7 @@ class FFMPEGLibrary
     void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
     int (*Fff_check_alignment)(void);
 
-    bool isLoadedOK;
+    bool m_isLoadedOK;
 };
 
 //////////////////////////////////////////////////////////////////////////////
