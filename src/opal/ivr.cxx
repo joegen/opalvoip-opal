@@ -207,6 +207,10 @@ bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
 
 PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 {
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return false;
+
   PString vxmlToLoad = vxml;
 
   if (vxmlToLoad.IsEmpty() || vxmlToLoad == "*") {
