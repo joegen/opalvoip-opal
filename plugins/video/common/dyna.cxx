@@ -109,11 +109,11 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
 # ifdef UNICODE
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
      USES_CONVERSION;
-    m_hDLL = LoadLibrary(A2T(path));
+    m_hDLL = LoadLibraryEx(A2T(path), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
   });
 # else
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
-    m_hDLL = LoadLibrary(path);
+    m_hDLL = LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
   });
 # endif /* UNICODE */
 #else
