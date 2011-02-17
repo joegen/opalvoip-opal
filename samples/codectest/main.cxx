@@ -912,6 +912,7 @@ void TranscoderThread::Main()
   PUInt64 totalEncodedByteCount = 0;
   PUInt64 skippedFrames = 0;
   PUInt64 totalDroppedPacketCount = 0;
+  PINDEX  largestPacket = 0;
 
   bool oldSrcState = true;
   bool oldOutState = true;
@@ -1104,6 +1105,8 @@ void TranscoderThread::Main()
           ((VideoThread *)this)->CalcVideoPacketStats(encFrames, ((OpalVideoTranscoder *)decoder)->WasLastFrameIFrame());
         RTP_DataFrameList outFrames;
         for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          if (encFrames[i].GetPayloadSize() > largestPacket)
+            largestPacket = encFrames[i].GetPayloadSize();
           bool state = decoder->ConvertFrames(encFrames[i], outFrames);
           if (oldDecState != state) {
             oldDecState = state;
@@ -1221,17 +1224,17 @@ void TranscoderThread::Main()
     cout << totalEncodedByteCount/1000.0 << " k";
   else if (totalEncodedByteCount < 10000000000ULL)
     cout << totalEncodedByteCount /1000000.0 << " M";
-  cout << "bytes,"
-       << totalEncodedPacketCount << " packets,"
+  cout << "bytes\n"
+       << totalEncodedPacketCount << " packets (max "
+       << largestPacket << " bytes)\n"
        << totalInputFrameCount << " frames over " << duration << " seconds at "
-       << (totalInputFrameCount*1000.0/duration.GetMilliSeconds()) << " fps" << endl;
+       << (totalInputFrameCount*1000.0/duration.GetMilliSeconds()) << " fps\n";
 
-  if (m_dropPercent > 0) {
-    cout << totalDroppedPacketCount << " dropped frames(" << totalDroppedPacketCount*100.0/totalEncodedPacketCount << "%)" << endl;
-  }
+  if (m_dropPercent > 0)
+    cout << totalDroppedPacketCount << " dropped frames(" << totalDroppedPacketCount*100.0/totalEncodedPacketCount << "%)\n";
 
-  cout << "Average bit rate = ";
   {
+    cout << "Average bit rate = ";
     PInt64 msecs = duration.GetMilliSeconds();
     if (msecs == 0) 
       cout << "N/A";
@@ -1241,15 +1244,16 @@ void TranscoderThread::Main()
     }
   }
 
-  cout << ",max bit rate = ";
+  cout << ", max bit rate = ";
   if (maximumBitRate == 0)
     cout << "N/A";
-  else {
+  else
     OUTPUT_BPS(cout, maximumBitRate);
-  }
+  cout << '\n';
 
-  cout << "," << skippedFrames << " skipped frames (" << (skippedFrames * 100.0)/totalInputFrameCount << "%)";
-  cout << endl;
+  if (rateController != NULL)
+    cout << "Rate controller skipped " << skippedFrames
+         << " frames (" << (skippedFrames * 100.0)/totalInputFrameCount << "%)\n";
 
   cout << "CPU used: " << cpuTimes << endl;
 
