@@ -1,11 +1,11 @@
 Building and installing H.263-1998
 ==================================
 
-This codec is based on FFMPEG.
+This plugin allows OPAL to use H.263 and H.263 (1998) aka H.263+ video codecs.
 
-For Linux the confugure should find FFMPEG and point the compilation to it.
-You just need to make sure it is installed, using yum or apt-get or
-whatever your distribution needs.
+The plugin uses the FFMPEG library, also known as libavcodec, to encode and
+decode video data. Please follow the instructions in ../common/ReadMe.txt to
+make sure the library is installed for your platform.
 
 
-For Windows, please follow the instructions in ../common/ReadMe.txt
+                                   _o0o_

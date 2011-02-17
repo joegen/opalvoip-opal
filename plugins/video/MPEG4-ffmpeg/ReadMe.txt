@@ -1,64 +1,15 @@
 OPAL MPEG4 plugin
 -----------------
 
-This plugin allows OPAL to use MPEG4 as a high-resolution SIP video codec.
-Resolutions up to 704x480 have been tested. The plugin uses the ffmpeg
-library, also known as libavcodec, to encode and decode MPEG4 data.
+This plugin allows OPAL to use MPEG4 part 2 high-resolution video codec.
 
-The plugin should work with recent versions of the ffmpeg library. The
-following versions are known to work:
-
-  * Subversion checkout r8997 (2007-05-11)
-
-Success or failure reports with other versions would be appreciated -
-please send to the OpenH323 mailing list (openh323@lists.sourceforge.net).
-
-To detect decoder errors caused by packet loss, the plugin uses some of
-ffmpeg's private data structures. Consequently you will need a copy of the
-ffmpeg source tree when building the plugin.
-
-
-Building ffmpeg
----------------
-
-Download the latest ffmpeg sources from SVN following the instructions
-at http://ffmpeg.mplayerhq.hu/ .
-
-Configure and build ffmpeg:
-       $ ./configure --enable-shared
-       $ make
-
-Make sure your compiler is recent: gcc 4.1.1 is known to compile properly,
-while gcc 3.3.5 creates stack alignment problems. In case gcc 3.3.5 has 
-to be used, the plugin may be configured with the 
---enable-ffmpeg-stackalign-hack
-option in order to circumvent these problems.
-
-Many Linux distributions ship with a version of ffmpeg - check for
-/usr/lib/libavcodec.so*. It is best not to replace these with the new
-versions you've compiled. Instead, copy the new versions to a separate
-directory:
-       $ su
-       # mkdir /usr/local/opal-mpeg4
-       # cp -p libavutil/libavutil.so* /usr/local/opal-mpeg4
-       # cp -p libavcodec/libavcodec.so* /usr/local/opal-mpeg4
-
-
-Building the plugin
--------------------
-
-When you configure OPAL, pass the argument
-       --with-libavcodec-source-dir=<path to your ffmpeg source directory>
+The plugin uses the FFMPEG library, also known as libavcodec, to encode and
+decode video data. Please follow the instructions in ../common/ReadMe.txt to
+make sure the library is installed for your platform.
 
 
 Using the plugin
 ----------------
-
-Use the LD_LIBRARY_PATH environment variable to tell the plugin where to
-find the ffmpeg libraries at runtime. For example, if you installed
-libavutil.so.49 and libavcodec.so.51 to /usr/local/opal-mpeg4,
-export LD_LIBRARY_PATH=/usr/local/opal-mpeg4 before running your
-application.
 
 The following settings have been tested together and provide good performance:
 
@@ -117,3 +68,6 @@ Interoperability
 ----------------
 
 This plugins has been tested with linphone and should comply with RFC 3016.
+
+
+                                   _o0o_

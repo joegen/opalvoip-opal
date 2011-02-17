@@ -43,28 +43,13 @@
 #include "plugin-config.h"
 #endif
 
-#include <stdarg.h>
 #include <codec/opalplugin.h>
 
-#ifdef _MSC_VER
- #include "../common/vs-stdint.h"
- #include "../common/critsect.h"
-#else
- #include <stdint.h>
- #include "critsect.h"
-#endif
+#include "critsect.h"
+#include "ffmpeg.h"
 
 #include "shared/h264frame.h"
 
-
-
-extern "C" {
-#ifdef _MSC_VER
-  #include "libavcodec/avcodec.h"
-#else
-  #include LIBAVCODEC_HEADER
-#endif
-};
 
 #define P720_WIDTH 720
 #define P720_HEIGHT 480

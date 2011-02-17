@@ -43,7 +43,7 @@
 
 #define PIPE_TIMEOUT 5000
 #define BUFSIZE 4096
-#define GPL_PROCESS_FILENAME "plugins\\h264_video_pwplugin_helper.exe"
+#define GPL_PROCESS_FILENAME "x264plugin_helper.exe"
 #define DIR_SEPERATOR "\\"
 #define DIR_TOKENISER ";"
 
@@ -256,20 +256,25 @@ void H264EncCtx::flushStream ()
 
 bool H264EncCtx::findGplProcess()
 {
-  char * env = ::getenv("PWLIBPLUGINDIR");
+  static char const DefaultPath[] = "." DIR_TOKENISER "C:\\PTLib_Plugins";
+  char buffer[sizeof(DefaultPath)];
+
+  char * env = ::getenv("PTLIBPLUGINDIR");
   if (env == NULL)
-    env = ::getenv("PTLIBPLUGINDIR");
-  if (env != NULL) {
-    const char * token = strtok(env, DIR_TOKENISER);
-    while (token != NULL) {
-
-      if (checkGplProcessExists(token)) 
-        return true;
-
-      token = strtok(NULL, DIR_TOKENISER);
-    }
+    env = ::getenv("PWLIBPLUGINDIR");
+  if (env == NULL) {
+    strcpy(buffer, DefaultPath);
+    env = buffer;
   }
-  return checkGplProcessExists(".");
+
+  const char * token = strtok(env, DIR_TOKENISER);
+  while (token != NULL) {
+    if (checkGplProcessExists(token))
+      return true;
+    token = strtok(NULL, DIR_TOKENISER);
+  }
+
+  return false;
 }
 
 bool H264EncCtx::checkGplProcessExists (const char * dir)
