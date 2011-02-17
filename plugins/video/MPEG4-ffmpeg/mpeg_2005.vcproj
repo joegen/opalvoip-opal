@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="H.263-1998 (FFMPEG) Video Codec"
-	ProjectGUID="{E75AF717-C8A6-40E7-82CB-80D67CE01611}"
+	Name="MPEG4 part 2 (FFMPEG) Video Codec"
+	ProjectGUID="{D96E9539-B594-4C4B-8782-33A54D990F5F}"
+	RootNamespace="MPEG4 part 2 (FFMPEG) Video Codec"
 	>
 	<Platforms>
 		<Platform
@@ -73,7 +74,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="avcodec.lib avutil.lib"
-				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
+				OutputFile="$(OutDir)/mpeg4_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\common\ffmpeg\lib"
@@ -164,7 +165,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="avcodec.lib avutil.lib"
-				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
+				OutputFile="$(OutDir)/mpeg4_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\common\ffmpeg\lib"
@@ -197,54 +198,25 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying codec and debug information to plug in directory"
-				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins"
 			/>
 		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+		<File
+			RelativePath="..\common\dyna.cxx"
 			>
-			<File
-				RelativePath=".\h263-1998.cxx"
-				>
-			</File>
-			<File
-				RelativePath=".\h263pframe.cxx"
-				>
-			</File>
-			<File
-				RelativePath=".\rfc2190.cxx"
-				>
-			</File>
-			<File
-				RelativePath="..\common\trace.cxx"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Include Files"
+		</File>
+		<File
+			RelativePath=".\mpeg4.cxx"
 			>
-			<File
-				RelativePath=".\h263-1998.h"
-				>
-			</File>
-			<File
-				RelativePath=".\h263pframe.h"
-				>
-			</File>
-			<File
-				RelativePath=".\rfc2190.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tracer.h"
-				>
-			</File>
-		</Filter>
+		</File>
+		<File
+			RelativePath="..\common\trace.cxx"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

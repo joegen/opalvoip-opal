@@ -35,11 +35,11 @@
 
  */
 
-#include "h264-x264.h"
-
 #ifndef _MSC_VER
 #include "plugin-config.h"
 #endif
+
+#include "h264-x264.h"
 
 #ifdef WIN32
 #include "h264pipe_win32.h"
@@ -52,13 +52,6 @@
 #include "rtpframe.h"
 
 #include <stdlib.h>
-#if defined(_WIN32) || defined(_WIN32_WCE)
-  #include <malloc.h>
-  #define STRCMPI  _strcmpi
-#else
-  #include <semaphore.h>
-  #define STRCMPI  strcasecmp
-#endif
 #include <string.h>
 
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H264);

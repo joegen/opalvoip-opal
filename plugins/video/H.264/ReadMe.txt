@@ -3,21 +3,40 @@ Building and installing H.264
 
 This codec is based on FFMPEG and x264.
 
-Note, due to the GPL license for the x264 codec, it cannot be linked to
-directly. So, there is a special program that runs and the plig in talks
-to it via a socket. Stupid, but .....
+Please follow the instructions in ../common/ReadMe.txt to make sure the
+FFMPEG library is installed for your platform.
 
 
-For Linux, the configure should find FFMPEG and point the compilation to it.
-You just need to make sure it is installed, using yum or apt-get or
-whatever your distribution needs.
-
-
-For Windows, please follow the instructions in ../common/ReadMe.txt to get
-FFMPEG installed.
+For Linux
+---------
 
 Then you need to get an x264 snapshot from:
 
-	ftp://ftp.videolan.org/pub/videolan/x264/snapshots/
+    ftp://ftp.videolan.org/pub/videolan/x264/snapshots/
 
-and unpack it into the x264 sub-directory.
+and do the usual:
+
+    tar xf last_x264.tar.bz2
+    cd x246-snaphot*
+    ./configure
+    make
+    sudo make install
+
+Note: make sure yasm is installed.
+
+Then proceed back to OPAL and redo the configure as described in
+../common/ReadMe.txt.
+
+
+For Windows
+-----------
+
+Compiling x264 on Windows is a major pain, go get the precompiled version from
+
+    http://www.h323plus.org/source/download/ffmpeg_x264.zip
+
+and copy the contents to your C:\PTLib_Plugins directory. The plug-in itself
+should compile out of the box, but will not work without the above.
+
+
+                                   _o0o_
