@@ -15,7 +15,7 @@ and do the usual:
 
     tar xf ffmpeg-0.6.1.tar.bz2
     cd ffmpeg-0.6.1
-    ./configure
+    ./configure --enable-shared
     make
     sudo make install
 
