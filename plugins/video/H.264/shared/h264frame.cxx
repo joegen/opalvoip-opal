@@ -101,7 +101,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
   // read the nals out of the encoder and create meta data about their location and size in the frame
   for (currentNAL = 0; currentNAL < numberOfNALs; currentNAL++) {
     int currentNALLen;
-    currentNALLen = X264_NAL_ENCODE(currentPositionInFrame, &vopBufferLen, &NALs[currentNAL]);
+    currentNALLen = X264_NAL_ENCODE(currentPositionInFrame, &vopBufferLen, 1, &NALs[currentNAL]);
     if (currentNALLen > 0) 
     {
       m_NALs[m_numberOfNALsInFrame].length = currentNALLen;

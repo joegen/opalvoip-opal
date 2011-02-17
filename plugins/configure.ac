@@ -432,8 +432,6 @@ AC_ARG_ENABLE([libavcodec],
 
 if test "x$HAVE_LIBAVCODEC" = "xno" ; then
   AC_MSG_RESULT(Manually disabled libavcodec support)
-  HAVE_H263P=no
-  HAVE_MPEG4=no
 else
   PKG_CHECK_MODULES([LIBAVCODEC],
                     [libavcodec >= 51.11.0],
@@ -443,25 +441,17 @@ else
                      AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
                      OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
                      AC_SUBST(LIBAVCODEC_LIB_NAME)
-                     HAVE_LIBAVCODEC=yes
                      OPAL_LIBAVCODEC_HACK
                      case "$target_os" in
                         cygwin* | mingw* ) 
                                            LIBAVCODEC_LIB_NAME="avcodec.dll"
-                                           HAVE_H263P=yes
-                                           HAVE_MPEG4=yes
-                                           ;;
-                                       * ) 
-                                           AC_CHECK_LIB(avcodec, h263p_encoder, [HAVE_H263P=yes], [HAVE_H263P=no])
-                                           AC_CHECK_LIB(avcodec, mpeg4_encoder, [HAVE_MPEG4=yes], [HAVE_MPEG4=no])
                                            ;;
                      esac
                      OPAL_LIBAVCODEC_HEADER
+                     HAVE_LIBAVCODEC=yes
                     ],
                     [
                      HAVE_LIBAVCODEC=no
-                     HAVE_H263P=no
-                     HAVE_MPEG4=no
                     ]
                    )
 fi
@@ -494,12 +484,12 @@ AC_SUBST(HAVE_LIBAVCODEC)
 AC_SUBST(LIBAVCODEC_SOURCE_DIR)
 AC_SUBST(HAVE_LIBAVCODEC_RTP_MODE)
 
-if test "x${HAVE_H263P}" = "xyes"; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
   AC_CONFIG_FILES(video/H.263-1998/Makefile)
   SUBDIRS+=" video/H.263-1998"
 fi
 
-if test "x${HAVE_MPEG4}" = "xyes"; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
   AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
   SUBDIRS+=" video/MPEG4-ffmpeg"
 fi
@@ -508,7 +498,7 @@ fi
 dnl     ########################
 dnl     x264
 dnl     ########################
-if test -d audio/H.264/gpl ; then
+if test -d video/H.264/gpl ; then
   AC_ARG_ENABLE([x264],
                 [AC_HELP_STRING([--disable-x264],[disable x264 support])],
                 [HAVE_H264=$enableval],
@@ -542,6 +532,7 @@ AC_SUBST(DL_LIBS)
 AC_SUBST(X264_LINK_STATIC)
 
 if test "x$HAVE_H264" = "xyes" ; then
+  AC_CONFIG_FILES(video/H.264/Makefile)
   AC_CONFIG_FILES(video/H.264/gpl/Makefile)
   SUBDIRS+=" video/H.264"
 fi
@@ -729,11 +720,11 @@ echo "                             SILK :  ${HAVE_SILK}"
 echo ""
 
 echo "                           H.261  :  ${HAVE_H261} (vic)"
-echo "                     H.263/H.263+ :  ${HAVE_H263P} (ffmpeg)"
+echo "                     H.263/H.263+ :  ${HAVE_LIBAVCODEC} (ffmpeg)"
 echo "                           H.264  :  ${HAVE_H264} (x264)"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
-if test "x${HAVE_MPEG4}" = "xyes" ; then
+if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
 if test "x${LIBAVCODEC_SOURCE_DIR}" = "x" ; then
 echo "                    MPEG4 Part 2  :  yes (no rate control correction)"
 else
