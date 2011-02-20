@@ -56,6 +56,7 @@
 #include <ptclib/url.h>
 
 #include "../../version.h"
+#include "../../revision.h"
 
 
 static const char * const DefaultMediaFormatOrder[] = {
@@ -104,7 +105,7 @@ PString OpalGetVersion()
 #define BetaCode    "beta"
 #define ReleaseCode "."
 
-  return psprintf("%u.%u%s%u", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER);
+  return psprintf("%u.%u%s%u (svn:%u)", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER, SVN_REVISION);
 }
 
 

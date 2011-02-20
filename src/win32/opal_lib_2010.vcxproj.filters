@@ -947,9 +947,15 @@
     <ClInclude Include="..\..\include\opal\buildopts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\revision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal\buildopts.h.in">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\revision.h.in">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
