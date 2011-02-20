@@ -467,6 +467,7 @@
     <ClInclude Include="..\..\include\t38\h323t38.h" />
     <ClInclude Include="..\..\include\t38\sipt38.h" />
     <ClInclude Include="..\..\include\t38\t38proto.h" />
+    <ClInclude Include="..\..\revision.h" />
     <ClInclude Include="..\lids\capi_linux.h" />
     <ClInclude Include="..\lids\capi_win32.h" />
   </ItemGroup>
@@ -495,6 +496,21 @@ configure --no-search --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLI
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\configure.ac" />
+    <CustomBuild Include="..\..\revision.h.in">
+      <FileType>Document</FileType>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory).svn\entries</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory).svn\entries</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory).svn\entries</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Checking SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Checking SVN revision include file.</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Checking SVN revision include file.</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+    </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />
     <None Include="..\asn\h235.asn" />
