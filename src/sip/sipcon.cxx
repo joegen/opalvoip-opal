@@ -3121,7 +3121,7 @@ void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
   PSafeLockReadWrite safeLock(*this);
   if (safeLock.IsLocked() && originalInvite != NULL && !m_responsePackets.empty()) {
     PTRACE(3, "SIP\t" << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
-           << " not received yet, retry sending response.");
+           << " not received yet, retry " << m_responseRetryCount << " sending response for " << *this);
 
     PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++m_responseRetryCount);
     if (timeout > endpoint.GetRetryTimeoutMax())
@@ -3137,11 +3137,17 @@ void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
   if (safeLock.IsLocked() && !m_responsePackets.empty()) {
-    PTRACE(1, "SIP\tFailed to receive " << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK"));
+    PTRACE(1, "SIP\tFailed to receive "
+           << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
+           << " for " << *this);
 
     m_responseRetryTimer.Stop();
 
-    if (IsReleased()) {
+    // Clear out pending responses if we are releasing, just die now.
+    while (!m_responsePackets.empty())
+      m_responsePackets.pop();
+
+    if (!IsReleased()) {
       if (m_responsePackets.front().GetStatusCode() < 200)
         SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
       else {
