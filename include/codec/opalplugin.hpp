@@ -49,34 +49,40 @@
 #endif
 
 #if PLUGINCODEC_TRACING
-  static PluginCodec_LogFunction PluginCodec_LogFunctionInstance;
+  extern PluginCodec_LogFunction PluginCodec_LogFunctionInstance;
 
-  static int PluginCodec_SetLogFunction(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len)
-  {
-    if (len == NULL || *len != sizeof(PluginCodec_LogFunction))
-      return false;
+#define PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF \
+  PluginCodec_LogFunction PluginCodec_LogFunctionInstance; \
+  static int PluginCodec_SetLogFunction(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len) \
+  { \
+    if (len == NULL || *len != sizeof(PluginCodec_LogFunction)) \
+      return false; \
+ \
+    PluginCodec_LogFunctionInstance = (PluginCodec_LogFunction)parm; \
+    if (PluginCodec_LogFunctionInstance != NULL) \
+      PluginCodec_LogFunctionInstance(4, __FILE__, __LINE__, "Plugin", "Started logging."); \
+ \
+    return true; \
+  } \
 
-    PluginCodec_LogFunctionInstance = (PluginCodec_LogFunction)parm;
-    if (PluginCodec_LogFunctionInstance != NULL)
-      PluginCodec_LogFunctionInstance(4, __FILE__, __LINE__, "Plugin", "Started logging.");
-
-    return true;
-  }
-
-  #define PLUGINCODEC_CONTROL_LOG_FUNCTION { PLUGINCODEC_CONTROL_SET_LOG_FUNCTION, PluginCodec_SetLogFunction },
+  #define PLUGINCODEC_CONTROL_LOG_FUNCTION_INC { PLUGINCODEC_CONTROL_SET_LOG_FUNCTION, PluginCodec_SetLogFunction },
 #else
-  #define PLUGINCODEC_CONTROL_LOG_FUNCTION
+  #define PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+  #define PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
 #endif
 
 #if !defined(PTRACE)
   #if PLUGINCODEC_TRACING
     #include <sstream>
+    #define PTRACE_CHECK(level) \
+        (PluginCodec_LogFunctionInstance != NULL && PluginCodec_LogFunctionInstance(level, NULL, 0, NULL, NULL))
     #define PTRACE(level, section, args) \
-      if (PluginCodec_LogFunctionInstance != NULL && PluginCodec_LogFunctionInstance(level, NULL, 0, NULL, NULL)) { \
+      if (PTRACE_CHECK(level)) { \
         std::ostringstream strm; strm << args; \
         PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, section, strm.str().c_str()); \
       } else (void)0
   #else
+    #define PTRACE_CHECK(level)
     #define PTRACE(level, section, expr)
   #endif
 #endif
@@ -461,6 +467,7 @@ class PluginCodec
 
 
 #define PLUGINCODEC_DEFINE_CONTROL_TABLE(name) \
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF \
   static PluginCodec_ControlDefn name[] = { \
     { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  PluginCodec::GetOutputDataSize }, \
     { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised }, \
@@ -468,7 +475,7 @@ class PluginCodec
     { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions }, \
     { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions }, \
     { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions }, \
-    PLUGINCODEC_CONTROL_LOG_FUNCTION \
+    PLUGINCODEC_CONTROL_LOG_FUNCTION_INC \
     { NULL } \
   }
 

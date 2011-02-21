@@ -37,13 +37,8 @@
 //#define SEND_STAP_PACKETS 1
 
 
-#ifdef _MSC_VER
-#include "../../common/vs-stdint.h"
-#include "../../common/rtpframe.h"
-#else
-#include <stdint.h>
+#include "ffmpeg.h"
 #include "rtpframe.h"
-#endif
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
 #define H264_NAL_TYPE_DP_A_SLICE 2

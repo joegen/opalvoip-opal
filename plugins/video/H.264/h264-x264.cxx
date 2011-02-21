@@ -48,7 +48,6 @@
 #endif
 
 #include "dyna.h"
-#include "trace.h"
 #include "rtpframe.h"
 
 #include <stdlib.h>
@@ -73,12 +72,32 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
     vsprintf(buffer + strlen(buffer), fmt, arg);
     if (strlen(buffer) > 0)
       buffer[strlen(buffer)-1] = 0;
-    if (severity == 4)
-      { TRACE_UP (severity, buffer); }
-    else
-      { TRACE (severity, buffer); }
+    PTRACE(severity, "H.264", buffer);
   }
 }
+
+
+static bool InitLibs()
+{
+  if (!FFMPEGLibraryInstance.IsLoaded()) {
+    if (!FFMPEGLibraryInstance.Load()) {
+      PTRACE(1, "H264", "Codec\tDisabled");
+      return false;
+    }
+    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+    FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
+  }
+
+  if (!H264EncCtxInstance.isLoaded()) {
+    if (!H264EncCtxInstance.Load()) {
+      PTRACE(1, "H264", "Codec\tDisabled");
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 static char * num2str(int num)
 {
@@ -89,6 +108,9 @@ static char * num2str(int num)
 
 H264EncoderContext::H264EncoderContext()
 {
+  if (!InitLibs())
+    return;
+
   H264EncCtxInstance.call(H264ENCODERCONTEXT_CREATE);
 }
 
@@ -171,7 +193,8 @@ void H264EncoderContext::Unlock ()
 
 H264DecoderContext::H264DecoderContext()
 {
-  if (!FFMPEGLibraryInstance.IsLoaded()) return;
+  if (!InitLibs())
+    return;
 
   _gotIFrame = false;
   _gotAGoodFrame = false;
@@ -180,29 +203,29 @@ H264DecoderContext::H264DecoderContext()
   _rxH264Frame = new H264Frame();
 
   if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H264)) == NULL) {
-    TRACE(1, "H264\tDecoder\tCodec not found for decoder");
+    PTRACE(1, "H264", "Decoder\tCodec not found for decoder");
     return;
   }
 
   _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
-    TRACE(1, "H264\tDecoder\tFailed to allocate context for decoder");
+    PTRACE(1, "H264", "Decoder\tFailed to allocate context for decoder");
     return;
   }
 
   _outputFrame = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_outputFrame == NULL) {
-    TRACE(1, "H264\tDecoder\tFailed to allocate frame for encoder");
+    PTRACE(1, "H264", "Decoder\tFailed to allocate frame for encoder");
     return;
   }
 
   if (FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) < 0) {
-    TRACE(1, "H264\tDecoder\tFailed to open H.264 decoder");
+    PTRACE(1, "H264", "Decoder\tFailed to open H.264 decoder");
     return;
   }
   else
   {
-    TRACE(1, "H264\tDecoder\tDecoder successfully opened");
+    PTRACE(1, "H264", "Decoder\tDecoder successfully opened");
   }
 }
 
@@ -215,7 +238,7 @@ H264DecoderContext::~H264DecoderContext()
       if (_context->codec != NULL)
       {
         FFMPEGLibraryInstance.AvcodecClose(_context);
-        TRACE(4, "H264\tDecoder\tClosed H.264 decoder, decoded " << _frameCounter << " Frames, skipped " << _skippedFrameCounter << " Frames" );
+        PTRACE(4, "H264", "Decoder\tClosed H.264 decoder, decoded " << _frameCounter << " Frames, skipped " << _skippedFrameCounter << " Frames" );
       }
     }
 
@@ -251,21 +274,21 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   if (_rxH264Frame->GetFrameSize()==0)
   {
     _rxH264Frame->BeginNewFrame();
-    TRACE(4, "H264\tDecoder\tGot an empty frame - skipping");
+    PTRACE(4, "H264", "Decoder\tGot an empty frame - skipping");
     _skippedFrameCounter++;
     flags = (_gotAGoodFrame ? requestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
   }
 
-  TRACE_UP(4, "H264\tDecoder\tDecoding " << _rxH264Frame->GetFrameSize()  << " bytes");
+  PTRACE(4, "H264", "Decoder\tDecoding " << _rxH264Frame->GetFrameSize()  << " bytes");
 
   // look and see if we have read an I frame.
   if (_gotIFrame == 0)
   {
     if (!_rxH264Frame->IsSync())
     {
-      TRACE(1, "H264\tDecoder\tWaiting for an I-Frame");
+      PTRACE(1, "H264", "Decoder\tWaiting for an I-Frame");
       _rxH264Frame->BeginNewFrame();
       flags = (_gotAGoodFrame ? requestIFrame : 0);
       _gotAGoodFrame = false;
@@ -281,14 +304,14 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   _rxH264Frame->BeginNewFrame();
   if (!gotPicture) 
   {
-    TRACE(1, "H264\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
+    PTRACE(1, "H264", "Decoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
     _skippedFrameCounter++;
     flags = (_gotAGoodFrame ? requestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
   }
 
-  TRACE_UP(4, "H264\tDecoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
+  PTRACE(4, "H264", "Decoder\tDecoded " << bytesDecoded << " bytes"<< ", Resolution: " << _context->width << "x" << _context->height);
   int frameBytes = (_context->width * _context->height * 3) / 2;
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
   header->x = header->y = 0;
@@ -347,6 +370,9 @@ static int get_codec_options(const struct PluginCodec_Definition * codec,
                                                   void * parm,
                                                   unsigned * parmLen)
 {
+  if (!InitLibs())
+    return false;
+
     if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
         return 0;
 
@@ -426,7 +452,7 @@ static int adjust_bitrate_to_level (unsigned & targetBitrate, unsigned level, in
     }
   
     if (!h264_levels[i].level_idc) {
-      TRACE(1, "H264\tCap\tIllegal Level negotiated");
+      PTRACE(1, "H264", "Cap\tIllegal Level negotiated");
       return 0;
     }
   }
@@ -434,7 +460,7 @@ static int adjust_bitrate_to_level (unsigned & targetBitrate, unsigned level, in
     i = idx;
 
 // Correct Target Bitrate
-  TRACE(4, "H264\tCap\tBitrate: " << targetBitrate << "(" << h264_levels[i].bitrate << ")");
+  PTRACE(4, "H264", "Cap\tBitrate: " << targetBitrate << "(" << h264_levels[i].bitrate << ")");
   if (targetBitrate > h264_levels[i].bitrate)
     targetBitrate = h264_levels[i].bitrate;
 
@@ -451,14 +477,14 @@ static int adjust_to_level (unsigned & width, unsigned & height, unsigned & fram
   }
 
   if (!h264_levels[i].level_idc) {
-    TRACE(1, "H264\tCap\tIllegal Level negotiated");
+    PTRACE(1, "H264", "Cap\tIllegal Level negotiated");
     return 0;
   }
 
 // Correct max. number of macroblocks per frame
   uint32_t nbMBsPerFrame = width * height / 256;
   unsigned j = 0;
-  TRACE(4, "H264\tCap\tFrame Size: " << nbMBsPerFrame << "(" << h264_levels[i].frame_size << ")");
+  PTRACE(4, "H264", "Cap\tFrame Size: " << nbMBsPerFrame << "(" << h264_levels[i].frame_size << ")");
   if    ( (nbMBsPerFrame          > h264_levels[i].frame_size)
        || (width  * width  / 2048 > h264_levels[i].frame_size)
        || (height * height / 2048 > h264_levels[i].frame_size) ) {
@@ -471,7 +497,7 @@ static int adjust_to_level (unsigned & width, unsigned & height, unsigned & fram
       j++; 
     }
     if (!h264_resolutions[j].width) {
-      TRACE(1, "H264\tCap\tNo Resolution found that has number of macroblocks <=" << h264_levels[i].frame_size);
+      PTRACE(1, "H264", "Cap\tNo Resolution found that has number of macroblocks <=" << h264_levels[i].frame_size);
       return 0;
     }
     else {
@@ -482,7 +508,7 @@ static int adjust_to_level (unsigned & width, unsigned & height, unsigned & fram
 
 // Correct macroblocks per second
   uint32_t nbMBsPerSecond = width * height / 256 * (90000 / frameTime);
-  TRACE(4, "H264\tCap\tMB/s: " << nbMBsPerSecond << "(" << h264_levels[i].mbps << ")");
+  PTRACE(4, "H264", "Cap\tMB/s: " << nbMBsPerSecond << "(" << h264_levels[i].mbps << ")");
   if (nbMBsPerSecond > h264_levels[i].mbps)
     frameTime =  (unsigned) (90000 / 256 * width  * height / h264_levels[i].mbps );
 
@@ -542,7 +568,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
         targetBitrate = atoi(option[1]);
   }
 
-  TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
+  PTRACE(4, "H264", "Cap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
 
   // Though this is not a strict requirement we enforce 
   //it here in order to obtain optimal compression results
@@ -638,7 +664,7 @@ static int encoder_set_options(
         context->SetTSTO (atoi(options[i+1]));
 
     }
-    TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
+    PTRACE(4, "H264", "Cap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
 
     if (!adjust_bitrate_to_level (targetBitrate, level)) {
       context->Unlock();
@@ -740,7 +766,7 @@ static int merge_profile_level_h264(char ** result, const char * dst, const char
   
   *result = strdup(buffer);
 
-  TRACE(4, "H264\tCap\tCustom merge profile-level: " << src << " and " << dst << " to " << *result);
+  PTRACE(4, "H264", "Cap\tCustom merge profile-level: " << src << " and " << dst << " to " << *result);
 
   return true;
 }
@@ -776,7 +802,7 @@ static int merge_packetization_mode(char ** result, const char * dst, const char
   
   *result = strdup(buffer);
 
-  TRACE(4, "H264\tCap\tCustom merge packetization-mode: " << src << " and " << dst << " to " << *result);
+  PTRACE(4, "H264", "Cap\tCustom merge packetization-mode: " << src << " and " << dst << " to " << *result);
 
 //  if (dstInt > 0)
     return 1;
@@ -797,50 +823,14 @@ PLUGIN_CODEC_IMPLEMENT(H264)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-  if (debug_level!=NULL) {
-    Trace::SetLevel(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevel(0);
-  }
-
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-  if (debug_level!=NULL) {
-    Trace::SetLevelUserPlane(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
-  if (!FFMPEGLibraryInstance.Load()) {
-    *count = 0;
-    TRACE(1, "H264\tCodec\tDisabled");
-    return NULL;
-  }
-
-  if (!H264EncCtxInstance.isLoaded()) {
-    if (!H264EncCtxInstance.Load()) {
-      *count = 0;
-      TRACE(1, "H264\tCodec\tDisabled");
-      return NULL;
-    }
-  }
-
-  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
-  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
-
   if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
-    TRACE(1, "H264\tCodec\tDisabled - plugin version mismatch");
+    PTRACE(1, "H264", "Codec\tDisabled - plugin version mismatch");
     return NULL;
   }
-  else {
-    *count = sizeof(h264CodecDefn) / sizeof(struct PluginCodec_Definition);
-    TRACE(1, "H264\tCodec\tEnabled");
-    return h264CodecDefn;
-  }
-  
+
+  *count = sizeof(h264CodecDefn) / sizeof(struct PluginCodec_Definition);
+  PTRACE(1, "H264", "Codec\tEnabled");
+  return h264CodecDefn;
 }
 };
