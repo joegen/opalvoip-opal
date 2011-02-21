@@ -192,18 +192,31 @@ static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list a
     return;
 
   int level;
-  switch (severity) {
-    case AV_LOG_QUIET: level = 0; break;
-    case AV_LOG_ERROR: level = 1; break;
-    case AV_LOG_INFO:  level = 4; break;
-    case AV_LOG_DEBUG: level = 4; break;
-    default:           level = 4; break;
-  }
+  if (severity <= AV_LOG_FATAL)
+    level = 0;
+  else if (severity <= AV_LOG_ERROR)
+    level = 1;
+  else if (severity <= AV_LOG_WARNING)
+    level = 2;
+  else if (severity <= AV_LOG_INFO)
+    level = 3;
+  else if (severity <= AV_LOG_VERBOSE)
+    level = 4;
+  else
+    level = 5;
 
   if (PTRACE_CHECK(level)) {
     char buffer[512];
-    vsnprintf(buffer, sizeof(buffer), fmt, arg);
-    PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "FFMPEG", buffer);
+    int len = vsnprintf(buffer, sizeof(buffer), fmt, arg);
+    if (len > 0) {
+      // Drop extra trailing line feed
+      --len;
+      if (buffer[len] == '\n')
+        buffer[len] = '\0';
+      // Check for bogus error from H.263, everything works so what does this mean?
+      if (strncmp(buffer, "Too many slices", 15) != 0)
+        PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "FFMPEG", buffer);
+    }
   }
 }
 #endif
@@ -517,10 +530,7 @@ int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *g
   char dummy[16];
 
   WITH_ALIGNED_STACK({
-    int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
-
-    PTRACE(4, m_codecString, "DYNA\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
-    return res;
+    return Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
   });
 }
 

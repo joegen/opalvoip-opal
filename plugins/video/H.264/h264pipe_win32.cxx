@@ -72,6 +72,8 @@ H264EncCtx::~H264EncCtx()
 
 bool H264EncCtx::Load()
 {
+  if (loaded)
+    return true;
 
   snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d", GetCurrentProcessId());
 
