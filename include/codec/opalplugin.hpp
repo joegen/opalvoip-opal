@@ -113,6 +113,12 @@ class PluginCodec_MediaFormat
     }
 
 
+    virtual bool IsValidForProtocol(const char * /*protocol*/)
+    {
+      return true;
+    }
+
+
     bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed))
     {
       if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
@@ -457,6 +463,16 @@ class PluginCodec
              codec != NULL && codec->SetOptions((const char * const *)parm);
     }
 
+    static int ValidForProtocol(const PluginCodec_Definition * defn, 
+                                 void *,
+                                 const char * , 
+                                 void * parm, 
+                                 unsigned * len)
+    {
+      return len != NULL && *len == sizeof(const char *) && parm != NULL && defn->userData != NULL &&
+             ((PluginCodec_MediaFormat *)defn->userData)->IsValidForProtocol((const char *)parm);
+    }
+
   protected:
     const PluginCodec_Definition * m_definition;
 
@@ -475,6 +491,7 @@ class PluginCodec
     { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions }, \
     { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions }, \
     { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions }, \
+    { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol }, \
     PLUGINCODEC_CONTROL_LOG_FUNCTION_INC \
     { NULL } \
   }

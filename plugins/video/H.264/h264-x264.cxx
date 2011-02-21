@@ -50,11 +50,14 @@
 #endif
 
 
-#define MY_CODEC   x264                                     // Name of codec (use C variable characters)
+#define MY_CODEC      x264                                  // Name of codec (use C variable characters)
+#define MY_CODEC_LOG "x264"
 
 static unsigned   MyVersion = PLUGIN_CODEC_VERSION_OPTIONS; // Minimum version for codec (should never change)
 static const char MyDescription[] = "x264 Video Codec";     // Human readable description of codec
-static const char MyFormatName[] = "H.264";                 // OpalMediaFormat name string to generate
+static const char FormatNameH323[] = "H.264";               // OpalMediaFormat name string to generate
+static const char FormatNameSIP0[] = "H.264-0";             // OpalMediaFormat name string to generate
+static const char FormatNameSIP1[] = "H.264-1";             // OpalMediaFormat name string to generate
 static const char MyPayloadName[] = "h264";                 // RTP payload name (IANA approved)
 static unsigned   MyClockRate = 90000;                      // RTP dictates 90000
 static unsigned   MyMaxFrameRate = 60;                      // Maximum frame rate (per second)
@@ -531,7 +534,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
         ++i;
       maxWidth = MaxVideoResolutions[i].m_width;
       maxHeight = MaxVideoResolutions[i].m_height;
-      PTRACE(5, MyFormatName, "Reduced max resolution to " << maxWidth << 'x' << maxHeight
+      PTRACE(5, MY_CODEC_LOG, "Reduced max resolution to " << maxWidth << 'x' << maxHeight
                  << " (" << macroBlocks << '>' << maxFrameSize << ')');
       macroBlocks = MaxVideoResolutions[i].m_macroblocks;
     }
@@ -577,7 +580,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
     else {
       std::string sdpProfLevel = original[NameSDPProfileAndLevel];
       if (sdpProfLevel.length() < 6) {
-        PTRACE(1, MyFormatName, "SDP profile-level-id field illegal.");
+        PTRACE(1, MY_CODEC_LOG, "SDP profile-level-id field illegal.");
         return false;
       }
 
@@ -646,7 +649,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
       if (str == LevelInfo[levelIndex].m_Name)
         break;
     }
-    PTRACE(5, MyFormatName, "Level \"" << str << "\" selected index " << levelIndex);
+    PTRACE(5, MY_CODEC_LOG, "Level \"" << str << "\" selected index " << levelIndex);
 
     /* While we have selected the desired level, we may need to adjust it
        further due to resolution restrictions. This is due to the fact that
@@ -660,7 +663,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
       while (levelIndex > 0 && maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
         --levelIndex;
     }
-    PTRACE(5, MyFormatName, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
+    PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
 
     unsigned bitRate = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_BIT_RATE]);
     if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
@@ -746,7 +749,7 @@ class MyEncoder : public PluginCodec
         return true;
       }
 
-      PTRACE(1, MyFormatName, "Could not open encoder.");
+      PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
       return true;
     }
 
@@ -818,7 +821,7 @@ class MyEncoder : public PluginCodec
 
     bool SetPacketisationMode(unsigned mode)
     {
-      PTRACE(4, MyFormatName, "Setting NALU " << (mode == 0 ? "aligned" : "fragmentation") << " mode.");
+      PTRACE(4, MY_CODEC_LOG, "Setting NALU " << (mode == 0 ? "aligned" : "fragmentation") << " mode.");
 
       if (mode > 2) // Or 3 if support interleaved mode
         return false; // Unknown/unsupported packetization mode
@@ -1039,7 +1042,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameH323,                     // destination format
 
     &MyMediaFormatInfo,                 // user data 
 
@@ -1074,7 +1077,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameH323,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo,                 // user data 
@@ -1111,7 +1114,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameSIP1,                     // destination format
 
     &MyMediaFormatInfo_1,               // user data 
 
@@ -1146,7 +1149,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameSIP1,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo_1,               // user data 
@@ -1183,7 +1186,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameSIP0,                     // destination format
 
     &MyMediaFormatInfo_0,               // user data 
 
@@ -1218,7 +1221,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameSIP0,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo_0,               // user data 

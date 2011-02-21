@@ -39,7 +39,9 @@
 
 static unsigned   MyVersion = PLUGIN_CODEC_VERSION_OPTIONS; // Minimum version for codec (should never change)
 static const char MyDescription[] = "My H.264 Video Codec"; // Human readable description of codec
-static const char MyFormatName[] = "My-H.264";              // OpalMediaFormat name string to generate
+static const char FormatNameH323[] = "H.264";               // OpalMediaFormat name string to generate
+static const char FormatNameSIP0[] = "H.264-0";             // OpalMediaFormat name string to generate
+static const char FormatNameSIP1[] = "H.264-1";             // OpalMediaFormat name string to generate
 static const char MyPayloadName[] = "h264";                 // RTP payload name (IANA approved)
 static unsigned   MyClockRate = 90000;                      // RTP dictates 90000
 static unsigned   MyMaxFrameRate = 60;                      // Maximum frame rate (per second)
@@ -917,7 +919,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameH323,                     // destination format
 
     &MyMediaFormatInfo,                 // user data 
 
@@ -952,7 +954,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameH323,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo,                 // user data 
@@ -989,7 +991,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameSIP1,                     // destination format
 
     &MyMediaFormatInfo_1,               // user data 
 
@@ -1024,7 +1026,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameSIP1,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo_1,               // user data 
@@ -1061,7 +1063,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
 
     MyDescription,                      // text decription
     YUV420PFormatName,                  // source format
-    MyFormatName,                       // destination format
+    FormatNameSIP0,                     // destination format
 
     &MyMediaFormatInfo_0,               // user data 
 
@@ -1096,7 +1098,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
     MyDescription,                      // text decription
-    MyFormatName,                       // source format
+    FormatNameSIP0,                     // source format
     YUV420PFormatName,                  // destination format
 
     &MyMediaFormatInfo_0,               // user data 
