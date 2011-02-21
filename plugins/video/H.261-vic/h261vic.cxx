@@ -61,7 +61,7 @@
 #include "plugin-config.h"
 #endif
 
-#include <codec/opalplugin.h>
+#include <codec/opalplugin.hpp>
 
 
 #if defined (_WIN32) || defined (_WIN32_WCE)
@@ -108,12 +108,6 @@ typedef unsigned int u_int;
 #ifdef _WIN32
   #undef min
   #undef max
-#endif
-
-#ifdef _MSC_VER
-   #include "../common/trace.h"
-#else
-   #include "trace.h"
 #endif
 
 
@@ -227,7 +221,7 @@ class H261EncoderContext
 				  , 1.0);
 	videoQuality = std::max ((int)( floor ( tsto / factor)), 1); 
       } 
-      TRACE(4, "H261\tf(tsto=" << tsto << ", bitrate=" << bitrate << ", width=" << width <<", height=" << height << ")=" << videoQuality);
+      PTRACE(4, "H261", "f(tsto=" << tsto << ", bitrate=" << bitrate << ", width=" << width <<", height=" << height << ")=" << videoQuality);
     }
 
     int EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -265,25 +259,25 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
 
       // get and validate header
       if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
-        TRACE(1,"H261\tVideo grab too small");
+        PTRACE(1,"H261", "Video grab too small");
         return 0;
       } 
 
       PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
       if (header->x != 0 && header->y != 0) {
-        TRACE(1,"H261\tVideo grab of partial frame unsupported");
+        PTRACE(1,"H261", "Video grab of partial frame unsupported");
         return 0;
       }
 
       // make sure the incoming frame is big enough for the specified frame size
       if (srcRTP.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + frameWidth*frameHeight*12/8)) {
-        TRACE(1,"H261\tPayload of grabbed frame too small for full frame");
+        PTRACE(1,"H261", "Payload of grabbed frame too small for full frame");
         return 0;
       }
 
       if ((header->width  != 176 && header->width  != 352) ||
           (header->height != 144 && header->height != 288)) {
-        TRACE(1,"H261\tInvalid frame size");
+        PTRACE(1,"H261", "Invalid frame size");
         return 0;
       }
 
@@ -468,7 +462,7 @@ class H261DecoderContext
       bool lostPreviousPacket = false;
       if ((expectedSequenceNumber == 0) || (expectedSequenceNumber != srcRTP.GetSequenceNumber())) {
         lostPreviousPacket = true;
-        TRACE(3,"H261\tDetected loss of one video packet. "
+        PTRACE(3,"H261", "Detected loss of one video packet. "
     	      << expectedSequenceNumber << " != "
               << srcRTP.GetSequenceNumber() << " Will recover.");
       }
@@ -840,6 +834,7 @@ static int valid_for_protocol(const struct PluginCodec_Definition *, void *, con
 
 }
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 static PluginCodec_ControlDefn h323EncoderControls[] = {
   { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
@@ -849,6 +844,7 @@ static PluginCodec_ControlDefn h323EncoderControls[] = {
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
 
@@ -1215,27 +1211,6 @@ extern "C" {
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/)
   {
-#ifndef _WIN32_WCE
-    char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-    if (debug_level!=NULL) {
-      Trace::SetLevel(atoi(debug_level));
-    }
-    else {
-      Trace::SetLevel(0);
-    }
-
-    debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-    if (debug_level!=NULL) {
-      Trace::SetLevelUserPlane(atoi(debug_level));
-    }
-    else {
-      Trace::SetLevelUserPlane(0);
-    }
-#else
-    Trace::SetLevel(0);
-    Trace::SetLevelUserPlane(0);
-#endif
-
     *count = sizeof(h261CodecDefn) / sizeof(struct PluginCodec_Definition);
     return h261CodecDefn;
   }

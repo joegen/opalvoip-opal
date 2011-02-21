@@ -150,6 +150,8 @@ static int merge_packetization_mode(char ** result, const char * dest, const cha
 static void free_string(char * str);
 ///////////////////////////////////////////////////////////////////////////////
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
 static struct PluginCodec_information licenseInfo = {
   1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
 
@@ -184,6 +186,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
 
