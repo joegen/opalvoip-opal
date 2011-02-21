@@ -55,6 +55,15 @@ endif
 endif
 
 
+ifeq ($(VERBOSE),)
+Q=@
+Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
+Q_DEP= @echo [DEP] `echo $< | sed s^@OPALDIR@/^^` ; 
+Q_AR = @echo [AR] `echo $@ | sed s^@OPALDIR@/^^` ;
+Q_LD = @echo [LD] `echo $@ | sed s^@OPALDIR@/^^` ;
+endif
+
+
 ifeq ($(DEBUG_BUILD),yes)
   LIB_FILENAME_STATIC=$(DEBUG_LIB_FILENAME_STATIC)
   LIB_FILENAME_SHARED=$(DEBUG_LIB_FILENAME_SHARED)
@@ -69,6 +78,8 @@ else
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
 endif
 
+
+REVISION_FILE = $(OPALDIR)/revision.h
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -510,14 +521,6 @@ DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
 #
 
 
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_DEP= @echo [DEP] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_AR = @echo [AR] `echo $@ | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $@ | sed s^@OPALDIR@/^^` ;
-endif
-
-
 $(OPAL_OBJDIR)/%.o : %.cxx
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
 	$(Q_CC)$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -607,6 +610,28 @@ $(RUBY_WRAPPER): $(RUBY_SRCDIR)/opal.i $(OPAL_INCDIR)/opal.h
 	$(SWIG) -ruby -w451 -I$(OPAL_INCDIR) -o $@ $<
 endif
 
+endif
+
+
+####################################################
+
+$(OPAL_SRCDIR)/opal/manager.cxx: $(REVISION_FILE)
+
+$(REVISION_FILE) : $(REVISION_FILE).in
+ifeq ($(shell which svn 2> /dev/null),)
+	$(Q)cp $< $@
+else
+ifeq ($(wildcard .svn),)
+	$(Q)cp $< $@
+else
+	$(Q)sed "s/SVN_REVISION.*/SVN_REVISION `LC_ALL=C svn info | sed -n 's/Revision: //p'`/" $< > $@.tmp
+	$(Q)if diff -q $@ $@.tmp >/dev/null 2>&1; then \
+	  rm $@.tmp; \
+	else \
+	  mv -f $@.tmp $@; \
+	  echo "Revision file updated to `sed -n 's/.*SVN_REVISION\(.*\)/\1/p' $@`" ; \
+	fi
+endif
 endif
 
 
