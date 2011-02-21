@@ -62,7 +62,7 @@
 
 #include "../common/mpi.h"
 #include "../common/ffmpeg.h"
-#include "../common/trace.h"
+#include "../common/dyna.h"
 
 #include "tracer.h"
 
@@ -104,33 +104,8 @@ static struct StdSizes {
   { CIF16_WIDTH, CIF16_HEIGHT, PLUGINCODEC_CIF16_MPI },
 };
 
-//static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
+static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
-static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg)
-{
-  char buffer[512];
-  int severity = 0;
-  if (v) {
-    switch (level)
-    {
-      case AV_LOG_QUIET: severity = 0; break;
-      case AV_LOG_ERROR: severity = 1; break;
-      case AV_LOG_INFO:  severity = 4; break;
-      case AV_LOG_DEBUG: severity = 4; break;
-    }
-    sprintf(buffer, "H.263\tFFMPEG\t");
-    vsprintf(buffer + strlen(buffer), fmt, arg);
-    if (strlen(buffer) > 0)
-      buffer[strlen(buffer)-1] = 0;
-printf("%s\n", buffer);
-/*
-    if (severity = 4) 
-      { TRACE_UP (severity, buffer); }
-    else
-      { TRACE (severity, buffer); }
-*/
-  }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -217,6 +192,7 @@ H263_Base_EncoderContext::H263_Base_EncoderContext(const char * _prefix)
   , _context(NULL)
 { 
   _inputFrameBuffer = NULL;
+  FFMPEGLibraryInstance.Load();
 }
 
 H263_Base_EncoderContext::~H263_Base_EncoderContext()
@@ -229,19 +205,22 @@ bool H263_Base_EncoderContext::Open(CodecID codecId)
 {
   TRACE_AND_LOG(tracer, 1, "Opening encoder");
 
-  _codec = avcodec_find_encoder(codecId);
+  if (!FFMPEGLibraryInstance.IsLoaded())
+    return false;
+
+  _codec = FFMPEGLibraryInstance.AvcodecFindEncoder(codecId);
   if (_codec == NULL) {
     TRACE_AND_LOG(tracer, 1, "Codec not found for encoder");
     return false;
   }
 
-  _context = avcodec_alloc_context();
+  _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
     TRACE_AND_LOG(tracer, 1, "Failed to allocate context for encoder");
     return false;
   }
 
-  _inputFrame = avcodec_alloc_frame();
+  _inputFrame = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_inputFrame == NULL) {
     TRACE_AND_LOG(tracer, 1, "Failed to allocate frame for encoder");
     return false;
@@ -273,12 +252,14 @@ bool H263_Base_EncoderContext::Open(CodecID codecId)
   _context->error_recognition = 5;
 
   // debugging flags
-  if (Trace::CanTraceUserPlane(4)) {
+#if PLUGINCODEC_TRACING
+  if (PTRACE_CHECK(4)) {
     _context->debug |= FF_DEBUG_RC;
     _context->debug |= FF_DEBUG_PICT_INFO;
     _context->debug |= FF_DEBUG_MV;
     _context->debug |= FF_DEBUG_QP;
   }
+#endif
 
   _height = CIF_WIDTH; _width = CIF_HEIGHT;
   SetFrameWidth(_height);
@@ -327,7 +308,7 @@ void H263_Base_EncoderContext::SetTargetBitrate (unsigned rate)
 void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
 {
   _width = width;
-  avcodec_set_dimensions(_context, _width, _height);
+  FFMPEGLibraryInstance.AvSetDimensions(_context, _width, _height);
 
   _inputFrame->linesize[0] = width;
   _inputFrame->linesize[1] = width / 2;
@@ -339,7 +320,7 @@ void H263_Base_EncoderContext::SetFrameWidth (unsigned width)
 void H263_Base_EncoderContext::SetFrameHeight (unsigned height)
 {
   _height = height;
-  avcodec_set_dimensions(_context, _width, _height);
+  FFMPEGLibraryInstance.AvSetDimensions(_context, _width, _height);
   CODEC_TRACER(tracer, "frame height set to " << height);
 }
 
@@ -355,7 +336,7 @@ void H263_Base_EncoderContext::SetTSTO (unsigned tsto)
 
   _context->qmin = H263P_MIN_QUANT;
   _context->qmax = round ( (31.0 - H263P_MIN_QUANT) / 31.0 * tsto + H263P_MIN_QUANT);
-  _context->qmax = min( _context->qmax, 31);
+  _context->qmax = std::min( _context->qmax, 31);
 
   _context->mb_qmin = _context->qmin;
   _context->mb_qmax = _context->qmax;
@@ -483,14 +464,14 @@ bool H263_Base_EncoderContext::OpenCodec()
   CODEC_TRACER_FLAG(tracer, CODEC_FLAG_LOOP_FILTER);
   CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_AIV);
 
-  return avcodec_open(_context, _codec) == 0;
+  return FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) == 0;
 }
 
 void H263_Base_EncoderContext::CloseCodec()
 {
   if (_context != NULL) {
     if (_context->codec != NULL) {
-      avcodec_close(_context);
+      FFMPEGLibraryInstance.AvcodecClose(_context);
     }
   }
 }
@@ -519,9 +500,9 @@ H263_RFC2190_EncoderContext::~H263_RFC2190_EncoderContext()
   CloseCodec();
 
   if (_context != NULL)
-    av_free(_context);
+    FFMPEGLibraryInstance.AvcodecFree(_context);
   if (_inputFrame != NULL)
-    av_free(_inputFrame);
+    FFMPEGLibraryInstance.AvcodecFree(_inputFrame);
 
   TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
@@ -713,7 +694,7 @@ int H263_RFC2190_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
 
   //CODEC_TRACER(tracer, "Encoder called with " << frameSize << " bytes and frame type " << _inputFrame->pict_type << " at " << header->width << "x" << header->height);
 
-  int encodedLen = avcodec_encode_video(_context, packetizer.m_buffer, packetizer.m_bufferSize, _inputFrame);  
+  int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, packetizer.m_buffer, packetizer.m_bufferSize, _inputFrame);  
 
   if (encodedLen < 0) {
     TRACE_AND_LOG(tracer, 1, "Encoder failed");
@@ -774,9 +755,9 @@ H263_RFC2429_EncoderContext::~H263_RFC2429_EncoderContext()
     delete _txH263PFrame;
 
   if (_context != NULL)
-    av_free(_context);
+    FFMPEGLibraryInstance.AvcodecFree(_context);
   if (_inputFrame != NULL)
-    av_free(_inputFrame);
+    FFMPEGLibraryInstance.AvcodecFree(_inputFrame);
 
   TRACE_AND_LOG(tracer, 3, "encoder closed");
 }
@@ -890,7 +871,7 @@ int H263_RFC2429_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLe
  
   _txH263PFrame->BeginNewFrame();
   _txH263PFrame->SetTimestamp(srcRTP.GetTimestamp());
-  _txH263PFrame->SetFrameSize (avcodec_encode_video(_context, _txH263PFrame->GetFramePtr(), frameSize, _inputFrame));  
+  _txH263PFrame->SetFrameSize (FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, _txH263PFrame->GetFramePtr(), frameSize, _inputFrame));  
   _frameCount++; 
 
   if (_txH263PFrame->GetFrameSize() == 0) {
@@ -918,18 +899,21 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * _prefix)
   , tracer(_prefix, false)
 #endif
 {
-  if ((_codec = avcodec_find_decoder(CODEC_ID_H263)) == NULL) {
+  if (!FFMPEGLibraryInstance.Load())
+    return;
+
+  if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H263)) == NULL) {
     TRACE_AND_LOG(tracer, 1, "Codec not found for decoder");
     return;
   }
 
-  _context = avcodec_alloc_context();
+  _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
     TRACE_AND_LOG(tracer, 1, "Failed to allocate context for decoder");
     return;
   }
 
-  _outputFrame = avcodec_alloc_frame();
+  _outputFrame = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_outputFrame == NULL) {
     TRACE_AND_LOG(tracer, 1, "Failed to allocate frame for decoder");
     return;
@@ -943,11 +927,13 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * _prefix)
   _frameCount = 0;
 
   // debugging flags
-  if (Trace::CanTrace(4)) {
+#if PLUGINCODEC_TRACING
+  if (PTRACE_CHECK(4)) {
     _context->debug |= FF_DEBUG_RC;
     _context->debug |= FF_DEBUG_PICT_INFO;
     _context->debug |= FF_DEBUG_MV;
   }
+#endif
 
   TRACE_AND_LOG(tracer, 4, "Decoder created");
 }
@@ -957,9 +943,9 @@ H263_Base_DecoderContext::~H263_Base_DecoderContext()
   CloseCodec();
 
   if (_context != NULL)
-    av_free(_context);
+    FFMPEGLibraryInstance.AvcodecFree(_context);
   if (_outputFrame != NULL)
-    av_free(_outputFrame);
+    FFMPEGLibraryInstance.AvcodecFree(_outputFrame);
 }
 
 bool H263_Base_DecoderContext::OpenCodec()
@@ -969,7 +955,7 @@ bool H263_Base_DecoderContext::OpenCodec()
     return 0;
   }
 
-  if (avcodec_open(_context, _codec) < 0) {
+  if (FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) < 0) {
     TRACE_AND_LOG(tracer, 1, "Failed to open H.263 decoder");
     return false;
   }
@@ -983,7 +969,7 @@ void H263_Base_DecoderContext::CloseCodec()
 {
   if (_context != NULL) {
     if (_context->codec != NULL) {
-      avcodec_close(_context);
+      FFMPEGLibraryInstance.AvcodecClose(_context);
       TRACE_AND_LOG(tracer, 4, "Closed H.263 decoder" );
     }
   }
@@ -1064,7 +1050,7 @@ bool H263_RFC2429_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   int gotPicture = 0;
 
   TRACE_AND_LOG(tracer, 4, "Decoding " << _rxH263PFrame->GetFrameSize()  << " bytes");
-  int bytesDecoded = avcodec_decode_video(_context, _outputFrame, &gotPicture, _rxH263PFrame->GetFramePtr(), _rxH263PFrame->GetFrameSize());
+  int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(_context, _outputFrame, &gotPicture, _rxH263PFrame->GetFramePtr(), _rxH263PFrame->GetFrameSize());
 
   _rxH263PFrame->BeginNewFrame();
 
@@ -1200,7 +1186,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 #endif
 
   int gotPicture = 0;
-  int bytesDecoded = avcodec_decode_video(_context, _outputFrame, &gotPicture, &depacketizer.frame[0], depacketizer.frame.size());
+  int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(_context, _outputFrame, &gotPicture, &depacketizer.frame[0], depacketizer.frame.size());
 
   depacketizer.NewFrame();
 
@@ -1693,6 +1679,8 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
   return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
 }
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_information licenseInfo = {
@@ -1736,6 +1724,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
 
@@ -2058,38 +2047,13 @@ extern "C" {
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   {
-    char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-    if (debug_level!=NULL) {
-      Trace::SetLevel(atoi(debug_level));
-    } 
-    else {
-      Trace::SetLevel(0);
-    }
-
-    debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-    if (debug_level!=NULL) {
-      Trace::SetLevelUserPlane(atoi(debug_level));
-    } 
-    else {
-      Trace::SetLevelUserPlane(0);
-    }
-
-    avcodec_init();
-    avcodec_register_all();
-
-    av_log_set_level(AV_LOG_FATAL);
-    av_log_set_callback(&logCallbackFFMPEG);
-
     if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
       *count = 0;
-      TRACE(1, "H.263\tCodec\tDisabled - plugin version mismatch");
       return NULL;
     }
-    else {
-      *count = sizeof(h263CodecDefn) / sizeof(struct PluginCodec_Definition);
-      TRACE(1, "H.263\tCodec\tEnabled with " << *count << " definitions");
-      return h263CodecDefn;
-    }
+
+    *count = sizeof(h263CodecDefn) / sizeof(struct PluginCodec_Definition);
+    return h263CodecDefn;
   }
 
 };

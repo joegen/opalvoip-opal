@@ -33,8 +33,8 @@
 #include "plugin-config.h"
 #endif
 
+#include <codec/opalplugin.h>
 #include "h264frame.h"
-#include "trace.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -114,7 +114,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
       }
       m_NALs[m_numberOfNALsInFrame].length -= header;
       m_NALs[m_numberOfNALsInFrame].offset += header;
-      TRACE_UP(4, "H264\tEncap\tLoaded NAL unit #" << currentNAL << " - type " << NALs[currentNAL].i_type);
+      PTRACE(4, "H264", "Encap\tLoaded NAL unit #" << currentNAL << " - type " << NALs[currentNAL].i_type);
 
       uint8_t* NALptr = NALs[currentNAL].p_payload;
       if ( Trace::CanTraceUserPlane(4) && (NALs[currentNAL].i_type == H264_NAL_TYPE_SEQ_PARAM)) 
@@ -136,7 +136,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
       TRACE_UP(4,"[enc] Need to increase vop buffer size by  " << -currentNALLen);
     }
   }
-  TRACE_UP(4, "H264\tEncap\tLoaded an encoded frame of " << m_encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
+  PTRACE(4, "H264", "Encap\tLoaded an encoded frame of " << m_encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
 }
 #endif
 
@@ -178,7 +178,7 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
         frame.SetMarker((m_currentNAL + 1) >= m_numberOfNALsInFrame ? 1 : 0);
         flags |= frame.GetMarker() ? isLastFrame : 0;  // marker bit on last frame of video
 
-        TRACE_UP(4, "H264\tEncap\tEncapsulating NAL unit #" << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
+        PTRACE(4, "H264", "Encap\tEncapsulating NAL unit #" << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
         m_currentNAL++;
         return true;
 #ifdef SEND_STAP_PACKETS
@@ -214,7 +214,7 @@ bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
     highestNALNumberInSTAP--;
   }
 
-  TRACE_UP(4, "H264\tEncap\tEncapsulating NAL units " << m_currentNAL << "-"<< (highestNALNumberInSTAP-1) << "/" << (m_numberOfNALsInFrame-1) << " as a STAP of " << STAPLen);
+  PTRACE(4, "H264", "Encap\tEncapsulating NAL units " << m_currentNAL << "-"<< (highestNALNumberInSTAP-1) << "/" << (m_numberOfNALsInFrame-1) << " as a STAP of " << STAPLen);
 
   frame.SetPayloadSize(1); // for stap header
 
@@ -235,7 +235,7 @@ bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
     memcpy ((uint8_t*)frame.GetPayloadPtr() + frame.GetPayloadSize() - curNALLen, (void *)curNALPtr, curNALLen);
 
     if ((*curNALPtr & 0x60) > maxNRI) maxNRI = *curNALPtr & 0x60;
-    TRACE_UP(4, "H264\tEncap\tAdding NAL unit " << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes to STAP");
+    PTRACE(4, "H264", "Encap\tAdding NAL unit " << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes to STAP");
     m_currentNAL++;
   }
 
@@ -295,7 +295,7 @@ bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
 
     m_currentNALFURemainingDataPtr += curFULen;
     m_currentNALFURemainingLen -= curFULen;
-    TRACE_UP(4, "H264\tEncap\tEncapsulating "<< curFULen << " bytes of NAL " << m_currentNAL<< "/" << (m_numberOfNALsInFrame-1) << " as a FU (" << m_currentNALFURemainingLen << " bytes remaining)");
+    PTRACE(4, "H264", "Encap\tEncapsulating "<< curFULen << " bytes of NAL " << m_currentNAL<< "/" << (m_numberOfNALsInFrame-1) << " as a FU (" << m_currentNALFURemainingLen << " bytes remaining)");
   } 
   if (m_currentNALFURemainingLen==0)
   {
@@ -312,7 +312,7 @@ bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
       curNALType <= H264_NAL_TYPE_FILLER_DATA)
   {
     // regular NAL - put in buffer, adding the header.
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating a regular NAL unit NAL of " << frame.GetPayloadSize() - 1 << " bytes (type " << (int) curNALType << ")");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating a regular NAL unit NAL of " << frame.GetPayloadSize() - 1 << " bytes (type " << (int) curNALType << ")");
     AddDataToEncodedFrame(frame.GetPayloadPtr() + 1, frame.GetPayloadSize() - 1, *(frame.GetPayloadPtr()), 1);
   } 
   else if (curNALType == 24) 
@@ -327,7 +327,7 @@ bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
   }
   else
   {
-    TRACE_UP(4, "H264\tDeencap\tSkipping unsupported NAL unit type " << curNALType);
+    PTRACE(4, "H264", "Deencap\tSkipping unsupported NAL unit type " << curNALType);
     return false;
   }
   return true;
@@ -351,7 +351,7 @@ bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & /*flags*/) {
   uint8_t* curSTAP = frame.GetPayloadPtr() + 1;
   uint32_t curSTAPLen = frame.GetPayloadSize() - 1; 
 
-  TRACE_UP(4, "H264\tDeencap\tDeencapsulating a STAP of " << curSTAPLen << " bytes");
+  PTRACE(4, "H264", "Deencap\tDeencapsulating a STAP of " << curSTAPLen << " bytes");
   while (curSTAPLen > 0)
   {
     // first, theres a 2 byte length field
@@ -359,13 +359,13 @@ bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & /*flags*/) {
     curSTAP += 2;
     // then the header, followed by the body.  We'll add the header
     // in the AddDataToEncodedFrame - that's why the nal body is dptr + 1
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating an NAL unit of " << len << " bytes (type " << (int)(*curSTAP && 0x1f) << ") from STAP");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating an NAL unit of " << len << " bytes (type " << (int)(*curSTAP && 0x1f) << ") from STAP");
     AddDataToEncodedFrame(curSTAP + 1,  len - 1, *curSTAP, 1);
     curSTAP += len;
     if ((len + 2) > curSTAPLen)
     {
       curSTAPLen = 0;
-      TRACE(1, "H264\tDeencap\tError deencapsulating STAP, STAP header says its " << len + 2 << " bytes long but there are only " << curSTAPLen << " bytes left of the packet");
+      PTRACE(1, "H264", "Deencap\tError deencapsulating STAP, STAP header says its " << len + 2 << " bytes long but there are only " << curSTAPLen << " bytes left of the packet");
       return false;
     }
     else
@@ -383,7 +383,7 @@ bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
 
   if ((curFUPtr[1] & 0x80) && !(curFUPtr[1] & 0x40))
   {
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, !Endbit)");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, !Endbit)");
     if (m_currentFU) {
       m_currentFU=1;
     }
@@ -396,7 +396,7 @@ bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
   } 
   else if (!(curFUPtr[1] & 0x80) && !(curFUPtr[1] & 0x40))
   {
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, !Endbit)");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, !Endbit)");
     if (m_currentFU)
     {
       m_currentFU++;
@@ -405,13 +405,13 @@ bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
     else
     {
       m_currentFU=0;
-      TRACE(1, "H264\tDeencap\tReceived an intermediate FU without getting the first - dropping!");
+      PTRACE(1, "H264", "Deencap\tReceived an intermediate FU without getting the first - dropping!");
       return false;
     }
   } 
   else if (!(curFUPtr[1] & 0x80) && (curFUPtr[1] & 0x40))
   {
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, Endbit)");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, Endbit)");
     if (m_currentFU) {
       m_currentFU=0;
       AddDataToEncodedFrame( curFUPtr + 2, curFULen - 2, 0, 0);
@@ -419,14 +419,14 @@ bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
     else
     {
       m_currentFU=0;
-      TRACE(1, "H264\tDeencap\tReceived a last FU without getting the first - dropping!");
+      PTRACE(1, "H264", "Deencap\tReceived a last FU without getting the first - dropping!");
       return false;
     }
   } 
   else if ((curFUPtr[1] & 0x80) && (curFUPtr[1] & 0x40))
   {
-    TRACE_UP(4, "H264\tDeencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, Endbit)");
-    TRACE(1, "H264\tDeencap\tReceived a FU with both Starbit and Endbit set - This MUST NOT happen!");
+    PTRACE(4, "H264", "Deencap\tDeencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, Endbit)");
+    PTRACE(1, "H264", "Deencap\tReceived a FU with both Starbit and Endbit set - This MUST NOT happen!");
     m_currentFU=0;
     return false;
   } 
@@ -439,11 +439,11 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
 
   if (addHeader) 
   {
-    TRACE_UP(4, "H264\tDeencap\tAdding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
+    PTRACE(4, "H264", "Deencap\tAdding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
     uint8_t* NALptr = data;
-    if ( Trace::CanTraceUserPlane(4) && ((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3)) 
+    if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3)) 
     {
-      TRACE_UP(4, "H264\tDeencap\tProfile: " << (int)NALptr[0] << 
+      PTRACE(4, "H264", "Deencap\tProfile: " << (int)NALptr[0] << 
                                 " Level: "   << (int)NALptr[2] << 
 			        " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
 			                         << (NALptr[1] & 0x40 ? 1 : 0) 
@@ -451,10 +451,11 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
 					         << (NALptr[1] & 0x10 ? 1 : 0));
     }
   }
-  else TRACE_UP(4, "H264\tDeencap\tAdding a NAL unit of " << dataLen << " bytes to buffer");
+  else
+    PTRACE(4, "H264", "Deencap\tAdding a NAL unit of " << dataLen << " bytes to buffer");
 
   if (m_encodedFrameLen + dataLen + headerLen > MAX_FRAME_SIZE) {
-    TRACE(1, "H264\tDeencap\tFrame too big (" << m_encodedFrameLen + dataLen + headerLen << ">" << MAX_FRAME_SIZE << ")");
+    PTRACE(1, "H264", "Deencap\tFrame too big (" << m_encodedFrameLen + dataLen + headerLen << ">" << MAX_FRAME_SIZE << ")");
     return;
   }
 
@@ -489,7 +490,7 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
       m_NALs[m_numberOfNALsInFrame - 1].length += dataLen;
   }
 
-  TRACE_UP (4, "H264\tDeencap\tReserved memory for  " << m_numberOfNALsReserved <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
+  PTRACE(4, "H264", "Deencap\tReserved memory for  " << m_numberOfNALsReserved <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
     << m_NALs[m_numberOfNALsInFrame-1].offset << " Length: "<< m_NALs[m_numberOfNALsInFrame-1].length << " Type: "<< (int)(m_NALs[m_numberOfNALsInFrame-1].type));
 
   memcpy(currentPositionInFrame, data, dataLen);

@@ -41,12 +41,14 @@
 #ifndef __FFMPEG_H__
 #define __FFMPEG_H__ 1
 
-#include <codec/opalplugin.h>
+#include <codec/opalplugin.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
+  #define __STDC_CONSTANT_MACROS
+  #include "vs-stdint.h"
   #include <windows.h>
   #include <malloc.h>
   #undef min
@@ -61,7 +63,6 @@
 
 #include <string.h>
 #include "critsect.h"
-#include "trace.h"
 
 
 extern "C" {

@@ -88,7 +88,7 @@ class FFMPEGLibrary
     FFMPEGLibrary(CodecID codec);
     ~FFMPEGLibrary();
 
-    bool Load(int ver = 0);
+    bool Load();
 
     AVCodec *AvcodecFindEncoder(enum CodecID id);
     AVCodec *AvcodecFindDecoder(enum CodecID id);

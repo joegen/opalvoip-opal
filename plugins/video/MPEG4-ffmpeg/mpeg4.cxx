@@ -61,7 +61,7 @@
 #endif
 
 
-#include <codec/opalplugin.h>
+#include <codec/opalplugin.hpp>
 
 extern "C" {
 PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
@@ -69,7 +69,6 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
 
 
 #include <stdlib.h>
-#include "trace.h"
 #include "dyna.h"
 #include "rtpframe.h"
 
@@ -208,30 +207,6 @@ const static struct mpeg4_resolution {
 
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_MPEG4);
 
-static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
-  char buffer[512];
-  int severity = 0;
-  if (v) {
-    switch (level)
-    {
-      case AV_LOG_QUIET: severity = 0; break;
-      case AV_LOG_ERROR: severity = 1; break;
-      case AV_LOG_INFO:  severity = 4; break;
-      case AV_LOG_DEBUG: severity = 4; break;
-      default:           severity = 4; break;
-    }
-    strcpy(buffer, "MPEG4\tFFMPEG\t");
-    vsprintf(buffer + strlen(buffer), fmt, arg);
-    if (strlen(buffer) > 0)
-      buffer[strlen(buffer)-1] = 0;
-    if (severity == 4) 
-      { TRACE_UP (severity, buffer); }
-    else
-      { TRACE (severity, buffer); }
-  }
-}
-    
-
 
 static bool mpeg4IsIframe (BYTE * frameBuffer, unsigned int frameLen )
 {
@@ -240,14 +215,13 @@ static bool mpeg4IsIframe (BYTE * frameBuffer, unsigned int frameLen )
   while ((i+4)<= frameLen) {
     if ((frameBuffer[i] == 0) && (frameBuffer[i+1] == 0) && (frameBuffer[i+2] == 1)) {
       if (frameBuffer[i+3] == 0xb0)
-        TRACE_UP(4, "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) frameBuffer[i+4]);
+        PTRACE(4, "MPEG4", "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) frameBuffer[i+4]);
       if (frameBuffer[i+3] == 0xb6) {
         unsigned vop_coding_type = (unsigned) ((frameBuffer[i+4] & 0xC0) >> 6);
-        TRACE_UP(4, "Found vop_start_code, is vop_coding_type is " << vop_coding_type );
+        PTRACE(4, "MPEG4", "Found vop_start_code, is vop_coding_type is " << vop_coding_type );
         if (vop_coding_type == 0)
           isIFrame = true;
-        if (!Trace::CanTraceUserPlane(4))
-	  return isIFrame;
+        return isIFrame;
       }
     }
     i++;	
@@ -397,14 +371,12 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   
   m_isIFrame = false;
 
-  if (!FFMPEGLibraryInstance.IsLoaded()){
-    return;
-  }
-
   // Default frame size.  These may change after encoder_set_options
   m_frameWidth  = CIF_WIDTH;
   m_frameHeight = CIF_HEIGHT;
   m_rawFrameLen = (m_frameWidth * m_frameHeight * 3) / 2;
+
+  FFMPEGLibraryInstance.Load();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -414,9 +386,8 @@ MPEG4EncoderContext::MPEG4EncoderContext()
 
 MPEG4EncoderContext::~MPEG4EncoderContext()
 {
-  if (FFMPEGLibraryInstance.IsLoaded()) {
-    CloseCodec();
-  }
+  CloseCodec();
+
   if (m_rawFrameBuffer) {
     delete[] m_rawFrameBuffer;
     m_rawFrameBuffer = NULL;
@@ -526,7 +497,7 @@ void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
   }
   
   if (!mpeg4_profile_levels[i].profileLevel) {
-    TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
+    PTRACE(1, "MPEG4", "Illegal Profle-Level negotiated");
     return;
   }
   m_maxBufferSize = mpeg4_profile_levels[i].maxBufferSize * 16384;
@@ -722,33 +693,35 @@ bool MPEG4EncoderContext::OpenCodec()
 {
   m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (m_avcontext == NULL) {
-    TRACE(1, "MPEG4\tEncoder\tFailed to allocate context for encoder");
+    PTRACE(1, "MPEG4", "Encoder failed to allocate context for encoder");
     return false;
   }
 
   m_avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (m_avpicture == NULL) {
-    TRACE(1, "MPEG4\tEncoder\tFailed to allocate frame for encoder");
+    PTRACE(1, "MPEG4", "Encoder failed to allocate frame for encoder");
     return false;
   }
 
   if((m_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
-    TRACE(1, "MPEG4\tEncoder\tCodec not found for encoder");
+    PTRACE(1, "MPEG4", "Encoder not found");
     return false;
   }
 
+#if PLUGINCODEC_TRACING
   // debugging flags
-  if (Trace::CanTraceUserPlane(4)) {
+  if (PTRACE_CHECK(4)) {
     m_avcontext->debug |= FF_DEBUG_RC;
     m_avcontext->debug |= FF_DEBUG_PICT_INFO;
     m_avcontext->debug |= FF_DEBUG_MV;
   }
+#endif
   
   SetStaticEncodingParams();
   SetDynamicEncodingParams(false);    // don't force a restart, it's not open
   if (FFMPEGLibraryInstance.AvcodecOpen(m_avcontext, m_avcodec) < 0)
   {
-    TRACE(1, "MPEG4\tEncoder\tCould not open codec");
+    PTRACE(1, "MPEG4", "Encoder could not be opened");
     return false;
   }
   return true;
@@ -954,7 +927,7 @@ static int adjust_bitrate_to_profile_level (unsigned & targetBitrate, unsigned p
     }
   
     if (!mpeg4_profile_levels[i].profileLevel) {
-      TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
+      PTRACE(1, "MPEG4", "Illegal Profle-Level negotiated");
       return 0;
     }
   }
@@ -962,8 +935,8 @@ static int adjust_bitrate_to_profile_level (unsigned & targetBitrate, unsigned p
     i = idx;
 
 // Correct Target Bitrate
-  TRACE(4, "MPEG4\tCap\tAdjusting to " << mpeg4_profile_levels[i].profileName << " Profile, Level " <<  mpeg4_profile_levels[i].level);
-  TRACE(4, "MPEG4\tCap\tBitrate: " << targetBitrate << "(" << mpeg4_profile_levels[i].bitrate << ")");
+  PTRACE(4, "MPEG4", "Adjusting to " << mpeg4_profile_levels[i].profileName << " Profile, Level " <<  mpeg4_profile_levels[i].level
+          << " bitrate: " << targetBitrate << "(" << mpeg4_profile_levels[i].bitrate << ")");
   if (targetBitrate > mpeg4_profile_levels[i].bitrate)
     targetBitrate = mpeg4_profile_levels[i].bitrate;
 
@@ -980,14 +953,14 @@ static int adjust_to_profile_level (unsigned & width, unsigned & height, unsigne
   }
 
   if (!mpeg4_profile_levels[i].profileLevel) {
-    TRACE(1, "MPEG4\tCap\tIllegal Level negotiated");
+    PTRACE(1, "MPEG4", "tIllegal Level negotiated");
     return 0;
   }
 
 // Correct max. number of macroblocks per frame
   uint32_t nbMBsPerFrame = width * height / 256;
   unsigned j = 0;
-  TRACE(4, "MPEG4\tCap\tFrame Size: " << nbMBsPerFrame << "(" << mpeg4_profile_levels[i].frame_size << ")");
+  PTRACE(4, "MPEG4", "Frame Size: " << nbMBsPerFrame << "(" << mpeg4_profile_levels[i].frame_size << ")");
   if    ( (nbMBsPerFrame          > mpeg4_profile_levels[i].frame_size) ) {
 
     while (mpeg4_resolutions[j].width) {
@@ -996,7 +969,7 @@ static int adjust_to_profile_level (unsigned & width, unsigned & height, unsigne
       j++; 
     }
     if (!mpeg4_resolutions[j].width) {
-      TRACE(1, "MPEG4\tCap\tNo Resolution found that has number of macroblocks <=" << mpeg4_profile_levels[i].frame_size);
+      PTRACE(1, "MPEG4", "No Resolution found that has number of macroblocks <=" << mpeg4_profile_levels[i].frame_size);
       return 0;
     }
     else {
@@ -1007,7 +980,7 @@ static int adjust_to_profile_level (unsigned & width, unsigned & height, unsigne
 
 // Correct macroblocks per second
   uint32_t nbMBsPerSecond = width * height / 256 * (90000 / frameTime);
-  TRACE(4, "MPEG4\tCap\tMBs/s: " << nbMBsPerSecond << "(" << mpeg4_profile_levels[i].mbps << ")");
+  PTRACE(4, "MPEG4", "MBs/s: " << nbMBsPerSecond << "(" << mpeg4_profile_levels[i].mbps << ")");
   if (nbMBsPerSecond > mpeg4_profile_levels[i].mbps)
     frameTime =  (unsigned) (90000 / 256 * width  * height / mpeg4_profile_levels[i].mbps );
 
@@ -1131,7 +1104,7 @@ static int encoder_set_options(
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
-        context->SetIQuantFactor(atof(options[i+1]));
+        context->SetIQuantFactor((float)atof(options[i+1]));
     }
 
     if (profileLevel == 0) {
@@ -1176,6 +1149,8 @@ static int encoder_get_output_data_size(const PluginCodec_Definition * /*codec*/
   return context->GetFrameBytes() * 3 / 2;
 }
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
 static PluginCodec_ControlDefn sipEncoderControls[] = {
   { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
@@ -1183,6 +1158,7 @@ static PluginCodec_ControlDefn sipEncoderControls[] = {
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
 
@@ -1256,16 +1232,13 @@ MPEG4DecoderContext::MPEG4DecoderContext()
     m_frameWidth(0),
     m_frameHeight(0)
 {
-  if (!FFMPEGLibraryInstance.IsLoaded()) {
-    return;
-  }
-
   // Default frame sizes.  These may change after decoder_set_options is called
   m_frameWidth  = CIF_WIDTH;
   m_frameHeight = CIF_HEIGHT;
   m_gotAGoodFrame = true;
 
-  OpenCodec();
+  if (FFMPEGLibraryInstance.Load())
+    OpenCodec();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1422,19 +1395,19 @@ void MPEG4DecoderContext::ResizeDecodingFrame(bool restartCodec) {
 bool MPEG4DecoderContext::OpenCodec()
 {
     if ((m_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
-        TRACE(1, "MPEG4\tDecoder\tCodec not found for encoder");
+        PTRACE(1, "MPEG4", "Decoder not found for encoder");
         return false;
     }
         
     m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
     if (m_avcontext == NULL) {
-        TRACE(1, "MPEG4\tDecoder\tFailed to allocate context for encoder");
+        PTRACE(1, "MPEG4", "Decoder failed to allocate context");
         return false;
     }
 
     m_avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
     if (m_avpicture == NULL) {
-        TRACE(1, "MPEG4\tDecoder\tFailed to allocate frame for decoder");
+        PTRACE(1, "MPEG4", "Decoder failed to allocate frame");
         return false;
     }
 
@@ -1443,10 +1416,11 @@ bool MPEG4DecoderContext::OpenCodec()
     SetStaticDecodingParams();
     SetDynamicDecodingParams(false);    // don't force a restart, it's not open
     if (FFMPEGLibraryInstance.AvcodecOpen(m_avcontext, m_avcodec) < 0) {
-        TRACE(1, "MPEG4\tDecoder\tFailed to open MPEG4 decoder");
+        PTRACE(1, "MPEG4", "Decoder failed to open");
         return false;
     }
-    TRACE(1, "MPEG4\tDecoder\tDecoder successfully opened");
+
+    PTRACE(4, "MPEG4", "Decoder successfully opened");
     return true;
 }
 
@@ -1512,7 +1486,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
 
         // throw the data away and ask for an IFrame
-        TRACE(1, "MPEG4\tDecoder\tWaiting for an I-Frame");
+        PTRACE(1, "MPEG4", "Decoder waiting for an I-Frame");
         m_lastPktOffset = 0;
         flags = (m_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
         m_gotAGoodFrame = false;
@@ -1535,7 +1509,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                 m_gotAGoodFrame = false;
             }
 #endif
-            TRACE_UP(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << m_avcontext->width << "x" << m_avcontext->height);
+            PTRACE(4, "MPEG4", "Decoded " << len << " bytes" << ", Resolution: " << m_avcontext->width << "x" << m_avcontext->height);
             // If the decoding size changes on us, we can catch it and resize
             if (!m_disableResize
                 && (m_frameWidth != (unsigned)m_avcontext->width
@@ -1586,7 +1560,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             m_gotAGoodFrame = true;
         }
         else {
-            TRACE(1, "MPEG4\tDecoder\tDecoded "<< len << " bytes without getting a Picture..."); 
+            PTRACE(5, "MPEG4", "Decoded "<< len << " bytes without getting a Picture..."); 
             // decoding error, ask for an IFrame update
             flags = (m_gotAGoodFrame ? PluginCodec_ReturnCoderRequestIFrame : 0);
             m_gotAGoodFrame = false;
@@ -1960,41 +1934,19 @@ extern "C" {
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition *
 PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-  if (debug_level!=NULL) {
-    Trace::SetLevel(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevel(0);
-  }
-
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-  if (debug_level!=NULL) {
-    Trace::SetLevelUserPlane(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
   if (!FFMPEGLibraryInstance.Load()) {
     *count = 0;
-    TRACE(1, "MPEG4\tCodec\tDisabled");
+    PTRACE(1, "MPEG4", "Disabled");
     return NULL;
   }
-
-  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
-  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
 
   // check version numbers etc
   if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
-    TRACE(1, "MPEG4\tCodec\tDisabled - plugin version mismatch");
     return NULL;
   }
-  else {
-    *count = sizeof(mpeg4CodecDefn) / sizeof(struct PluginCodec_Definition);
-    TRACE(1, "MPEG4\tCodec\tEnabled");
-    return mpeg4CodecDefn;
-  }
+
+  *count = sizeof(mpeg4CodecDefn) / sizeof(struct PluginCodec_Definition);
+  return mpeg4CodecDefn;
 }
 };
