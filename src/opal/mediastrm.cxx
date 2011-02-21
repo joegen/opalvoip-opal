@@ -109,15 +109,13 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 
 PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool fromPatch)
 {
-  // If we are source, then update the sink side, and vice versa
-  if (!fromPatch) {
-    PSafeLockReadOnly safeLock(*this);
-    return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
-  }
-
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
+
+  // If we are source, then update the sink side, and vice versa
+  if (!fromPatch && mediaPatch != NULL)
+    return mediaPatch->UpdateMediaFormat(newMediaFormat);
 
   if (!mediaFormat.Update(newMediaFormat))
     return false;
