@@ -172,7 +172,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="wsock32.lib"
 				OutputFile="$(OutDir)/h264_x264_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -216,6 +215,10 @@
 			Name="Source Files"
 			>
 			<File
+				RelativePath="..\common\dyna.cxx"
+				>
+			</File>
+			<File
 				RelativePath=".\h264-x264.cxx"
 				>
 			</File>
@@ -232,27 +235,15 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath=".\h264-x264.h"
-				>
-			</File>
-			<File
-				RelativePath=".\h264pipe_win32.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="common"
-			>
-			<File
-				RelativePath="..\common\dyna.cxx"
-				>
-			</File>
-			<File
 				RelativePath="..\common\dyna.h"
 				>
 			</File>
 			<File
 				RelativePath="..\common\ffmpeg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\h264pipe_win32.h"
 				>
 			</File>
 			<File
