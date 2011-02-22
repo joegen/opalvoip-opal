@@ -103,7 +103,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description=""
 				CommandLine=""
 			/>
 		</Configuration>
@@ -197,14 +196,13 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying fax plug in and debug files"
-				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy $(SolutionDir)$(ConfigurationName)\libspandsp.dll c:\ptlib_plugins&#x0D;&#x0A;copy $(SolutionDir)$(ConfigurationName)\libspandsp.pdb c:\ptlib_plugins"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy $(ProjectDir)spandsp-0.0.6\src\$(ConfigurationName)\libspandsp.dll c:\ptlib_plugins&#x0D;&#x0A;copy $(ProjectDir)spandsp-0.0.6\src\$(ConfigurationName)\libspandsp.pdb c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
-			RelativePathToProject=".\spandsp-0.0.6\src\libspandsp.2008.vcproj"
 		/>
 	</References>
 	<Files>
