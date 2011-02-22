@@ -7,9 +7,6 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{7ce1b498-9aac-4df4-9707-0c49cd657150}</UniqueIdentifier>
     </Filter>
-    <Filter Include="common">
-      <UniqueIdentifier>{19a3c45c-0869-41d4-b618-4b336040c0bd}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h264-x264.cxx">
@@ -18,14 +15,11 @@
     <ClCompile Include="h264pipe_win32.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\trace.cxx">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="shared\h264frame.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\common\dyna.cxx">
-      <Filter>common</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -33,6 +27,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="h264pipe_win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ffmpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\dyna.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
