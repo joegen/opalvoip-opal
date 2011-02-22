@@ -48,7 +48,7 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     </LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">H263-1998_ptplugin</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">h263_ffmpeg_ptplugin</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">H263-1998_ptplugin</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -80,7 +80,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>avcodec.lib;avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)h263-1998_ptplugin.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>..\common\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -135,12 +134,14 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\dyna.cxx" />
     <ClCompile Include="h263-1998.cxx" />
     <ClCompile Include="h263pframe.cxx" />
     <ClCompile Include="rfc2190.cxx" />
-    <ClCompile Include="..\common\trace.cxx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\dyna.h" />
+    <ClInclude Include="..\common\ffmpeg.h" />
     <ClInclude Include="h263-1998.h" />
     <ClInclude Include="h263pframe.h" />
     <ClInclude Include="rfc2190.h" />
