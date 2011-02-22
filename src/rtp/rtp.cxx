@@ -1145,7 +1145,7 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
       PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
-             << ", dropped " << dropped << " packet(s) at " << sequenceNumber);
+             << ", " << dropped << " packet(s) missing at " << sequenceNumber);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
     }
