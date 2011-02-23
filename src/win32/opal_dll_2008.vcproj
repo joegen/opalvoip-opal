@@ -1707,7 +1707,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="opal_2005.dtf"
+				RelativePath="opal_2008.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -1957,7 +1957,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="opald_2005.dtf"
+				RelativePath="opald_2008.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -2207,7 +2207,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="opaln_2005.dtf"
+				RelativePath="opaln_2008.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -2338,7 +2338,7 @@
 			Name="WM5"
 			>
 			<File
-				RelativePath=".\opal_2005_wm.dtf"
+				RelativePath=".\opal_2008_wm.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -2468,7 +2468,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\opald_2005_wm.dtf"
+				RelativePath=".\opald_2008_wm.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -2598,7 +2598,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\opaln_2005_wm.dtf"
+				RelativePath=".\opaln_2008_wm.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -3478,7 +3478,7 @@
 			Name="WM6"
 			>
 			<File
-				RelativePath=".\opal_2005_wm6.dtf"
+				RelativePath=".\opal_2008_wm6.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -3608,7 +3608,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\opald_2005_wm6.dtf"
+				RelativePath=".\opald_2008_wm6.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
@@ -3738,7 +3738,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\opaln_2005_wm6.dtf"
+				RelativePath=".\opaln_2008_wm6.dtf"
 				>
 				<FileConfiguration
 					Name="No Trace|Win32"
