@@ -245,6 +245,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\platform.h"
+				>
+			</File>
+			<File
 				RelativePath="..\common\rtpframe.h"
 				>
 			</File>

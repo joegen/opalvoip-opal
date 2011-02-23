@@ -241,6 +241,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\platform.h"
+				>
+			</File>
+			<File
 				RelativePath=".\rfc2190.h"
 				>
 			</File>
