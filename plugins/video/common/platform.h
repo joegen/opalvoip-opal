@@ -36,15 +36,20 @@
 #ifndef __PLATFORM_H__
 #define __PLATFORM_H__ 1
 
-#define __STDC_CONSTANT_MACROS
+#define __STDC_CONSTANT_MACROS 1
 
 #if defined (_MSC_VER)
+  #define _CRT_NONSTDC_NO_DEPRECATE 1
+  #define _CRT_SECURE_NO_WARNINGS 1
+
   #include "vs-stdint.h"
 
   #include <windows.h>
-  #include <malloc.h>
   #undef min
   #undef max
+
+  #include <malloc.h>
+  #include <stdio.h>
 
   #define round(d)  ((int)((double)(d)+0.5))
   #define strdup(s) _strdup(s)
