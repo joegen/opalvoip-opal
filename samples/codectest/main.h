@@ -35,23 +35,23 @@
 class TranscoderThread : public PThread
 {
   public:
-    TranscoderThread(unsigned _num, const char * name)
+    TranscoderThread(unsigned num, const char * name)
       : PThread(5000, NoAutoDeleteThread, NormalPriority, name)
-      , running(false)
-      , encoder(NULL)
-      , decoder(NULL)
-      , num(_num)
-      , timestamp(0)
-      , markerHandling(NormalMarkers)
-      , rateController(NULL)
+      , m_running(false)
+      , m_encoder(NULL)
+      , m_decoder(NULL)
+      , m_num(num)
+      , m_timestamp(0)
+      , m_markerHandling(NormalMarkers)
+      , m_rateController(NULL)
       , m_dropPercent(0)
     {
     }
 
     ~TranscoderThread()
     {
-      delete encoder;
-      delete decoder;
+      delete m_encoder;
+      delete m_decoder;
     }
 
     int InitialiseCodec(PArgList & args, const OpalMediaFormat & rawFormat);
@@ -60,7 +60,11 @@ class TranscoderThread : public PThread
 
     virtual bool Read(RTP_DataFrame & frame) = 0;
     virtual bool Write(const RTP_DataFrame & frame) = 0;
-    void Start() { if (running) Resume(); }
+    void Start()
+    {
+      if (m_running)
+        Resume();
+    }
     virtual void Stop() = 0;
 
     virtual void UpdateStats(const RTP_DataFrame &) { }
@@ -71,29 +75,29 @@ class TranscoderThread : public PThread
     virtual void ReportSNR()
     {  }
 
-    bool running;
+    bool m_running;
 
-    PSyncPointAck pause;
-    PSyncPoint    resume;
+    PSyncPointAck m_pause;
+    PSyncPoint    m_resume;
 
-    OpalTranscoder * encoder;
-    OpalTranscoder * decoder;
-    unsigned         num;
-    DWORD            timestamp;
+    OpalTranscoder * m_encoder;
+    OpalTranscoder * m_decoder;
+    unsigned         m_num;
+    DWORD            m_timestamp;
     enum MarkerHandling {
       SuppressMarkers,
       ForceMarkers,
       NormalMarkers
-    } markerHandling;
+    } m_markerHandling;
 
     PDECLARE_NOTIFIER(OpalMediaCommand, TranscoderThread, OnTranscoderCommand);
     bool m_forceIFrame;
 
-    OpalVideoRateController * rateController;
-    int framesToTranscode;
-    int frameTime;
-    bool calcSNR;
-    int m_dropPercent;
+    OpalVideoRateController * m_rateController;
+    int  m_framesToTranscode;
+    int  m_frameTime;
+    bool m_calcSNR;
+    int  m_dropPercent;
 };
 
 
@@ -102,16 +106,16 @@ class AudioThread : public TranscoderThread
   public:
     AudioThread(unsigned _num)
       : TranscoderThread(_num, "Audio")
-      , recorder(NULL)
-      , player(NULL)
-      , readSize(0)
+      , m_recorder(NULL)
+      , m_player(NULL)
+      , m_readSize(0)
     {
     }
 
     ~AudioThread()
     {
-      delete recorder;
-      delete player;
+      delete m_recorder;
+      delete m_player;
     }
 
     bool Initialise(PArgList & args);
@@ -121,27 +125,28 @@ class AudioThread : public TranscoderThread
     virtual bool Write(const RTP_DataFrame & frame);
     virtual void Stop();
 
-    PSoundChannel * recorder;
-    PSoundChannel * player;
-    PINDEX          readSize;
+    PSoundChannel * m_recorder;
+    PSoundChannel * m_player;
+    PINDEX          m_readSize;
 };
+
 
 class VideoThread : public TranscoderThread
 {
   public:
-    VideoThread(unsigned _num)
-      : TranscoderThread(_num, "Video")
-      , grabber(NULL)
-      , display(NULL)
-      , singleStep(false)
-      , frameWait(0, INT_MAX)
+    VideoThread(unsigned num)
+      : TranscoderThread(num, "Video")
+      , m_grabber(NULL)
+      , m_display(NULL)
+      , m_singleStep(false)
+      , m_frameWait(0, INT_MAX)
     {
     }
 
     ~VideoThread()
     {
-      delete grabber;
-      delete display;
+      delete m_grabber;
+      delete m_display;
     }
 
     bool Initialise(PArgList & args);
@@ -154,31 +159,31 @@ class VideoThread : public TranscoderThread
     void CalcVideoPacketStats(const RTP_DataFrameList & frames, bool isIFrame);
     void WriteFrameStats(const PString & str);
 
-    PVideoInputDevice  * grabber;
-    PVideoOutputDevice * display;
+    PVideoInputDevice  * m_grabber;
+    PVideoOutputDevice * m_display;
 
-    bool                 singleStep;
-    PSemaphore           frameWait;
-    unsigned             frameRate;
+    bool                 m_singleStep;
+    PSemaphore           m_frameWait;
+    unsigned             m_frameRate;
 
     void SaveSNRFrame(const RTP_DataFrame * src)
-    { snrSourceFrames.push(src); }
+    { m_snrSourceFrames.push(src); }
 
     void CalcSNR(const RTP_DataFrame & src);
     void CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst);
     void ReportSNR();
 
-    PString frameFn;
-    PTextFile frameStatFile;
-    PInt64 frameCount;
-    DWORD frameStartTimestamp;
-    std::queue<const RTP_DataFrame *> snrSourceFrames;
+    PString   m_frameFilename;
+    PTextFile m_frameStatFile;
+    PInt64    m_frameCount;
+    DWORD     m_frameStartTimestamp;
+    std::queue<const RTP_DataFrame *> m_snrSourceFrames;
 
-    unsigned snrWidth, snrHeight;
-    double sumYSNR;
-    double sumCbSNR;
-    double sumCrSNR;
-    PInt64 snrCount;
+    unsigned m_snrWidth, m_snrHeight;
+    double   m_sumYSNR;
+    double   m_sumCbSNR;
+    double   m_sumCrSNR;
+    PInt64   m_snrCount;
 
     OpalBitRateCalculator m_bitRateCalc;
 };
@@ -198,18 +203,18 @@ class CodecTest : public PProcess
     {
       public:
         TestThreadInfo(unsigned num)
-          : audio(num)
-          , video(num)
+          : m_audio(num)
+          , m_video(num)
         {
         }
 
-        bool Initialise(PArgList & args) { return audio.Initialise(args) && video.Initialise(args); }
-        void Start() { audio.Start(); video.Start(); }
-        void Stop()  { audio.Stop(); video.Stop(); }
-        void Wait()  { audio.WaitForTermination(); video.WaitForTermination(); }
+        bool Initialise(PArgList & args) { return m_audio.Initialise(args)  &&  m_video.Initialise(args); }
+        void Start()                            { m_audio.Start();              m_video.Start(); }
+        void Stop()                             { m_audio.Stop();               m_video.Stop(); }
+        void Wait()                             { m_audio.WaitForTermination(); m_video.WaitForTermination(); }
 
-        AudioThread audio;
-        VideoThread video;
+        AudioThread m_audio;
+        VideoThread m_video;
     };
 };
 
