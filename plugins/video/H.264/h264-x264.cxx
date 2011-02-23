@@ -732,7 +732,7 @@ class MyEncoder : public PluginCodec
       , m_constraints(0)
       , m_packetisationMode(1)
       , m_maxRTPSize(1400)
-      , m_tsto(1)
+      , m_tsto(15)
     {
     }
 
@@ -845,7 +845,7 @@ class MyEncoder : public PluginCodec
       H264EncCtxInstance.call(SET_FRAME_WIDTH, m_width);
       H264EncCtxInstance.call(SET_FRAME_HEIGHT, m_height);
       H264EncCtxInstance.call(SET_FRAME_RATE, m_frameRate);
-      H264EncCtxInstance.call(SET_TARGET_BITRATE, m_bitRate);
+      H264EncCtxInstance.call(SET_TARGET_BITRATE, m_bitRate/1000);
       H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, m_maxRTPSize);
       H264EncCtxInstance.call(SET_TSTO, m_tsto);
       H264EncCtxInstance.call(APPLY_OPTIONS);
