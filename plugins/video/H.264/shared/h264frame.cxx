@@ -29,17 +29,11 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
-#ifndef _MSC_VER
-#include "plugin-config.h"
-#endif
-
-#include <codec/opalplugin.h>
 #include "h264frame.h"
-
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef LICENCE_MPL
+#ifdef GPL_HELPER_APP
   #ifndef _WIN32
     #include "../gpl/enc-ctx.h"
     #include "../gpl/x264loader_unix.h"
@@ -47,8 +41,20 @@
   #else
     #define X264_NAL_ENCODE x264_nal_encode 
   #endif
+  #if PLUGINCODEC_TRACING
+    #define PTRACE_CHECK(level) ((level) < 4)
+    #define PTRACE(level, section, expr) cerr << section << '\t' << expr
+  #else
+    #define PTRACE_CHECK(level) true
+    #define PTRACE(level, section, expr)
+  #endif
+#else
+  #include <codec/opalplugin.hpp>
 #endif
+
+
 #define MAX_FRAME_SIZE 128 * 1024
+
 
 H264Frame::H264Frame ()
 {
@@ -85,7 +91,7 @@ H264Frame::~H264Frame ()
     free(m_NALs);
 }
 
-#ifndef LICENCE_MPL
+#ifdef GPL_HELPER_APP
 void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
   int vopBufferLen;
   int currentNAL = 0;
@@ -117,9 +123,8 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
       PTRACE(6, "H264", "Loaded NAL unit #" << currentNAL << " - type " << NALs[currentNAL].i_type);
 
       uint8_t* NALptr = NALs[currentNAL].p_payload;
-      if ( Trace::CanTraceUserPlane(4) && (NALs[currentNAL].i_type == H264_NAL_TYPE_SEQ_PARAM)) 
-      {
-      TRACE_UP(4,   "H264\tProfile: " << (int)NALptr[0] << 
+      if (PTRACE_CHECK(4) && (NALs[currentNAL].i_type == H264_NAL_TYPE_SEQ_PARAM)) {
+        PTRACE(4, "H264", "Profile: " << (int)NALptr[0] << 
                                 " Level: "   << (int)NALptr[2] << 
 		   	        " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
 			                         << (NALptr[1] & 0x40 ? 1 : 0) 
@@ -133,7 +138,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
     } 
     else
     {
-      TRACE_UP(4,"[enc] Need to increase vop buffer size by  " << -currentNALLen);
+      PTRACE(4, "H264", "[enc] Need to increase vop buffer size by  " << -currentNALLen);
     }
   }
   PTRACE(6, "H264", "Loaded an encoded frame of " << m_encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
