@@ -213,11 +213,10 @@ static struct PluginCodec_Option const Level =
   H264_LEVEL_STR_5_1
 };
 
-static const char NameH241Profile[] = "H.241 Profile Mask";
 static struct PluginCodec_Option const H241Profiles =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameH241Profile,                    // User visible name
+  "H.241 Profile Mask",               // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(DefaultProfileH241),      // Initial value
@@ -228,11 +227,10 @@ static struct PluginCodec_Option const H241Profiles =
   "127"                               // Maximum value
 };
 
-static const char NameH241Level[] = "H.241 Level";
 static struct PluginCodec_Option const H241Level =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameH241Level,                      // User visible name
+  "H.241 Level",                      // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(DefaultLevelH241),        // Initial value
@@ -243,11 +241,10 @@ static struct PluginCodec_Option const H241Level =
   "113"                               // Maximum value
 };
 
-static const char NameSDPProfileAndLevel[] = "SIP/SDP Profile & Level";
 static struct PluginCodec_Option const SDPProfileAndLevel =
 {
   PluginCodec_OctetsOption,           // Option type
-  NameSDPProfileAndLevel,             // User visible name
+  "SIP/SDP Profile & Level",          // User visible name
   true,                               // User Read/Only flag
   PluginCodec_NoMerge,                // Merge mode
   DefaultSDPProfileAndLevel,          // Initial value
@@ -255,11 +252,10 @@ static struct PluginCodec_Option const SDPProfileAndLevel =
   "42800A"                            // FMTP default value (as per RFC)
 };
 
-static const char NameMaxMBPS[] = "Max MBPS";
 static struct PluginCodec_Option const MaxMBPS =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameMaxMBPS,                        // User visible name
+  "Max MBPS",                         // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
@@ -270,11 +266,10 @@ static struct PluginCodec_Option const MaxMBPS =
   "983040"                            // Maximum value
 };
 
-static const char NameMaxFS[] = "Max FS";
 static struct PluginCodec_Option const MaxFS =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameMaxFS,                          // User visible name
+  "Max FS",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
@@ -285,11 +280,10 @@ static struct PluginCodec_Option const MaxFS =
   "36864"                             // Maximum value
 };
 
-static const char NameMaxBR[] = "Max BR";
 static struct PluginCodec_Option const MaxBR =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameMaxBR,                          // User visible name
+  "Max BR",                           // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
@@ -300,11 +294,10 @@ static struct PluginCodec_Option const MaxBR =
   "240000"                            // Maximum value
 };
 
-static const char NameMaxNaluSize[] = "Max NALU Size";
 static struct PluginCodec_Option const MaxNaluSize =
 {
   PluginCodec_IntegerOption,          // Option type
-  NameMaxNaluSize,                    // User visible name
+  "Max NALU Size",                    // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(H241_MAX_NALU_SIZE),      // Initial value
@@ -356,11 +349,24 @@ static struct PluginCodec_Option const PacketizationMode_1 =
   "2"                                 // Maximum value
 };
 
-static const char NameSendAccessUnitDelimiters[] = "Send Access Unit Delimiters";
+static struct PluginCodec_Option const TemporalSpatialTradeOff =
+{
+  PluginCodec_IntegerOption,          // Option type
+  PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF, // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "31",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "31"                                // Maximum value
+};
+
 static struct PluginCodec_Option const SendAccessUnitDelimiters =
 {
   PluginCodec_BoolOption,                         // Option type
-  NameSendAccessUnitDelimiters,                   // User visible name
+  "Send Access Unit Delimiters",                  // User visible name
   false,                                          // User Read/Only flag
   PluginCodec_AndMerge,                           // Merge mode
   STRINGIZE(DefaultSendAccessUnitDelimiters)      // Initial value
@@ -377,6 +383,7 @@ static struct PluginCodec_Option const * const OptionTable[] = {
   &MaxFS,
   &MaxBR,
   &MediaPacketizations,
+  &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
   NULL
 };
@@ -390,6 +397,7 @@ static struct PluginCodec_Option const * const OptionTable_0[] = {
   &MaxFS,
   &MaxBR,
   &PacketizationMode_0,
+  &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
   NULL
 };
@@ -403,6 +411,7 @@ static struct PluginCodec_Option const * const OptionTable_1[] = {
   &MaxFS,
   &MaxBR,
   &PacketizationMode_1,
+  &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
   NULL
 };
@@ -549,11 +558,11 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
     ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_FRAME_HEIGHT);
 
     // Frame rate
-    unsigned maxMBPS = std::max(info.m_MaxMBPS, String2Unsigned(original[NameMaxMBPS]));
+    unsigned maxMBPS = std::max(info.m_MaxMBPS, String2Unsigned(original[MaxMBPS.m_name]));
     ClampMin(90000*macroBlocks/maxMBPS, original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
     // Bit rate
-    unsigned maxBitRate = std::max(info.m_MaxBitRate, String2Unsigned(original[NameMaxBR])*1000);
+    unsigned maxBitRate = std::max(info.m_MaxBitRate, String2Unsigned(original[MaxBR.m_name])*1000);
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_MAX_BIT_RATE);
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
   }
@@ -565,20 +574,20 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
     size_t profileIndex = sizeof(ProfileInfo)/sizeof(ProfileInfo[0]);
 
     if (original["Protocol"] == "H.323") {
-      unsigned h241profiles = String2Unsigned(original[NameH241Profile]);
+      unsigned h241profiles = String2Unsigned(original[H241Profiles.m_name]);
       while (--profileIndex > 0) {
         if ((h241profiles&ProfileInfo[profileIndex].m_H241) != 0)
           break;
       }
 
-      unsigned h241level = String2Unsigned(original[NameH241Level]);
+      unsigned h241level = String2Unsigned(original[H241Level.m_name]);
       for (; levelIndex < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; ++levelIndex) {
         if (h241level <= LevelInfo[levelIndex].m_H241)
           break;
       }
     }
     else {
-      std::string sdpProfLevel = original[NameSDPProfileAndLevel];
+      std::string sdpProfLevel = original[SDPProfileAndLevel.m_name];
       if (sdpProfLevel.length() < 6) {
         PTRACE(1, MY_CODEC_LOG, "SDP profile-level-id field illegal.");
         return false;
@@ -613,7 +622,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
     Change(ProfileInfo[profileIndex].m_Name, original, changed, "Profile"); 
     Change(LevelInfo[levelIndex].m_Name, original, changed, "Level");
 
-    unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[NameMaxFS]));
+    unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[MaxFS.m_name]));
     ClampOptions(LevelInfo[levelIndex],
                  String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH]),
                  String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT]),
@@ -637,7 +646,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
         break;
     }
 
-    Change(ProfileInfo[profileIndex].m_H241, original, changed, NameH241Profile);
+    Change(ProfileInfo[profileIndex].m_H241, original, changed, H241Profiles.m_name);
 
     // get the current level 
     str = original["Level"];
@@ -667,10 +676,10 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
 
     unsigned bitRate = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_BIT_RATE]);
     if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
-      Change(bitRate/1000, original, changed, NameMaxBR);
+      Change(bitRate/1000, original, changed, MaxBR.m_name);
 
     // set the new level
-    Change(LevelInfo[levelIndex].m_H241, original, changed, NameH241Level);
+    Change(LevelInfo[levelIndex].m_H241, original, changed, H241Level.m_name);
 
     // Calculate SDP parameters from the adjusted profile/level
     char sdpProfLevel[7];
@@ -678,14 +687,14 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
             ProfileInfo[profileIndex].m_H264,
             ProfileInfo[profileIndex].m_Constraints | LevelInfo[levelIndex].m_constraints,
             LevelInfo[levelIndex].m_H264);
-    Change(sdpProfLevel, original, changed, NameSDPProfileAndLevel);
+    Change(sdpProfLevel, original, changed, SDPProfileAndLevel.m_name);
 
     // Clamp other variables (width/height etc) according to the adjusted profile/level
     ClampOptions(LevelInfo[levelIndex], maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
 
     // Do this afer the clamping, maxFrameSizeInMB may change
     if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize)
-      Change(maxFrameSizeInMB, original, changed, NameMaxFS);
+      Change(maxFrameSizeInMB, original, changed, MaxFS.m_name);
 
     return true;
   }
@@ -732,7 +741,7 @@ class MyEncoder : public PluginCodec
       , m_constraints(0)
       , m_packetisationMode(1)
       , m_maxRTPSize(1400)
-      , m_tsto(15)
+      , m_tsto(31)
     {
     }
 
@@ -777,9 +786,9 @@ class MyEncoder : public PluginCodec
         return SetOptionUnsigned(m_maxRTPSize, optionValue, 65535);
 
       if (STRCMPI(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
-        return SetOptionUnsigned(m_tsto, optionValue, 31, 1);
+        return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
 
-      if (strcasecmp(optionName, NameH241Level) == 0) {
+      if (strcasecmp(optionName, H241Level.m_name) == 0) {
         size_t i;
         for (i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; i++) {
           if ((unsigned)m_level <= LevelInfo[i].m_H264)
