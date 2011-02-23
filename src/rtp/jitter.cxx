@@ -265,7 +265,7 @@ void OpalJitterBuffer::Reset()
 }
 
 
-PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & tick)
+PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
 {
   PWaitAndSignal mutex(m_bufferMutex);
 
@@ -347,7 +347,7 @@ DWORD OpalJitterBuffer::CalculateRequiredTimestamp(DWORD playOutTimestamp) const
 }
 
 
-PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & tick)
+PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
 {
   // Default response is an empty frame, ie silence
   frame.SetPayloadSize(0);
