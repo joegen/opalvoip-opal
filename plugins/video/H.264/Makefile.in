@@ -56,7 +56,6 @@ vpath	%.o   $(OBJDIR)
 SRCS    += $(SHAREDDIR)/h264frame.cxx \
            h264-x264.cxx \
            $(COMMONDIR)/dyna.cxx \
-           $(COMMONDIR)/trace.cxx
 
 ifeq ($(WIN32),yes)
 SRCS    += h264pipe_win32.cxx
