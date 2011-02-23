@@ -69,7 +69,6 @@ endif
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
 	   rfc2190.cxx \
-	   $(COMMONDIR)/trace.cxx \
 	   $(COMMONDIR)/mpi.cxx
 
 $(OBJDIR)/%.o : %.cxx

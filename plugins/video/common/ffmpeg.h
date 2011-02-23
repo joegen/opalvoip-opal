@@ -14,6 +14,7 @@
  * of the original code portions and any parts now included in this new copy is asserted through 
  * their inclusion in the copyright notices below.
  *
+ * Copyright (C) 2011 Vox Lucida Pty. Ltd.
  * Copyright (C) 2006 Post Increment
  * Copyright (C) 2005 Salyens
  * Copyright (C) 2001 March Networks Corporation
@@ -36,6 +37,7 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
  *                 Matthias Schneider (ma30002000@yahoo.de)
+ *                 Robert Jongbloed (robertj@voxlucida.com.au)
  */
 
 #ifndef __FFMPEG_H__
@@ -43,53 +45,23 @@
 
 #include <codec/opalplugin.hpp>
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#if defined(_WIN32) || defined(_WIN32_WCE)
-  #define __STDC_CONSTANT_MACROS
-  #include "vs-stdint.h"
-  #include <windows.h>
-  #include <malloc.h>
-  #undef min
-  #undef max
-  #define STRCMPI  _strcmpi
-#else
-  #include <semaphore.h>
-  #include <dlfcn.h>
-  #define STRCMPI  strcasecmp
-  typedef unsigned char BYTE;
-#endif
-
-#include <string.h>
-#include "critsect.h"
-
+#include "platform.h"
 
 extern "C" {
-#if defined (_WIN32) && defined (_MSC_VER)
-#include "vs-stdint.h"
-#define LIBAVCODEC_HEADER   "libavcodec\avcodec.h"
-#pragma warning(push)
-#pragma warning(disable:4244 4996)
-#define round(d)  ((int)((double)(d)+0.5))
-#define strdup(s) _strdup(s)
-#else
-#include "plugin-config.h"
-#include <stdint.h>
-#endif
-
-#include LIBAVCODEC_HEADER
-
-#ifdef _WIN32
-#pragma warning(pop)
-#endif
+  #include LIBAVCODEC_HEADER
 };
 
 #ifndef LIBAVCODEC_VERSION_INT
 #error Libavcodec include is not correct
 #endif
 
+#include "critsect.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <vector>
+
 
 // Compile time version checking
 #if LIBAVCODEC_VERSION_INT < ((51<<16)+(11<<8)+0)
@@ -121,12 +93,5 @@ extern "C" {
 #define WITH_ALIGNED_STACK(what) what
 #endif
 
-#ifdef  _WIN32
-# define DIR_SEPARATOR "\\"
-# define DIR_TOKENISER ";"
-#else
-# define DIR_SEPARATOR "/"
-# define DIR_TOKENISER ":"
-#endif
 
 #endif // __FFMPEG_H__
