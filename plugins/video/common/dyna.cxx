@@ -39,21 +39,6 @@
  */
 #include "dyna.h"
 
-#ifdef _MSC_VER
-#define snprintf  _snprintf
-#define vsnprintf _vsnprintf
-#pragma warning(disable:4101)
-#endif
-
-#ifndef PATH_SEP
-#ifdef _WIN32
-#pragma pack(16)
-#define	PATH_SEP  ";"
-#else
-#define	PATH_SEP  ":"
-#endif
-#endif
-
 bool DynaLink::Open(const char *name)
 {
   // At first we try without a path
@@ -77,11 +62,11 @@ bool DynaLink::Open(const char *name)
 #else
     strcpy(ptlibPath, "/usr/local/lib");
 #endif
-  char * p = ::strtok(ptlibPath, PATH_SEP);
+  char * p = ::strtok(ptlibPath, DIR_TOKENISER);
   while (p != NULL) {
     if (InternalOpen(p, name))
       return true;
-    p = ::strtok(NULL, PATH_SEP);
+    p = ::strtok(NULL, DIR_TOKENISER);
   }
 
   return false;
@@ -128,7 +113,7 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
 #ifndef _WIN32
     const char * err = dlerror();
     if (err != NULL) {
-      PTRACE(1, m_codecString, "\tDYNA\tError loading " << path << " - " << err)
+      PTRACE(1, m_codecString, "\tDYNA\tError loading " << path << " - " << err);
     }  
     else {
       PTRACE(1, m_codecString, "\tDYNA\tError loading " << path);
@@ -139,7 +124,10 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
     return false;
   } 
 
+#ifdef _WIN32
   GetModuleFileName(m_hDLL, path, sizeof(path));
+#endif
+
   PTRACE(1, m_codecString, "\tDYNA\tSuccessfully loaded '" << path << "'");
   return true;
 }

@@ -42,7 +42,8 @@
 #define __DYNA_H__ 1
 
 #include "ffmpeg.h"
-	  
+
+
 /////////////////////////////////////////////////////////////////
 //
 // define a class to simplify handling a DLL library
