@@ -73,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
+				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".\ffmpeg\lib"
@@ -161,7 +161,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
+				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".\ffmpeg\lib"
