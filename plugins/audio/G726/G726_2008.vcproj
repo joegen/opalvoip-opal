@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\G726"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -103,8 +103,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\G726"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"

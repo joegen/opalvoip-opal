@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="..\..\$(ConfigurationName)\SpanDSPFax"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -74,7 +74,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies=".\spandsp-0.0.6\src\Release\spandsp.lib"
-				OutputFile="../../Release/SpanDSPFax_pwplugin.dll"
+				OutputFile="$(OutDir)\SpanDSPFax_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
@@ -108,8 +108,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="..\..\$(ConfigurationName)\SpanDSPFax"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -164,7 +164,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies=".\spandsp-0.0.6\src\Debug\spandsp.lib"
-				OutputFile="../../Debug/SpanDSPFax_pwplugin.dll"
+				OutputFile="$(OutDir)\SpanDSPFax_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=""
