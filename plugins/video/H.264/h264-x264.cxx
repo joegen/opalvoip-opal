@@ -102,12 +102,12 @@ H264EncCtx H264EncCtxInstance;
 static bool InitLibs()
 {
   if (!FFMPEGLibraryInstance.Load()) {
-    PTRACE(1, "H264", "Codec\tDisabled");
+    PTRACE(1, MY_CODEC_LOG, "Codec\tDisabled");
     return false;
   }
 
   if (!H264EncCtxInstance.Load()) {
-    PTRACE(1, "H264", "Codec\tDisabled");
+    PTRACE(1, MY_CODEC_LOG, "Codec\tDisabled");
     return false;
   }
 
@@ -816,7 +816,7 @@ class MyEncoder : public PluginCodec
         if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) != NULL ||
             strstr(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != NULL)
           return SetPacketisationMode(0);
-        PTRACE(2, "H.264", "Unknown packetisation mode: \"" << optionValue << '"');
+        PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
         return false; // Unknown/unsupported media packetization
       }
 
@@ -858,6 +858,14 @@ class MyEncoder : public PluginCodec
       H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, m_maxRTPSize);
       H264EncCtxInstance.call(SET_TSTO, m_tsto);
       H264EncCtxInstance.call(APPLY_OPTIONS);
+      PTRACE(3, MY_CODEC_LOG, "Applied options: "
+                              "prof=" << m_profile << " "
+                              "lev=" << m_level << " "
+                              "res=" << m_width << 'x' << m_height << " "
+                              "fps=" << m_frameRate << " "
+                              "bps=" << m_bitRate << " "
+                              "RTP=" << m_maxRTPSize << " "
+                              "TSTO=" << m_tsto);
       return true;
     }
 
@@ -969,11 +977,11 @@ class MyDecoder : public PluginCodec
 
       if (m_fullFrame.GetFrameSize() == 0) {
         m_fullFrame.BeginNewFrame();
-        PTRACE(3, "H264", "Got an empty video frame - skipping");
+        PTRACE(3, MY_CODEC_LOG, "Got an empty video frame - skipping");
         return true;
       }
 
-      PTRACE(5, "H264", "Decoding " << m_fullFrame.GetFrameSize()  << " bytes");
+      PTRACE(5, MY_CODEC_LOG, "Decoding " << m_fullFrame.GetFrameSize()  << " bytes");
 
       /* Do conversion of RTP packet. Note that typically many are received
          before an output frame is generated. If no output fram is available
@@ -988,7 +996,7 @@ class MyDecoder : public PluginCodec
       m_fullFrame.BeginNewFrame();
 
       if (!gotPicture) {
-        PTRACE(4, "H264", "Decoding " << bytesDecoded  << " bytes without a picture.");
+        PTRACE(4, MY_CODEC_LOG, "Decoding " << bytesDecoded  << " bytes without a picture.");
         flags |= PluginCodec_ReturnCoderRequestIFrame;
         return true;
       }
