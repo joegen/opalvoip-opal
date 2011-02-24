@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\H263-1998"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -73,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
+				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".\ffmpeg\lib"
@@ -106,8 +106,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\H263-1998"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -161,7 +161,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h263-1998_ptplugin.dll"
+				OutputFile="$(OutDir)/h263_ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".\ffmpeg\lib"
