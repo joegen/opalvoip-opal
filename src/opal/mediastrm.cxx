@@ -1110,11 +1110,13 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
                                            unsigned sessionID,
                                            PVideoInputDevice * in,
                                            PVideoOutputDevice * out,
-                                           PBoolean del)
-  : OpalMediaStream(conn, mediaFormat, sessionID, in != NULL),
-    inputDevice(in),
-    outputDevice(out),
-    autoDelete(del)
+                                           PBoolean delIn,
+                                           PBoolean delOut)
+  : OpalMediaStream(conn, mediaFormat, sessionID, in != NULL)
+  , m_inputDevice(in)
+  , m_outputDevice(out)
+  , m_autoDeleteInput(delIn)
+  , m_autoDeleteOutput(delOut)
 {
   PAssert(in != NULL || out != NULL, PInvalidParameter);
 }
@@ -1123,22 +1125,24 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
 OpalVideoMediaStream::~OpalVideoMediaStream()
 {
   Close();
-  if (autoDelete) {
-    delete inputDevice;
-    delete outputDevice;
-  }
+
+  if (m_autoDeleteInput)
+    delete m_inputDevice;
+
+  if (m_autoDeleteOutput)
+    delete m_outputDevice;
 }
 
 
 PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
-  if (inputDevice != NULL) {
-    PINDEX minDataSize = inputDevice->GetMaxFrameBytes();
+  if (m_inputDevice != NULL) {
+    PINDEX minDataSize = m_inputDevice->GetMaxFrameBytes();
     if (dataSize < minDataSize)
       dataSize = minDataSize;
   }
-  if (outputDevice != NULL) {
-    PINDEX minDataSize = outputDevice->GetMaxFrameBytes();
+  if (m_outputDevice != NULL) {
+    PINDEX minDataSize = m_outputDevice->GetMaxFrameBytes();
     if (dataSize < minDataSize)
       dataSize = minDataSize;
   }
@@ -1155,28 +1159,32 @@ PBoolean OpalVideoMediaStream::Open()
   unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
-  if (inputDevice != NULL) {
-    if (!inputDevice->SetColourFormatConverter(mediaFormat)) {
+  if (m_inputDevice != NULL) {
+    if (!m_inputDevice->SetColourFormatConverter(mediaFormat)) {
       PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
       return false;
     }
-    if (!inputDevice->SetFrameSizeConverter(width, height)) {
+    if (!m_inputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
       return false;
     }
-    if (!inputDevice->Start()) {
+    if (!m_inputDevice->SetFrameRate(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime())) {
+      PTRACE(1, "Media\tCould not set frame rate in grabber to " << (mediaFormat.GetClockRate()/mediaFormat.GetFrameTime()));
+      return false;
+    }
+    if (!m_inputDevice->Start()) {
       PTRACE(1, "Media\tCould not start video grabber");
       return false;
     }
-    lastGrabTime = PTimer::Tick();
+    m_lastGrabTime = PTimer::Tick();
   }
 
-  if (outputDevice != NULL) {
-    if (!outputDevice->SetColourFormatConverter(mediaFormat)) {
+  if (m_outputDevice != NULL) {
+    if (!m_outputDevice->SetColourFormatConverter(mediaFormat)) {
       PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
       return false;
     }
-    if (!outputDevice->SetFrameSizeConverter(width, height)) {
+    if (!m_outputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
       return false;
     }
@@ -1193,11 +1201,11 @@ PBoolean OpalVideoMediaStream::Close()
   if (!OpalMediaStream::Close())
     return false;
 
-  if (inputDevice != NULL)
-    inputDevice->Stop();
+  if (m_inputDevice != NULL)
+    m_inputDevice->Stop();
 
-  if (outputDevice != NULL)
-    outputDevice->Stop();
+  if (m_outputDevice != NULL)
+    m_outputDevice->Stop();
 
   return true;
 }
@@ -1213,18 +1221,18 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
   }
 
-  if (inputDevice == NULL) {
+  if (m_inputDevice == NULL) {
     PTRACE(1, "Media\tTried to read from video display device");
     return false;
   }
 
-  if (size < inputDevice->GetMaxFrameBytes()) {
-    PTRACE(1, "Media\tTried to read with insufficient buffer size - " << size << " < " << inputDevice->GetMaxFrameBytes());
+  if (size < m_inputDevice->GetMaxFrameBytes()) {
+    PTRACE(1, "Media\tTried to read with insufficient buffer size - " << size << " < " << m_inputDevice->GetMaxFrameBytes());
     return false;
   }
 
   unsigned width, height;
-  inputDevice->GetFrameSize(width, height);
+  m_inputDevice->GetFrameSize(width, height);
   OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)PAssertNULL(data);
   frame->x = frame->y = 0;
   frame->width = width;
@@ -1232,12 +1240,12 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
   unsigned flags = 0;
-  if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags))
+  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags))
     return false;
 
   PTimeInterval currentGrabTime = PTimer::Tick();
-  timestamp += (int)((currentGrabTime - lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
-  lastGrabTime = currentGrabTime;
+  timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
+  m_lastGrabTime = currentGrabTime;
 
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0)
     ExecuteCommand(OpalVideoUpdatePicture());
@@ -1247,15 +1255,16 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (length > 0)
     length += sizeof(PluginCodec_Video_FrameHeader);
 
-  if (outputDevice == NULL)
+  if (m_outputDevice == NULL)
     return true;
 
-  if (outputDevice->Start())
-    return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
+  if (m_outputDevice->Start())
+    return m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
 
   PTRACE(1, "Media\tCould not start video display device");
-  delete outputDevice;
-  outputDevice = NULL;
+  if (m_autoDeleteOutput)
+    delete m_outputDevice;
+  m_outputDevice = NULL;
   return true;
 }
 
@@ -1270,7 +1279,7 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
-  if (outputDevice == NULL) {
+  if (m_outputDevice == NULL) {
     PTRACE(1, "Media\tTried to write to video capture device");
     return false;
   }
@@ -1284,19 +1293,19 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
 
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data;
 
-  if (!outputDevice->SetFrameSize(frame->width, frame->height)) {
+  if (!m_outputDevice->SetFrameSize(frame->width, frame->height)) {
     PTRACE(1, "Media\tCould not resize video display device to " << frame->width << 'x' << frame->height);
     return false;
   }
 
-  if (!outputDevice->Start()) {
+  if (!m_outputDevice->Start()) {
     PTRACE(1, "Media\tCould not start video display device");
     return false;
   }
 
-  return outputDevice->SetFrameData(frame->x, frame->y,
-                                    frame->width, frame->height,
-                                    OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
+  return m_outputDevice->SetFrameData(frame->x, frame->y,
+                                      frame->width, frame->height,
+                                      OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
 }
 
 
