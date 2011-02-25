@@ -922,6 +922,9 @@ class MyDecoder : public PluginCodec
 
     virtual bool Construct()
     {
+      if (!InitLibs())
+        return false;
+
       /* Complete construction of object after it has been created. This
          allows you to fail the create operation (return false), which cannot
          be done in the normal C++ constructor. */
