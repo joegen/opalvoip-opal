@@ -821,41 +821,39 @@ void OpalConnection::OnPauseMediaStream(OpalMediaStream & /*strm*/, bool /*pause
 }
 
 
-OpalMediaStream * OpalConnection::CreateMediaStream(
 #if OPAL_VIDEO
-  const OpalMediaFormat & mediaFormat,
-  unsigned sessionID,
-  PBoolean isSource
-#else
-  const OpalMediaFormat & ,
-  unsigned ,
-  PBoolean 
-#endif
-  )
+OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                    unsigned sessionID,
+                                                    PBoolean isSource)
 {
-#if OPAL_VIDEO
   if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
-      PBoolean autoDelete;
-      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDelete)) {
+      PBoolean autoDeleteGrabber;
+      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber)) {
         PVideoOutputDevice * previewDevice;
-        if (!CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDelete))
+        PBoolean autoDeletePreview;
+        if (!CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview))
           previewDevice = NULL;
-        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
       }
     }
     else {
       PVideoOutputDevice * videoDevice;
       PBoolean autoDelete;
       if (CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete))
-        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
     }
   }
-#endif
 
   return NULL;
 }
+#else
+OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean)
+{
+  retrurn NULL;
+}
+#endif
 
 
 PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
