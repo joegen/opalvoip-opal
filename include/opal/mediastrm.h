@@ -871,7 +871,8 @@ class OpalVideoMediaStream : public OpalMediaStream
       unsigned sessionID,                  ///<  Session number for stream
       PVideoInputDevice * inputDevice,     ///<  Device to use for video grabbing
       PVideoOutputDevice * outputDevice,   ///<  Device to use for video display
-      bool autoDelete = true               ///<  Automatically delete PVideoDevices
+      bool autoDeleteInput,                ///<  Automatically delete PVideoInputDevice
+      bool autoDeleteOutput                ///<  Automatically delete PVideoOutputDevice
     );
 
     /**Delete attached channel if autoDelete enabled.
@@ -930,23 +931,26 @@ class OpalVideoMediaStream : public OpalMediaStream
 
     /** Get the input device (e.g. for statistics)
       */
-    virtual PVideoInputDevice * GetVideoInputDevice() const {
-      return inputDevice;
+    virtual PVideoInputDevice * GetVideoInputDevice() const
+    {
+      return m_inputDevice;
     }
 
     /** Get the output device (e.g. for statistics)
       */
-    virtual PVideoOutputDevice * GetVideoOutputDevice() const {
-      return outputDevice;
+    virtual PVideoOutputDevice * GetVideoOutputDevice() const
+    {
+      return m_outputDevice;
     }
 
   //@}
 
   protected:
-    PVideoInputDevice  * inputDevice;
-    PVideoOutputDevice * outputDevice;
-    bool                 autoDelete;
-    PTimeInterval        lastGrabTime;
+    PVideoInputDevice  * m_inputDevice;
+    PVideoOutputDevice * m_outputDevice;
+    bool                 m_autoDeleteInput;
+    bool                 m_autoDeleteOutput;
+    PTimeInterval        m_lastGrabTime;
 };
 
 #endif // OPAL_VIDEO
