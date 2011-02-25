@@ -85,7 +85,7 @@ bool H264EncCtx::Load()
   
   if (!findGplProcess()) { 
 
-    PTRACE(1, "H264", "IPC\tPP: Couldn't find GPL process executable " << GPL_PROCESS_FILENAME);
+    PTRACE(1, "x264", "IPC\tPP: Couldn't find GPL process executable " << GPL_PROCESS_FILENAME);
     closeAndRemovePipes(); 
     return false;
   }  
@@ -99,13 +99,13 @@ bool H264EncCtx::Load()
   if (!ConnectNamedPipe(stream, NULL)) {
 	if (GetLastError() != ERROR_PIPE_CONNECTED) {
 
-          PTRACE(1, "H264", "IPC\tPP: Could not establish communication with child process (" << ErrorMessage() << ")");
+          PTRACE(1, "x264", "IPC\tPP: Could not establish communication with child process (" << ErrorMessage() << ")");
 	  closeAndRemovePipes(); 
 	  return false;
 	}
   } 
 
-  PTRACE(1, "H264", "IPC\tPP: Successfully established communication with child process");
+  PTRACE(1, "x264", "IPC\tPP: Successfully established communication with child process");
   loaded = true;
   return true;
 }
@@ -189,7 +189,7 @@ bool H264EncCtx::createPipes()
 
   if (stream == INVALID_HANDLE_VALUE) {
 
-    PTRACE(1, "H264", "IPC\tPP: Failure on creating Pipe - terminating (" << ErrorMessage() << ")");
+    PTRACE(1, "x264", "IPC\tPP: Failure on creating Pipe - terminating (" << ErrorMessage() << ")");
     return false;
   }
   return true;
@@ -198,9 +198,9 @@ bool H264EncCtx::createPipes()
 void H264EncCtx::closeAndRemovePipes()
 {
   if (!DisconnectNamedPipe(stream))
- 	PTRACE(1, "H264", "IPC\tPP: Failure on disconnecting Pipe (" << ErrorMessage() << ")");
+ 	PTRACE(1, "x264", "IPC\tPP: Failure on disconnecting Pipe (" << ErrorMessage() << ")");
   if (!CloseHandle(stream))
- 	PTRACE(1, "H264", "IPC\tPP: Failure on closing Handle (" << ErrorMessage() << ")");
+ 	PTRACE(1, "x264", "IPC\tPP: Failure on closing Handle (" << ErrorMessage() << ")");
 }
 
 void H264EncCtx::readStream (LPVOID data, unsigned bytes)
@@ -217,13 +217,13 @@ void H264EncCtx::readStream (LPVOID data, unsigned bytes)
 
   if (!fSuccess) {
 
-	PTRACE(1, "H264", "IPC\tPP: Failure on reading - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tPP: Failure on reading - terminating (" << ErrorMessage() << ")");
 	closeAndRemovePipes();
   }
 
   if (bytes != bytesRead) {
 
-    PTRACE(1, "H264", "IPC\tPP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
+    PTRACE(1, "x264", "IPC\tPP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
 	closeAndRemovePipes();
   }
 }
@@ -242,13 +242,13 @@ void H264EncCtx::writeStream (LPCVOID data, unsigned bytes)
 
   if (!fSuccess) {
 
-	PTRACE(1, "H264", "IPC\tPP: Failure on writing - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tPP: Failure on writing - terminating (" << ErrorMessage() << ")");
 	closeAndRemovePipes();
   }
 
   if (bytes != bytesWritten) {
 
-    PTRACE(1, "H264", "IPC\tPP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
+    PTRACE(1, "x264", "IPC\tPP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
 	closeAndRemovePipes();
   }
 }
@@ -257,7 +257,7 @@ void H264EncCtx::flushStream ()
 {
   if (!FlushFileBuffers(stream)) {
 
-	PTRACE(1, "H264", "IPC\tPP: Failure on flushing - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tPP: Failure on flushing - terminating (" << ErrorMessage() << ")");
 	closeAndRemovePipes();
   }
 }
@@ -296,12 +296,12 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 
   fin.open(gplProcess,ios::in);
   if( !fin.is_open() ){
-    PTRACE(1, "H264", "IPC\tPP: Couldn't find GPL process executable in " << gplProcess);
+    PTRACE(1, "x264", "IPC\tPP: Couldn't find GPL process executable in " << gplProcess);
     fin.close();
     return false;
   }
   fin.close();
-  PTRACE(1, "H264", "IPC\tPP: Found GPL process executable in " << gplProcess);
+  PTRACE(1, "x264", "IPC\tPP: Found GPL process executable in " << gplProcess);
   return true;
 }
 
@@ -328,10 +328,10 @@ bool H264EncCtx::execGplProcess()
                       &si,         // Pointer to STARTUPINFO structure
                       &pi ))       // Pointer to PROCESS_INFORMATION structure
   {
-      PTRACE(1, "H264", "IPC\tPP: Couldn't create child process: " << ErrorMessage());
+      PTRACE(1, "x264", "IPC\tPP: Couldn't create child process: " << ErrorMessage());
       return false;
   }
-  PTRACE(1, "H264", "IPC\tPP: Successfully created child process " << pi.dwProcessId);
+  PTRACE(1, "x264", "IPC\tPP: Successfully created child process " << pi.dwProcessId);
   return true;
 }
 

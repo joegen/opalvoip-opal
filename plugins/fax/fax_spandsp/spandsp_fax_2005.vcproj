@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="..\..\$(ConfigurationName)\SpanDSPFax"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -107,8 +107,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\$(ConfigurationName)"
-			IntermediateDirectory="..\..\$(ConfigurationName)\SpanDSPFax"
+			OutputDirectory="..\..\..\bin\plugins\$(ConfigurationName)\"
+			IntermediateDirectory="$(OutDir)$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -203,7 +203,6 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
-			RelativePathToProject=".\spandsp-0.0.6\src\libspandsp.2005.vcproj"
 		/>
 	</References>
 	<Files>
