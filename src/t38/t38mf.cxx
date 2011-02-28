@@ -99,7 +99,7 @@ RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessi
 
 OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
-  return new OpalRTPMediaSession(conn, m_mediaType, sessionID, NULL);
+  return new OpalRTPMediaSession(conn, m_mediaType, sessionID);
 }
 
 

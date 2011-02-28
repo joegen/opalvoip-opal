@@ -1716,10 +1716,6 @@ class H323Connection : public OpalRTPConnection
        If there is no session of the specified ID, a new one is created using
        the information provided in the tranport parameter. If the system
        does not support the specified transport, NULL is returned.
-
-       If this function is used, then the ReleaseSession() function MUST be
-       called or the session is never deleted for the lifetime of the H323
-       connection.
       */
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,
