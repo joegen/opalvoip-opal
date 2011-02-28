@@ -4248,7 +4248,7 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
-  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = (PString));
+  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = (const char *));
   SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
   PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
                              m_manager.m_recordingOptions.m_videoWidth,
