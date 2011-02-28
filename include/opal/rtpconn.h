@@ -117,14 +117,14 @@ class OpalRTPMediaSession : public OpalMediaSession
     OpalRTPMediaSession(
       OpalConnection & conn,
       const OpalMediaType & mediaType,
-      unsigned sessionId,
-      RTP_Session * rtpSession
+      unsigned sessionId
     );
     OpalRTPMediaSession(const OpalRTPMediaSession & obj);
+    ~OpalRTPMediaSession();
 
     PObject * Clone() const { return new OpalRTPMediaSession(*this); }
 
-    void Open(RTP_Session * rtpSession);
+    void Attach(RTP_Session * rtpSession);
 
     virtual void Close();
 
@@ -201,7 +201,7 @@ class OpalRTPSessionManager : public PObject
 
     /**Release the session.
      */
-    virtual void ReleaseSession(
+    virtual void CloseSession(
       unsigned sessionID     ///<  Session ID to release, 0 indicates all
     );
 
@@ -321,7 +321,7 @@ class OpalRTPConnection : public OpalConnection
 
     /**Release the session.
      */
-    virtual void ReleaseSession(
+    virtual void CloseSession(
       unsigned sessionID     ///<  RTP session number, 0 indicates all
     );
 
