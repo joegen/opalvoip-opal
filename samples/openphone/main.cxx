@@ -6365,7 +6365,7 @@ void StatisticsField::Clear()
 }
 
 
-double StatisticsField::CalculateBandwidth(DWORD bytes)
+double StatisticsField::CalculateBandwidth(PUInt64 bytes)
 {
   PTimeInterval tick = PTimer::Tick();
 
