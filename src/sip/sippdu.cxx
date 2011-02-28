@@ -1380,7 +1380,7 @@ static bool LocateFieldParameter(const PString & fieldValue, const PString & par
     }
     else if (fieldValue[val] != '=') {
       if (fieldValue(start, val-1) *= paramName) {
-        end = val;
+        end = val-1;
         return true;
       }
     }
