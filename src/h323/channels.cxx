@@ -665,9 +665,6 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
 
 H323_RTPChannel::~H323_RTPChannel()
 {
-  // Finished with the RTP session, this will delete the session if it is no
-  // longer referenced by any logical channels.
-  connection.ReleaseSession(GetSessionID());
 }
 
 
