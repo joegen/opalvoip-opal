@@ -871,8 +871,8 @@ class OpalVideoMediaStream : public OpalMediaStream
       unsigned sessionID,                  ///<  Session number for stream
       PVideoInputDevice * inputDevice,     ///<  Device to use for video grabbing
       PVideoOutputDevice * outputDevice,   ///<  Device to use for video display
-      bool autoDeleteInput,                ///<  Automatically delete PVideoInputDevice
-      bool autoDeleteOutput                ///<  Automatically delete PVideoOutputDevice
+      bool autoDeleteInput = true,         ///<  Automatically delete PVideoInputDevice
+      bool autoDeleteOutput = true         ///<  Automatically delete PVideoOutputDevice
     );
 
     /**Delete attached channel if autoDelete enabled.
