@@ -150,8 +150,6 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
 
 OpalRFC2833Proto::~OpalRFC2833Proto()
 {
-  if (m_rtpSession != NULL)
-    m_connection.ReleaseSession(m_rtpSession->GetSessionID());
 }
 
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
