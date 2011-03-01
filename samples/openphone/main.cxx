@@ -1594,13 +1594,15 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
   tstringstream text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
-           "Copyright � 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+           "Copyright (c) 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
            "\n"
            "This application may be used for any purpose so long as it is not sold "
            "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
            " disguised or hidden in any way.\n"
            "\n"
-           "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n";
+           "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n"
+           "  OPAL Version:  " << OpalGetVersion() << "\n"
+           "  PTLib Version: " << PProcess::GetLibVersion() << '\n';
   wxMessageDialog dialog(this, text.str().c_str(), wxT("About ..."), wxOK);
   dialog.ShowModal();
 }
