@@ -569,7 +569,6 @@ OpalRTPSessionManager::OpalRTPSessionManager(const OpalRTPSessionManager & other
 
 OpalRTPSessionManager::~OpalRTPSessionManager()
 {
-  CloseSession(0);
 }
 
 
