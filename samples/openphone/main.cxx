@@ -1942,11 +1942,14 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 void MyManager::OnRightClick(wxListEvent& event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
-  menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
-  menuBar->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
-  menuBar->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
-  PopupMenu(menuBar->GetMenu(0), event.GetPoint());
+  wxMenu * menu = menuBar->Remove(0);
   delete menuBar;
+
+  menu->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
+  menu->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
+  menu->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
+  PopupMenu(menu, event.GetPoint());
+  delete menu;
 }
 
 
