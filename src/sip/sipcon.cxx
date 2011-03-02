@@ -542,6 +542,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   }
 
   SetPhase(AlertingPhase);
+  alertingTime = PTime();
   NotifyDialogState(SIPDialogNotification::Early);
 
   return PTrue;
@@ -2655,6 +2656,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
+    alertingTime = PTime();
     OnAlerting();
     NotifyDialogState(SIPDialogNotification::Early);
   }
@@ -2672,6 +2674,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
+    alertingTime = PTime();
     OnAlerting();
     NotifyDialogState(SIPDialogNotification::Early);
   }
