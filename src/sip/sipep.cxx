@@ -748,7 +748,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
   if (handler != NULL)
     handler->OnReceivedResponse(transaction, response);
   else {
-    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << response.GetMIME().GetCallID());
+    PTRACE(2, "SIP\tResponse for " << transaction << " received,"
+              " but unknown handler, ID: " << transaction.GetMIME().GetCallID());
   }
 }
 
@@ -902,7 +903,8 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
   if (handler != NULL) 
     handler->OnTransactionFailed(transaction);
   else {
-    PTRACE(2, "SIP\tResponse received for unknown handler ID: " << transaction.GetMIME().GetCallID());
+    PTRACE(2, "SIP\tTransaction " << transaction << " failed,"
+              " unknown handler, ID: " << transaction.GetMIME().GetCallID());
   }
 }
 
