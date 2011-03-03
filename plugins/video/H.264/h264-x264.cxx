@@ -53,7 +53,12 @@
 #define MY_CODEC      x264                                  // Name of codec (use C variable characters)
 #define MY_CODEC_LOG "x264"
 
-static unsigned   MyVersion = PLUGIN_CODEC_VERSION_OPTIONS; // Minimum version for codec (should never change)
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+static unsigned MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
+#else
+static unsigned MyVersion = PLUGIN_CODEC_VERSION_OPTIONS;
+#endif
+
 static const char MyDescription[] = "x264 Video Codec";     // Human readable description of codec
 static const char FormatNameH323[] = "H.264";               // OpalMediaFormat name string to generate
 static const char FormatNameSIP0[] = "H.264-0";             // OpalMediaFormat name string to generate
@@ -310,15 +315,18 @@ static struct PluginCodec_Option const MaxNaluSize =
 
 #define OpalPluginCodec_Identifer_H264_Truncated "0.0.8.241.0.0.0" // Some stupid endpoints (e.g. Polycom) use this, one zero short!
 
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
 static struct PluginCodec_Option const MediaPacketizations =
 {
   PluginCodec_StringOption,           // Option type
   PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
   true,                               // User Read/Only flag
-  PluginCodec_NoMerge,                // Merge mode
-  OpalPluginCodec_Identifer_H264_Aligned "," OpalPluginCodec_Identifer_H264_NonInterleaved // Initial value
-  "," OpalPluginCodec_Identifer_H264_Truncated
+  PluginCodec_IntersectionMerge,      // Merge mode
+  OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
+  OpalPluginCodec_Identifer_H264_NonInterleaved ","
+  OpalPluginCodec_Identifer_H264_Truncated
 };
+#endif
 
 static const char NamePacketizationMode[] = "Packetization Mode";
 static struct PluginCodec_Option const PacketizationMode_0 =
@@ -372,7 +380,7 @@ static struct PluginCodec_Option const SendAccessUnitDelimiters =
   STRINGIZE(DefaultSendAccessUnitDelimiters)      // Initial value
 };
 
-static struct PluginCodec_Option const * const OptionTable[] = {
+static struct PluginCodec_Option const * OptionTable[] = {
   &Profile,
   &Level,
   &H241Profiles,
@@ -382,9 +390,11 @@ static struct PluginCodec_Option const * const OptionTable[] = {
   &MaxMBPS,
   &MaxFS,
   &MaxBR,
-  &MediaPacketizations,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+  &MediaPacketizations,  // Note: must be last entry
+#endif
   NULL
 };
 
@@ -516,14 +526,27 @@ static unsigned hexbyte(const char * hex)
 
 class MyPluginMediaFormat : public PluginCodec_MediaFormat
 {
-    bool m_sipOnly;
+  bool m_sipOnly;
 
-  public:
-    MyPluginMediaFormat(OptionsTable options, bool sipOnly)
-      : PluginCodec_MediaFormat(options)
-      , m_sipOnly(sipOnly)
-    {
+public:
+  MyPluginMediaFormat(OptionsTable options, bool sipOnly)
+    : PluginCodec_MediaFormat(options)
+    , m_sipOnly(sipOnly)
+  {
+  }
+
+
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+  void ClearMediaPacketizations()
+  {
+    for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
+      if (strcmp((*options)->m_name, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
+        *options = NULL;
+        break;
+      }
     }
+  }
+#endif
 
 
   static void ClampOptions(const LevelInfoStruct & info,
@@ -807,7 +830,10 @@ class MyEncoder : public PluginCodec
         return true;
       }
 
-      if (strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
+      if (
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+         strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
+#endif
           strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATION) == 0) {
         if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Interleaved) != NULL)
           return SetPacketisationMode(2);
@@ -1270,9 +1296,30 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
   }
 };
 
+static size_t const MyCodecDefinitionSize = sizeof(MyCodecDefinition)/sizeof(MyCodecDefinition[0]);
+
 extern "C"
 {
-  PLUGIN_CODEC_IMPLEMENT_ALL(MY_CODEC, MyCodecDefinition, MyVersion)
+  PLUGIN_CODEC_IMPLEMENT(MY_CODEC)
+  PLUGIN_CODEC_DLL_API
+  struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
+  {
+    if (version < PLUGIN_CODEC_VERSION_OPTIONS)
+      return NULL;
+
+#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+    if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
+      for (size_t i = 0; i < MyCodecDefinitionSize; ++i) {
+        MyPluginMediaFormat * info = (MyPluginMediaFormat *)MyCodecDefinition[i].userData;
+        if (info != NULL)
+          info->ClearMediaPacketizations();
+      }
+    }
+#endif
+
+    *count = MyCodecDefinitionSize;
+    return MyCodecDefinition;
+  }
 };
 
 /////////////////////////////////////////////////////////////////////////////
