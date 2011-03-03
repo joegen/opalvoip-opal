@@ -832,11 +832,19 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
   if (buffer == NULL || size == 0)
     return m_channel->Read(buffer, size);
 
+  unsigned consecutiveZeroReads = 0;
   while (size > 0) {
     if (!m_channel->Read(buffer, size))
       return false;
 
     PINDEX lastReadCount = m_channel->GetLastReadCount();
+    if (lastReadCount != 0)
+      consecutiveZeroReads = 0;
+    else if (++consecutiveZeroReads > 10) {
+      PTRACE(1, "Media\tRaw channel returned success with zero data multiple consecutive times, aborting.");
+      return false;
+    }
+
     CollectAverage(buffer, lastReadCount);
 
     buffer += lastReadCount;
