@@ -433,7 +433,7 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
     }
   }
 
-  PTRACE(2, "OpalCon\tNo filter to remove for stage " << stage);
+  PTRACE(3, "OpalCon\tNo filter to remove for stage " << stage);
   return false;
 }
 
@@ -549,6 +549,8 @@ void OpalMediaPatch::Main()
   PTRACE(4, "Patch\tThread started for " << *this);
 	
   bool asynchronous = OnStartMediaPatch();
+  PAdaptiveDelay asynchPacing;
+  PThread::Times lastThreadTimes;
   PTimeInterval lastTick;
 
   /* Note the RTP frame is outside loop so that a) it is more efficient
@@ -583,16 +585,30 @@ void OpalMediaPatch::Main()
       break;
     }
  
+    if (asynchronous)
+      asynchPacing.Delay(10);
+
     /* Don't starve the CPU if we have idle frames and the no source or
        destination is synchronous. Note that performing a Yield is not good
        enough, as the media patch threads are high priority and will consume
        all available CPU if allowed. Also just doing a sleep each time around
        the loop slows down video where you get clusters of packets thrown at
        us, want to clear them as quickly as possible out of the UDP OS buffers
-       or we overflow and lose some. Best compromise is to every 100ms, sleep
-       for 10ms so can not use more than about 90% of CPU. */
-    if (asynchronous && PTimer::Tick() - lastTick > 100) {
-      PThread::Sleep(10);
+       or we overflow and lose some. Best compromise is to every X ms, sleep
+       for X/10 ms so can not use more than about 90% of CPU. */
+    static const unsigned SampleTimeMS = 200;
+    static const unsigned ThresholdPercent = 90;
+    if (PTimer::Tick() - lastTick > SampleTimeMS) {
+      PThread::Times threadTimes;
+      if (PThread::Current()->GetTimes(threadTimes)) {
+        PTRACE(5, "Patch\tCPU for " << *this << " is " << threadTimes);
+        if ((threadTimes.m_user - lastThreadTimes.m_user + threadTimes.m_kernel - lastThreadTimes.m_kernel)
+                                      > (threadTimes.m_real - lastThreadTimes.m_real)*ThresholdPercent/100) {
+          PTRACE(2, "Patch\tGreater that 90% CPU usage for " << *this);
+          PThread::Sleep(SampleTimeMS*(100-ThresholdPercent)/100);
+        }
+        lastThreadTimes = threadTimes;
+      }
       lastTick = PTimer::Tick();
     }
   }
