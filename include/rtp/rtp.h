@@ -1198,7 +1198,8 @@ class RTP_UDP : public RTP_Session
     bool appliedQOS;
     bool remoteIsNAT;
     bool localHasNAT;
-    bool first;
+    bool m_firstData;
+    bool m_firstControl;
     int  badTransmitCounter;
     PTime badTransmitStart;
 
