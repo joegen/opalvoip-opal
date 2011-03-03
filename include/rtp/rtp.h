@@ -911,7 +911,11 @@ class RTP_Session : public PObject
     bool HasFailed() const
     { return failed; }
 
-    void AddFilter(const PNotifier & filter);
+    typedef PNotifierTemplate<SendReceiveStatus &> FilterNotifier;
+    #define PDECLARE_RTPFilterNotifier(cls, fn) PDECLARE_NOTIFIER2(RTP_DataFrame, cls, fn, RTP_Session::SendReceiveStatus &)
+    #define PCREATE_RTPFilterNotifier(fn) PCREATE_NOTIFIER2(fn, RTP_Session::SendReceiveStatus &)
+
+    void AddFilter(const FilterNotifier & filter);
 
     virtual void SendBYE();
 
@@ -1006,13 +1010,7 @@ class RTP_Session : public PObject
     PBoolean byeSent;
     bool                failed;      ///<  set to true if session has received too many ICMP destination unreachable
 
-    class Filter : public PObject {
-        PCLASSINFO(Filter, PObject);
-      public:
-        Filter(const PNotifier & n) : notifier(n) { }
-        PNotifier notifier;
-    };
-    PList<Filter> filters;
+    list<FilterNotifier> m_filters;
 };
 
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.

@@ -123,7 +123,7 @@ class OpalRFC2833Proto : public PObject {
       RTP_DataFrame::PayloadTypes type ///<  new payload type
     ) { m_payloadType = type; }
 
-    const PNotifier & GetReceiveHandler() const { return m_receiveHandler; }
+    const RTP_Session::FilterNotifier & GetReceiveHandler() const { return m_receiveHandler; }
 
     PString GetTxCapability() const;
     PString GetRxCapability() const;
@@ -136,7 +136,7 @@ class OpalRFC2833Proto : public PObject {
   protected:
     void SendAsyncFrame();
 
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
+    PDECLARE_RTPFilterNotifier(OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
@@ -145,7 +145,7 @@ class OpalRFC2833Proto : public PObject {
     std::vector<bool>           m_txCapabilitySet;
     std::vector<bool>           m_rxCapabilitySet;
     PNotifier                   m_receiveNotifier;
-    PNotifier                   m_receiveHandler;
+    RTP_Session::FilterNotifier m_receiveHandler;
 
     enum {
       ReceiveIdle,
