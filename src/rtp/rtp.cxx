@@ -1766,7 +1766,9 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
 {
   PWaitAndSignal mutex(dataMutex);
 
-  first = true;
+  m_firstData = true;
+  m_firstControl = true;
+
   // save local address 
   localAddress = transportLocalAddress;
 
@@ -2075,7 +2077,7 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
 
 int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
-  if (first && isAudio) {
+  if (m_firstData && isAudio) {
     PTimeInterval oldTimeout = dataSocket.GetReadTimeout();
     dataSocket.SetReadTimeout(0);
 
@@ -2087,7 +2089,7 @@ int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSo
     PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
 
     dataSocket.SetReadTimeout(oldTimeout);
-    first = false;
+    m_firstData = false;
   }
 
   return PSocket::Select(dataSocket, controlSocket, timeout);
@@ -2229,11 +2231,12 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 
   PINDEX pduSize = controlSocket->GetLastReadCount();
   if (pduSize < 4 || pduSize < 4+frame.GetPayloadSize()) {
-    PTRACE(2, "RTP_UDP\tSession " << sessionID
-           << ", Received control packet too small: " << pduSize << " bytes");
+    PTRACE_IF(2, pduSize > 1 || !m_firstControl, "RTP_UDP\tSession " << sessionID
+              << ", Received control packet too small: " << pduSize << " bytes");
     return e_IgnorePacket;
   }
 
+  m_firstControl = false;
   frame.SetSize(pduSize);
   return OnReceiveControl(frame);
 }
