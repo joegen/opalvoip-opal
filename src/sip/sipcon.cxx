@@ -2278,6 +2278,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
   }
 
+  if (!SetRemoteMediaFormats(originalInvite->GetSDP(*this))) {
+    Release(EndedByCapabilityExchange);
+    return;
+  }
+
   releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
 
@@ -2332,11 +2337,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   PTRACE(3, "SIP\tEstablished connection " << *replacedConnection << " replaced by " << *this);
-
-  if (!SetRemoteMediaFormats(originalInvite->GetSDP(*this))) {
-    Release(EndedByCapabilityExchange);
-    return;
-  }
 
   // Do OnRelease for other connection synchronously or there is
   // confusion with media streams still open
