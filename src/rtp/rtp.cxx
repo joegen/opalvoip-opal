@@ -1191,10 +1191,11 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
       userData->OnRxStatistics(*this);
   }
 
-  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) 
-    f->notifier(frame, (INT)this);
+  SendReceiveStatus status = e_ProcessPacket;
+  for (list<FilterNotifier>::iterator filter = m_filters.begin(); filter != m_filters.end(); ++filter) 
+    (*filter)(frame, status);
 
-  return e_ProcessPacket;
+  return status;
 }
 
 
@@ -1650,14 +1651,11 @@ PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &, bool)
   return true;
 }
 
-void RTP_Session::AddFilter(const PNotifier & filter)
+void RTP_Session::AddFilter(const FilterNotifier & filter)
 {
   // ensures that a filter is added only once
-  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
-    if (f->notifier == filter)
-      return;
-  }
-  filters.Append(new Filter(filter));
+  if (find(m_filters.begin(), m_filters.end(), filter) == m_filters.end())
+    m_filters.push_back(filter);
 }
 
 
@@ -1811,7 +1809,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
           }
           else {
             PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
-                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
+                   << " could not create RTP/RTCP socket pair; trying to create individual sockets.");
             if (natMethod->CreateSocket(dataSocket, localAddress) && natMethod->CreateSocket(controlSocket, localAddress)) {
               dataSocket->GetLocalAddress(localAddress, localDataPort);
               controlSocket->GetLocalAddress(localAddress, localControlPort);
@@ -1822,7 +1820,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
               dataSocket = NULL;
               controlSocket = NULL;
               PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
-                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
+                     << " could not create RTP/RTCP sockets individually either, using normal sockets.");
             }
           }
           break;
@@ -1833,6 +1831,8 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
              talk to the real RTP destination. All we can so is bind to the
              local interface the NAT is on and hope the NAT router is doing
              something sneaky like symmetric port forwarding. */
+          PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
+                  << " cannot create RTP/RTCP socket pair; creating individual sockets.");
           natMethod->GetInterfaceAddress(bindingAddress);
           break;
       }
@@ -2084,7 +2084,7 @@ int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSo
     while (dataSocket.Read(buffer, sizeof(buffer)))
       ++count;
 
-    PTRACE_IF(2, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
+    PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
 
     dataSocket.SetReadTimeout(oldTimeout);
     first = false;
