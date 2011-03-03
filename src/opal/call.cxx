@@ -83,7 +83,7 @@ OpalCall::~OpalCall()
   delete m_recordManager;
 #endif
 
-  PTRACE(3, "Call\t" << *this << " destroyed.");
+  PTRACE(3, "Call\tDestroyed " << *this);
 }
 
 
@@ -95,6 +95,7 @@ void OpalCall::PrintOn(ostream & strm) const
 
 void OpalCall::OnEstablishedCall()
 {
+  PTRACE(3, "Call\tEstablished " << *this);
   manager.OnEstablishedCall(*this);
 }
 
