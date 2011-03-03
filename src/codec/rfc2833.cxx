@@ -123,7 +123,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-  , m_receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
+  , m_receiveHandler(PCREATE_RTPFilterNotifier(ReceivedPacket))
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
@@ -388,10 +388,12 @@ void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned times
 }
 
 
-void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
+void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, RTP_Session::SendReceiveStatus & status)
 {
   if (frame.GetPayloadType() != m_payloadType || frame.GetPayloadSize() == 0)
     return;
+
+  status = RTP_Session::e_IgnorePacket;
 
   PWaitAndSignal mutex(m_mutex);
 
