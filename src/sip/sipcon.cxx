@@ -3308,7 +3308,10 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
   switch (sendUserInputMode) {
     case SendUserInputAsProtocolDefault :
     case SendUserInputAsRFC2833 :
-      return m_remoteFormatList.HasFormat(OpalRFC2833) ? SendUserInputAsRFC2833 : SendUserInputAsString;
+      if (m_remoteFormatList.HasFormat(OpalRFC2833))
+        return SendUserInputAsRFC2833;
+      PTRACE(3, "SIP\tSendUserInputMode for RFC2833 requested, but unavailable at remote.");
+      return SendUserInputAsString;
 
     case NumSendUserInputModes :
     case SendUserInputAsQ931 :
