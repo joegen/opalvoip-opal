@@ -433,7 +433,7 @@ void OpalConnection::Release(CallEndReason reason)
   {
     PWaitAndSignal m(phaseMutex);
     if (IsReleased()) {
-      PTRACE(2, "OpalCon\tAlready released " << *this);
+      PTRACE(3, "OpalCon\tAlready released " << *this);
       return;
     }
     SetPhase(ReleasingPhase);
