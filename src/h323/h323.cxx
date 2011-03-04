@@ -350,9 +350,6 @@ void H323Connection::OnReleased()
 
   connectionState = ShuttingDownConnection;
 
-  if (!callEndTime.IsValid())
-    callEndTime = PTime();
-
   PTRACE(3, "H225\tSending release complete PDU: callRef=" << callReference);
   H323SignalPDU rcPDU;
   rcPDU.BuildReleaseComplete(*this);
@@ -403,10 +400,10 @@ void H323Connection::OnReleased()
     // Calculate time since we sent the end session command so we do not actually
     // wait for returned endSession if it has already been that long
     PTimeInterval waitTime = endpoint.GetEndSessionTimeout();
-    if (callEndTime.IsValid()) {
+    if (GetConnectionEndTime().IsValid()) {
       PTime now;
-      if (now > callEndTime) { // Allow for backward motion in time (DST change)
-        waitTime -= now - callEndTime;
+      if (now > GetConnectionEndTime()) { // Allow for backward motion in time (DST change)
+        waitTime -= now - GetConnectionEndTime();
         if (waitTime < 0)
           waitTime = 0;
       }
@@ -1053,6 +1050,11 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
       if (!WriteSignalPDU(callProceedingPDU))
         return PFalse;
+
+      if (GetPhase() < ProceedingPhase) {
+        SetPhase(ProceedingPhase);
+        OnProceeding();
+      }
     }
 
     /** Here is a spot where we should wait in case of Call Intrusion
@@ -1373,8 +1375,6 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     if (!CreateOutgoingControlChannel(alert.m_h245Address))
       return PFalse;
 
-  alertingTime = PTime();
-
   return OnAlerting(pdu, remotePartyName);
 }
 
@@ -1384,7 +1384,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (GetPhase() < AlertingPhase) {
     // Never actually got the ALERTING, fake it as some things get upset
     // if the sequence is not strictly followed.
-    alertingTime = PTime();
+    SetPhase(AlertingPhase);
     if (!OnAlerting(pdu, remotePartyName))
       return PFalse;
   }
@@ -1611,9 +1611,6 @@ PBoolean H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
 
 void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 {
-  if (!callEndTime.IsValid())
-    callEndTime = PTime();
-
   endSessionReceived.Signal();
 
   CallEndReason reason(EndedByRefusal, pdu.GetQ931().GetCause());
@@ -2096,8 +2093,6 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
     }
   }
 
-  alertingTime = PTime();
-
   HandleTunnelPDU(alertingPDU);
 
 #if OPAL_H450
@@ -2191,8 +2186,6 @@ PBoolean H323Connection::SetConnected()
   connectPDU = NULL;
   delete alertingPDU;
   alertingPDU = NULL;
-
-  connectedTime = PTime();
 
   InternalEstablishedConnectionCheck();
   return PTrue;
