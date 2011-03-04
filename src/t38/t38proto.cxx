@@ -821,7 +821,7 @@ void OpalFaxConnection::InternalGetStatistics(OpalMediaStatistics & statistics, 
 void OpalFaxConnection::OnSendCNGCED(PTimer &, INT)
 {
   if (m_state == e_AwaitingSwitchToT38 && LockReadOnly()) {
-    PTimeInterval elapsed = PTime() - connectedTime;
+    PTimeInterval elapsed = PTime() - GetConnectionStartTime();
     if (m_releaseTimeout > 0 && elapsed > m_releaseTimeout) {
       PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
       Release(OpalConnection::EndedByCapabilityExchange);

@@ -542,7 +542,6 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   }
 
   SetPhase(AlertingPhase);
-  alertingTime = PTime();
   NotifyDialogState(SIPDialogNotification::Early);
 
   return PTrue;
@@ -2210,6 +2209,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 
+  SetPhase(SetUpPhase);
+
   NotifyDialogState(SIPDialogNotification::Trying);
   mime.GetAlertInfo(m_alertInfo, m_appearanceCode);
 
@@ -2286,8 +2287,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
 
-  SetPhase(SetUpPhase);
-
   // See if we have a replaces header, if not is normal call
   PString replaces = mime("Replaces");
   if (replaces.IsEmpty()) {
@@ -2303,6 +2302,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     OnApplyStringOptions();
 
     if (ownerCall.OnSetUp(*this)) {
+      if (GetPhase() < ProceedingPhase) {
+        SetPhase(ProceedingPhase);
+        OnProceeding();
+      }
       AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
       return;
     }
@@ -2656,7 +2659,6 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & response)
 
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
-    alertingTime = PTime();
     OnAlerting();
     NotifyDialogState(SIPDialogNotification::Early);
   }
@@ -2674,7 +2676,6 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
   if (GetPhase() < AlertingPhase) {
     SetPhase(AlertingPhase);
-    alertingTime = PTime();
     OnAlerting();
     NotifyDialogState(SIPDialogNotification::Early);
   }
