@@ -397,7 +397,7 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
-    PTRACE(2, "OpalCon\tCall end reason for " << *this << " set to " << reason);
+    PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
     callEndReason = reason;
     ownerCall.SetCallEndReason(reason);
   }
@@ -494,8 +494,9 @@ void OpalConnection::OnReleased()
   SetPhase(ReleasedPhase);
 
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+  static const int Level = 3;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
     trace << "OpalCon\tConnection " << *this << " released\n"
              "        Initial Time: " << m_phaseTime[UninitialisedPhase] << '\n';
     for (Phases ph = SetUpPhase; ph < NumPhases; ph = (Phases)(ph+1)) {
@@ -504,7 +505,7 @@ void OpalConnection::OnReleased()
         trace << (m_phaseTime[ph]-m_phaseTime[UninitialisedPhase]);
       else
         trace << "N/A";
-      trace << '\n';
+      trace << "     Call end reason: " << callEndReason << '\n';
     }
     trace << PTrace::End;
   }
@@ -1700,7 +1701,7 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
             SetAutoStart(mediaType, OpalMediaType::Receive);
           else if (tokens[i] *= "sendonly")
             SetAutoStart(mediaType, OpalMediaType::Transmit);
-          else if (tokens[i] *= "offer")
+          else if ((tokens[i] *= "offer") || (tokens[i] *= "inactive"))
             SetAutoStart(mediaType, OpalMediaType::OfferInactive);
           else if (tokens[i] *= "exclusive") {
             OpalMediaTypeFactory::KeyList_T types = OpalMediaType::GetList();
