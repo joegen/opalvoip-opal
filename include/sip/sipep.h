@@ -995,7 +995,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     {
       public:
         WorkThreadPool(unsigned maxWorkers)
-          : PQueuedThreadPool(maxWorkers)
+          : PQueuedThreadPool<SIP_Work>(maxWorkers)
         { }
         virtual WorkerThreadBase * CreateWorkerThread();
     } m_connectionThreadPool, m_handlerThreadPool;
