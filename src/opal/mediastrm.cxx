@@ -767,7 +767,7 @@ void OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 
 PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  if (!isOpen || IsSink())
+  if (!isOpen || IsSink() || mediaPatch == NULL)
     return OpalMediaStream::SetPatch(patch);
 
   rtpSession.Close(true);
