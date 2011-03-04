@@ -303,7 +303,7 @@ class OpalIMManager : public PObject
         IM_Work(OpalIMManager & mgr, const PString & conversationId);
         virtual ~IM_Work();
 
-        virtual void Process() = 0;
+        virtual void Work() = 0;
 
         OpalIMManager & m_mgr;
         PString m_conversationId;
@@ -315,7 +315,7 @@ class OpalIMManager : public PObject
         NewIncomingIM_Work(OpalIMManager & mgr, const PString & conversationId)
           : IM_Work(mgr, conversationId)
         { }
-        virtual void Process()
+        virtual void Work()
         { m_mgr.InternalOnNewIncomingIM(m_conversationId); }
     };
 
@@ -325,7 +325,7 @@ class OpalIMManager : public PObject
         NewConversation_Work(OpalIMManager & mgr, const PString & conversationId)
           : IM_Work(mgr, conversationId)
         { }
-        virtual void Process()
+        virtual void Work()
         { m_mgr.InternalOnNewConversation(m_conversationId); }
     };
 
@@ -336,7 +336,7 @@ class OpalIMManager : public PObject
           : IM_Work(mgr, conversationId)
           , m_info(info)
         { }
-        virtual void Process()
+        virtual void Work()
         { m_mgr.InternalOnMessageSent(m_conversationId, m_info); }
 
         OpalIMContext::MessageSentInfo m_info;
@@ -348,15 +348,10 @@ class OpalIMManager : public PObject
         CompositionIndicationTimeout_Work(OpalIMManager & mgr, const PString & conversationId)
           : IM_Work(mgr, conversationId)
         { }
-        virtual void Process()
+        virtual void Work()
         { m_mgr.InternalOnCompositionIndicationTimeout(m_conversationId); }
     };
 
-    class WorkThreadPool : public PThreadPool<IM_Work>
-    {
-      public:
-        virtual WorkerThreadBase * CreateWorkerThread();
-    } m_imThreadPool;
 
     void AddWork(IM_Work * work);
     virtual void InternalOnNewConversation(const PString & conversation);
@@ -365,24 +360,7 @@ class OpalIMManager : public PObject
     virtual void InternalOnCompositionIndicationTimeout(const PString & conversationId);
 
   protected:
-    typedef std::queue<IM_Work *> MessageQueue;
-
-    class IM_Work_Thread : public WorkThreadPool::WorkerThread
-    {
-      public:
-        IM_Work_Thread(WorkThreadPool & pool_);
-
-        void AddWork(IM_Work * work);
-        void RemoveWork(IM_Work * work);
-        unsigned GetWorkSize() const;
-
-        void Main();
-        void Shutdown();
-
-      protected:
-        PSyncPoint m_sync;
-        MessageQueue m_cmdQueue;
-    };
+    PQueuedThreadPool<IM_Work> m_imThreadPool;
 
     PTime m_lastGarbageCollection;
     OpalManager & m_manager;

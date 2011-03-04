@@ -52,7 +52,9 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::SIPEndPoint(OpalManager & mgr)
+SIPEndPoint::SIPEndPoint(OpalManager & mgr,
+                         unsigned maxConnectionThreads,
+                         unsigned maxHandlerThreads)
   : OpalRTPEndPoint(mgr, "sip", CanTerminateCall)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , retryTimeoutMin(500)             // 0.5 seconds
@@ -67,6 +69,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   , natBindingTimeout(0, 0, 1)       // 1 minute
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
+  , m_connectionThreadPool(maxConnectionThreads)
+  , m_handlerThreadPool(maxHandlerThreads)
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -1807,76 +1811,11 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::WorkThreadPool::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()
+PThreadPoolBase::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()
 { 
-  return new SIP_Work_Thread(*this); 
+  return new QueuedWorkerThread(*this, PThread::HighPriority); 
 }
 
-
-SIPEndPoint::SIP_Work_Thread::SIP_Work_Thread(WorkThreadPool & pool_)
-  : WorkThreadPool::WorkerThread(pool_)
-{
-  SetPriority(HighPriority);
-}
-
-
-unsigned SIPEndPoint::SIP_Work_Thread::GetWorkSize() const 
-{ 
-  return m_pduQueue.size(); 
-}
-
-
-void SIPEndPoint::SIP_Work_Thread::AddWork(SIP_Work * work)
-{
-  PWaitAndSignal m(m_workerMutex);
-  m_pduQueue.push(work);
-  if (m_pduQueue.size() == 1)
-    m_sync.Signal();
-}
-
-
-void SIPEndPoint::SIP_Work_Thread::RemoveWork(SIP_Work * work)
-{
-  m_workerMutex.Wait();
-  m_pduQueue.pop();
-  m_workerMutex.Signal();
-
-  delete work;
-}
-
-
-void SIPEndPoint::SIP_Work_Thread::Shutdown()
-{
-  m_shutdown = true;
-  m_sync.Signal();
-}
-
-
-void SIPEndPoint::SIP_Work_Thread::Main()
-{
-  while (!m_shutdown) {
-
-    // get the work
-    m_workerMutex.Wait();
-    SIP_Work * work = m_pduQueue.size() > 0 ? m_pduQueue.front() : NULL;
-    m_workerMutex.Signal();
-
-    // wait for work to become available
-    if (work == NULL) {
-      m_sync.Wait();
-      continue;
-    }
-
-    // process the work
-    work->Process();
-
-    // indicate work is now free
-    m_pool.RemoveWork(work);
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token)
   : m_endpoint(ep)
@@ -1894,7 +1833,7 @@ SIPEndPoint::SIP_Work::~SIP_Work()
 }
 
 
-void SIPEndPoint::SIP_Work::Process()
+void SIPEndPoint::SIP_Work::Work()
 {
   if (PAssertNULL(m_pdu) == NULL)
     return;
