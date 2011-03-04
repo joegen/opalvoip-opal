@@ -93,7 +93,9 @@ class SIPEndPoint : public OpalRTPEndPoint
     /**Create a new endpoint.
      */
     SIPEndPoint(
-      OpalManager & manager
+      OpalManager & manager,
+      unsigned maxConnectionThreads = 10,
+      unsigned maxHandlerThreads = 5
     );
 
     /**Destroy endpoint.
@@ -974,47 +976,32 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     std::map<PString, PSyncPoint> m_registrationComplete;
 
-  public:
-    class WorkThreadPool;
+
+    // Thread pooling
     class SIP_Work
     {
       public:
         SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token);
         virtual ~SIP_Work();
 
-        virtual void Process();
+        virtual void Work();
 
         SIPEndPoint & m_endpoint;
         SIP_PDU     * m_pdu;
         PString       m_token;
     };
 
-    class WorkThreadPool : public PThreadPool<SIP_Work>
+    class WorkThreadPool : public PQueuedThreadPool<SIP_Work>
     {
       public:
+        WorkThreadPool(unsigned maxWorkers)
+          : PQueuedThreadPool(maxWorkers)
+        { }
         virtual WorkerThreadBase * CreateWorkerThread();
     } m_connectionThreadPool, m_handlerThreadPool;
 
-  protected:
-    typedef std::queue<SIP_Work *> SIP_WorkQueue;
 
-    class SIP_Work_Thread : public WorkThreadPool::WorkerThread
-    {
-      public:
-        SIP_Work_Thread(WorkThreadPool & pool_);
-
-        void AddWork(SIP_Work * work);
-        void RemoveWork(SIP_Work * work);
-        unsigned GetWorkSize() const;
-
-        void Main();
-        void Shutdown();
-
-      protected:
-        PSyncPoint m_sync;
-        SIP_WorkQueue m_pduQueue;
-    };
-
+    // Network interface checking
     enum {
       HighPriority = 80,
       LowPriority  = 30,
