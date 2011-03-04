@@ -547,7 +547,6 @@ PBoolean OpalLineConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
 
   // switch phase 
   SetPhase(AlertingPhase);
-  alertingTime = PTime();
 
   if (line.IsTerminal() && GetMediaStream(OpalMediaType::Audio(), false) == NULL) {
     // Start ringing if we don't have an audio media stream
@@ -798,7 +797,6 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
     // switch phase 
     SetPhase(AlertingPhase);
-    alertingTime = PTime();
   }
 
   if (!OnIncomingConnection(0, NULL)) {

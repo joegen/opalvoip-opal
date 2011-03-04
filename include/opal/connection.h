@@ -1387,21 +1387,27 @@ class OpalConnection : public PSafeObject
      */
     PBoolean IsOriginating() const { return originating; }
 
+    /**Get the time at which the phase of the call was entered.
+      */
+    const PTime & GetPhaseTime(Phases phase) const { return m_phaseTime[phase]; }
+
     /**Get the time at which the connection was begun
       */
-    PTime GetSetupUpTime() const { return setupTime; }
+    const PTime & GetSetupUpTime() const { return m_phaseTime[SetUpPhase]; }
 
-    /**Get the time at which the ALERTING was received
+    /**Get the time at which the ALERTING/18x was received
       */
-    PTime GetAlertingTime() const { return alertingTime; }
+    const PTime & GetAlertingTime() const { return m_phaseTime[AlertingPhase]; }
 
-    /**Get the time at which the connection was established
+    /**Get the time at which the connection was started.
+       This is where the H.323 CONNECT or SIP 200 OK is received and generally
+       indicates the start of te billable period for a call.
       */
-    PTime GetConnectionStartTime() const { return connectedTime; }
+    const PTime & GetConnectionStartTime() const { return m_phaseTime[ConnectedPhase]; }
 
     /**Get the time at which the connection was cleared
       */
-    PTime GetConnectionEndTime() const { return callEndTime; }
+    const PTime & GetConnectionEndTime() const { return m_phaseTime[ReleasingPhase]; }
 
     /**Get the product info for all endpoints.
       */
@@ -1720,10 +1726,6 @@ class OpalConnection : public PSafeObject
   protected:
     PString              callToken;
     PBoolean             originating;
-    PTime                setupTime;
-    PTime                alertingTime;
-    PTime                connectedTime;
-    PTime                callEndTime;
     OpalProductInfo      productInfo;
     PString              localPartyName;
     PString              displayName;
@@ -1831,6 +1833,14 @@ class OpalConnection : public PSafeObject
     PLUA_BINDING_END()
     PLUA_DECLARE_FUNCTION(LuaSetOption);
 #endif
+
+    // A version of PTime where default constructor creates invalid times
+    class ZeroTime : public PTime
+    {
+      public:
+        ZeroTime() : PTime(0) { }
+    };
+    ZeroTime m_phaseTime[NumPhases];
 
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);

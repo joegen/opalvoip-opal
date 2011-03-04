@@ -207,7 +207,6 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
     if (GetPhase() == AlertingPhase)
       return PFalse;
     
-    alertingTime = PTime();
     SetPhase(AlertingPhase);
   }
 

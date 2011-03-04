@@ -216,9 +216,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , phase(UninitialisedPhase)
   , callToken(token)
   , originating(PFalse)
-  , alertingTime(0)
-  , connectedTime(0)
-  , callEndTime(0)
   , productInfo(ep.GetProductInfo())
   , localPartyName(ep.GetDefaultLocalPartyName())
   , displayName(ep.GetDefaultDisplayName())
@@ -318,6 +315,8 @@ OpalConnection::OpalConnection(OpalCall & call,
   m_lua.SetValue("prefix", str);
   m_lua.CallLuaFunction("OnConstruct");
 #endif
+
+  m_phaseTime[UninitialisedPhase].SetCurrentTime();
 }
 
 OpalConnection::~OpalConnection()
@@ -398,7 +397,7 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
-    PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
+    PTRACE(2, "OpalCon\tCall end reason for " << *this << " set to " << reason);
     callEndReason = reason;
     ownerCall.SetCallEndReason(reason);
   }
@@ -486,13 +485,30 @@ void OpalConnection::OnReleaseThreadMain(PThread &, INT reason)
 
 void OpalConnection::OnReleased()
 {
-  PTRACE(3, "OpalCon\tOnReleased " << *this);
+  PTRACE(4, "OpalCon\tOnReleased " << *this);
 
   CloseMediaStreams();
 
   endpoint.OnReleased(*this);
 
   SetPhase(ReleasedPhase);
+
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+    trace << "OpalCon\tConnection " << *this << " released\n"
+             "        Initial Time: " << m_phaseTime[UninitialisedPhase] << '\n';
+    for (Phases ph = SetUpPhase; ph < NumPhases; ph = (Phases)(ph+1)) {
+      trace << setw(20) << ph << ": ";
+      if (m_phaseTime[ph].IsValid())
+        trace << (m_phaseTime[ph]-m_phaseTime[UninitialisedPhase]);
+      else
+        trace << "N/A";
+      trace << '\n';
+    }
+    trace << PTrace::End;
+  }
+#endif
 }
 
 
@@ -574,10 +590,8 @@ PBoolean OpalConnection::SetConnected()
 {
   PTRACE(3, "OpalCon\tSetConnected for " << *this);
 
-  if (GetPhase() < ConnectedPhase) {
+  if (GetPhase() < ConnectedPhase)
     SetPhase(ConnectedPhase);
-    connectedTime = PTime();
-  }
 
   if (!mediaStreams.IsEmpty() && GetPhase() < EstablishedPhase) {
     SetPhase(EstablishedPhase);
@@ -591,7 +605,6 @@ PBoolean OpalConnection::SetConnected()
 void OpalConnection::OnConnectedInternal()
 {
   if (GetPhase() < ConnectedPhase) {
-    connectedTime = PTime();
     SetPhase(ConnectedPhase);
     OnConnected();
   }
@@ -1518,8 +1531,11 @@ void OpalConnection::SetPhase(Phases phaseToSet)
   // With next few lines we will prevent phase to ever go down when it
   // reaches ReleasingPhase - end result - once you call Release you never
   // go back.
-  if (phase < ReleasingPhase || (phase == ReleasingPhase && phaseToSet == ReleasedPhase))
+  if (phase < ReleasingPhase || (phase == ReleasingPhase && phaseToSet == ReleasedPhase)) {
     phase = phaseToSet;
+    if (!m_phaseTime[phase].IsValid())
+      m_phaseTime[phase].SetCurrentTime();
+  }
 }
 
 
