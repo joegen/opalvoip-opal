@@ -84,7 +84,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-rtp-max:" 
          "-rtp-tos:"
          "-rtp-size:"
-         "-stun:";
+         "-stun:"
+         "-tel:";
 }
 
 
@@ -97,6 +98,7 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "  -P or --prefer codec    : Set preference order for codecs.\n"
          "        --inband-detect   : Disable detection of in-band tones.\n"
          "        --inband-send     : Disable transmission of in-band tones.\n"
+         "        --tel proto       : Protocol to use for tel: URI, e.g. sip\n"
          "\n"
 
 #if OPAL_SIP
@@ -337,6 +339,15 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     SetMediaFormatMask(args.GetOptionString('D').Lines());
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
+
+  PString telProto = args.GetOptionString("tel");
+  if (!telProto.IsEmpty()) {
+    OpalEndPoint * ep = FindEndPoint(telProto);
+    if (ep != NULL)
+      AttachEndPoint(ep, "tel");
+    else
+      cerr << "The \"tel\" URI cannot be mapped to protocol \"" << telProto << '"' << endl;
+  }
 
   return true;
 }
