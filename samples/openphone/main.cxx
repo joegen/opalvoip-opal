@@ -1594,13 +1594,15 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
   tstringstream text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
-           "Copyright � 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+           "Copyright (c) 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
            "\n"
            "This application may be used for any purpose so long as it is not sold "
            "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
            " disguised or hidden in any way.\n"
            "\n"
-           "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n";
+           "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n"
+           "  OPAL Version:  " << OpalGetVersion() << "\n"
+           "  PTLib Version: " << PProcess::GetLibVersion() << '\n';
   wxMessageDialog dialog(this, text.str().c_str(), wxT("About ..."), wxOK);
   dialog.ShowModal();
 }
@@ -1940,11 +1942,14 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 void MyManager::OnRightClick(wxListEvent& event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
-  menuBar->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
-  menuBar->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
-  menuBar->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
-  PopupMenu(menuBar->GetMenu(0), event.GetPoint());
+  wxMenu * menu = menuBar->Remove(0);
   delete menuBar;
+
+  menu->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
+  menu->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
+  menu->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
+  PopupMenu(menu, event.GetPoint());
+  delete menu;
 }
 
 
@@ -4248,7 +4253,8 @@ bool OptionsDialog::TransferDataFromWindow()
 #endif
 
   SAVE_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo = 0 != );
-  SAVE_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat = (PString));
+  m_manager.m_recordingOptions.m_audioFormat = m_AudioRecordingFormat.p_str();
+  config->Write(AudioRecordingFormatKey, m_AudioRecordingFormat);
   SAVE_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing = (OpalRecordManager::VideoMode));
   PVideoFrameInfo::ParseSize(m_VideoRecordingSize,
                              m_manager.m_recordingOptions.m_videoWidth,
@@ -6365,7 +6371,7 @@ void StatisticsField::Clear()
 }
 
 
-double StatisticsField::CalculateBandwidth(DWORD bytes)
+double StatisticsField::CalculateBandwidth(PUInt64 bytes)
 {
   PTimeInterval tick = PTimer::Tick();
 
