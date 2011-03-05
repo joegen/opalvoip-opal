@@ -268,6 +268,14 @@ class H323Connection : public OpalRTPConnection
       */
     virtual bool SetAlertingType(const PString & info);
 
+    /** Get Q.931 Progress Indicator IE description from received PROGRESS or ALERTING pdus.
+      */
+    unsigned GetProgressIndicator() const { return m_progressIndicator; }
+
+    /** Set Q.931 Progress Indicator IE description to send in PROGRESS or ALERTING pdus.
+      */
+    void SetProgressIndicator(unsigned indicator) { m_progressIndicator = indicator; }
+
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.
@@ -2054,6 +2062,7 @@ class H323Connection : public OpalRTPConnection
     PBoolean                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
+    unsigned             m_progressIndicator;
     OpalGloballyUniqueID callIdentifier;
     OpalGloballyUniqueID conferenceIdentifier;
 
