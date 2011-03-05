@@ -97,9 +97,7 @@ void IvrOPAL::Main()
 
 
   m_manager->AddRouteEntry("sip.*:.* = ivr:");
-  m_manager->AddRouteEntry("ivr:.* = sip:<da>");
   m_manager->AddRouteEntry("h323.*:.* = ivr:");
-  m_manager->AddRouteEntry("ivr:.* = h323:<da>");
 
 
   if (args.GetCount() == 1)
