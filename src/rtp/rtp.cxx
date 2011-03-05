@@ -46,6 +46,8 @@
 #include <ptclib/pstun.h>
 #include <opal/rtpconn.h>
 
+#include <algorithm>
+
 #define new PNEW
 
 #define BAD_TRANSMIT_TIME_MAX 10    //  maximum of seconds of transmit fails before session is killed
@@ -1650,6 +1652,7 @@ PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &, bool)
 {
   return true;
 }
+
 
 void RTP_Session::AddFilter(const FilterNotifier & filter)
 {
