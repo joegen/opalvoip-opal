@@ -505,9 +505,10 @@ void OpalConnection::OnReleased()
         trace << (m_phaseTime[ph]-m_phaseTime[UninitialisedPhase]);
       else
         trace << "N/A";
-      trace << "     Call end reason: " << callEndReason << '\n';
+      trace << '\n';
     }
-    trace << PTrace::End;
+    trace << "     Call end reason: " << callEndReason << '\n'
+          << PTrace::End;
   }
 #endif
 }
