@@ -178,6 +178,7 @@ H323Connection::H323Connection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , m_remoteConnectAddress(address)
+  , m_progressIndicator(0)
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
@@ -617,6 +618,8 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
       }
     }
   }
+
+  pdu.GetQ931().GetProgressIndicator(m_progressIndicator);
 
   PBoolean ok;
   switch (q931.GetMessageType()) {
