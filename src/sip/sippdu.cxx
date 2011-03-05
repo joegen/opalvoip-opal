@@ -480,6 +480,8 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 
   if (port > 0)
     addr << ':' << port;
+  else
+    addr << ":5060";
 
   return addr;
 }

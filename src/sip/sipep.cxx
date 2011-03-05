@@ -247,6 +247,13 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PString & localInterface)
 {
   OpalTransportAddress remoteAddress = remoteURL.GetHostAddress();
+  if (remoteAddress.IsEmpty()) {
+    if (GetRegistrationsCount() == 0) {
+      PTRACE(1, "SIP\tCannot use tel URI with phone-context or existing registration.");
+      return false;
+    }
+    remoteAddress = SIPURL(GetRegistrations()[0]).GetHostAddress();
+  }
 
   OpalTransportAddress localAddress;
   if (!localInterface.IsEmpty()) {
