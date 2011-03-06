@@ -29,8 +29,9 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
+#include <codec/opalplugin.hpp>
+
 #include "theora_frame.h"
-#include "trace.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -72,7 +73,7 @@ theoraFrame::~theoraFrame ()
 
 void theoraFrame::SetFromHeaderConfig (ogg_packet* headerPacket) {
   if (headerPacket->bytes != THEORA_HEADER_PACKET_SIZE ) {
-    TRACE(1, "THEORA\tEncap\tGot Header Packet from encoder that has len " << headerPacket->bytes << " != " << THEORA_HEADER_PACKET_SIZE);
+    PTRACE(1, "THEORA", "Encap\tGot Header Packet from encoder that has len " << headerPacket->bytes << " != " << THEORA_HEADER_PACKET_SIZE);
     return;
   }
 
@@ -83,7 +84,7 @@ void theoraFrame::SetFromHeaderConfig (ogg_packet* headerPacket) {
 }
 
 void theoraFrame::SetFromTableConfig (ogg_packet* tablePacket) {
-  TRACE_UP(4, "THEORA\tEncap\tGot table packet with len " << tablePacket->bytes);
+  PTRACE(4, "THEORA", "Encap\tGot table packet with len " << tablePacket->bytes);
 
   memcpy (_packedConfigData.ptr + THEORA_HEADER_PACKET_SIZE, tablePacket->packet, tablePacket->bytes);
   _packedConfigData.len = tablePacket->bytes + THEORA_HEADER_PACKET_SIZE;
@@ -93,7 +94,7 @@ void theoraFrame::SetFromTableConfig (ogg_packet* tablePacket) {
 
 
 void theoraFrame::SetFromFrame (ogg_packet* framePacket) {
-  TRACE_UP(4, "THEORA\tEncap\tGot encoded frame packet with len " << framePacket->bytes);
+  PTRACE(4, "THEORA", "Encap\tGot encoded frame packet with len " << framePacket->bytes);
 
   memcpy (_encodedData.ptr, framePacket->packet, framePacket->bytes);
   _encodedData.len = framePacket->bytes;
@@ -120,13 +121,13 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
         _configSent = true;
        else
         frame.SetMarker(1);
-      TRACE_UP(4, "THEORA\tEncap\tEncapsulated fragmentation last packet with length of " << len << " bytes");
+      PTRACE(4, "THEORA", "Encap\tEncapsulated fragmentation last packet with length of " << len << " bytes");
     } 
     else {
       // continuation fragmentation packet
       dataPtr[3] = sendPackedConfig ? 0x90 : 0x80;
       len = (_maxPayloadSize - 6);
-      TRACE_UP(4, "THEORA\tEncap\tEncapsulated fragmentation continuation packet with length of " << len << " bytes");
+      PTRACE(4, "THEORA", "Encap\tEncapsulated fragmentation continuation packet with length of " << len << " bytes");
     }
   }
   else {
@@ -138,13 +139,13 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
         _configSent = true;
        else
         frame.SetMarker(1);
-      TRACE_UP(4, "THEORA\tEncap\tEncapsulated single packet with length of " << len << " bytes");
+      PTRACE(4, "THEORA", "Encap\tEncapsulated single packet with length of " << len << " bytes");
     } 
     else {
       // start fragmentation packet
       dataPtr[3] = sendPackedConfig ? 0x50 : 0x40;
       len = (_maxPayloadSize - 6);
-      TRACE_UP(4, "THEORA\tEncap\tEncapsulated fragmentation start packet with length of " << len << " bytes");
+      PTRACE(4, "THEORA", "Encap\tEncapsulated fragmentation start packet with length of " << len << " bytes");
     }
   }
   dataPtr[4] = (len >> 8);
@@ -154,7 +155,7 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
   if (frameData.pos == frameData.len) 
     frameData.pos = 0; 
   if (frameData.pos > frameData.len) 
-    TRACE(1, "THEORA\tEncap\tPANIC: " << frameData.pos << "<" << frameData.len );
+    PTRACE(1, "THEORA", "Encap\tPANIC: " << frameData.pos << "<" << frameData.len );
   frame.SetTimestamp(_timestamp);
   frame.SetPayloadSize(len + 6);
 }
@@ -164,15 +165,15 @@ void theoraFrame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
   flags = 0;
   flags |= IsIFrame() ?  isIFrame : 0;
 
-  TRACE_UP(4, "THEORA\tEncap\tConfig Data in queue for RTP frame:  " << _packedConfigData.len << ", position: "<< _packedConfigData.pos);
-  TRACE_UP(4, "THEORA\tEncap\tFrame Data in queue for RTP frame:  " << _encodedData.len << ", position: "<< _encodedData.pos);
+  PTRACE(4, "THEORA", "Encap\tConfig Data in queue for RTP frame:  " << _packedConfigData.len << ", position: "<< _packedConfigData.pos);
+  PTRACE(4, "THEORA", "Encap\tFrame Data in queue for RTP frame:  " << _encodedData.len << ", position: "<< _encodedData.pos);
 
   if ((!_configSent) || (_packedConfigData.pos > 0))  // config not yet sent or still fragments left
     assembleRTPFrame (frame, _packedConfigData, true);
   else if (_encodedData.len > 0)
     assembleRTPFrame (frame, _encodedData, false);
   else 
-    TRACE(1, "THEORA\tEncap\tNeither config data nor frame data to send");
+    PTRACE(1, "THEORA", "Encap\tNeither config data nor frame data to send");
 
   if (frame.GetMarker()) {
     flags |= isLastFrame;  // marker bit on last frame of video
@@ -193,7 +194,7 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
 
   len = (dataPtr[4] << 8) + dataPtr[5];
   if (len > frame.GetPayloadSize() - 6) {
-    TRACE(1, "THEORA\tDeencap\tMalformed packet received, indicated payload length of " << len << " bytes but packet payload is only " << frame.GetPayloadSize() - 6 << "bytes long");
+    PTRACE(1, "THEORA", "Deencap\tMalformed packet received, indicated payload length of " << len << " bytes but packet payload is only " << frame.GetPayloadSize() - 6 << "bytes long");
     return false;
   }
 
@@ -204,7 +205,7 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
       dataPtr += 4;
 
       if ((isPackedConfig) && (numberPackets > 1)) {
-        TRACE(1, "THEORA\tDeencap\tPacked config with " << numberPackets << " > 1 makes no sense - taking only first packet");
+        PTRACE(1, "THEORA", "Deencap\tPacked config with " << numberPackets << " > 1 makes no sense - taking only first packet");
         numberPackets = 1;
       }
 
@@ -212,11 +213,11 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
 
         len = (dataPtr[0] << 8) + dataPtr[1];
         if ((frameData.len + (i<<1) + 4 + len) > frame.GetPayloadSize()) {
-          TRACE(1, "THEORA\tDeencap\tMalformed packet, packet #" << i << " has length larger than total packet length");
+          PTRACE(1, "THEORA", "Deencap\tMalformed packet, packet #" << i << " has length larger than total packet length");
           return false;
         }
         if (frameData.pos + len > MAX_FRAME_SIZE) {
-         TRACE(1, "THEORA\tDeencap\tCannot add packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
+         PTRACE(1, "THEORA", "Deencap\tCannot add packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
           return false;
         }
 
@@ -237,42 +238,42 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
 
         if ((i+1) <= numberPackets) {
           if ((frameData.len + ((i+1) << 1) + 6) > frame.GetPayloadSize()) {
-            TRACE(1, "THEORA\tDeencap\tMalformed packet, packet #" << i + 1 << " has length field outside packet");
+            PTRACE(1, "THEORA", "Deencap\tMalformed packet, packet #" << i + 1 << " has length field outside packet");
             return false;
           }
           dataPtr += len + 2;
         }
 
-        TRACE_UP(4, "THEORA\tDeencap\tAdded unfragmented segment #" << i << " of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
+        PTRACE(4, "THEORA", "Deencap\tAdded unfragmented segment #" << i << " of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
       }
       return true;
 
     case START_FRAGMENT:
       if (len > MAX_FRAME_SIZE) {
-        TRACE(1, "THEORA\tDeencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
+        PTRACE(1, "THEORA", "Deencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
       }
       frameData.pos = 0;
       frameData.len = 0;
       memcpy (frameData.ptr + frameData.pos, dataPtr + 6, len);
       frameData.pos = len;
-      TRACE_UP(4, "THEORA\tDeencap\tAdded start fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
+      PTRACE(4, "THEORA", "Deencap\tAdded start fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
       return true;
 
     case CONTINUATION_FRAGMENT:
       if (frameData.pos + len > MAX_FRAME_SIZE) {
-        TRACE(1, "THEORA\tDeencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
+        PTRACE(1, "THEORA", "Deencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
       }
-      if (frameData.pos == 0) { TRACE(1, "Received fragment continuation when fragment start was never received"); return false;}
+      if (frameData.pos == 0) { PTRACE(1, "THEORA", "Received fragment continuation when fragment start was never received"); return false;}
       memcpy (frameData.ptr + frameData.pos, dataPtr + 6, len);
       frameData.pos +=len;
       frameData.len = 0;
-      TRACE_UP(4, "THEORA\tDeencap\tAdded continuation fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
+      PTRACE(4, "THEORA", "Deencap\tAdded continuation fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
       return true;
     case END_FRAGMENT:
       if (frameData.pos + len > MAX_FRAME_SIZE) {
-        TRACE(1, "THEORA\tDeencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
+        PTRACE(1, "THEORA", "Deencap\tCannot add continuation packet to buffer since buffer is only " << MAX_FRAME_SIZE << " bytes long and " << frameData.pos + len << " bytes are needed");
       }
-      if (frameData.pos == 0) { TRACE(1, "Received fragment end when fragment start was never received"); return false;}
+      if (frameData.pos == 0) { PTRACE(1, "THEORA", "Received fragment end when fragment start was never received"); return false;}
       memcpy (frameData.ptr + frameData.pos, dataPtr + 6, len);
       frameData.pos += len;
       frameData.len = frameData.pos;
@@ -285,10 +286,10 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
         packet.len = frameData.len;
         _packets.push_back(packet);
       }
-      TRACE_UP(4, "THEORA\tDeencap\tAdded end fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
+      PTRACE(4, "THEORA", "Deencap\tAdded end fragment of size " << len << " to data block of " << frameData.len << ", pos: " << frameData.pos);
       return true;
     default:
-      TRACE(1, "THEORA\tDeencap\tIgnoring unknown fragment type " << fragmentType);
+      PTRACE(1, "THEORA", "Deencap\tIgnoring unknown fragment type " << fragmentType);
       return false;
   }
   return false;
@@ -298,7 +299,7 @@ bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/) {
 
   // packet too short
   if (frame.GetPayloadSize() < 6) {
-    TRACE(1, "THEORA\tDeencap\tPacket too short, RTP payload length < 6 bytes"); 
+    PTRACE(1, "THEORA", "Deencap\tPacket too short, RTP payload length < 6 bytes"); 
     return false;
   } 
 
@@ -308,25 +309,25 @@ bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/) {
 
   switch (dataType) {
     case RAW_THEORA_PAYLOAD:
-      TRACE_UP(4, "THEORA\tDeencap\tDeencapsulating raw theora payload packet"); 
+      PTRACE(4, "THEORA", "Deencap\tDeencapsulating raw theora payload packet"); 
       return disassembleRTPFrame(frame, _encodedData, false);
     case THEORA_PACKED_CONFIG_PAYLOAD: //config
-      TRACE_UP(4, "THEORA\tDeencap\tDeencapsulating packed config payload packet"); 
+      PTRACE(4, "THEORA", "Deencap\tDeencapsulating packed config payload packet"); 
       if (currentIdent != _ident) {
         return disassembleRTPFrame(frame, _packedConfigData, true);
        }
        else {
-        TRACE_UP(4, "THEORA\tDeencap\tPacked config is already known for this stream - ignoring packet"); 
+        PTRACE(4, "THEORA", "Deencap\tPacked config is already known for this stream - ignoring packet"); 
         return true;
       }
     case LEGACY_THEORA_COMMENT_PAYLOAD:
-      TRACE(1, "THEORA\tDeencap\tIgnored packet with legacy theora comment payload"); 
+      PTRACE(1, "THEORA", "Deencap\tIgnored packet with legacy theora comment payload"); 
       return true;
     case RESERVED:
-      TRACE(1, "THEORA\tDeencap\tIgnored packet with reserved payload"); 
+      PTRACE(1, "THEORA", "Deencap\tIgnored packet with reserved payload"); 
       return true;
     default:
-      TRACE(1, "THEORA\tDeencap\tIgnored packet with unknown payload " << dataType); 
+      PTRACE(1, "THEORA", "Deencap\tIgnored packet with unknown payload " << dataType); 
       return false;
   }
   return false;
