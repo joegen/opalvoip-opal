@@ -35,9 +35,10 @@
 
  */
 
+#include <codec/opalplugin.hpp>
+
 #include "theora_plugin.h"
 
-#include "trace.h"
 #include "rtpframe.h"
 
 #include <stdlib.h>
@@ -177,14 +178,14 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
 
   if (srcRTP.GetPayloadSize() < sizeof(frameHeader))
   {
-   TRACE(1, "THEORA\tEncoder\tVideo grab too small, Close down video transmission thread");
+   PTRACE(1, "THEORA", "Encoder\tVideo grab too small, Close down video transmission thread");
    return 0;
   }
 
   frameHeader * header = (frameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0)
   {
-    TRACE(1, "THEORA\tEncoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
+    PTRACE(1, "THEORA", "Encoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
     return 0;
   }
 
@@ -216,19 +217,19 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   ret = theora_encode_YUVin( &_theoraState, &yuv );
   if (ret != 0) {
     if (ret == -1) {
-      TRACE(1, "THEORA\tEncoder\tEncoding failed: The size of the given frame differs from those previously input (should not happen)")
+      PTRACE(1, "THEORA", "Encoder\tEncoding failed: The size of the given frame differs from those previously input (should not happen)");
     } else {
-      TRACE(1, "THEORA\tEncoder\tEncoding failed: " << theoraErrorMessage(ret));
+      PTRACE(1, "THEORA", "Encoder\tEncoding failed: " << theoraErrorMessage(ret));
     }
     return 0;
   }
 
   ret = theora_encode_packetout( &_theoraState, 0 /* not last Packet */, &framePacket );
   switch (ret) {
-    case  0: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): No internal storage exists OR no packet is ready"); return 0; break;
-    case -1: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): The encoding process has completed but something is not ready yet"); return 0; break;
-    case  1: TRACE_UP(4, "THEORA\tEncoder\tSuccessfully encoded OGG packet of " << framePacket.bytes << " bytes"); break;
-    default: TRACE(1, "THEORA\tEncoder\tEncoding failed (packet): " << theoraErrorMessage(ret)); return 0; break;
+    case  0: PTRACE(1, "THEORA", "Encoder\tEncoding failed (packet): No internal storage exists OR no packet is ready"); return 0; break;
+    case -1: PTRACE(1, "THEORA", "Encoder\tEncoding failed (packet): The encoding process has completed but something is not ready yet"); return 0; break;
+    case  1: PTRACE(4, "THEORA", "Encoder\tSuccessfully encoded OGG packet of " << framePacket.bytes << " bytes"); break;
+    default: PTRACE(1, "THEORA", "Encoder\tEncoding failed (packet): " << theoraErrorMessage(ret)); return 0; break;
   }
 
   _txTheoraFrame->SetFromFrame(&framePacket);
@@ -310,12 +311,12 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     _rxTheoraFrame->GetOggPacket (&oggPacket);
     if (theora_packet_isheader(&oggPacket)) {
 
-      TRACE_UP(4, "THEORA\tDecoder\tGot OGG header packet with size " << oggPacket.bytes);
+      PTRACE(4, "THEORA", "Decoder\tGot OGG header packet with size " << oggPacket.bytes);
 
       // In case we receive new header packets when the stream is already established
       // we have to wait to get both table and header packet until reopening the decoder
       if (_gotHeader && _gotTable) {
-        TRACE(4, "THEORA\tDecoder\tGot OGG header packet after stream was established");
+        PTRACE(4, "THEORA", "Decoder\tGot OGG header packet after stream was established");
         theora_clear( &_theoraState );
         theora_info_clear( &_theoraInfo );
         theora_info_init( &_theoraInfo );
@@ -328,7 +329,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       theoraComment.vendor = (char*) "theora";
       ret = theora_decode_header( &_theoraInfo, &theoraComment, &oggPacket );
       if (ret != 0) {
-        TRACE(1, "THEORA\tDecoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
+        PTRACE(1, "THEORA", "Decoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
         flags = (_gotAGoodFrame ? requestIFrame : 0);
         _gotAGoodFrame = false;
         return 1;
@@ -349,10 +350,10 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
         if (theora_packet_iskeyframe(&oggPacket)) {
 
-          TRACE_UP(4, "THEORA\tDecoder\tGot OGG keyframe data packet with size " << oggPacket.bytes);
+          PTRACE(4, "THEORA", "Decoder\tGot OGG keyframe data packet with size " << oggPacket.bytes);
           ret = theora_decode_packetin( &_theoraState, &oggPacket );
           if (ret != 0) {
-            TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
+            PTRACE(1, "THEORA", "Decoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
             flags = (_gotAGoodFrame ? requestIFrame : 0);
             _gotAGoodFrame = false;
             return 1;
@@ -365,10 +366,10 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
           if  (_gotIFrame) {
 
-            TRACE_UP(4, "THEORA\tDecoder\tGot OGG non-keyframe data packet with size " << oggPacket.bytes);
+            PTRACE(4, "THEORA", "Decoder\tGot OGG non-keyframe data packet with size " << oggPacket.bytes);
             ret = theora_decode_packetin( &_theoraState, &oggPacket );
             if (ret != 0) {
-              TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
+              PTRACE(1, "THEORA", "Decoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
               flags = (_gotAGoodFrame ? requestIFrame : 0);
               _gotAGoodFrame = false;
               return 1;
@@ -378,7 +379,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           } 
           else {
 
-            TRACE(1, "THEORA\tDecoder\tGot OGG non-keyframe data Packet but still waiting for keyframe");
+            PTRACE(1, "THEORA", "Decoder\tGot OGG non-keyframe data Packet but still waiting for keyframe");
             flags = (_gotAGoodFrame ? requestIFrame : 0);
             _gotAGoodFrame = false;
             return 1;
@@ -387,13 +388,13 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       } 
       else {
 
-        TRACE(1, "THEORA\tDecoder\tGot OGG data packet but still waiting for header and/or table Packets");
+        PTRACE(1, "THEORA", "Decoder\tGot OGG data packet but still waiting for header and/or table Packets");
         return 0;
       }
     }
   }
 
-  TRACE_UP(4, "THEORA\tDecoder\tNo more OGG packets to decode");
+  PTRACE(4, "THEORA", "Decoder\tNo more OGG packets to decode");
 
   if (gotFrame) {
 
@@ -401,7 +402,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     int frameBytes = (int) (size * 3 / 2);
     PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
 
-    TRACE_UP(4, "THEORA\tDecoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
+    PTRACE(4, "THEORA", "Decoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
 
     header->x = header->y = 0;
     header->width = _theoraInfo.width;
@@ -448,7 +449,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   } 
   else { /*gotFrame */
 
-    TRACE(1, "THEORA\tDecoder\tDid not get a decoded frame");
+    PTRACE(1, "THEORA", "Decoder\tDid not get a decoded frame");
     flags = (_gotAGoodFrame ? requestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
@@ -596,8 +597,8 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     capHeight = 480;
   }
 
-  frameWidth = min (capWidth, frameWidth);
-  frameHeight = min (capHeight, frameHeight);
+  frameWidth = std::min(capWidth, frameWidth);
+  frameHeight = std::min(capHeight, frameHeight);
     
   frameWidth -= frameWidth % 16;
   frameHeight -= frameHeight % 16;
@@ -637,8 +638,8 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   }
 
-  capWidth = min (capWidth, maxWidth);
-  capHeight = min (capHeight, maxHeight);
+  capWidth = std::min(capWidth, maxWidth);
+  capHeight = std::min(capHeight, maxHeight);
 
   capWidth -= capWidth % 16;
   capHeight -= capHeight % 16;
@@ -685,7 +686,7 @@ static int encoder_set_options(
 	 context->SetMaxRTPFrameSize (atoi(options[i+1]));
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
 	 context->SetMaxKeyFramePeriod (atoi(options[i+1]));
-      TRACE (4, "THEORA\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
+      PTRACE(4, "THEORA", "Encoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
     context->ApplyOptions();
   }
@@ -739,22 +740,6 @@ PLUGIN_CODEC_IMPLEMENT(THEORA)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-  if (debug_level!=NULL) {
-    Trace::SetLevel(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevel(0);
-  }
-
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-  if (debug_level!=NULL) {
-    Trace::SetLevelUserPlane(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
     *count = 0;
     return NULL;

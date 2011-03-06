@@ -49,8 +49,7 @@ vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS    += theora_frame.cxx \
-           theora_plugin.cxx \
-           $(COMMONDIR)/trace.cxx
+           theora_plugin.cxx
 
 
 ifeq ($(VERBOSE),)
