@@ -597,8 +597,8 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     capHeight = 480;
   }
 
-  frameWidth = min (capWidth, frameWidth);
-  frameHeight = min (capHeight, frameHeight);
+  frameWidth = std::min(capWidth, frameWidth);
+  frameHeight = std::min(capHeight, frameHeight);
     
   frameWidth -= frameWidth % 16;
   frameHeight -= frameHeight % 16;
@@ -638,8 +638,8 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   }
 
-  capWidth = min (capWidth, maxWidth);
-  capHeight = min (capHeight, maxHeight);
+  capWidth = std::min(capWidth, maxWidth);
+  capHeight = std::min(capHeight, maxHeight);
 
   capWidth -= capWidth % 16;
   capHeight -= capHeight % 16;
@@ -740,22 +740,6 @@ PLUGIN_CODEC_IMPLEMENT(THEORA)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-  if (debug_level!=NULL) {
-    Trace::SetLevel(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevel(0);
-  }
-
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-  if (debug_level!=NULL) {
-    Trace::SetLevelUserPlane(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
     *count = 0;
     return NULL;
