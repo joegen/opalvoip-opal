@@ -1450,7 +1450,8 @@ bool SIPConnection::WriteINVITE()
   m_needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
-  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT)) {
+  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) &&
+                  (!number.IsEmpty() || !name.IsEmpty() || !domain.IsEmpty())) {
     SIPURL contact = invite->GetMIME().GetContact();
     if (!number.IsEmpty())
       contact.SetUserName(number);
@@ -1458,7 +1459,7 @@ bool SIPConnection::WriteINVITE()
       contact.SetDisplayName(name);
     if (!domain.IsEmpty())
       contact.SetHostName(domain);
-    invite->GetMIME().SetContact(contact);
+    invite->GetMIME().SetContact(contact.AsQuotedString());
   }
 
   SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
@@ -2979,6 +2980,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       mime.AddSupported("100rel");
   }
 
+  mime.AddSupported("replaces");
   for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
     PCaselessString key = m_stringOptions.GetKeyAt(i);
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
