@@ -132,8 +132,8 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   if (IsEmpty() || address.IsEmpty())
     return PTrue;
 
-  PCaselessString myPrefix = GetProto();
-  PCaselessString theirPrefix = address.GetProto();
+  PCaselessString myPrefix = GetProto(true);
+  PCaselessString theirPrefix = address.GetProto(true);
   return myPrefix == theirPrefix ||
         (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix 
 #if OPAL_PTLIB_SSL

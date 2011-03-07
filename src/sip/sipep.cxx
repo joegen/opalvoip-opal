@@ -1759,18 +1759,33 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const SIPURL & localURI)
+void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU & pdu)
 {
+  SIPURL localURI = pdu.GetMIME().GetFrom();
+  SIPURL contact;
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(localURI, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler == NULL) {
-    // Precise AOR not found, locate the name used for the domain.
+  // If precise AOR not found, locate the name used for the domain.
+  if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByDomain(localURI.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-    if (handler == NULL)
-      return GetLocalURL(transport, localURI.GetUserName());
+  SIPRegisterHandler * registrar = dynamic_cast<SIPRegisterHandler *>(&*handler);
+
+  if (registrar != NULL) {
+    std::set<SIPURL> contacts;
+    if (SIPMIMEInfo::ExtractURLs(registrar->GetParams().m_contactAddress, contacts)) {
+      for (std::set<SIPURL>::iterator it = contacts.begin(); it != contacts.end(); ++it) {
+        if (it->GetHostAddress().GetProto(true) == transport.GetProtoPrefix()) {
+          contact = *it;
+          break;
+        }
+      }
+    }
   }
 
-  OpalTransport * handlerTransport = handler->GetTransport();
-  return GetLocalURL(handlerTransport != NULL ? *handlerTransport : transport, handler->GetAddressOfRecord().GetUserName());
+  if (contact.IsEmpty())
+    contact = GetLocalURL(transport, localURI.GetUserName());
+
+  contact.Sanitise(pdu.GetMethod() != SIP_PDU::Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
+  pdu.GetMIME().SetContact(contact.AsQuotedString());
 }
 
 
