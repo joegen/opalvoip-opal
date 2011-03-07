@@ -461,6 +461,18 @@ PString SIPURL::GetDisplayName (PBoolean useDefault) const
 }
 
 
+PString SIPURL::GetFieldParameter(const PString & name) const
+{
+  return SIPMIMEInfo::ExtractFieldParameter(fieldParameters, name);
+}
+
+
+void SIPURL::SetFieldParameter(const PString & name, const PString & value)
+{
+  fieldParameters = SIPMIMEInfo::InsertFieldParameter(fieldParameters, name, value);
+}
+
+
 OpalTransportAddress SIPURL::GetHostAddress() const
 {
   if (IsEmpty())
@@ -501,6 +513,7 @@ void SIPURL::Sanitise(UsageContext context)
     { "ttl",                       (1<<ToURI)|(1<<FromURI)                |(1<<RouteURI)|(1<<RegisterURI)                  },
     { "transport",                 (1<<ToURI)|(1<<FromURI)                                                                 },
     { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|              (1<<RegisterURI)                  },
+    { "expires",   (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
     { "tag",       (1<<RequestURI)|                        (1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
   };
 
@@ -774,7 +787,13 @@ PString SIPMIMEInfo::GetContact() const
 
 bool SIPMIMEInfo::GetContacts(std::set<SIPURL> & contacts) const
 {
-  PStringArray lines = GetString("Contact").Lines();
+  return ExtractURLs(GetString("Contact"), contacts);
+}
+
+
+bool SIPMIMEInfo::ExtractURLs(const PString & str, std::set<SIPURL> & urls)
+{
+  PStringArray lines = str.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     PString line = lines[0];
 
@@ -800,13 +819,13 @@ bool SIPMIMEInfo::GetContacts(std::set<SIPURL> & contacts) const
       SIPURL uri = line(comma+1, pos-1);
       if (!uri.GetPortSupplied())
         uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
-      contacts.insert(uri);
+      urls.insert(uri);
 
       comma = previousPos = pos;
     } while (comma != P_MAX_INDEX);
   }
 
-  return !contacts.empty();
+  return !urls.empty();
 }
 
 
@@ -874,6 +893,37 @@ void SIPMIMEInfo::SetViaList(const PStringList & v)
     fieldValue << *via;
   }
   SetAt("Via", fieldValue);
+}
+
+
+PString SIPMIMEInfo::GetFirstVia() const
+{
+  // Get first via
+  PString via = GetVia();
+  via.Delete(via.FindOneOf("\r\n"), P_MAX_INDEX);
+  return via;
+}
+
+OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
+{
+  // Get first via
+  PCaselessString via = GetFirstVia();
+
+  if (via.Find("/UDP") == P_MAX_INDEX)
+    return OpalTransportAddress();
+
+  PINDEX start, val, end;
+  if (!LocateFieldParameter(via, "rport", start, val, end) || val >= end)
+    return OpalTransportAddress();
+
+  WORD port = (WORD)via(val, end).AsUnsigned();
+  if (port == 0)
+    return OpalTransportAddress();
+  
+  if (LocateFieldParameter(via, "received", start, val, end) && val < end)
+    return OpalTransportAddress(via(val, end), port, "udp");
+
+  return OpalTransportAddress(via(via.Find(' ')+1, via.Find(':')-1), port, "udp");
 }
 
 
@@ -1657,7 +1707,6 @@ SIP_PDU::SIP_PDU(Methods meth)
   , m_versionMajor(SIP_VER_MAJOR)
   , m_versionMinor(SIP_VER_MINOR)
   , m_SDP(NULL)
-  , m_usePeerTransportAddress(false)
 {
 }
 
@@ -1670,7 +1719,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   : m_method(NumMethods)
   , m_statusCode(code)
   , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
-  , m_usePeerTransportAddress(false)
 {
   InitialiseHeaders(request);
 
@@ -1700,7 +1748,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_mime(pdu.m_mime)
   , m_entityBody(pdu.m_entityBody)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
-  , m_usePeerTransportAddress(pdu.m_usePeerTransportAddress)
 {
 }
 
@@ -1710,7 +1757,6 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   m_method = pdu.m_method;
   m_statusCode = pdu.m_statusCode;
   m_uri = pdu.m_uri;
-  m_usePeerTransportAddress = pdu.m_usePeerTransportAddress;
 
   m_versionMajor = pdu.m_versionMajor;
   m_versionMinor = pdu.m_versionMinor;
@@ -1800,7 +1846,6 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
                     dialog.GetNextCSeq(),
                     via);
   SetRoute(dialog.GetRouteSet());
-  m_usePeerTransportAddress = dialog.UsePeerTransportAddress();
 }
 
 
@@ -1808,10 +1853,7 @@ void SIP_PDU::InitialiseHeaders(SIPConnection & connection,
                                 const OpalTransport & transport)
 {
   InitialiseHeaders(connection.GetDialog(), CreateVia(connection.GetEndPoint(), transport));
-
-  SIPURL contact = connection.GetEndPoint().GetContactURL(transport, connection.GetDialog().GetLocalURI());
-  contact.Sanitise(m_method != Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
-  m_mime.SetContact(contact.AsQuotedString());
+  connection.GetEndPoint().AdjustToRegistration(transport, *this);
 }
 
 
@@ -2026,10 +2068,8 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
     }
   }
 
-  if (endpoint != NULL && response.GetMIME().GetContact().IsEmpty()) {
-    SIPURL to = GetMIME().GetTo();
-    response.GetMIME().SetContact(endpoint->GetLocalURL(transport, to.GetUserName()));
-  }
+  if (endpoint != NULL && response.GetMIME().GetContact().IsEmpty())
+    endpoint->AdjustToRegistration(transport, *const_cast<SIP_PDU *>(this));
 
   return response.Write(transport, newAddress);
 }
@@ -2327,9 +2367,7 @@ PString SIP_PDU::GetTransactionID() const
        CSeq in our id as we want the CANCEL messages directed at out
        transaction structure.
      */
-    PStringList vias;
-    if (m_mime.GetViaList(vias))
-      m_transactionID = SIPMIMEInfo::ExtractFieldParameter(vias.front(), "branch");
+    m_transactionID = SIPMIMEInfo::ExtractFieldParameter(m_mime.GetFirstVia(), "branch");
     if (m_transactionID.IsEmpty()) {
       PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has no branch parameter!");
       m_transactionID = m_mime.GetCallID() + m_mime.GetCSeq(); // Fail safe ...
@@ -2370,7 +2408,6 @@ SIPDialogContext::SIPDialogContext()
   : m_callId(SIPTransaction::GenerateCallID())
   , m_lastSentCSeq(0)
   , m_lastReceivedCSeq(0)
-  , m_usePeerTransportAddress(false)
   , m_forking(false)
 {
 }
@@ -2494,7 +2531,7 @@ void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 }
 
 
-void SIPDialogContext::Update(const SIP_PDU & pdu)
+void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
 {
   const SIPMIMEInfo & mime = pdu.GetMIME();
 
@@ -2532,12 +2569,10 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     SetRemoteURI(mime.GetFrom());
   }
 
-  /* Update target address, if required */
-  if (pdu.GetMethod() == SIP_PDU::Method_INVITE || pdu.GetMethod() == SIP_PDU::Method_SUBSCRIBE) {
+  if (pdu.GetMethod() != SIP_PDU::NumMethods) {
     PINDEX start, val, end;
-    PStringList viaList;
-    if (mime.GetViaList(viaList))
-      m_usePeerTransportAddress = LocateFieldParameter(viaList.front(), "rport", start, val, end);
+    if (LocateFieldParameter(mime.GetFirstVia(), "rport", start, val, end) && val >= end)
+      m_externalTransportAddress = transport.GetLastReceivedAddress();
   }
 }
 
@@ -2570,6 +2605,29 @@ bool SIPDialogContext::IsDuplicateCSeq(unsigned requestCSeq)
 }
 
 
+OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress() const
+{
+  // In order of priority ...
+
+  if (!m_externalTransportAddress.IsEmpty())
+    return m_externalTransportAddress;
+
+  OpalTransportAddress addr = m_proxy.GetHostAddress();
+  if (!addr.IsEmpty())
+    return addr;
+
+  SIPURL uri;
+  if (m_routeSet.IsEmpty())
+    uri = m_requestURI;
+  else
+    uri = m_routeSet.front();
+
+
+  uri.AdjustToDNS();
+  return uri.GetHostAddress();
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport & trans)
@@ -2599,7 +2657,7 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   , m_retryTimeoutMax(m_endpoint.GetRetryTimeoutMax())
   , m_state(NotStarted)
   , m_retry(1)
-  , m_remoteAddress(conn.GetDialog().GetProxy().GetHostAddress())
+  , m_remoteAddress(conn.GetDialog().GetRemoteTransportAddress())
 {
   m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
@@ -2628,21 +2686,13 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
 
   m_mime.SetExpires(params.m_expire);
 
-  if (params.m_contactAddress.IsEmpty())
-    SetContact(params.m_addressOfRecord);
-  else
+  if (!params.m_contactAddress.IsEmpty())
     m_mime.SetContact(params.m_contactAddress);
 
   if (!params.m_proxyAddress.IsEmpty())
     SetRoute(SIPURL(params.m_proxyAddress));
 
   m_mime.AddMIME(params.m_mime);
-}
-
-
-void SIPTransaction::SetContact(const SIPURL & uri)
-{
-  m_mime.SetContact(m_endpoint.GetLocalURL(m_transport, uri.GetUserName()));
 }
 
 
@@ -2680,9 +2730,7 @@ PBoolean SIPTransaction::Start()
      the RFC, for a request in a dialog. 
      handle case where address changed using rport
    */
-  if (m_usePeerTransportAddress)
-    m_remoteAddress = m_transport.GetLastReceivedAddress();
-  else if (m_remoteAddress.IsEmpty()) {
+  if (m_remoteAddress.IsEmpty()) {
     SIPURL destination;
     destination = m_uri;
     PStringList routeSet = GetMIME().GetRoute();
@@ -2771,18 +2819,13 @@ bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 
 bool SIPTransaction::ResendCANCEL()
 {
-  // Use the topmost via header from the INVITE we cancel as per 9.1. 
-  PStringList vias;
-  if (!m_mime.GetViaList(vias))
-    vias.AppendString(PString());
-
   SIP_PDU cancel(Method_CANCEL);
   cancel.InitialiseHeaders(m_uri,
                            m_mime.GetTo(),
                            m_mime.GetFrom(),
                            m_mime.GetCallID(),
                            m_mime.GetCSeqIndex(),
-                           vias.front());
+                           m_mime.GetFirstVia()); // Use the topmost via header from the INVITE we cancel as per 9.1. 
 
   return SendPDU(cancel);
 }
@@ -3206,18 +3249,9 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
         if (!m_connection->LockReadOnly())
           return false;
 
-        SIPDialogContext & dialog = m_connection->GetDialog();
-        const PStringList & routeSet = dialog.GetRouteSet();
-        SIPURL dest;
-        if (routeSet.IsEmpty())
-          dest = dialog.GetRequestURI();
-        else
-          dest = routeSet.front();
+        m_remoteAddress = m_connection->GetDialog().GetRemoteTransportAddress();
         m_connection->UnlockReadOnly();
 
-        dest.AdjustToDNS();
-
-        m_remoteAddress = dest.GetHostAddress();
         PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
       }
 
@@ -3463,7 +3497,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
   // I have no idea why this is necessary, but it is the way OpenSIPS works ....
   if (params.m_eventPackage == SIPSubscribe::Dialog && params.m_contactAddress.IsEmpty())
-    SetContact(dialog.GetRemoteURI());
+    m_mime.SetContact(dialog.GetRemoteURI());
 
   m_mime.SetEvent(params.m_eventPackage);
 
@@ -3517,7 +3551,6 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
 {
   InitialiseHeaders(dialog, CreateVia(ep, trans));
 
-  SetContact(dialog.GetLocalURI());
   m_mime.SetEvent(eventPackage);
   m_mime.SetSubscriptionState(state);
 
@@ -3528,6 +3561,8 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
   }
 
   m_entityBody = body;
+
+  ep.AdjustToRegistration(trans, *this);
 }
 
 

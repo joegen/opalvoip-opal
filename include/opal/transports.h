@@ -99,7 +99,7 @@ class OpalTransportAddress : public PCaselessString
 
     /**Return the underlying protocol for the transport address.
       */
-    PCaselessString GetProto() const { return Left(Find('$')); }
+    PCaselessString GetProto(bool withDollar = false) const { return Left(Find('$')+(withDollar?1:0)); }
 
     /**Extract the ip address from transport address.
        Returns false, if the address is not an IP transport address.
