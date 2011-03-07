@@ -1516,20 +1516,35 @@ PString SIPMIMEInfo::InsertFieldParameter(const PString & fieldValue,
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPAuthenticator::SIPAuthenticator(SIP_PDU & pdu)
-: m_pdu(pdu)
-{ }
+  : m_pdu(pdu)
+{
+}
+
 
 PMIMEInfo & SIPAuthenticator::GetMIME()
-{ return m_pdu.GetMIME(); }
+{
+  return m_pdu.GetMIME();
+}
+
 
 PString SIPAuthenticator::GetURI()
-{ return m_pdu.GetURI().AsString(); }
+{
+  return m_pdu.GetURI().AsString();
+}
+
 
 PString SIPAuthenticator::GetEntityBody()
-{ return m_pdu.GetEntityBody(); }
+{
+  m_pdu.SetEntityBody();
+  return m_pdu.GetEntityBody();
+}
+
 
 PString SIPAuthenticator::GetMethod()
-{ return MethodNames[m_pdu.GetMethod()]; }
+{
+  return MethodNames[m_pdu.GetMethod()];
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -2268,16 +2283,25 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 }
 
 
+void  SIP_PDU::SetEntityBody()
+{
+  if (m_SDP == NULL)
+    return;
+
+  if (!m_entityBody.IsEmpty())
+    return;
+
+  m_entityBody = m_SDP->Encode();
+  m_mime.SetContentType("application/sdp");
+  m_mime.SetContentLength(m_entityBody.GetLength());
+}
+
+
 PString SIP_PDU::Build()
 {
   PStringStream str;
 
-  if (m_SDP != NULL) {
-    m_entityBody = m_SDP->Encode();
-    m_mime.SetContentType("application/sdp");
-  }
-
-  m_mime.SetContentLength(m_entityBody.GetLength());
+  SetEntityBody();
 
   if (m_method != NumMethods)
     str << MethodNames[m_method] << ' ' << m_uri << ' ';

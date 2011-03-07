@@ -669,6 +669,7 @@ class SIP_PDU : public PSafeObject
     unsigned GetVersionMinor() const         { return m_versionMinor; }
     const PString & GetEntityBody() const    { return m_entityBody; }
     void SetEntityBody(const PString & body) { m_entityBody = body; }
+    void SetEntityBody();
     const PString & GetInfo() const          { return m_info; }
     void SetInfo(const PString & info)       { m_info = info; }
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
