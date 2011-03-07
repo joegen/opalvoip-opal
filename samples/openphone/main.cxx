@@ -812,7 +812,7 @@ bool MyManager::Initialise()
   config->SetPath(GeneralGroup);
   if (config->Read(UsernameKey, &str) && !str.IsEmpty())
     SetDefaultUserName(str);
-  if (config->Read(DisplayNameKey, &str) && !str.IsEmpty())
+  if (config->Read(DisplayNameKey, &str))
     SetDefaultDisplayName(str);
 
   if (!config->Read(RingSoundDeviceNameKey, &m_RingSoundDeviceName))

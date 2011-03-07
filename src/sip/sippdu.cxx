@@ -1200,7 +1200,7 @@ void SIPMIMEInfo::SetSupported(const PStringSet & v)
 
 void SIPMIMEInfo::AddSupported(const PString & v)
 {
-  SetTokenSet("Supported", v);
+  AddTokenSet("Supported", v);
 }
 
 
