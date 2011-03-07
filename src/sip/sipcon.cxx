@@ -1782,7 +1782,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
-  m_dialog.Update(response);
+  m_dialog.Update(*transport, response);
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -2201,7 +2201,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
-  m_dialog.Update(request);
+  m_dialog.Update(*transport, request);
   UpdateRemoteAddresses();
 
   // We received a Re-INVITE for a current connection
@@ -2238,11 +2238,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
   if (!PIPSocket::GetHostAddress(m_dialog.GetRequestURI().GetHostName(), sigAddr)) {
-    PStringList vias;
-    if (mime.GetViaList(vias)) {
-      PString via = vias.front();
+    PString via = mime.GetFirstVia();
+    if (!via.IsEmpty())
       sigAddr = via(via.Find(' ')+1, via.Find(':')-1);
-    }
   }
 
   // get the local and peer transport addresses
@@ -2595,7 +2593,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   }
   releaseMethod = ReleaseWithNothing;
 
-  m_dialog.Update(request);
+  m_dialog.Update(*transport, request);
   UpdateRemoteAddresses();
   request.GetMIME().GetProductInfo(remoteProductInfo);
 
@@ -3045,9 +3043,7 @@ bool SIPConnection::SendInviteOK()
   // this can be used to prompoe any incoming calls to TCP. Not quite there yet, but it *almost* works
   SIPURL contact;
   bool promoteToTCP = false;    // disable code for now
-  if (!promoteToTCP || (transport != NULL && (PString(transport->GetProtoPrefix()) == "$tcp"))) 
-    contact = endpoint.GetContactURL(*transport, m_dialog.GetLocalURI());
-  else {
+  if (promoteToTCP && (transport == NULL || strcmp(transport->GetProtoPrefix(), "$tcp") != 0)) {
     // see if endpoint contains a TCP listener we can use
     OpalTransportAddress newAddr;
     if (!endpoint.FindListenerForProtocol("tcp", newAddr))

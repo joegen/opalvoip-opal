@@ -130,13 +130,26 @@ class SIPURL : public PURL
     void SetDisplayName(const PString & str) 
       { displayName = str; }
 
-    /**Returns the field parameter (outside of <>)
+    /**Returns the field parameters (outside of <>)
       */
     PString GetFieldParameters() const { return fieldParameters; }
 
+    /**Returns the field parameters (outside of <>)
+      */
+    void SetFieldParameters(const PString & str) { fieldParameters = str; }
+
     /**Returns the field parameter (outside of <>)
       */
-    void SetFieldParameters(const PString & str ) { fieldParameters = str; }
+    PString GetFieldParameter(
+      const PString & name
+    ) const;
+
+    /**Returns the field parameter (outside of <>)
+      */
+    void SetFieldParameter(
+      const PString & name,
+      const PString & value
+    );
 
     /**Get the host and port as a transport address.
       */
@@ -301,6 +314,9 @@ class SIPMIMEInfo : public PMIMEInfo
     bool GetViaList(PStringList & v) const;
     void SetViaList(const PStringList & v);
 
+    PString GetFirstVia() const;
+    OpalTransportAddress GetViaReceivedAddress() const;
+
     PString GetReferTo() const;
     void SetReferTo(const PString & r);
 
@@ -418,6 +434,13 @@ class SIPMIMEInfo : public PMIMEInfo
       const PString & fieldValue,   ///< Value of field string
       const PString & paramName,    ///< Field parameter name
       const PString & newValue      ///< New value for parameter
+    );
+
+    /**Extract a list of unique URLs, comma separated and escaped with <>.
+      */
+    static bool ExtractURLs(
+      const PString & str,
+      std::set<SIPURL> & urls
     );
 
   protected:
@@ -691,8 +714,6 @@ class SIP_PDU : public PSafeObject
     SDPSessionDescription * m_SDP;
 
     mutable PString m_transactionID;
-
-    bool m_usePeerTransportAddress;
 };
 
 
@@ -746,7 +767,7 @@ class SIPDialogContext
     const SIPURL & GetProxy() const { return m_proxy; }
     void SetProxy(const SIPURL & proxy, bool addToRouteSet);
 
-    void Update(const SIP_PDU & response);
+    void Update(OpalTransport & transport, const SIP_PDU & response);
 
     unsigned GetNextCSeq();
     void IncrementCSeq(unsigned inc) { m_lastSentCSeq += inc; }
@@ -761,7 +782,7 @@ class SIPDialogContext
              !m_remoteTag.IsEmpty();
     }
 
-    bool UsePeerTransportAddress() const { return m_usePeerTransportAddress; }
+    OpalTransportAddress GetRemoteTransportAddress() const;
 
     void SetForking(bool f) { m_forking = f; }
 
@@ -775,7 +796,7 @@ class SIPDialogContext
     PStringList m_routeSet;
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
-    bool        m_usePeerTransportAddress;
+    OpalTransportAddress m_externalTransportAddress;
     bool        m_forking;
     SIPURL      m_proxy;
 };
@@ -879,7 +900,6 @@ class SIPTransaction : public SIP_PDU
     bool SendPDU(SIP_PDU & pdu);
     bool ResendCANCEL();
     void SetParameters(const SIPParameters & params);
-    void SetContact(const SIPURL & uri);
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
