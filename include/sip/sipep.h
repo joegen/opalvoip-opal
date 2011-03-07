@@ -847,19 +847,18 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual SIPURL GetDefaultRegisteredPartyName(const OpalTransport & transport);
     
 
-    /**Return the contact URL for the given host and user name
-     * based on the listening port of the registration to that host.
-     * 
-     * That URL can be used as as contact field in outgoing
-     * requests.
-     *
-     * The URL is translated if required.
-     *
-     * If no active registration is used, return the result of GetLocalURL
-     * on the given transport.
+    /**Adjust the outgoing PDU to registered information.
+       Various header fields of the PDU must be adjusted to agree with values
+       provided to/from the active registration for the domain the call is being
+       made to. For example the "From" field must agree exactly with
+     
+       If no active registration is available, the result of GetLocalURL() on
+       the given transport is set to the Contact field.
      */
-    SIPURL GetContactURL(const OpalTransport &transport, const SIPURL & localURI);
-
+    void AdjustToRegistration(
+      const OpalTransport & transport,
+      SIP_PDU & pdu
+    );
 
     /**Return the local URL for the given transport and user name.
      * That URL can be used as via address, and as contact field in outgoing

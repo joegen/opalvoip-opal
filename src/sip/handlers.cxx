@@ -704,28 +704,62 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   transaction.GetMIME().GetContacts(requestContacts);
   response.GetMIME().GetContacts(replyContacts);
 
-  m_parameters.m_contactAddress.MakeEmpty();
-
+  std::list<SIPURL> contacts;
   for (std::set<SIPURL>::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
     // RFC3261 does say the registrar must send back ALL registrations, however
     // we only deal with replies from the registrar that we actually requested.
     std::set<SIPURL>::iterator request = requestContacts.find(*reply);
-    if (request != requestContacts.end()) {
-      PString expires = SIPMIMEInfo::ExtractFieldParameter(reply->GetFieldParameters(), "expires");
-      if (expires.IsEmpty())
-        SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
-      else
-        SetExpire(expires.AsUnsigned());
+    if (request != requestContacts.end())
+      contacts.push_back(*reply);
+  }
 
-      if (!m_parameters.m_contactAddress.IsEmpty())
-        m_parameters.m_contactAddress += ", ";
-      m_parameters.m_contactAddress += request->AsQuotedString();
+  // See if we are behind NAT and the Via header rport was present, and different
+  // to our registered contact field. Some servers will refuse to work unless the
+  // Contact agrees whith where the packet is physically coming from.
+  OpalTransportAddress externalAddress = response.GetMIME().GetViaReceivedAddress();
+  bool useExternalAddress = !externalAddress.IsEmpty();
+  if (useExternalAddress) {
+    std::list<SIPURL>::iterator contact;
+    for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
+      if (contact->GetHostAddress() == externalAddress) {
+        useExternalAddress = false;
+        break;
+      }
     }
+    if (useExternalAddress) {
+      PString username = m_addressOfRecord.GetUserName();
+      for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
+        if (contact->GetHostAddress().GetProto() == "udp") {
+          contact->SetFieldParameter("expires", "0");
+          username = contact->GetUserName();
+        }
+      }
+      contacts.push_front(SIPURL(username, externalAddress));
+      contacts.front().SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
+    }
+  }
+
+  m_parameters.m_contactAddress.MakeEmpty();
+
+  for (std::list<SIPURL>::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
+    PString expires = contact->GetFieldParameter("expires");
+    if (expires.IsEmpty())
+      SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
+    else
+      SetExpire(expires.AsUnsigned());
+
+    if (!m_parameters.m_contactAddress.IsEmpty())
+      m_parameters.m_contactAddress += ", ";
+    m_parameters.m_contactAddress += contact->AsQuotedString();
   }
 
   response.GetMIME().GetProductInfo(m_productInfo);
 
   SendStatus(SIP_PDU::Successful_OK, oldState);
+
+  // If we have had a NAT port change to what we thought, need to initiate another REGISTER
+  if (useExternalAddress)
+    SendRequest(GetState());
 }
 
 
@@ -958,7 +992,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
    * An answer can only shorten the expires time.
    */
   SetExpire(response.GetMIME().GetExpires(originalExpire));
-  m_dialog.Update(response);
+  m_dialog.Update(*m_transport, response);
 
   if (GetState() != Unsubscribing)
     SIPHandler::OnReceivedOK(transaction, response);
