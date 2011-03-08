@@ -499,14 +499,21 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
 }
 
 
-void OpalMediaPatch::SetPaused(bool pause)
+bool OpalMediaPatch::SetPaused(bool pause)
 {
   PReadWaitAndSignal mutex(inUse);
 
-  source.SetPaused(pause);
+  bool atLeastOne = source.SetPaused(pause, true);
 
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-    s->stream->SetPaused(pause);
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->stream->SetPaused(pause, true))
+      atLeastOne = true;
+  }
+
+  if (!pause)
+    Start();
+
+  return atLeastOne;
 }
 
 
@@ -563,6 +570,11 @@ void OpalMediaPatch::Main()
   RTP_DataFrame sourceFrame(0);
 
   while (source.IsOpen()) {
+    if (source.IsPaused()) {
+      PThread::Sleep(100);
+      continue;
+    }
+
     sourceFrame.MakeUnique();
     sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
 

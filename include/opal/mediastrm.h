@@ -364,13 +364,15 @@ class OpalMediaStream : public PSafeObject
 
     /**Get the paused state for stream.
       */
-    bool IsPaused() const { return paused; }
+    bool IsPaused() const { return m_paused; }
 
     /**Set the paused state for stream.
        This will stop reading/writing data from the stream.
+       Returns true if the pause state was changed
       */
-    virtual void SetPaused(
-      bool pause    ///< Indicate that the stream should be paused
+    virtual bool SetPaused(
+      bool pause,             ///< Indicate that the stream should be paused
+      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
     );
 
     /**Returns true if the media stream is open.
@@ -414,7 +416,7 @@ class OpalMediaStream : public PSafeObject
     unsigned         sessionID;
     PString          identifier;
     OpalMediaFormat  mediaFormat;
-    bool             paused;
+    bool             m_paused;
     bool             isSource;
     bool             isOpen;
     PINDEX           defaultDataSize;
@@ -572,8 +574,9 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Set the paused state for stream.
        This will stop reading/writing data from the stream.
       */
-    virtual void SetPaused(
-      bool pause    ///< Indicate that the stream should be paused
+    virtual bool SetPaused(
+      bool pause,             ///< Indicate that the stream should be paused
+      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
     );
 
     /**Read an RTP frame of data from the source media stream.
