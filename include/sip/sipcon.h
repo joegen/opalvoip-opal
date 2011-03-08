@@ -640,10 +640,10 @@ class SIPConnection : public OpalRTPConnection
     virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
       SIP_PDU::StatusCodes code,
-      const char * contact = NULL,
-      const char * extra = NULL,
-      const SDPSessionDescription * sdp = NULL,
-      const char * body = NULL
+      const SDPSessionDescription * sdp = NULL
+    );
+    virtual void AdjustInviteResponse(
+      SIP_PDU & response
     );
 
     void UpdateRemoteAddresses();
