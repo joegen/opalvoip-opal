@@ -976,12 +976,11 @@ OpalMixerMediaStream::OpalMixerMediaStream(OpalConnection & conn,
                                                             bool listenOnly)
   : OpalMediaStream(conn, format, sessionID, isSource)
   , m_node(node)
+  , m_listenOnly(listenOnly)
 #if OPAL_VIDEO
   , m_video(mediaFormat.GetMediaType() == OpalMediaType::Video())
 #endif
 {
-  paused = IsSink() && listenOnly;
-
   /* We are a bit sneaky here. OpalCall::OpenSourceMediaStream will have
      selected the network codec (e.g. G.723.1) anbd passed it to us, but for
      the case of incoming media to the mixer (sink), we switch it to the raw
@@ -1020,7 +1019,9 @@ PBoolean OpalMixerMediaStream::Open()
     return false;
   }
 
-  if (!paused && !m_node->AttachStream(this))
+  SetPaused(IsSink() && m_listenOnly);
+
+  if (!IsPaused() && !m_node->AttachStream(this))
     return false;
 
   return OpalMediaStream::Open();
@@ -1040,9 +1041,6 @@ PBoolean OpalMixerMediaStream::Close()
 
 PBoolean OpalMixerMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  if (paused)
-    return true;
-
 #if OPAL_VIDEO
   if (m_video)
     return m_node->WriteVideo(GetID(), packet);
