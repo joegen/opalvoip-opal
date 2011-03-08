@@ -748,11 +748,11 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
     m_timeUnits = timeUnits;
 
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
-    PTRACE_IF(4, m_jitterBuffer != NULL, "InfLID\tSwitching off jitter buffer " << *m_jitterBuffer);
+    PTRACE_IF(4, m_jitterBuffer != NULL, "RTP\tSwitching off jitter buffer " << *m_jitterBuffer);
     m_jitterBuffer.SetNULL();
   }
   else {
-    PTRACE(4, "InfLID\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
+    PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     resequenceOutOfOrderPackets = false;
     if (m_jitterBuffer != NULL)
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);

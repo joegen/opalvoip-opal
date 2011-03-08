@@ -682,12 +682,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
         }
       }
     }
-    else {
-      // Sanitise the contact address URI provided
-      SIPURL contact(params.m_contactAddress);
-      contact.Sanitise(SIPURL::ContactURI);
-      params.m_contactAddress = contact.AsQuotedString();
-    }
   }
 
   return new SIPRegister(endpoint, trans, GetCallID(), m_sequenceNumber, params);
@@ -713,6 +707,13 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       contacts.push_back(*reply);
   }
 
+  // Huh? Nothing we tried to register, registered! How is that possible?
+  if (contacts.empty()) {
+    PTRACE(2, "SIP\tREGISTER returned no Contacts we requested, unregistering.");
+    SendRequest(Unsubscribing);
+    return;
+  }
+
   // See if we are behind NAT and the Via header rport was present, and different
   // to our registered contact field. Some servers will refuse to work unless the
   // Contact agrees whith where the packet is physically coming from.
@@ -734,8 +735,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
           username = contact->GetUserName();
         }
       }
-      contacts.push_front(SIPURL(username, externalAddress));
-      contacts.front().SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
+
+      SIPURL newContact(username, externalAddress);
+      newContact.SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
+      contacts.push_back(newContact);
     }
   }
 
@@ -758,8 +761,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   SendStatus(SIP_PDU::Successful_OK, oldState);
 
   // If we have had a NAT port change to what we thought, need to initiate another REGISTER
-  if (useExternalAddress)
+  if (useExternalAddress) {
+    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
     SendRequest(GetState());
+  }
 }
 
 
