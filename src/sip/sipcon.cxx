@@ -388,7 +388,14 @@ void SIPConnection::OnReleased()
       sipCode = GetStatusCodeFromReason(callEndReason);
 
       // EndedByCallForwarded is a special case because it needs extra paramater
-      SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
+      if (callEndReason != EndedByCallForwarded)
+        SendInviteResponse(sipCode);
+      else {
+        SIP_PDU response(*originalInvite, sipCode);
+        AdjustInviteResponse(response);
+        response.GetMIME().SetContact(forwardParty);
+        originalInvite->SendResponse(*transport, response); 
+      }
 
       /* Wait for ACK from remote before destroying object. Note that we either
          get the ACK, or OnAckTimeout() fires and sets this flag anyway. We are
@@ -537,7 +544,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
       Release(EndedByCapabilityExchange);
       return PFalse;
     }
-    if (!SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
+    if (!SendInviteResponse(SIP_PDU::Information_Session_Progress, &sdpOut))
       return PFalse;
   }
 
@@ -2539,7 +2546,9 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   PString referTo = requestMIME.GetReferTo();
   if (referTo.IsEmpty()) {
-    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest, NULL, "Missing refer-to header");
+    SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
+    response.SetInfo("Missing refer-to header");
+    request.SendResponse(*transport, response);
     return;
   }    
 
@@ -3032,47 +3041,56 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 
 bool SIPConnection::SendInviteOK()
 {
-  SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
-
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (externalSDP.IsEmpty()) {
+    SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     if (!OnSendAnswerSDP(m_rtpSessions, sdpOut))
       return false;
+    return SendInviteResponse(SIP_PDU::Successful_OK, &sdpOut);
   }
 
-  // this can be used to prompoe any incoming calls to TCP. Not quite there yet, but it *almost* works
-  SIPURL contact;
-  bool promoteToTCP = false;    // disable code for now
-  if (promoteToTCP && (transport == NULL || strcmp(transport->GetProtoPrefix(), "$tcp") != 0)) {
-    // see if endpoint contains a TCP listener we can use
-    OpalTransportAddress newAddr;
-    if (!endpoint.FindListenerForProtocol("tcp", newAddr))
-      return false;
-    contact = SIPURL("", newAddr, 0);
-  }
+  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
+  AdjustInviteResponse(response);
 
-  return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdpOut, externalSDP);
+  response.SetEntityBody(externalSDP);
+  return originalInvite->SendResponse(*transport, response); 
 }
 
 
 PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
-                                           const char * contact,
-                                           const char * extra,
-                                           const SDPSessionDescription * sdp,
-                                           const char * body)
+                                           const SDPSessionDescription * sdp)
 {
   if (originalInvite == NULL)
     return true;
 
-  SIP_PDU response(*originalInvite, code, contact, extra, sdp);
+  SIP_PDU response(*originalInvite, code, sdp);
+  AdjustInviteResponse(response);
+
+  if (sdp != NULL)
+    response.GetSDP(*this)->SetSessionName(response.GetMIME().GetUserAgent());
+
+  return originalInvite->SendResponse(*transport, response); 
+}
+
+
+void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
+{
   SIPMIMEInfo & mime = response.GetMIME();
   mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(endpoint.GetAllowedMethods());
 
-  if (sdp != NULL)
-    response.GetSDP(*this)->SetSessionName(mime.GetUserAgent());
-  else if (body != NULL && *body != '\0')
-    response.SetEntityBody(body);
+  endpoint.AdjustToRegistration(*transport, response);
+
+  // this can be used to promote any incoming calls to TCP. Not quite there yet, but it *almost* works
+  bool promoteToTCP = false;    // disable code for now
+  if (promoteToTCP && (transport == NULL || strcmp(transport->GetProtoPrefix(), "tcp$") != 0)) {
+    // see if endpoint contains a TCP listener we can use
+    OpalTransportAddress newAddr;
+    if (endpoint.FindListenerForProtocol("tcp", newAddr)) {
+      response.GetMIME().SetContact(SIPURL("", newAddr, 0).AsQuotedString());
+      PTRACE(3, "SIP\tPromoting connection to TCP");
+    }
+  }
 
   if (response.GetStatusCode() == SIP_PDU::Information_Ringing) {
     if (m_allowedEvents.GetSize() > 0) {
@@ -3109,12 +3127,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
       m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
       m_responseFailTimer = endpoint.GetAckTimeout();
       break;
-
-    default :
-      return true;
   }
-
-  return originalInvite->SendResponse(*transport, response); 
 }
 
 

@@ -594,8 +594,6 @@ class SIP_PDU : public PSafeObject
     SIP_PDU(
       const SIP_PDU & request,
       StatusCodes code,
-      const char * contact = NULL,
-      const char * extra = NULL,
       const SDPSessionDescription * sdp = NULL
     );
 
@@ -667,9 +665,7 @@ class SIP_PDU : public PSafeObject
     bool SendResponse(
       OpalTransport & transport,
       StatusCodes code,
-      SIPEndPoint * endpoint = NULL,
-      const char * contact = NULL,
-      const char * extra = NULL
+      SIPEndPoint * endpoint = NULL
     ) const;
     bool SendResponse(
       OpalTransport & transport,

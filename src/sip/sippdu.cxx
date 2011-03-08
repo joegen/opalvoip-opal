@@ -650,6 +650,7 @@ void SIPURL::SetTag(const PString & tag)
 SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
   : compactForm(_compactForm)
 {
+  SetContentLength(0);
 }
 
 
@@ -1713,27 +1714,12 @@ SIP_PDU::SIP_PDU(Methods meth)
 
 SIP_PDU::SIP_PDU(const SIP_PDU & request, 
                  StatusCodes code, 
-                 const char * contact,
-                 const char * extra,
                  const SDPSessionDescription * sdp)
   : m_method(NumMethods)
   , m_statusCode(code)
   , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
 {
   InitialiseHeaders(request);
-
-  /* Use extra parameter as redirection URL in case of 302 */
-  if (code == SIP_PDU::Redirection_MovedTemporarily) {
-    m_mime.SetContact(SIPURL(extra));
-    extra = NULL;
-  }
-  else if (contact != NULL) {
-    m_mime.SetContact(PString(contact));
-  }
-    
-  // format response
-  if (extra != NULL)
-    m_info = extra;
 }
 
 
@@ -1973,11 +1959,9 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 
 bool SIP_PDU::SendResponse(OpalTransport & transport,
                            StatusCodes code,
-                           SIPEndPoint * endpoint,
-                           const char * contact,
-                           const char * extra) const
+                           SIPEndPoint * endpoint) const
 {
-  SIP_PDU response(*this, code, contact, extra);
+  SIP_PDU response(*this, code);
   return SendResponse(transport, response, endpoint);
 }
 
@@ -2068,8 +2052,8 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
     }
   }
 
-  if (endpoint != NULL && response.GetMIME().GetContact().IsEmpty())
-    endpoint->AdjustToRegistration(transport, *const_cast<SIP_PDU *>(this));
+  if (endpoint != NULL)
+    endpoint->AdjustToRegistration(transport, response);
 
   return response.Write(transport, newAddress);
 }
@@ -3561,8 +3545,6 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
   }
 
   m_entityBody = body;
-
-  ep.AdjustToRegistration(trans, *this);
 }
 
 
