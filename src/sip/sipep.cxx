@@ -1767,15 +1767,17 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   // If precise AOR not found, locate the name used for the domain.
   if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByDomain(localURI.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  SIPRegisterHandler * registrar = dynamic_cast<SIPRegisterHandler *>(&*handler);
 
-  if (registrar != NULL) {
-    std::set<SIPURL> contacts;
-    if (SIPMIMEInfo::ExtractURLs(registrar->GetParams().m_contactAddress, contacts)) {
-      for (std::set<SIPURL>::iterator it = contacts.begin(); it != contacts.end(); ++it) {
-        if (it->GetHostAddress().GetProto(true) == transport.GetProtoPrefix()) {
-          contact = *it;
-          break;
+  if (handler != NULL) {
+    SIPRegisterHandler * registrar = dynamic_cast<SIPRegisterHandler *>(&*handler);
+    if (PAssertNULL(registrar) != NULL) {
+      std::set<SIPURL> contacts;
+      if (SIPMIMEInfo::ExtractURLs(registrar->GetParams().m_contactAddress, contacts)) {
+        for (std::set<SIPURL>::iterator it = contacts.begin(); it != contacts.end(); ++it) {
+          if (it->GetHostAddress().GetProto(true) == transport.GetProtoPrefix()) {
+            contact = *it;
+            break;
+          }
         }
       }
     }
