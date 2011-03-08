@@ -65,7 +65,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , sessionID(_sessionID)
   , identifier(conn.GetCall().GetToken() + psprintf("_%u", sessionID))
   , mediaFormat(fmt)
-  , paused(false)
+  , m_paused(false)
   , isSource(isSourceStream)
   , isOpen(false)
   , defaultDataSize(mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1))
@@ -164,14 +164,20 @@ PBoolean OpalMediaStream::Start()
   if (!Open())
     return false;
 
-  if (!LockReadOnly())
+  PSafeLockReadOnly safeLock(*this);
+  if (!safeLock.IsLocked())
     return false;
 
-  if (mediaPatch != NULL)
-    mediaPatch->Start();
+  if (mediaPatch == NULL)
+    return false;
 
-  UnlockReadOnly();
+  if (IsPaused()) {
+    PTRACE(4, "Media\tStarting (paused) stream " << *this);
+    return false;
+  }
 
+  PTRACE(4, "Media\tStarting stream " << *this);
+  mediaPatch->Start();
   return true;
 }
 
@@ -264,9 +270,6 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   packet.SetMarker(marker);
   marker = false;
 
-  if (paused)
-    packet.SetPayloadSize(0);
-  
   return true;
 }
 
@@ -275,9 +278,6 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   if (!isOpen)
     return false;
-
-  if (paused)
-    packet.SetPayloadSize(0);
 
   timestamp = packet.GetTimestamp();
 
@@ -433,15 +433,24 @@ bool OpalMediaStream::EnableJitterBuffer(bool) const
 }
 
 
-void OpalMediaStream::SetPaused(bool pause)
+bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 {
-  if (paused == pause)
-    return;
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
+  // If we are source, then update the sink side, and vice versa
+  if (!fromPatch && mediaPatch != NULL)
+    return mediaPatch->SetPaused(pause);
+
+  if (m_paused == pause)
+    return false;
 
   PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
-  paused = pause;
+  m_paused = pause;
 
   connection.OnPauseMediaStream(*this, pause);
+  return true;
 }
 
 
@@ -673,20 +682,20 @@ PBoolean OpalRTPMediaStream::Close()
 }
 
 
-void OpalRTPMediaStream::SetPaused(bool pause)
+bool OpalRTPMediaStream::SetPaused(bool pause, bool fromPatch)
 {
-  if (paused == pause)
-    return;
+  if (!OpalMediaStream::SetPaused(pause, fromPatch))
+    return false;
 
   // If coming out of pause, reopen the RTP session, even though it is probably
   // still open, to make sure any pending error/statistic conditions are reset.
-  if (!paused)
+  if (!pause)
     rtpSession.Reopen(IsSource());
 
   if (IsSource())
-    EnableJitterBuffer(!paused);
+    EnableJitterBuffer(!pause);
 
-  OpalMediaStream::SetPaused(pause);
+  return true;
 }
 
 
@@ -697,12 +706,8 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (paused)
-    packet.SetPayloadSize(0);
-  else {
-    if (!rtpSession.ReadBufferedData(packet))
-      return false;
-  }
+  if (!rtpSession.ReadBufferedData(packet))
+    return false;
 
   timestamp = packet.GetTimestamp();
   return true;
@@ -718,7 +723,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   timestamp = packet.GetTimestamp();
 
-  if (paused || packet.GetPayloadSize() == 0)
+  if (packet.GetPayloadSize() == 0)
     return true;
 
   packet.SetPayloadType(m_payloadType);

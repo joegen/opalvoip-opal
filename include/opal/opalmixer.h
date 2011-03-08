@@ -948,6 +948,7 @@ class OpalMixerMediaStream : public OpalMediaStream
 
   protected:
     PSafePtr<OpalMixerNode> m_node;
+    bool m_listenOnly;
 #if OPAL_VIDEO
     bool m_video;
 #endif
