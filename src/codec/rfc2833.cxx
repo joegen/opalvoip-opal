@@ -165,22 +165,19 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
     }
   }
 
+  // convert tone to correct code
+  PINDEX code = ASCIIToRFC2833(tone, m_txCapabilitySet[NSECodeBase]);
+  if (code == P_MAX_INDEX || !m_txCapabilitySet[code])
+    return false; // Silently ignore illegal tone values for this instance
+
   // if transmittter is ever in this state, then stop the duration timer
   if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
     PTRACE(2, "RFC2833\tNo payload type, cannot send packet.");
     return false;
   }
 
-  // convert tone to correct code
-  PINDEX code = ASCIIToRFC2833(tone, m_txCapabilitySet[NSECodeBase]);
-
   // if same tone as last time and still transmitting, just extend the time
-  if (m_transmitState == TransmitIdle || (code != ' ' && code != m_transmitCode)) {
-    if (code == P_MAX_INDEX || !m_txCapabilitySet[code]) {
-      m_transmitState = TransmitIdle;
-      return false;
-    }
-
+  if (m_transmitState == TransmitIdle || (tone != ' ' && code != m_transmitCode)) {
     // kick off the transmitter
     m_transmitCode             = (BYTE)code;
     m_transmitState            = TransmitActive;
@@ -297,8 +294,12 @@ void OpalRFC2833Proto::SendAsyncFrame()
   } 
 
   PTRACE(frame.GetMarker() ? 3 : 4,
-         "RFC2833\tSent " << ((payload[1] & 0x80) ? "end" : "tone") << ": code=" << (unsigned)m_transmitCode <<
-         ", dur=" << m_transmitDuration << ", ts=" << frame.GetTimestamp() << ", mkr=" << frame.GetMarker());
+         "RFC2833\tSent " << ((payload[1] & 0x80) ? "end" : "tone") << ": "
+         "code=" << (unsigned)m_transmitCode << ", "
+         "dur=" << m_transmitDuration << ", "
+         "ts=" << frame.GetTimestamp() << ", "
+         "mkr=" << frame.GetMarker() << ", "
+         "pt=" << m_payloadType);
 }
 
 
