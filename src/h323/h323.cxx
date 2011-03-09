@@ -1779,7 +1779,6 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
-  SetPhase(SetUpPhase);
 
   // See if we are "proxied" that is the destCallSignalAddress is different
   // from the transport connection address
@@ -1913,7 +1912,6 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Do the transport connect
   connectionState = AwaitingTransportConnect;
-  SetPhase(SetUpPhase);
 
   // Release the mutex as can deadlock trying to clear call during connect.
   safeLock.Unlock();
@@ -2022,6 +2020,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Send the initial PDU
   if (!WriteSignalPDU(setupPDU))
     return EndedByTransportFail;
+
+  SetPhase(SetUpPhase);
 
   // WriteSignalPDU always resets lastPDUWasH245inSETUP.
   // So set it here if required

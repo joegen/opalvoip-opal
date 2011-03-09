@@ -518,11 +518,11 @@ class OpalConnection : public PSafeObject
        \ref pageOpalConnections.  */
     enum Phases {
       UninitialisedPhase,   //!< Indicates the OpalConnection instance has just been constructed
-      SetUpPhase,           //!< In the process of sending/receiving the initial INVITE packet
-      ProceedingPhase,      //!< The remote is now responsible for completing the call
+      SetUpPhase,           //!< Has just sent/received the initial SETUP/INVITE packet
+      ProceedingPhase,      //!< The receipt of SETUP/INVITE has been acknowledged
       AlertingPhase,        //!< The remote says there is a phone ringing, somewhere
       ConnectedPhase,       //!< There is agreement on having a call, usually means billing will apply
-      EstablishedPhase,     //!< Media is flowing, control streams  are all operational
+      EstablishedPhase,     //!< Media is established, streams  are all operational
       ForwardingPhase,      //!< Connection is in the process of being forwarded
       ReleasingPhase,       //!< Hangup packet has been sent/received, media and control not yet stopped
       ReleasedPhase,        //!< Media and control streams have been terminated
