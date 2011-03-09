@@ -960,7 +960,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     OpalMediaFormatList::const_iterator fmt = sdpFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != sdpFormats.end() && stream->UpdateMediaFormat(*fmt)) {
       PTRACE(4, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
-      stream->GetPatch()->SetPaused(paused);
+      stream->SetPaused(paused);
       return !paused;
     }
   }
@@ -1292,7 +1292,7 @@ bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
 
 OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  if (m_holdFromRemote && !isSource) {
+  if (m_holdFromRemote && !isSource && !m_handlingINVITE) {
     PTRACE(3, "SIP\tCannot start media stream as are currently in HOLD by remote.");
     return NULL;
   }
@@ -1499,8 +1499,6 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << m_dialog.GetRequestURI());
 
-  SetPhase(SetUpPhase);
-
   OnApplyStringOptions();
 
   if (m_stringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
@@ -1541,8 +1539,11 @@ PBoolean SIPConnection::SetUpConnection()
     m_dialog.SetForking(false);
   }
 
+  SetPhase(SetUpPhase);
+
   if (ok) {
     releaseMethod = ReleaseWithCANCEL;
+    m_handlingINVITE = true;
     return true;
   }
 
@@ -2948,13 +2949,17 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp,
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
 
-  if (recvStream == NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-    ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId);
+  if (recvStream == NULL &&
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
+      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
+     recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
 
-  if (sendStream == NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
+  if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-    if (otherParty != NULL)
-      ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId);
+    if (otherParty != NULL &&
+        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId) &&
+        (sendStream = GetMediaStream(rtpSessionId, false)) != NULL)
+      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
   }
 
   if (mediaType == OpalMediaType::Audio()) {

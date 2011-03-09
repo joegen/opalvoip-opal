@@ -200,8 +200,8 @@ class OpalMediaPatch : public PObject
 
     /**Set streams to paused.
       */
-    virtual void SetPaused(
-      bool pause
+    virtual bool SetPaused(
+      bool pause    ///< Indicate that the stream should be paused
     );
 
     /**Push a frame out to all the sink streams, transcoding as necessary.

@@ -286,7 +286,7 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 
 PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
 {
-  PTRACE(3, "Call\tGetOtherPartyConnection " << connection);
+  PTRACE(4, "Call\tGetOtherPartyConnection " << connection);
 
   PSafePtr<OpalConnection> otherConnection;
   EnumerateConnections(otherConnection, PSafeReference, &connection);
