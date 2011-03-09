@@ -1499,8 +1499,6 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << m_dialog.GetRequestURI());
 
-  SetPhase(SetUpPhase);
-
   OnApplyStringOptions();
 
   if (m_stringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
@@ -1540,6 +1538,8 @@ PBoolean SIPConnection::SetUpConnection()
     ok = transport->WriteConnect(WriteINVITE, this);
     m_dialog.SetForking(false);
   }
+
+  SetPhase(SetUpPhase);
 
   if (ok) {
     releaseMethod = ReleaseWithCANCEL;
