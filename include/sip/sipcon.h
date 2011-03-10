@@ -349,6 +349,16 @@ class SIPConnection : public OpalRTPConnection
     virtual SendUserInputModes GetRealSendUserInputMode() const;
 
     /**Send a user input indication to the remote endpoint.
+       This is for sending arbitrary strings as user indications.
+
+       The default behaviour is to call SendUserInputTone() for each character
+       in the string.
+      */
+    virtual PBoolean SendUserInputString(
+      const PString & value                   ///<  String value of indication
+    );
+
+    /**Send a user input indication to the remote endpoint.
        This sends DTMF emulation user input. If something more sophisticated
        than the simple tones that can be sent using the SendUserInput()
        function.
