@@ -1941,6 +1941,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 {
   unsigned responseClass = response.GetStatusCode()/100;
 
+  m_allowedMethods |= response.GetMIME().GetAllowBitMask();
+
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     switch (response.GetStatusCode()) {
       case SIP_PDU::Failure_UnAuthorised :
@@ -3341,6 +3343,20 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
   }
 
   return sendUserInputMode;
+}
+
+
+PBoolean SIPConnection::SendUserInputString(const PString & value)
+{
+  if (GetRealSendUserInputMode() == SendUserInputAsString) {
+    SIPInfo::Params params;
+    params.m_contentType = ApplicationDTMFKey;
+    params.m_body = value;
+    if (SendINFO(params))
+      return true;
+  }
+
+  OpalRTPConnection::SendUserInputString(value);
 }
 
 
