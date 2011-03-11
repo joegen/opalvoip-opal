@@ -3356,7 +3356,7 @@ PBoolean SIPConnection::SendUserInputString(const PString & value)
       return true;
   }
 
-  OpalRTPConnection::SendUserInputString(value);
+  return OpalRTPConnection::SendUserInputString(value);
 }
 
 
