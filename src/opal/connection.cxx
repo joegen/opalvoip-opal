@@ -866,7 +866,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 #else
 OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean)
 {
-  retrurn NULL;
+  return NULL;
 }
 #endif
 
