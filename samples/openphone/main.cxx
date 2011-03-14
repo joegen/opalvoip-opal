@@ -624,6 +624,7 @@ MyManager::MyManager()
   , m_localVideoFrameY(INT_MIN)
   , m_remoteVideoFrameX(INT_MIN)
   , m_remoteVideoFrameY(INT_MIN)
+  , m_primaryVideoGrabber(NULL)
   , m_SecondaryVideoGrabPreview(false)
   , m_SecondaryVideoOpening(false)
   , m_ExtendedVideoRoles(e_DisabledExtendedVideoRoles)
@@ -660,6 +661,8 @@ MyManager::~MyManager()
   LogWindow.SetFrame(NULL);
 
   ShutDownEndpoints();
+
+  delete m_primaryVideoGrabber;
 
   wxMenuBar * menubar = GetMenuBar();
   SetMenuBar(NULL);
@@ -934,6 +937,10 @@ bool MyManager::Initialise()
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
   m_SecondaryVideoGrabber = videoArgs;
+
+  m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(videoArgs, true);
+  if (m_primaryVideoGrabber != NULL)
+    m_primaryVideoGrabber->Stop();
 
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
@@ -2060,6 +2067,8 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
   else {
     LogWindow << "Calling \"" << address << '"' << endl;
     m_tabs->AddPage(new CallingPanel(*this, m_activeCall->GetToken(), m_tabs), wxT("Calling"), true);
+    if (m_primaryVideoGrabber != NULL)
+      m_primaryVideoGrabber->Start();
   }
 }
 
@@ -2938,8 +2947,14 @@ PBoolean MyManager::CreateVideoInputDevice(const OpalConnection & connection,
                                            PVideoInputDevice * & device,
                                            PBoolean & autoDelete)
 {
-  if (!m_SecondaryVideoOpening)
-    return OpalManager::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+  if (!m_SecondaryVideoOpening) {
+    if (m_primaryVideoGrabber == NULL)
+      return OpalManager::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+
+    device = m_primaryVideoGrabber;
+    autoDelete = false;
+    return true;
+  }
 
   mediaFormat.AdjustVideoArgs(m_SecondaryVideoGrabber);
 
@@ -4338,6 +4353,11 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
+  delete m_manager.m_primaryVideoGrabber;
+  m_manager.m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(grabber, false);
+  if (m_manager.m_primaryVideoGrabber != NULL)
+    m_manager.m_primaryVideoGrabber->Stop();
+
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
   SAVE_FIELD(VideoAutoReceive, m_manager.SetAutoStartReceiveVideo);
