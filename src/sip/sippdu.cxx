@@ -45,6 +45,7 @@
 #include <opal/manager.h>
 #include <opal/connection.h>
 #include <opal/transports.h>
+#include <codec/opalplugin.h>
 
 #include <ptclib/cypher.h>
 #include <ptclib/pdns.h>
