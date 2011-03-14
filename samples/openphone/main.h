@@ -1116,6 +1116,8 @@ class MyManager : public wxFrame, public OpalManager
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
 
+    PVideoInputDevice * m_primaryVideoGrabber;
+
     PVideoDevice::OpenArgs m_SecondaryVideoGrabber;
     bool                   m_SecondaryVideoGrabPreview;
     bool                   m_SecondaryVideoOpening;
