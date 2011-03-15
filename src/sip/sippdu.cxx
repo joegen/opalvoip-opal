@@ -2309,14 +2309,11 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 
 void  SIP_PDU::SetEntityBody()
 {
-  if (m_SDP == NULL)
-    return;
+  if (m_SDP != NULL && m_entityBody.IsEmpty()) {
+    m_entityBody = m_SDP->Encode();
+    m_mime.SetContentType("application/sdp");
+  }
 
-  if (!m_entityBody.IsEmpty())
-    return;
-
-  m_entityBody = m_SDP->Encode();
-  m_mime.SetContentType("application/sdp");
   m_mime.SetContentLength(m_entityBody.GetLength());
 }
 
