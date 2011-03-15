@@ -1438,16 +1438,14 @@ bool SIPConnection::WriteINVITE()
   if (!number.IsEmpty())
     myAddress.SetUserName(number);
 
-  PString name(m_stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME));
-  if (!name.IsEmpty())
-    myAddress.SetDisplayName(name);
+  if (m_stringOptions.Contains(OPAL_OPT_CALLING_DISPLAY_NAME))
+    myAddress.SetDisplayName(m_stringOptions[OPAL_OPT_CALLING_DISPLAY_NAME]);
+  else
+    myAddress.SetDisplayName(GetDisplayName());
 
   PString domain(m_stringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
   if (!domain.IsEmpty())
     myAddress.SetHostName(domain);
-
-  if (myAddress.GetDisplayName(false).IsEmpty())
-    myAddress.SetDisplayName(GetDisplayName());
 
   myAddress.SetTag(GetToken());
   m_dialog.SetLocalURI(myAddress);
@@ -1457,13 +1455,10 @@ bool SIPConnection::WriteINVITE()
   m_needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
-  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) &&
-                  (!number.IsEmpty() || !name.IsEmpty() || !domain.IsEmpty())) {
+  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) && (!number.IsEmpty() || !domain.IsEmpty())) {
     SIPURL contact = invite->GetMIME().GetContact();
     if (!number.IsEmpty())
       contact.SetUserName(number);
-    if (!name.IsEmpty())
-      contact.SetDisplayName(name);
     if (!domain.IsEmpty())
       contact.SetHostName(domain);
     invite->GetMIME().SetContact(contact.AsQuotedString());
