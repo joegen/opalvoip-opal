@@ -377,17 +377,30 @@ class OpalCall : public PSafeObject
   /**@name Media management */
   //@{
     /**Get the media formats of the connections in call.
-       This returns the intersection of all the media formats that all
-       connections in the call, optionally excepting the one provided as a
-       parameter, are capable of.
+       This returns the intersection of all the media formats available in
+       connections in the call, not including the parameter. It is in
+       esence the "local" media formats available to the connection.
 
        This will also add to the list all media formats for which there are
        transcoders registered.
       */
     virtual OpalMediaFormatList GetMediaFormats(
-      const OpalConnection & connection,  ///<  Connection requesting formats
-      PBoolean includeSpecifiedConnection     ///<  Include parameters media
+      const OpalConnection & connection  ///<  Connection requesting formats
     );
+
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
+
+       The default behaviour calls the OpalManager function of the same name.
+      */
+    virtual void AdjustMediaFormats(
+      bool local,                         ///<  Media formats a local ones to be presented to remote
+      const OpalConnection & connection,  ///<  Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
+    ) const;
 
     /**Open source media streams for the specified connection.
        A source media stream is opened for the connection, if successful then

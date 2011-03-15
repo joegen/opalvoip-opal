@@ -639,40 +639,42 @@ bool OpalConnection::OnTransferNotify(const PStringToString & info)
 }
 
 
-void OpalConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
+void OpalConnection::AdjustMediaFormats(bool   local,
+                        const OpalConnection * otherConnection,
+                         OpalMediaFormatList & mediaFormats) const
 {
-  if (otherConnection != NULL && otherConnection != this)
-    otherConnection->AdjustMediaFormats(local, mediaFormats, NULL);
-  else {
-    mediaFormats.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
-    endpoint.AdjustMediaFormats(local, *this, mediaFormats);
+  if (otherConnection != NULL)
+    return;
 
-    if (local) {
-      for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
-        PString key = m_stringOptions.GetKeyAt(i);
-        PINDEX colon = key.Find(':');
-        if (colon != P_MAX_INDEX) {
-          PString fmtName = key.Left(colon);
-          PString optName = key.Mid(colon+1);
-          if (!fmtName.IsEmpty() && !optName.IsEmpty()) {
-            PString optValue = m_stringOptions.GetDataAt(i);
-            OpalMediaFormatList::const_iterator iterFormat;
-            while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
-              OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
-              if (format.SetOptionValue(optName, optValue)) {
-                PTRACE(4, "OpalCon\tSet media format " << format
-                       << " option " << optName << " to \"" << optValue << '"');
-              }
-              else {
-                PTRACE(2, "OpalCon\tFailed to set media format " << format
-                       << " option " << optName << " to \"" << optValue << '"');
-              }
+  mediaFormats.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
+
+  if (local) {
+    for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
+      PString key = m_stringOptions.GetKeyAt(i);
+      PINDEX colon = key.Find(':');
+      if (colon != P_MAX_INDEX) {
+        PString fmtName = key.Left(colon);
+        PString optName = key.Mid(colon+1);
+        if (!fmtName.IsEmpty() && !optName.IsEmpty()) {
+          PString optValue = m_stringOptions.GetDataAt(i);
+          OpalMediaFormatList::const_iterator iterFormat;
+          while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
+            OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
+            if (format.SetOptionValue(optName, optValue)) {
+              PTRACE(4, "OpalCon\tSet media format " << format
+                     << " option " << optName << " to \"" << optValue << '"');
+            }
+            else {
+              PTRACE(2, "OpalCon\tFailed to set media format " << format
+                     << " option " << optName << " to \"" << optValue << '"');
             }
           }
         }
       }
     }
   }
+
+  endpoint.AdjustMediaFormats(local, *this, mediaFormats);
 }
 
 
@@ -1629,7 +1631,9 @@ OpalMediaFormatList OpalConnection::GetMediaFormats() const
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
-  return ownerCall.GetMediaFormats(*this, FALSE);
+  if (m_localMediaFormats.IsEmpty())
+    m_localMediaFormats = ownerCall.GetMediaFormats(*this);
+  return m_localMediaFormats;
 }
 
 

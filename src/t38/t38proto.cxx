@@ -647,7 +647,9 @@ OpalMediaFormatList OpalFaxConnection::GetMediaFormats() const
 }
 
 
-void OpalFaxConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
+void OpalFaxConnection::AdjustMediaFormats(bool   local,
+                           const OpalConnection * otherConnection,
+                            OpalMediaFormatList & mediaFormats) const
 {
   // Remove everything but G.711 or fax stuff
   OpalMediaFormatList::iterator i = mediaFormats.begin();
@@ -664,7 +666,7 @@ void OpalFaxConnection::AdjustMediaFormats(bool local, OpalMediaFormatList & med
     }
   }
 
-  OpalConnection::AdjustMediaFormats(local, mediaFormats, otherConnection);
+  OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
 }
 
 

@@ -388,20 +388,18 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 }
 
 
-OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
-                                              PBoolean includeSpecifiedConnection)
+OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 {
   OpalMediaFormatList commonFormats;
 
-  PBoolean first = PTrue;
+  bool first = true;
 
   PSafePtr<OpalConnection> otherConnection;
-  while (EnumerateConnections(otherConnection, PSafeReadOnly, includeSpecifiedConnection ? NULL : &connection)) {
+  while (EnumerateConnections(otherConnection, PSafeReadOnly, &connection)) {
     OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(otherConnection->GetMediaFormats());
-    connection.AdjustMediaFormats(true, possibleFormats, otherConnection);
     if (first) {
       commonFormats = possibleFormats;
-      first = PFalse;
+      first = false;
     }
     else {
       // Want intersection of the possible formats for all connections.
@@ -420,12 +418,20 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   if (first)
     commonFormats = OpalTranscoder::GetPossibleFormats(manager.GetCommonMediaFormats(false, true));
 
-  connection.AdjustMediaFormats(true, commonFormats, NULL);
+  connection.AdjustMediaFormats(true, NULL, commonFormats);
 
   PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << commonFormats << setfill(' '));
 
   return commonFormats;
+}
+
+
+void OpalCall::AdjustMediaFormats(bool local, const OpalConnection & connection, OpalMediaFormatList & mediaFormats) const
+{
+  PSafePtr<OpalConnection> otherConnection;
+  while (EnumerateConnections(otherConnection, PSafeReadOnly, &connection))
+    otherConnection->AdjustMediaFormats(local, &connection, mediaFormats);
 }
 
 
@@ -503,7 +509,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     order += '@' + mediaType;        // And media of the same type
 
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
-    connection.AdjustMediaFormats(false, sinkMediaFormats, otherConnection);
     if (sinkMediaFormats.IsEmpty()) {
       PTRACE(2, "Call\tOpenSourceMediaStreams failed with no sink formats" << traceText);
       return false;
@@ -519,7 +524,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sourceMediaFormats = sourceFormat; // Use the source format already established
     else {
       sourceMediaFormats = connection.GetMediaFormats();
-      otherConnection->AdjustMediaFormats(false, sourceMediaFormats, &connection);
       if (sourceMediaFormats.IsEmpty()) {
         PTRACE(2, "Call\tOpenSourceMediaStreams failed with no source formats" << traceText);
         return false;
@@ -563,7 +567,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 #endif
 
     OpalMediaFormatList localMediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    otherConnection->AdjustMediaFormats(true, localMediaFormats, &connection);
     if (!SelectMediaFormats(mediaType,
                             sourceMediaFormats,
                             sinkMediaFormats,
