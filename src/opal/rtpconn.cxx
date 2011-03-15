@@ -408,22 +408,21 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
 }
 
 
-void OpalRTPConnection::AdjustMediaFormats(bool local,
-                          OpalMediaFormatList & mediaFormats,
-                               OpalConnection * otherConnection) const
+void OpalRTPConnection::AdjustMediaFormats(bool   local,
+                           const OpalConnection * otherConnection,
+                            OpalMediaFormatList & mediaFormats) const
 {
-  OpalConnection::AdjustMediaFormats(local, mediaFormats, otherConnection);
-
-  if (otherConnection != NULL && otherConnection != this)
-    return;
-
-  OpalMediaFormatList::iterator fmt = mediaFormats.begin();
-  while (fmt != mediaFormats.end()) {
-    if (fmt->IsTransportable())
-      ++fmt;
-    else
-      mediaFormats -= *fmt++;
+  if (otherConnection == NULL && local) {
+    OpalMediaFormatList::iterator fmt = mediaFormats.begin();
+    while (fmt != mediaFormats.end()) {
+      if (fmt->IsTransportable())
+        ++fmt;
+      else
+        mediaFormats -= *fmt++;
+    }
   }
+
+  OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
 }
 
 

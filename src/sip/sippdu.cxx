@@ -2360,14 +2360,11 @@ PString SIP_PDU::GetTransactionID() const
 }
 
 
-SDPSessionDescription * SIP_PDU::GetSDP(const SIPConnection & connection)
+SDPSessionDescription * SIP_PDU::GetSDP(const OpalMediaFormatList & masterList)
 {
   if (m_SDP == NULL && m_mime.GetContentType() == "application/sdp") {
-    OpalMediaFormatList mediaFormats = connection.GetEndPoint().GetMediaFormats();
-    connection.AdjustMediaFormats(false, mediaFormats, NULL);
-
     m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
-    if (!m_SDP->Decode(m_entityBody, mediaFormats)) {
+    if (!m_SDP->Decode(m_entityBody, masterList)) {
       delete m_SDP;
       m_SDP = NULL;
     }

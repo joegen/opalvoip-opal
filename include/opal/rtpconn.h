@@ -460,16 +460,17 @@ class OpalRTPConnection : public OpalConnection
        that an application may remove or reorder the media formats before they
        are used to open media streams.
 
-       This function may also be executed to adjust the media format list for
-       other connections in the call. If this happens then the "otherConnection"
-       parameter will be non-NULL.
+       This function may also be executed by other connections in the call. If
+       this happens then the "otherConnection" parameter will be non-NULL. The
+       "local" parameter sense is relative to the "otherConnection" parameter,
+       if NULL then it is relative to "this".
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void AdjustMediaFormats(
-      bool local,                          ///<  Media formats a local ones to be presented to remote
-      OpalMediaFormatList & mediaFormats,  ///<  Media formats to use
-      OpalConnection * otherConnection     ///<  Other connection we are adjusting media for
+      bool local,                             ///<  Media formats a local ones to be presented to remote
+      const OpalConnection * otherConnection, ///<  Other connection we are adjusting media for
+      OpalMediaFormatList & mediaFormats      ///<  Media formats to use
     ) const;
 
     /**Call back when patching a media stream.
