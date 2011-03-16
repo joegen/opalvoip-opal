@@ -337,7 +337,7 @@ bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX
 {
   unsigned oldTimestamp = timestamp;
 
-  if (!WriteData(data, length, written) || written == 0) {
+  if (!WriteData(data, length, written) || (length > 0 && written == 0)) {
     PTRACE(2, "Media\tWriteData failed, written=" << written);
     return false;
   }
