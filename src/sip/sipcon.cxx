@@ -1429,18 +1429,27 @@ bool SIPConnection::WriteINVITE()
   // only allow override of calling party number if the local party
   // name hasn't been first specified by a register handler. i.e a
   // register handler's target number is always used
-  PString number(m_stringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_stringOptions(OPAL_OPT_CALLING_PARTY_NAME)));
-  if (!number.IsEmpty())
-    myAddress.SetUserName(number);
+  bool changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NUMBER);
+  if (changedUserName)
+    myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NUMBER]);
+  else {
+    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NAME);
+    if (changedUserName)
+      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NAME]);
+  }
 
-  if (m_stringOptions.Contains(OPAL_OPT_CALLING_DISPLAY_NAME))
+  bool changedDisplayName = m_stringOptions.Contains(OPAL_OPT_CALLING_DISPLAY_NAME);
+  if (changedDisplayName)
     myAddress.SetDisplayName(m_stringOptions[OPAL_OPT_CALLING_DISPLAY_NAME]);
   else
     myAddress.SetDisplayName(GetDisplayName());
 
-  PString domain(m_stringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
-  if (!domain.IsEmpty())
-    myAddress.SetHostName(domain);
+  // Domain cannot be an empty string so do not set if override is empty
+  {
+    PString domain(m_stringOptions(OPAL_OPT_CALLING_PARTY_DOMAIN));
+    if (!domain.IsEmpty())
+      myAddress.SetHostName(domain);
+  }
 
   myAddress.SetTag(GetToken());
   m_dialog.SetLocalURI(myAddress);
@@ -1450,13 +1459,14 @@ bool SIPConnection::WriteINVITE()
   m_needReINVITE = false;
   SIPTransaction * invite = new SIPInvite(*this, OpalRTPSessionManager(*this));
 
-  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) && (!number.IsEmpty() || !domain.IsEmpty())) {
-    SIPURL contact = invite->GetMIME().GetContact();
-    if (!number.IsEmpty())
-      contact.SetUserName(number);
-    if (!domain.IsEmpty())
-      contact.SetHostName(domain);
-    invite->GetMIME().SetContact(contact.AsQuotedString());
+  if (!m_stringOptions.Contains(SIP_HEADER_CONTACT) && (changedUserName || changedDisplayName)) {
+    SIPMIMEInfo & mime = invite->GetMIME();
+    SIPURL contact = mime.GetContact();
+    if (changedUserName)
+      contact.SetUserName(myAddress.GetUserName());
+    if (changedDisplayName)
+      contact.SetDisplayName(myAddress.GetDisplayName());
+    mime.SetContact(contact.AsQuotedString());
   }
 
   SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
