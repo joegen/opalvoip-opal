@@ -2278,11 +2278,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
   }
 
-  if (!SetRemoteMediaFormats(originalInvite->GetSDP(m_localMediaFormats))) {
-    Release(EndedByCapabilityExchange);
-    return;
-  }
-
   releaseMethod = ReleaseWithResponse;
   m_handlingINVITE = true;
 
@@ -2298,7 +2293,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
-    OnApplyStringOptions();
+    if (!SetRemoteMediaFormats(originalInvite->GetSDP(GetLocalMediaFormats()))) {
+      Release(EndedByCapabilityExchange);
+      return;
+    }
 
     if (ownerCall.OnSetUp(*this)) {
       if (GetPhase() < ProceedingPhase) {
