@@ -45,6 +45,7 @@
 #include <opal/manager.h>
 #include <opal/connection.h>
 #include <opal/transports.h>
+#include <codec/opalplugin.h>
 
 #include <ptclib/cypher.h>
 #include <ptclib/pdns.h>
@@ -328,8 +329,8 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
      there COULD be a generic-param later.
    */
 
-  displayName.MakeEmpty();
-  fieldParameters.MakeEmpty();
+  m_displayName.MakeEmpty();
+  m_fieldParameters.RemoveAll();
 
   while (isspace(*cstr))
     cstr++;
@@ -345,11 +346,11 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
       }
     } while (str[endQuote-1] == '\\');
 
-    displayName = str(1, endQuote-1);
+    m_displayName = str(1, endQuote-1);
 
     PINDEX backslash;
-    while ((backslash = displayName.Find('\\')) != P_MAX_INDEX)
-      displayName.Delete(backslash, 1);
+    while ((backslash = m_displayName.Find('\\')) != P_MAX_INDEX)
+      m_displayName.Delete(backslash, 1);
   }
 
   // see if URL is just a URI or it contains a display address as well
@@ -368,12 +369,12 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
     if (!PURL::InternalParse(str(startBracket+1, endBracket-1), defaultScheme))
       return false;
 
-    fieldParameters = str.Mid(endBracket+1).Trim();
+    PURL::SplitVars(str.Mid(endBracket+1).Trim(), m_fieldParameters, ';', '=');
 
     if (endQuote == 0) {
       // There were no double quotes around the display name, take
       // everything before the start angle bracket, sans whitespace
-      displayName = str.Left(startBracket).Trim();
+      m_displayName = str.Left(startBracket).Trim();
     }
   }
 
@@ -423,53 +424,27 @@ PString SIPURL::AsQuotedString() const
 {
   PStringStream s;
 
-  if (!displayName)
-    s << '"' << displayName << "\" ";
+  if (!m_displayName)
+    s << '"' << m_displayName << "\" ";
   s << '<' << AsString() << '>';
 
-  if (!fieldParameters.IsEmpty()) {
-    if (fieldParameters[0] != ';')
-      s << ';';
-    s << fieldParameters;
+  for (PINDEX i = 0; i < m_fieldParameters.GetSize(); ++i) {
+    s << ';' << m_fieldParameters.GetKeyAt(i);
+
+    PString data = m_fieldParameters.GetDataAt(i);
+    if (!data.IsEmpty())
+      s << '=' << data;
   }
 
   return s;
 }
 
 
-PString SIPURL::GetDisplayName (PBoolean useDefault) const
+PString SIPURL::GetDisplayName(PBoolean useDefault) const
 {
-  PString s;
-  PINDEX tag;
-    
-  s = displayName;
-
-  if (displayName.IsEmpty () && useDefault) {
-
-    s = AsString ();
-    s.Replace ("sip:", "");
-
-    /* There could be a tag if we are using the URL,
-     * remove it
-     */
-    tag = s.Find (';');
-    if (tag != P_MAX_INDEX)
-      s = s.Left (tag);
-  }
-
-  return s;
-}
-
-
-PString SIPURL::GetFieldParameter(const PString & name) const
-{
-  return SIPMIMEInfo::ExtractFieldParameter(fieldParameters, name);
-}
-
-
-void SIPURL::SetFieldParameter(const PString & name, const PString & value)
-{
-  fieldParameters = SIPMIMEInfo::InsertFieldParameter(fieldParameters, name, value);
+  if (m_displayName.IsEmpty() && useDefault)
+    return AsString();
+  return m_displayName;
 }
 
 
@@ -519,15 +494,11 @@ void SIPURL::Sanitise(UsageContext context)
 
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
     if (SanitaryFields[i].contexts&(1<<context)) {
-      paramVars.RemoveAt(PCaselessString(SanitaryFields[i].name));
-      PINDEX start, val, end;
-      if (LocateFieldParameter(fieldParameters, SanitaryFields[i].name, start, val, end))
-        fieldParameters.Delete(start, end-start);
+      PCaselessString name = SanitaryFields[i].name;
+      paramVars.RemoveAt(name);
+      m_fieldParameters.RemoveAt(name);
     }
   }
-
-  if (fieldParameters == ";")
-    fieldParameters.MakeEmpty();
 
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
@@ -638,10 +609,8 @@ PString SIPURL::GenerateTag()
 
 void SIPURL::SetTag(const PString & tag)
 {
-  if (fieldParameters.Find(";tag=") != P_MAX_INDEX)
-    return;
-
-  fieldParameters += ";tag=" + tag;
+  if (!m_fieldParameters.Contains("tag"))
+    m_fieldParameters.SetAt("tag", tag);
 }
 
 
@@ -2359,14 +2328,11 @@ PString SIP_PDU::GetTransactionID() const
 }
 
 
-SDPSessionDescription * SIP_PDU::GetSDP(const SIPConnection & connection)
+SDPSessionDescription * SIP_PDU::GetSDP(const OpalMediaFormatList & masterList)
 {
   if (m_SDP == NULL && m_mime.GetContentType() == "application/sdp") {
-    OpalMediaFormatList mediaFormats = connection.GetEndPoint().GetMediaFormats();
-    connection.AdjustMediaFormats(false, mediaFormats, NULL);
-
     m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
-    if (!m_SDP->Decode(m_entityBody, mediaFormats)) {
+    if (!m_SDP->Decode(m_entityBody, masterList)) {
       delete m_SDP;
       m_SDP = NULL;
     }
@@ -2443,7 +2409,7 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool loc
 
   PString newTag = url.GetParamVars()("tag");
   if (newTag.IsEmpty())
-    newTag = SIPMIMEInfo::ExtractFieldParameter(uri.GetFieldParameters(), "tag");
+    newTag = uri.GetFieldParameter("tag");
   else
     uri.SetParamVar("tag", PString::Empty());
 
@@ -2456,7 +2422,7 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool loc
     tag = SIPURL::GenerateTag();
 
   if (!tag.IsEmpty())
-    uri.SetFieldParameters("tag="+tag);
+    uri.SetFieldParameter("tag", tag);
 
   uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
 }

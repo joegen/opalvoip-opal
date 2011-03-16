@@ -84,7 +84,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   originating = PFalse;
 
   ep.CopyLocalMediaFormats(localMediaFormats);
-  AdjustMediaFormats(true, localMediaFormats, NULL);
+  AdjustMediaFormats(true, NULL, localMediaFormats);
   PTRACE(5, "Local ordered codecs are " << localMediaFormats);
   
   local_hold = PFalse;
@@ -348,7 +348,7 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
     remoteMediaFormats.Reorder(PStringArray(wildcard));
   }
 
-  AdjustMediaFormats(false, remoteMediaFormats, NULL);
+  AdjustMediaFormats(false, NULL, remoteMediaFormats);
   PTRACE(4, "Connection\tREMOTE Codecs are " << remoteMediaFormats);
 }
 
