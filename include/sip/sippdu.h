@@ -128,28 +128,29 @@ class SIPURL : public PURL
     PString GetDisplayName(PBoolean useDefault = true) const;
     
     void SetDisplayName(const PString & str) 
-      { displayName = str; }
-
-    /**Returns the field parameters (outside of <>)
-      */
-    PString GetFieldParameters() const { return fieldParameters; }
-
-    /**Returns the field parameters (outside of <>)
-      */
-    void SetFieldParameters(const PString & str) { fieldParameters = str; }
+    {
+      m_displayName = str;
+    }
 
     /**Returns the field parameter (outside of <>)
       */
     PString GetFieldParameter(
-      const PString & name
-    ) const;
+      const PString & name,
+      const PString & dflt = PString::Empty()
+    ) const { return m_fieldParameters(name, dflt); }
 
     /**Returns the field parameter (outside of <>)
       */
     void SetFieldParameter(
       const PString & name,
       const PString & value
-    );
+    ) { m_fieldParameters.SetAt(name, value); }
+
+    /**Removes the field parameter (outside of <>)
+      */
+    void RemoveFieldParameter(
+      const PString & name
+    ) { m_fieldParameters.RemoveAt(name); }
 
     /**Get the host and port as a transport address.
       */
@@ -218,8 +219,8 @@ class SIPURL : public PURL
       const char * defaultScheme
     );
 
-    PString displayName;
-    PString fieldParameters;
+    PString         m_displayName;
+    PStringToString m_fieldParameters;
 };
 
 
@@ -694,7 +695,7 @@ class SIP_PDU : public PSafeObject
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
-    SDPSessionDescription * GetSDP(const SIPConnection & connection);
+    SDPSessionDescription * GetSDP(const OpalMediaFormatList & masterList);
     void SetSDP(SDPSessionDescription * sdp);
 
   protected:
