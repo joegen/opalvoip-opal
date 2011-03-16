@@ -455,7 +455,7 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
     SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_redirectingNumber, redirect);
   }
 
-  const OpalProductInfo & info = connection.GetProductInfo();
+  const OpalProductInfo & info = network->GetProductInfo();
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_name,    BuildProductName(info));
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_version, info.version);
