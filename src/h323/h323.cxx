@@ -3836,10 +3836,7 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 #endif
 
     list += remoteCapabilities.GetMediaFormats();
-
-    // Note we do NOT use AdjustMediaFormats here as we are supposed to
-    // use the ordering dictated by the remote.
-    list.Remove(endpoint.GetManager().GetMediaFormatMask());
+    AdjustMediaFormats(false, NULL, list);
   }
 
   return list;

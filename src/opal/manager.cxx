@@ -803,12 +803,13 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
 
 
 void OpalManager::AdjustMediaFormats(bool local,
-                                     const OpalConnection & /*connection*/,
+                                     const OpalConnection & connection,
                                      OpalMediaFormatList & mediaFormats) const
 {
   mediaFormats.Remove(mediaFormatMask);
   if (local)
     mediaFormats.Reorder(mediaFormatOrder);
+  connection.GetCall().AdjustMediaFormats(local, connection, mediaFormats);
 }
 
 

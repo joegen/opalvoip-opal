@@ -1010,7 +1010,7 @@ class MyDecoder : public PluginCodec
         return true;
       }
 
-      PTRACE(5, MY_CODEC_LOG, "Decoding " << m_fullFrame.GetFrameSize()  << " bytes");
+      int bytesToDecode = m_fullFrame.GetFrameSize();
 
       /* Do conversion of RTP packet. Note that typically many are received
          before an output frame is generated. If no output fram is available
@@ -1021,14 +1021,28 @@ class MyDecoder : public PluginCodec
                                                                   m_picture,
                                                                   &gotPicture,
                                                                   m_fullFrame.GetFramePtr(),
-                                                                  m_fullFrame.GetFrameSize());
+                                                                  bytesToDecode);
       m_fullFrame.BeginNewFrame();
 
-      if (!gotPicture) {
-        PTRACE(4, MY_CODEC_LOG, "Decoding " << bytesDecoded  << " bytes without a picture.");
+      if (bytesDecoded <= 0) {
+        // Should have output log error in logging callback dyna.cxx
         flags |= PluginCodec_ReturnCoderRequestIFrame;
+        m_fullFrame.BeginNewFrame();
         return true;
       }
+
+      if (!gotPicture) {
+        PTRACE(3, MY_CODEC_LOG, "Decoded " << bytesDecoded<< " of " << bytesToDecode 
+               << " bytes without a picture.");
+        return true;
+      }
+
+      if (bytesDecoded == bytesToDecode)
+        PTRACE(5, MY_CODEC_LOG, "Decoded " << bytesToDecode << " byte "
+               << (m_picture->key_frame ? 'I' : 'P') << "-Frame");
+      else
+        PTRACE(4, MY_CODEC_LOG, "Decoded only " << bytesDecoded << " of " << bytesToDecode << " byte "
+               << (m_picture->key_frame ? 'I' : 'P') << "-Frame");
 
       // If we determine this is an Intra (reference) frame, set flag
       if (m_picture->key_frame)

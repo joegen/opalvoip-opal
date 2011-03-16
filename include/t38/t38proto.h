@@ -208,7 +208,7 @@ class OpalFaxConnection : public OpalLocalConnection
 
     virtual void OnApplyStringOptions();
     virtual OpalMediaFormatList GetMediaFormats() const;
-    virtual void AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const;
+    virtual void AdjustMediaFormats(bool local, const OpalConnection * otherConnection, OpalMediaFormatList & mediaFormats) const;
     virtual void AcceptIncoming();
     virtual void OnEstablished();
     virtual void OnReleased();

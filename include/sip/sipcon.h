@@ -609,16 +609,15 @@ class SIPConnection : public OpalRTPConnection
       unsigned sessionID,
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut,
-      const OpalMediaFormatList & localMediaFormats,
       bool offerOpenMediaStreamOnly
     );
+
     virtual bool OnSendAnswerSDP(
       OpalRTPSessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );
     virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
-      const OpalMediaFormatList & localMediaFormats,
       unsigned sessionIndex,
       SDPSessionDescription & sdpOut
     );
@@ -628,8 +627,7 @@ class SIPConnection : public OpalRTPConnection
     );
     virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
-      unsigned sessionId,
-      const OpalMediaFormatList & localMediaFormats
+      unsigned sessionId
     );
 
     virtual OpalMediaSession * SetUpMediaSession(
