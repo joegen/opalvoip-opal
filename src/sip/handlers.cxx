@@ -719,37 +719,42 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   // Contact agrees whith where the packet is physically coming from.
   OpalTransportAddress externalAddress = response.GetMIME().GetViaReceivedAddress();
   bool useExternalAddress = !externalAddress.IsEmpty();
+  std::list<SIPURL>::iterator contact;
+
   if (useExternalAddress) {
-    std::list<SIPURL>::iterator contact;
     for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
       if (contact->GetHostAddress() == externalAddress) {
         useExternalAddress = false;
         break;
       }
     }
-    if (useExternalAddress) {
-      PString username = m_addressOfRecord.GetUserName();
-      for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
-        if (contact->GetHostAddress().GetProto() == "udp") {
-          contact->SetFieldParameter("expires", "0");
-          username = contact->GetUserName();
-        }
-      }
+  }
 
-      SIPURL newContact(username, externalAddress);
-      newContact.SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
-      contacts.push_back(newContact);
+  if (useExternalAddress) {
+    std::list<SIPURL> newContacts;
+
+    for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
+      if (contact->GetHostAddress().GetProto() == "udp") {
+        contact->RemoveFieldParameter("expires");
+
+        SIPURL newContact(contact->GetUserName(), externalAddress);
+        newContact.SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
+        newContacts.push_back(newContact);
+      }
     }
+
+    contacts.insert(contacts.end(), newContacts.begin(), newContacts.end());
+    SetExpire(0);
   }
 
   m_parameters.m_contactAddress.MakeEmpty();
 
-  for (std::list<SIPURL>::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
-    PString expires = contact->GetFieldParameter("expires");
-    if (expires.IsEmpty())
-      SetExpire(response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
-    else
-      SetExpire(expires.AsUnsigned());
+  for (contact = contacts.begin(); contact != contacts.end(); ++contact) {
+    PString expiresStr = contact->GetFieldParameter("expires");
+    int expires = expiresStr.IsEmpty() ? response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds())
+                                       : expiresStr.AsUnsigned();
+    if (!useExternalAddress)
+      SetExpire(expires);
 
     if (!m_parameters.m_contactAddress.IsEmpty())
       m_parameters.m_contactAddress += ", ";
