@@ -54,7 +54,6 @@ vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS   += $(SHAREDDIR)/h264frame.cxx \
-	  $(COMMONDIR)/trace.cxx \
 	  enc-ctx.cxx  \
 
 
