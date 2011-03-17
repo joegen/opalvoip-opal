@@ -22,7 +22,6 @@
 #include "plugin-config.h"
 
 #include "enc-ctx.h"
-#include "trace.h"
 #include "rtpframe.h"
 
 #include <stdio.h>
@@ -52,14 +51,10 @@ static void logCallbackX264 (void * /*priv*/, int level, const char *fmt, va_lis
     case X264_LOG_DEBUG:   severity = 4; break;
     default:               severity = 4; break;
   }
-  sprintf(buffer, "H264\tx264\t"); 
-  vsprintf(buffer + strlen (buffer), fmt, arg);
+  vsprintf(buffer, fmt, arg);
   if (strlen(buffer) > 0)
     buffer[strlen(buffer)-1] = 0;
-  if (severity == 4)
-    { TRACE_UP (severity, buffer); }
-  else
-    { TRACE (severity, buffer); }
+  PTRACE(severity, "x264", buffer);
 }
 
 X264EncoderContext::X264EncoderContext()
@@ -109,11 +104,11 @@ X264EncoderContext::X264EncoderContext()
   _codec = X264_ENCODER_OPEN(&_context);
   
   if (_codec == NULL) {
-    TRACE(1, "H264\tEncoder\tCouldn't init x264 encoder");
+    PTRACE(1, "x264", "Encoder\tCouldn't init x264 encoder");
   } 
   else
   {
-    TRACE(4, "H264\tEncoder\tx264 encoder successfully opened");
+    PTRACE(4, "x264", "Encoder\tx264 encoder successfully opened");
   }
 }
 
@@ -122,7 +117,7 @@ X264EncoderContext::~X264EncoderContext()
     if (_codec != NULL)
     {
       X264_ENCODER_CLOSE(_codec);
-      TRACE(4, "H264\tEncoder\tClosed H.264 encoder, encoded " << _frameCounter << " Frames" );
+      PTRACE(4, "x264", "Encoder\tClosed H.264 encoder, encoded " << _frameCounter << " Frames" );
     }
   if (_txH264Frame) delete _txH264Frame;
 }
@@ -184,7 +179,7 @@ void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
   }
 
   if (!h264_levels[i].level_idc) {
-    TRACE(1, "H264\tCap\tIllegal Level negotiated");
+    PTRACE(1, "x264", "Illegal Level negotiated");
     return;
   }
 
@@ -208,11 +203,11 @@ void X264EncoderContext::ApplyOptions()
   X264_ENCODER_CLOSE(_codec);
   _codec = X264_ENCODER_OPEN(&_context);
   if (_codec == NULL) {
-    TRACE(1, "H264\tEncoder\tCouldn't init x264 encoder");
+    PTRACE(1, "x264", "Encoder\tCouldn't init x264 encoder");
   } 
   else
   {
-    TRACE(4, "H264\tEncoder\tx264 encoder successfully opened");
+    PTRACE(4, "x264", "Encoder\tx264 encoder successfully opened");
   }
 }
 
@@ -242,14 +237,14 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
 
   if (srcRTP.GetPayloadSize() < sizeof(frameHeader))
   {
-   TRACE(1, "H264\tEncoder\tVideo grab too small, Close down video transmission thread");
-   return 0;
+    PTRACE(1, "x264", "Encoder\tVideo grab too small, Close down video transmission thread");
+    return 0;
   }
 
   frameHeader * header = (frameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0)
   {
-    TRACE(1, "H264\tEncoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
+    PTRACE(1, "x264", "Encoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
     return 0;
   }
 
@@ -288,7 +283,7 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
 
   while (numberOfNALs==0) { // workaround for first 2 packets being 0
     if (X264_ENCODER_ENCODE(_codec, &NALs, &numberOfNALs, &_inputFrame, &dummyOutput) < 0) {
-      TRACE (1,"H264\tEncoder\tEncoding failed");
+      PTRACE(1,"x264", "Encoder\tEncoding failed");
       return 0;
     } 
   }

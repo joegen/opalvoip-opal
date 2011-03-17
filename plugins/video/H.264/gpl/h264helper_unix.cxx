@@ -25,7 +25,6 @@
 #include "enc-ctx.h"
 #include <sys/stat.h>
 #include <fstream>
-#include "trace.h"
 #include <stdlib.h> 
 
 #ifndef X264_LINK_STATIC
@@ -63,21 +62,21 @@ void closeAndExit()
 void writeStream (std::ofstream & stream, const char* data, unsigned bytes)
 {
   stream.write(data, bytes);
-  if (stream.bad())  { TRACE (1, "H264\tIPC\tCP: Bad flag set on writing - terminating"); closeAndExit(); }
+  if (stream.bad())  { PTRACE(1, "x264", "IPC CP: Bad flag set on writing - terminating"); closeAndExit(); }
 }
 
 void readStream (std::ifstream & stream, char* data, unsigned bytes)
 {
   stream.read(data, bytes);
-  if (stream.fail()) { TRACE (1, "H264\tIPC\tCP: Terminating");                           closeAndExit(); }
-  if (stream.bad())  { TRACE (1, "H264\tIPC\tCP: Bad flag set on reading - terminating"); closeAndExit(); }
-  if (stream.eof())  { TRACE (1, "H264\tIPC\tCP: Received EOF - terminating");            closeAndExit(); }
+  if (stream.fail()) { PTRACE(1, "x264", "IPC CP: Terminating");                           closeAndExit(); }
+  if (stream.bad())  { PTRACE(1, "x264", "IPC CP: Bad flag set on reading - terminating"); closeAndExit(); }
+  if (stream.eof())  { PTRACE(1, "x264", "IPC CP: Received EOF - terminating");            closeAndExit(); }
 }
 
 void flushStream (std::ofstream & stream)
 {
   stream.flush();
-  if (stream.bad())  { TRACE (1, "H264\tIPC\tCP: Bad flag set on flushing - terminating"); closeAndExit(); }
+  if (stream.bad())  { PTRACE(1, "x264", "IPC CP: Bad flag set on flushing - terminating"); closeAndExit(); }
 }
 
 
@@ -86,28 +85,12 @@ int main(int argc, char *argv[])
   unsigned status;
   if (argc != 3) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS");
-  if (debug_level!=NULL) {
-      Trace::SetLevel(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevel(0);
-  }
-
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE");
-  if (debug_level!=NULL) {
-      Trace::SetLevelUserPlane(atoi(debug_level));
-  } 
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
   x264 = NULL;
   dstLen=1400;
   dlStream.open(argv[1], std::ios::binary);
-  if (dlStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when opening DL named pipe"); exit (1); }
+  if (dlStream.fail()) { PTRACE(1, "x264", "IPC CP: Error when opening DL named pipe"); exit (1); }
   ulStream.open(argv[2],std::ios::binary);
-  if (ulStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when opening UL named pipe"); exit (1); }
+  if (ulStream.fail()) { PTRACE(1, "x264", "IPC CP: Error when opening UL named pipe"); exit (1); }
 
 #ifndef X264_LINK_STATIC
   if (X264Lib.Load()) 
@@ -124,7 +107,7 @@ int main(int argc, char *argv[])
   flushStream(ulStream);
 
   if (status == 0) {
-    TRACE (1, "H264\tIPC\tCP: Failed to load dynamic library - exiting"); 
+    PTRACE(1, "x264", "IPC CP: Failed to load dynamic library - exiting"); 
     closeAndExit();
   }
 
