@@ -495,7 +495,9 @@ void SIPURL::Sanitise(UsageContext context)
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
     if (SanitaryFields[i].contexts&(1<<context)) {
       PCaselessString name = SanitaryFields[i].name;
+      paramVars.MakeUnique();
       paramVars.RemoveAt(name);
+      m_fieldParameters.MakeUnique();
       m_fieldParameters.RemoveAt(name);
     }
   }
@@ -503,13 +505,16 @@ void SIPURL::Sanitise(UsageContext context)
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
     if (key.NumCompare("OPAL-") == EqualTo) {
+      paramVars.MakeUnique();
       paramVars.RemoveAt(key);
       --i; // Allow for ++ in for loop
     }
   }
 
-  if (context != ContactURI && context != ExternalURI)
+  if (context != ContactURI && context != ExternalURI) {
+    queryVars.MakeUnique();
     queryVars.RemoveAll();
+  }
 
   switch (context) {
     case RequestURI :
