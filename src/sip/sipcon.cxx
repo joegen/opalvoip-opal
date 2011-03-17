@@ -3161,11 +3161,12 @@ void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
 
     m_responseRetryTimer.Stop();
 
-    // Clear out pending responses if we are releasing, just die now.
-    while (!m_responsePackets.empty())
-      m_responsePackets.pop();
-
-    if (!IsReleased()) {
+    if (IsReleased()) {
+      // Clear out pending responses if we are releasing, just die now.
+      while (!m_responsePackets.empty())
+        m_responsePackets.pop();
+    }
+    else {
       if (m_responsePackets.front().GetStatusCode() < 200)
         SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
       else {
