@@ -1,4 +1,4 @@
-LIBRARY opaln_2005
+LIBRARY opaln
 EXPORTS
     ??$?0PAUOpalMessage@@@?$allocator@PAPAUOpalMessage@@@std@@QAE@ABV?$allocator@PAUOpalMessage@@@1@@Z @1 NONAME
     ??$?0PAUSIP_PDU_Work@SIPEndPoint@@@?$allocator@PAPAUSIP_PDU_Work@SIPEndPoint@@@std@@QAE@ABV?$allocator@PAUSIP_PDU_Work@SIPEndPoint@@@1@@Z @2 NONAME
