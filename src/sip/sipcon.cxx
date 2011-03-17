@@ -191,6 +191,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_sdpVersion(0)
   , needReINVITE(false)
   , m_handlingINVITE(false)
+  , m_symmetricOpenStream(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
@@ -1080,17 +1081,14 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     return false;
   }
 
-  // Disable send of re-INVITE if the ancestor OpenMediaStream has to close
-  // the media stream, so don't get two re-INVITEs in quick succession.
-  bool oldReINVITE = needReINVITE;
-  needReINVITE = false;
-
   // Make sure stream is symmetrical, if codec changed, close and re-open it
   OpalMediaStreamPtr otherStream = GetMediaStream(sessionID, !isSource);
-  bool makesymmetrical = otherStream != NULL &&
+  bool makesymmetrical = !m_symmetricOpenStream &&
+                          otherStream != NULL &&
                           otherStream->IsOpen() &&
                           otherStream->GetMediaFormat() != mediaFormat;
   if (makesymmetrical) {
+    m_symmetricOpenStream = true;
     // We must make sure reverse stream is closed before opening the
     // new forward one or can really confuse the RTP stack, especially
     // if switching to udptl in fax mode
@@ -1101,29 +1099,29 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
     else
       otherStream->Close();
+    m_symmetricOpenStream = false;
   }
 
   OpalMediaStreamPtr oldStream = GetMediaStream(sessionID, isSource);
 
   // Open forward side
   OpalMediaStreamPtr newStream = OpalRTPConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
-  if (newStream == NULL) {
-    needReINVITE = oldReINVITE;
+  if (newStream == NULL)
     return newStream;
-  }
 
   // Open other direction, if needed (must be after above open)
-  if (makesymmetrical &&
-      !GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
-                                                  mediaFormat.GetMediaType(), sessionID, mediaFormat)) {
-    newStream->Close();
-    needReINVITE = oldReINVITE;
-    return NULL;
+  if (makesymmetrical) {
+    m_symmetricOpenStream = true;
+    bool ok = GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
+                                                          mediaFormat.GetMediaType(), sessionID, mediaFormat);
+    m_symmetricOpenStream = false;
+    if (!ok) {
+      newStream->Close();
+      return NULL;
+    }
   }
 
-  needReINVITE = oldReINVITE;
-
-  if (!m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
+  if (!m_symmetricOpenStream && !m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
     SendReINVITE(PTRACE_PARAM("open channel"));
 
   return newStream;
@@ -2362,7 +2360,7 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   if (GetPhase() == EstablishedPhase) // re-INVITE
     StartMediaStreams();
   else if (!ok)
-    Release(EndedByCapabilityExchange);
+      Release(EndedByCapabilityExchange);
 }
 
 
