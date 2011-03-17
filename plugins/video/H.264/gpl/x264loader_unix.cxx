@@ -20,7 +20,7 @@
  */
 #include "plugin-config.h"
 #include "x264loader_unix.h"
-#include "trace.h"
+#include "enc-ctx.h"
 #include <dlfcn.h>
 #include <string.h>
 
@@ -52,7 +52,7 @@ bool X264Library::Load()
 #endif
       !Open("libx264.so")
       && !Open("libx264"))  {
-    TRACE (1, "H264\tDYNA\tFailed to load x264 library - codec disabled");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264 library - codec disabled");
     return false;
   }
 
@@ -61,56 +61,56 @@ bool X264Library::Load()
 #else
   if (!GetFunction("x264_encoder_open", (Function &)Xx264_encoder_open)) {
 #endif
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_open");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_open");
     return false;
   }
   if (!GetFunction("x264_param_default", (Function &)Xx264_param_default)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_param_default");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_param_default");
     return false;
   }
   if (!GetFunction("x264_encoder_encode", (Function &)Xx264_encoder_encode)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_encode");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_encode");
     return false;
   }
   if (!GetFunction("x264_nal_encode", (Function &)Xx264_nal_encode)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_nal_encode");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_nal_encode");
     return false;
   }
 
   if (!GetFunction("x264_encoder_reconfig", (Function &)Xx264_encoder_reconfig)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_reconfig");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_reconfig");
     return false;
   }
 
   if (!GetFunction("x264_encoder_headers", (Function &)Xx264_encoder_headers)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_headers");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_headers");
     return false;
   }
 
   if (!GetFunction("x264_encoder_close", (Function &)Xx264_encoder_close)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_close");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_close");
     return false;
   }
 
   if (!GetFunction("x264_picture_alloc", (Function &)Xx264_picture_alloc)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_picture_alloc");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_picture_alloc");
     return false;
   }
 
   if (!GetFunction("x264_picture_clean", (Function &)Xx264_picture_clean)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_picture_clean");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_picture_clean");
     return false;
   }
 
   if (!GetFunction("x264_encoder_close", (Function &)Xx264_encoder_close)) {
-    TRACE (1, "H264\tDYNA\tFailed to load x264_encoder_close");
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_close");
     return false;
   }
 
-  TRACE (4, "H264\tDYNA\tLoader was compiled with x264 build " << X264_BUILD << " present" );
+  PTRACE(4, "x264", "DYNA\tLoader was compiled with x264 build " << X264_BUILD << " present" );
 
   _isLoaded = true;
-  TRACE (4, "H264\tDYNA\tSuccessfully loaded libx264 library and verified functions");
+  PTRACE(4, "x264", "DYNA\tSuccessfully loaded libx264 library and verified functions");
 
   return true;
 }
@@ -118,7 +118,7 @@ bool X264Library::Load()
 
 bool X264Library::Open(const char *name)
 {
-  TRACE(4, "H264\tDYNA\tTrying to open x264 library " << name)
+  PTRACE(4, "x264", "DYNA\tTrying to open x264 library " << name)
 
   if ( strlen(name) == 0 )
     return false;
@@ -128,14 +128,14 @@ bool X264Library::Open(const char *name)
   if (_dynamicLibrary == NULL) {
     char * error = (char *) dlerror();
     if (error != NULL) {
-        TRACE(4, "H264\tDYNA\tCould not load " << name << " - " << error)
+        PTRACE(4, "x264", "DYNA\tCould not load " << name << " - " << error)
     }
     else {
-        TRACE(4, "H264\tDYNA\tCould not load " << name);
+        PTRACE(4, "x264", "DYNA\tCould not load " << name);
     }
     return false;
   } 
-  TRACE(4, "H264\tDYNA\tSuccessfully loaded " << name);
+  PTRACE(4, "x264", "DYNA\tSuccessfully loaded " << name);
   return true;
 }
 

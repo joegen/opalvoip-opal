@@ -43,6 +43,13 @@ extern "C" {
 #define X264_LINK_STATIC 1
 #endif
 
+#if PTRACING
+#define PTRACE(l,m,o) cerr << o
+#else
+#define PTRACE(l,m,o)
+#endif
+
+
 #define CIF_WIDTH 352
 #define CIF_HEIGHT 288
 #define QCIF_WIDTH 176
