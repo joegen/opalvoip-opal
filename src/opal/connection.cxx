@@ -213,7 +213,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   : PSafeObject(&call)  // Share the lock flag from the call
   , ownerCall(call)
   , endpoint(ep)
-  , phase(UninitialisedPhase)
+  , m_phase(UninitialisedPhase)
   , callToken(token)
   , originating(PFalse)
   , productInfo(ep.GetProductInfo())
@@ -430,7 +430,7 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 void OpalConnection::Release(CallEndReason reason)
 {
   {
-    PWaitAndSignal m(phaseMutex);
+    PWaitAndSignal mutex(m_phaseMutex);
     if (IsReleased()) {
       PTRACE(3, "OpalCon\tAlready released " << *this);
       return;
@@ -1528,17 +1528,17 @@ PINDEX OpalConnection::GetMaxRtpPayloadSize() const
 
 void OpalConnection::SetPhase(Phases phaseToSet)
 {
-  PTRACE(3, "OpalCon\tSetPhase from " << phase << " to " << phaseToSet << " for " << *this);
+  PTRACE(3, "OpalCon\tSetPhase from " << m_phase << " to " << phaseToSet << " for " << *this);
 
-  PWaitAndSignal m(phaseMutex);
+  PWaitAndSignal mutex(m_phaseMutex);
 
   // With next few lines we will prevent phase to ever go down when it
   // reaches ReleasingPhase - end result - once you call Release you never
   // go back.
-  if (phase < ReleasingPhase || (phase == ReleasingPhase && phaseToSet == ReleasedPhase)) {
-    phase = phaseToSet;
-    if (!m_phaseTime[phase].IsValid())
-      m_phaseTime[phase].SetCurrentTime();
+  if (m_phase < ReleasingPhase || (m_phase == ReleasingPhase && phaseToSet == ReleasedPhase)) {
+    m_phase = phaseToSet;
+    if (!m_phaseTime[m_phase].IsValid())
+      m_phaseTime[m_phase].SetCurrentTime();
   }
 }
 
