@@ -483,13 +483,14 @@ void SIPURL::Sanitise(UsageContext context)
     const char * name;
     unsigned     contexts;
   } const SanitaryFields[] = {
-    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)                  },
-    { "maddr",                     (1<<ToURI)|(1<<FromURI)                                                                 },
-    { "ttl",                       (1<<ToURI)|(1<<FromURI)                |(1<<RouteURI)|(1<<RegisterURI)                  },
-    { "transport",                 (1<<ToURI)|(1<<FromURI)                                                                 },
-    { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<ContactURI)|              (1<<RegisterURI)                  },
-    { "expires",   (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
-    { "tag",       (1<<RequestURI)|                        (1<<ContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
+    { "method",    (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)|(1<<RedirectURI)|(1<<ContactURI)|(1<<RegContactURI)|(1<<RouteURI)|(1<<RegisterURI)                  },
+    { "maddr",                     (1<<ToURI)|(1<<FromURI)                                                                                                     },
+    { "ttl",                       (1<<ToURI)|(1<<FromURI)                 |(1<<ContactURI)                   |(1<<RouteURI)|(1<<RegisterURI)                  },
+    { "transport",                 (1<<ToURI)|(1<<FromURI)                                                                                                     },
+    { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<RedirectURI)                |(1<<RegContactURI)              |(1<<RegisterURI)                  },
+    { "expires",   (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                 |(1<<ContactURI)                   |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
+    { "q",         (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                 |(1<<ContactURI)                   |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
+    { "tag",       (1<<RequestURI)                        |(1<<RedirectURI)|(1<<ContactURI)|(1<<RegContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
   };
 
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
@@ -511,7 +512,7 @@ void SIPURL::Sanitise(UsageContext context)
     }
   }
 
-  if (context != ContactURI && context != ExternalURI) {
+  if (context != RedirectURI && context != ExternalURI) {
     queryVars.MakeUnique();
     queryVars.RemoveAll();
   }
@@ -530,7 +531,7 @@ void SIPURL::Sanitise(UsageContext context)
       }
       break;
 
-    case ContactURI :
+    case RegContactURI :
       /* Strict application of RFC3261, 19.1.1 does not require this, but
          there are some interop problems with registrars where the ports
          presence/absence is not handled correctly. There is a distinction
@@ -543,9 +544,6 @@ void SIPURL::Sanitise(UsageContext context)
          generally OK, though not perfect. It prevents using an SRV record
          as the contact, but as the thing doing the registering is nearly
          always the thing listening on a port, it is the 99.9% solution.
-
-         Note INVITE contact field is the RouteURI enum, not ContactURI so
-         the port may be defaulted there.
        */
       if (!GetPortSupplied())
         SetPort(scheme == "sips" ? 5061 : 5060);
@@ -760,13 +758,13 @@ PString SIPMIMEInfo::GetContact() const
 }
 
 
-bool SIPMIMEInfo::GetContacts(std::set<SIPURL> & contacts) const
+bool SIPMIMEInfo::GetContacts(std::list<SIPURL> & contacts) const
 {
   return ExtractURLs(GetString("Contact"), contacts);
 }
 
 
-bool SIPMIMEInfo::ExtractURLs(const PString & str, std::set<SIPURL> & urls)
+bool SIPMIMEInfo::ExtractURLs(const PString & str, std::list<SIPURL> & urls)
 {
   PStringArray lines = str.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
@@ -794,7 +792,12 @@ bool SIPMIMEInfo::ExtractURLs(const PString & str, std::set<SIPURL> & urls)
       SIPURL uri = line(comma+1, pos-1);
       if (!uri.GetPortSupplied())
         uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
-      urls.insert(uri);
+
+      double q = uri.GetFieldParameter("q", "0").AsReal();
+      std::list<SIPURL>::iterator it = urls.begin();
+      while (it != urls.end() && it->GetFieldParameter("q", "0").AsReal() > q)
+        ++it;
+      urls.push_back(uri);
 
       comma = previousPos = pos;
     } while (comma != P_MAX_INDEX);

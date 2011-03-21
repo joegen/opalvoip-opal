@@ -1773,15 +1773,19 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   }
 
   if (handler != NULL) {
-    SIPRegisterHandler * registrar = dynamic_cast<SIPRegisterHandler *>(&*handler);
+    const SIPRegisterHandler * registrar = dynamic_cast<const SIPRegisterHandler *>(&*handler);
     if (PAssertNULL(registrar) != NULL) {
-      std::set<SIPURL> contacts;
-      if (SIPMIMEInfo::ExtractURLs(registrar->GetParams().m_contactAddress, contacts)) {
-        for (std::set<SIPURL>::iterator it = contacts.begin(); it != contacts.end(); ++it) {
-          if (it->GetHostAddress().GetProto(true) == transport.GetProtoPrefix()) {
-            contact = *it;
-            break;
-          }
+      PIPSocket::Address ip;
+      bool transportLocal = transport.GetRemoteAddress().GetIpAddress(ip) && manager.IsLocalAddress(ip);
+
+      const std::list<SIPURL> & contacts = registrar->GetContacts();
+      for (std::list<SIPURL>::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
+        OpalTransportAddress contactAddress = it->GetHostAddress();
+        if (contactAddress.GetProto(true) == transport.GetProtoPrefix() &&
+            contactAddress.GetIpAddress(ip) &&
+            manager.IsLocalAddress(ip) == transportLocal) {
+          contact = *it;
+          break;
         }
       }
     }
@@ -1790,7 +1794,7 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   if (contact.IsEmpty())
     contact = GetLocalURL(transport, user);
 
-  contact.Sanitise(pdu.GetMethod() != SIP_PDU::Method_INVITE ? SIPURL::ContactURI : SIPURL::RouteURI);
+  contact.Sanitise(SIPURL::ContactURI);
   pdu.GetMIME().SetContact(contact.AsQuotedString());
 }
 
