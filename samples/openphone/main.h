@@ -771,6 +771,7 @@ class OptionsDialog : public wxDialog
     // Routing fields
     wxString     m_ForwardingAddress;
     int          m_ForwardingTimeout;
+    PwxString    m_telURI;
     wxListCtrl * m_Routes;
     int          m_SelectedRoute;
     wxComboBox * m_RouteSource;
