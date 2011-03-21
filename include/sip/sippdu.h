@@ -157,13 +157,15 @@ class SIPURL : public PURL
     OpalTransportAddress GetHostAddress() const;
 
     enum UsageContext {
-      ExternalURI,  ///< URI used anywhere outside of protocol
-      RequestURI,   ///< Request-URI (after the INVITE)
-      ToURI,        ///< To header field
-      FromURI,      ///< From header field
-      ContactURI,   ///< Registration or Redirection Contact header field
-      RouteURI,     ///< Dialog Contact header field, or Record-Route header field
-      RegisterURI   ///< URI on REGISTER request line.
+      ExternalURI,   ///< URI used anywhere outside of protocol
+      RequestURI,    ///< Request-URI (after the INVITE)
+      ToURI,         ///< To header field
+      FromURI,       ///< From header field
+      RouteURI,      ///< Record-Route header field
+      RedirectURI,   ///< Redirect Contact header field
+      ContactURI,    ///< General Contact header field
+      RegContactURI, ///< Registration Contact header field
+      RegisterURI    ///< URI on REGISTER request line.
     };
 
     /** Removes tag parm & query vars and recalculates urlString
@@ -300,7 +302,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
-    bool GetContacts(std::set<SIPURL> & contacts) const;
+    bool GetContacts(std::list<SIPURL> & contacts) const;
     void SetContact(const PString & v);
 
     PString GetSubject() const;
@@ -441,7 +443,7 @@ class SIPMIMEInfo : public PMIMEInfo
       */
     static bool ExtractURLs(
       const PString & str,
-      std::set<SIPURL> & urls
+      std::list<SIPURL> & urls
     );
 
   protected:
