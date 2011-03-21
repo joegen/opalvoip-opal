@@ -508,7 +508,7 @@ static BYTE const ReverseBits[256] = {
 ///////////////////////////////////////////////////////////////////////
 
 OpalCapiEndPoint::OpalCapiEndPoint(OpalManager & manager)
-  : OpalEndPoint(manager, "isdn", CanTerminateCall)
+  : OpalEndPoint(manager, "isdn", CanTerminateCall|SupportsE164)
   , m_capi(new OpalCapiFunctions)
   , m_thread(NULL)
   , m_applicationId(0)

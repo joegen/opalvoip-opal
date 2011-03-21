@@ -52,7 +52,7 @@ static const char PrefixPOTS[] = "pots";
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, PrefixPOTS, CanTerminateCall),
+  : OpalEndPoint(mgr, PrefixPOTS, CanTerminateCall|SupportsE164),
     defaultLine("*")
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");

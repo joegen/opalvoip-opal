@@ -248,6 +248,7 @@ DEF_FIELD(RegistrarCompatibility);
 static const wxChar RoutingGroup[] = wxT("/Routes");
 DEF_FIELD(ForwardingAddress);
 DEF_FIELD(ForwardingTimeout);
+DEF_FIELD(telURI);
 
 #if PTRACING
 static const wxChar TracingGroup[] = wxT("/Tracing");
@@ -1232,6 +1233,9 @@ bool MyManager::Initialise()
   config->SetPath(GeneralGroup);
   config->Read(ForwardingAddressKey, &m_ForwardingAddress);
   config->Read(ForwardingTimeoutKey, &m_ForwardingTimeout);
+
+  if (config->Read(telURIKey, &str) && !str.empty())
+    AttachEndPoint(FindEndPoint(str), "tel");
 
   config->SetPath(RoutingGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
@@ -4183,12 +4187,25 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 0; i < m_Routes->GetColumnCount(); i++)
     m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
+  {
+    OpalEndPoint * ep = m_manager.FindEndPoint("tel");
+    if (ep != NULL)
+      m_telURI = ep->GetPrefixName();
+    combo = FindWindowByNameAs<wxComboBox>(this, telURIKey);
+    combo->Append(wxEmptyString);
+    combo->SetValidator(wxGenericValidator(&m_telURI));
+  }
+
   // Fill combo box with possible protocols
   m_RouteSource = FindWindowByNameAs<wxComboBox>(this, wxT("RouteSource"));
   m_RouteSource->Append(AllRouteSources);
   PList<OpalEndPoint> endpoints = m_manager.GetEndPoints();
-  for (i = 0; i < endpoints.GetSize(); i++)
-    m_RouteSource->Append(PwxString(endpoints[i].GetPrefixName()));
+  for (i = 0; i < endpoints.GetSize(); i++) {
+    PwxString prefix(endpoints[i].GetPrefixName());
+    m_RouteSource->Append(prefix);
+    if (endpoints[i].HasAttribute(OpalEndPoint::SupportsE164))
+      combo->Append(prefix);
+  }
   m_RouteSource->SetSelection(0);
 
 
@@ -4563,6 +4580,11 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(ForwardingAddress, m_manager.m_ForwardingAddress =);
   SAVE_FIELD(ForwardingTimeout, m_manager.m_ForwardingTimeout =);
+
+  config->Write(telURIKey, m_telURI);
+  m_manager.DetachEndPoint("tel");
+  if (!m_telURI.empty())
+    m_manager.AttachEndPoint(m_manager.FindEndPoint(m_telURI), "tel");
 
   config->DeleteGroup(RoutingGroup);
   config->SetPath(RoutingGroup);
