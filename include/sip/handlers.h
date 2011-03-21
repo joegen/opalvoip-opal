@@ -205,12 +205,15 @@ public:
 
   const SIPRegister::Params & GetParams() const { return m_parameters; }
 
+  const std::list<SIPURL> & GetContacts() const { return m_contactAddresses; }
+
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   SIPRegister::Params m_parameters;
   unsigned            m_sequenceNumber;
+  std::list<SIPURL>   m_contactAddresses;
 };
 
 
