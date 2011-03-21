@@ -49,6 +49,8 @@
 #include <sip/sipep.h>
 #include <ptclib/pxml.h>
 
+#include <algorithm>
+
 
 #define new PNEW
 
