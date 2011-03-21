@@ -70,7 +70,7 @@ class OpalEndPoint : public PObject
   public:
     enum Attributes {
       CanTerminateCall = 1,
-      HasLineInterface = 2
+      SupportsE164 = 2
     };
 
   /**@name Construction */

@@ -55,7 +55,7 @@
 SIPEndPoint::SIPEndPoint(OpalManager & mgr,
                          unsigned maxConnectionThreads,
                          unsigned maxHandlerThreads)
-  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall)
+  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall|SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , retryTimeoutMin(500)             // 0.5 seconds
   , retryTimeoutMax(0, 4)            // 4 seconds
@@ -1683,16 +1683,34 @@ bool SIPEndPoint::GetAuthentication(const PString & realm, PString & user, PStri
 
 SIPURL SIPEndPoint::GetRegisteredProxy(const SIPURL & url)
 {
-  // Look up by the full URL first in case of multiple registrations to the same domain.
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  if (handler == NULL) {
-    // Precise AOR not found, locate the name used for the domain.
-    handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-    if (handler == NULL) 
-      return SIPURL();
+  PSafePtr<SIPHandler> handler;
+
+  if (url.GetScheme() != "tel") {
+    // Look up by the full URL first in case of multiple registrations to the same domain.
+    if ((handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL)
+      // Precise AOR not found, locate the name used for the domain.
+      handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    return handler != NULL ? handler->GetProxy() : SIPURL();
   }
 
-  return handler->GetProxy();
+
+  PString domain = url.GetHostName();
+  if (domain.IsEmpty() || OpalIsE164(domain)) {
+    // No context, just get first registration
+    handler = activeSIPHandlers.GetFirstHandler();
+    while (handler != NULL && handler->GetMethod() != SIP_PDU::Method_REGISTER)
+      ++handler;
+  }
+  else
+    handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+
+  if (handler == NULL)
+    return SIPURL();
+
+  SIPURL proxy = handler->GetProxy();
+  if (proxy.IsEmpty())
+    return handler->GetAddressOfRecord();
+  return proxy;
 }
 
 

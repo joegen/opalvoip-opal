@@ -52,7 +52,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2EndPoint::IAX2EndPoint(OpalManager & mgr, unsigned short port)
-  : OpalEndPoint(mgr, "iax2", CanTerminateCall), localPort(port)
+  : OpalEndPoint(mgr, "iax2", CanTerminateCall|SupportsE164)
+  , localPort(port)
 {
   
   localUserName = mgr.GetDefaultUserName();
