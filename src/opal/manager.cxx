@@ -1256,15 +1256,16 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   PINDEX colon = b_party.Find(':');
   if (colon == P_MAX_INDEX)
     colon = 0;
-  else if (b_party.NumCompare("tel", colon) == EqualTo) // Small cheat for tel: URI (RFC3966)
-    colon++;
-  else if (FindEndPoint(b_party.Left(colon)) == NULL)
-    colon = 0;
-  else {
+  else if (FindEndPoint(b_party.Left(colon)) != NULL) {
+    // Hack to make some modes work
     if (destination.Find("<da>") != P_MAX_INDEX)
       return b_party;
     colon++;
   }
+  else if (b_party.NumCompare("tel", colon) == EqualTo) // Small cheat for tel: URI (RFC3966)
+    colon++;
+  else
+    colon = 0;
 
   PINDEX nonDigitPos = b_party.FindSpan("0123456789*#-.()", colon + (b_party[colon] == '+'));
   PString digits = b_party(colon, nonDigitPos-1);
