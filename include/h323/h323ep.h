@@ -1190,10 +1190,12 @@ class H323EndPoint : public OpalRTPEndPoint
     WORD GetRtpIpPortPair() { return manager.GetRtpIpPortPair(); }
 
     /**Get the IP Type Of Service byte for RTP channels.
+       Deprecated, use OpalManager::GetMediaTypeOfService().
      */
     BYTE P_DEPRECATED GetRtpIpTypeofService() const { return manager.GetMediaTypeOfService(); }
 
     /**Set the IP Type Of Service byte for RTP channels.
+       Deprecated, use OpalManager::SetMediaTypeOfService().
      */
     void P_DEPRECATED SetRtpIpTypeofService(unsigned tos) { manager.SetMediaTypeOfService(tos); }
 
