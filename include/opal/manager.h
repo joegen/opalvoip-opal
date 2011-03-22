@@ -1281,8 +1281,14 @@ class OpalManager : public PObject
      */
     void SetMediaTypeOfService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
 
-    // For backward compatibility
+    /**Get the IP Type Of Service byte for RTP channels.
+       Deprecated, use OpalManager::GetMediaTypeOfService().
+     */
     BYTE P_DEPRECATED GetRtpIpTypeofService() const { return m_defaultMediaTypeOfService; }
+
+    /**Set the IP Type Of Service byte for RTP channels.
+       Deprecated, use OpalManager::SetMediaTypeOfService().
+     */
     void P_DEPRECATED SetRtpIpTypeofService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
