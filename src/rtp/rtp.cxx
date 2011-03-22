@@ -89,6 +89,8 @@ RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic)
 bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 {
   if (sz < RTP_DataFrame::MinHeaderSize) {
+    PTRACE(2, "RTP\tInvalid RTP packet, "
+              "smaller than minimum header size, " << sz << " < " << RTP_DataFrame::MinHeaderSize);
     m_payloadSize = m_paddingSize = 0;
     return false;
   }
@@ -99,6 +101,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
     m_headerSize += (GetExtensionSizeDWORDs()+1)*4;
 
   if (sz < m_headerSize) {
+    PTRACE(2, "RTP\tInvalid RTP packet, "
+              "smaller than indicated header size, " << sz << " < " << m_headerSize);
     m_payloadSize = m_paddingSize = 0;
     return false;
   }
@@ -116,7 +120,8 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
   PINDEX pos = sz;
   do {
     if (pos-- <= m_headerSize) {
-      PTRACE(1, "RTP\tInvalid RTP packet, padding indicated but not enough data.");
+      PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
+                "size=" << sz << ", header=" << m_headerSize);
       m_payloadSize = m_paddingSize = 0;
       return false;
     }
@@ -1323,9 +1328,7 @@ PBoolean RTP_Session::SendReport()
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
   report.EndPacket();
 
-  PBoolean stat = WriteControl(report);
-
-  return stat;
+  return WriteControl(report);
 }
 
 
@@ -1427,17 +1430,17 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
                 PTRACE(4,"RTP\tSession " << sessionID << ", SourceDescription end of items");
                 item = NULL;
                 break;
-              } else {
-                item = item->GetNextItem();
               }
+
+              item = item->GetNextItem();
             }
+
             /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
                otherwise it reads over the buffer */
-            if((item == NULL) || 
-              (item->type == RTP_ControlFrame::e_END) || 
-              ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
+            if (item == NULL || 
+                item->type == RTP_ControlFrame::e_END || 
+                (sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)
               break;
-            }
           }
           OnRxSourceDescription(descriptions);
         }
@@ -1467,6 +1470,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
         else {
           PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet truncated");
         }
+
         if (closeOnBye) {
           PTRACE(3, "RTP\tSession " << sessionID << ", Goodbye packet closing transport");
           return e_AbortTransport;
@@ -1586,8 +1590,8 @@ void RTP_Session::OnRxApplDefined(const PString & PTRACE_PARAM(type),
           unsigned PTRACE_PARAM(subtype), DWORD PTRACE_PARAM(src),
           const BYTE * /*data*/, PINDEX PTRACE_PARAM(size))
 {
-  PTRACE(3, "RTP\tSession " << sessionID << ", OnApplDefined: \"" << type << "\"-" << subtype
-   << " " << src << " [" << size << ']');
+  PTRACE(3, "RTP\tSession " << sessionID << ", OnApplDefined: \""
+         << type << "\"-" << subtype << " " << src << " [" << size << ']');
 }
 
 
@@ -2167,6 +2171,8 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
       return RTP_Session::e_IgnorePacket;
 
     case EAGAIN :
+      PTRACE(4, "RTP_UDP\tSession " << sessionID << ", " << channelName
+             << " read packet interrupted.");
       // Shouldn't happen, but it does.
       return RTP_Session::e_IgnorePacket;
 
@@ -2191,13 +2197,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
     return status;
 
   // Check received PDU is big enough
-  PINDEX pduSize = dataSocket->GetLastReadCount();
-  if (frame.SetPacketSize(pduSize))
-    return e_ProcessPacket;
-
-  PTRACE(2, "RTP_UDP\tSession " << sessionID
-         << ", Received data packet too small: " << pduSize << " bytes");
-  return e_IgnorePacket;
+  return frame.SetPacketSize(dataSocket->GetLastReadCount()) ? e_ProcessPacket : e_IgnorePacket;
 }
 
 
@@ -2234,7 +2234,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 
   PINDEX pduSize = controlSocket->GetLastReadCount();
   if (pduSize < 4 || pduSize < 4+frame.GetPayloadSize()) {
-    PTRACE_IF(2, pduSize > 1 || !m_firstControl, "RTP_UDP\tSession " << sessionID
+    PTRACE_IF(2, pduSize != 1 || !m_firstControl, "RTP_UDP\tSession " << sessionID
               << ", Received control packet too small: " << pduSize << " bytes");
     return e_IgnorePacket;
   }
