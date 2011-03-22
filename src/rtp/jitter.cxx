@@ -267,6 +267,11 @@ void OpalJitterBuffer::Reset()
 
 PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
 {
+  if (frame.GetSize() < RTP_DataFrame::MinHeaderSize) {
+    PTRACE(2, "Jitter\tWriting invalid RTP data frame.");
+    return true; // Don't abort, but ignore
+  }
+
   PWaitAndSignal mutex(m_bufferMutex);
 
   DWORD timestamp = frame.GetTimestamp();
@@ -329,12 +334,12 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
 
   // Add to buffer
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
-  if (!result.second) {
-    PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
-    return false;
+  if (result.second) {
+    ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
   }
-
-  ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
+  else {
+    PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
+  }
 
   return true;
 }
@@ -588,29 +593,14 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
 {
   PTRACE(4, "Jitter\tReceive thread started: " << *this);
 
-  m_bufferMutex.Wait();
-
   while (m_running) {
     RTP_DataFrame frame(0, m_packetSize);
 
-    do {
-      m_bufferMutex.Signal();
-
-      // Keep reading from the RTP transport frames
-      if (!OnReadPacket(frame)) {
-        m_running = false; // Flag to stop the reading side thread
-        goto exitThread;
-      }
-    } while (frame.GetSize() == 0);
-
-    m_bufferMutex.Wait();
-    if (!WriteData(frame))
-      break;
+    // Keep reading from the RTP transport frames
+    if (!OnReadPacket(frame) || !WriteData(frame))
+      m_running = false;
   }
 
-  m_bufferMutex.Signal();
-
-exitThread:
   PTRACE(4, "Jitter\tReceive thread finished: " << *this);
 }
 
@@ -646,7 +636,7 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
 {
   bool success = m_session.ReadData(frame);
-  PTRACE(8, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
+  PTRACE_IF(6, success, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
   return success;
 }
 
