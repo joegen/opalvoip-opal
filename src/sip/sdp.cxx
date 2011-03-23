@@ -433,13 +433,13 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
 
 //////////////////////////////////////////////////////////////////////////////
 
-unsigned & SDPBandwidth::operator[](const PString & type)
+unsigned & SDPBandwidth::operator[](const PCaselessString & type)
 {
-  return std::map<PString, unsigned>::operator[](type);
+  return std::map<PCaselessString, unsigned>::operator[](type);
 }
 
 
-unsigned SDPBandwidth::operator[](const PString & type) const
+unsigned SDPBandwidth::operator[](const PCaselessString & type) const
 {
   const_iterator it = find(type);
   return it != end() ? it->second : UINT_MAX;
@@ -467,7 +467,7 @@ bool SDPBandwidth::Parse(const PString & param)
 }
 
 
-void SDPBandwidth::SetMin(const PString & type, unsigned value)
+void SDPBandwidth::SetMin(const PCaselessString & type, unsigned value)
 {
   iterator it = find(type);
   if (it == end())
@@ -1298,9 +1298,9 @@ PString SDPApplicationMediaDescription::GetSDPPortList() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-const PString & SDPSessionDescription::ConferenceTotalBandwidthType()      { static PString s = "CT";   return s; }
-const PString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static PString s = "AS";   return s; }
-const PString & SDPSessionDescription::TransportIndependentBandwidthType() { static PString s = "TIAS"; return s; }
+const PCaselessString & SDPSessionDescription::ConferenceTotalBandwidthType()      { static const PConstCaselessString s = "CT";   return s; }
+const PCaselessString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static const PConstCaselessString s = "AS";   return s; }
+const PCaselessString & SDPSessionDescription::TransportIndependentBandwidthType() { static const PConstCaselessString s = "TIAS"; return s; }
 
 SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version, const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME)
