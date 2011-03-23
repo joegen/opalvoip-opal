@@ -1298,9 +1298,9 @@ PString SDPApplicationMediaDescription::GetSDPPortList() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-const PCaselessString & SDPSessionDescription::ConferenceTotalBandwidthType()      { static const PConstCaselessString s = "CT";   return s; }
-const PCaselessString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static const PConstCaselessString s = "AS";   return s; }
-const PCaselessString & SDPSessionDescription::TransportIndependentBandwidthType() { static const PConstCaselessString s = "TIAS"; return s; }
+const PCaselessString & SDPSessionDescription::ConferenceTotalBandwidthType()      { static const PConstCaselessString s("CT");   return s; }
+const PCaselessString & SDPSessionDescription::ApplicationSpecificBandwidthType()  { static const PConstCaselessString s("AS");   return s; }
+const PCaselessString & SDPSessionDescription::TransportIndependentBandwidthType() { static const PConstCaselessString s("TIAS"); return s; }
 
 SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version, const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME)
