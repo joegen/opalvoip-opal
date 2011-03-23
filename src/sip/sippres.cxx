@@ -59,14 +59,14 @@
 
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
 
-const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s = "Sub-Protocol";   return s; }
-const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s = "Presence Agent"; return s; }
-const PCaselessString & SIP_Presentity::XcapRootKey()      { static const PConstCaselessString s = "XCAP Root";      return s; }
-const PCaselessString & SIP_Presentity::XcapAuthIdKey()    { static const PConstCaselessString s = "XCAP Auth ID";   return s; }
-const PCaselessString & SIP_Presentity::XcapPasswordKey()  { static const PConstCaselessString s = "XCAP Password";  return s; }
-const PCaselessString & SIP_Presentity::XcapAuthAuidKey()  { static const PConstCaselessString s = "XCAP AUID";      return s; }
-const PCaselessString & SIP_Presentity::XcapAuthFileKey()  { static const PConstCaselessString s = "XCAP AuthFile";  return s; }
-const PCaselessString & SIP_Presentity::XcapBuddyListKey() { static const PConstCaselessString s = "XCAP BuddyList"; return s; }
+const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }
+const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s("Presence Agent"); return s; }
+const PCaselessString & SIP_Presentity::XcapRootKey()      { static const PConstCaselessString s("XCAP Root");      return s; }
+const PCaselessString & SIP_Presentity::XcapAuthIdKey()    { static const PConstCaselessString s("XCAP Auth ID");   return s; }
+const PCaselessString & SIP_Presentity::XcapPasswordKey()  { static const PConstCaselessString s("XCAP Password");  return s; }
+const PCaselessString & SIP_Presentity::XcapAuthAuidKey()  { static const PConstCaselessString s("XCAP AUID");      return s; }
+const PCaselessString & SIP_Presentity::XcapAuthFileKey()  { static const PConstCaselessString s("XCAP AuthFile");  return s; }
+const PCaselessString & SIP_Presentity::XcapBuddyListKey() { static const PConstCaselessString s("XCAP BuddyList"); return s; }
 
 OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
 OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
