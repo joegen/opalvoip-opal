@@ -182,9 +182,9 @@ class OpalPresentity : public PSafeObject
     ///< Get all attribute names for this presentity class.
     virtual PStringArray GetAttributeNames() const = 0;
 
-    static const PString & AuthNameKey();         ///< Key for authentication name attribute
-    static const PString & AuthPasswordKey();     ///< Key for authentication password attribute
-    static const PString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
+    static const PCaselessString & AuthNameKey();         ///< Key for authentication name attribute
+    static const PCaselessString & AuthPasswordKey();     ///< Key for authentication password attribute
+    static const PCaselessString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
 
     /** Get the address-of-record for the presentity.
         This is typically a URL which represents our local identity in the
