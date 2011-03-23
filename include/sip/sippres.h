@@ -230,14 +230,14 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
       e_OMA
     };
 
-    static const PString & SubProtocolKey();
-    static const PString & PresenceAgentKey();
-    static const PString & XcapRootKey();
-    static const PString & XcapAuthIdKey();
-    static const PString & XcapPasswordKey();
-    static const PString & XcapAuthAuidKey();
-    static const PString & XcapAuthFileKey();
-    static const PString & XcapBuddyListKey();
+    static const PCaselessString & SubProtocolKey();
+    static const PCaselessString & PresenceAgentKey();
+    static const PCaselessString & XcapRootKey();
+    static const PCaselessString & XcapAuthIdKey();
+    static const PCaselessString & XcapPasswordKey();
+    static const PCaselessString & XcapAuthAuidKey();
+    static const PCaselessString & XcapAuthFileKey();
+    static const PCaselessString & XcapBuddyListKey();
 
     virtual PStringArray GetAttributeNames() const;
 

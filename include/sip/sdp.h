@@ -47,14 +47,14 @@
 
 /////////////////////////////////////////////////////////
 
-class SDPBandwidth : public std::map<PString, unsigned>
+class SDPBandwidth : public std::map<PCaselessString, unsigned>
 {
   public:
-    unsigned & operator[](const PString & type);
-    unsigned operator[](const PString & type) const;
+    unsigned & operator[](const PCaselessString & type);
+    unsigned operator[](const PCaselessString & type) const;
     friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
     bool Parse(const PString & param);
-    void SetMin(const PString & type, unsigned value);
+    void SetMin(const PCaselessString & type, unsigned value);
 };
 
 /////////////////////////////////////////////////////////
@@ -346,9 +346,9 @@ class SDPSessionDescription : public PObject
 
     OpalMediaFormatList GetMediaFormats() const;
 
-    static const PString & ConferenceTotalBandwidthType();
-    static const PString & ApplicationSpecificBandwidthType();
-    static const PString & TransportIndependentBandwidthType(); // RFC3890
+    static const PCaselessString & ConferenceTotalBandwidthType();
+    static const PCaselessString & ApplicationSpecificBandwidthType();
+    static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
 
   protected:
     void ParseOwner(const PString & str);

@@ -40,9 +40,9 @@
 
 ///////////////////////////////////////////////////////////////////////
 
-const PString & OpalPresentity::AuthNameKey()        { static const PString s = "Auth ID";       return s; }
-const PString & OpalPresentity::AuthPasswordKey()    { static const PString s = "Auth Password"; return s; }
-const PString & OpalPresentity::TimeToLiveKey()      { static const PString s = "Time to Live";  return s; }
+const PCaselessString & OpalPresentity::AuthNameKey()     { static const PConstCaselessString s = "Auth ID";       return s; }
+const PCaselessString & OpalPresentity::AuthPasswordKey() { static const PConstCaselessString s = "Auth Password"; return s; }
+const PCaselessString & OpalPresentity::TimeToLiveKey()   { static const PConstCaselessString s = "Time to Live";  return s; }
 
 
 PString OpalPresenceInfo::AsString() const
