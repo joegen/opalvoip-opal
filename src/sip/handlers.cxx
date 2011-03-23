@@ -655,7 +655,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
         params.m_contactAddress = "*";
       else {
         for (std::list<SIPURL>::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact) {
-          contact->RemoveFieldParameter("expires");
+          contact->GetFieldParameters().Remove("expires");
           if (!params.m_contactAddress.IsEmpty())
             params.m_contactAddress += ", ";
           params.m_contactAddress += contact->AsQuotedString();
@@ -688,7 +688,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
             if (params.m_compatibility != SIPRegister::e_CannotRegisterPrivateContacts || localAddress.IsEquivalent(interfaces[i], true)) {
               SIPURL contact(userName, interfaces[i]);
               contact.Sanitise(SIPURL::RegContactURI);
-              contact.SetFieldParameter("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
+              contact.GetFieldParameters().Set("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
               m_contactAddresses.push_back(contact);
 
               if (!params.m_contactAddress.IsEmpty())
@@ -749,7 +749,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     // unregisetered everthing, reregister
     std::list<SIPURL>::iterator contact = m_contactAddresses.begin();
     while (contact != m_contactAddresses.end()) {
-      if (contact->GetFieldParameter("expires").AsUnsigned() > 0)
+      if (contact->GetFieldParameters().GetInteger("expires") > 0)
         ++contact;
       else
         m_contactAddresses.erase(contact++);
@@ -779,10 +779,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
     for (std::list<SIPURL>::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
       if (contact->GetHostAddress().GetProto() == "udp") {
-        contact->RemoveFieldParameter("expires");
+        contact->GetFieldParameters().Remove("expires");
 
         SIPURL newContact(contact->GetUserName(), externalAddress);
-        newContact.SetFieldParameter("expires", PString(PString::Unsigned, originalExpire));
+        newContact.GetFieldParameters().SetInteger("expires", originalExpire);
         newContacts.push_back(newContact);
       }
     }
@@ -793,9 +793,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   else {
     int minExpiry = INT_MAX;
     for (std::list<SIPURL>::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
-      PString expiresStr = contact->GetFieldParameter("expires");
-      int expires = expiresStr.IsEmpty() ? response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds())
-                                         : expiresStr.AsUnsigned();
+      long expires = contact->GetFieldParameters().GetInteger("expires",
+                          response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds()));
       if (minExpiry > expires)
         minExpiry = expires;
     }
