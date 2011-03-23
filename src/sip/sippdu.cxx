@@ -793,9 +793,9 @@ bool SIPMIMEInfo::ExtractURLs(const PString & str, std::list<SIPURL> & urls)
       if (!uri.GetPortSupplied())
         uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
 
-      double q = uri.GetFieldParameter("q", "0").AsReal();
+      double q = uri.GetFieldParameters().GetReal("q");
       std::list<SIPURL>::iterator it = urls.begin();
-      while (it != urls.end() && it->GetFieldParameter("q", "0").AsReal() > q)
+      while (it != urls.end() && it->GetFieldParameters().GetReal("q") > q)
         ++it;
       urls.push_back(uri);
 
@@ -2417,7 +2417,7 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool loc
 
   PString newTag = url.GetParamVars()("tag");
   if (newTag.IsEmpty())
-    newTag = uri.GetFieldParameter("tag");
+    newTag = uri.GetFieldParameters().Get("tag");
   else
     uri.SetParamVar("tag", PString::Empty());
 
@@ -2430,7 +2430,7 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool loc
     tag = SIPURL::GenerateTag();
 
   if (!tag.IsEmpty())
-    uri.SetFieldParameter("tag", tag);
+    uri.GetFieldParameters().Set("tag", tag);
 
   uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
 }

@@ -132,25 +132,9 @@ class SIPURL : public PURL
       m_displayName = str;
     }
 
-    /**Returns the field parameter (outside of <>)
-      */
-    PString GetFieldParameter(
-      const PString & name,
-      const PString & dflt = PString::Empty()
-    ) const { return m_fieldParameters(name, dflt); }
-
-    /**Returns the field parameter (outside of <>)
-      */
-    void SetFieldParameter(
-      const PString & name,
-      const PString & value
-    ) { m_fieldParameters.SetAt(name, value); }
-
-    /**Removes the field parameter (outside of <>)
-      */
-    void RemoveFieldParameter(
-      const PString & name
-    ) { m_fieldParameters.RemoveAt(name); }
+    /// Return string options in field parameters
+    const PStringOptions & GetFieldParameters() const { return m_fieldParameters; }
+          PStringOptions & GetFieldParameters()       { return m_fieldParameters; }
 
     /**Get the host and port as a transport address.
       */
@@ -221,8 +205,8 @@ class SIPURL : public PURL
       const char * defaultScheme
     );
 
-    PString         m_displayName;
-    PStringToString m_fieldParameters;
+    PString        m_displayName;
+    PStringOptions m_fieldParameters;
 };
 
 
