@@ -1779,6 +1779,12 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 
 void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU & pdu)
 {
+  // When we start adding things like P-Asserted-Identity, this function will change
+  // Right now it just does the Contact field
+
+  if (pdu.GetMIME().Has("Contact"))
+    return;
+
   SIPURL contact;
 
   PString user = SIPURL(pdu.GetMIME().GetFrom()).GetUserName();
