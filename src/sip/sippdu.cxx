@@ -3477,6 +3477,8 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
   SetAllow(ep.GetAllowedMethods());
 
   SetParameters(params);
+
+  ep.AdjustToRegistration(trans, *this);
 }
 
 
@@ -3516,6 +3518,8 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
   }
 
   m_entityBody = body;
+
+  ep.AdjustToRegistration(trans, *this);
 }
 
 
