@@ -3062,7 +3062,7 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
     else {
       SIPURL remoteURL = m_remoteAddress;
       server = aor;
-      if (!aor.GetHostAddress().IsEquivalent(remoteURL.GetHostAddress())) {
+      if (aor.GetHostName() != remoteURL.GetHostAddress()) {
         /* Note this sets the proxy field because the user has given a full AOR
            with a domain for "user" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
@@ -3472,7 +3472,8 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
     m_mime.AddSupported("eventlist");
   }
 
-  m_mime.SetAccept(acceptableContentTypes);
+  if (!acceptableContentTypes.IsEmpty())
+    m_mime.SetAccept(acceptableContentTypes);
 
   SetAllow(ep.GetAllowedMethods());
 
