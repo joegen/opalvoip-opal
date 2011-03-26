@@ -231,6 +231,17 @@ int InitialiseOPAL()
 
   FreeMessageFunction(response);
 
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSetProtocolParameters;
+
+  command.m_param.m_protocol.m_prefix = "sip";
+  command.m_param.m_protocol.m_defaultOptions = "PRACK-Mode=0\nInitial-Offer=false";
+
+  if ((response = MySendCommand(&command, "Could not set SIP options")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+
   return 1;
 }
 
