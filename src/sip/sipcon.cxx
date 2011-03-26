@@ -522,7 +522,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
 PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean withMedia)
 {
-  if (IsOriginating()) {
+  if (IsOriginating() || originalInvite == NULL) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
     return PTrue;
   }
@@ -536,7 +536,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   if (GetPhase() >= AlertingPhase) 
     return PFalse;
 
-  if (!withMedia) 
+  if (!withMedia && (!m_prackEnabled || originalInvite->GetSDP(m_localMediaFormats) != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
