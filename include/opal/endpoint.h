@@ -138,10 +138,22 @@ class OpalEndPoint : public PObject
       */
     virtual PStringArray GetDefaultListeners() const;
 
+    /**Get comma separated list of transport protocols to create if
+       no explicit listeners started.
+      */
+    virtual PString GetDefaultTransport() const;
+
     /**Find a listener given the transport address.
       */
     OpalListener * FindListener(
         const OpalTransportAddress & iface ///<  Address of interface we may be listening on.
+    );
+
+    /** Find a listener that is compatible with the specified protocol
+     */
+    bool FindListenerForProtocol(
+      const char * proto,         ///< Protocol to findlistener, e.g "tcp" or "udp"
+      OpalTransportAddress & addr ///< Address of listner interface
     );
 
     /**Stop a listener given the transport address.
@@ -182,6 +194,16 @@ class OpalEndPoint : public PObject
       */
     virtual PBoolean NewIncomingConnection(
       OpalTransport * transport  ///<  Transport connection came in on
+    );
+
+    /**Call back for a new connection has been constructed.
+       This is called after CreateConnection has returned a new connection.
+       It allows an application to make any custom adjustments to the
+       connection before it begins to process the protocol. behind it.
+      */
+    virtual void OnNewConnection(
+      OpalCall & call,              ///< Call that owns the newly created connection.
+      OpalConnection & connection   ///< New connection just created
     );
   //@}
 
@@ -607,6 +629,32 @@ class OpalEndPoint : public PObject
     );
   //@}
 
+  /**@name Instant Messaging */
+  //@{
+    /**Send text message
+     */
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
+    );
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
+    virtual PBoolean Message(
+      OpalIM & Message
+    );
+
+    /**Called when text message received
+     */
+    virtual void OnMessageReceived(
+      const OpalIM & message
+    );
+  //@}
+
   /**@name Other services */
   //@{
     /**Callback called when Message Waiting Indication (MWI) is received
@@ -703,48 +751,11 @@ class OpalEndPoint : public PObject
     void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
   //@}
 
-    virtual PString GetDefaultTransport() const;
-
-    /**Call back for a new connection has been constructed.
-       This is called after CreateConnection has returned a new connection.
-       It allows an application to make any custom adjustments to the
-       connection before it begins to process the protocol. behind it.
-      */
-    virtual void OnNewConnection(
-      OpalCall & call,              ///< Call that owns the newly created connection.
-      OpalConnection & connection   ///< New connection just created
-    );
-
 #if OPAL_PTLIB_SSL
+    /** Get the name of the file to use as SSL certificate for SSL based calls, e.g. sips or h323s
+      */
     PString GetSSLCertificate() const;
 #endif
-
-    /** Find a listener that is compatible with the specified protocol
-     */
-    bool FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr);
-
-    /**Send text message
-     */
-    virtual PBoolean Message(
-      const PString & to, 
-      const PString & body
-    );
-    virtual PBoolean Message(
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      PURL & from, 
-      PString & conversationId
-    );
-    virtual PBoolean Message(
-      OpalIM & Message
-    );
-
-    /**Called when text message received
-     */
-    virtual void OnMessageReceived(
-      const OpalIM & message
-    );
 
   protected:
     OpalManager   & manager;
