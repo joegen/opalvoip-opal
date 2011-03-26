@@ -1418,20 +1418,34 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   if (command.m_param.m_protocol.m_interfaceAddresses != NULL)
     StartStopListeners(ep, command.m_param.m_protocol.m_interfaceAddresses, response);
 
-  if (m_apiVersion >= 22) {
-    unsigned mode = ep->GetSendUserInputMode();
-    if (mode != OpalConnection::SendUserInputAsProtocolDefault)
-      ++mode;
-    else
-      mode = OpalUserInputDefault;
-    response->m_param.m_protocol.m_userInputMode = (OpalUserInputModes)mode;
+  if (m_apiVersion < 22)
+    return;
 
-    mode = command.m_param.m_protocol.m_userInputMode;
-    if (mode != OpalUserInputDefault && mode <= OpalConnection::NumSendUserInputModes)
-      --mode;
-    else
-      mode = OpalConnection::SendUserInputAsProtocolDefault;
-    ep->SetSendUserInputMode((OpalConnection::SendUserInputModes)mode);
+  unsigned mode = ep->GetSendUserInputMode();
+  if (mode != OpalConnection::SendUserInputAsProtocolDefault)
+    ++mode;
+  else
+    mode = OpalUserInputDefault;
+  response->m_param.m_protocol.m_userInputMode = (OpalUserInputModes)mode;
+
+  mode = command.m_param.m_protocol.m_userInputMode;
+  if (mode != OpalUserInputDefault && mode <= OpalConnection::NumSendUserInputModes)
+    --mode;
+  else
+    mode = OpalConnection::SendUserInputAsProtocolDefault;
+  ep->SetSendUserInputMode((OpalConnection::SendUserInputModes)mode);
+
+  if (m_apiVersion < 23)
+    return;
+
+  PStringStream strm;
+  strm << ep->GetDefaultStringOptions();
+  SET_MESSAGE_STRING(response, m_param.m_protocol.m_defaultOptions, strm);
+  if (!IsNullString(command.m_param.m_protocol.m_defaultOptions)) {
+    OpalConnection::StringOptions newOptions;
+    strm = command.m_param.m_protocol.m_defaultOptions;
+    strm >> newOptions;
+    ep->SetDefaultStringOptions(newOptions);
   }
 }
 
