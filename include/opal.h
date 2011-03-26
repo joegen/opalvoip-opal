@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 22
+#define OPAL_C_API_VERSION 23
 
 
 ///////////////////////////////////////
@@ -725,6 +725,8 @@ typedef struct OpalParamProtocol {
   OpalUserInputModes m_userInputMode; /**< The mode for user input transmission. Note this only applies if an
                                            explicit protocol is indicated in m_prefix. See OpalUserInputModes
                                            for more information. */
+  const char * m_defaultOptions;      /**< Default options for new calls using the specified protocol. This
+                                           string is of the form key=value\nkey=value */
 } OpalParamProtocol;
 
 
