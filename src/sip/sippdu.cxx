@@ -2773,9 +2773,9 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
       int expiry = mime.GetExpires();
       if (expiry > 0)
-        completionTimer.SetInterval(0, expiry);
-      else if (method == Method_INVITE)
-        completionTimer = endpoint.GetInviteTimeout();
+        m_completionTimer.SetInterval(0, expiry);
+      else if (m_method == Method_INVITE)
+        m_completionTimer = m_endpoint.GetProgressTimeout();
       else
         completionTimer = endpoint.GetNonInviteTimeout();
     }
