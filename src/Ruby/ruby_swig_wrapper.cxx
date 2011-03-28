@@ -6111,6 +6111,87 @@ fail:
 }
 
 
+
+/*
+  Document-method: Opal::OpalParamProtocol.m_defaultOptions
+
+  call-seq:
+    m_defaultOptions -> char
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalParamProtocol.m_defaultOptions=
+
+  call-seq:
+    m_defaultOptions=(x) -> char
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalParamProtocol_m_defaultOptions_set(int argc, VALUE *argv, VALUE self) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_defaultOptions", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamProtocol * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_defaultOptions", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(reinterpret_cast< const char * >(arg2))) + 1;
+    arg1->m_defaultOptions = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
+  } else {
+    arg1->m_defaultOptions = 0;
+  }
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalParamProtocol_m_defaultOptions_get(int argc, VALUE *argv, VALUE self) {
+  OpalParamProtocol *arg1 = (OpalParamProtocol *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  char *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_defaultOptions", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamProtocol * >(argp1);
+  result = (char *) ((arg1)->m_defaultOptions);
+  vresult = SWIG_FromCharPtr((const char *)result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
 _wrap_OpalParamProtocol_allocate(VALUE self) {
@@ -14543,7 +14624,7 @@ free_OpalContext(OpalContext *arg1) {
   Document-method: Opal::OpalContext.Initialise
 
   call-seq:
-    Initialise(char options, unsigned int version=22) -> unsigned int
+    Initialise(char options, unsigned int version=23) -> unsigned int
     Initialise(char options) -> unsigned int
 
 An instance method.
@@ -15993,7 +16074,7 @@ SWIGEXPORT void Init_opal(void) {
   }
   
   SWIG_RubyInitializeTrackings();
-  rb_define_const(mOpal, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(22)));
+  rb_define_const(mOpal, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(23)));
   rb_define_module_function(mOpal, "OpalInitialise", VALUEFUNC(_wrap_OpalInitialise), -1);
   rb_define_const(mOpal, "OPAL_INITIALISE_FUNCTION", SWIG_FromCharPtr("OpalInitialise"));
   rb_define_module_function(mOpal, "OpalShutDown", VALUEFUNC(_wrap_OpalShutDown), -1);
@@ -16180,6 +16261,8 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_interfaceAddresses", VALUEFUNC(_wrap_OpalParamProtocol_m_interfaceAddresses_get), -1);
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_userInputMode=", VALUEFUNC(_wrap_OpalParamProtocol_m_userInputMode_set), -1);
   rb_define_method(SwigClassOpalParamProtocol.klass, "m_userInputMode", VALUEFUNC(_wrap_OpalParamProtocol_m_userInputMode_get), -1);
+  rb_define_method(SwigClassOpalParamProtocol.klass, "m_defaultOptions=", VALUEFUNC(_wrap_OpalParamProtocol_m_defaultOptions_set), -1);
+  rb_define_method(SwigClassOpalParamProtocol.klass, "m_defaultOptions", VALUEFUNC(_wrap_OpalParamProtocol_m_defaultOptions_get), -1);
   SwigClassOpalParamProtocol.mark = 0;
   SwigClassOpalParamProtocol.destroy = (void (*)(void *)) free_OpalParamProtocol;
   SwigClassOpalParamProtocol.trackObjects = 0;
