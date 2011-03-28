@@ -242,6 +242,7 @@ DEF_FIELD(RegistrarContact);
 DEF_FIELD(RegistrarAuthID);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
+DEF_FIELD(RegistrarProxy);
 DEF_FIELD(RegistrarTimeToLive);
 DEF_FIELD(RegistrarCompatibility);
 
@@ -1191,7 +1192,8 @@ bool MyManager::Initialise()
   if (config->Read(RegistrarUsedKey, &registration.m_Active, false) &&
       config->Read(RegistrarNameKey, &registration.m_Domain) &&
       config->Read(RegistrarUsernameKey, &registration.m_User) &&
-      config->Read(RegistrarPasswordKey, &registration.m_Password))
+      config->Read(RegistrarPasswordKey, &registration.m_Password) &&
+      config->Read(RegistrarProxyKey, &registration.m_Proxy))
     m_registrations.push_back(registration);
 
   config->SetPath(RegistrarGroup);
@@ -3458,6 +3460,7 @@ bool RegistrationInfo::Read(wxConfigBase & config)
   config.Read(RegistrarContactKey, &m_Contact);
   config.Read(RegistrarAuthIDKey, &m_AuthID);
   config.Read(RegistrarPasswordKey, &m_Password);
+  config.Read(RegistrarProxyKey, &m_Proxy);
   config.Read(RegistrarTimeToLiveKey, &m_TimeToLive);
   if (config.Read(RegistrarCompatibilityKey, &iType, SIPRegister::e_FullyCompliant))
     m_Compatibility = (SIPRegister::CompatibilityModes)iType;
@@ -3475,6 +3478,7 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarContactKey, m_Contact);
   config.Write(RegistrarAuthIDKey, m_AuthID);
   config.Write(RegistrarPasswordKey, m_Password);
+  config.Write(RegistrarProxyKey, m_Proxy);
   config.Write(RegistrarTimeToLiveKey, m_TimeToLive);
   config.Write(RegistrarCompatibilityKey, (int)m_Compatibility);
 }
@@ -3508,6 +3512,7 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
         param.m_contactAddress = m_Contact.p_str();
         param.m_authID = m_AuthID.p_str();
         param.m_password = m_Password.p_str();
+        param.m_proxyAddress = m_Proxy.p_str();
         param.m_expire = m_TimeToLive;
         param.m_compatibility = m_Compatibility;
         status = sipEP.Register(param, m_aor) ? 1 : 2;
@@ -4540,6 +4545,7 @@ bool OptionsDialog::TransferDataFromWindow()
     config->DeleteEntry(RegistrarNameKey);
     config->DeleteEntry(RegistrarUsernameKey);
     config->DeleteEntry(RegistrarPasswordKey);
+    config->DeleteEntry(RegistrarProxyKey);
     config->DeleteGroup(RegistrarGroup);
 
     int registrationIndex = 1;
@@ -5671,6 +5677,7 @@ BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarContactKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarAuthIDKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarPasswordKey), RegistrationDialog::Changed)
+  EVT_TEXT(wxXmlResource::GetXRCID(RegistrarProxyKey), RegistrationDialog::Changed)
   EVT_TEXT(wxXmlResource::GetXRCID(RegistrarTimeToLiveKey), RegistrationDialog::Changed)
   EVT_BUTTON(wxXmlResource::GetXRCID(RegistrarUsedKey), RegistrationDialog::Changed)
 END_EVENT_TABLE()
@@ -5695,6 +5702,7 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
   FindWindowByNameAs<wxTextCtrl>(this, RegistrarContactKey      )->SetValidator(wxGenericValidator(&m_info.m_Contact));
   FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey       )->SetValidator(wxGenericValidator(&m_info.m_AuthID));
   FindWindowByNameAs<wxTextCtrl>(this, RegistrarPasswordKey     )->SetValidator(wxGenericValidator(&m_info.m_Password));
+  FindWindowByNameAs<wxTextCtrl>(this, RegistrarProxyKey        )->SetValidator(wxGenericValidator(&m_info.m_Proxy));
   FindWindowByNameAs<wxSpinCtrl>(this, RegistrarTimeToLiveKey   )->SetValidator(wxGenericValidator(&m_info.m_TimeToLive));
   FindWindowByNameAs<wxChoice  >(this, RegistrarCompatibilityKey)->SetValidator(wxGenericValidator((int *)&m_info.m_Compatibility));
 }
