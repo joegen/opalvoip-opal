@@ -114,6 +114,8 @@ void TestPresEnt::AddPresentity(PArgList & args)
     return;
   }
 
+  presentity->GetAttributes().Set("Sub-Protocol", "Agent");
+
   presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
   presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
 
