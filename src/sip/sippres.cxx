@@ -274,7 +274,7 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
 
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
-    if (m_subProtocol != e_PeerToPeer)
+    if (m_subProtocol >= e_XCAP)
       param.m_remoteAddress = m_presenceAgent.AsString()+";transport=tcp";
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
@@ -461,7 +461,7 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceAgent.AsString() + ";transport=tcp";
+  //param.m_remoteAddress    = m_presenceAgent.AsString() + ";transport=tcp";
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
