@@ -117,6 +117,8 @@ void TestPresEnt::AddPresentity(PArgList & args)
   presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
   presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
 
+  presentity->GetAttributes().Set("Sub-Protocol", "Agent");
+
   presentity->GetAttributes().Set(OpalPresentity::TimeToLiveKey,      "1200");
   if (args.HasOption('a'))
     presentity->GetAttributes().Set(SIP_Presentity::AuthNameKey,      args.GetOptionString('a'));
