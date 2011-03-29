@@ -1460,10 +1460,16 @@ PBoolean OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * us
 
   PBoolean ok = PFalse;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    PTRACE(4, "OpalUDP\tWriting to interface " << i << " - \"" << interfaces[i] << '"');
-    socket->SetInterface(interfaces[i]);
-    if (function(*this, userData))
-      ok = PTrue;
+    PIPSocket::Address ifip(interfaces[i]);
+    if (ifip.GetVersion() != remoteAddress.GetVersion())
+      PTRACE(4, "OpalUDP\tSkipping incompatible interface " << i << " - \"" << interfaces[i] << '"');
+    else {
+      PTRACE(4, "OpalUDP\tWriting to interface " << i << " - \"" << interfaces[i] << '"');
+      socket->SetInterface(interfaces[i]);
+      // Make sure is compatible address
+      if (function(*this, userData))
+        ok = PTrue;
+    }
   }
 
   return ok;
