@@ -321,6 +321,13 @@ SIPConnection::~SIPConnection()
 }
 
 
+void SIPConnection::OnApplyStringOptions()
+{
+  m_prackMode = (PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, m_prackMode);
+  OpalRTPConnection::OnApplyStringOptions();
+}
+
+
 bool SIPConnection::GarbageCollection()
 {
   /* Note we wait for various transactions to complete as the transport they
