@@ -181,6 +181,8 @@ static const char sdpTHEORA[]    = { "theora" };
 
 /////////////////////////////////////////////////////////////////////////////
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
 static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
@@ -189,6 +191,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
 
