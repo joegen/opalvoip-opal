@@ -462,8 +462,10 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 
   if (paramVars.Contains("maddr"))
     addr << paramVars["maddr"];
-  else
+  else if (!hostname.IsEmpty())
     addr << hostname;
+  else
+    addr << "*";
 
   if (port > 0)
     addr << ':' << port;
@@ -2473,15 +2475,18 @@ bool SIPDialogContext::SetRemoteURI(const PString & uri)
 
 void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 {
-  PTRACE_IF(3, !proxy.IsEmpty(), "SIP\tOutbound proxy for dialog set to " << proxy);
+  if (!proxy.IsEmpty()) {
 
-  m_proxy = proxy;
+    PTRACE(3, "SIP\tOutbound proxy for dialog set to " << proxy);
 
-  // Default routeSet if there is a proxy
-  if (addToRouteSet && m_routeSet.IsEmpty() && !proxy.IsEmpty()) {
-    PStringStream str;
-    str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
-    m_routeSet += str;
+    m_proxy = proxy;  
+
+    // Default routeSet if there is a proxy
+    if (addToRouteSet && m_routeSet.IsEmpty()) {
+      PStringStream str;
+      str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
+      m_routeSet += str;
+    }
   }
 }
 
@@ -2689,6 +2694,7 @@ PBoolean SIPTransaction::Start()
     SIPURL destination;
     destination = m_uri;
     PStringList routeSet = GetMIME().GetRoute();
+    PTRACE(1, "Routeset = " << routeSet);
     if (!routeSet.IsEmpty()) {
       SIPURL firstRoute = routeSet.front();
       if (firstRoute.GetParamVars().Contains("lr"))
