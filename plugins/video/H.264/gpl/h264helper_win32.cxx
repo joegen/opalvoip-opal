@@ -187,14 +187,6 @@ int main(int argc, char *argv[])
     Trace::SetLevel(0);
   }
 		  
-  debug_level = getenv ("PTLIB_TRACE_CODECS_USER_PLANE"); 
-  if (debug_level!=NULL) {
-    Trace::SetLevelUserPlane(atoi(debug_level));
-  }
-  else {
-    Trace::SetLevelUserPlane(0);
-  }
-
   x264 = NULL;
   dstLen=1400;
 
