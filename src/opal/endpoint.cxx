@@ -322,6 +322,15 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
   OpalListenerList::iterator listener;
 
   if (!associatedLocalAddress.IsEmpty()) {
+    for (listener = listeners.begin(); listener != listeners.end(); ++listener) {
+      if (listener->GetLocalAddress().GetProto() == associatedLocalAddress.GetProto())
+        AddTransportAddresses(interfaceAddresses,
+                              excludeLocalHost,
+                              natInterfaceIP,
+                              natExternalIP,
+                              associatedLocalAddress,
+                              listener->GetLocalAddress(associatedRemoteAddress));
+    }
     for (listener = listeners.begin(); listener != listeners.end(); ++listener)
       AddTransportAddresses(interfaceAddresses,
                             excludeLocalHost,
@@ -329,6 +338,16 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
                             natExternalIP,
                             associatedLocalAddress,
                             listener->GetLocalAddress(associatedRemoteAddress));
+  }
+
+  for (listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    if (listener->GetLocalAddress().GetProto() == associatedLocalAddress.GetProto())
+      AddTransportAddresses(interfaceAddresses,
+                            excludeLocalHost,
+                            natInterfaceIP,
+                            natExternalIP,
+                            OpalTransportAddress(),
+                            listener->GetLocalAddress());
   }
 
   for (listener = listeners.begin(); listener != listeners.end(); ++listener)
