@@ -58,6 +58,7 @@ class MySIPEndPoint : public SIPEndPoint
     void PrintResults() const;
 
     PString  m_password;
+    PString  m_contact;
     StatsMap m_pending;
 };
 
@@ -89,6 +90,7 @@ void RegTest::Main()
   PArgList & args = GetArguments();
 
   args.Parse("c-count:"
+             "C-contact:"
              "I-interfaces:"
              "p-password:"
 #if PTRACING
@@ -108,6 +110,7 @@ void RegTest::Main()
             "\n"
             "Available options are:\n"
             "  -c or --count n            : Count of users to register.\n"
+            "  -C or --contact url        : Pre-define REGISTER Contact header.\n"
             "  -I or --interfaces iface   : Use specified interface(s)\n"
             "  -p or --password pwd       : Pasword to use for all registrations\n"
 #if PTRACING
@@ -128,6 +131,7 @@ void RegTest::Main()
   m_endpoint->StartListeners(args.GetOptionString('I').Lines());
 
   m_endpoint->m_password = args.GetOptionString('p');
+  m_endpoint->m_contact = args.GetOptionString('C');
 
   unsigned count = args.GetOptionString('c').AsUnsigned();
 
@@ -150,9 +154,12 @@ void RegTest::Main()
 
   if (count > 0) {
     PTimeInterval duration = PTime() - startTime;
-    cout << "Initial registrations took " << duration << ", "
+    cout << "Registration requests took " << duration << ", "
+         << (1000.0*count/duration.GetMilliSeconds()) << "/second, "
          << ((double)duration.GetMilliSeconds()/count) << "ms/REGISTER" << endl;
   }
+
+  cout << "Waiting for all registrations to complete ..." << endl;
 
   while (m_endpoint->HasPending())
     PThread::Sleep(1000);
@@ -161,7 +168,7 @@ void RegTest::Main()
 
   PThread::Sleep(2000);
 
-  cout << "Test completed, unregistering." << endl;
+  cout << "Unregistering ..." << endl;
 }
 
 
@@ -171,6 +178,7 @@ void MySIPEndPoint::MyRegister(const SIPURL & aor)
 
   params.m_addressOfRecord  = aor.AsString();
   params.m_password         = m_password;
+  params.m_contactAddress   = m_contact;
   params.m_expire           = 300;
 
   PString returnedAOR;
@@ -208,6 +216,7 @@ bool MySIPEndPoint::HasPending() const
 
 void MySIPEndPoint::PrintResults() const
 {
+  cout << "Registrations completed:" << endl;
   for (StatsMap::const_iterator it = m_pending.begin(); it != m_pending.end(); ++it) {
     cout << "aor: " << it->first
          << "  status: " << it->second.m_status
