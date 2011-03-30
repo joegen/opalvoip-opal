@@ -53,6 +53,7 @@ class MySIPEndPoint : public SIPEndPoint
     MySIPEndPoint(OpalManager & mgr) : SIPEndPoint(mgr) { }
 
     virtual void OnRegistrationStatus(const RegistrationStatus & status);
+    void PerformTest(const PArgList & args);
     void MyRegister(const SIPURL & aor);
     bool HasPending() const;
 
@@ -70,9 +71,6 @@ class RegTest : public PProcess
     RegTest();
 
     virtual void Main();
-
-    OpalManager     m_manager;
-    MySIPEndPoint * m_endpoint;
 };
 
 
@@ -130,13 +128,24 @@ void RegTest::Main()
     return;
   }
 
-  m_endpoint = new MySIPEndPoint(m_manager);
+  {
+    OpalManager manager;
+    MySIPEndPoint * endpoint = new MySIPEndPoint(manager);
+    endpoint->PerformTest(args);
+    cout << "Unregistering ..." << endl;
+  }
 
-  m_endpoint->StartListeners(args.GetOptionString('I').Lines());
+  cout << "Test completed." << endl;
+}
 
-  m_endpoint->m_password = args.GetOptionString('p');
-  m_endpoint->m_contact = args.GetOptionString('C');
-  m_endpoint->m_proxy = args.GetOptionString('P');
+
+void MySIPEndPoint::PerformTest(const PArgList & args)
+{
+  StartListeners(args.GetOptionString('I').Lines());
+
+  m_password = args.GetOptionString('p');
+  m_contact = args.GetOptionString('C');
+  m_proxy = args.GetOptionString('P');
 
   unsigned count = args.GetOptionString('c').AsUnsigned();
 
@@ -147,12 +156,12 @@ void RegTest::Main()
     if (!url.Parse(args[arg]))
       cerr << "Could not parse \"" << args[arg] << "\" as a SIP address\n";
     else if (count == 0)
-      m_endpoint->MyRegister(url);
+      MyRegister(url);
     else {
       PString nameFormat = url.GetUserName() + "%05u";
       for (unsigned index = 0; index < count; ++index) {
         url.SetUserName(psprintf(nameFormat, index));
-        m_endpoint->MyRegister(url);
+        MyRegister(url);
       }
     }
   }
@@ -166,7 +175,7 @@ void RegTest::Main()
 
   cout << "Waiting for all registrations to complete ..." << endl;
 
-  while (m_endpoint->HasPending())
+  while (HasPending())
     PThread::Sleep(1000);
 
   if (args.HasOption('v'))
@@ -174,7 +183,7 @@ void RegTest::Main()
 
   double totalTime = 0;
   unsigned divisor = 0;
-  for (StatsMap::const_iterator it = m_endpoint->m_statistics.begin(); it != m_endpoint->m_statistics.end(); ++it) {
+  for (StatsMap::const_iterator it = m_statistics.begin(); it != m_statistics.end(); ++it) {
     PTimeInterval duration = it->second.m_finishTime - it->second.m_startTime;
     totalTime += duration.GetMilliSeconds();
     ++divisor;
@@ -183,8 +192,7 @@ void RegTest::Main()
            << "  status: " << it->second.m_status
            << "  time: " << (it->second.m_finishTime - it->second.m_startTime) << "s\n";
   }
-  cout << "Average registration time: " << (totalTime/divisor) << "ms\n"
-       << "Unregistering ..." << endl;
+  cout << "Average registration time: " << (totalTime/divisor) << "ms\n";
 }
 
 
