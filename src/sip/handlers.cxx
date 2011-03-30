@@ -708,6 +708,11 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
         }
       }
     }
+    else {
+      if (!SIPMIMEInfo::ExtractURLs(params.m_contactAddress, m_contactAddresses)) {
+        PTRACE(1, "SIP\tUser defined contact address has no SIP addresses in it!");
+      }
+    }
   }
 
   return new SIPRegister(endpoint, trans, GetCallID(), m_sequenceNumber, params);
@@ -720,7 +725,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   SIPHandler::OnReceivedOK(transaction, response);
 
-  if (GetState() == Unsubscribed) {
+  if (GetState() == Unsubscribed || m_contactAddresses.empty()) {
     SendStatus(SIP_PDU::Successful_OK, oldState);
     return;
   }
