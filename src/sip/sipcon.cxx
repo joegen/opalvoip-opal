@@ -2229,6 +2229,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SetPhase(SetUpPhase);
 
+  OnApplyStringOptions();
+
   NotifyDialogState(SIPDialogNotification::Trying);
   mime.GetAlertInfo(m_alertInfo, m_appearanceCode);
 
