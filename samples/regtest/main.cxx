@@ -55,11 +55,11 @@ class MySIPEndPoint : public SIPEndPoint
     virtual void OnRegistrationStatus(const RegistrationStatus & status);
     void MyRegister(const SIPURL & aor);
     bool HasPending() const;
-    void PrintResults() const;
 
     PString  m_password;
     PString  m_contact;
-    StatsMap m_pending;
+    PString  m_proxy;
+    StatsMap m_statistics;
 };
 
 
@@ -93,6 +93,8 @@ void RegTest::Main()
              "C-contact:"
              "I-interfaces:"
              "p-password:"
+             "P-proxy:"
+             "v-verbose."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -111,8 +113,10 @@ void RegTest::Main()
             "Available options are:\n"
             "  -c or --count n            : Count of users to register.\n"
             "  -C or --contact url        : Pre-define REGISTER Contact header.\n"
+            "  -P or --proxy url          : Proxy to use for registration.\n"
             "  -I or --interfaces iface   : Use specified interface(s)\n"
             "  -p or --password pwd       : Pasword to use for all registrations\n"
+            "  -v or --verbose            : Indicate verbose output.\n"
 #if PTRACING
             "  -o or --output file        : file name for output of log messages\n"       
             "  -t or --trace              : degree of verbosity in error log (more times for more detail)\n"     
@@ -132,6 +136,7 @@ void RegTest::Main()
 
   m_endpoint->m_password = args.GetOptionString('p');
   m_endpoint->m_contact = args.GetOptionString('C');
+  m_endpoint->m_proxy = args.GetOptionString('P');
 
   unsigned count = args.GetOptionString('c').AsUnsigned();
 
@@ -154,7 +159,7 @@ void RegTest::Main()
 
   if (count > 0) {
     PTimeInterval duration = PTime() - startTime;
-    cout << "Registration requests took " << duration << ", "
+    cout << "Registration requests took " << duration << " seconds, "
          << (1000.0*count/duration.GetMilliSeconds()) << "/second, "
          << ((double)duration.GetMilliSeconds()/count) << "ms/REGISTER" << endl;
   }
@@ -164,11 +169,22 @@ void RegTest::Main()
   while (m_endpoint->HasPending())
     PThread::Sleep(1000);
 
-  m_endpoint->PrintResults();
+  if (args.HasOption('v'))
+    cout << "Registrations completed, details:" << endl;
 
-  PThread::Sleep(2000);
-
-  cout << "Unregistering ..." << endl;
+  double totalTime = 0;
+  unsigned divisor = 0;
+  for (StatsMap::const_iterator it = m_endpoint->m_statistics.begin(); it != m_endpoint->m_statistics.end(); ++it) {
+    PTimeInterval duration = it->second.m_finishTime - it->second.m_startTime;
+    totalTime += duration.GetMilliSeconds();
+    ++divisor;
+    if (args.HasOption('v'))
+      cout << "aor: " << it->first
+           << "  status: " << it->second.m_status
+           << "  time: " << (it->second.m_finishTime - it->second.m_startTime) << "s\n";
+  }
+  cout << "Average registration time: " << (totalTime/divisor) << "ms\n"
+       << "Unregistering ..." << endl;
 }
 
 
@@ -179,12 +195,13 @@ void MySIPEndPoint::MyRegister(const SIPURL & aor)
   params.m_addressOfRecord  = aor.AsString();
   params.m_password         = m_password;
   params.m_contactAddress   = m_contact;
+  params.m_proxyAddress     = m_proxy;
   params.m_expire           = 300;
 
   PString returnedAOR;
 
   if (Register(params, returnedAOR))
-    m_pending[returnedAOR]; // Create 
+    m_statistics[returnedAOR]; // Create 
   else
     cerr << "Registration of " << aor << " failed" << endl;
 }
@@ -194,8 +211,8 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   SIPEndPoint::OnRegistrationStatus(status);
 
-  StatsMap::iterator it = m_pending.find(status.m_addressofRecord);
-  if (it == m_pending.end())
+  StatsMap::iterator it = m_statistics.find(status.m_addressofRecord);
+  if (it == m_statistics.end())
     return;
 
   it->second.m_status = status.m_reason;
@@ -205,23 +222,12 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 
 bool MySIPEndPoint::HasPending() const
 {
-  for (StatsMap::const_iterator it = m_pending.begin(); it != m_pending.end(); ++it) {
+  for (StatsMap::const_iterator it = m_statistics.begin(); it != m_statistics.end(); ++it) {
     if (it->second.m_status/100 == 1)
       return true;
   }
 
   return false;
-}
-
-
-void MySIPEndPoint::PrintResults() const
-{
-  cout << "Registrations completed:" << endl;
-  for (StatsMap::const_iterator it = m_pending.begin(); it != m_pending.end(); ++it) {
-    cout << "aor: " << it->first
-         << "  status: " << it->second.m_status
-         << "  time: " << (it->second.m_finishTime - it->second.m_startTime) << "s\n";
-  }
 }
 
 
