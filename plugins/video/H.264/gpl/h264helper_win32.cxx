@@ -21,12 +21,6 @@
 
 #include "../shared/pipes.h"
 
-#ifdef _MSC_VER
-#include "../../common/trace.h"
-#else
-#include "trace.h"
-#endif
-
 #include "enc-ctx.h"
 
 #include <windows.h>
@@ -76,7 +70,7 @@ ErrorMessage()
 void closeAndExit()
 {
   if (!CloseHandle(stream))
- 	TRACE(1, "H264\tIPC\tCP: Failure on closing Handle (" << ErrorMessage() << ")");
+ 	PTRACE(1, "x264", "IPC\tCP: Failure on closing Handle (" << ErrorMessage() << ")");
   exit(1);
 }
 
@@ -85,7 +79,7 @@ void openPipe(const char* name)
   DWORD dwMode;
   if (!WaitNamedPipe(name, NMPWAIT_USE_DEFAULT_WAIT)) { 
 
- 	TRACE(1, "H264\tIPC\tCP: Error when waiting for Pipe (" << ErrorMessage() << ")");
+ 	PTRACE(1, "x264", "IPC\tCP: Error when waiting for Pipe (" << ErrorMessage() << ")");
     exit (1);
   } 
 
@@ -99,7 +93,7 @@ void openPipe(const char* name)
 
   if (stream == INVALID_HANDLE_VALUE)  {
 
-	TRACE(1, "H264\tIPC\tCP: Could not open Pipe (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tCP: Could not open Pipe (" << ErrorMessage() << ")");
     exit (1);
   }
 
@@ -110,7 +104,7 @@ void openPipe(const char* name)
                                 NULL,     // don't set maximum bytes 
                                 NULL))    // don't set maximum time 
   {
-    TRACE(1, "H264\tIPC\tCP: Failure on activating message mode (" << ErrorMessage() << ")");
+    PTRACE(1, "x264", "IPC\tCP: Failure on activating message mode (" << ErrorMessage() << ")");
     closeAndExit();
   }
 }
@@ -129,13 +123,13 @@ void readStream (HANDLE stream, LPVOID data, unsigned bytes)
 
   if (!fSuccess) {
 
-	TRACE(1, "H264\tIPC\tCP: Failure on reading - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tCP: Failure on reading - terminating (" << ErrorMessage() << ")");
 	closeAndExit();
   }
 
   if (bytes != bytesRead) {
 
-    TRACE(1, "H264\tIPC\tCP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
+    PTRACE(1, "x264", "IPC\tCP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
 	closeAndExit();
   }
 }
@@ -154,13 +148,13 @@ void writeStream (HANDLE stream, LPCVOID data, unsigned bytes)
 
   if (!fSuccess) {
 
-	TRACE(1, "H264\tIPC\tCP: Failure on writing - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tCP: Failure on writing - terminating (" << ErrorMessage() << ")");
 	closeAndExit();
   }
 
   if (bytes != bytesWritten) {
 
-    TRACE(1, "H264\tIPC\tCP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
+    PTRACE(1, "x264", "IPC\tCP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
 	closeAndExit();
   }
 }
@@ -169,7 +163,7 @@ void flushStream (HANDLE stream)
 {
   if (!FlushFileBuffers(stream)) {
 
-	TRACE(1, "H264\tIPC\tPP: Failure on flushing - terminating (" << ErrorMessage() << ")");
+	PTRACE(1, "x264", "IPC\tPP: Failure on flushing - terminating (" << ErrorMessage() << ")");
 	closeAndExit();
   }
 }
@@ -179,19 +173,11 @@ int main(int argc, char *argv[])
 {
   if (argc != 2) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
-  char * debug_level = getenv ("PTLIB_TRACE_CODECS"); 
-  if (debug_level!=NULL) {
-    Trace::SetLevel(atoi(debug_level));
-  }
-  else {
-    Trace::SetLevel(0);
-  }
-		  
   x264 = NULL;
   dstLen=1400;
 
   openPipe(argv[1]);
-   
+
   while (1) {
     readStream(stream, (LPVOID)&msg, sizeof(msg));
     switch (msg) {
