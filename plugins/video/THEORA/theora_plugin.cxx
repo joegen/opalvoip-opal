@@ -35,6 +35,10 @@
 
  */
 
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin-config.h"
+#endif
+
 #include <codec/opalplugin.hpp>
 
 #include "theora_plugin.h"
