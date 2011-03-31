@@ -1777,12 +1777,15 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU & pdu)
+void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU & pdu)
 {
   // When we start adding things like P-Asserted-Identity, this function will change
   // Right now it just does the Contact field
 
   if (pdu.GetMIME().Has("Contact"))
+    return;
+
+  if (!PAssert(transport.IsOpen(), PLogicError))
     return;
 
   SIPURL contact;
@@ -1792,9 +1795,8 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
 
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   // If precise AOR not found, locate the name used for the domain.
-  if (handler == NULL) {
+  if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  }
 
   if (handler != NULL) {
     const SIPRegisterHandler * registrar = dynamic_cast<const SIPRegisterHandler *>(&*handler);
@@ -1816,46 +1818,10 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   }
 
   if (contact.IsEmpty())
-    contact = GetLocalURL(transport, user);
+    contact = SIPURL(user, transport.GetLocalAddress(), GetDefaultSignalPort());
 
   contact.Sanitise(SIPURL::ContactURI);
   pdu.GetMIME().SetContact(contact.AsQuotedString());
-}
-
-
-SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & userName)
-{
-  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
-  OpalTransportAddress contactAddress = transport.GetLocalAddress();
-  WORD contactPort = GetDefaultSignalPort();
-  if (transport.IsOpen())
-    transport.GetLocalAddress().GetIpAndPort(ip, contactPort);
-  else {
-    for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-      OpalTransportAddress binding = listener->GetLocalAddress();
-      if (transport.IsCompatibleTransport(binding)) {
-        binding.GetIpAndPort(ip, contactPort);
-        break;
-      }
-    }
-  }
-
-  PIPSocket::Address localIP;
-  WORD localPort;
-  
-  if (contactAddress.GetIpAndPort(localIP, localPort)) {
-    PIPSocket::Address remoteIP;
-    if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      GetManager().TranslateIPAddress(localIP, remoteIP);    
-      contactPort = localPort;
-      PString proto = transport.GetProtoPrefix();
-      contactAddress = OpalTransportAddress(localIP, contactPort, proto.Left(proto.GetLength()-1)); //xxxxxx
-    }
-  }
-
-  SIPURL contact(userName, contactAddress, contactPort);
-
-  return contact;
 }
 
 

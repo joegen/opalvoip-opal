@@ -1742,9 +1742,9 @@ SIP_PDU::~SIP_PDU()
 }
 
 
-void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
-                                const SIPURL & to,
-                                const SIPURL & from,
+void SIP_PDU::InitialiseHeaders(const PString & dest,
+                                const PString & to,
+                                const PString & from,
                                 const PString & callID,
                                 unsigned cseq,
                                 const PString & via)
@@ -1767,49 +1767,35 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 }
 
 
-PString SIP_PDU::CreateVia(SIPEndPoint & endpoint, const OpalTransport & transport, SIPConnection * connection)
+PString SIP_PDU::CreateVia(const OpalTransport & transport)
 {
-  PString localPartyName;
+  m_transactionID = "z9hG4bK" + OpalGloballyUniqueID().AsString();
 
-  if (connection != NULL) {
-    localPartyName = connection->GetLocalPartyName();
-
-    PINDEX pos = localPartyName.Find('@');
-    if (pos != P_MAX_INDEX)
-      localPartyName = localPartyName.Left(pos);
-
-    pos = localPartyName.Find(' ');
-    if (pos != P_MAX_INDEX)
-      localPartyName.Replace(" ", "_", true);
-  }
-
-  OpalTransportAddress via = endpoint.GetLocalURL(transport, localPartyName).GetHostAddress();
-
-  // construct Via:
-  PINDEX dollar = via.Find('$');
+  OpalTransportAddress via = transport.GetLocalAddress();
 
   PStringStream str;
-  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/'
-      << via.Left(dollar).ToUpper() << ' ';
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/' << via.GetProto().ToUpper() << ' ';
   PIPSocket::Address ip;
   WORD port = 5060;
   if (via.GetIpAndPort(ip, port))
     str << ip.AsString(true) << ':' << port;
   else
-    str << via.Mid(dollar+1);
-  str << ";branch=z9hG4bK" << OpalGloballyUniqueID() << ";rport";
+    str << via.Mid(via.GetProto(true).GetLength());
+  str << ";branch=" << m_transactionID << ";rport";
   return str;
 }
 
 
 void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
 {
-  InitialiseHeaders(dialog.GetRequestURI(),
-                    dialog.GetRemoteURI(),
-                    dialog.GetLocalURI(),
-                    dialog.GetCallID(),
-                    dialog.GetNextCSeq(),
-                    via);
+  // Assume the dialog URI's are already sanitised.
+  m_uri = dialog.GetRequestURI();
+  m_mime.SetTo(dialog.GetRemoteURI().AsQuotedString());
+  m_mime.SetFrom(dialog.GetLocalURI().AsQuotedString());
+  m_mime.SetCallID(dialog.GetCallID());
+  m_mime.SetCSeq(PString(dialog.GetNextCSeq()) & MethodNames[m_method]);
+  m_mime.SetMaxForwards(70);
+  m_mime.SetVia(via);
   SetRoute(dialog.GetRouteSet());
 }
 
@@ -1817,7 +1803,7 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
 void SIP_PDU::InitialiseHeaders(SIPConnection & connection,
                                 const OpalTransport & transport)
 {
-  InitialiseHeaders(connection.GetDialog(), CreateVia(connection.GetEndPoint(), transport));
+  InitialiseHeaders(connection.GetDialog(), CreateVia(transport));
   connection.GetEndPoint().AdjustToRegistration(transport, *this);
 }
 
@@ -2412,6 +2398,21 @@ bool SIPDialogContext::FromString(const PString & str)
   return IsEstablished();
 }
 
+
+void SIPDialogContext::SetRequestURI(const SIPURL & url)
+{
+  m_requestURI = url;
+  m_requestURI.Sanitise(SIPURL::RequestURI);
+}
+
+
+bool SIPDialogContext::SetRequestURI(const PString & uri)
+{
+  if (!m_requestURI.Parse(uri))
+    return false;
+  m_requestURI.Sanitise(SIPURL::RequestURI);
+  return true;
+}
 
 static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool local)
 {
@@ -3242,7 +3243,7 @@ SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
                       invite.GetMIME().GetFrom(),
                       invite.GetMIME().GetCallID(),
                       invite.GetMIME().GetCSeqIndex(),
-                      CreateVia(invite.GetConnection()->GetEndPoint(), invite.GetTransport()));
+                      CreateVia(invite.GetTransport()));
 
     // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
     // as well as the initial Route
@@ -3303,7 +3304,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                     params.m_localAddress,
                     id,
                     cseq,
-                    CreateVia(ep, trans));
+                    CreateVia(trans));
 
   SetAllow(ep.GetAllowedMethods());
 
@@ -3454,7 +3455,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
                            const Params & params)
   : SIPTransaction(Method_SUBSCRIBE, ep, trans)
 {
-  InitialiseHeaders(dialog, CreateVia(ep, trans));
+  InitialiseHeaders(dialog, CreateVia(trans));
 
   // I have no idea why this is necessary, but it is the way OpenSIPS works ....
   if (params.m_eventPackage == SIPSubscribe::Dialog && params.m_contactAddress.IsEmpty())
@@ -3513,7 +3514,7 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
                      const PString & body)
   : SIPTransaction(Method_NOTIFY, ep, trans)
 {
-  InitialiseHeaders(dialog, CreateVia(ep, trans));
+  InitialiseHeaders(dialog, CreateVia(trans));
 
   m_mime.SetEvent(eventPackage);
   m_mime.SetSubscriptionState(state);
@@ -3547,7 +3548,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   : SIPTransaction(Method_PUBLISH, ep, trans)
 {
   SIPURL addr = params.m_addressOfRecord;
-  InitialiseHeaders(addr, addr, addr, id, ep.GetNextCSeq(), CreateVia(ep, trans));
+  InitialiseHeaders(addr, addr, addr, id, ep.GetNextCSeq(), CreateVia(trans));
 
   if (!sipIfMatch.IsEmpty())
     m_mime.SetSIPIfMatch(sipIfMatch);
@@ -3653,7 +3654,7 @@ void SIPMessage::Construct(const Params & params)
       m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
   }
 
-  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_endpoint, m_transport));
+  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
 
   if (!params.m_contentType.IsEmpty()) {
     m_mime.SetContentType(params.m_contentType);
@@ -3685,7 +3686,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
     localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
   localAddress.SetTag();
 
-  InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
+  InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(trans));
 
   Construct(params);
 }
@@ -3748,7 +3749,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                     GenerateCallID(),
                     ep.GetNextCSeq(),
-                    CreateVia(ep, trans));
+                    CreateVia(trans));
   // PING must not have a body
 }
 
