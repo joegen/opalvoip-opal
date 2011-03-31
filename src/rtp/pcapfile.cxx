@@ -58,7 +58,7 @@ void Reverse(char * ptr, size_t sz)
   }
 }
 
-#define REVERSE(p) Reverse((char *)p, sizeof(p))
+#define REVERSE(p) Reverse((char *)&p, sizeof(p))
 
 
 ///////////////////////////////////////////////////////////////////////////////
