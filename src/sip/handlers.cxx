@@ -2095,14 +2095,14 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 }
 
 
-static PString MakeUrlKey(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
+static PString MakeUrlKey(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
 {
   PStringStream key;
 
-  key << method << '\n' << aor;
+  key << method << ' ' << aor;
 
   if (!eventPackage.IsEmpty())
-    key << '\n' << eventPackage;
+    key << ' ' << eventPackage;
 
   return key;
 }
@@ -2221,13 +2221,13 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByCallID(const PString & cal
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, PSafetyMode mode)
 {
   return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method), mode);
 }
 
 
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage, PSafetyMode mode)
 {
   return FindBy(m_byAorAndPackage, MakeUrlKey(aor, method, eventPackage), mode);
 }
