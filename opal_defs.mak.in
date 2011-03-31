@@ -33,6 +33,8 @@ ifndef OPAL_SHARED_LIB
 OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
 endif
 
+#detected by configure, needed by Makefile
+OSTYPE = @OSTYPE@
 
 # Tool names detected by configure
 CXX                     = @CXX@
@@ -148,6 +150,5 @@ else
   LIBS     += $(RELEASE_LIBS)
   LIB_NAME  = $(RELEASE_LIB_NAME)
 endif
-
 
 # End of file
