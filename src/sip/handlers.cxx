@@ -127,7 +127,8 @@ SIPHandler::~SIPHandler()
 
   delete authentication;
 
-  PTRACE(4, "SIP\tDestroyed " << m_method << " handler for " << m_addressOfRecord);
+  PTRACE_IF(4, !m_addressOfRecord.IsEmpty(),
+            "SIP\tDestroyed " << m_method << " handler for " << m_addressOfRecord);
 }
 
 
