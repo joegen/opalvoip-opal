@@ -112,7 +112,7 @@ public:
 
   virtual bool IsDuplicateCSeq(unsigned ) { return false; }
 
-  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
+  virtual SIPTransaction * CreateTransaction(OpalTransport &) { return NULL; }
 
   SIP_PDU::Methods GetMethod() const { return m_method; }
   virtual SIPSubscribe::EventPackage GetEventPackage() const { return SIPSubscribe::EventPackage(); }
