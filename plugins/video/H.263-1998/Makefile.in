@@ -69,7 +69,8 @@ endif
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
 	   rfc2190.cxx \
-	   $(COMMONDIR)/mpi.cxx
+	   $(COMMONDIR)/mpi.cxx \
+	   $(COMMONDIR)/dyna.cxx
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
