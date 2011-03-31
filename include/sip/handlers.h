@@ -428,8 +428,8 @@ class SIPHandlersList
      * or 6001@seconix.com when registering 6001@seconix.com to
      * sip.seconix.com
      */
-    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PURL & url, SIP_PDU::Methods meth, PSafetyMode m);
-    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PURL & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m);
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, PSafetyMode m);
+    PSafePtr<SIPHandler> FindSIPHandlerByUrl(const PString & url, SIP_PDU::Methods meth, const PString & eventPackage, PSafetyMode m);
 
     /**
      * Find the SIPHandler object with the specified registration host.

@@ -512,7 +512,7 @@ class SIP_PDU : public PSafeObject
       Information_Session_Progress        = 183,
 
       Successful_OK                       = 200,
-      Successful_Accepted		          = 202,
+      Successful_Accepted                 = 202,
 
       Redirection_MultipleChoices         = 300,
       Redirection_MovedPermanently        = 301,
@@ -593,9 +593,9 @@ class SIP_PDU : public PSafeObject
     ) const;
 
     void InitialiseHeaders(
-      const SIPURL & dest,
-      const SIPURL & to,
-      const SIPURL & from,
+      const PString & dest,
+      const PString & to,
+      const PString & from,
       const PString & callID,
       unsigned cseq,
       const PString & via
@@ -628,9 +628,7 @@ class SIP_PDU : public PSafeObject
     void AdjustVia(OpalTransport & transport);
 
     PString CreateVia(
-      SIPEndPoint & endpoint,
-      const OpalTransport & transport,
-      SIPConnection * connection = NULL
+      const OpalTransport & transport
     );
 
     /**Read PDU from the specified transport.
@@ -727,8 +725,8 @@ class SIPDialogContext
     void SetCallID(const PString & id) { m_callId = id; }
 
     const SIPURL & GetRequestURI() const { return m_requestURI; }
-    void SetRequestURI(const SIPURL & url) { m_requestURI = url; }
-    bool SetRequestURI(const PString & uri) { return m_requestURI.Parse(uri); }
+    void SetRequestURI(const SIPURL & url);
+    bool SetRequestURI(const PString & uri);
 
     const PString & GetLocalTag() const { return m_localTag; }
     void SetLocalTag(const PString & tag) { m_localTag = tag; }

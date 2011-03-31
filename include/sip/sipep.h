@@ -846,7 +846,6 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     virtual SIPURL GetDefaultRegisteredPartyName(const OpalTransport & transport);
     
-
     /**Adjust the outgoing PDU to registered information.
        Various header fields of the PDU must be adjusted to agree with values
        provided to/from the active registration for the domain the call is being
@@ -860,30 +859,14 @@ class SIPEndPoint : public OpalRTPEndPoint
       SIP_PDU & pdu
     );
 
-    /**Return the local URL for the given transport and user name.
-     * That URL can be used as via address, and as contact field in outgoing
-     * requests.
-     *
-     * The URL is translated if required.
-     *
-     * If the transport is not running, the first listener transport
-     * will be used, if any.
-     */
-    virtual SIPURL GetLocalURL(
-       const OpalTransport & transport,             ///< Transport on which we can receive new requests
-       const PString & userName = PString::Empty()  ///< The user name part of the contact field
-    );
-    
-    
+
     /**Return the outbound proxy URL, if any.
      */
     const SIPURL & GetProxy() const { return proxy; }
 
-    
     /**Set the outbound proxy URL.
      */
     void SetProxy(const SIPURL & url);
-    
     
     /**Set the outbound proxy URL.
      */
