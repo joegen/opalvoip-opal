@@ -1,7 +1,7 @@
 /*
  * handlers.h
  *
- * Session Initiation Protocol endpoint.
+ * Session Initiation Protocol non-connection protocol handlers.
  *
  * Open Phone Abstraction Library (OPAL)
  *
@@ -59,8 +59,13 @@ protected:
   SIPHandler(
     SIP_PDU::Methods method,
     SIPEndPoint & ep,
-    const SIPParameters & params
+    const SIPParameters & params,
+    const PString & callID = SIPTransaction::GenerateCallID()
   );
+
+private:
+  // This ctor is only used for searching
+  SIPHandler(const PString & callID);
 
 public:
   ~SIPHandler();
@@ -100,8 +105,8 @@ public:
   virtual int GetExpire()
     { return expire; }
 
-  virtual PString GetCallID()
-    { return callID; }
+  const PString & GetCallID() const
+    { return m_callID; }
 
   virtual void SetBody(const PString & /*body*/) { }
 
@@ -110,7 +115,7 @@ public:
   virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
 
   SIP_PDU::Methods GetMethod() const { return m_method; }
-  virtual SIPSubscribe::EventPackage GetEventPackage() const { return SIPEventPackage(); }
+  virtual SIPSubscribe::EventPackage GetEventPackage() const { return SIPSubscribe::EventPackage(); }
 
   virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response);
@@ -125,7 +130,7 @@ public:
   bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
-  SIPEndPoint & GetEndPoint() const { return endpoint; }
+  SIPEndPoint & GetEndPoint() const { return *m_endpoint; }
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
@@ -144,7 +149,7 @@ protected:
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
   virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
 
-  SIPEndPoint               & endpoint;
+  SIPEndPoint               * m_endpoint;
 
   SIPAuthentication         * authentication;
   PString                     m_username;
@@ -154,10 +159,10 @@ protected:
   PSafeList<SIPTransaction>   m_transactions;
   OpalTransport             * m_transport;
 
-  SIP_PDU::Methods            m_method;
-  SIPURL                      m_addressOfRecord;
+  const SIP_PDU::Methods      m_method;
+  const SIPURL                m_addressOfRecord;
   SIPURL                      m_remoteAddress;
-  PString                     callID;
+  const PString               m_callID;
   int                         expire;
   int                         originalExpire;
   int                         offlineExpire;
@@ -173,7 +178,6 @@ protected:
 
   // Keep a copy of the keys used for easy removal on destruction
   typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
-  std::pair<IndexMap::iterator, bool> m_byCallID;
   std::pair<IndexMap::iterator, bool> m_byAorAndPackage;
   std::pair<IndexMap::iterator, bool> m_byAuthIdAndRealm;
   std::pair<IndexMap::iterator, bool> m_byAorUserAndRealm;
@@ -437,13 +441,11 @@ class SIPHandlersList
   protected:
     void RemoveIndexes(SIPHandler * handler);
 
-    PMutex m_extraMutex;
-    PSafeList<SIPHandler> m_handlersList;
+    PSafeSortedList<SIPHandler> m_handlersList;
 
     typedef SIPHandler::IndexMap IndexMap;
     PSafePtr<SIPHandler> FindBy(IndexMap & by, const PString & key, PSafetyMode m);
 
-    IndexMap m_byCallID;
     IndexMap m_byAorAndPackage;
     IndexMap m_byAuthIdAndRealm;
     IndexMap m_byAorUserAndRealm;
