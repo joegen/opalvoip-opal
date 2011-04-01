@@ -555,6 +555,37 @@ struct SIPDialogNotification : public PObject
 };
 
 
+/** Information for SIP "reg" event package (RFC3680) notification messages.
+  */
+class SIPRegNotification : public PObject
+{
+  PCLASSINFO(SIPRegNotification, PObject)
+public:
+  enum States {
+    Initial,
+    Active,
+    Terminated,
+    NumStates
+  };
+  friend States operator++(States & state) { return (state = (States)(state+1)); }
+  friend States operator--(States & state) { return (state = (States)(state-1)); }
+  static PString GetStateName(States state);
+  PString GetStateName() const { return GetStateName(m_state); }
+  static States GetStateFromName(const PCaselessString & str);
+
+  SIPRegNotification(
+    const SIPURL & aor = SIPURL(),
+    States state = Initial
+  );
+
+  SIPURL            m_aor;
+  States            m_state;
+  std::list<SIPURL> m_contacts;
+
+  void PrintOn(ostream & strm) const;
+};
+
+
 #endif // OPAL_SIP
 
 #endif // OPAL_SIP_HANDLERS_H

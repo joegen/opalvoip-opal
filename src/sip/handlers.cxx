@@ -1408,6 +1408,8 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
 
 
+///////////////////////////////////////////////////////////////////////////////
+
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
   if (participantElement == NULL)
@@ -1551,6 +1553,64 @@ public:
 
 static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+class SIPRegEventPackageHandler : public SIPEventPackageHandler
+{
+  virtual PCaselessString GetContentType() const
+  {
+    return "application/reginfo+xml";
+  }
+
+  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  {
+    // Check for empty body, if so then is OK, just a ping ...
+    if (request.GetEntityBody().IsEmpty())
+      return true;
+
+    PXML xml;
+    if (!xml.Load(request.GetEntityBody()))
+      return false;
+
+    PXMLElement * rootElement = xml.GetRootElement();
+    if (rootElement == NULL || rootElement->GetName() != "reginfo")
+      return false;
+
+    PINDEX regIndex = 0;
+    PXMLElement * regElement;
+    while ((regElement = rootElement->GetElement("registration", regIndex++)) != NULL) {
+      SIPRegNotification info(regElement->GetAttribute("aor"),
+                              SIPRegNotification::GetStateFromName(regElement->GetAttribute("state")));
+      PINDEX contactIndex = 0;
+      PXMLElement * contactElement;
+      while ((contactElement = regElement->GetElement("contact", contactIndex++)) != NULL) {
+        PXMLElement * element = contactElement->GetElement("uri");
+        if (element == NULL)
+          continue;
+
+        SIPURL contact(element->GetData());
+
+        PStringOptions & fields = contact.GetFieldParameters();
+        fields.Set("expires", contactElement->GetAttribute("duration-registered"));
+        fields.Set("q", contactElement->GetAttribute("q"));
+        fields.Set("state", contactElement->GetAttribute("state"));
+        fields.Set("event", contactElement->GetAttribute("event"));
+
+        if ((element = contactElement->GetElement("display-name")) != NULL)
+          contact.SetDisplayName(element->GetData());
+
+        info.m_contacts.push_back(contact);
+      }
+      handler.GetEndPoint().OnRegInfoReceived(info);
+    }
+
+    return true;
+  }
+};
+
+static SIPEventPackageFactory::Worker<SIPRegEventPackageHandler> regEventPackageHandler(SIPSubscribe::Reg);
+
 #endif // P_EXPAT
 
 
@@ -1662,6 +1722,65 @@ void SIPDialogNotification::PrintOn(ostream & strm) const
   // Close out dialog tag
   strm << "  </dialog>\r\n";
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+SIPRegNotification::SIPRegNotification(const SIPURL & aor, States state)
+  : m_aor(aor)
+  , m_state(state)
+{
+}
+
+
+PString SIPRegNotification::GetStateName(States state)
+{
+  static const char * const Names[] = {
+    "init",
+    "active",
+    "terminated"
+  };
+  if (state < PARRAYSIZE(Names) && Names[state] != NULL)
+    return Names[state];
+
+  return psprintf("<%u>", state);
+}
+
+
+SIPRegNotification::States SIPRegNotification::GetStateFromName(const PCaselessString & str)
+{
+  States state = Initial;
+  while (state < NumStates && str != GetStateName(state))
+   ++state;
+
+  return state;
+}
+
+
+void SIPRegNotification::PrintOn(ostream & strm) const
+{
+  if (m_aor.IsEmpty())
+    return;
+
+  strm << "  <reginfo xmlns=\"urn:ietf:params:xml:ns:reginfo\" version=\"0\" state=\"full\">\r\n"
+       << "    <registration aor=\"" << m_aor << "\" state=\"" << GetStateName() << "\">\r\n";
+
+  for (std::list<SIPURL>::const_iterator it = m_contacts.begin(); it != m_contacts.end(); ++it) {
+    const PStringOptions & fields = it->GetFieldParameters();
+    strm << "      <contact state=\""               << fields.Get("state") << "\" "
+                           "event=\""               << fields.Get("event") << "\" "
+                           "duration-registered=\"" << fields.Get("expires") << "\" "
+                           "q=\""                   << fields.Get("q") << "\">\r\n"
+            "        <uri>" << *it << "</uri>\r\n";
+    if (!it->GetDisplayName().IsEmpty())
+      strm << "        <display-name>" << it->GetDisplayName() << "</display-name>\r\n";
+    strm << "      </contact>\r\n";
+  }
+  // Close out dialog tag
+  strm << "    </registration>\r\n"
+          "  </reginfo>\r\n";
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 
