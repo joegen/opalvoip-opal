@@ -822,6 +822,25 @@ ostream & operator<<(ostream & strm, const SIPParameters & params);
 /////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
+class SIPTransactionBase : public SIP_PDU
+{
+    PCLASSINFO(SIPTransactionBase, SIP_PDU);
+  public:
+    SIPTransactionBase(
+      Methods method
+    ) : SIP_PDU(method) { }
+    SIPTransactionBase(
+      const PString & transactionID
+    ) { m_transactionID = transactionID; }
+
+    Comparison Compare(
+      const PObject & other
+    ) const;
+
+    virtual bool IsTerminated() const = 0;
+};
+
+
 /** Session Initiation Protocol transaction.
     A transaction is a stateful independent entity that provides services to
     a connection (Transaction User). Transactions are contained within 
@@ -832,9 +851,9 @@ ostream & operator<<(ostream & strm, const SIPParameters & params);
     In either case the SIP_PDU ancestor is the sent or received request.
  */
 
-class SIPTransaction : public SIP_PDU
+class SIPTransaction : public SIPTransactionBase
 {
-    PCLASSINFO(SIPTransaction, SIP_PDU);
+    PCLASSINFO(SIPTransaction, SIPTransactionBase);
   public:
     SIPTransaction(
       Methods method,
