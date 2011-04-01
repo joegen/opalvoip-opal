@@ -2597,8 +2597,16 @@ OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress() const
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+PObject::Comparison SIPTransactionBase::Compare(const PObject & other) const
+{
+  return GetTransactionID().Compare(dynamic_cast<const SIPTransactionBase&>(other).GetTransactionID());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
 SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport & trans)
-  : SIP_PDU(method)
+  : SIPTransactionBase(method)
   , m_endpoint(ep)
   , m_transport(trans)
   , m_retryTimeoutMin(ep.GetRetryTimeoutMin())
@@ -2616,7 +2624,7 @@ SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport &
 
 
 SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
-  : SIP_PDU(meth)
+  : SIPTransactionBase(meth)
   , m_endpoint(conn.GetEndPoint())
   , m_transport(conn.GetTransport())
   , m_connection(&conn)
