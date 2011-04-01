@@ -139,10 +139,10 @@ void SIPEndPoint::ShutDown()
   }
 
   // Clean up transactions still in progress, waiting for them to terminate.
-  PSafePtr<SIPTransaction> transaction;
-  while ((transaction = transactions.GetAt(0, PSafeReference)) != NULL) {
+  PSafePtr<SIPTransactionBase> transaction;
+  while ((transaction = m_transactions.GetAt(0, PSafeReference)) != NULL) {
     if (transaction->IsTerminated())
-      transactions.RemoveAt(transaction->GetTransactionID());
+      m_transactions.Remove(transaction);
     else
       PThread::Sleep(100);
   }
@@ -384,20 +384,17 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
-  PTRACE(6, "SIP\tGarbage collection: transactions=" << transactions.GetSize() << ", connections=" << connectionsActive.GetSize());
+  PTRACE(6, "SIP\tGarbage collection: transactions=" << m_transactions.GetSize() << ", connections=" << connectionsActive.GetSize());
 
-  PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly);
+  PSafePtr<SIPTransactionBase> transaction(m_transactions, PSafeReadOnly);
   while (transaction != NULL) {
-    if (transaction->IsTerminated()) {
-      PString id = transaction->GetTransactionID();
-      ++transaction;
-      transactions.RemoveAt(id);
-    }
+    if (transaction->IsTerminated())
+      m_transactions.Remove(transaction++);
     else
       ++transaction;
   }
 
-  bool transactionsDone = transactions.DeleteObjectsToBeRemoved();
+  bool transactionsDone = m_transactions.DeleteObjectsToBeRemoved();
 
 
   PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler();

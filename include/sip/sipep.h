@@ -824,10 +824,10 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { m_transactions.Append(transaction); }
 
     PSafePtr<SIPTransaction> GetTransaction(const PString & transactionID, PSafetyMode mode = PSafeReadWrite)
-    { return transactions.FindWithLock(transactionID, mode); }
+    { return PSafePtrCast<SIPTransactionBase, SIPTransaction>(m_transactions.FindWithLock(transactionID, mode)); }
     
     /**Return the next CSEQ for the next transaction.
      */
@@ -956,7 +956,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     SIPHandlersList   activeSIPHandlers;
     PStringToString   m_receivedConnectionTokens;
 
-    PSafeDictionary<PString, SIPTransaction> transactions;
+    PSafeSortedList<SIPTransactionBase> m_transactions;
 
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
