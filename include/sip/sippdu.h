@@ -661,7 +661,7 @@ class SIP_PDU : public PSafeObject
     /** Construct the PDU string to output.
         Returns the total length of the PDU.
       */
-    PString Build();
+    void Build(PString & pduStr, PINDEX & pduLen);
 
     PString GetTransactionID() const;
 

@@ -183,16 +183,19 @@ void MySIPEndPoint::PerformTest(const PArgList & args)
 
   double totalTime = 0;
   unsigned divisor = 0;
+  unsigned failed = 0;
   for (StatsMap::const_iterator it = m_statistics.begin(); it != m_statistics.end(); ++it) {
     PTimeInterval duration = it->second.m_finishTime - it->second.m_startTime;
     totalTime += duration.GetMilliSeconds();
     ++divisor;
+    if (it->second.m_status != 200)
+      ++failed;
     if (args.HasOption('v'))
       cout << "aor: " << it->first
            << "  status: " << it->second.m_status
            << "  time: " << (it->second.m_finishTime - it->second.m_startTime) << "s\n";
   }
-  cout << "Average registration time: " << (totalTime/divisor) << "ms\n";
+  cout << "Average registration time: " << (totalTime/divisor) << "ms, (" << failed << " failed)\n";
 }
 
 
