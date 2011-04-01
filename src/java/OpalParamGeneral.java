@@ -285,13 +285,13 @@ public class OpalParamGeneral {
     return OpalMediaDataType.swigToEnum(OPALJNI.OpalParamGeneral_m_mediaDataHeader_get(swigCPtr, this));
   }
 
-  public void setM_messageAvailable(SWIGTYPE_p_f_p_q_const__OpalMessage__int value) {
-    OPALJNI.OpalParamGeneral_m_messageAvailable_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__OpalMessage__int.getCPtr(value));
+  public void setM_messageAvailable(SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int value) {
+    OPALJNI.OpalParamGeneral_m_messageAvailable_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int.getCPtr(value));
   }
 
-  public SWIGTYPE_p_f_p_q_const__OpalMessage__int getM_messageAvailable() {
+  public SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int getM_messageAvailable() {
     long cPtr = OPALJNI.OpalParamGeneral_m_messageAvailable_get(swigCPtr, this);
-    return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__OpalMessage__int(cPtr, false);
+    return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__struct_OpalMessage__int(cPtr, false);
   }
 
   public void setM_mediaOptions(String value) {
