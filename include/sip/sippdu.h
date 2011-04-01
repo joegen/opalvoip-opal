@@ -837,7 +837,7 @@ class SIPTransactionBase : public SIP_PDU
       const PObject & other
     ) const;
 
-    virtual bool IsTerminated() const = 0;
+    virtual bool IsTerminated() const { return true; }
 };
 
 
