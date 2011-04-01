@@ -664,6 +664,13 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
 
+    /**Callback called when reg NOTIFY message is received
+     */
+    virtual void OnRegInfoReceived(
+      const SIPRegNotification & info  ///< Information on dialog state change
+    );
+
+
     /**Send SIP message
      */
     virtual PBoolean Message(

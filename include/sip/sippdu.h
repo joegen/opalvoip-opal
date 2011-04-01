@@ -1078,6 +1078,7 @@ class SIPSubscribe : public SIPTransaction
       MessageSummary,
       Presence,
       Dialog,
+      Reg,
 
       NumPredefinedPackages,
 

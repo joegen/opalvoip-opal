@@ -3347,6 +3347,7 @@ static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages]
   "message-summary",
   "presence",
   "dialog;sla;ma", // sla is the old version ma is the new for Line Appearance extension
+  "reg"
 };
 
 SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)

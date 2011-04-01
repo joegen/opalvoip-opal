@@ -508,7 +508,11 @@ class RegistrationInfo
       Register,
       SubscribeMWI,
       SubcribePresence,
-      SubscribeMLA
+      SubscribeMLA,
+      PublishPresence,
+      PresenceWatcher,
+      OthersRegistration,
+      NumRegType
     };
 
     RegistrationInfo();
