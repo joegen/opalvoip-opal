@@ -3499,13 +3499,17 @@ void RegistrationInfo::Write(wxConfigBase & config)
 }
 
 // these must match the drop-down box on the Registration/Subcription dialog box
-static SIPSubscribe::PredefinedPackages const EventPackageMapping[] = {
-  SIPSubscribe::NumPredefinedPackages,             // Skip Register enum
-  SIPSubscribe::MessageSummary,                    // MWI
-  SIPSubscribe::Presence,                          // presence
-  SIPSubscribe::Dialog,                            // line appearance
-  SIPSubscribe::NumPredefinedPackages,             // Skip PublishPresence enum
-  SIPSubscribe::Presence | SIPSubscribe::Watcher   // watch presence
+static struct {
+  const wxChar *                   m_name;
+  SIPSubscribe::PredefinedPackages m_package;
+} const RegistrationInfoTable[RegistrationInfo::NumRegType] = {
+  { wxT("Registration"),        SIPSubscribe::NumPredefinedPackages }, // Skip Register enum
+  { wxT("Message Waiting"),     SIPSubscribe::MessageSummary },
+  { wxT("Others Presence"),     SIPSubscribe::Presence },
+  { wxT("Line Appearance"),     SIPSubscribe::Dialog },
+  { wxT("My Presence"),         SIPSubscribe::NumPredefinedPackages }, // Skip PublishPresence enum
+  { wxT("Presence Watcher"),    SIPSubscribe::Presence | SIPSubscribe::Watcher },  // watch presence
+  { wxT("Watch Registration"),  SIPSubscribe::Reg }
 };
 
 
@@ -3535,10 +3539,10 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
       break;
 
     default :
-      if (sipEP.IsSubscribed(EventPackageMapping[m_Type], m_aor, true))
+      if (sipEP.IsSubscribed(RegistrationInfoTable[m_Type].m_package, m_aor, true))
         status = 0;
       else {
-        SIPSubscribe::Params param(EventPackageMapping[m_Type]);
+        SIPSubscribe::Params param(RegistrationInfoTable[m_Type].m_package);
         param.m_addressOfRecord = m_User.p_str();
         param.m_agentAddress = m_Domain.p_str();
         param.m_contactAddress = m_Contact.p_str();
@@ -3552,13 +3556,8 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
   if (status == 0)
     return true;
 
-  static const char * const TypeNames[] = {
-    "Register",
-    "MWI subscribe",
-    "Presence subscribe",
-    "Appearance subscribe"
-  };
-  LogWindow << "SIP " << TypeNames[m_Type] << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
+  LogWindow << "SIP " << PString(RegistrationInfoTable[m_Type].m_name)
+            << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
   return status != 2;
 }
 
@@ -3571,7 +3570,7 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
   if (m_Type == Register)
     sipEP.Unregister(m_aor);
   else
-    sipEP.Unsubscribe(EventPackageMapping[m_Type], m_aor);
+    sipEP.Unsubscribe(RegistrationInfoTable[m_Type].m_package, m_aor);
 
   m_aor.MakeEmpty();
   return true;
@@ -5250,15 +5249,7 @@ void OptionsDialog::RegistrationToList(bool create, RegistrationInfo * registrat
   }
 
 
-  static const wxChar * const TypeNames[] = {
-    wxT("Registration"),
-    wxT("Message Waiting"),
-    wxT("Others Presence"),
-    wxT("Line Appearance"),
-    wxT("My Presence"),
-    wxT("Presence Watcher")
-  };
-  m_Registrations->SetItem(position, 1, TypeNames[registration->m_Type]);
+  m_Registrations->SetItem(position, 1, RegistrationInfoTable[registration->m_Type].m_name);
   m_Registrations->SetItem(position, 2, registration->m_User);
   m_Registrations->SetItem(position, 3, registration->m_Domain);
   m_Registrations->SetItem(position, 4, registration->m_AuthID);
@@ -5717,7 +5708,11 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
   m_domain = FindWindowByNameAs<wxTextCtrl>(this, RegistrarDomainKey);
   m_domain->SetValidator(wxGenericValidator(&m_info.m_Domain));
 
-  FindWindowByNameAs<wxChoice  >(this, RegistrationTypeKey      )->SetValidator(wxGenericValidator((int *)&m_info.m_Type));
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, RegistrationTypeKey);
+  for (PINDEX i = 0; i < RegistrationInfo::NumRegType; ++i)
+    choice->Append(RegistrationInfoTable[i].m_name);
+  choice->SetValidator(wxGenericValidator((int *)&m_info.m_Type));
+
   FindWindowByNameAs<wxCheckBox>(this, RegistrarUsedKey         )->SetValidator(wxGenericValidator(&m_info.m_Active));
   FindWindowByNameAs<wxTextCtrl>(this, RegistrarContactKey      )->SetValidator(wxGenericValidator(&m_info.m_Contact));
   FindWindowByNameAs<wxTextCtrl>(this, RegistrarAuthIDKey       )->SetValidator(wxGenericValidator(&m_info.m_AuthID));

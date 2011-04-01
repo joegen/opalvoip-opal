@@ -1615,6 +1615,13 @@ void SIPEndPoint::SendNotifyDialogInfo(const SIPDialogNotification & info)
   Notify(info.m_entity, SIPEventPackage(SIPSubscribe::Dialog), info);
 }
 
+
+void SIPEndPoint::OnRegInfoReceived(const SIPRegNotification & PTRACE_PARAM(info))
+{
+  PTRACE(3, "SIP\tReceived registration info for \"" << info.m_aor << "\" state=" << info.GetStateName());
+}
+
+
 void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & username,
                            const PString & password)
