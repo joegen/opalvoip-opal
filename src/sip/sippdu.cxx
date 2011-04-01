@@ -2221,14 +2221,18 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
     PTRACE(4, "SIP\tSet new interface " << localInterface << " for transport " << transport);
   }
 
+  PString pduStr;
+  PINDEX pduLen;
+
   m_mime.SetCompactForm(false);
-  PString strPDU = Build();
-  if (!transport.IsReliable() && strPDU.GetLength() > 1300) {
-    PTRACE(4, "SIP\tPDU is too large (" << strPDU.GetLength() << " bytes) trying compact form.");
+  Build(pduStr, pduLen);
+
+  if (!transport.IsReliable() && pduLen > 1300) {
+    PTRACE(4, "SIP\tPDU is too large (" << pduLen << " bytes) trying compact form.");
     m_mime.SetCompactForm(true);
-    strPDU = Build();
-    PTRACE_IF(2, strPDU.GetLength() > PluginCodec_RTP_MaxPacketSize,
-              "SIP\tPDU is likely too large (" << strPDU.GetLength() << " bytes) for UDP datagram.");
+    Build(pduStr, pduLen);
+    PTRACE_IF(2, pduLen > PluginCodec_RTP_MaxPacketSize,
+              "SIP\tPDU is likely too large (" << pduLen << " bytes) for UDP datagram.");
   }
 
 #if PTRACING
@@ -2245,14 +2249,14 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
       trace << ' ';
     }
 
-    trace << '(' << strPDU.GetLength() << " bytes) to: "
+    trace << '(' << pduLen << " bytes) to: "
              "rem=" << transport.GetRemoteAddress() << ","
              "local=" << transport.GetLocalAddress() << ","
              "if=" << transport.GetInterface();
 
     if (PTrace::CanTrace(4)) {
       trace << '\n';
-      for (const char * ptr = strPDU; *ptr != '\0'; ++ptr) {
+      for (const char * ptr = pduStr; *ptr != '\0'; ++ptr) {
         if (*ptr != '\r')
           trace << *ptr;
       }
@@ -2262,7 +2266,7 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   }
 #endif
 
-  bool ok = transport.WriteString(strPDU);
+  bool ok = transport.Write((const char *)pduStr, pduLen);
   PTRACE_IF(1, !ok, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
 
   transport.SetInterface(oldInterface);
@@ -2283,25 +2287,27 @@ void  SIP_PDU::SetEntityBody()
 }
 
 
-PString SIP_PDU::Build()
+void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 {
-  PStringStream str;
+  PStringStream strm;
 
   SetEntityBody();
 
   if (m_method != NumMethods)
-    str << MethodNames[m_method] << ' ' << m_uri << ' ';
+    strm << MethodNames[m_method] << ' ' << m_uri << ' ';
 
-  str << "SIP/" << m_versionMajor << '.' << m_versionMinor;
+  strm << "SIP/" << m_versionMajor << '.' << m_versionMinor;
 
   if (m_method == NumMethods) {
     if (m_info.IsEmpty())
       m_info = GetStatusCodeDescription(m_statusCode);
-    str << ' ' << (unsigned)m_statusCode << ' ' << m_info;
+    strm << ' ' << (unsigned)m_statusCode << ' ' << m_info;
   }
 
-  str << "\r\n" << setfill('\r') << m_mime << m_entityBody;
-  return str;
+  strm << "\r\n" << setfill('\r') << m_mime << m_entityBody;
+
+  pduStr = strm;
+  pduLen = strm.GetLength();
 }
 
 
