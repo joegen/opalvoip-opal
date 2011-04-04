@@ -107,9 +107,13 @@ static struct PluginCodec_information LicenseInfo = {
 
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H264);
 H264EncCtx H264EncCtxInstance;
+CriticalSection InitMutex;
+
 
 static bool InitLibs()
 {
+  WaitAndSignal mutex(InitMutex);
+
   if (!FFMPEGLibraryInstance.Load()) {
     PTRACE(1, MY_CODEC_LOG, "Codec\tDisabled");
     return false;
