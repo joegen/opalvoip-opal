@@ -114,7 +114,8 @@ void TestPresEnt::AddPresentity(PArgList & args)
     return;
   }
 
-  presentity->GetAttributes().Set("Sub-Protocol", "Agent");
+  presentity->GetAttributes().Set(SIP_Presentity::SubProtocolKey,
+            args.GetOptionString('s', !m_xcapRoot || !m_xcapAuthID || !m_xcapPassword ? "OMA" : "Agent"));
 
   presentity->SetAuthorisationRequestNotifier(PCREATE_AuthorisationRequestNotifier(AuthorisationRequest));
   presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(PresenceChange));
@@ -147,7 +148,8 @@ void TestPresEnt::Main()
 {
   PArgList & args = GetArguments();
 #define URL_OPTIONS "a-auth-id:" \
-                    "p-password:"
+                    "p-password:" \
+                    "s-sub-protocol:"
   args.Parse("h-help."
              "f-file:"
              "L-listener:"
@@ -192,8 +194,11 @@ void TestPresEnt::Main()
             "  -h or --help                 : print this help message.\n"
             "\n"
             "Available URL options are:\n"
-            "  -a or --auth-id              : Authirisation ID, default to URL username.\n"
-            "  -p or --password             : Authorisation password.\n"
+#define URL_HELP \
+            "  -a or --auth-id              : Authorisation ID, default to URL username.\n" \
+            "  -p or --password             : Authorisation password.\n" \
+            "  -s or --sub-protocol proto   : set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
+            URL_HELP
             "\n"
             "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
             ;
@@ -255,7 +260,7 @@ void TestPresEnt::Main()
   cli.SetPrompt("PRES> ");
   cli.SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
                  "Create presentity.",
-                 "[ -p ] <url>");
+                 "[ -a -p -s ] <url>\n" URL_HELP);
   cli.SetCommand("list", PCREATE_NOTIFIER(CmdList),
                  "List presentities.");
   cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
