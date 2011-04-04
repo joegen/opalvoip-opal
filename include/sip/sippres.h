@@ -240,6 +240,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     static const PCaselessString & XcapBuddyListKey();
 
     virtual PStringArray GetAttributeNames() const;
+    virtual PStringArray GetAttributeTypes() const;
 
     virtual bool Open();
     virtual bool IsOpen() const;
