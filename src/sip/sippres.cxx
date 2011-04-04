@@ -142,6 +142,24 @@ PStringArray SIP_Presentity::GetAttributeNames() const
 }
 
 
+PStringArray SIP_Presentity::GetAttributeTypes() const
+{
+  PStringArray names;
+  names.AppendString("Enum\nPeerToPeer,Agent,XCAP,OMA\nAgent");
+  names.AppendString("String");
+  names.AppendString("String");
+  names.AppendString("Password");
+  names.AppendString("URL");
+  names.AppendString("String");
+  names.AppendString("Password");
+  names.AppendString("String");
+  names.AppendString("String");
+  names.AppendString("String");
+  names.AppendString("Integer\n1,999999999\n300");
+  return names;
+}
+
+
 bool SIP_Presentity::Open()
 {
   Close();

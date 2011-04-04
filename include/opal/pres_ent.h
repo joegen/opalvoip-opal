@@ -182,6 +182,9 @@ class OpalPresentity : public PSafeObject
     ///< Get all attribute names for this presentity class.
     virtual PStringArray GetAttributeNames() const = 0;
 
+    ///< Get all attribute types for this presentity class.
+    virtual PStringArray GetAttributeTypes() const = 0;
+
     static const PCaselessString & AuthNameKey();         ///< Key for authentication name attribute
     static const PCaselessString & AuthPasswordKey();     ///< Key for authentication password attribute
     static const PCaselessString & TimeToLiveKey();       ///< Key for Time-To-Live attribute, in seconds for underlying protocol
