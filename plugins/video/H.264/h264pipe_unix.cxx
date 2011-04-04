@@ -54,9 +54,11 @@ H264EncCtx::~H264EncCtx()
   closeAndRemovePipes();
 }
 
-bool 
-H264EncCtx::Load()
+bool H264EncCtx::Load()
 {
+  if (loaded)
+    return true;
+
   snprintf ( dlName, sizeof(dlName), "/tmp/x264-dl-%d", getpid());
   snprintf ( ulName, sizeof(ulName), "/tmp/x264-ul-%d", getpid());
   if (!createPipes()) {
