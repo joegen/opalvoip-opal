@@ -196,6 +196,9 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
 
 bool OpalPresentity::SubscribeToPresence(const PURL & presentity, bool subscribe, const PString & note)
 {
+  if (!IsOpen())
+    return false;
+
   OpalSubscribeToPresenceCommand * cmd = CreateCommand<OpalSubscribeToPresenceCommand>();
   if (cmd == NULL)
     return false;
@@ -216,6 +219,9 @@ bool OpalPresentity::UnsubscribeFromPresence(const PURL & presentity)
 
 bool OpalPresentity::SetPresenceAuthorisation(const PURL & presentity, Authorisation authorisation)
 {
+  if (!IsOpen())
+    return false;
+
   OpalAuthorisationRequestCommand * cmd = CreateCommand<OpalAuthorisationRequestCommand>();
   if (cmd == NULL)
     return false;
@@ -229,6 +235,9 @@ bool OpalPresentity::SetPresenceAuthorisation(const PURL & presentity, Authorisa
 
 bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PString & note)
 {
+  if (!IsOpen())
+    return false;
+
   m_localState     = state;
   m_localStateNote = note;
 
@@ -244,6 +253,9 @@ bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PStri
 
 bool OpalPresentity::GetLocalPresence(OpalPresenceInfo::State & state, PString & note)
 {
+  if (!IsOpen())
+    return false;
+
   state = m_localState;
   note  = m_localStateNote;
 
@@ -252,6 +264,9 @@ bool OpalPresentity::GetLocalPresence(OpalPresenceInfo::State & state, PString &
 
 bool OpalPresentity::SendMessageTo(const OpalIM & message)
 {
+  if (!IsOpen())
+    return false;
+
   OpalSendMessageToCommand * cmd = CreateCommand<OpalSendMessageToCommand>();
   if (cmd == NULL)
     return false;
@@ -315,6 +330,9 @@ void OpalPresentity::SetPresenceChangeNotifier(const PresenceChangeNotifier & no
 
 OpalPresentity::BuddyStatus OpalPresentity::GetBuddyListEx(BuddyList &)
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (m_temporarilyUnavailable)
     return BuddyStatus_ListTemporarilyUnavailable;
 
@@ -324,6 +342,9 @@ OpalPresentity::BuddyStatus OpalPresentity::GetBuddyListEx(BuddyList &)
 
 OpalPresentity::BuddyStatus OpalPresentity::SetBuddyListEx(const BuddyList &)
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (m_temporarilyUnavailable)
     return BuddyStatus_ListTemporarilyUnavailable;
 
@@ -333,6 +354,9 @@ OpalPresentity::BuddyStatus OpalPresentity::SetBuddyListEx(const BuddyList &)
 
 OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyListEx()
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (m_temporarilyUnavailable)
     return BuddyStatus_ListTemporarilyUnavailable;
 
@@ -342,6 +366,9 @@ OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyListEx()
 
 OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (buddy.m_presentity.IsEmpty())
     return BuddyStatus_BadBuddySpecification;
 
@@ -366,6 +393,9 @@ OpalPresentity::BuddyStatus OpalPresentity::GetBuddyEx(BuddyInfo & buddy)
 
 OpalPresentity::BuddyStatus OpalPresentity::SetBuddyEx(const BuddyInfo & buddy)
 {  
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (m_temporarilyUnavailable)
     return BuddyStatus_ListTemporarilyUnavailable;
 
@@ -384,6 +414,9 @@ OpalPresentity::BuddyStatus OpalPresentity::SetBuddyEx(const BuddyInfo & buddy)
 
 OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentity)
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (presentity.IsEmpty())
     return BuddyStatus_BadBuddySpecification;
 
@@ -408,6 +441,9 @@ OpalPresentity::BuddyStatus OpalPresentity::DeleteBuddyEx(const PURL & presentit
 
 OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & successfulCount, bool subscribe)
 {
+  if (!IsOpen())
+    return BuddyStatus_AccountNotLoggedIn;
+
   if (m_temporarilyUnavailable)
     return BuddyStatus_ListTemporarilyUnavailable;
 
@@ -428,9 +464,6 @@ OpalPresentity::BuddyStatus OpalPresentity::SubscribeBuddyListEx(PINDEX & succes
 
 OpalPresentity::BuddyStatus OpalPresentity::UnsubscribeBuddyListEx()
 {
-  if (m_temporarilyUnavailable)
-    return BuddyStatus_ListTemporarilyUnavailable;
-
   PINDEX successfulCount;
   return SubscribeBuddyListEx(successfulCount, false);
 }
