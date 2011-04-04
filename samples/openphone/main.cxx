@@ -197,6 +197,7 @@ DEF_FIELD(FaxAutoAnswerMode);
 
 static const wxChar PresenceGroup[] = wxT("/Presence");
 DEF_FIELD(PresenceAOR);
+static const PConstString PresenceActiveKey("Active");
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
@@ -988,6 +989,7 @@ bool MyManager::Initialise()
     if (config->Read(PresenceAORKey, &aor) && !aor.empty()) {
       PSafePtr<OpalPresentity> presentity = AddPresentity(aor);
       if (presentity != NULL) {
+        presentity->GetAttributes().Set(PresenceActiveKey, "Yes"); // OpenPhone extra attribute
         presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(OnPresenceChange));
         long idx;
         PwxString name;
@@ -996,8 +998,9 @@ bool MyManager::Initialise()
             presentity->GetAttributes().Set(name.p_str(), PwxString(config->Read(name)));
           } while (config->GetNextEntry(name, idx));
         }
-        LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
-                  << " presence for identity " << aor << endl;
+        if (presentity->GetAttributes().GetBoolean(PresenceActiveKey))
+          LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
+                    << " presence for identity " << aor << endl;
       }
     }
 
@@ -4121,12 +4124,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   m_Registrations = FindWindowByNameAs<wxListCtrl>(this, wxT("Registrars"));
   m_Registrations->InsertColumn(0, _T("Item"));
-  m_Registrations->InsertColumn(1, _T("Type"));
-  m_Registrations->InsertColumn(2, _T("User"));
-  m_Registrations->InsertColumn(3, _T("Domain/Host"));
-  m_Registrations->InsertColumn(4, _T("Auth ID"));
-  m_Registrations->InsertColumn(5, _T("Refresh"));
-  m_Registrations->InsertColumn(6, _T("Status"));
+  m_Registrations->InsertColumn(1, _T("Status"));
+  m_Registrations->InsertColumn(2, _T("Type"));
+  m_Registrations->InsertColumn(3, _T("User"));
+  m_Registrations->InsertColumn(4, _T("Domain/Host"));
+  m_Registrations->InsertColumn(5, _T("Auth ID"));
+  m_Registrations->InsertColumn(6, _T("Refresh"));
   for (RegistrationList::iterator registration = m_manager.m_registrations.begin(); registration != m_manager.m_registrations.end(); ++registration)
     RegistrationToList(true, new RegistrationInfo(*registration), INT_MAX);
   m_Registrations->SetColumnWidth(0, wxLIST_AUTOSIZE_USEHEADER);
@@ -4390,6 +4393,7 @@ bool OptionsDialog::TransferDataFromWindow()
 
     OpalPresentity * presentity = (OpalPresentity *)m_Presentities->GetItemData(item);
     PStringArray attributeNames = presentity->GetAttributeNames();
+    attributeNames.AppendString(PresenceActiveKey);
     for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
       PString name = attributeNames[i];
       if (presentity->GetAttributes().Has(name))
@@ -4399,8 +4403,13 @@ bool OptionsDialog::TransferDataFromWindow()
     PSafePtr<OpalPresentity> activePresentity = m_manager.AddPresentity(aor);
     if (activePresentity != NULL) {
       activePresentity->GetAttributes() = presentity->GetAttributes();
-      LogWindow << (activePresentity->Open() ? "Establishing" : "Could not establish")
-                << " presence for identity " << aor << endl;
+      if (presentity->GetAttributes().GetBoolean(PresenceActiveKey))
+        LogWindow << (activePresentity->Open() ? "Establishing" : "Could not establish")
+                  << " presence for identity " << aor << endl;
+      else if (activePresentity->IsOpen()) {
+        activePresentity->Close();
+        LogWindow << "Stopping presence for identity " << aor << endl;
+      }
     }
 
     PINDEX pos = activePresentities.GetValuesIndex(aor.p_str());
@@ -4955,7 +4964,7 @@ void OptionsDialog::EditedPresentity(wxListEvent & evt)
 }
 
 
-static char DefaultAttributeValue[] = "<<default>>";
+static PConstString DefaultAttributeValue("<<default>>");
 
 bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
 {
@@ -4972,10 +4981,29 @@ bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
   m_PresentityAttributes->Enable();
 
   PStringArray attributeNames = presentity->GetAttributeNames();
+  PStringArray attributeTypes = presentity->GetAttributeTypes();
+  attributeNames.InsertAt(0, new PString(PresenceActiveKey));
+  attributeTypes.InsertAt(0, new PString("Enum\nNo,Yes\nYes"));
+
   m_PresentityAttributes->InsertRows(0, attributeNames.GetSize());
   for (PINDEX i = 0; i < attributeNames.GetSize(); ++i) {
     PString name = attributeNames[i];
-    PwxString value = presentity->GetAttributes().Get(name, DefaultAttributeValue);
+    PStringArray attribute = attributeTypes[i].Lines();
+
+    wxGridCellEditor * editor = NULL;
+    PCaselessString attribType = attribute[0];
+    if (attribType == "Integer")
+      editor = new wxGridCellNumberEditor;
+    else if (attribType == "Enum")
+      editor = new wxGridCellChoiceEditor;
+    if (editor != NULL) {
+      if (attribute.GetSize() > 1)
+        editor->SetParameters(PwxString(attribute[1]));
+      m_PresentityAttributes->SetCellEditor(i, 0, editor);
+    }
+
+    PwxString value = presentity->GetAttributes().Get(name,
+                            attribute.GetSize() > 2 ? attribute[2] : DefaultAttributeValue);
     m_PresentityAttributes->SetRowLabelValue(i, PwxString(name));
     m_PresentityAttributes->SetCellValue(value, i, 0);
   }
@@ -5238,16 +5266,16 @@ void OptionsDialog::RegistrationToList(bool create, RegistrationInfo * registrat
     wxT("My Presence"),
     wxT("Presence Watcher")
   };
-  m_Registrations->SetItem(position, 1, TypeNames[registration->m_Type]);
-  m_Registrations->SetItem(position, 2, registration->m_User);
-  m_Registrations->SetItem(position, 3, registration->m_Domain);
-  m_Registrations->SetItem(position, 4, registration->m_AuthID);
+  m_Registrations->SetItem(position, 2, TypeNames[registration->m_Type]);
+  m_Registrations->SetItem(position, 3, registration->m_User);
+  m_Registrations->SetItem(position, 4, registration->m_Domain);
+  m_Registrations->SetItem(position, 5, registration->m_AuthID);
 
   wxString str;
   str.sprintf(wxT("%u:%02u"), registration->m_TimeToLive/60, registration->m_TimeToLive%60);
-  m_Registrations->SetItem(position, 5, str);
+  m_Registrations->SetItem(position, 6, str);
 
-  m_Registrations->SetItem(position, 6, registration->m_Active ? wxT("ACTIVE") : wxT("disabled"));
+  m_Registrations->SetItem(position, 1, registration->m_Active ? wxT("ACTIVE") : wxT("disabled"));
 }
 
 
