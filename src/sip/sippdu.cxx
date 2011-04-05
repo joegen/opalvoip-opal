@@ -2709,7 +2709,6 @@ PBoolean SIPTransaction::Start()
     SIPURL destination;
     destination = m_uri;
     PStringList routeSet = GetMIME().GetRoute();
-    PTRACE(1, "Routeset = " << routeSet);
     if (!routeSet.IsEmpty()) {
       SIPURL firstRoute = routeSet.front();
       if (firstRoute.GetParamVars().Contains("lr"))
