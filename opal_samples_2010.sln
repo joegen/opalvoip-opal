@@ -20,11 +20,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CallGen", "samples\callgen\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayRTP", "samples\playrtp\playrtp_2010.vcxproj", "{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "C Interface", "samples\c_api\c_api_2010.vcxproj", "{966ED653-88B9-4B83-85F0-4104EDFC2BDE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opal_c_api", "samples\c_api\c_api_2010.vcxproj", "{966ED653-88B9-4B83-85F0-4104EDFC2BDE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FaxOPAL", "samples\faxopal\FaxOPAL_2010.vcxproj", "{FFC2C809-4DF4-41C1-9D51-3BA5D3506533}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IVR OPAL", "samples\ivropal\IvrOPAL_2010.vcxproj", "{D7F92DDD-CA73-4E2F-8940-4E2D1C863D25}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ivropal", "samples\ivropal\IvrOPAL_2010.vcxproj", "{D7F92DDD-CA73-4E2F-8940-4E2D1C863D25}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sipim", "samples\sipim\sipim_2010.vcxproj", "{D4F638A4-B109-4348-9247-FFC163676723}"
 EndProject
@@ -34,11 +34,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "src\win32\opal_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalecho", "samples\opalecho\opalecho_2010.vcxproj", "{072F7820-710F-416A-A348-A4D1D023C72B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL MCU", "samples\opalmcu\OPAL_MCU_2010.vcxproj", "{6C1D0918-6995-41C4-9068-6300F3E60D47}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalmcu", "samples\opalmcu\OPAL_MCU_2010.vcxproj", "{6C1D0918-6995-41C4-9068-6300F3E60D47}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testpresent", "samples\testpresent\testpresent_2010.vcxproj", "{1650298C-5F43-47B8-974E-155D1FA0D672}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "samples\codectest\codectest_2010.vcxproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regtest", "samples\regtest\regtest_2010.vcxproj", "{80E8E641-6F16-4960-90C1-49B622259C6F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -191,6 +193,14 @@ Global
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Win32.Build.0 = Release|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Template|Win32.ActiveCfg = Release|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Template|Win32.Build.0 = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Debug|Win32.Build.0 = Debug|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.No Trace|Win32.ActiveCfg = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.No Trace|Win32.Build.0 = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Release|Win32.ActiveCfg = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Release|Win32.Build.0 = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Template|Win32.ActiveCfg = Release|Win32
+		{80E8E641-6F16-4960-90C1-49B622259C6F}.Template|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
