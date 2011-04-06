@@ -67,7 +67,7 @@ class OpalJitterBuffer;
     Note the timestamps of the input media are extremely important as they are
     used so that breaks or too fast data in the input media is dealt with correctly.
   */
-class OpalBaseMixer
+class OpalBaseMixer : public PObject
 {
   public:
     OpalBaseMixer(
@@ -342,7 +342,7 @@ class OpalVideoMixer : public OpalBaseMixer
     );
 
   protected:
-    struct VideoStream : public Stream
+    struct VideoStream : public PObject, public Stream
     {
       VideoStream(OpalVideoMixer & mixer);
       virtual void QueuePacket(const RTP_DataFrame & rtp);

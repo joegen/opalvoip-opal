@@ -325,13 +325,13 @@ PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, const PURL 
   // must have a remote scheme
   PString remoteScheme   = remoteURL.GetScheme();
   if (remoteURL.GetScheme().IsEmpty()) {
-    PTRACE(3, "OpalIMContext\tTo URL '" << remoteURL << "' has no scheme");
+    PTRACE2(3, NULL, "OpalIMContext\tTo URL '" << remoteURL << "' has no scheme");
     return NULL;
   }
 
   // force local scheme to same as remote scheme
   if (localURL.GetScheme() != remoteScheme) {
-    PTRACE(3, "OpalIMContext\tForcing local scheme to '" << remoteScheme << "'");
+    PTRACE2(3, NULL, "OpalIMContext\tForcing local scheme to '" << remoteScheme << "'");
     localURL.SetScheme(remoteScheme);
   }
 
@@ -345,7 +345,7 @@ PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, const PURL 
   // create the IM context
   PSafePtr<OpalIMContext> imContext = PFactory<OpalIMContext>::CreateInstance(remoteScheme);
   if (imContext == NULL) {
-    PTRACE(3, "OpalIMContext\tCannot find IM handler for scheme '" << remoteScheme << "'");
+    PTRACE2(3, NULL, "OpalIMContext\tCannot find IM handler for scheme '" << remoteScheme << "'");
     return NULL;
   }
 
@@ -360,7 +360,7 @@ PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, const PURL 
 
   imContext->ResetLastUsed();
 
-  PTRACE(3, "OpalIMContext\tCreated IM context '" << imContext->GetID() << "' for scheme '" << remoteScheme << "' from " << localURL << " to " << remoteURL);
+  PTRACE2(3, imContext, "OpalIMContext\tCreated IM context '" << imContext->GetID() << "' for scheme '" << remoteScheme << "' from " << localURL << " to " << remoteURL);
 
   return imContext;
 }

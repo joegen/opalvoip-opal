@@ -1018,7 +1018,7 @@ OpalLineInterfaceDevice * OpalLineInterfaceDevice::CreateAndOpen(const PString &
   }
 
   if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
-    PTRACE(1, "LID\tInvalid device description \"" << descriptor << '"');
+    PTRACE2(1, NULL, "LID\tInvalid device description \"" << descriptor << '"');
     return NULL;
   }
 

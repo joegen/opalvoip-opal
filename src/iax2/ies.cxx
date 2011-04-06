@@ -107,7 +107,7 @@ IAX2Ie * IAX2Ie::BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcD
   case ie_recDropped      : return new IAX2IeDroppedFrames(length, srcData);
   case ie_recOoo          : return new IAX2IeReceivedOoo(length, srcData);
   case ie_callToken       : return new IAX2IeCallToken(length, srcData);
-  default: PTRACE(1, "Ie\t Invalid IE type code " << ::hex << ((int)_typeCode) << ::dec);
+  default: PTRACE2(1, NULL, "Ie\t Invalid IE type code " << ::hex << ((int)_typeCode) << ::dec);
   };
   
   return new IAX2IeInvalidElement();
