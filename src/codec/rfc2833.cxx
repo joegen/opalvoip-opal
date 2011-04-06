@@ -340,7 +340,7 @@ PINDEX OpalRFC2833Proto::ASCIIToRFC2833(char tone, bool hasNSE)
   if ((theChar = strchr(RFC2833Table1Events, upperTone)) != NULL) 
     return (PINDEX)(theChar-RFC2833Table1Events);
 
-  PTRACE(1, "RFC2833\tInvalid tone character '" << tone << "'.");
+  PTRACE2(1, NULL, "RFC2833\tInvalid tone character '" << tone << "'.");
   return P_MAX_INDEX;
 }
 

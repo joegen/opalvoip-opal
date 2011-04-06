@@ -585,8 +585,6 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     virtual unsigned GetSubType() const;
 
-    static bool SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
-
     virtual void PrintOn(std::ostream & strm) const;
 
   protected:

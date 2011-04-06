@@ -1996,7 +1996,7 @@ unsigned H323VideoPluginCapability::GetSubType() const
   } \
 
 
-bool H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
+static bool SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
 {
   SET_OR_CREATE_PARM(MaxRxFrameWidthOption, frameWidth, <);
   SET_OR_CREATE_PARM(MinRxFrameWidthOption, frameWidth, >);
@@ -2444,7 +2444,7 @@ static bool SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
     if (!mediaFormat.SetOptionInteger(mpiTag, mpi))
       return false;
     if (mpi != 0) {
-      if (!H323VideoPluginCapability::SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, mpi))
+      if (!SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, mpi))
         return false;
       formatDefined = true;
     }
