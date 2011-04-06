@@ -1216,7 +1216,7 @@ PBoolean H323EndPoint::AddAliasName(const PString & name)
 {
   PAssert(!name, "Must have non-empty string in AliasAddress!");
 
-  if (localAliasNames.GetValuesIndex(name) != P_MAX_INDEX)
+  if (localAliasNames.find(name) != localAliasNames.end())
     return PFalse;
 
   localAliasNames.AppendString(name);
@@ -1226,15 +1226,14 @@ PBoolean H323EndPoint::AddAliasName(const PString & name)
 
 PBoolean H323EndPoint::RemoveAliasName(const PString & name)
 {
-  PINDEX pos = localAliasNames.GetValuesIndex(name);
-  if (pos == P_MAX_INDEX)
+  PStringList::iterator pos = localAliasNames.find(name);
+  if (pos == localAliasNames.end())
     return PFalse;
 
-  PAssert(localAliasNames.GetSize() > 1, "Must have at least one AliasAddress!");
-  if (localAliasNames.GetSize() < 2)
+  if (!PAssert(localAliasNames.GetSize() > 1, "Must have at least one AliasAddress!"))
     return PFalse;
 
-  localAliasNames.RemoveAt(pos);
+  localAliasNames.erase(pos);
   return PTrue;
 }
 
@@ -1243,7 +1242,7 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
 {
   PAssert(!pattern, "Must have non-empty string in AddressPattern !");
 
-  if (localAliasPatterns.GetValuesIndex(pattern) != P_MAX_INDEX)
+  if (localAliasPatterns.find(pattern) != localAliasPatterns.end())
     return false;
 
   localAliasPatterns.AppendString(pattern);

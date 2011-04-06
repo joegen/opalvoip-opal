@@ -799,8 +799,8 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 
     PStringToString params;
     PURL::SplitVars(party.Mid(semicolon), params, ';', '=');
-    for (PINDEX i = 0; i < params.GetSize(); ++i)
-      stringOptions->SetAt(params.GetKeyAt(i), params.GetDataAt(i));
+    for (PStringToString::iterator it = params.begin(); it != params.end(); ++it)
+      stringOptions->SetAt(it->first, it->second);
   }
 
   return AddConnection(CreateConnection(node, call, userData, options, stringOptions));
@@ -872,11 +872,11 @@ OpalMixerConnection::OpalMixerConnection(PSafePtr<OpalMixerNode> node,
 {
   m_node->AttachConnection(this);
 
-  const PStringList & names = node->GetNames();
+  const PStringSet & names = node->GetNames();
   if (names.IsEmpty())
     localPartyName = node->GetGUID().AsString();
   else
-    localPartyName = names[0];
+    localPartyName = *names.begin();
 
   PTRACE(4, "MixerCon\tConstructed");
 }
@@ -1157,13 +1157,13 @@ void OpalMixerNode::AddName(const PString & name)
   if (name.IsEmpty())
     return;
 
-  if (m_names.GetValuesIndex(name) != P_MAX_INDEX) {
+  if (m_names.Contains(name)) {
     PTRACE(4, "MixerNode\tName \"" << name << "\" already added to " << *this);
     return;
   }
 
   PTRACE(4, "MixerNode\tAdding name \"" << name << "\" to " << *this);
-  m_names.AppendString(name);
+  m_names += name;
   m_manager.AddNodeName(name, this);
 }
 
@@ -1173,15 +1173,14 @@ void OpalMixerNode::RemoveName(const PString & name)
   if (name.IsEmpty())
     return;
 
-  PINDEX index = m_names.GetValuesIndex(name);
-  if (index == P_MAX_INDEX) {
+  PStringSet::iterator it = m_names.find(name);
+  if (it == m_names.end())
     PTRACE(4, "MixerNode\tName \"" << name << "\" not present in " << *this);
-    return;
+  else {
+    PTRACE(4, "MixerNode\tRemoving name \"" << name << "\" from " << *this);
+    m_names.erase(it);
+    m_manager.RemoveNodeName(name);
   }
-
-  PTRACE(4, "MixerNode\tRemoving name \"" << name << "\" from " << *this);
-  m_names.RemoveAt(index);
-  m_manager.RemoveNodeName(name);
 }
 
 
@@ -1635,11 +1634,10 @@ void OpalMixerNodeManager::RemoveNodeName(PString name)
 }
 
 
-void OpalMixerNodeManager::RemoveNodeNames(PStringList names)
+void OpalMixerNodeManager::RemoveNodeNames(const PStringSet & names)
 {
-  PStringList::iterator iter = names.begin();
-  while (iter != names.end())
-    m_nodesByName.RemoveAt(*iter++);
+  for (PStringSet::const_iterator it = names.begin(); it != names.end(); ++it)
+    m_nodesByName.RemoveAt(*it);
 }
 
 

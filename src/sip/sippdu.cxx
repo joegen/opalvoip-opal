@@ -401,8 +401,8 @@ PObject::Comparison SIPURL::Compare(const PObject & obj) const
   COMPARE_COMPONENT(GetPortSupplied());
 
   // If URI parameter exists in both then must be equal
-  for (PINDEX i = 0; i < paramVars.GetSize(); i++) {
-    PString param = paramVars.GetKeyAt(i);
+  for (PStringToString::const_iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+    PString param = it->first;
     if (other.paramVars.Contains(param))
       COMPARE_COMPONENT(paramVars[param]);
   }
@@ -428,10 +428,10 @@ PString SIPURL::AsQuotedString() const
     s << '"' << m_displayName << "\" ";
   s << '<' << AsString() << '>';
 
-  for (PINDEX i = 0; i < m_fieldParameters.GetSize(); ++i) {
-    s << ';' << m_fieldParameters.GetKeyAt(i);
+  for (PStringToString::const_iterator it = m_fieldParameters.begin(); it != m_fieldParameters.end(); ++it) {
+    s << ';' << it->first;
 
-    PString data = m_fieldParameters.GetDataAt(i);
+    PString data = it->second;
     if (!data.IsEmpty())
       s << '=' << data;
   }
@@ -505,8 +505,8 @@ void SIPURL::Sanitise(UsageContext context)
     }
   }
 
-  for (i = 0; i < paramVars.GetSize(); ++i) {
-    PCaselessString key = paramVars.GetKeyAt(i);
+  for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+    PCaselessString key = it->first;
     if (key.NumCompare("OPAL-") == EqualTo) {
       paramVars.MakeUnique();
       paramVars.RemoveAt(key);
@@ -632,9 +632,9 @@ void SIPMIMEInfo::PrintOn(ostream & strm) const
 {
   const char * eol = strm.fill() == '\r' ? "\r\n" : "\n";
 
-  for (PINDEX i = 0; i < GetSize(); i++) {
-    PCaselessString name = GetKeyAt(i);
-    PString value = GetDataAt(i);
+  for (PStringToString::const_iterator it = begin(); it != end(); ++it) {
+    PCaselessString name = it->first;
+    PString value = it->second;
 
     if (compactForm) {
       for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
@@ -994,7 +994,7 @@ PStringList SIPMIMEInfo::GetRouteList(const char * name, bool reversed) const
          (right - left) > 5) {
     PString * pstr = new PString(s(left+1, right-1));
     if (reversed)
-      routeSet.InsertAt(0, pstr);
+      routeSet.Prepend(pstr);
     else
       routeSet.Append(pstr);
   }
@@ -1188,10 +1188,13 @@ void SIPMIMEInfo::SetTokenSet(const char * field, const PStringSet & tokens)
     RemoveAt(field);
   else {
     PStringStream strm;
-    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-      if (i > 0)
+    bool outputSeparator = false;
+    for (PStringSet::const_iterator it = tokens.begin(); it != tokens.end(); ++it) {
+      if (outputSeparator)
         strm << ',';
-      strm << tokens.GetKeyAt(i);
+      else
+        outputSeparator = true;
+      strm << *it;
     }
     SetAt(field,  strm);
   }
@@ -1835,7 +1838,7 @@ bool SIP_PDU::SetRoute(const PStringList & set)
   if (!firstRoute.GetParamVars().Contains("lr")) {
     // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
     routeSet.MakeUnique();
-    routeSet.RemoveAt(0);
+    routeSet.RemoveHead();
     routeSet.AppendString(m_uri.AsString());
     m_uri = firstRoute;
     m_uri.Sanitise(SIPURL::RouteURI);

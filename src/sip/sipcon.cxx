@@ -276,8 +276,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   }
 
   const PStringToString & query = adjustedDestination.GetQueryVars();
-  for (PINDEX i = 0; i < query.GetSize(); ++i)
-    m_stringOptions.SetAt(HeaderPrefix+query.GetKeyAt(i), query.GetDataAt(i));
+  for (PStringToString::const_iterator it = query.begin(); it != query.end(); ++it)
+    m_stringOptions.SetAt(HeaderPrefix+it->first, it->second);
   adjustedDestination.SetQuery(PString::Empty());
 
   m_stringOptions.ExtractFromURL(adjustedDestination);
@@ -1021,7 +1021,7 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
 
   // Remove anything we never offerred
   while (!m_answerFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_answerFormatList.front()) == m_localMediaFormats.end())
-    m_answerFormatList.RemoveAt(0);
+    m_answerFormatList.RemoveHead();
 
   AdjustMediaFormats(false, NULL, m_answerFormatList);
   if (m_answerFormatList.IsEmpty()) {
@@ -3000,12 +3000,12 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   }
 
   mime.AddSupported("replaces");
-  for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
-    PCaselessString key = m_stringOptions.GetKeyAt(i);
+  for (PStringToString::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
+    PCaselessString key = it->first;
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
-      PString data = m_stringOptions.GetDataAt(i);
+      PString data = it->second;
       if (!data.IsEmpty()) {
-        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_stringOptions.GetDataAt(i));
+        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), data);
         if (key == SIP_HEADER_REPLACES)
           mime.AddRequire("replaces");
       }

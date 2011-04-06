@@ -182,9 +182,9 @@ PBoolean MyGatekeeperServer::OnPostControl(const PStringToString & data, PHTML &
 {
   bool gotOne = FALSE;
 
-  for (PINDEX i = 0; i < data.GetSize(); i++) {
-    PString key = data.GetKeyAt(i);
-    PString value = data.GetDataAt(i);
+  for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
+    PString key = it->first;
+    PString value = it->second;
     if (value == "Unregister") {
       PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByIdentifier(key);
       if (ep != NULL) {

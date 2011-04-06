@@ -136,10 +136,10 @@ class IAX2Ie : public PObject
   virtual PBoolean IsValid() { return validData; }
   
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return 0; }
+  virtual BYTE GetLengthOfData() const { return 0; }
   
   /**return the number of bytes to hold this Information Element when stored in a packet*/
-  int GetBinarySize() { return 2 + GetLengthOfData(); }
+  int GetBinarySize() const { return 2 + GetLengthOfData(); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -212,7 +212,7 @@ class IAX2IeNone : public IAX2Ie
   /**@name Worker methods*/
   //@{  
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return 0; }
+  virtual BYTE GetLengthOfData() const { return 0; }
   
   /**Report the value stored in this class */
   BYTE GetValue() { return 0; }
@@ -257,7 +257,7 @@ class IAX2IeByte : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -301,7 +301,7 @@ class IAX2IeChar : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -345,7 +345,7 @@ class IAX2IeShort : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -387,7 +387,7 @@ class IAX2IeInt : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -430,7 +430,7 @@ class IAX2IeUShort : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -472,7 +472,7 @@ class IAX2IeUInt : public IAX2Ie
   /**@name Worker methods*/
   //@{
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(dataValue); }
+  virtual BYTE GetLengthOfData() const { return sizeof(dataValue); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -520,7 +520,7 @@ class IAX2IeString : public IAX2Ie
   /**@name Worker methods*/
   //@{  
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData();
+  virtual BYTE GetLengthOfData() const;
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -570,7 +570,7 @@ class IAX2IeBinary : public IAX2Ie
   /**@name Worker methods*/
   //@{  
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
+  virtual BYTE GetLengthOfData() const { return (BYTE)dataValue.GetSize(); }
   
   /**print this class (nicely) to the designated stream*/
   virtual void PrintOn(ostream & str) const;
@@ -623,7 +623,7 @@ class IAX2IeDateAndTime : public IAX2Ie
   virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return 4; }
+  virtual BYTE GetLengthOfData() const { return 4; }
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(const PTime & newData) 
@@ -667,7 +667,7 @@ class IAX2IeBlockOfData : public IAX2Ie
   virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
+  virtual BYTE GetLengthOfData() const { return (BYTE)dataValue.GetSize(); }
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(const PBYTEArray & newData) 
@@ -716,7 +716,7 @@ class IAX2IeSockaddrIn : public IAX2Ie
   virtual void PrintOn(ostream & str) const;
   
   /**return the number of bytes to hold this data element */
-  virtual BYTE GetLengthOfData() { return sizeof(struct sockaddr_in); }
+  virtual BYTE GetLengthOfData() const { return sizeof(struct sockaddr_in); }
     
   /**Take the supplied data and copy contents into this IE */
   void SetData(const PIPSocket::Address & newAddr, PINDEX newPort) 
@@ -2143,49 +2143,15 @@ class IAX2IeCallToken : public IAX2IeBinary
 /////////////////////////////////////////////////////////////////////////////
 
 
-PDECLARE_LIST (IAX2IeList, IAX2Ie *)
-#ifdef DOC_PLUS_PLUS 
 /**An array of IE* elements are stored in this list */
-class IAX2IeList : public IAX2Ie *
+class IAX2IeList : public PList<IAX2Ie>
 {
-#endif
  public:
-  /**Destructor, so all eleents are destroyed on destruction */
-  ~IAX2IeList();
-  
-  /**Access method, get pointer to information element at index. 
-     Returns NULL if index is out of bounds.
-     This will remove the specified IAX2Ie from the list. */
-  IAX2Ie *RemoveIeAt(PINDEX i);
-  
-  /**Access method, get pointer to last information element in the list.
-     Returns NULL if index is out of bounds.
-     This will remove the specified IAX2Ie from the list. */
-  IAX2Ie *RemoveLastIe();
-  
-  /**Initialisation - Objects are not automatically deleted on removal */
-  void Initialise() {  DisallowDeleteObjects(); }
-  
-  /**Delete item at a particular index */
-  void DeleteAt(PINDEX idex);
-  
-  /**Test to see if list is empty - returns true if no elements stored in this list */
-  PBoolean Empty() const { return GetSize() == 0; }
-  
-  /**Test to see if list is empty - returns true if no elements stored in this list */
-  PBoolean IsEmpty() const { return GetSize() == 0; }
-  
-  /**Add a new IAX2Ie to the list */
-  void AppendIe(IAX2Ie *newMember) { Append(newMember);}
-  
+  IAX2IeList() {  DisallowDeleteObjects(); }
+   ~IAX2IeList() { AllowDeleteObjects(); }
+
   /**Get the number of bytes to store all these IAX2Ie's in a network packet */
   int GetBinaryDataSize() const;
-  
-  /**Get a pointer to the IAX2Ie which is stored at index i*/
-  IAX2Ie * GetIeAt(int i) const;
-  
- protected:
-  
 };
 
 

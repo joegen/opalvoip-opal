@@ -152,11 +152,7 @@ void SipIM::Main()
   pcss->SetSoundChannelRecordDevice("NULL");
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
-  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    if (!allMediaFormats[i].IsTransportable())
-      allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
-  }
-
+  allMediaFormats.RemoveNonTransportable();
 
   m_manager->AddRouteEntry("sip:.*\t.*=pc:*");
   m_manager->AddRouteEntry("pc:.*\t.*=sip:<da>");

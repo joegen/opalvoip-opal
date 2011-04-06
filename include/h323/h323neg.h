@@ -188,7 +188,7 @@ class H245NegLogicalChannel : public H245Negotiator
     virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
     virtual void HandleTimeout(PTimer &, INT);
 
-    H323Channel * GetChannel();
+    H323Channel * GetChannel() const;
 
     bool IsAwaitingEstablishment() const { return state == e_AwaitingEstablishment; }
     bool IsEstablished() const { return state == e_Established; }
@@ -251,10 +251,9 @@ class H245NegLogicalChannels : public H245Negotiator
     virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
 
     H323ChannelNumber GetNextChannelNumber();
-    PINDEX GetSize() const { return channels.GetSize(); }
-    H323Channel * GetChannelAt(PINDEX i);
+    H245LogicalChannelDict & GetChannels() { return channels; }
+    const H245LogicalChannelDict & GetChannels() const { return channels; }
     H323Channel * FindChannel(unsigned channelNumber, PBoolean fromRemote);
-    H245NegLogicalChannel & GetNegLogicalChannelAt(PINDEX i);
     H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, PBoolean fromRemote);
     H323Channel * FindChannelBySession(unsigned rtpSessionId, PBoolean fromRemote);
     void RemoveAll();

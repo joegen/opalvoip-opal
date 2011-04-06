@@ -2043,14 +2043,14 @@ PBoolean H323RegisteredEndPoint::AddServiceControlSession(const H323ServiceContr
   H225_ServiceControlSession_reason::Choices reason = H225_ServiceControlSession_reason::e_refresh;
   if (!serviceControlSessions.Contains(type)) {
     PINDEX id = 0;
-    PINDEX i = 0;
-    while (i < serviceControlSessions.GetSize()) {
-      if (id != serviceControlSessions.GetDataAt(i))
-        i++;
+    POrdinalDictionary<PString>::iterator it = serviceControlSessions.begin();
+    while (it != serviceControlSessions.end()) {
+      if (id != it->second)
+        ++it;
       else {
         if (++id >= 256)
-          return PFalse;
-        i = 0;
+          return false;
+        it = serviceControlSessions.begin();
       }
     }
     serviceControlSessions.SetAt(type, id);
