@@ -3418,10 +3418,9 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
 
   PChannel * existingTransmitChannel = NULL;
 
-  PINDEX count = logicalChannels->GetSize();
-
-  for (PINDEX i = 0; i < count; ++i) {
-    H323Channel* channel = logicalChannels->GetChannelAt(i);
+  for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                        it != logicalChannels->GetChannels().end(); ++it) {
+    H323Channel* channel = it->second.GetChannel();
     if (!channel)
       return NULL;
 
@@ -3567,8 +3566,9 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
   if (remoteCaps.GetSize() == 0) {
     PTRACE(3, "H323\tReceived empty CapabilitySet, shutting down transmitters.");
     // Received empty TCS, so close all transmit channels
-    for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-      H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
+    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                          it != logicalChannels->GetChannels().end(); ++it) {
+      H245NegLogicalChannel & negChannel = it->second;
       H323Channel * channel = negChannel.GetChannel();
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
@@ -4008,8 +4008,9 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
   // The second time is after CLC Ack or a timeout occurs, then we call the ancestor
   // function to clean up the media stream.
   if (!IsReleased()) {
-    for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-      H323Channel * channel = logicalChannels->GetNegLogicalChannelAt(i).GetChannel();
+    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                          it != logicalChannels->GetChannels().end(); ++it) {
+      H323Channel * channel = it->second.GetChannel();
       if (channel != NULL && channel->GetMediaStream() == &stream) {
         const H323ChannelNumber & number = channel->GetNumber();
         if (!logicalChannels->Close(number, number.IsFromRemote()))
@@ -4496,8 +4497,9 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
   }
 
   // Check all running channels, and if new one can't run with it return PFalse
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
+  for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                        it != logicalChannels->GetChannels().end(); ++it) {
+    H323Channel * channel = it->second.GetChannel();
     if (channel != NULL && channel->GetDirection() == dir) {
       if (dir != H323Channel::IsReceiver) {
         if (!remoteCapabilities.IsAllowed(capability, channel->GetCapability())) {
@@ -4543,8 +4545,9 @@ void H323Connection::CloseLogicalChannelNumber(const H323ChannelNumber & number)
 void H323Connection::CloseAllLogicalChannels(PBoolean fromRemote)
 {
   PSafeLockReadWrite mutex(*this);
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(i);
+  for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                        it != logicalChannels->GetChannels().end(); ++it) {
+    H245NegLogicalChannel & negChannel = it->second;
     H323Channel * channel = negChannel.GetChannel();
     if (channel != NULL && channel->GetNumber().IsFromRemote() == fromRemote)
       negChannel.Close();
@@ -4587,8 +4590,9 @@ unsigned H323Connection::GetBandwidthUsed() const
   PSafeLockReadOnly mutex(*this);
   unsigned used = 0;
 
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    H323Channel * channel = logicalChannels->GetChannelAt(i);
+  for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                        it != logicalChannels->GetChannels().end(); ++it) {
+    H323Channel * channel = it->second.GetChannel();
     if (channel != NULL)
       used += channel->GetBandwidthUsed();
   }
@@ -4609,9 +4613,9 @@ PBoolean H323Connection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean f
       return PFalse;
 
     // Go through logical channels and close down some.
-    PINDEX chanIdx = logicalChannels->GetSize();
-    while (used > newBandwidth && chanIdx-- > 0) {
-      H323Channel * channel = logicalChannels->GetChannelAt(chanIdx);
+    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                          it != logicalChannels->GetChannels().end() && used > newBandwidth ; ++it) {
+      H323Channel * channel = it->second.GetChannel();
       if (channel != NULL) {
         used -= channel->GetBandwidthUsed();
         CloseLogicalChannelNumber(channel->GetNumber());
@@ -4906,8 +4910,9 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 
   bool closedSomething = false;
 
-  for (PINDEX c = 0; c < logicalChannels->GetSize(); c++) {
-    H245NegLogicalChannel & negChannel = logicalChannels->GetNegLogicalChannelAt(c);
+  for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                        it != logicalChannels->GetChannels().end(); ++it) {
+    H245NegLogicalChannel & negChannel = it->second;
     H323Channel * channel = negChannel.GetChannel();
     if (channel != NULL && !channel->GetNumber().IsFromRemote() &&
           (negChannel.IsAwaitingEstablishment() || negChannel.IsEstablished())) {

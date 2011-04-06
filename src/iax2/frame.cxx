@@ -1239,20 +1239,17 @@ void IAX2FullFrameProtocol::WriteIeAsBinaryData()
   PINDEX headerSize = data.GetSize();
   data.SetSize(headerSize + ieElements.GetBinaryDataSize());
   
-  PINDEX i;
-  for(i = 0; i < ieElements.GetSize(); i++) {
-    PTRACE(6, "Frame\tAppend to outgoing frame " << *ieElements.GetIeAt(i));
-    ieElements.GetIeAt(i)->WriteBinary(data.GetPointer(), headerSize);
+  for (IAX2IeList::iterator it = ieElements.begin(); it != ieElements.end(); ++it) {
+    PTRACE(6, "Frame\tAppend to outgoing frame " << *it);
+    it->WriteBinary(data.GetPointer(), headerSize);
   }    
 }
 
 PBoolean IAX2FullFrameProtocol::GetCallTokenIe(IAX2IeCallToken & callToken)
 {
-  PINDEX i;
-  for (i = 0; i < ieElements.GetSize(); i++) {
-    IAX2Ie *elem = ieElements.GetIeAt(i);
-    if (elem->GetKeyValue() == IAX2Ie::ie_callToken) {
-      IAX2IeCallToken *src = (IAX2IeCallToken *)elem;
+  for (IAX2IeList::iterator it = ieElements.begin(); it != ieElements.end(); ++it) {
+    if (it->GetKeyValue() == IAX2Ie::ie_callToken) {
+      IAX2IeCallToken *src = (IAX2IeCallToken *)&*it;
       callToken.CopyData(src);
       return PTrue;
     }
@@ -1295,21 +1292,14 @@ void IAX2FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsig
 {
   capability = 0;
   preferred = 0;
-  IAX2Ie * p;
-  PINDEX i = 0;
-  for(;;) {
-    p = GetIeAt(i);
-    if (p == NULL)
-      break;
-    
-    i++;
-    if (p->IsValid()) {
-      if (PIsDescendant(p, IAX2IeCapability)) {
-	capability = ((IAX2IeCapability *)p)->ReadData();
+  for (IAX2IeList::iterator it = ieElements.begin(); it != ieElements.end(); ++it) {
+    if (it->IsValid()) {
+      if (PIsDescendant(&*it, IAX2IeCapability)) {
+	capability = ((IAX2IeCapability *)&*it)->ReadData();
 	PTRACE(5, "IAX2FullFrameProtocol\tCapability codecs are " << capability);
       }
-      if (PIsDescendant(p, IAX2IeFormat)) {
-	preferred = ((IAX2IeFormat *)p)->ReadData();
+      if (PIsDescendant(&*it, IAX2IeFormat)) {
+	preferred = ((IAX2IeFormat *)&*it)->ReadData();
 	PTRACE(4, "IAX2FullFrameProtocol\tPreferred codec is " << preferred);
       }
     } else {
@@ -1320,19 +1310,12 @@ void IAX2FullFrameProtocol::GetRemoteCapability(unsigned int & capability, unsig
 
 void IAX2FullFrameProtocol::CopyDataFromIeListTo(IAX2IeData &res)
 {
-  IAX2Ie * p;
-  PINDEX i = 0;
-  for(;;) {
-    p = GetIeAt(i);
-    if (p == NULL)
-      break;
-    
-    i++;
-    PTRACE(4, "From IAX2FullFrameProtocol, handle IAX2Ie of type " << *p);
-    if (p->IsValid()) 
-      p->StoreDataIn(res);
+  for (IAX2IeList::iterator it = ieElements.begin(); it != ieElements.end(); ++it) {
+    PTRACE(4, "From IAX2FullFrameProtocol, handle IAX2Ie of type " << *it);
+    if (it->IsValid()) 
+      it->StoreDataIn(res);
     else {
-      PTRACE(3, "Invalid data in IE. " << *p);
+      PTRACE(3, "Invalid data in IE. " << *it);
     }
   }
 }
@@ -1501,24 +1484,20 @@ PString IAX2FullFrameCng::GetSubClassName() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2FrameList::~IAX2FrameList()
-{   
-}
-
 void IAX2FrameList::ReportList(PString & answer)
 {
   PStringStream reply;
   {
     PWaitAndSignal m(mutex);
-    
-    for(PINDEX i = 0; i < PAbstractList::GetSize(); i++) {
-       IAX2Frame *frame = (IAX2Frame *)GetAt(i);
-       reply << "     #" << (i + 1) << " of " 
-	     << PAbstractList::GetSize() << "   "
-	     << frame->GetConnectionToken() << " " 
-	     << frame->GetTimeStamp();
-       if (frame->IsFullFrame()) {
-	 IAX2FullFrame *ff = (IAX2FullFrame *)frame;
+
+    PINDEX count = 0;
+    for (iterator it = begin(); it != end(); ++it) {
+       reply << "     #" << ++count << " of " 
+	     << GetSize() << "   "
+	     << it->GetConnectionToken() << " " 
+	     << it->GetTimeStamp();
+       if (it->IsFullFrame()) {
+	 IAX2FullFrame *ff = (IAX2FullFrame *)&*it;
 	 reply << " " << ff->GetSequenceInfo().AsString() << " " 
 	       << ff->GetFullFrameName() << endl;
        }
@@ -1534,7 +1513,7 @@ void IAX2FrameList::AddNewFrame(IAX2Frame *newFrame)
   PTRACE(5, "Frame\tAdd " << newFrame->IdString() 
 	 << " " << newFrame->GetRemoteInfo());
   PWaitAndSignal m(mutex);
-  PAbstractList::Append(newFrame);
+  Append(newFrame);
 }
 
 void IAX2FrameList::GrabContents(IAX2FrameList &src)
@@ -1549,17 +1528,12 @@ void IAX2FrameList::GrabContents(IAX2FrameList &src)
 IAX2Frame *IAX2FrameList::GetLastFrame()
 {
   PWaitAndSignal m(mutex);
-  PINDEX elems = GetEntries();
-  if (elems ==  0) {
-    return NULL;
-  }
-  
-  return (IAX2Frame *)PAbstractList::RemoveAt(0);
+  return (IAX2Frame *)RemoveHead();
 }
 
 void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 {
-  PINDEX currentIndex;
+  iterator currentIter;
   IAX2FullFrame *sent;
 
   PWaitAndSignal m(mutex);
@@ -1567,18 +1541,14 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
   PTRACE(5, "Frame\tID# Delete matchingSendFrame start, test on " 
 	 << reply->IdString());
 
-  for (PINDEX i = 0; i < GetEntries(); i++) {
+  for (iterator it = begin(); it != end(); ++it) {
     sent = NULL;
-    IAX2Frame *frame = (IAX2Frame *)GetAt(i);
-    if (frame == NULL)
-      continue;
-    
-    PTRACE(5, "ID#DeleteMatching " << frame->IdString());
-    if (!frame->IsFullFrame())
+    PTRACE(5, "ID#DeleteMatching " << it->IdString());
+    if (!it->IsFullFrame())
       continue;
 
-    sent = (IAX2FullFrame *)frame;
-    currentIndex = i; /* If a match is found, we delete this one */
+    sent = (IAX2FullFrame *)&*it;
+    currentIter = it; /* If a match is found, we delete this one */
 
     if (sent->DeleteFrameNow()) {
       // Skip this frame, as it is marked, delete now
@@ -1667,7 +1637,7 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
  foundMatch:
 
   delete sent;
-  RemoveAt(currentIndex);
+  erase(currentIter);
   return;
 }  
 
@@ -1677,15 +1647,11 @@ void IAX2FrameList::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
   PWaitAndSignal m(mutex);
   PTRACE(4, "Look for a frame that has been sent, waiting to be acked etc, that matches the supplied Vnak frame");
   
-  for (PINDEX i = 0; i < GetEntries(); i++) {
-    IAX2Frame *frame = (IAX2Frame *)GetAt(i);
-    if (frame == NULL)
-      continue;
-    
-    if (!frame->IsFullFrame())
+  for (iterator it = begin(); it != end(); ++it) {
+    if (!it->IsFullFrame())
       continue;
 
-    IAX2FullFrame *sent = (IAX2FullFrame *)frame;
+    IAX2FullFrame *sent = (IAX2FullFrame *)&*it;
 
     if (sent->DeleteFrameNow()) {
       PTRACE(4, "Skip this frame, as it is marked, delete now" << sent->IdString());
@@ -1720,23 +1686,28 @@ void IAX2FrameList::GetResendFramesDeleteOldFrames(IAX2FrameList &framesToSend)
     return;
   }
   
-  for (PINDEX i = GetEntries(); i > 0; i--) {
-    IAX2FullFrame *active = (IAX2FullFrame *)PAbstractList::GetAt(i - 1);
-    if (active == NULL)
+  iterator it = rbegin();
+  while (it != rend()) {
+    IAX2FullFrame *active = dynamic_cast<IAX2FullFrame *>(&*it);
+    if (active == NULL) {
+      --it;
       continue;
+    }
     
     if (active->DeleteFrameNow()) { 
       PTRACE(5, "marked as delete now, so delete" << *active);
       delete active;
       active = NULL;
-      PAbstractList::RemoveAt(i - 1);
+      erase(it--);
       continue;
-      }
-    
+    }
+
     if (active->SendFrameNow()) {
-      PAbstractList::RemoveAt(i - 1);
+      erase(it--);
       framesToSend.AddNewFrame(active);
     }
+    else
+      --it;
   }
   PTRACE(4, "Have collected " << framesToSend.GetSize() << " frames to onsend");
   PTRACE(5, "ID# GetResendFramesDeleteOldFrames end ");
@@ -1747,9 +1718,10 @@ void IAX2FrameList::MarkAllAsResent()
 {
   PWaitAndSignal m(mutex);
 
-  for (PINDEX i = 0; i < GetEntries(); i++) {
-    IAX2FullFrame *active = (IAX2FullFrame *)PAbstractList::GetAt(i);
-    active->MarkAsResent();
+  for (iterator it = begin(); it != end(); ++it) {
+    IAX2FullFrame *active = dynamic_cast<IAX2FullFrame *>(&*it);
+    if (active != NULL)
+      active->MarkAsResent();
   }
 }
 

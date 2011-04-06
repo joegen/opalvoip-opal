@@ -122,7 +122,6 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
     /**Get a format iterator in the list matching the payload type.
 
-
        Returns end() if not in list.
       */
     const_iterator FindFormat(
@@ -169,6 +168,32 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const PString & wildcard    ///<  Wildcard string name.
     ) const { return FindFormat(wildcard) != end(); }
 
+    /**Determine if a list contains a specific media type
+      */
+    bool HasType(
+      const OpalMediaType & type,
+      bool mustBeTransportable = true
+    ) const;
+
+    /**Reorder the formats in the list.
+       The order variable is an array of names and the list is reordered
+       according to the order in that array.
+
+       Each string in the array is checked using the wildcard matching algorithm
+       similar to FindFormat().
+
+       The '*' character indicates substrings, for example: "G.711*" would
+       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
+
+       The '@' character indicates a type of media format, so say "\@video"
+       would sort by video codec.
+
+        The '!' character is not supported.
+      */
+    void Reorder(
+      const PStringArray & order
+    );
+
     /**Remove all the formats specified.
        Each string in the array is checked using the wildcard matching algorithm in
        FindFormat().
@@ -191,38 +216,14 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const PStringArray & mask
     );
 
-    /**Reorder the formats in the list.
-       The order variable is an array of names and the list is reordered
-       according to the order in that array.
-
-       Each string in the array is checked using the wildcard matching algorithm
-       similar to FindFormat().
-
-       The '*' character indicates substrings, for example: "G.711*" would
-       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
-
-       The '@' character indicates a type of media format, so say "\@video"
-       would sort by video codec.
-
-        The '!' character is not supported.
+    /**Remove all the non-transportable formats specified.
       */
-    void Reorder(
-      const PStringArray & order
-    );
-
-    /**Determine if a list contains a specific media type
-      */
-    bool HasType(
-      const OpalMediaType & type,
-      bool mustBeTransportable = true
-    ) const;
+    void RemoveNonTransportable();
   //@}
 
   private:
     virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
     virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
-    virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
-    virtual PBoolean SetAt(PINDEX, PObject *) { return false; }
 };
 
 

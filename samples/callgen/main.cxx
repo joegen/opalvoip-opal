@@ -254,10 +254,7 @@ void CallGen::Main()
   traceStream << PTrace::End;
 #endif
 
-  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    if (!allMediaFormats[i].IsTransportable())
-      allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
-  }
+  allMediaFormats.RemoveNonTransportable();
   allMediaFormats.Remove(manager.GetMediaFormatMask());
   allMediaFormats.Reorder(manager.GetMediaFormatOrder());
 

@@ -512,7 +512,7 @@ class OpalMixerNodeManager : public PObject
        Commonly used when node destroyed.
       */
     void RemoveNodeNames(
-      PStringList names   ///< list of alias names for nodes
+      const PStringSet & names   ///< list of alias names for nodes
     );
   //@}
 
@@ -1074,7 +1074,7 @@ class OpalMixerNode : public PSafeObject
 
     /**Get list of names for this node.
       */
-    const PStringList & GetNames() const { return m_names; }
+    const PStringSet & GetNames() const { return m_names; }
 
     /**Add a name for this node.
       */
@@ -1122,7 +1122,7 @@ class OpalMixerNode : public PSafeObject
 
     OpalMixerNodeManager & m_manager;
     PGloballyUniqueID      m_guid;
-    PStringList            m_names;
+    PStringSet             m_names;
     OpalMixerNodeInfo    * m_info;
     PTime                  m_creationTime;
 

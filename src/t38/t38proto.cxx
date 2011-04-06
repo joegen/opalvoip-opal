@@ -127,11 +127,11 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
     void ApplyStringOptions(const PStringToString & stringOptions)
     {
-      for (PINDEX i = 0 ; i < stringOptions.GetSize() ; i++) {
-        PCaselessString key = stringOptions.GetKeyAt(i);
+      for (PStringToString::const_iterator it = stringOptions.begin(); it != stringOptions.end(); ++it) {
+        PCaselessString key = it->first;
 
         if (key == "T38-UDPTL-Redundancy") {
-          PStringArray value = stringOptions.GetDataAt(i).Tokenise(",", FALSE);
+          PStringArray value = it->second.Tokenise(",", FALSE);
           PWaitAndSignal mutex(m_writeMutex);
 
           m_redundancy.clear();
@@ -173,18 +173,18 @@ class T38PseudoRTP_Handler : public RTP_Encoding
         else
         if (key == "T38-UDPTL-Redundancy-Interval") {
           PWaitAndSignal mutex(m_writeMutex);
-          m_redundancyInterval = stringOptions.GetDataAt(i).AsUnsigned();
+          m_redundancyInterval = it->second.AsUnsigned();
           PTRACE(3, "T38_UDPTL\tUse redundancy interval " << m_redundancyInterval);
         }
         else
         if (key == "T38-UDPTL-Keep-Alive-Interval") {
           PWaitAndSignal mutex(m_writeMutex);
-          m_keepAliveInterval = stringOptions.GetDataAt(i).AsUnsigned();
+          m_keepAliveInterval = it->second.AsUnsigned();
           PTRACE(3, "T38_UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
         }
         else
         if (key == "T38-UDPTL-Optimise-On-Retransmit") {
-          PCaselessString value = stringOptions.GetDataAt(i);
+          PCaselessString value = it->second;
           PWaitAndSignal mutex(m_writeMutex);
 
           m_optimiseOnRetransmit =
@@ -193,7 +193,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
           PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
         }
         else {
-          PTRACE(4, "T38_UDPTL\tIgnored option " << key << " = \"" << stringOptions.GetDataAt(i) << "\"");
+          PTRACE(4, "T38_UDPTL\tIgnored option " << key << " = \"" << it->second << "\"");
         }
       }
     }

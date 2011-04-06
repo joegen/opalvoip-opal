@@ -373,11 +373,11 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
 }
 
 
-void DisplayPlugInInfo(const PString & name, const PPluginModuleManager::PluginListType & pluginList)
+void DisplayPlugInInfo(const PString & name, PPluginModuleManager::PluginListType & pluginList)
 {
-  for (int i = 0; i < pluginList.GetSize(); i++) {
-    if (pluginList.GetKeyAt(i) == name) {
-      PDynaLink & dll = pluginList.GetDataAt(i);
+  for (PPluginModuleManager::PluginListType::iterator it = pluginList.begin(); it != pluginList.end(); ++it) {
+    if (it->first == name) {
+      PDynaLink & dll = it->second;
       PluginCodec_GetCodecFunction getCodecs;
       if (!dll.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
         cout << "error: " << name << " is missing the function " << PLUGIN_CODEC_GET_CODEC_FN_STR << endl;
@@ -616,8 +616,8 @@ void OpalCodecInfo::Main()
 
   if (args.HasOption('p')) {
     cout << "Plugin codecs:" << endl;
-    for (int i = 0; i < pluginList.GetSize(); i++)
-      cout << "   " << pluginList.GetKeyAt(i) << endl;
+    for (PPluginModuleManager::PluginListType::iterator it = pluginList.begin(); it != pluginList.end(); ++it)
+      cout << "   " << it->first << endl;
     cout << "\n\n";
     needHelp = false;
   }

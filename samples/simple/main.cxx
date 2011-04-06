@@ -863,10 +863,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     srcEP = defaultSrcEP;
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
-  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    if (!allMediaFormats[i].IsTransportable())
-      allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
-  }
+  allMediaFormats.RemoveNonTransportable();
   allMediaFormats.Remove(GetMediaFormatMask());
   allMediaFormats.Reorder(GetMediaFormatOrder());
 

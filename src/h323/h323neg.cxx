@@ -888,7 +888,7 @@ void H245NegLogicalChannel::Release()
 }
 
 
-H323Channel * H245NegLogicalChannel::GetChannel()
+H323Channel * H245NegLogicalChannel::GetChannel() const
 {
   return channel;
 }
@@ -1072,12 +1072,6 @@ H323ChannelNumber H245NegLogicalChannels::GetNextChannelNumber()
 }
 
 
-H323Channel * H245NegLogicalChannels::GetChannelAt(PINDEX i)
-{
-  return channels.GetDataAt(i).GetChannel();
-}
-
-
 H323Channel * H245NegLogicalChannels::FindChannel(unsigned channelNumber,
                                                   PBoolean fromRemote)
 {
@@ -1087,12 +1081,6 @@ H323Channel * H245NegLogicalChannels::FindChannel(unsigned channelNumber,
     return channels[chanNum].GetChannel();
 
   return NULL;
-}
-
-
-H245NegLogicalChannel & H245NegLogicalChannels::GetNegLogicalChannelAt(PINDEX i)
-{
-  return channels.GetDataAt(i);
 }
 
 
@@ -1107,10 +1095,9 @@ H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned c
 H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId,
                                                            PBoolean fromRemote)
 {
-  PINDEX i;
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
-  for (i = 0; i < GetSize(); i++) {
-    H245NegLogicalChannel & logChan = channels.GetDataAt(i);
+  for (H245LogicalChannelDict::iterator it = channels.begin(); it != channels.end(); ++it) {
+    H245NegLogicalChannel & logChan = it->second;
     if (logChan.IsAwaitingEstablishment() || logChan.IsEstablished()) {
       H323Channel * channel = logChan.GetChannel();
       if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
@@ -1125,8 +1112,8 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
 
 void H245NegLogicalChannels::RemoveAll()
 {
-  for (PINDEX i = 0; i < channels.GetSize(); i++) {
-    H245NegLogicalChannel & neg = channels.GetDataAt(i);
+  for (H245LogicalChannelDict::iterator it = channels.begin(); it != channels.end(); ++it) {
+    H245NegLogicalChannel & neg = it->second;
     H323Channel * channel = neg.GetChannel();
     if (channel != NULL)
       channel->Close();

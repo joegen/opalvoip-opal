@@ -359,7 +359,7 @@ PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
     return PFalse;
   }
 
-  OpalTransportAddress & address = mediaTransportAddresses[sessionID];
+  const OpalTransportAddress & address = mediaTransportAddresses[sessionID];
 
   PIPSocket::Address ip;
   WORD port;
@@ -575,8 +575,8 @@ unsigned OpalRTPSessionManager::GetNextSessionID()
 {
   unsigned maxSessionID = 0;
 
-  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
-    unsigned sessionID = sessions.GetDataAt(i).sessionId;
+  for (SessionDict::iterator it = sessions.begin(); it != sessions.end(); ++it) {
+    unsigned sessionID = it->second.sessionId;
     if (maxSessionID < sessionID)
       maxSessionID = sessionID;
   }
@@ -619,9 +619,9 @@ void OpalRTPSessionManager::CloseSession(unsigned sessionID)
 {
   PWaitAndSignal mutex(m_mutex);
   if (sessionID == 0) {
-    for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
-      PTRACE(3, "RTP\tClosing session " << sessions.GetKeyAt(i));
-      sessions.GetDataAt(i).Close();
+    for (SessionDict::iterator it = sessions.begin(); it != sessions.end(); ++it) {
+      PTRACE(3, "RTP\tClosing session " << it->first);
+      it->second.Close();
     }
   }
   else {
@@ -693,8 +693,8 @@ bool OpalRTPSessionManager::AllSessionsFailing()
 {
   PWaitAndSignal wait(m_mutex);
 
-  for (PINDEX i = 0; i < sessions.GetSize(); ++i) {
-    OpalMediaSession & session = sessions.GetDataAt(i);
+  for (SessionDict::iterator it = sessions.begin(); it != sessions.end(); ++it) {
+    OpalMediaSession & session = it->second;
     if (session.IsActive() && !session.HasFailed())
       return false;
   }

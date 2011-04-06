@@ -2483,10 +2483,8 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       // require at least one of the media format's packetizations to be in the mediaPacketizations list
       PStringArray packetizations = packetizationString.Tokenise(",");
       for (PINDEX j = 0; j < packetizations.GetSize(); j++) {
-        for (PINDEX k = 0; k < mediaPacketizations.GetSize(); k++) {
-          if (mediaPacketizations.GetKeyAt(k) == packetizations[j])
-            return &capability;
-        }
+        if (mediaPacketizations[packetizations[j]])
+          return &capability;
       }
 
       PTRACE(4, "H323\tUnsupported media packetization " << packetizationString << ", not using capability " << cap);

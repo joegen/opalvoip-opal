@@ -1624,16 +1624,14 @@ void RTP_Session::SourceDescription::PrintOn(ostream & strm) const
   };
 
   strm << "ssrc=" << sourceIdentifier;
-  for (PINDEX i = 0; i < items.GetSize(); i++) {
-    strm << "\n  item[" << i << "]: type=";
-    unsigned typeNum = items.GetKeyAt(i);
+  for (POrdinalToString::const_iterator it = items.begin(); it != items.end(); ++it) {
+    unsigned typeNum = it->first;
+    strm << "\n  item[" << typeNum << "]: type=";
     if (typeNum < PARRAYSIZE(DescriptionNames))
       strm << DescriptionNames[typeNum];
     else
       strm << typeNum;
-    strm << " data=\""
-      << items.GetDataAt(i)
-      << '"';
+    strm << " data=\"" << it->second << '"';
   }
 }
 

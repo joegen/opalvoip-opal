@@ -376,7 +376,7 @@ void IAX2IeString::WriteBinary(BYTE *data)
     memcpy(data, dataValue.GetPointer(), GetLengthOfData());
 }
 
-BYTE IAX2IeString::GetLengthOfData() 
+BYTE IAX2IeString::GetLengthOfData() const
 { 
   if (dataValue.GetSize() == 0)
     return 0;
@@ -623,56 +623,14 @@ BYTE IAX2IeCallToken::iKeyPad[IAX2IeCallToken::blockSize];
 BYTE IAX2IeCallToken::oKeyPad[IAX2IeCallToken::blockSize];
 /////////////////////////////////////////////////////////////////////////////
 
-IAX2IeList::~IAX2IeList()
-{
-    AllowDeleteObjects();
-}
-
-IAX2Ie *IAX2IeList::RemoveIeAt(PINDEX i)
-{ 
-  if (i >= GetSize())
-    return NULL;
-  
-  return (IAX2Ie *) PAbstractList::RemoveAt(i);
-}
-
-IAX2Ie *IAX2IeList::RemoveLastIe()
-{
-  PINDEX elems = PAbstractList::GetSize();
-  if (elems > 0) {
-    return RemoveIeAt(elems - 1);	  
-  }
-  
-  return NULL;
-}
-
-void IAX2IeList::DeleteAt(PINDEX idex)
-{
-  if (idex >= PAbstractList::GetSize())
-    return;
-  
-  IAX2Ie *obj = RemoveIeAt(idex);
-  
-  delete obj;
-}
-
 int IAX2IeList::GetBinaryDataSize() const
 {
   PINDEX totalSize = 0;
-  for (PINDEX i = 0; i < PAbstractList::GetSize(); i++)
-    totalSize += GetIeAt(i)->GetBinarySize();
+  for (IAX2IeList::const_iterator it = begin(); it != end(); ++it)
+    totalSize += it->GetBinarySize();
   
   return totalSize;
 }
-
-IAX2Ie *IAX2IeList::GetIeAt(int i) const
-{
-  if (i >= GetSize())
-    return NULL;
-  
-  return (IAX2Ie *)GetAt(i); 
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 

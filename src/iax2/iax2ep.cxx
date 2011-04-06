@@ -251,21 +251,23 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
 void IAX2EndPoint::ReportStoredConnections()
 {
-  PStringArray cons = GetAllConnections();
-  PTRACE(5, " There are " << cons.GetSize() << " stored connections in connectionsActive");
-  PINDEX i;
-  for(i = 0; i < cons.GetSize(); i++) {
-    PTRACE(5, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
-  }
+#if PTRACING
+  if (PTrace::CanTrace(5)) {
+    PStringArray cons = GetAllConnections();
+    PTRACE(5, " There are " << cons.GetSize() << " stored connections in connectionsActive");
+    PINDEX i;
+    for(i = 0; i < cons.GetSize(); i++) {
+      PTRACE(5, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
+    }
 
-  mutexTokenTable.StartRead();
-  PTRACE(5, " There are " << tokenTable.GetSize() 
-	 << " stored connections in the token translation table.");
-  for (i = 0; i < tokenTable.GetSize(); i++) {
-    PTRACE(5, " token table at " << i << " is " 
-	   << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
+    mutexTokenTable.StartRead();
+    PTRACE(5, " There are " << tokenTable.GetSize() 
+	   << " stored connections in the token translation table.");
+    for (PStringToString::iterator it = tokenTable.begin(); it != tokenTable.end(); ++it)
+      PTRACE(5, " token table at " << i << " is " << it->first << " " << it->second);
+    mutexTokenTable.EndRead();
   }
-  mutexTokenTable.EndRead();
+#endif
 }
 
 PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
