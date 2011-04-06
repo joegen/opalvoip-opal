@@ -84,7 +84,7 @@ class EchoConnection : public OpalLocalConnection
 
     PMutex m_mediaMutex;
 
-    class MediaInfo {
+    class MediaInfo : public PObject {
       public:
         MediaInfo(const OpalMediaType & type)
           : m_type(type)

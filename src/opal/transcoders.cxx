@@ -178,7 +178,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder == NULL) {
-    PTRACE(2, "Opal\tCould not create transcoder instance from " << srcFormat << " to " << destFormat);
+    PTRACE2(2, NULL, "Opal\tCould not create transcoder instance from " << srcFormat << " to " << destFormat);
     return NULL;
   }
 
@@ -186,8 +186,8 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
   if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
     return transcoder;
 
+  PTRACE2(2, transcoder, "Opal\tError creating transcoder instance from " << srcFormat << " to " << destFormat);
   delete transcoder;
-  PTRACE(2, "Opal\tError creating transcoder instance from " << srcFormat << " to " << destFormat);
   return NULL;
 }
 

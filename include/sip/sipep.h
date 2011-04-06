@@ -967,7 +967,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
 
     // Thread pooling
-    class SIP_Work
+    class SIP_Work : public PObject
     {
       public:
         SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token);

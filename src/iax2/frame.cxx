@@ -263,7 +263,7 @@ void IAX2Frame::BuildTimeStamp(const PTimeInterval & callStartTick)
 DWORD IAX2Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
 {
   DWORD tVal = (DWORD)(PTimer::Tick() - callStartTick).GetMilliSeconds();
-  PTRACE(6, "Frame\tCalculate timestamp as " << tVal);
+  PTRACE2(6, NULL, "Frame\tCalculate timestamp as " << tVal);
   return tVal;
 }
 
@@ -1032,7 +1032,7 @@ unsigned short IAX2FullFrameVoice::OpalNameToIax2Value(const PString opalName)
   if (opalName.Find("iLBC-13k3") != P_MAX_INDEX) {
     return ilbc; 
     }
-  PTRACE(6, "Codec " << opalName << " is not supported in IAX2");
+  PTRACE2(6, NULL, "Codec " << opalName << " is not supported in IAX2");
   return 0;
 }
 

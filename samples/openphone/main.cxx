@@ -263,6 +263,7 @@ DEF_FIELD(TraceDateTime);
 DEF_FIELD(TraceTimestamp);
 DEF_FIELD(TraceThreadName);
 DEF_FIELD(TraceThreadAddress);
+DEF_FIELD(TraceObjectInstance);
 DEF_FIELD(TraceFileName);
 DEF_FIELD(TraceOptions);
 #endif
@@ -4228,6 +4229,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(TraceTimestamp, (PTrace::GetOptions()&PTrace::Timestamp) != 0);
   INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
+  INIT_FIELD(TraceObjectInstance, (PTrace::GetOptions()&PTrace::ObjectInstance) != 0);
   INIT_FIELD(TraceFileName, m_manager.m_traceFileName);
 #else
   RemoveNotebookPage(this, wxT("Tracing"));
@@ -4648,6 +4650,8 @@ bool OptionsDialog::TransferDataFromWindow()
     traceOptions |= PTrace::Timestamp;
   if (m_TraceThreadName)
     traceOptions |= PTrace::Thread;
+  if (m_TraceObjectInstance)
+    traceOptions |= PTrace::ObjectInstance;
   if (m_TraceThreadAddress)
     traceOptions |= PTrace::ThreadAddress;
 

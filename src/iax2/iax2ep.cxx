@@ -311,13 +311,14 @@ PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
 	res[portIndex] = halfs[1];
   }
 
-  PTRACE(4, "Opal\t call protocol          " << res[protoIndex]);
-  PTRACE(4, "Opal\t destination user       " << res[userIndex]);
-  PTRACE(4, "Opal\t transport to use       " << res[transportIndex]);
-  PTRACE(4, "Opal\t destination address    " << res[addressIndex]);
-  PTRACE(4, "Opal\t destination port       " << res[portIndex]);
-  PTRACE(4, "Opal\t destination extension  " << res[extensionIndex]);
-  PTRACE(4, "Opal\t destination context    " << res[contextIndex]);
+  PTRACE2(4, NULL, "IAX2\t"
+          "call protocol          " << res[protoIndex] << "\n "
+          "destination user       " << res[userIndex] << "\n "
+          "transport to use       " << res[transportIndex] << "\n "
+          "destination address    " << res[addressIndex] << "\n "
+          "destination port       " << res[portIndex] << "\n "
+          "destination extension  " << res[extensionIndex] << "\n "
+          "destination context    " << res[contextIndex]);
 
   return res;
 }
