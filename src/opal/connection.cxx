@@ -649,14 +649,14 @@ void OpalConnection::AdjustMediaFormats(bool   local,
   mediaFormats.Remove(m_stringOptions(OPAL_OPT_REMOVE_CODEC).Lines());
 
   if (local) {
-    for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i) {
-      PString key = m_stringOptions.GetKeyAt(i);
+    for (PStringToString::const_iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
+      PString key = it->first;
       PINDEX colon = key.Find(':');
       if (colon != P_MAX_INDEX) {
         PString fmtName = key.Left(colon);
         PString optName = key.Mid(colon+1);
         if (!fmtName.IsEmpty() && !optName.IsEmpty()) {
-          PString optValue = m_stringOptions.GetDataAt(i);
+          PString optValue = it->second;
           OpalMediaFormatList::const_iterator iterFormat;
           while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
             OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
@@ -1548,8 +1548,8 @@ void OpalConnection::SetStringOptions(const StringOptions & options, bool overwr
   if (overwrite)
     m_stringOptions = options;
   else {
-    for (PINDEX i = 0; i < options.GetSize(); ++i)
-      m_stringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
+    for (PStringToString::const_iterator it = options.begin(); it != options.end(); ++it)
+      m_stringOptions.SetAt(it->first, it->second);
   }
 }
 
@@ -1830,10 +1830,10 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
 {
   PStringToString params = url.GetParamVars();
   params.MakeUnique();
-  for (PINDEX i = 0; i < params.GetSize(); ++i) {
-    PCaselessString key = params.GetKeyAt(i);
+  for (PStringToString::iterator it = params.begin(); it != params.end(); ++it) {
+    PCaselessString key = it->first;
     if (key.NumCompare("OPAL-") == EqualTo) {
-      SetAt(key.Mid(5), params.GetDataAt(i));
+      SetAt(key.Mid(5), it->second);
       url.SetParamVar(key, PString::Empty());
     }
   }

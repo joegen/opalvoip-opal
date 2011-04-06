@@ -144,7 +144,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
     output.Append(new RTP_DataFrame(0, maxOutputSize));
   else {
     while (output.GetSize() > 1)
-      output.RemoveAt(1);
+      output.RemoveTail();
   }
 
   // set the output timestamp and marker bit

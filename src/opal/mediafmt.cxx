@@ -1803,6 +1803,18 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
 }
 
 
+void OpalMediaFormatList::RemoveNonTransportable()
+{
+  iterator it = begin();
+  while (it != end()) {
+    if (it->IsTransportable())
+      ++it;
+    else
+      erase(it++);
+  }
+}
+
+
 OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol, const_iterator format) const
 {
   if (format == const_iterator())
@@ -1913,34 +1925,46 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PStrin
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
   DisallowDeleteObjects();
-  PINDEX nextPos = 0;
+
+  OpalMediaFormatBaseList::iterator orderedIter = begin();
+
   for (PINDEX i = 0; i < order.GetSize(); i++) {
     if (order[i][0] == '@') {
       OpalMediaType mediaType = order[i].Mid(1);
-      PINDEX findPos = 0;
-      while (findPos < GetSize()) {
-        if ((*this)[findPos].GetMediaType() == mediaType) {
-          if (findPos > nextPos)
-            OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
-          nextPos++;
+
+      OpalMediaFormatBaseList::iterator findIter = orderedIter;
+      while (findIter != end()) {
+        if (findIter->GetMediaType() != mediaType)
+          ++findIter;
+        else if (findIter == orderedIter) {
+          ++orderedIter;
+          ++findIter;
         }
-        findPos++;
+        else {
+          insert(orderedIter, &*findIter);
+          erase(findIter++);
+        }
       }
     }
     else {
       PStringArray wildcards = order[i].Tokenise('*', true);
 
-      PINDEX findPos = 0;
-      while (findPos < GetSize()) {
-        if (WildcardMatch((*this)[findPos].m_info->formatName, wildcards)) {
-          if (findPos > nextPos)
-            OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
-          nextPos++;
+      OpalMediaFormatBaseList::iterator findIter = orderedIter;
+      while (findIter != end()) {
+        if (!WildcardMatch(findIter->GetName(), wildcards))
+          ++findIter;
+        else if (findIter == orderedIter) {
+          ++orderedIter;
+          ++findIter;
         }
-        findPos++;
+        else {
+          insert(orderedIter, &*findIter);
+          erase(findIter++);
+        }
       }
     }
   }
+
   AllowDeleteObjects();
 }
 

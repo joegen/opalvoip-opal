@@ -987,12 +987,8 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   /**Get text description of the subclass contents*/
   static PString GetSubClassName(PINDEX t);
   
-  /**Return a pointer to the n'th Ie in the internal list. If it is not
-     there, a NULL is returned */
-  IAX2Ie *GetIeAt(PINDEX i) {      return ieElements.GetIeAt(i); }
-  
   /**Add a new Information Element (Ie) to the intenral list */
-  void AppendIe(IAX2Ie *newElement) { ieElements.AppendIe(newElement); }
+  void AppendIe(IAX2Ie *newElement) { ieElements.Append(newElement); }
   
   /**Write the contents of the Ie internal list to the frame data array.
      This is usually done in preparation to transmitting this frame */
@@ -1157,20 +1153,15 @@ class IAX2FullFrameCng : public IAX2FullFrame
 
 /////////////////////////////////////////////////////////////////////////////    
 
-PDECLARE_LIST (IAX2FrameList, IAX2Frame *)
-#ifdef DOC_PLUS_PLUS     //This makes emacs bracket matching code happy.
 /** A list of all frames waiting for processing
 	 
     Note please, this class is thread safe.
      
    You do not need to protect acces to this class.
 */     
-class IAX2FrameList : public IAX2Frame *  
+class IAX2FrameList : public PList<IAX2Frame>
 {
-#endif
  public:
-  ~IAX2FrameList();
-  
   /**Report the frames queued in this list*/
   void ReportList(PString & answer);
   
@@ -1180,9 +1171,6 @@ class IAX2FrameList : public IAX2Frame *
   /**Removing item from list will not automatically delete it */
   void Initialise();
     
-  /**True if this frame list is empty*/
-  PBoolean Empty() { return GetSize() == 0; }
-  
   /**Copy to this frame the contents of the frameList pointed to by src*/
   void GrabContents(IAX2FrameList &src);
   
@@ -1201,16 +1189,10 @@ class IAX2FrameList : public IAX2Frame *
   /**Get a list of frames to send, and delete the timed out frames */
   void GetResendFramesDeleteOldFrames(IAX2FrameList & framesToSend);
   
-  /**Thread safe read of the number of elements on this list. */
-  virtual PINDEX GetSize() { PWaitAndSignal m(mutex); return PAbstractList::GetSize(); }
-  
   /**Mark every frame on this list as having been resent*/
   void MarkAllAsResent();
   
  protected:
-  /**NON Thread safe read of the number of elements on this list. */
-  virtual PINDEX GetEntries() { return PAbstractList::GetSize(); }
-  
   /**Local variable which protects access. */
   PMutex mutex;
 };

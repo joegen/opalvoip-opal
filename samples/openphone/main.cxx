@@ -4433,9 +4433,9 @@ bool OptionsDialog::TransferDataFromWindow()
       }
     }
 
-    PINDEX pos = activePresentities.GetValuesIndex(aor.p_str());
-    if (pos != P_MAX_INDEX)
-      activePresentities.RemoveAt(pos);
+    PStringList::iterator pos = activePresentities.find(aor.p_str());
+    if (pos != activePresentities.end())
+      activePresentities.erase(pos);
   }
   for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
     m_manager.RemovePresentity(*it);

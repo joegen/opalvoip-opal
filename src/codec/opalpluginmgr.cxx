@@ -984,7 +984,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       // searching for a large enough free memory block, so as we don't have to make
       // a new one every time, let's not.
       dstList.DisallowDeleteObjects();
-      m_bufferRTP = (RTP_DataFrame *)dstList.RemoveAt(0);
+      m_bufferRTP = (RTP_DataFrame *)dstList.RemoveHead();
       dstList.AllowDeleteObjects();
     }
 

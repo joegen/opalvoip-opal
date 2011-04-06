@@ -367,8 +367,8 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool /*forked*/)
   SIPTransaction * transaction = CreateTransaction(transport);
 
   if (transaction != NULL) {
-    for (PINDEX i = 0; i < m_mime.GetSize(); ++i) 
-      transaction->GetMIME().SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
+    for (PStringToString::iterator it = m_mime.begin(); it != m_mime.end(); ++it)
+      transaction->GetMIME().SetAt(it->first, it->second);
     if (GetState() == Unsubscribing)
       transaction->GetMIME().SetExpires(0);
     if (authentication != NULL) {

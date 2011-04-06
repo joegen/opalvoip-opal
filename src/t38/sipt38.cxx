@@ -129,8 +129,8 @@ bool SDPFaxMediaDescription::PrintOn(ostream & str, const PString & connectStrin
     return false;
 
   // output options
-  for (PINDEX i = 0; i < t38Attributes.GetSize(); i++) 
-    str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
+  for (PStringToString::const_iterator it = t38Attributes.begin(); it != t38Attributes.end(); ++it)
+    str << "a=" << it->first << ":" << it->second << "\r\n";
 
   return true;
 }

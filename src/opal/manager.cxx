@@ -627,8 +627,8 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
 
   OpalConnection::StringOptions mergedOptions = connection.GetStringOptions();
   if (stringOptions != NULL) {
-    for (PINDEX i = 0; i < stringOptions->GetSize(); ++i)
-      mergedOptions.SetAt(stringOptions->GetKeyAt(i), stringOptions->GetDataAt(i));
+    for (PStringToString::iterator it = stringOptions->begin(); it != stringOptions->end(); ++it)
+      mergedOptions.SetAt(it->first, it->second);
   }
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection

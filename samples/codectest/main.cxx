@@ -114,8 +114,8 @@ void CodecTest::Main()
     PPluginModuleManager::PluginListType pluginList = codecMgr->GetPluginList();
 
     cout << "Plugin codecs:" << endl;
-    for (int i = 0; i < pluginList.GetSize(); i++) {
-      PDynaLink & plugin =  pluginList.GetDataAt(i);
+    for (PPluginModuleManager::PluginListType::iterator it = pluginList.begin(); it != pluginList.end(); ++it) {
+      PDynaLink & plugin = it->second;
 
       PStringList codecNames;
       PluginCodec_GetCodecFunction getCodecs;
@@ -1061,14 +1061,14 @@ void TranscoderThread::Main()
       //  drop encoded frames if required
       //
       if (m_dropPercent > 0) {
-        PINDEX i = 0;
-        while (i < encFrames.GetSize()) {
+        RTP_DataFrameList::iterator it = encFrames.begin();
+        while (it != encFrames.end()) {
           int n = PRandom::Number() % 100; 
           if (n >= m_dropPercent) 
-            i++;
+            ++it;
           else {
             ++totalDroppedPacketCount;
-            encFrames.RemoveAt(i);
+            encFrames.erase(it++);
           }
         }
       }

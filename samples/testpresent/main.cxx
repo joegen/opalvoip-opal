@@ -340,10 +340,9 @@ void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
 
 void TestPresEnt::CmdList(PCLI::Arguments & args, INT)
 {
-  PINDEX i;
-  for (i = 0; i < m_presentities.GetSize(); ++i) {
-    PString key = m_presentities.GetKeyAt(i);
-    OpalPresentity & presentity = m_presentities[key];
+  for (PDictionary<PString, OpalPresentity>::iterator it = m_presentities.end(); it != m_presentities.end(); ++it) {
+    PString key = it->first;
+    OpalPresentity & presentity = it->second;
     OpalPresenceInfo::State state;
     PString note;
     presentity.GetLocalPresence(state, note);

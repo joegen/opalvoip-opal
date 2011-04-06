@@ -62,21 +62,21 @@ PBYTEArray * IAX2SoundList::GetLastEntry()
   if (size == 0)
     return NULL;
   
-  return (PBYTEArray *) RemoveAt(size - 1);
+  return (PBYTEArray *)RemoveTail();
 }
 
 void IAX2SoundList::AddNewEntry(PBYTEArray *newElem)
 {
   PWaitAndSignal m(mutex);
   
-  InsertAt(0, newElem);
+  Prepend(newElem);
 }
 
 void IAX2SoundList::GetAllDeleteAll(IAX2SoundList &dest)
 {
   PWaitAndSignal m(mutex);
   while(PAbstractList::GetSize() > 0) {
-    dest.AddNewEntry((PBYTEArray *)RemoveAt(0));
+    dest.AddNewEntry((PBYTEArray *)RemoveHead());
   }
 }
 
