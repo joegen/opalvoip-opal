@@ -93,8 +93,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
 
   natMethod = None;
 
-  SIPURL ssss("");
-
   // Make sure these have been contructed now to avoid
   // payload type disambiguation problems.
   GetOpalRFC2833();
@@ -1824,7 +1822,7 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
   }
 
   if (contact.IsEmpty())
-    contact = SIPURL(user, transport.GetLocalAddress(), GetDefaultSignalPort());
+    contact = SIPURL(user, transport.GetLocalAddress());
 
   contact.Sanitise(SIPURL::ContactURI);
   pdu.GetMIME().SetContact(contact.AsQuotedString());
