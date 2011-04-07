@@ -299,11 +299,12 @@ enum IconStates {
   NumIconStates
 };
 
-static const wxChar * const IconStatusNames[] =
+static const wxChar * const IconStatusNames[NumIconStates] =
 {
   wxT("Unknown"),
   wxT("Unavailable"),
-  wxT("Online")
+  wxT("Online"),
+  wxT("Busy")
 };
 
 
@@ -3257,7 +3258,6 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
     if (info != NULL) {
       SIPURL speedDialURL(sdInfo->m_Address.p_str());
       if (info->m_entity == speedDialURL) {
-        LogWindow << "Presence notification received for " << info->m_entity << endl;
         PwxString status = info->m_note;
 
         IconStates icon;
@@ -3284,12 +3284,18 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
             break;
         }
 
-        m_speedDials->SetItemImage(index, icon);
+        if (status.IsEmpty())
+          status = IconStatusNames[icon];
 
-        if (m_speedDialDetail) {
-          if (status.IsEmpty())
-            status = IconStatusNames[icon];
+        if (m_speedDialDetail)
           m_speedDials->SetItem(index, e_StatusColumn, status);
+
+        wxListItem item;
+        item.m_itemId = index;
+        item.m_mask = wxLIST_MASK_IMAGE;
+        if (m_speedDials->GetItem(item) && item.m_image!= icon) {
+          m_speedDials->SetItemImage(index, icon);
+          LogWindow << "Presence notification received for " << info->m_entity << ", \"" << status << '"' << endl;
         }
         break;
       }
