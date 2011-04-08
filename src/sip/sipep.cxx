@@ -1538,7 +1538,7 @@ bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString 
 
   SIPSubscribe::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(body);
   else {
