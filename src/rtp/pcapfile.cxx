@@ -68,6 +68,7 @@ OpalPCAPFile::OpalPCAPFile()
   , m_filterSrcIP(PIPSocket::GetDefaultIpAny())
   , m_filterDstIP(PIPSocket::GetDefaultIpAny())
   , m_fragmentated(false)
+  , m_fragmentProto(0)
   , m_filterSrcPort(0)
   , m_filterDstPort(0)
   , m_packetSrcPort(0)
@@ -137,7 +138,10 @@ void OpalPCAPFile::PrintOn(ostream & strm) const
 
 bool OpalPCAPFile::ReadRawPacket(PBYTEArray & payload)
 {
-  m_fragmentated = false;
+  if (m_fragmentated) {
+    m_fragments.SetSize(0);
+    m_fragmentated = false;
+  }
 
   RecordHeader recordHeader;
   if (!Read(&recordHeader, sizeof(recordHeader))) {
@@ -211,24 +215,27 @@ int OpalPCAPFile::GetIP(PBYTEArray & payload)
   bool isFragment = (ip[6] & 0x20) != 0;
   int fragmentOffset = (((ip[6]&0x1f)<<8)+ip[7])*8;
   PINDEX fragmentsSize = m_fragments.GetSize();
-  if (isFragment || fragmentsSize > 0) {
-    if (fragmentsSize != fragmentOffset) {
-      PTRACE(2, "PCAPFile\tMissing IP fragment in \"" << GetFilePath() << '"');
-      m_fragments.SetSize(0);
-      return -1;
-    }
+  if (!isFragment && fragmentsSize == 0)
+    return ip[9]; // Next protocol layer
 
-    m_fragments.Concatenate(payload);
-
-    if (isFragment)
-      return -1;
-
-    payload = m_fragments;
+  if (fragmentsSize != fragmentOffset) {
+    PTRACE(2, "PCAPFile\tMissing IP fragment in \"" << GetFilePath() << '"');
     m_fragments.SetSize(0);
-    m_fragmentated = true;
+    return -1;
   }
 
-  return ip[9]; // Next protocol layer
+  if (fragmentsSize == 0)
+    m_fragmentProto = ip[9]; // Next protocol layer
+
+  m_fragments.Concatenate(payload);
+
+  if (isFragment)
+    return -1;
+
+  payload.Attach(m_fragments, m_fragments.GetSize());
+  m_fragmentated = true;
+
+  return m_fragmentProto; // Next protocol layer
 }
 
 
@@ -279,6 +286,7 @@ OpalPCAPFile::DiscoveredRTPInfo::DiscoveredRTPInfo()
   m_ts_matches[0]   = m_ts_matches[1]   = 0;
   m_index[0] = m_index[1] = 0;
   m_format[0] = m_format[1] = m_type[0] = m_type[1] = "Unknown";
+  m_firstFrame[0] = m_firstFrame[1] = NULL;
 }
 
 
@@ -290,7 +298,7 @@ void OpalPCAPFile::DiscoveredRTPMap::PrintOn(ostream & strm) const
     const DiscoveredRTPInfo & info = iter->second;
     for (int dir = 0; dir < 2; ++dir) {
       if (info.m_found[dir]) {
-        if (info.m_payload[dir] != info.m_firstFrame[dir]->GetPayloadType())
+        if (info.m_payload[dir] != info.m_firstFrame[dir].GetPayloadType())
           strm << "Mismatched payload types" << endl;
         strm << info.m_index[dir] << " : " << info.m_addr[dir].AsString() 
                                   << " -> " << info.m_addr[1-dir].AsString() 
@@ -343,7 +351,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 
       info.m_found[dir]    = true;
 
-      info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
+      info.m_firstFrame[dir] = rtp;
+      info.m_firstFrame[dir].MakeUnique();
     }
     else {
       DiscoveredRTPInfo & info = r->second;
@@ -376,7 +385,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 
         info.m_found[dir]    = true;
 
-        info.m_firstFrame[dir] = new RTP_DataFrame(rtp.GetPointer(), rtp.GetSize());
+        info.m_firstFrame[dir] = rtp;
+        info.m_firstFrame[dir].MakeUnique();
       }
     }
   }
@@ -416,7 +426,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
         if (info.m_firstFrame[dir] != NULL) {
           info.m_index[dir] = index++;
 
-          RTP_DataFrame::PayloadTypes pt = info.m_firstFrame[dir]->GetPayloadType();
+          RTP_DataFrame::PayloadTypes pt = info.m_firstFrame[dir].GetPayloadType();
 
           // look for known audio types
           if (pt <= RTP_DataFrame::Cisco_CN) {
@@ -437,8 +447,8 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
           }
           else {
             // try and identify media by inspection
-            const BYTE * data = info.m_firstFrame[dir]->GetPayloadPtr();
-            PINDEX size = info.m_firstFrame[dir]->GetPayloadSize();
+            const BYTE * data = info.m_firstFrame[dir].GetPayloadPtr();
+            PINDEX size = info.m_firstFrame[dir].GetPayloadSize();
 
             // xxx00111 01000010 xxxx0000 - H.264
             if (size > 6 && (data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0) {
