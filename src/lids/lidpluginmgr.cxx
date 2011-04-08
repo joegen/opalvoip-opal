@@ -851,7 +851,12 @@ PBoolean OpalPluginLID::SetVAD(unsigned line, PBoolean enable)
 
 PBoolean OpalPluginLID::GetCallerID(unsigned line, PString & idString, PBoolean full)
 {
-  return CHECK_FN(GetCallerID, (m_context, line, idString.GetPointer(500), 500, full)) == PluginLID_NoError;
+  char id[500];
+  if (CHECK_FN(GetCallerID, (m_context, line, id, sizeof(id), full)) != PluginLID_NoError)
+    return false;
+
+  idString = id;
+  return true;
 }
 
 

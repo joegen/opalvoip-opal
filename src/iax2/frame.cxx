@@ -1420,8 +1420,7 @@ IAX2FullFrameText::IAX2FullFrameText(IAX2Processor *iaxProcessor, const PString&
 
   PINDEX headerSize = data.GetSize();
   data.SetSize(text.GetLength() + headerSize);
-  memcpy(data.GetPointer() + headerSize, 
-	 internalText.GetPointer(), internalText.GetLength());
+  memcpy(data.GetPointer() + headerSize, (const char *)internalText, internalText.GetLength());
 
   PTRACE(4, "Construct a full frame text" << IdString() << " for text " << text);
 }

@@ -1261,8 +1261,9 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
     void GetStatistics(OpalMediaStatistics & statistics) const
     {
       statistics.m_fax.m_result = -2;
-      PString msg;
-      if (getCodecStatistics.Call(msg.GetPointer(1000), 999, context) != 0) {
+      char buf[1000];
+      if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
+        PConstString msg(buf);
         int result, errorCorrection;
         PINDEX position = 0;
         if (ExtractValue(msg, position, result) &&
