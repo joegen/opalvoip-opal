@@ -984,7 +984,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
   PINDEX len = bytes.GetSize()-offset;
 
   if (len > 0)
-    memcpy(number.GetPointer(len+1), ((const BYTE *)bytes)+offset, len);
+    memcpy(number.GetPointerAndSetLength(len), ((const BYTE *)bytes)+offset, len);
 
   return !number;
 }
