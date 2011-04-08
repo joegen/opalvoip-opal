@@ -841,7 +841,7 @@ class OpalMediaFormat : public PContainer
 
     /**Get the RTP encoding name that is to be used for this media format.
       */
-    const char * GetEncodingName() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? "" : m_info->rtpEncodingName.GetPointer(); }
+    const char * GetEncodingName() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? "" : (const char *)m_info->rtpEncodingName; }
 
     /** Get the media type for this format
       */

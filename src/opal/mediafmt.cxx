@@ -1084,7 +1084,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
         rtpEncodingName.GetLength() > 0 &&
         rtpEncodingName[0] == '+') {
       forceIsTransportable = true;
-      rtpEncodingName = rtpEncodingName.Mid(1);
+      rtpEncodingName.Delete(0, 1);
     }
     return;
   }
@@ -1446,7 +1446,7 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
-    return (rtpEncodingName != NULL) || (forceIsTransportable);
+    return !rtpEncodingName.IsEmpty() || forceIsTransportable;
 
   return true;
 }

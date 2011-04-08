@@ -2144,7 +2144,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   if (!truncated) {
     if (contentLengthPresent) {
       if (contentLength > 0)
-        stream->read(m_entityBody.GetPointer(contentLength+1), contentLength);
+        stream->read(m_entityBody.GetPointerAndSetLength(contentLength), contentLength);
     }
     else {
       contentLength = 0;

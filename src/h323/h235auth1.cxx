@@ -278,11 +278,8 @@ PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
  
   /** make a SHA1 hash before send to the hmac_sha1 */
   unsigned char secretkey[20];
-  
-  SHA1((unsigned char *)password.GetPointer(), password.GetSize()-1, secretkey);
-
+  SHA1(password, password.GetLength(), secretkey);
   hmac_sha(secretkey, 20, rawPDU.GetPointer(), rawPDU.GetSize(), key, HASH_SIZE);
-  
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
   PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed: \"" << password << '"');
@@ -414,8 +411,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   memcpy(RV, data, HASH_SIZE);
   
   unsigned char secretkey[20];
-  SHA1((unsigned char *)password.GetPointer(), password.GetSize()-1, secretkey);
-    
+  SHA1(password, password.GetLength(), secretkey);
   
   /****
   * step 4

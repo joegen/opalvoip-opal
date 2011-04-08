@@ -373,7 +373,7 @@ void IAX2IeString::PrintOn(ostream & str) const
 void IAX2IeString::WriteBinary(BYTE *data)
 {
   if(validData)
-    memcpy(data, dataValue.GetPointer(), GetLengthOfData());
+    memcpy(data, (const char *)dataValue, GetLengthOfData());
 }
 
 BYTE IAX2IeString::GetLengthOfData() const
@@ -531,7 +531,7 @@ void IAX2IeCallToken::InitialiseKey()
   secretKey = msg;
 
   BYTE block[20];
-  memcpy(block, secretKey.GetPointer(), secretKey.GetLength());
+  memcpy(block, (const char *)secretKey, secretKey.GetLength());
   for (i = 0; i < secretKey.GetLength(); i++) {
     iKeyPad[i] ^= block[i];
     oKeyPad[i] ^= block[i];
@@ -545,7 +545,7 @@ void IAX2IeCallToken::WriteKeySequence(PIPSocket::Address & remote)
   
   PBYTEArray data;
   data.SetSize(answer.GetLength());
-  memcpy(data.GetPointer(), answer.GetPointer(), answer.GetLength());
+  memcpy(data.GetPointer(), (const char *)answer, answer.GetLength());
   SetData(data);
 }
 
@@ -579,7 +579,7 @@ PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
 
   memcpy(block, iKeyPad, blockSize);
   PString message = srcTime + remote.AsString();
-  memcpy(block + blockSize, message.GetPointer(), message.GetLength());
+  memcpy(block + blockSize, (const char *)message, message.GetLength());
   
   PMessageDigest::Result bin_digest;
   PMessageDigestSHA1::Encode((const void *)block,

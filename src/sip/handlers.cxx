@@ -2216,14 +2216,7 @@ PStringList SIPHandlersList::GetAddresses(bool includeOffline, SIP_PDU::Methods 
 
 static PString MakeUrlKey(const PString & aor, SIP_PDU::Methods method, const PString & eventPackage = PString::Empty())
 {
-  PStringStream key;
-
-  key << method << ' ' << aor;
-
-  if (!eventPackage.IsEmpty())
-    key << ' ' << eventPackage;
-
-  return key;
+  return PString((unsigned)method) + aor + eventPackage;
 }
 
 
