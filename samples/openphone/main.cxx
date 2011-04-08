@@ -293,9 +293,10 @@ static const wxChar NotAvailableString[] = wxT("N/A");
 
 enum IconStates {
   Icon_Unknown,
-  Icon_Absent,
+  Icon_Unavailable,
   Icon_Present,
   Icon_Busy,
+  Icon_Away,
   NumIconStates
 };
 
@@ -304,7 +305,8 @@ static const wxChar * const IconStatusNames[NumIconStates] =
   wxT("Unknown"),
   wxT("Unavailable"),
   wxT("Online"),
-  wxT("Busy")
+  wxT("Busy"),
+  wxT("Away")
 };
 
 
@@ -651,6 +653,8 @@ MyManager::MyManager()
   m_imageListNormal->Add(wxICON(present48));
   m_imageListSmall ->Add(wxICON(busy16));
   m_imageListNormal->Add(wxICON(busy48));
+  m_imageListSmall ->Add(wxICON(absent16));
+  m_imageListNormal->Add(wxICON(absent48));
 
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
   m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
@@ -3263,7 +3267,7 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
         IconStates icon;
         switch (info->m_state) {
           case OpalPresenceInfo::NoPresence :
-            icon = Icon_Absent;
+            icon = Icon_Unavailable;
             break;
 
           case OpalPresenceInfo::Busy :
@@ -3271,14 +3275,14 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
             break;
 
           case OpalPresenceInfo::Away :
-            icon = Icon_Absent;
+            icon = Icon_Away;
             break;
 
           default :
             if (status.CmpNoCase(wxT("busy")) == 0)
               icon = Icon_Busy;
             else if (status.CmpNoCase(wxT("away")) == 0)
-              icon = Icon_Absent;
+              icon = Icon_Away;
             else
               icon = Icon_Present;
             break;
