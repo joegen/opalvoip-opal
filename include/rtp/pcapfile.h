@@ -99,7 +99,7 @@ class OpalPCAPFile : public PFile
       unsigned m_seq_matches[2];
       unsigned m_ts_matches[2];
 
-      RTP_DataFrame * m_firstFrame[2];
+      RTP_DataFrame m_firstFrame[2];
 
       PString m_type[2];
       PString m_format[2];
@@ -164,6 +164,7 @@ class OpalPCAPFile : public PFile
 
     PBYTEArray m_fragments;
     bool       m_fragmentated;
+    unsigned   m_fragmentProto;
 
     WORD m_filterSrcPort;
     WORD m_filterDstPort;
