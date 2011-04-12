@@ -42,6 +42,9 @@
 #include <rtp/rtp.h>
 
 #include <rtp/jitter.h>
+
+#include <rtp/metrics.h>
+
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
 #include <opal/rtpconn.h>
@@ -561,6 +564,8 @@ RTP_Session::RTP_Session(const Params & params)
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
   , reportTimeInterval(0, 12)  // Seconds
+  , lastSRTimestamp(0)
+  , lastSRReceiveTime(0)
   , reportTimer(reportTimeInterval)
   , failed(false)
 {
@@ -589,6 +594,7 @@ RTP_Session::RTP_Session(const Params & params)
   expectedSequenceNumber = 0;
   lastRRSequenceNumber = 0;
   resequenceOutOfOrderPackets = true;
+  srPacketsReceived = 0;
   consecutiveOutOfOrderPackets = 0;
 
   ClearStatistics();
@@ -836,11 +842,23 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
   lastRRSequenceNumber = expectedSequenceNumber;
 
   receiver.jitter = jitterLevel >> JitterRoundingGuardBits; // Allow for rounding protection bits
-
-  // The following have not been calculated yet.
-  receiver.lsr = 0;
-  receiver.dlsr = 0;
-
+  
+  if (srPacketsReceived > 0) {
+    // Calculate the last SR timestamp
+    PUInt32b lsr_ntp_sec  = (DWORD)(lastSRTimestamp.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
+    PUInt32b lsr_ntp_frac = lastSRTimestamp.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
+    receiver.lsr = (((lsr_ntp_sec << 16) & 0xFFFF0000) | ((lsr_ntp_frac >> 16) & 0x0000FFFF));
+  
+    // Calculate the delay since last SR
+    PTime now;
+    delaySinceLastSR = now - lastSRReceiveTime;
+    receiver.dlsr = (DWORD)(delaySinceLastSR.GetMilliSeconds()*65536/1000);
+  }
+  else {
+    receiver.lsr = 0;
+    receiver.dlsr = 0;
+  }
+  
   PTRACE(3, "RTP\tSession " << sessionID << ", SentReceiverReport:"
             " ssrc=" << receiver.ssrc
          << " fraction=" << (unsigned)receiver.fraction
@@ -849,7 +867,140 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
          << " jitter=" << receiver.jitter
          << " lsr=" << receiver.lsr
          << " dlsr=" << receiver.dlsr);
+} 
+
+
+#if OPAL_RTCP_XR
+
+void RTP_Session::InsertExtendedReportPacket(RTP_ControlFrame & report)
+{
+  report.StartNewPacket();
+  report.SetPayloadType(RTP_ControlFrame::e_ExtendedReport);
+  report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ExtendedReport));  // length is SSRC of packet sender plus XR
+  report.SetCount(1);
+  BYTE * payload = report.GetPayloadPtr();
+
+  // add the SSRC to the start of the payload
+  *(PUInt32b *)payload = syncSourceOut;
+  
+  RTP_ControlFrame::ExtendedReport & xr = *(RTP_ControlFrame::ExtendedReport *)(payload+4);
+  
+  xr.bt = 0x07;
+  xr.type_specific = 0x00;
+  xr.length = 0x08;
+  xr.ssrc = syncSourceOut;
+  
+  xr.loss_rate = m_metrics.GetLossRate();
+  xr.discard_rate = m_metrics.GetDiscardRate();
+  xr.burst_density = m_metrics.GetBurstDensity();
+  xr.gap_density = m_metrics.GetGapDensity();
+  xr.burst_duration = m_metrics.GetBurstDuration();
+  xr.gap_duration = m_metrics.GetGapDuration();
+  xr.round_trip_delay = m_metrics.GetRoundTripDelay();
+  xr.end_system_delay = m_metrics.GetEndSystemDelay();
+  xr.signal_level = 0x7F;
+  xr.noise_level = 0x7F;
+  xr.rerl = 0x7F;	
+  xr.gmin = 16;
+  xr.r_factor = m_metrics.RFactor();
+  xr.ext_r_factor = 0x7F;
+  xr.mos_lq = m_metrics.MOS_LQ();
+  xr.mos_cq = m_metrics.MOS_CQ();
+  xr.rx_config = 0x00;
+  xr.reserved = 0x00;
+  xr.jb_nominal = (WORD)(m_jitterBuffer->GetMinJitterDelay()/m_jitterBuffer->GetTimeUnits());
+  xr.jb_maximum = (WORD)(m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits());
+  xr.jb_absolute = (WORD)(m_jitterBuffer->GetMaxJitterDelay()/m_jitterBuffer->GetTimeUnits());
+  
+  report.EndPacket();
+  
+  PTRACE(3, "RTP\tSession " << sessionID << ", SentExtendedReport:"
+            " ssrc=" << xr.ssrc
+         << " loss_rate=" << (PUInt32b) xr.loss_rate
+         << " discard_rate=" << (PUInt32b) xr.discard_rate
+         << " burst_density=" << (PUInt32b) xr.burst_density
+         << " gap_density=" << (PUInt32b) xr.gap_density
+         << " burst_duration=" << xr.burst_duration
+         << " gap_duration=" << xr.gap_duration
+         << " round_trip_delay="<< xr.round_trip_delay
+         << " end_system_delay="<< xr.end_system_delay
+         << " gmin="<< (PUInt32b) xr.gmin
+         << " r_factor="<< (PUInt32b) xr.r_factor
+         << " mos_lq="<< (PUInt32b) xr.mos_lq
+         << " mos_cq="<< (PUInt32b) xr.mos_cq
+         << " jb_nominal_delay="<< xr.jb_nominal
+         << " jb_maximum_delay="<< xr.jb_maximum
+         << " jb_absolute_delay="<< xr.jb_absolute);
+
 }
+
+static RTP_Session::ExtendedReportArray
+BuildExtendedReportArray(const RTP_ControlFrame & frame, PINDEX offset)
+{
+  RTP_Session::ExtendedReportArray reports;
+
+  const RTP_ControlFrame::ExtendedReport * rr = (const RTP_ControlFrame::ExtendedReport *)(frame.GetPayloadPtr()+offset);
+  for (PINDEX repIdx = 0; repIdx < (PINDEX)frame.GetCount(); repIdx++) {
+    RTP_Session::ExtendedReport * report = new RTP_Session::ExtendedReport;
+    report->sourceIdentifier = rr->ssrc;
+    report->lossRate = rr->loss_rate;
+    report->discardRate = rr->discard_rate;
+    report->burstDensity = rr->burst_density;
+    report->gapDensity = rr->gap_density;
+    report->roundTripDelay = rr->round_trip_delay;
+    report->RFactor = rr->r_factor;
+    report->mosLQ = rr->mos_lq;
+    report->mosCQ = rr->mos_cq;
+    report->jbNominal = rr->jb_nominal;
+    report->jbMaximum = rr->jb_maximum;
+    report->jbAbsolute = rr->jb_absolute;
+    reports.SetAt(repIdx, report);
+    rr++;
+  }
+  return reports;
+}
+
+
+void RTP_Session::OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset)
+{
+  const RTP_ControlFrame::ReceiverReport * rr = (const RTP_ControlFrame::ReceiverReport *)(frame.GetPayloadPtr()+offset);
+  for (unsigned repIdx = 0; repIdx < frame.GetCount(); repIdx++, rr++)
+    m_metrics.OnRxSenderReport(rr->lsr, rr->dlsr);
+}
+
+
+void RTP_Session::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedReportArray & reports)
+{
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    strm << "RTP\tSession " << sessionID << ", OnExtendedReport: ssrc=" << src << '\n';
+    for (PINDEX i = 0; i < reports.GetSize(); i++)
+      strm << "  XR: " << reports[i] << '\n';
+    strm << PTrace::End;
+  }
+#endif
+}
+
+
+void RTP_Session::ExtendedReport::PrintOn(ostream & strm) const
+{
+  strm << "ssrc=" << sourceIdentifier
+       << " loss_rate=" << lossRate
+       << " discard_rate=" << discardRate
+       << " burst_density=" << burstDensity
+       << " gap_density=" << gapDensity
+       << " round_trip_delay=" << roundTripDelay
+       << " r_factor=" << RFactor
+       << " mos_lq=" << mosLQ
+       << " mos_cq=" << mosCQ
+       << " jb_nominal=" << jbNominal
+       << " jb_maximum=" << jbMaximum
+       << " jb_absolute=" << jbAbsolute;
+}
+
+#endif
+
 
 RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 {
@@ -1029,6 +1180,10 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
            << " src=" << hex << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount() << dec);
 
+#if OPAL_RTCP_XR
+    m_metrics.SetPayloadInfo(frame);
+#endif
+
     if ((frame.GetPayloadType() == RTP_DataFrame::T38) &&
         (frame.GetSequenceNumber() >= 0x8000) &&
          (frame.GetPayloadSize() == 0)) {
@@ -1095,6 +1250,9 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         jitterLevel += variance - ((jitterLevel+(1<<(JitterRoundingGuardBits-1))) >> JitterRoundingGuardBits);
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
+#if OPAL_RTCP_XR
+        m_metrics.SetJitterDelay(m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits());
+#endif
       }
 
       if (frame.GetMarker())
@@ -1108,6 +1266,10 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
              << ", adjusting sequence numbers to expect " << expectedSequenceNumber);
     }
     else if (sequenceNumber < expectedSequenceNumber) {
+#if OPAL_RTCP_XR
+      m_metrics.OnPacketDiscarded();
+#endif
+
       // Check for Cisco bug where sequence numbers suddenly start incrementing
       // from a different base.
       if (++consecutiveOutOfOrderPackets > 10) {
@@ -1155,6 +1317,9 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
              << ", " << dropped << " packet(s) missing at " << sequenceNumber);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
+#if OPAL_RTCP_XR
+      m_metrics.OnPacketLost(dropped);
+#endif
     }
   }
 
@@ -1162,6 +1327,10 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
+  
+#if OPAL_RTCP_XR
+  m_metrics.OnPacketReceived();
+#endif
 
   // Call the statistics call-back on the first PDU with total count == 1
   if (packetsReceived == 1 && userData != NULL)
@@ -1327,6 +1496,11 @@ PBoolean RTP_Session::SendReport()
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, canonicalName);
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
   report.EndPacket();
+  
+#if OPAL_RTCP_XR
+  //Generate and send RTCP-XR packet
+  InsertExtendedReportPacket(report);
+#endif
 
   return WriteControl(report);
 }
@@ -1393,9 +1567,18 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
           sender.sourceIdentifier = *(const PUInt32b *)payload;
           const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
           sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
+
+          // Save the receive time
+          lastSRTimestamp = sender.realTimestamp;
+          lastSRReceiveTime.SetCurrentTime();
+          srPacketsReceived++;
+
           sender.rtpTimestamp = sr.rtp_ts;
           sender.packetsSent = sr.psent;
           sender.octetsSent = sr.osent;
+#if OPAL_RTCP_XR
+          OnRxSenderReportToMetrics(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport));
+#endif
           OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
         }
         else {
@@ -1487,6 +1670,16 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
           PTRACE(2, "RTP\tSession " << sessionID << ", ApplDefined packet truncated");
         }
         break;
+
+#if OPAL_RTCP_XR
+      case RTP_ControlFrame::e_ExtendedReport :
+        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport)))
+          OnRxExtendedReport(*(const PUInt32b *)payload, BuildExtendedReportArray(frame, sizeof(PUInt32b)));
+        else {
+          PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
+        }
+        break;
+#endif
 
   #if OPAL_VIDEO
       case RTP_ControlFrame::e_IntraFrameRequest :
