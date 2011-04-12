@@ -459,3 +459,7 @@ EXPORTS
     u2a @41175 NONAME
     _speex_putc @41178 NONAME
     _Init_OPAL
+    _ceilf
+    _expf
+    _powf
+    

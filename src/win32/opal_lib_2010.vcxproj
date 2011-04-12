@@ -311,6 +311,7 @@
     <ClCompile Include="..\opal\transcoders.cxx" />
     <ClCompile Include="..\opal\transports.cxx" />
     <ClCompile Include="..\rtp\jitter.cxx" />
+    <ClCompile Include="..\rtp\metrics.cxx" />
     <ClCompile Include="..\rtp\pcapfile.cxx" />
     <ClCompile Include="..\rtp\rtp.cxx" />
     <ClCompile Include="..\rtp\srtp.cxx" />
@@ -453,6 +454,7 @@
     <ClInclude Include="..\..\include\opal\transcoders.h" />
     <ClInclude Include="..\..\include\opal\transports.h" />
     <ClInclude Include="..\..\include\rtp\jitter.h" />
+    <ClInclude Include="..\..\include\rtp\metrics.h" />
     <ClInclude Include="..\..\include\rtp\pcapfile.h" />
     <ClInclude Include="..\..\include\rtp\rtp.h" />
     <ClInclude Include="..\..\include\rtp\srtp.h" />
