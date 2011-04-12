@@ -211,7 +211,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
 
   protected:
-    int consecutiveBadPackets;
+    unsigned consecutiveBadPackets;
     bool oneGoodPacket;
     PBYTEArray lastIFP;
 };
