@@ -115,6 +115,14 @@ class OpalJitterBuffer : public PSafeObject
     /**Get current delay for jitter buffer.
       */
     DWORD GetCurrentJitterDelay() const { return m_currentJitterDelay; }
+    
+    /**Get minimum delay for jitter buffer.
+      */
+    DWORD GetMinJitterDelay() const { return m_minJitterDelay; }
+    
+    /**Get maximum delay for jitter buffer.
+      */
+    DWORD GetMaxJitterDelay() const { return m_maxJitterDelay; }
 
     /**Get time units.
       */
