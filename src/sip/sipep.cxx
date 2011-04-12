@@ -392,7 +392,7 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 
 PBoolean SIPEndPoint::GarbageCollection()
 {
-  PTRACE(5, "SIP\tMONITOR:transactions=" << transactions.GetSize() << ",connections=" << connectionsActive.GetSize());
+  PTRACE(6, "SIP\tMONITOR:transactions=" << transactions.GetSize() << ",connections=" << connectionsActive.GetSize());
 
   PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly);
   while (transaction != NULL) {
