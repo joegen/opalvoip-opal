@@ -53,6 +53,7 @@ namespace PWLibStupidLinkerHacks {
 
 #define SPANDSP_AUDIO_SIZE    320
 
+static unsigned MaxConsecutiveBadPackets = 1000;
 static PAtomicInteger faxCallIndex;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,6 @@ class T38PseudoRTP_Handler : public RTP_Encoding
       oneGoodPacket         = false;
 
       lastIFP.SetSize(0);
-      rtpUDP->SetReportTimeInterval(20);
       rtpUDP->SetNextSentSequenceNumber(0);
     }
 
@@ -186,10 +186,11 @@ class T38PseudoRTP_Handler : public RTP_Encoding
     #endif
 
           consecutiveBadPackets++;
-          if (consecutiveBadPackets < 100)
+          if (consecutiveBadPackets < MaxConsecutiveBadPackets)
             return RTP_Session::e_IgnorePacket;
 
-          PTRACE(1, "RTP_T38\tRaw data decode failed 100 times, remote probably not switched from audio, aborting!");
+          PTRACE(1, "RTP_T38\tRaw data decode failed " << MaxConsecutiveBadPackets << " times,"
+                    " remote probably not switched from audio, aborting!");
           return RTP_Session::e_AbortTransport;
         }
 
