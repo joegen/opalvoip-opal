@@ -45,6 +45,7 @@
 
 #include <list>
 
+#include <rtp/metrics.h>
 
 class RTP_JitterBuffer;
 class PNatMethod;
@@ -199,14 +200,15 @@ class RTP_ControlFrame : public PBYTEArray
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
-      e_IntraFrameRequest = 192,
-      e_SenderReport = 200,
-      e_ReceiverReport,
-      e_SourceDescription,
-      e_Goodbye,
-      e_ApplDefined,
-      e_TransportLayerFeedBack, // RFC4585
-      e_PayloadSpecificFeedBack
+      e_IntraFrameRequest       = 192,
+      e_SenderReport            = 200,
+      e_ReceiverReport          = 201,
+      e_SourceDescription       = 202,
+      e_Goodbye                 = 203,
+      e_ApplDefined             = 204,
+      e_TransportLayerFeedBack  = 205, // RFC4585
+      e_PayloadSpecificFeedBack = 206,
+      e_ExtendedReport          = 207  // RFC3611
     };
 
     unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
@@ -245,6 +247,35 @@ class RTP_ControlFrame : public PBYTEArray
       PUInt32b rtp_ts;    /* RTP timestamp */
       PUInt32b psent;     /* packets sent */
       PUInt32b osent;     /* octets sent */ 
+    };
+
+    struct ExtendedReport {
+      /* VoIP Metrics Report Block */
+      BYTE bt;                     /* block type */
+      BYTE type_specific;          /* determined by the block definition */
+      PUInt16b length;             /* length of the report block */
+      PUInt32b ssrc;               /* data source being reported */
+      BYTE loss_rate;              /* fraction of RTP data packets lost */ 
+      BYTE discard_rate;           /* fraction of RTP data packets discarded */
+      BYTE burst_density;          /* fraction of RTP data packets within burst periods */
+      BYTE gap_density;            /* fraction of RTP data packets within inter-burst gaps */
+      PUInt16b burst_duration;     /* the mean duration, in ms, of burst periods */
+      PUInt16b gap_duration;       /* the mean duration, in ms, of gap periods */
+      PUInt16b round_trip_delay;   /* the most recently calculated round trip time */    
+      PUInt16b end_system_delay;   /* the most recently estimates end system delay */
+      BYTE signal_level;           /* voice signal level related to 0 dBm */
+      BYTE noise_level;            /* ratio of the silent background level to 0 dBm */
+      BYTE rerl;                   /* residual echo return loss */
+      BYTE gmin;                   /* gap threshold */
+      BYTE r_factor;               /* voice quality metric of the call */
+      BYTE ext_r_factor;           /* external R factor */
+      BYTE mos_lq;                 /* MOS for listen quality */
+      BYTE mos_cq;                 /* MOS for conversational quality */
+      BYTE rx_config;              /* receiver configuration byte */
+      BYTE reserved;               /* reserved for future definition */
+      PUInt16b jb_nominal;         /* current nominal jitter buffer delay, in ms */ 
+      PUInt16b jb_maximum;         /* current maximum jitter buffer delay, in ms */
+      PUInt16b jb_absolute;        /* current absolute maximum jitter buffer delay, in ms */
     };
 
     enum DescriptionTypes {
@@ -634,6 +665,7 @@ class RTP_Session : public PObject
         DWORD packetsSent;
         DWORD octetsSent;
     };
+
     virtual void OnRxSenderReport(const SenderReport & sender,
                                   const ReceiverReportArray & reports);
     virtual void OnRxReceiverReport(DWORD src,
@@ -657,6 +689,31 @@ class RTP_Session : public PObject
 
     virtual void OnRxApplDefined(const PString & type, unsigned subtype, DWORD src,
                                  const BYTE * data, PINDEX size);
+
+#if OPAL_RTCP_XR
+    class ExtendedReport : public PObject  {
+        PCLASSINFO(ExtendedReport, PObject);
+      public:
+        void PrintOn(ostream &) const;
+
+        DWORD sourceIdentifier;
+        DWORD lossRate;            /* fraction of RTP data packets lost */ 
+        DWORD discardRate;         /* fraction of RTP data packets discarded */
+        DWORD burstDensity;        /* fraction of RTP data packets within burst periods */
+        DWORD gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
+        DWORD roundTripDelay;  /* the most recently calculated round trip time */    
+        DWORD RFactor;            /* voice quality metric of the call */
+        DWORD mosLQ;               /* MOS for listen quality */
+        DWORD mosCQ;               /* MOS for conversational quality */
+        DWORD jbNominal;      /* current nominal jitter buffer delay, in ms */ 
+        DWORD jbMaximum;      /* current maximum jitter buffer delay, in ms */
+        DWORD jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
+    };
+    PARRAY(ExtendedReportArray, ExtendedReport);
+
+    virtual void OnRxExtendedReport(DWORD src,
+                                    const ExtendedReportArray & reports);                             
+#endif
   //@}
 
   /**@name Member variable access */
@@ -917,11 +974,21 @@ class RTP_Session : public PObject
 
     void AddFilter(const FilterNotifier & filter);
 
+#if OPAL_RTCP_XR
+    const RTCP_XR_Metrics & GetMetrics() const { return m_metrics; }
+#endif
+
     virtual void SendBYE();
 
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
+
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
+    
+#if OPAL_RTCP_XR
+    void InsertExtendedReportPacket(RTP_ControlFrame & report);
+    void OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset);    
+#endif
 
     PString             m_encoding;
     PMutex              m_encodingMutex;
@@ -952,6 +1019,9 @@ class RTP_Session : public PObject
     WORD          expectedSequenceNumber;
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
+    PTime         lastSRTimestamp;
+    PTime         lastSRReceiveTime;
+    PTimeInterval delaySinceLastSR;
     WORD          lastRRSequenceNumber;
     bool          resequenceOutOfOrderPackets;
     unsigned      consecutiveOutOfOrderPackets;
@@ -971,6 +1041,7 @@ class RTP_Session : public PObject
     DWORD rtcpPacketsSent;
     DWORD octetsSent;
     DWORD packetsReceived;
+    DWORD srPacketsReceived;
     DWORD octetsReceived;
     DWORD packetsLost;
     DWORD packetsLostByRemote;
@@ -990,6 +1061,11 @@ class RTP_Session : public PObject
 
     unsigned txStatisticsCount;
     unsigned rxStatisticsCount;
+    
+#if OPAL_RTCP_XR
+    // Calculate the VoIP Metrics for RTCP-XR
+    RTCP_XR_Metrics m_metrics;
+#endif
 
     DWORD    averageSendTimeAccum;
     DWORD    maximumSendTimeAccum;

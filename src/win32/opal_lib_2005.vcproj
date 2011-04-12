@@ -8630,6 +8630,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\rtp\metrics.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\rtp\pcapfile.cxx"
 					>
 				</File>
@@ -10564,7 +10568,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(InputDir).svn\entries"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -10575,7 +10579,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(InputDir).svn\entries"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -10586,7 +10590,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(InputDir).svn\entries"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -10861,6 +10865,10 @@
 				>
 				<File
 					RelativePath="..\..\include\rtp\jitter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\metrics.h"
 					>
 				</File>
 				<File
