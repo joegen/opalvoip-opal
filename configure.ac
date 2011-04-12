@@ -80,6 +80,7 @@ OPAL_T120DATA=no
 OPAL_LID=yes
 OPAL_CAPI=yes
 OPAL_STATISTICS=yes
+OPAL_RTCP_XR=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
 OPAL_RFC4175=yes
@@ -584,6 +585,10 @@ OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [whether to enable accoustic echo cancellation 
 dnl MSWIN_DISPLAY  g711plc,Packet Loss Concealment for G.711
 dnl MSWIN_DEFINE   g711plc,OPAL_G711PLC
 OPAL_SIMPLE_OPTION(g711plc,OPAL_G711PLC, [whether to enable Packet Loss Concealment for G.711])
+
+dnl MSWIN_DISPLAY  rtcpxr,RTCP Extended Reports support
+dnl MSWIN_DEFINE   rtcpxr,OPAL_RTCP_XR
+OPAL_SIMPLE_OPTION(rtcpxr,OPAL_RTCP_XR, [whether to enable RTCP Extended Reports support])
 
 dnl MSWIN_DISPLAY  statistics,Statistics gathering support
 dnl MSWIN_DEFINE   statistics,OPAL_STATISTICS

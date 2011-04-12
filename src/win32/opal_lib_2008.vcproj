@@ -3058,6 +3058,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\rtp\metrics.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\rtp\pcapfile.cxx"
 					>
 				</File>
@@ -3725,6 +3729,10 @@
 				>
 				<File
 					RelativePath="..\..\include\rtp\jitter.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\metrics.h"
 					>
 				</File>
 				<File
