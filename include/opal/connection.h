@@ -68,6 +68,8 @@ class OpalRFC2833Info;
 class PURL;
 
 
+#define OPAL_URL_PARAM_PREFIX "OPAL-"
+
 #define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
 #define OPAL_OPT_CALL_IDENTIFIER      "Call-Identifier"       ///< String option to override generated call identifier
 #define OPAL_OPT_CALLING_PARTY_URL    "Calling-Party-URL"     ///< String option to set outgoing local URL
