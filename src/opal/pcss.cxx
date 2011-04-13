@@ -220,7 +220,7 @@ PSafePtr<OpalConnection> OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     PURL::SplitVars(remoteParty.Mid(semicolon), params, ';', '=');
     for (PStringToString::iterator it = params.begin(); it != params.end(); ++it) {
       PString key = it->first;
-      if (key.NumCompare("OPAL-") == EqualTo)
+      if (key.NumCompare(OPAL_URL_PARAM_PREFIX) == EqualTo)
         key.Delete(0, 5);
       stringOptions->SetAt(key, it->second);
     }

@@ -1832,7 +1832,7 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
   params.MakeUnique();
   for (PStringToString::iterator it = params.begin(); it != params.end(); ++it) {
     PCaselessString key = it->first;
-    if (key.NumCompare("OPAL-") == EqualTo) {
+    if (key.NumCompare(OPAL_URL_PARAM_PREFIX) == EqualTo) {
       SetAt(key.Mid(5), it->second);
       url.SetParamVar(key, PString::Empty());
     }
