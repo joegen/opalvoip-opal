@@ -2595,7 +2595,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   to.SetQuery(PString::Empty());
 
   if (referSub)
-    to.SetParamVar("OPAL-"OPAL_SIP_REFERRED_CONNECTION, GetToken());
+    to.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
   if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL) && referSub)
@@ -2709,6 +2709,8 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
   SIPURL whereTo = response.GetMIME().GetContact();
+  for (PINDEX i = 0; i < m_stringOptions.GetSize(); ++i)
+    whereTo.SetParamVar(OPAL_URL_PARAM_PREFIX + m_stringOptions.GetKeyAt(i), m_stringOptions.GetDataAt(i));
   PTRACE(3, "SIP\tReceived redirect to " << whereTo);
   endpoint.ForwardConnection(*this, whereTo.AsString());
 }
