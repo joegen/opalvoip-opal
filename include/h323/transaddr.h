@@ -92,8 +92,18 @@ class H323TransportAddress : public OpalTransportAddress
 };
 
 
-PDECLARE_ARRAY(H323TransportAddressArray, H323TransportAddress)
+class H323TransportAddressArray : public PArray<H323TransportAddress>
+{
+    typedef PArray<H323TransportAddress> ParentClass;
+    PCLASSINFO(H323TransportAddressArray, ParentClass);
+
+  protected:
+    inline H323TransportAddressArray(int dummy, const H323TransportAddressArray * c)
+      : ParentClass(dummy, c) { }
+
   public:
+    H323TransportAddressArray(PINDEX initialSize = 0)
+      : ParentClass(initialSize) { }
     H323TransportAddressArray(
       const OpalTransportAddress & address
     ) { AppendAddress(address); }
@@ -125,6 +135,11 @@ PDECLARE_ARRAY(H323TransportAddressArray, H323TransportAddress)
     void AppendAddress(
       const H323TransportAddress & address
     );
+
+    virtual PObject * Clone() const
+    {
+      return new H323TransportAddressArray(0, this);
+    }
 
   protected:
     void AppendStringCollection(
