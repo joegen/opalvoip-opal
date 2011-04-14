@@ -33,6 +33,10 @@
 
 #if OPAL_CAPI
 
+  #ifdef _MSC_VER
+    #pragma message("CAPI ISDN support enabled")
+  #endif
+
 #ifdef _WIN32
 #include "capi_win32.h"
 #else
@@ -1239,6 +1243,12 @@ PBoolean OpalCapiMediaStream::IsSynchronous() const
   return true;
 }
 
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("CAPI ISDN support DISABLED")
+  #endif
 
 #endif // OPAL_CAPI
 

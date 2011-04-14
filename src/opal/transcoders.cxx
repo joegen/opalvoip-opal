@@ -141,7 +141,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // make sure there is at least one output frame available
   if (output.IsEmpty())
-    output.Append(new RTP_DataFrame(0, maxOutputSize));
+    output.Append(new RTP_DataFrame((PINDEX)0, maxOutputSize));
   else {
     while (output.GetSize() > 1)
       output.RemoveTail();

@@ -34,9 +34,13 @@
 #pragma implementation "lidep.cxx"
 #endif
 
-#include <opal/buildopts.h>
-
 #include <lids/lidep.h>
+
+#if OPAL_LID
+
+  #ifdef _MSC_VER
+    #pragma message("Line Interface Device support enabled")
+  #endif
 
 #include <opal/manager.h>
 #include <opal/call.h>
@@ -1183,6 +1187,15 @@ unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
 {
   return line.GetAverageSignalLevel(true);
 }
+
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("Line Interface Device support DISABLED")
+  #endif
+
+#endif // OPAL_LID
 
 
 /////////////////////////////////////////////////////////////////////////////

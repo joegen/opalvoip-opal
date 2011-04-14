@@ -45,6 +45,10 @@
 
 #if OPAL_FAX
 
+  #ifdef _MSC_VER
+    #pragma message("T.38 Fax (spandsp) support enabled")
+  #endif
+
 #include <asn/t38.h>
 
 OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC);
@@ -890,6 +894,12 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
   }
 }
 
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("T.38 Fax (spandsp) support DISABLED")
+  #endif
 
 #endif // OPAL_FAX
 

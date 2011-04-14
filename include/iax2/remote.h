@@ -43,10 +43,6 @@
 
 #include <ptlib/sockets.h>
 
-#if OPAL_PTLIB_SSL_AES
-#include <openssl/aes.h>
-#endif
-
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif

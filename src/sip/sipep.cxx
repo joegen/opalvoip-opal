@@ -33,6 +33,10 @@
 
 #if OPAL_SIP
 
+  #ifdef _MSC_VER
+    #pragma message("SIP support enabled")
+  #endif
+
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
 #endif
@@ -1952,6 +1956,12 @@ void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interface
   }
 }
 
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("SIP support DISABLED")
+  #endif
 
 #endif // OPAL_SIP
 

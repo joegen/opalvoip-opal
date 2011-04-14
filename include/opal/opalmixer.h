@@ -40,6 +40,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_MIXER
+
 #include <queue>
 
 #include <opal/localep.h>
@@ -1177,6 +1179,8 @@ class OpalMixerNode : public PSafeObject
 #endif // OPAL_VIDEO
 };
 
+
+#endif // OPAL_HAS_MIXER
 
 #endif // OPAL_OPAL_OPAL_MIXER
 

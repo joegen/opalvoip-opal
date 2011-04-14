@@ -68,9 +68,6 @@
 #if defined(P_SSL) && !defined(OPAL_PTLIB_SSL)
   #define  OPAL_PTLIB_SSL P_SSL
 #endif
-#if defined(P_SSL_AES) && !defined(OPAL_PTLIB_SSL_AES)
-  #define  OPAL_PTLIB_SSL_AES P_SSL_AES
-#endif
 #if defined(P_ASN) && !defined(OPAL_PTLIB_ASN)
   #define  OPAL_PTLIB_ASN P_ASN
 #endif
@@ -125,7 +122,7 @@
 #undef  OPAL_CAPI
 #undef  OPAL_T120DATA
 
-#if P_VXML
+#if OPAL_PTLIB_VXML
   #undef  OPAL_IVR
 #endif
 

@@ -40,6 +40,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_LID
+
 #include <opal/endpoint.h>
 #include <lids/lid.h>
 #include <codec/silencedetect.h>
@@ -705,6 +707,8 @@ class OpalLineSilenceDetector : public OpalSilenceDetector
     OpalLine & line;
 };
 
+
+#endif // OPAL_LID
 
 #endif // OPAL_LIDS_LIDEP_H
 
