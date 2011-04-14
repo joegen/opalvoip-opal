@@ -207,8 +207,18 @@ class OpalTransportAddress : public PCaselessString
 };
 
 
-PDECLARE_ARRAY(OpalTransportAddressArray, OpalTransportAddress)
+class OpalTransportAddressArray : public PArray<OpalTransportAddress>
+{
+    typedef PArray<OpalTransportAddress> ParentClass;
+    PCLASSINFO(OpalTransportAddressArray, ParentClass);
+
+  protected:
+    inline OpalTransportAddressArray(int dummy, const OpalTransportAddressArray * c)
+      : ParentClass(dummy, c) { }
+
   public:
+    OpalTransportAddressArray(PINDEX initialSize = 0)
+      : ParentClass(initialSize) { }
     OpalTransportAddressArray(
       const OpalTransportAddress & address
     ) { AppendAddress(address); }
@@ -231,6 +241,11 @@ PDECLARE_ARRAY(OpalTransportAddressArray, OpalTransportAddress)
     void AppendAddress(
       const OpalTransportAddress & address
     );
+
+    virtual PObject * Clone() const
+    {
+      return new OpalTransportAddressArray(0, this);
+    }
 
   protected:
     void AppendStringCollection(
