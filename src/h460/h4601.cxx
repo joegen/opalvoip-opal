@@ -833,7 +833,7 @@ void H460_Feature::AttachConnection(H323Connection * _con)
 
 static const char H460FeaturePluginBaseClass[] = "H460_Feature";
 
-template <> H460_Feature * PDevicePluginFactory<H460_Feature>::Worker::Create(const PString & type) const
+template <> H460_Feature * PDevicePluginFactory<H460_Feature>::Worker::Create(const PDefaultPFactoryKey & type) const
 {
   return H460_Feature::CreateFeature(type);
 }
