@@ -175,7 +175,7 @@ class RTP_DataFrame : public PBYTEArray
   protected:
     PINDEX m_headerSize;
     PINDEX m_payloadSize;
-    PINDEX m_paddingSize;
+    unsigned m_paddingSize;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);

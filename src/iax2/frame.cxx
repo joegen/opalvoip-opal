@@ -48,7 +48,7 @@
 
 #include <ptclib/cypher.h>
 
-#if OPAL_PTLIB_SSL_AES
+#if OPAL_PTLIB_SSL
 #include <openssl/aes.h>
   #ifdef _MSC_VER
     #pragma comment(lib, P_SSL_LIB1)
@@ -799,7 +799,7 @@ PBoolean IAX2FullFrame::WriteHeader()
   
   int a = CompressSubClass();
   if (a < 0)
-    Write1Byte(0xff);
+    Write1Byte((BYTE)0xff);
   else
     Write1Byte((BYTE)a);     
   PTRACE(6, "Comppressed sub class is " << a << " from " << subClass);
@@ -1325,7 +1325,7 @@ PString IAX2FullFrameProtocol::GetSubClassName() const
   return GetSubClassName(GetSubClass());
 }
 
-PString IAX2FullFrameProtocol::GetSubClassName(PINDEX t)
+PString IAX2FullFrameProtocol::GetSubClassName(unsigned t)
 {
   switch (t) {
   case cmdNew:        return PString("new");

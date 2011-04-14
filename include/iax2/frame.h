@@ -700,21 +700,12 @@ class IAX2FullFrameVoice : public IAX2FullFrame
   
   /**Get text description of the subclass contents, given the supplied
      argument*/
-  static PString GetSubClassName(unsigned short testValue)
-     { return GetSubClassName((unsigned int) testValue); }
-
-  /**Get text description of the subclass contents, given the supplied
-     argument*/
-  static PString GetSubClassName(unsigned int testValue);
+  static PString GetSubClassName(unsigned testValue);
   
   /**Get text description of the subclass contents, given the supplied
    argument.  The name returned is that recoginised by the OPAL
    library. */
   static PString GetOpalNameOfCodec(PINDEX testValue);
-  
-  /**Get text description of the subclass contents, given the supplied argument*/
-  static PString GetSubClassName(int testValue) 
-    { return GetSubClassName((unsigned short) testValue); }
   
   /**Turn the OPAL string (which describes the codec) into a AudioSc value. If there is no conversion
      found, return 0. */
@@ -985,7 +976,7 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   virtual PString GetSubClassName() const; 
 
   /**Get text description of the subclass contents*/
-  static PString GetSubClassName(PINDEX t);
+  static PString GetSubClassName(unsigned t);
   
   /**Add a new Information Element (Ie) to the intenral list */
   void AppendIe(IAX2Ie *newElement) { ieElements.Append(newElement); }

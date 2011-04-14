@@ -40,6 +40,10 @@
 
 #if OPAL_HAS_PCSS
 
+  #ifdef _MSC_VER
+    #pragma message("PC Sound System support enabled")
+  #endif
+
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
@@ -464,6 +468,12 @@ PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & m
   return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("PC Sound System support DISABLED")
+  #endif
 
 #endif // OPAL_HAS_PCSS
 

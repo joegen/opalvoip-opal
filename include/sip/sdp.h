@@ -335,8 +335,8 @@ class SDPSessionDescription : public PObject
     time_t GetOwnerSessionId() const { return ownerSessionId; }
     void SetOwnerSessionId(time_t value) { ownerSessionId = value; }
 
-    PINDEX GetOwnerVersion() const { return ownerVersion; }
-    void SetOwnerVersion(PINDEX value) { ownerVersion = value; }
+    unsigned GetOwnerVersion() const { return ownerVersion; }
+    void SetOwnerVersion(unsigned value) { ownerVersion = value; }
 
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }

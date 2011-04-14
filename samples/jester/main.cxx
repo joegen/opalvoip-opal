@@ -447,7 +447,7 @@ void JesterProcess::ConsumePackets(PThread &, INT)
   if (m_startTimeDelta < 0)
     PThread::Sleep(-m_startTimeDelta);
 
-  RTP_DataFrame readFrame(0, m_bytesPerBlock);
+  RTP_DataFrame readFrame((PINDEX)0, m_bytesPerBlock);
   PBYTEArray silence(m_bytesPerBlock);
 
   while (m_keepRunning) {
