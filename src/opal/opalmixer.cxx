@@ -32,9 +32,14 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
-
 #include <opal/opalmixer.h>
+
+#if OPAL_HAS_MIXER
+
+  #ifdef _MSC_VER
+    #pragma message("Mixer (MCU) support enabled")
+  #endif
+
 #include <opal/patch.h>
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
@@ -173,7 +178,7 @@ bool OpalBaseMixer::WriteStream(const Key_T & key, const RTP_DataFrame & rtp)
 RTP_DataFrame * OpalBaseMixer::ReadMixed()
 {
   // create output frame
-  RTP_DataFrame * mixed = new RTP_DataFrame(0, GetOutputSize());
+  RTP_DataFrame * mixed = new RTP_DataFrame((PINDEX)0, GetOutputSize());
   mixed->SetPayloadType(RTP_DataFrame::MaxPayloadType);
   if (ReadMixed(*mixed))
     return mixed;
@@ -250,7 +255,7 @@ void OpalBaseMixer::PushThreadMain()
 bool OpalBaseMixer::OnPush()
 {
   if (m_pushFrame == NULL) {
-    m_pushFrame = new RTP_DataFrame(0, GetOutputSize());
+    m_pushFrame = new RTP_DataFrame((PINDEX)0, GetOutputSize());
     m_pushFrame->SetPayloadType(RTP_DataFrame::MaxPayloadType);
   }
 
@@ -1641,6 +1646,13 @@ void OpalMixerNodeManager::RemoveNodeNames(const PStringSet & names)
 }
 
 
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("Mixer (MCU) support DISABLED")
+  #endif
+
+#endif // OPAL_HAS_MIXER
+
+
 //////////////////////////////////////////////////////////////////////////////
-
-

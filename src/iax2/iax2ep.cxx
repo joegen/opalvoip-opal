@@ -35,6 +35,10 @@
 
 #if OPAL_IAX2
 
+  #ifdef _MSC_VER
+    #pragma message("IAX2 support enabled")
+  #endif
+
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2ep.h"
 #endif
@@ -843,6 +847,13 @@ void IAX2IncomingEthernetFrames::Main()
   PTRACE(3, "Distribute\tEnd of thread - Do no more work now");
   return;
 }
+
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("IAX2 support DISABLED")
+  #endif
 
 #endif // OPAL_IAX2
 

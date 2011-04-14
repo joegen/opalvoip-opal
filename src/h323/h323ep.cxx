@@ -36,6 +36,10 @@
 #include <opal/buildopts.h>
 #if OPAL_H323
 
+  #ifdef _MSC_VER
+    #pragma message("H.323 support enabled")
+  #endif
+
 #ifdef __GNUC__
 #pragma implementation "h323ep.h"
 #endif
@@ -1348,6 +1352,12 @@ bool H323EndPoint::OnFeatureInstance(int instType, const PString & identifer)
   return true;
 }
 
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("H.323 support DISABLED")
+  #endif
 
 #endif // OPAL_H323
 
