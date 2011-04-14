@@ -1948,8 +1948,6 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   OnReceivedSDP(response);
 
-  m_handlingINVITE = false;
-
   switch (GetPhase()) {
     case ConnectedPhase :
       SetPhase(EstablishedPhase);
@@ -1964,6 +1962,8 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     default :
       break;
   }
+
+  m_handlingINVITE = false;
 
   StartPendingReINVITE();
 }
