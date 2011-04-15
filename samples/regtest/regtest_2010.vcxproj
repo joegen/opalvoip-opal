@@ -150,11 +150,6 @@
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2010.vcxproj">
       <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\win32\opal_lib_2005.vcxproj">
-      <Project>{ed9cc7da-08a6-4cb9-9783-f1c3799398d8}</Project>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\win32\opal_lib_2010.vcxproj">
       <Project>{11fb12b5-b5eb-4dff-bd6f-2a0bdf187c22}</Project>
     </ProjectReference>
