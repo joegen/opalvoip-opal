@@ -1255,7 +1255,9 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
 #if OPAL_RTCP_XR
-        m_metrics.SetJitterDelay(m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits());
+        JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count in case gets deleted out from under us
+        if (jitter != NULL)
+          m_metrics.SetJitterDelay(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
 #endif
       }
 
