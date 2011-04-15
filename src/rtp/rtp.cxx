@@ -908,9 +908,13 @@ void RTP_Session::InsertExtendedReportPacket(RTP_ControlFrame & report)
   xr.mos_cq = m_metrics.MOS_CQ();
   xr.rx_config = 0x00;
   xr.reserved = 0x00;
-  xr.jb_nominal = (WORD)(m_jitterBuffer->GetMinJitterDelay()/m_jitterBuffer->GetTimeUnits());
-  xr.jb_maximum = (WORD)(m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits());
-  xr.jb_absolute = (WORD)(m_jitterBuffer->GetMaxJitterDelay()/m_jitterBuffer->GetTimeUnits());
+
+  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count in case gets deleted out from under us
+  if (jitter != NULL) {
+    xr.jb_nominal = (WORD)(jitter->GetMinJitterDelay()/jitter->GetTimeUnits());
+    xr.jb_maximum = (WORD)(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
+    xr.jb_absolute = (WORD)(jitter->GetMaxJitterDelay()/jitter->GetTimeUnits());
+  }
   
   report.EndPacket();
   
