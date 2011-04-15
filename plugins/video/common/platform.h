@@ -61,9 +61,10 @@
 
   #pragma warning(disable:4101 4244 4996)
   #pragma pack(16)
-
+#elif defined(_WIN32)
+  #define LIBAVCODEC_HEADER "libavcodec/avcodec.h"
+  #include "stdint.h"
 #else
-
   #include "plugin-config.h"
   #include <stdint.h>
   #include <semaphore.h>
