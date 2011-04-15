@@ -488,7 +488,7 @@ PBoolean IAX2Encryption::IsEncrypted() const
   return encryptionEnabled;
 }
 
-#if OPAL_PTLIB_SSL_AES
+#ifdef P_SSL_AES
 AES_KEY *IAX2Encryption::AesEncryptKey()
 {
   return &aesEncryptKey; 
@@ -509,7 +509,7 @@ void IAX2Encryption::CalculateAesKeys()
     return;
 
 
-#if OPAL_PTLIB_SSL_AES
+#ifdef P_SSL_AES
   IAX2IeMd5Result ie(*this);
   PBYTEArray context = ie.GetDataBlock();
 
