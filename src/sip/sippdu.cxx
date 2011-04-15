@@ -505,12 +505,15 @@ void SIPURL::Sanitise(UsageContext context)
     }
   }
 
-  for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+  for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ) {
     PCaselessString key = it->first;
-    if (key.NumCompare("OPAL-") == EqualTo) {
-      paramVars.MakeUnique();
+    if (key.NumCompare("OPAL-") != EqualTo)
+      ++it;
+    else if (paramVars.MakeUnique())
+      paramVars.erase(it++);
+    else {
       paramVars.RemoveAt(key);
-      --i; // Allow for ++ in for loop
+      it = paramVars.begin();
     }
   }
 
