@@ -270,7 +270,7 @@ PUInt16b RTCP_XR_Metrics::GetRoundTripDelay()
 
 PUInt16b RTCP_XR_Metrics::GetEndSystemDelay()
 {
-  if (!isPayloadTypeOK) {
+  if (!isPayloadTypeOK || payloadBitrate == 0) {
     return 0;
   }
   /* Account 2 times for the codec time (sender and receiver sides) */
@@ -420,7 +420,7 @@ float RTCP_XR_Metrics::GetPonderateId()
     count++;
   }      
   
-  if (count != 0) {
+  if (count != 0 && sumDuration != 0) {
     ponderateId = sumId/sumDuration;
   }
   return ponderateId;
@@ -485,7 +485,7 @@ float RTCP_XR_Metrics::GetPonderateIe()
     count++;
   }      
   
-  if (count != 0) {
+  if (count != 0 && sumDuration != 0) {
     ponderateIe = sumIe/sumDuration;
   }
   return ponderateIe;
