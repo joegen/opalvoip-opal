@@ -308,7 +308,7 @@ IAX2FullFrameProtocol *IAX2CallProcessor::BuildNewFrameForSending(IAX2FullFrameP
   if (!callingContext.IsEmpty())
     f->AppendIe(new IAX2IeCalledContext(callingContext));
 
-#if OPAL_PTLIB_SSL_AES
+#ifdef P_SSL_AES
   f->AppendIe(new IAX2IeEncryption());
 #endif
 

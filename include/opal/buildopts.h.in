@@ -44,7 +44,6 @@
 #undef OPAL_VERSION
 
 #undef  OPAL_PTLIB_SSL
-#undef  OPAL_PTLIB_SSL_AES
 #undef  OPAL_PTLIB_ASN
 #undef  OPAL_PTLIB_EXPAT
 #undef  OPAL_PTLIB_AUDIO
