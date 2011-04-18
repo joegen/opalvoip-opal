@@ -1111,6 +1111,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
   // Open other direction, if needed (must be after above open)
   if (makesymmetrical) {
+    PTRACE(3, "SIP\tOpening reverse media stream due to symmetry");
     m_symmetricOpenStream = true;
     bool ok = GetCall().OpenSourceMediaStreams(*(isSource ? GetCall().GetOtherPartyConnection(*this) : this),
                                                           mediaFormat.GetMediaType(), sessionID, mediaFormat);
@@ -1964,6 +1965,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   }
 
   m_handlingINVITE = false;
+  PTRACE(4, "SIP\tCompleted received INVITE");
 
   StartPendingReINVITE();
 }
@@ -2360,7 +2362,9 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & request)
   if (GetPhase() == EstablishedPhase) // re-INVITE
     StartMediaStreams();
   else if (!ok)
-      Release(EndedByCapabilityExchange);
+    Release(EndedByCapabilityExchange);
+
+  PTRACE(5, "SIP\tCompleted OnReceivedSDP");
 }
 
 
