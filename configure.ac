@@ -193,8 +193,8 @@ case "$OSTYPE" in
           HAVE_RANLIB=no
         ;;
 
-        Darwin )  
-	  SHAREDLIBEXT=dylib 
+        Darwin )
+	  SHAREDLIBEXT=dylib
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
@@ -211,7 +211,7 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
           HAVE_RANLIB=no
         ;;
 
-        cygwin*|mingw* )
+        cygwin|mingw )
 	  SHAREDLIBEXT=dll
           SHARED_CFLAGS=
           OPAL_DETERMINE_LIBNAMES(DEBUG)
@@ -469,8 +469,8 @@ AC_SUBST(OPAL_RUBY)
 dnl ########################################################################
 dnl MSWIN unconditionally needed LIBS
 dnl ########################################################################
-case "$target_os" in
-        cygwin*|mingw**)
+case "$OSTYPE" in
+        cygwin|mingw)
           OPAL_ADD_CFLAGS_LIBS([], [-lavifil32])
         ;;
 esac

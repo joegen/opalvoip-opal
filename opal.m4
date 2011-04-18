@@ -105,8 +105,8 @@ AC_DEFUN([OPAL_DETERMINE_DEBUG],
                         [AC_HELP_STRING([--enable-debug],[Enable debug build])],
                         [DEBUG_BUILD=$enableval],
                         [DEBUG_BUILD=no])
-           case "$target_os" in
-               solaris*)
+           case "$OSTYPE" in
+               solaris)
                  opal_release_flags="-O3 -DSOLARIS"
                  opal_debug_flags="-g -D_DEBUG -DSOLARIS"
                ;;
@@ -175,7 +175,7 @@ AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],
 
 dnl OPAL_DETERMINE_LIBNAMES
 dnl Determine opal library and symlink names
-dnl Arguments: $target_os
+dnl Arguments: $OSTYPE
 dnl            $MACHTYPE
 dnl            $SHAREDLIBEXT
 dnl            BUILD_TYPE
@@ -205,9 +205,9 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
             build_suffix="${BUILD_TYPE}${BUILD_NUMBER}"
           fi
 
-          case "$target_os" in
-                  cygwin*|mingw*|darwin*)  
-                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}" 
+          case "$OSTYPE" in
+                  cygwin|mingw|Darwin)
+                    $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
                   *)
                     $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}"
@@ -828,8 +828,8 @@ AC_DEFUN([OPAL_FIND_LIBDL],
               AC_MSG_RESULT(no)
             else
               AC_MSG_RESULT(yes)
-              case "$target_os" in
-                freebsd*|openbsd*|netbsd*|darwin*)  
+              case "$OSTYPE" in
+                freebsd|openbsd|netbsd|Darwin)
                   AC_CHECK_LIB([c],[dlopen],
                               [
                                 opal_libdl=yes
