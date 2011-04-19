@@ -973,7 +973,7 @@ void RTP_Session::OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PIND
 }
 
 
-void RTP_Session::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedReportArray & reports)
+void RTP_Session::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {

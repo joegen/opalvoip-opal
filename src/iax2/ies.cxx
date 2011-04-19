@@ -571,10 +571,9 @@ PBoolean IAX2IeCallToken::ValidKeySequence (IAX2IeCallToken & cf,
   return keySequence == bits[1];
 }
 
-PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
-					   PIPSocket::Address & remote)
-{
 #if P_SSL
+PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime, PIPSocket::Address & remote)
+{
   BYTE block[1000];
 
   memcpy(block, iKeyPad, blockSize);
@@ -598,11 +597,16 @@ PString IAX2IeCallToken::ReportKeySequence(const PString & srcTime,
     answer.sprintf("%02x", (unsigned)data[i]);
 
   return answer;
+}
 #else 
+PString IAX2IeCallToken::ReportKeySequence(const PString &, PIPSocket::Address &)
+{
   PAssertAlways("SSL should be enabled in the build when call token is used");
   return PString::Empty();
-#endif
 }
+#endif
+
+
 /************
   These variables are static, as they are only accessed from the
   IAX2IeCallToken class, and they never ever change during program
