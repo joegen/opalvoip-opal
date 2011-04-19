@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="WiX Installer"
+	Version="8.00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="WiX Candle"
+			DisplayName="WiX Script Compiler"
+			CommandLine="&quot;$(WIX)\bin\candle&quot; [AllOptions] [AdditionalOptions] [inputs]"
+			Outputs="$(InputName).wixobj"
+			FileExtensions="*.wxs"
+			ExecutionDescription="Compiling WiX Script"
+			ShowOnlyRuleProperties="false"
+			>
+			<Properties>
+				<BooleanProperty
+					Name="WixCandleNoLogo"
+					DisplayName="Suppress logo"
+					Description="Suppresses output of logo information"
+					Switch="-nologo"
+				/>
+				<BooleanProperty
+					Name="WixCandleVerbose"
+					DisplayName="Verbose"
+					Description="Verbose output"
+					Switch="-v"
+				/>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="WiX Light"
+			DisplayName="WiX Script Linker"
+			CommandLine="&quot;$(WIX)\bin\light&quot; [AllOptions] [AdditionalOptions] [inputs]"
+			Outputs="$(InputName).msi"
+			FileExtensions="*.wixobj"
+			ExecutionDescription="Linking WiX Scripts"
+			>
+			<Properties>
+				<BooleanProperty
+					Name="WixLightNoLogo"
+					DisplayName="Suppress logo"
+					Description="Suppress output of logo information"
+					Switch="-nologo"
+					DefaultValue="true"
+				/>
+				<BooleanProperty
+					Name="WixLightVerbose"
+					DisplayName="Verbose"
+					Description="Verbose output"
+					Switch="-v"
+				/>
+				<StringProperty
+					Name="WixLightOutFile"
+					DisplayName="Output file"
+					Description="Output file"
+					Switch="-out &quot;[value]&quot;"
+					DefaultValue="$(OutDir)\$(ProjectName).msi"
+				/>
+				<BooleanProperty
+					Name="WixLightUI"
+					DisplayName="User Interface"
+					Description="Include user interface extensions"
+					Switch="-ext WixUIExtension"
+				/>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>
