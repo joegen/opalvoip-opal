@@ -716,4 +716,3 @@ PFACTORY_LOAD(SIP_Presentity);
 
 
 #endif  // OPAL_IM_PRES_ENT_H
-

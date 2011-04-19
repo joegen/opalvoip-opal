@@ -117,7 +117,7 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress)
+SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress, OpalMediaSession *) const
 {
   return new SDPSIPIMMediaDescription(localAddress);
 }
@@ -213,47 +213,36 @@ OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn,
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & _conn, unsigned _sessionId)
-: OpalMediaSession(_conn, SIP_IM, _sessionId)
+OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & conn, unsigned sessionId)
+  : OpalMediaSession(conn, sessionId, SIP_IM)
+  , m_transportAddress(m_connection.GetTransport().GetLocalAddress())
+  , m_localURL(m_connection.GetLocalPartyURL())
+  , m_remoteURL(m_connection.GetRemotePartyURL())
+  , m_callId(m_connection.GetToken())
 {
-  transportAddress = connection.GetTransport().GetLocalAddress();
-  localURL         = connection.GetLocalPartyURL();
-  remoteURL        = connection.GetRemotePartyURL();
-  callId           = connection.GetToken();
 }
 
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(const OpalSIPIMMediaSession & obj)
-  : OpalMediaSession(obj)
-{
-  transportAddress = obj.transportAddress;
-  localURL         = obj.localURL;        
-  remoteURL        = obj.remoteURL;       
-  callId           = obj.callId;          
-}
 
 OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
 {
-  return transportAddress;
+  return m_transportAddress;
 }
 
 
-SDPMediaDescription * OpalSIPIMMediaSession::CreateSDPMediaDescription(const OpalTransportAddress & sdpContactAddress)
+OpalTransportAddress OpalSIPIMMediaSession::GetRemoteMediaAddress() const
 {
-  return new SDPSIPIMMediaDescription(sdpContactAddress, transportAddress, localURL);
+  return m_remoteURL.GetHostAddress();
 }
 
 
 OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
-                                                                         unsigned sessionID, 
-                                                                         PBoolean isSource)
+                                                            unsigned sessionID, 
+                                                            PBoolean isSource)
 {
-  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (connection.IsOriginating() ? "originator" : "receiver") << " with local " << localURL << " and remote " << remoteURL);
-  return new OpalIMMediaStream(connection, mediaFormat, sessionID, isSource);
-}
-
-
-void OpalSIPIMMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList &)
-{
+  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in "
+         << (m_connection.IsOriginating() ? "originator" : "receiver")
+         << " with local " << m_localURL << " and remote " << m_remoteURL);
+  return new OpalIMMediaStream(m_connection, mediaFormat, sessionID, isSource);
 }
 
 

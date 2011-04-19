@@ -210,9 +210,6 @@ OpalManager::OpalManager()
   , stun(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
-#ifdef OPAL_ZRTP
-  , zrtpEnabled(false)
-#endif
 #ifdef OPAL_HAS_IM
   , m_imManager(NULL)
 #endif
@@ -829,18 +826,6 @@ PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
   return true;
-}
-
-
-RTP_UDP * OpalManager::CreateRTPSession (const RTP_Session::Params & params)
-{
-  return new RTP_UDP(params);
-}
-
-
-void OpalManager::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
-{
-  connection.GetCall().OnRTPStatistics(connection, session);
 }
 
 
@@ -1949,13 +1934,6 @@ void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interface
   if (stun != NULL && stun->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
     stun->InvalidateCache();
 }
-
-#ifdef OPAL_ZRTP
-bool OpalManager::GetZRTPEnabled() const
-{
-  return zrtpEnabled;
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

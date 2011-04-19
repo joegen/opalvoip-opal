@@ -46,7 +46,7 @@
 #include <ptclib/guid.h>
 
 
-class RTP_Session;
+class OpalRTPSession;
 class OpalMediaPatch;
 class OpalLine;
 class OpalConnection;
@@ -458,7 +458,7 @@ class OpalMediaStreamPacing
     );
 
   protected:
-    bool           m_isAudio;
+    bool           m_timeOnMarkers;
     unsigned       m_frameTime;
     PINDEX         m_frameSize;
     unsigned       m_timeUnits;
@@ -546,7 +546,7 @@ class OpalRTPMediaStream : public OpalMediaStream
       OpalRTPConnection & conn,            ///<  Connection that owns the stream
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       bool isSource,                       ///<  Is a source stream
-      RTP_Session & rtpSession,            ///<  RTP session to stream to/from
+      OpalRTPSession & rtpSession,         ///<  RTP session to stream to/from
       unsigned minAudioJitterDelay,        ///<  Minimum jitter buffer size (if applicable)
       unsigned maxAudioJitterDelay         ///<  Maximum jitter buffer size (if applicable)
     );
@@ -580,14 +580,14 @@ class OpalRTPMediaStream : public OpalMediaStream
     );
 
     /**Read an RTP frame of data from the source media stream.
-       The new behaviour simply calls RTP_Session::ReadData().
+       The new behaviour simply calls OpalRTPSession::ReadData().
       */
     virtual PBoolean ReadPacket(
       RTP_DataFrame & packet
     );
 
     /**Write an RTP frame of data to the sink media stream.
-       The new behaviour simply calls RTP_Session::WriteData().
+       The new behaviour simply calls OpalRTPSession::WriteData().
       */
     virtual PBoolean WritePacket(
       RTP_DataFrame & packet
@@ -631,7 +631,7 @@ class OpalRTPMediaStream : public OpalMediaStream
 
     /** Return current RTP session
       */
-    virtual RTP_Session & GetRtpSession() const
+    virtual OpalRTPSession & GetRtpSession() const
     { return rtpSession; }
 
 #if OPAL_STATISTICS
@@ -640,9 +640,9 @@ class OpalRTPMediaStream : public OpalMediaStream
   //@}
 
   protected:
-    RTP_Session & rtpSession;
-    unsigned      minAudioJitterDelay;
-    unsigned      maxAudioJitterDelay;
+    OpalRTPSession & rtpSession;
+    unsigned         minAudioJitterDelay;
+    unsigned         maxAudioJitterDelay;
 };
 
 

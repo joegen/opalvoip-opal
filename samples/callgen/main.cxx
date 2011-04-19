@@ -706,6 +706,7 @@ PBoolean MyCall::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream 
 }
 
 
+#if 0
 void MyCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
 {
   if (receivedMedia.GetTimeInSeconds() == 0 && session.GetPacketsReceived() > 0) {
@@ -717,6 +718,7 @@ void MyCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Sessio
       mediaGateway = OpalTransportAddress(udpSess->GetRemoteAddress(), udpSess->GetRemoteDataPort());
   }
 }
+#endif
 
 
 // End of file ////////////////////////////////////////////////////////////////

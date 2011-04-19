@@ -670,11 +670,6 @@ void OpalCall::CloseMediaStreams()
 }
 
 
-void OpalCall::OnRTPStatistics(const OpalConnection & /*connection*/, const RTP_Session & /*session*/)
-{
-}
-
-
 PBoolean OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
                                      unsigned sessionID) const
 {

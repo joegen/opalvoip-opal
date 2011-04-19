@@ -3185,9 +3185,8 @@ bool SIPResponse::Send(OpalTransport & transport, const SIP_PDU & command)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & sm)
+SIPInvite::SIPInvite(SIPConnection & connection)
   : SIPTransaction(Method_INVITE, connection)
-  , m_rtpSessions(sm)
 {
   //m_mime.SetDate(); // now
   SetAllow(m_endpoint.GetAllowedMethods());
@@ -3201,7 +3200,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, const OpalRTPSessionManager & s
 
 SIPTransaction * SIPInvite::CreateDuplicate() const
 {
-  SIPTransaction * newTransaction = new SIPInvite(*m_connection, GetSessionManager());
+  SIPTransaction * newTransaction = new SIPInvite(*m_connection);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.

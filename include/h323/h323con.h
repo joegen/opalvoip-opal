@@ -91,6 +91,7 @@ class H323SignalPDU;
 class H323ControlPDU;
 class H323EndPoint;
 class H323TransportAddress;
+class H323RTPSession;
 
 class H235Authenticators;
 
@@ -1472,7 +1473,7 @@ class H323Connection : public OpalRTPConnection
     virtual H323_RTPChannel * CreateRTPChannel(
       const H323Capability & capability,
       H323Channel::Directions direction,
-      RTP_Session & rtp
+      H323RTPSession & rtp
     );
 
     /**This function is called when the remote endpoint want's to create
@@ -1713,36 +1714,6 @@ class H323Connection : public OpalRTPConnection
 
   /**@name RTP Session Management */
   //@{
-    /**Get an H323 RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
-      */
-    virtual H323_RTP_Session * GetSessionCallbacks(
-      unsigned sessionID
-    ) const;
-
-    /**Use an RTP session for the specified ID and for the given direction.
-       If there is no session of the specified ID, a new one is created using
-       the information provided in the tranport parameter. If the system
-       does not support the specified transport, NULL is returned.
-      */
-    virtual RTP_Session * UseSession(
-      const OpalTransport & transport,
-                   unsigned sessionID,
-      const OpalMediaType & mediatype,  ///<  media type
-                  RTP_QOS * rtpqos = NULL
-    );
-
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour calls H323EndPoint::OnRTPStatistics().
-      */
-    virtual void OnRTPStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
     /**Get the names of the codecs in use for the RTP session.
        If there is no session of the specified ID, an empty string is returned.
       */
@@ -2176,6 +2147,7 @@ class H323Connection : public OpalRTPConnection
 
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
     P_REMOVE_VIRTUAL_VOID(OnCleared());
+    P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
 };
 
 

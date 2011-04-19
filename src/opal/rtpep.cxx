@@ -42,11 +42,9 @@ OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all
                        const PCaselessString & prefix,      ///<  Prefix for URL style address strings
                                       unsigned attributes)  ///<  Bit mask of attributes endpoint has
   : OpalEndPoint(manager, prefix, attributes)
-#ifdef OPAL_ZRTP
-    , zrtpEnabled(manager.GetZRTPEnabled())
-#endif
 {
 }
+
 
 OpalRTPEndPoint::~OpalRTPEndPoint()
 {
@@ -69,23 +67,21 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 }
 
 
-#ifdef OPAL_ZRTP
-
-bool OpalRTPEndPoint::GetZRTPEnabled() const
-{ 
-  return zrtpEnabled; 
+OpalMediaSession * OpalRTPEndPoint::CreateMediaSession(OpalConnection & connection,
+                                                       unsigned sessionId,
+                                                       const OpalMediaType & mediaType)
+{
+  return new OpalRTPSession(connection, sessionId, mediaType);
 }
 
-#endif
 
-
-static RTP_UDP * GetRTPFromStream(const OpalMediaStream & stream)
+static OpalRTPSession * GetRTPFromStream(const OpalMediaStream & stream)
 {
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtpStream == NULL)
     return NULL;
 
-  return dynamic_cast<RTP_UDP *>(&rtpStream->GetRtpSession());
+  return dynamic_cast<OpalRTPSession *>(&rtpStream->GetRtpSession());
 }
 
 
@@ -108,9 +104,7 @@ bool OpalRTPEndPoint::OnLocalRTP(OpalConnection & connection1,
 
 bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 {
-  PWaitAndSignal mutex(inUseFlag);
-
-  RTP_UDP * rtp = GetRTPFromStream(stream);
+  OpalRTPSession * rtp = GetRTPFromStream(stream);
   if (rtp == NULL)
     return false;
 
@@ -155,7 +149,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 }
 
 
-void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp)
+void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSession * rtp)
 {
   if (rtp == NULL)
     return;
@@ -181,9 +175,8 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rt
 }
 
 
-void OpalRTPEndPoint::SetConnectionByRtpLocalPort(RTP_Session * session, OpalConnection * connection)
+void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConnection * connection)
 {
-  RTP_UDP * rtp = dynamic_cast<RTP_UDP *>(session);
   if (rtp == NULL)
     return;
 

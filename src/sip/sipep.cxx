@@ -1833,12 +1833,6 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
 }
 
 
-void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
-                                  const RTP_Session & session) const
-{
-  manager.OnRTPStatistics(connection, session);
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 PThreadPoolBase::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()

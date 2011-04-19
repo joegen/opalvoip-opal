@@ -29,7 +29,7 @@ class OpalLibZRTPConnectionInfo : public OpalZRTPConnectionInfo {
     OpalLibZRTPConnectionInfo();
 
     bool Open();
-    virtual RTP_UDP * CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat);
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionId);
 
     static PMutex globalMutex;
     static bool globalInited;
@@ -88,9 +88,9 @@ class LibZrtpSecurityMode_Base : public OpalZrtpSecurityMode
     LibZrtpSecurityMode_Base();
     ~LibZrtpSecurityMode_Base();
 
-    RTP_UDP * CreateRTPSession(
+    OpalMediaSession * CreateMediaSession(
       OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
-      const RTP_Session::Params & options ///< Parameters to construct with session.
+      const OpalRTPSession::Params & options ///< Parameters to construct with session.
     );
 
     PBoolean Open();
@@ -149,7 +149,7 @@ bool OpalLibZRTPConnectionInfo::Open()
   return true;
 }
 
-RTP_UDP * OpalLibZRTPConnectionInfo::CreateRTPSession(OpalConnection & conn, unsigned sessionId, bool remoteIsNat)
+OpalMediaSession * OpalLibZRTPConnectionInfo::CreateMediaSession(OpalConnection & conn, unsigned sessionId)
 {
   return new OpalZrtp_UDP(
   //OpalZRTPStreamInfo * zrtpStreamInfo = zrtpConnInfo->CreateStream();
@@ -214,7 +214,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnSendData(RTP_DataFrame & frame) {
  	zrtp_status_t err = ::zrtp_process_rtp(zrtpStream, (char *)frame.GetPointer(), &len);
    
 	if (err != zrtp_status_ok) {
-		return RTP_Session::e_IgnorePacket;
+		return OpalRTPSession::e_IgnorePacket;
 	}
  
 	frame.SetPayloadSize(len - frame.GetHeaderSize());
@@ -226,7 +226,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnReceiveData(RTP_DataFrame & frame) {
 	zrtp_status_t err = ::zrtp_process_srtp(zrtpStream, (char *)frame.GetPointer(), &len);
  
 	if (err != zrtp_status_ok) {
-		return RTP_Session::e_IgnorePacket;
+		return OpalRTPSession::e_IgnorePacket;
 	}
 	
 	frame.SetPayloadSize(len - frame.GetHeaderSize());
@@ -245,7 +245,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnSendControl(RTP_ControlFrame & frame,
 
 	zrtp_status_t err = ::zrtp_process_srtcp(zrtpStream, (char *)frame.GetPointer(), &len);
 	if (err != zrtp_status_ok) {
-		return RTP_Session::e_IgnorePacket;
+		return OpalRTPSession::e_IgnorePacket;
 	}
 	
     transmittedLen = len;
@@ -257,7 +257,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnReceiveControl(RTP_ControlFrame & fra
 	unsigned len = frame.GetSize();
 	zrtp_status_t err = ::zrtp_process_rtcp(zrtpStream, (char *)frame.GetPointer(), &len);
 	if (err != zrtp_status_ok) {
-		return RTP_Session::e_IgnorePacket;
+		return OpalRTPSession::e_IgnorePacket;
 	}
 	
 	frame.SetSize(len);
@@ -353,8 +353,8 @@ void LibZrtpSecurityMode_Base::Init(int *sas, int *pk, int *auth, int *cipher, i
 	printf("init zrtp security mode\n");
 }
  
-RTP_UDP * LibZrtpSecurityMode_Base::CreateRTPSession(OpalRTPConnection & connection,
-                                                     const RTP_Session::Params & options)
+OpalMediaSession * LibZrtpSecurityMode_Base::CreateMediaSession(OpalRTPConnection & connection,
+                                                     const OpalRTPSession::Params & options)
 {
   OpalZrtp_UDP * session = new OpalZrtp_UDP(options);
   session->SetSecurityMode(this);

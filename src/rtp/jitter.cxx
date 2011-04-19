@@ -607,13 +607,13 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
-                                        unsigned minJitterDelay,
-                                        unsigned maxJitterDelay,
-                                        unsigned time,
-                                          PINDEX packetSize)
+RTP_JitterBuffer::RTP_JitterBuffer(OpalRTPSession & session,
+                                   unsigned         minJitterDelay,
+                                   unsigned         maxJitterDelay,
+                                   unsigned         time,
+                                   PINDEX           packetSize)
   : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
-    m_session(sess)
+    m_session(session)
 {
   StartThread();
 }
@@ -624,18 +624,18 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
   PTRACE(4, "Jitter\tDestroying jitter buffer " << *this);
 
   m_running = false;
-  bool reopen = m_session.Close(true);
+  bool reopen = m_session.Shutdown(true);
 
   WaitForThreadTermination();
 
   if (reopen)
-    m_session.Reopen(true);
+    m_session.Restart(true);
 }
 
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
 {
-  bool success = m_session.ReadData(frame);
+  bool success = m_session.InternalReadData(frame);
   PTRACE_IF(6, success, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
   return success;
 }

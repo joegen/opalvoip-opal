@@ -549,6 +549,15 @@ class OpalEndPoint : public PObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
+    /** Create a new underlying media session instance.
+        Default behaviour returns NULL.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      OpalConnection & connection,    ///< COnnection that owns the new media session
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    );
+
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
        stream according to the logic of its underlying protocol.
