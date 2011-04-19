@@ -1,0 +1,333 @@
+<?xml version='1.0'?>
+<?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+<?define SaslDir = "C:\Tools" ?>
+<?define LDAPDir = "C:\Tools" ?>
+<?define SSLDir = "$(env.windir)\SYSTEM32" ?>
+<?define OPALDir = "..\.." ?>
+<?define PTLibDir = "..\..\..\ptlib" ?>
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+  <Product Name='Open Phone'
+           Language='1033'
+           Version='3.10.0'
+           Manufacturer='Vox Lucida Pty. Ltd.'
+           Id='*'
+           UpgradeCode='56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1'>
+
+    <Package Description='Open Phone'
+             Comments='VoIP client for OPAL'
+             Manufacturer='Vox Lucida Pty. Ltd.'
+             InstallerVersion='300'
+             Compressed='yes' />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <Media Id='1' Cabinet='OpenPhone.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1' />
+    <Property Id='DiskPrompt' Value="Open Phone 3.10 Installation [1]" />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFilesFolder' Name='PFiles'>
+        <Directory Id='VoxLucida' Name='Vox Lucida'>
+          <Directory Id='INSTALLDIR' Name='Open Phone'>
+            <Component Id='MainExecutable' Guid='*'>
+              <File Id='OpenPhoneEXE'
+		    Name='OpenPhone.exe'
+		    Source='$(var.OPALDir)\bin\OpenPhone\Release\OpenPhone.exe'
+		    DiskId='1'
+		    KeyPath='yes'>
+                <Shortcut Id="startmenuOpenPhone"
+                          Directory="ProgramMenuDir"
+                          Name="OpenPhone"
+                          WorkingDirectory='INSTALLDIR'
+                          Icon="OpenPhone.ico"
+                          IconIndex="0"
+                          Advertise="yes" />
+              </File>
+            </Component>
+            <Component Id='G.722.2' Guid='*'>
+              <File Id='G_722_2_DLL'
+		      Name='G7222_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\G7222_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='GSM_AMR' Guid='*'>
+              <File Id='GSM_AMR_DLL'
+		      Name='gsmamr_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\gsmamr_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='GSM0610' Guid='*'>
+              <File Id='GSM0610_DLL'
+		      Name='gsm0610_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\gsm0610_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='iLBC' Guid='*'>
+              <File Id='iLBC_DLL'
+		      Name='iLBC_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\iLBC_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='Speex' Guid='*'>
+              <File Id='Speex_DLL'
+		      Name='speex_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\speex_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='H.261' Guid='*'>
+              <File Id='H.261_DLL'
+		      Name='h261vic_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\h261_vic_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='H.263' Guid='*'>
+              <File Id='H.263_DLL'
+		      Name='h263_ffmpeg_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\h263_ffmpeg_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='H.264' Guid='*'>
+              <File Id='H.264_DLL'
+		      Name='h264_x264_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\h264_x264_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='MPEG4' Guid='*'>
+              <File Id='MPEG4_DLL'
+		      Name='mpeg4_ffmpeg_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\mpeg4_ffmpeg_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='AVCODEC' Guid='*'>
+              <File Id='AVCODEC_DLL'
+		      Name='avcodec-52.dll'
+		      Source='C:\PTLib_Plugins\avcodec-52.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='AVUTIL' Guid='*'>
+              <File Id='AVUTIL_DLL'
+		      Name='avutil-50.dll'
+		      Source='C:\PTLib_Plugins\avutil-50.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='AVCORE' Guid='*'>
+              <File Id='AVCORE_DLL'
+		      Name='avcore-0.dll'
+		      Source='C:\PTLib_Plugins\avutil-50.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='x264' Guid='*'>
+              <File Id='x264_DLL'
+		      Name='libx264-102.dll'
+		      Source='C:\PTLib_Plugins\libx264-102.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='x264_helper' Guid='*'>
+              <File Id='x264_EXE'
+		      Name='x264plugin_helper.exe'
+		      Source='C:\PTLib_Plugins\x264plugin_helper.exe'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='SpanDSPFax' Guid='*'>
+              <File Id='SpanDSPFax_DLL'
+		      Name='SpanDSPFax_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\SpanDSPFax_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='SpanDSPLib' Guid='*'>
+              <File Id='SpanDSPLib_DLL'
+		      Name='libspandsp.dll'
+		      Source='$(var.OPALDir)\plugins\fax\fax_spandsp\release\libspandsp.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='CM' Guid='*'>
+              <File Id='CM_DLL'
+		      Name='cm_hid_lid_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\cm_hid_lid_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='CM_HID' Guid='*'>
+              <File Id='CM_HID_DLL'
+		      Name='CM_HID.dll'
+		      Source='$(var.OPALDir)\plugins\LID\CM_HID\CM_HID.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='TigerJet' Guid='*'>
+              <File Id='TigerJet_DLL'
+		      Name='tj_lid_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\tj_lid_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='TigerJetDLL' Guid='*'>
+              <File Id='TigerJetSys_DLL'
+		      Name='TjIpSys.dll'
+		      Source='$(var.OPALDir)\plugins\LID\TigerJet\TjIpSys.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='WindowsHID' Guid='*'>
+              <File Id='WinHID_DLL'
+		      Name='winxp_hid_lid_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\winxp_hid_lid_ptplugin.dll'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='OPAL' Guid='*'>
+              <File Id='OPAL_DLL'
+		    Name='OPAL.DLL'
+		    Source='$(var.OPALDir)\lib\OPAL.DLL'
+		    DiskId='1'
+		    KeyPath='yes' />
+            </Component>
+            <Component Id='PTLib' Guid='*'>
+              <File Id='PTLib_DLL'
+		      Name='PTLib.DLL'
+		      Source='$(var.PTLibDir)\lib\PTLib.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='Lua' Guid='*'>
+              <File Id='Lua_DLL'
+		      Name='LUA5.1.DLL'
+		      Source='$(var.LuaDir)\LUA5.1.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='SASL' Guid='*'>
+              <File Id='SASL_DLL'
+		      Name='LIBSASL.DLL'
+		      Source='$(var.SaslDir)\LIBSASL.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='OpenLDAP' Guid='*'>
+              <File Id='OPENLDAP_DLL'
+		      Name='OPENLDAP.DLL'
+		      Source='$(var.LDAPDir)\OPENLDAP.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='OpenSSL1' Guid='*'>
+              <File Id='LIBEAY32_DLL'
+		      Name='LIBEAY32.DLL'
+		      Source='$(var.SSLDir)\LIBEAY32.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+            <Component Id='OpenSSL2' Guid='*'>
+              <File Id='SSLEAY32_DLL'
+		      Name='SSLEAY32.DLL'
+		      Source='$(var.SSLDir)\SSLEAY32.DLL'
+		      DiskId='1'
+		      KeyPath='yes' />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="OpenPhone">
+          <Component Id="ProgramMenuDir" Guid="*">
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+            <RegistryValue Root='HKCU'
+                           Key='Software\[Manufacturer]\[ProductName]'
+                           Type='string'
+                           Value=''
+                           KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Icon Id="OpenPhone.ico" SourceFile=".\OpenPhone.ico" />
+
+    <Feature Id='Complete' Level='1'>
+      <ComponentRef Id='MainExecutable' />
+      <ComponentRef Id='ProgramMenuDir' />
+    </Feature>
+
+    <Feature Id='Codecs'
+             Title="OPAL Codec Plug-ins"
+             Level='1'>
+      <ComponentRef Id='G.722.2' />
+      <ComponentRef Id='GSM_AMR' />
+      <ComponentRef Id='GSM0610' />
+      <ComponentRef Id='iLBC' />
+      <ComponentRef Id='Speex' />
+      <ComponentRef Id='H.261' />
+      <ComponentRef Id='H.263' />
+      <ComponentRef Id='H.264' />
+      <ComponentRef Id='MPEG4' />
+      <ComponentRef Id='AVCODEC' />
+      <ComponentRef Id='AVUTIL' />
+      <ComponentRef Id='AVCORE' />
+      <ComponentRef Id='x264' />
+      <ComponentRef Id='x264_helper' />
+      <ComponentRef Id='SpanDSPFax' />
+      <ComponentRef Id='SpanDSPLib' />
+      <ComponentRef Id='CM' />
+      <ComponentRef Id='CM_HID' />
+      <ComponentRef Id='TigerJet' />
+      <ComponentRef Id='TigerJetDLL' />
+      <ComponentRef Id='WindowsHID' />
+    </Feature>
+
+    <Feature Id='OPAL'
+             Title="Open Phone Abstraction Library"
+             AllowAdvertise="no"
+             Display="hidden"
+             Level='1'>
+      <ComponentRef Id='OPAL' />
+      <ComponentRef Id='OpenSSL1' />
+      <ComponentRef Id='OpenSSL2' />
+    </Feature>
+
+    <Feature Id='PTLib'
+             Title="Portable Tool Library"
+             AllowAdvertise="no"
+             Display="hidden"
+             Level='1'>
+      <ComponentRef Id='PTLib' />
+      <ComponentRef Id='Lua' />
+      <ComponentRef Id='SASL' />
+      <ComponentRef Id='OpenLDAP' />
+      <ComponentRef Id='OpenSSL1' />
+      <ComponentRef Id='OpenSSL2' />
+    </Feature>
+
+    <Feature Id="VCRedist"
+             Title="Microsoft C++ Run Time Libraries"
+             AllowAdvertise="no"
+             Display="hidden"
+             Level="1">
+      <MergeRef Id="VCRedist"/>
+    </Feature>
+
+    <DirectoryRef Id="TARGETDIR">
+      <Merge Id="VCRedist"
+             SourceFile="$(env.ProgramFiles)\Common Files\Merge Modules\Microsoft_VC$(var.MSVCRT_VER)_CRT_x86.msm"
+             DiskId="1"
+             Language="0"/>
+    </DirectoryRef>
+  </Product>
+</Wix>
