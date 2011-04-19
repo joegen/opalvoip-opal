@@ -139,7 +139,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/call.cxx \
            $(OPAL_SRCDIR)/opal/mediafmt.cxx \
            $(OPAL_SRCDIR)/opal/mediatype.cxx \
-           $(OPAL_SRCDIR)/opal/medisession.cxx \
+           $(OPAL_SRCDIR)/opal/mediasession.cxx \
            $(OPAL_SRCDIR)/opal/mediastrm.cxx \
            $(OPAL_SRCDIR)/opal/patch.cxx \
            $(OPAL_SRCDIR)/opal/transcoders.cxx \

@@ -121,7 +121,7 @@ SDPMediaDescription * OpalMSRPMediaType::CreateSDPMediaDescription(const OpalTra
                                                                    OpalMediaSession * session) const
 {
   OpalMSRPMediaSession * msrpSession = dynamic_cast<OpalMSRPMediaSession *>(session);
-  return new SDPMSRPMediaDescription(localAddress, msrpSession != NULL ? msrpSession->GetLocalURL() : PString::Empty());
+  return new SDPMSRPMediaDescription(localAddress, msrpSession != NULL ? msrpSession->GetLocalURL() : PURL());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

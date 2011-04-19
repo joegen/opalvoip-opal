@@ -292,7 +292,7 @@ class OpalRTPConnection : public OpalConnection
         ~SessionMap();
         void operator=(SessionMap & other);
       private:
-        SessionMap(const SessionMap &) { }
+        SessionMap(const SessionMap & obj) : map<unsigned, OpalMediaSession *>(obj) { }
     };
 
   protected:
