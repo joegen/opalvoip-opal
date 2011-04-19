@@ -44,7 +44,6 @@
 #include <opal/mediafmt.h>
 #include <iax2/iax2con.h>
 
-class RTP_Session;
 class OpalMediaPatch;
 class OpalLine;
 

@@ -48,9 +48,13 @@ class OpalSIPIMMediaType : public OpalIMMediaType
 {
   public:
     OpalSIPIMMediaType();
+
     virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
 
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+    SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress,
+      OpalMediaSession * session
+    ) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -62,27 +66,11 @@ class OpalSIPIMMediaSession : public OpalMediaSession
   PCLASSINFO(OpalSIPIMMediaSession, OpalMediaSession);
   public:
     OpalSIPIMMediaSession(OpalConnection & connection, unsigned sessionId);
-    OpalSIPIMMediaSession(const OpalSIPIMMediaSession & _obj);
-
-    virtual bool Open() { return true; }
-
-    virtual void Close() { }
 
     virtual PObject * Clone() const { return new OpalSIPIMMediaSession(*this); }
 
-    virtual bool IsActive() const { return true; }
-
-    virtual bool IsRTP() const { return false; }
-
-    virtual bool HasFailed() const { return false; }
-
     virtual OpalTransportAddress GetLocalMediaAddress() const;
-
-    virtual void SetRemoteMediaAddress(const OpalTransportAddress &, const OpalMediaFormatList & );
-
-    virtual SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress
-    );
+    virtual OpalTransportAddress GetRemoteMediaAddress() const;
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -90,13 +78,19 @@ class OpalSIPIMMediaSession : public OpalMediaSession
       PBoolean isSource
     );
 
-    virtual PString GetCallID() const { return callId; }
+    virtual PString GetCallID() const { return m_callId; }
 
   protected:
-    OpalTransportAddress transportAddress;
-    PString localURL;
-    PString remoteURL;
-    PString callId;
+    OpalTransportAddress m_transportAddress;
+    SIPURL               m_localURL;
+    SIPURL               m_remoteURL;
+    PString              m_callId;
+
+  private:
+    OpalSIPIMMediaSession(const OpalSIPIMMediaSession & obj) : OpalMediaSession(obj.m_connection, obj.m_sessionId, obj.m_mediaType) { }
+    void operator=(const OpalSIPIMMediaSession &) { }
+
+  friend class OpalSIPIMMediaType;
 };
 
 ////////////////////////////////////////////////////////////////////////////

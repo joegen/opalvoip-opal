@@ -33,7 +33,8 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediafmt.h>
-#include <opal/rtpconn.h>
+#include <opal/mediasession.h>
+#include <t38/t38proto.h>
 
 
 #define new PNEW
@@ -72,7 +73,6 @@ const OpalMediaFormat & GetOpalT38()
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxMediaType::OpalFaxMediaType()
@@ -81,26 +81,11 @@ OpalFaxMediaType::OpalFaxMediaType()
 }
 
 
-PString OpalFaxMediaType::GetRTPEncoding() const
-{
-  return "udptl";
-}
-
-
-RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, unsigned sessionID, bool remoteIsNAT)
-{
-  RTP_Session::Params params;
-  params.id = sessionID;
-  params.encoding = GetRTPEncoding();
-  params.remoteIsNAT = remoteIsNAT;
-  return new RTP_UDP(params);
-}
-
-
 OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
-  return new OpalRTPMediaSession(conn, m_mediaType, sessionID);
+  return new OpalFaxSession(conn, sessionID);
 }
+
 
 
 #endif // OPAL_T38_CAPABILITY

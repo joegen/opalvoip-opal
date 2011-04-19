@@ -539,6 +539,14 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
 }
 
 
+OpalMediaSession * OpalEndPoint::CreateMediaSession(OpalConnection & connection,
+                                                    unsigned sessionId,
+                                                    const OpalMediaType & mediaType)
+{
+  return NULL;
+}
+
+
 PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
                                      OpalMediaStream & stream)
 {
@@ -550,6 +558,7 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   manager.OnClosedMediaStream(stream);
 }
+
 
 #if OPAL_VIDEO
 PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,

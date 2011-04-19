@@ -5,6 +5,8 @@
 #pragma interface
 #endif
 
+#ifdef OPAL_ZRTP
+
 #include <zrtp.h>
 #include <opal/buildopts.h>
 #include <zrtp/zrtpeventproc.h>
@@ -38,5 +40,28 @@ class OpalZrtp {
 };
 
 
+class OpalZRTPStreamInfo {
+  public:
+    virtual bool Open() = 0;
+    virtual OpalMediaSession * CreateSession(
+      OpalConnection & connection,    ///< Connection that owns the sesion
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    ) = 0;
+};
+
+class OpalZRTPConnectionInfo {
+  public:
+    virtual bool Open() = 0;
+    virtual OpalMediaSession * CreateSession(
+      OpalConnection & connection,    ///< Connection that owns the sesion
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    ) = 0;
+
+    PMutex mutex;
+};
+
+#endif // OPAL_ZRTP
 
 #endif // OPAL_ZRTP_OPALZRTP_H

@@ -974,19 +974,14 @@ class SIPInvite : public SIPTransaction
     PCLASSINFO(SIPInvite, SIPTransaction);
   public:
     SIPInvite(
-      SIPConnection & connection,
-      const OpalRTPSessionManager & sm
+      SIPConnection & connection
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
-    const OpalRTPSessionManager & GetSessionManager() const { return m_rtpSessions; }
-          OpalRTPSessionManager & GetSessionManager()       { return m_rtpSessions; }
-
-  protected:
-    OpalRTPSessionManager m_rtpSessions;
+    OpalRTPConnection::SessionMap m_sessions;
 };
 
 

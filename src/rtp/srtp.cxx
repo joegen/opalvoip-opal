@@ -95,9 +95,10 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
 {
   PCLASSINFO(LibSRTPSecurityMode_Base, OpalSRTPSecurityMode);
   public:
-    RTP_UDP * CreateRTPSession(
+    OpalMediaSession * CreateMediaSession(
       OpalRTPConnection & connection,     ///< Connection creating session (may be needed by secure connections)
-      const RTP_Session::Params & options ///< Parameters to construct with session.
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
     );
 
     PBoolean SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return PTrue; }
@@ -148,8 +149,9 @@ void LibSRTPSecurityMode_Base::Init()
 }
 
 
-RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(OpalRTPConnection & /*connection*/,
-                                                     const RTP_Session::Params & options)
+OpalMediaSession * LibSRTPSecurityMode_Base::CreateMediaSession(OpalRTPConnection & /*connection*/,
+                                                                unsigned sessionId,
+                                                                const OpalMediaType & mediaType)
 {
   LibSRTP_UDP * session = new LibSRTP_UDP(options);
   session->SetSecurityMode(this);
@@ -270,7 +272,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
   frame.SetPayloadSize(len + SRTP_MAX_TRAILER_LEN);
   err_status_t err = ::srtp_protect(srtp->outboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
-    return RTP_Session::e_IgnorePacket;
+    return OpalRTPSession::e_IgnorePacket;
   frame.SetPayloadSize(len - frame.GetHeaderSize());
   return e_ProcessPacket;
 }
@@ -282,7 +284,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
   err_status_t err = ::srtp_unprotect(srtp->inboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
-    return RTP_Session::e_IgnorePacket;
+    return OpalRTPSession::e_IgnorePacket;
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
   return RTP_UDP::OnReceiveData(frame);
@@ -301,7 +303,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, 
 
   err_status_t err = ::srtp_protect_rtcp(srtp->outboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
-    return RTP_Session::e_IgnorePacket;
+    return OpalRTPSession::e_IgnorePacket;
   transmittedLen = len;
 
   return e_ProcessPacket;
@@ -314,7 +316,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveControl(RTP_ControlFrame & fram
   int len = frame.GetSize();
   err_status_t err = ::srtp_unprotect_rtcp(srtp->inboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
-    return RTP_Session::e_IgnorePacket;
+    return OpalRTPSession::e_IgnorePacket;
   frame.SetSize(len);
 
   return RTP_UDP::OnReceiveControl(frame);

@@ -254,40 +254,26 @@ OpalMediaFormat & H323Capability::GetWritableMediaFormat() const
 
 H323RealTimeCapability::H323RealTimeCapability()
 {
-    rtpqos = NULL;
 }
+
 
 H323RealTimeCapability::H323RealTimeCapability(const H323RealTimeCapability & rtc)
   : H323Capability(rtc)
 {
-  if (rtc.rtpqos == NULL) 
-    rtpqos = NULL;
-  else {
-    rtpqos  = new RTP_QOS();
-    *rtpqos = *rtc.rtpqos;
-  }
 }
+
 
 H323RealTimeCapability::~H323RealTimeCapability()
 {
-  if (rtpqos != NULL)
-    delete rtpqos;
 }
 
-void H323RealTimeCapability::AttachQoS(RTP_QOS * _rtpqos)
-{
-  if (rtpqos != NULL)
-    delete rtpqos;
-    
-  rtpqos = _rtpqos;
-}
 
 H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
                                                     H323Channel::Directions dir,
                                                     unsigned sessionID,
                                  const H245_H2250LogicalChannelParameters * param) const
 {
-  return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param, rtpqos);
+  return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param);
 }
 
 
@@ -1440,10 +1426,6 @@ class OpalH239MediaType : public OpalMediaTypeDefinition
     OpalH239MediaType()
       : OpalMediaTypeDefinition(H239MediaType, NULL)
     { }
-    virtual PString GetRTPEncoding() const { return PString::Empty(); }
-#if OPAL_SIP
-    virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) { return NULL; }
-#endif
 };
 
 OPAL_INSTANTIATE_MEDIATYPE2(H239, H239MediaType, OpalH239MediaType);
