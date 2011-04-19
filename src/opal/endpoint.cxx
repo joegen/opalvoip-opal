@@ -539,9 +539,9 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
 }
 
 
-OpalMediaSession * OpalEndPoint::CreateMediaSession(OpalConnection & connection,
-                                                    unsigned sessionId,
-                                                    const OpalMediaType & mediaType)
+OpalMediaSession * OpalEndPoint::CreateMediaSession(OpalConnection & /*connection*/,
+                                                    unsigned /*sessionId*/,
+                                                    const OpalMediaType & /*mediaType*/)
 {
   return NULL;
 }
