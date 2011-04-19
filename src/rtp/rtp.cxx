@@ -50,6 +50,8 @@
 #include <opal/endpoint.h>
 #include <opal/rtpconn.h>
 
+#include <algorithm>
+
 
 #define new PNEW
 
@@ -1826,7 +1828,7 @@ void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
 void OpalRTPSession::AddFilter(const FilterNotifier & filter)
 {
   // ensures that a filter is added only once
-  if (find(m_filters.begin(), m_filters.end(), filter) == m_filters.end())
+  if (std::find(m_filters.begin(), m_filters.end(), filter) == m_filters.end())
     m_filters.push_back(filter);
 }
 
