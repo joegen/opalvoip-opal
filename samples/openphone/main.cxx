@@ -3935,22 +3935,22 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
-  choice = FindWindowByNameAs<wxChoice>(this, VideoGrabFrameSizeKey);
-  choice->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  combo = FindWindowByNameAs<wxComboBox>(this, VideoGrabFrameSizeKey);
+  combo->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
-    choice->Append(PwxString(knownSizes[i]));
+    combo->Append(PwxString(knownSizes[i]));
 
   m_VideoMinFrameSize = m_manager.m_VideoMinFrameSize;
-  choice = FindWindowByNameAs<wxChoice>(this, VideoMinFrameSizeKey);
-  choice->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  combo = FindWindowByNameAs<wxComboBox>(this, VideoMinFrameSizeKey);
+  combo->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
-    choice->Append(PwxString(knownSizes[i]));
+    combo->Append(PwxString(knownSizes[i]));
 
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
-  choice = FindWindowByNameAs<wxChoice>(this, VideoMaxFrameSizeKey);
-  choice->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
+  combo = FindWindowByNameAs<wxComboBox>(this, VideoMaxFrameSizeKey);
+  combo->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
-    choice->Append(PwxString(knownSizes[i]));
+    combo->Append(PwxString(knownSizes[i]));
 
   m_videoGrabDevice = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -3980,10 +3980,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
-  choice = FindWindowByNameAs<wxChoice>(this, VideoRecordingSizeKey);
-  choice->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
+  combo = FindWindowByNameAs<wxComboBox>(this, VideoRecordingSizeKey);
+  combo->SetValidator(wxFrameSizeValidator(&m_VideoRecordingSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
-    choice->Append(PwxString(knownSizes[i]));
+    combo->Append(PwxString(knownSizes[i]));
 
   choice = FindWindowByNameAs<wxChoice>(this, AudioRecordingFormatKey);
   PWAVFileFormatByFormatFactory::KeyList_T wavFileFormats = PWAVFileFormatByFormatFactory::GetKeyList();
