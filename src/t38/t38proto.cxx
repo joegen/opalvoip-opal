@@ -61,414 +61,369 @@ static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalFaxMediaStream : public OpalNullMediaStream
+OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
+                                       unsigned sessionID,
+                                       bool isSource,
+                                       OpalFaxSession & session)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
+  , m_session(session)
 {
-  public:
-    OpalFaxMediaStream(OpalFaxConnection & conn,
-                       const OpalMediaFormat & mediaFormat,
-                       unsigned sessionID,
-                       bool isSource)
-      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource, true)
-      , m_connection(conn)
-    {
-      m_isAudio = true; // Even though we are not REALLY audio, act like we are
-    }
+}
 
-    bool Close()
-    {
-      if (isOpen &&
-          m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
-          m_connection.m_finalStatistics.m_fax.m_result < 0) {
-        if (mediaPatch != NULL)
-          mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
-        GetStatistics(m_connection.m_finalStatistics);
-        PTRACE(4, "T38\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
-      }
 
-      return OpalNullMediaStream::Close();
-    }
+PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
+{
+  if (!m_session.ReadData(packet))
+    return false;
 
-  private:
-    OpalFaxConnection & m_connection;
-};
+  timestamp = packet.GetTimestamp();
+  return true;
+}
+
+
+PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
+{
+  timestamp = packet.GetTimestamp();
+  return m_session.WriteData(packet);
+}
+
+
+PBoolean OpalFaxMediaStream::IsSynchronous() const
+{
+  return false;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-class T38PseudoRTP_Handler : public RTP_Encoding
+OpalFaxSession::OpalFaxSession(OpalConnection & connection, unsigned sessionId)
+  : OpalMediaSession(connection, sessionId, OpalMediaType::Fax())
+  , m_dataSocket(NULL)
+  , m_consecutiveBadPackets(0)
+  , m_oneGoodPacket(false)
+  , m_receivedPacket(new T38_UDPTLPacket)
+  , m_expectedSequenceNumber(0)
+  , m_secondaryPacket(-1)
+  , m_optimiseOnRetransmit(false) // not optimise udptl packets on retransmit
+  , m_sentPacket(new T38_UDPTLPacket)
 {
-  public:
-    T38PseudoRTP_Handler()
-    {
-      PStringToString options;
+  m_timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle));
 
-      options.SetAt("T38-UDPTL-Redundancy", "32767:1");           // re-send all ifp packets 1 time
-      options.SetAt("T38-UDPTL-Redundancy-Interval", "0");        // re-send redundancy ifp packets only with next ifp
-      options.SetAt("T38-UDPTL-Keep-Alive-Interval", "0");        // no send keep-alive packets
-      options.SetAt("T38-UDPTL-Optimise-On-Retransmit", "false"); // not optimise udptl packets on retransmit
+  m_sentPacket->m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
+  m_sentPacket->m_seq_number = (unsigned)-1;
 
-      ApplyStringOptions(options);
-    }
+  m_redundancy[32767] = 1;  // re-send all ifp packets 1 time
+}
 
 
-    void OnStart(RTP_Session & _rtpUDP)
-    {
-      RTP_Encoding::OnStart(_rtpUDP);
-
-      rtpUDP->SetJitterBufferSize(0, 0);
-      m_consecutiveBadPackets  = 0;
-      m_oneGoodPacket          = false;
-      m_expectedSequenceNumber = 0;
-      m_secondaryPacket        = -1;
-
-      m_sentPacketRedundancy.clear();
-      m_sentPacket = T38_UDPTLPacket();
-      m_sentPacket.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
-      m_sentPacket.m_seq_number = (unsigned)-1;
-      rtpUDP->SetNextSentSequenceNumber(0);
-    }
+OpalFaxSession::~OpalFaxSession()
+{
+  m_timerWriteDataIdle.Stop();
+  delete m_receivedPacket;
+  delete m_sentPacket;
+}
 
 
-    void ApplyStringOptions(const PStringToString & stringOptions)
-    {
-      for (PStringToString::const_iterator it = stringOptions.begin(); it != stringOptions.end(); ++it) {
-        PCaselessString key = it->first;
+void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
+{
+  for (PINDEX i = 0 ; i < mediaFormat.GetOptionCount() ; i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    PCaselessString key = option.GetName();
 
-        if (key == "T38-UDPTL-Redundancy") {
-          PStringArray value = it->second.Tokenise(",", FALSE);
-          PWaitAndSignal mutex(m_writeMutex);
+    if (key == "T38-UDPTL-Redundancy") {
+      PStringArray value = option.AsString().Tokenise(",", FALSE);
+      PWaitAndSignal mutex(m_writeMutex);
 
-          m_redundancy.clear();
+      m_redundancy.clear();
 
-          for (PINDEX i = 0 ; i < value.GetSize() ; i++) {
-            PStringArray pair = value[i].Tokenise(":", FALSE);
+      for (PINDEX i = 0 ; i < value.GetSize() ; i++) {
+        PStringArray pair = value[i].Tokenise(":", FALSE);
 
-            if (pair.GetSize() == 2) {
-              long size = pair[0].AsInteger();
-              long redundancy = pair[1].AsInteger();
+        if (pair.GetSize() == 2) {
+          long size = pair[0].AsInteger();
+          long redundancy = pair[1].AsInteger();
 
-              if (size > INT_MAX)
-                size = INT_MAX;
+          if (size > INT_MAX)
+            size = INT_MAX;
 
-              if (size > 0 && redundancy >= 0) {
-                m_redundancy[(int)size] = (int)redundancy;
-                continue;
-              }
-            }
-
-            PTRACE(2, "T38_UDPTL\tIgnored redundancy \"" << value[i] << "\"");
+          if (size > 0 && redundancy >= 0) {
+            m_redundancy[(int)size] = (int)redundancy;
+            continue;
           }
+        }
+
+        PTRACE(2, "T38_UDPTL\tIgnored redundancy \"" << value[i] << "\"");
+      }
 
 #if PTRACING
-          if (PTrace::CanTrace(3)) {
-            PStringStream s;
+      if (PTrace::CanTrace(3)) {
+        PStringStream s;
 
-            for (std::map<int, int>::iterator i = m_redundancy.begin() ; i != m_redundancy.end() ; i++) {
-              if (!s.IsEmpty())
-                s << ",";
+        for (std::map<int, int>::iterator i = m_redundancy.begin() ; i != m_redundancy.end() ; i++) {
+          if (!s.IsEmpty())
+            s << ",";
 
-              s << i->first << ":" << i->second;
-            }
+          s << i->first << ":" << i->second;
+        }
 
-            PTRACE(3, "T38_UDPTL\tUse redundancy \"" << s << "\"");
-          }
+        PTRACE(3, "T38_UDPTL\tUse redundancy \"" << s << "\"");
+      }
 #endif
-        }
-        else
-        if (key == "T38-UDPTL-Redundancy-Interval") {
-          PWaitAndSignal mutex(m_writeMutex);
-          m_redundancyInterval = it->second.AsUnsigned();
-          PTRACE(3, "T38_UDPTL\tUse redundancy interval " << m_redundancyInterval);
-        }
-        else
-        if (key == "T38-UDPTL-Keep-Alive-Interval") {
-          PWaitAndSignal mutex(m_writeMutex);
-          m_keepAliveInterval = it->second.AsUnsigned();
-          PTRACE(3, "T38_UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
-        }
-        else
-        if (key == "T38-UDPTL-Optimise-On-Retransmit") {
-          PCaselessString value = it->second;
-          PWaitAndSignal mutex(m_writeMutex);
-
-          m_optimiseOnRetransmit =
-            (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
-
-          PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
-        }
-        else {
-          PTRACE(4, "T38_UDPTL\tIgnored option " << key << " = \"" << it->second << "\"");
-        }
-      }
     }
-
-
-    PBoolean WriteData(RTP_DataFrame & frame, bool oob)
-    {
-      if (oob)
-        return false;
-
-      return RTP_Encoding::WriteData(frame, false);
-    }
-
-
-    RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame)
-    {
-      RTP_Session::SendReceiveStatus status = RTP_Encoding::OnSendData(frame);
-
-      if (status == RTP_Session::e_ProcessPacket && frame.GetPayloadSize() == 0)
-        status = RTP_Session::e_IgnorePacket;
-
-      return status;
-    }
-
-
-    bool WriteDataPDU(RTP_DataFrame & frame)
-    {
-      PINDEX plLen = frame.GetPayloadSize();
-
-      if (plLen == 0) {
-        PTRACE(2, "T38_UDPTL\tInternal error - empty payload");
-        return false;
-      }
-
+    else
+    if (key == "T38-UDPTL-Redundancy-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
-
-      if (!m_sentPacketRedundancy.empty()) {
-        T38_UDPTLPacket_error_recovery &recovery = m_sentPacket.m_error_recovery;
-
-        if (recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
-          // shift old primary ifp packet to secondary list
-
-          T38_UDPTLPacket_error_recovery_secondary_ifp_packets &secondary = recovery;
-
-          if (secondary.SetSize(secondary.GetSize() + 1)) {
-            for (int i = secondary.GetSize() - 2 ; i >= 0 ; i--) {
-              secondary[i + 1] = secondary[i];
-              secondary[i] = T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype();
-            }
-
-            secondary[0].SetValue(m_sentPacket.m_primary_ifp_packet.GetValue());
-            m_sentPacket.m_primary_ifp_packet = T38_UDPTLPacket_primary_ifp_packet();
-          }
-        } else {
-          PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
-        }
-      }
-
-      // calculate redundancy for new ifp packet
-
-      int redundancy = 0;
-
-      for (std::map<int, int>::iterator i = m_redundancy.begin() ; i != m_redundancy.end() ; i++) {
-        if (plLen <= i->first) {
-          if (redundancy < i->second)
-            redundancy = i->second;
-
-          break;
-        }
-      }
-
-      if (redundancy > 0 || !m_sentPacketRedundancy.empty())
-        m_sentPacketRedundancy.insert(m_sentPacketRedundancy.begin(), redundancy + 1);
-
-      // set new primary ifp packet
-
-      m_sentPacket.m_seq_number = frame.GetSequenceNumber();
-      m_sentPacket.m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), plLen);
-
-      bool ok = WriteUDPTL();
-
-      DecrementSentPacketRedundancy(true);
-
-      return ok;
+      m_redundancyInterval = option.AsString().AsUnsigned();
+      PTRACE(3, "T38_UDPTL\tUse redundancy interval " << m_redundancyInterval);
     }
-
-
-    void OnWriteDataIdle()
-    {
+    else
+    if (key == "T38-UDPTL-Keep-Alive-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
-
-      WriteUDPTL();
-
-      DecrementSentPacketRedundancy(m_optimiseOnRetransmit);
+      m_keepAliveInterval = option.AsString().AsUnsigned();
+      PTRACE(3, "T38_UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
     }
-
-
-    void SetWriteDataIdleTimer(PTimer & timer)
-    {
+    else
+    if (key == "T38-UDPTL-Optimise-On-Retransmit") {
+      PCaselessString value = option.AsString();
       PWaitAndSignal mutex(m_writeMutex);
+      m_optimiseOnRetransmit = (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
 
-      if (m_sentPacketRedundancy.empty() || m_redundancyInterval <= 0)
-        timer = m_keepAliveInterval;
-      else
-        timer = m_redundancyInterval;
+      PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
     }
+  }
+}
 
 
-    void DecrementSentPacketRedundancy(bool stripRedundancy)
-    {
-      int iMax = (int)m_sentPacketRedundancy.size() - 1;
+OpalTransportAddress OpalFaxSession::GetLocalMediaAddress() const
+{
+  return "";
+}
 
-      for (int i = iMax ; i >= 0 ; i--) {
-        m_sentPacketRedundancy[i]--;
 
-        if (i == iMax && m_sentPacketRedundancy[i] <= 0)
-          iMax--;
-      }
+OpalTransportAddress OpalFaxSession::GetRemoteMediaAddress() const
+{
+  return "";
+}
 
-      m_sentPacketRedundancy.resize(iMax + 1);
 
-      if (stripRedundancy) {
-        T38_UDPTLPacket_error_recovery &recovery = m_sentPacket.m_error_recovery;
+void OpalFaxSession::AttachTransport(Transport & transport)
+{
+  m_savedTransport = transport;
+  m_dataSocket = dynamic_cast<PUDPSocket *>(&transport.front());
+}
 
-        if (recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
-          T38_UDPTLPacket_error_recovery_secondary_ifp_packets &secondary = recovery;
-          secondary.SetSize(iMax > 0 ? iMax : 0);
-        } else {
-          PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
+
+OpalMediaSession::Transport OpalFaxSession::DetachTransport()
+{
+  Transport temp = m_savedTransport;
+  m_savedTransport = Transport(); // Detaches reference
+  m_dataSocket = NULL;
+  return temp;
+}
+
+
+OpalMediaStream * OpalFaxSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+{
+  return new OpalFaxMediaStream(m_connection, mediaFormat, sessionID, isSource, *this);
+}
+
+
+bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
+{
+  PINDEX plLen = frame.GetPayloadSize();
+
+  if (plLen == 0) {
+    PTRACE(2, "T38_UDPTL\tInternal error - empty payload");
+    return false;
+  }
+
+  PWaitAndSignal mutex(m_writeMutex);
+
+  if (!m_sentPacketRedundancy.empty()) {
+    T38_UDPTLPacket_error_recovery &recovery = m_sentPacket->m_error_recovery;
+
+    if (recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
+      // shift old primary ifp packet to secondary list
+
+      T38_UDPTLPacket_error_recovery_secondary_ifp_packets &secondary = recovery;
+
+      if (secondary.SetSize(secondary.GetSize() + 1)) {
+        for (int i = secondary.GetSize() - 2 ; i >= 0 ; i--) {
+          secondary[i + 1] = secondary[i];
+          secondary[i] = T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype();
         }
+
+        secondary[0].SetValue(m_sentPacket->m_primary_ifp_packet.GetValue());
+        m_sentPacket->m_primary_ifp_packet = T38_UDPTLPacket_primary_ifp_packet();
       }
+    } else {
+      PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
     }
+  }
 
+  // calculate redundancy for new ifp packet
 
-    bool WriteUDPTL()
-    {
-      PTRACE(5, "T38_UDPTL\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << m_sentPacket);
+  int redundancy = 0;
 
-      PPER_Stream rawData;
-      m_sentPacket.Encode(rawData);
-      rawData.CompleteEncoding();
+  for (std::map<int, int>::iterator i = m_redundancy.begin() ; i != m_redundancy.end() ; i++) {
+    if (plLen <= i->first) {
+      if (redundancy < i->second)
+        redundancy = i->second;
 
-      PTRACE(4, "T38_UDPTL\tSending UDPTL of size " << rawData.GetSize());
-
-      return rtpUDP->WriteDataOrControlPDU(rawData.GetPointer(), rawData.GetSize(), true);
+      break;
     }
+  }
+
+  if (redundancy > 0 || !m_sentPacketRedundancy.empty())
+    m_sentPacketRedundancy.insert(m_sentPacketRedundancy.begin(), redundancy + 1);
+
+  // set new primary ifp packet
+
+  m_sentPacket->m_seq_number = frame.GetSequenceNumber();
+  m_sentPacket->m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), plLen);
+
+  bool ok = WriteUDPTL();
+
+  DecrementSentPacketRedundancy(true);
+
+  if (m_sentPacketRedundancy.empty() || m_redundancyInterval <= 0)
+    m_timerWriteDataIdle = m_keepAliveInterval;
+  else
+    m_timerWriteDataIdle = m_redundancyInterval;
+
+  return ok;
+}
 
 
-    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
-    {
-      return RTP_Session::e_IgnorePacket; // Non fatal error, just ignore
+void OpalFaxSession::OnWriteDataIdle(PTimer &, INT)
+{
+  PWaitAndSignal mutex(m_writeMutex);
+
+  WriteUDPTL();
+
+  DecrementSentPacketRedundancy(m_optimiseOnRetransmit);
+}
+
+
+void OpalFaxSession::DecrementSentPacketRedundancy(bool stripRedundancy)
+{
+  int iMax = (int)m_sentPacketRedundancy.size() - 1;
+
+  for (int i = iMax ; i >= 0 ; i--) {
+    m_sentPacketRedundancy[i]--;
+
+    if (i == iMax && m_sentPacketRedundancy[i] <= 0)
+      iMax--;
+  }
+
+  m_sentPacketRedundancy.resize(iMax + 1);
+
+  if (stripRedundancy) {
+    T38_UDPTLPacket_error_recovery &recovery = m_sentPacket->m_error_recovery;
+
+    if (recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
+      T38_UDPTLPacket_error_recovery_secondary_ifp_packets &secondary = recovery;
+      secondary.SetSize(iMax > 0 ? iMax : 0);
+    } else {
+      PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
     }
+  }
+}
 
 
-    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
-    {
-      if (m_secondaryPacket >= 0)
-        return -1; // Force immediate call to ReadDataPDU
+bool OpalFaxSession::WriteUDPTL()
+{
+  PTRACE(5, "T38_UDPTL\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << m_sentPacket);
 
-      // Break out once a second so closes down in orderly fashion
-      return PSocket::Select(dataSocket, controlSocket, 1000);
+  PPER_Stream rawData;
+  m_sentPacket->Encode(rawData);
+  rawData.CompleteEncoding();
+
+  PTRACE(4, "T38_UDPTL\tSending UDPTL of size " << rawData.GetSize());
+
+  return m_dataSocket != NULL && m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
+}
+
+
+void OpalFaxSession::SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber)
+{
+  frame.SetPayloadSize(ifp.GetDataLength());
+  memcpy(frame.GetPayloadPtr(), (const BYTE *)ifp, ifp.GetDataLength());
+  frame.SetSequenceNumber((WORD)(sequenceNumber & 0xffff));
+  if (m_secondaryPacket <= 0)
+    m_expectedSequenceNumber = sequenceNumber+1;
+}
+
+
+bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
+{
+  if (m_secondaryPacket >= 0) {
+    if (m_secondaryPacket == 0)
+      SetFrameFromIFP(frame, m_receivedPacket->m_primary_ifp_packet, m_receivedPacket->m_seq_number);
+    else {
+      T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket->m_error_recovery;
+      SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket->m_seq_number - m_secondaryPacket);
     }
+    --m_secondaryPacket;
+    return true;
+  }
 
+  BYTE thisUDPTL[500];
+  if (m_dataSocket == NULL || !m_dataSocket->Read(thisUDPTL, sizeof(thisUDPTL)))
+    return false;
 
-    RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame)
-    {
-      // Override so do not do sender reports (RTP only) and push
-      // through a zero length packet so checks for orderly shut down
-      frame.SetPayloadSize(0);
-      return RTP_Session::e_ProcessPacket;
-    }
-
-
-    void SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber)
-    {
-      frame.SetPayloadSize(ifp.GetDataLength());
-      memcpy(frame.GetPayloadPtr(), (const BYTE *)ifp, ifp.GetDataLength());
-      frame.SetSequenceNumber((WORD)(sequenceNumber & 0xffff));
-      if (m_secondaryPacket <= 0)
-        m_expectedSequenceNumber = sequenceNumber+1;
-    }
-
-    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame)
-    {
-      if (m_secondaryPacket >= 0) {
-        if (m_secondaryPacket == 0)
-          SetFrameFromIFP(frame, m_receivedPacket.m_primary_ifp_packet, m_receivedPacket.m_seq_number);
-        else {
-          T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket.m_error_recovery;
-          SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket.m_seq_number - m_secondaryPacket);
-        }
-        --m_secondaryPacket;
-        return RTP_Session::e_ProcessPacket;
-      }
-
-      BYTE thisUDPTL[500];
-      RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(thisUDPTL, sizeof(thisUDPTL), true);
-      if (status != RTP_Session::e_ProcessPacket)
-        return status;
-
-      PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
+  PINDEX pduSize = m_dataSocket->GetLastReadCount();
       
-      PTRACE(4, "T38_UDPTL\tRead UDPTL of size " << pduSize);
+  PTRACE(4, "T38_UDPTL\tRead UDPTL of size " << pduSize);
 
-      PPER_Stream rawData(thisUDPTL, pduSize);
+  PPER_Stream rawData(thisUDPTL, pduSize);
 
-      // Decode the PDU
-      if (!m_receivedPacket.Decode(rawData)) {
-  #if PTRACING
-        if (m_oneGoodPacket)
-          PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
-                 << setprecision(2) << rawData << "\n  UDPTL = "
-                 << setprecision(2) << m_receivedPacket);
-        else
-          PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
-  #endif
+  // Decode the PDU
+  if (!m_receivedPacket->Decode(rawData)) {
+#if PTRACING
+    if (m_oneGoodPacket)
+      PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+              << setprecision(2) << rawData << "\n  UDPTL = "
+              << setprecision(2) << m_receivedPacket);
+    else
+      PTRACE(2, "RTP_T38\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+#endif
 
-        m_consecutiveBadPackets++;
-        if (m_consecutiveBadPackets < 1000)
-          return RTP_Session::e_IgnorePacket;
+    m_consecutiveBadPackets++;
+    if (m_consecutiveBadPackets < 1000)
+      return OpalRTPSession::e_IgnorePacket;
 
-        PTRACE(1, "RTP_T38\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
-        return RTP_Session::e_AbortTransport;
-      }
+    PTRACE(1, "RTP_T38\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
+    return false;
+  }
 
-      PTRACE_IF(3, !m_oneGoodPacket, "T38_UDPTL\tFirst decoded UDPTL packet");
-      m_oneGoodPacket = true;
-      m_consecutiveBadPackets = 0;
+  PTRACE_IF(3, !m_oneGoodPacket, "T38_UDPTL\tFirst decoded UDPTL packet");
+  m_oneGoodPacket = true;
+  m_consecutiveBadPackets = 0;
 
-      PTRACE(5, "T38_UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << m_receivedPacket);
+  PTRACE(5, "T38_UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << m_receivedPacket);
 
-      int missing = m_receivedPacket.m_seq_number - m_expectedSequenceNumber;
-      if (missing > 0 && m_receivedPacket.m_error_recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
-        // Packets are missing and we have redundency in the UDPTL packets
-        T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket.m_error_recovery;
-        if (secondaryPackets.GetSize() > 0) {
-          PTRACE(4, "T38_UDPTL\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
-          m_secondaryPacket = missing;
-          if (m_secondaryPacket > secondaryPackets.GetSize())
-            m_secondaryPacket = secondaryPackets.GetSize();
-          SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket.m_seq_number - m_secondaryPacket);
-          --m_secondaryPacket;
-          return RTP_Session::e_ProcessPacket;
-        }
-      }
-
-      SetFrameFromIFP(frame, m_receivedPacket.m_primary_ifp_packet, m_receivedPacket.m_seq_number);
-      m_expectedSequenceNumber = m_receivedPacket.m_seq_number+1;
-
-      return RTP_Session::e_ProcessPacket;
+  int missing = m_receivedPacket->m_seq_number - m_expectedSequenceNumber;
+  if (missing > 0 && m_receivedPacket->m_error_recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
+    // Packets are missing and we have redundency in the UDPTL packets
+    T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket->m_error_recovery;
+    if (secondaryPackets.GetSize() > 0) {
+      PTRACE(4, "T38_UDPTL\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
+      m_secondaryPacket = missing;
+      if (m_secondaryPacket > secondaryPackets.GetSize())
+        m_secondaryPacket = secondaryPackets.GetSize();
+      SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket->m_seq_number - m_secondaryPacket);
+      --m_secondaryPacket;
+      return OpalRTPSession::e_ProcessPacket;
     }
+  }
 
+  SetFrameFromIFP(frame, m_receivedPacket->m_primary_ifp_packet, m_receivedPacket->m_seq_number);
+  m_expectedSequenceNumber = m_receivedPacket->m_seq_number+1;
 
-  protected:
-    int             m_consecutiveBadPackets;
-    bool            m_oneGoodPacket;
-    T38_UDPTLPacket m_receivedPacket;
-    unsigned        m_expectedSequenceNumber;
-    int             m_secondaryPacket;
-
-    std::map<int, int>  m_redundancy;
-    PTimeInterval       m_redundancyInterval;
-    PTimeInterval       m_keepAliveInterval;
-    bool                m_optimiseOnRetransmit;
-    std::vector<int>    m_sentPacketRedundancy;
-    T38_UDPTLPacket     m_sentPacket;
-    PMutex              m_writeMutex;
-};
-
-
-PFACTORY_CREATE(PFactory<RTP_Encoding>, T38PseudoRTP_Handler, "udptl", false);
+  return true;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -696,7 +651,7 @@ void OpalFaxConnection::OnReleased()
 
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource);
+  return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, isSource, true);
 }
 
 

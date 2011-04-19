@@ -40,28 +40,17 @@
 
 #include <opal/buildopts.h>
 
+#include <opal/mediasession.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
+#include <rtp/metrics.h>
 
 #include <list>
 
-#include <rtp/metrics.h>
 
 class RTP_JitterBuffer;
 class PNatMethod;
 class OpalSecurityMode;
-
-///////////////////////////////////////////////////////////////////////////////
-// 
-// class to hold the QoS definitions for an RTP channel
-
-class RTP_QOS : public PObject
-{
-  PCLASSINFO(RTP_QOS,PObject);
-  public:
-    PQoS dataQoS;
-    PQoS ctrlQoS;
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Real Time Protocol - IETF RFC1889 and RFC1890
@@ -74,7 +63,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
-    RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
+    RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic = true);
 
     enum {
       ProtocolVersion = 2,
@@ -124,18 +113,18 @@ class RTP_DataFrame : public PBYTEArray
 
     unsigned GetVersion() const { return (theArray[0]>>6)&3; }
 
-    PBoolean GetExtension() const   { return (theArray[0]&0x10) != 0; }
-    void SetExtension(PBoolean ext);
+    bool GetExtension() const   { return (theArray[0]&0x10) != 0; }
+    void SetExtension(bool ext);
 
-    PBoolean GetMarker() const { return (theArray[1]&0x80) != 0; }
-    void SetMarker(PBoolean m);
+    bool GetMarker() const { return (theArray[1]&0x80) != 0; }
+    void SetMarker(bool m);
 
     bool GetPadding() const { return (theArray[0]&0x20) != 0; }
     void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
     BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
 
-    unsigned GetPaddingSize() const { return m_paddingSize; }
-    bool     SetPaddingSize(PINDEX sz);
+    PINDEX GetPaddingSize() const { return m_paddingSize; }
+    bool   SetPaddingSize(PINDEX sz);
 
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
     void         SetPayloadType(PayloadTypes t);
@@ -175,7 +164,7 @@ class RTP_DataFrame : public PBYTEArray
   protected:
     PINDEX m_headerSize;
     PINDEX m_payloadSize;
-    unsigned m_paddingSize;
+    PINDEX m_paddingSize;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);
@@ -219,8 +208,8 @@ class RTP_ControlFrame : public PBYTEArray
 
     BYTE * GetPayloadPtr() const;
 
-    PBoolean ReadNextPacket();
-    PBoolean StartNewPacket();
+    bool ReadNextPacket();
+    bool StartNewPacket();
     void EndPacket();
 
     PINDEX GetCompoundSize() const;
@@ -359,175 +348,73 @@ class RTP_ControlFrame : public PBYTEArray
 };
 
 
-class RTP_Session;
+///////////////////////////////////////////////////////////////////////////////
+// 
+// class to hold the QoS definitions for an RTP channel
+
+class RTP_QOS : public PObject
+{
+  PCLASSINFO(RTP_QOS,PObject);
+  public:
+    PQoS dataQoS;
+    PQoS ctrlQoS;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_STATISTICS
-
-/**This class carries statistics on the media stream.
-  */
-class OpalMediaStatistics : public PObject
-{
-    PCLASSINFO(OpalMediaStatistics, PObject);
-  public:
-    OpalMediaStatistics();
-
-    // General info (typicallly from RTP)
-    PUInt64  m_totalBytes;
-    unsigned m_totalPackets;
-    unsigned m_packetsLost;
-    unsigned m_packetsOutOfOrder;
-    unsigned m_packetsTooLate;
-    unsigned m_packetOverruns;
-    unsigned m_minimumPacketTime;
-    unsigned m_averagePacketTime;
-    unsigned m_maximumPacketTime;
-
-    // Audio
-    unsigned m_averageJitter;
-    unsigned m_maximumJitter;
-    unsigned m_jitterBufferDelay;
-
-    // Video
-    unsigned m_totalFrames;
-    unsigned m_keyFrames;
-
-    // Fax
-#if OPAL_FAX
-    enum {
-      FaxNotStarted = -2,
-      FaxInProgress = -1,
-      FaxSuccessful = 0,
-      FaxErrorBase  = 1
-    };
-    struct Fax {
-      Fax();
-
-      int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
-      int  m_bitRate;     // e.g. 14400, 9600
-      int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
-      bool m_errorCorrection;
-      int  m_txPages;
-      int  m_rxPages;
-      int  m_totalPages;
-      int  m_imageSize;   // In bytes
-      int  m_resolutionX; // Pixels per inch
-      int  m_resolutionY; // Pixels per inch
-      int  m_pageWidth;
-      int  m_pageHeight;
-      int  m_badRows;     // Total number of bad rows
-      int  m_mostBadRows; // Longest run of bad rows
-      int  m_errorCorrectionRetries;
-
-      PString m_errorText;
-    } m_fax;
-#endif
-};
-
-#endif
-
-
-/**This class is the base for user data that may be attached to the RTP_session
-   allowing callbacks for statistics and progress monitoring to be passed to an
-   arbitrary object that an RTP consumer may require.
-  */
-class RTP_UserData : public PObject
-{
-  PCLASSINFO(RTP_UserData, PObject);
-
-  public:
-    /**Callback from the RTP session for transmit statistics monitoring.
-       This is called every RTP_Session::txStatisticsInterval packets on the
-       transmitter indicating that the statistics have been updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnTxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-    /**Callback from the RTP session for receive statistics monitoring.
-       This is called every RTP_Session::receiverReportInterval packets on the
-       receiver indicating that the statistics have been updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRxStatistics(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-#if OPAL_VIDEO
-    /**Callback from the RTP session when an intra frame request control
-       packet is sent.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnTxIntraFrameRequest(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-
-    /**Callback from the RTP session when an intra frame request control
-       packet is received.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRxIntraFrameRequest(
-      const RTP_Session & session   ///<  Session with statistics
-    ) const;
-#endif
-
-    /**Callback from the RTP session when RTP session is failing due to the remote being unavailable
-       The default behaviour does nothing.
-      */
-    virtual void SessionFailing(
-      RTP_Session & session   ///<  Session with statistics
-    );
-};
-
-class RTP_Encoding;
-
-
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
-class RTP_Session : public PObject
+class OpalRTPSession : public OpalMediaSession
 {
-  PCLASSINFO(RTP_Session, PObject);
+  PCLASSINFO(OpalRTPSession, OpalMediaSession);
 
   public:
   /**@name Construction */
   //@{
-    struct Params {
-      Params()
-        : id(0)
-        , userData(NULL)
-        , autoDelete(true)
-        , isAudio(false)
-        , remoteIsNAT(false)
-      { }
-
-      PString             encoding;    ///<  identifies initial RTP encoding (RTP/AVP, UDPTL etc)
-      unsigned            id;          ///<  Session ID for RTP channel
-      RTP_UserData      * userData;    ///<  Optional data for session.
-      bool                autoDelete;  ///<  Delete optional data with session.
-      bool                isAudio;     ///<  is audio RTP data
-      bool                remoteIsNAT; ///<  Remote is behid NAT
-    };
-
     /**Create a new RTP session.
      */
-    RTP_Session(
-      const Params & options ///< Parameters to construct with session.
+    OpalRTPSession(
+      OpalConnection & connection,    ///< Connection that owns the sesion
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
     );
 
     /**Delete a session.
        This deletes the userData field if autoDeleteUserData is true.
      */
-    ~RTP_Session();
+    ~OpalRTPSession();
+  //@}
+
+  /**@name Overrides from class OpalMediaSession */
+  //@{
+    virtual bool Open(const OpalTransportAddress & localAddress);
+    virtual bool Close();
+    virtual bool Shutdown(bool reading);
+    virtual OpalTransportAddress GetLocalMediaAddress() const;
+    virtual OpalTransportAddress GetRemoteMediaAddress() const;
+    virtual void SetRemoteMediaAddress(const OpalTransportAddress & address);
+
+    virtual void AttachTransport(Transport & transport);
+    virtual Transport DetachTransport();
+
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, 
+      unsigned sessionID, 
+      bool isSource
+    );
   //@}
 
   /**@name Operations */
   //@{
+    /**Set the remote address and port information for session.
+      */
+    virtual bool SetRemoteSocketInfo(
+      PIPSocket::Address address,   ///<  Addre ss of remote
+      WORD port,                    ///<  Port on remote
+      bool isDataPort               ///<  Flag for data or control channel
+    );
+
     /**Sets the size of the jitter buffer to be used by this RTP session.
        A session defaults to not having any jitter buffer enabled for reading
        and the ReadBufferedData() function simply calls ReadData().
@@ -555,66 +442,49 @@ class RTP_Session : public PObject
     unsigned GetJitterTimeUnits() const { return m_timeUnits; }
 
     /**Modifies the QOS specifications for this RTP session*/
-    virtual PBoolean ModifyQOS(RTP_QOS * )
-    { return false; }
+    virtual bool ModifyQOS(RTP_QOS *);
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
-       directly if there is no jitter buffer enabled. An application should
-       generally use this in preference to directly calling ReadData().
+       directly if there is no jitter buffer enabled.
       */
-    virtual PBoolean ReadBufferedData(
+    virtual bool ReadData(
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
-    /**Read a data frame from the RTP channel.
-       Any control frames received are dispatched to callbacks and are not
-       returned by this function. It will block until a data frame is
-       available or an error occurs.
-      */
-    virtual PBoolean ReadData(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
-    ) = 0;
-
     /**Write a data frame from the RTP channel.
       */
-    virtual PBoolean WriteData(
+    virtual bool WriteData(
       RTP_DataFrame & frame   ///<  Frame to write to the RTP session
-    ) = 0;
+    );
 
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
       */
-    virtual PBoolean WriteOOBData(
+    virtual bool WriteOOBData(
       RTP_DataFrame & frame,
       bool rewriteTimeStamp = true
     );
 
     /**Write a control frame from the RTP channel.
       */
-    virtual PBoolean WriteControl(
+    virtual bool WriteControl(
       RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
-    ) = 0;
+    );
 
     /**Write the RTCP reports.
       */
-    virtual PBoolean SendReport();
+    virtual bool SendReport();
 
-    /**Close down the RTP session.
+   /**Restarts an existing session in the given direction.
       */
-    virtual bool Close(
-      PBoolean reading    ///<  Closing the read side of the session
-    ) = 0;
-
-   /**Reopens an existing session in the given direction.
-      */
-    virtual void Reopen(
-      PBoolean isReading
-    ) = 0;
+    virtual void Restart(
+      bool isReading
+    );
 
     /**Get the local host name as used in SDES packes.
       */
-    virtual PString GetLocalHostName() = 0;
+    virtual PString GetLocalHostName();
 
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
@@ -629,14 +499,8 @@ class RTP_Session : public PObject
       e_AbortTransport
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus Internal_OnSendData(RTP_DataFrame & frame);
-
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
-    virtual SendReceiveStatus Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
-
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus Internal_OnReceiveData(RTP_DataFrame & frame);
-
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
@@ -752,17 +616,6 @@ class RTP_Session : public PObject
       */
     void SetToolName(const PString & name);
 
-    /**Get the user data for the session.
-      */
-    RTP_UserData * GetUserData() const { return userData; }
-
-    /**Set the user data for the session.
-      */
-    void SetUserData(
-      RTP_UserData * data,            ///<  New user data to be used
-      PBoolean autoDeleteUserData = true  ///<  Delete optional data with session.
-    );
-
     /**Get the source output identifier.
       */
     DWORD GetSyncSourceOut() const { return syncSourceOut; }
@@ -780,7 +633,7 @@ class RTP_Session : public PObject
     /**Indicate if will ignore rtp payload type changes in received packets.
      */
     void SetIgnorePayloadTypeChanges(
-      PBoolean ignore   ///<  Flag to ignore payload type changes
+      bool ignore   ///<  Flag to ignore payload type changes
     ) { ignorePayloadTypeChanges = ignore; }
 
     /**Get the time interval for sending RTCP reports in the session.
@@ -792,11 +645,6 @@ class RTP_Session : public PObject
     void SetReportTimeInterval(
       const PTimeInterval & interval ///<  New time interval for reports.
     )  { reportTimeInterval = interval; }
-
-    /**Get the current report timer
-     */
-    PTimeInterval GetReportTimer()
-    { return reportTimer; }
 
     /**Get the interval for transmitter statistics in the session.
       */
@@ -821,6 +669,44 @@ class RTP_Session : public PObject
     /**Clear statistics
       */
     void ClearStatistics();
+
+    /**Get local address of session.
+      */
+    virtual PIPSocket::Address GetLocalAddress() const { return localAddress; }
+
+    /**Set local address of session.
+      */
+    virtual void SetLocalAddress(
+      const PIPSocket::Address & addr
+    ) { localAddress = addr; }
+
+    /**Get remote address of session.
+      */
+    PIPSocket::Address GetRemoteAddress() const { return remoteAddress; }
+
+    /**Get local data port of session.
+      */
+    virtual WORD GetLocalDataPort() const { return localDataPort; }
+
+    /**Get local control port of session.
+      */
+    virtual WORD GetLocalControlPort() const { return localControlPort; }
+
+    /**Get remote data port of session.
+      */
+    virtual WORD GetRemoteDataPort() const { return remoteDataPort; }
+
+    /**Get remote control port of session.
+      */
+    virtual WORD GetRemoteControlPort() const { return remoteControlPort; }
+
+    /**Get data UDP socket of session.
+      */
+    virtual PUDPSocket & GetDataSocket() { return *dataSocket; }
+
+    /**Get control UDP socket of session.
+      */
+    virtual PUDPSocket & GetControlSocket() { return *controlSocket; }
 
     /**Get total number of packets sent in session.
       */
@@ -926,7 +812,7 @@ class RTP_Session : public PObject
     DWORD GetJitterTimeOnRemote() const { return jitterLevelOnRemote/GetJitterTimeUnits(); }
   //@}
 
-    virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
+    virtual void SetCloseOnBYE(bool v)  { closeOnBye = v; }
 
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
@@ -942,35 +828,11 @@ class RTP_Session : public PObject
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 
-    virtual PString GetEncoding() const { return m_encoding; }
-    virtual void SetEncoding(const PString & newEncoding);
-
     DWORD GetSyncSourceIn() const { return syncSourceIn; }
 
-    class EncodingLock
-    {
-      public:
-        EncodingLock(RTP_Session & _session);
-        ~EncodingLock();
-
-        __inline RTP_Encoding * operator->() const { return m_encodingHandler; }
-
-      protected:
-        RTP_Session  & session;
-        RTP_Encoding * m_encodingHandler;
-    };
-
-    friend class EncodingLock; 
-
-    void SetFailed(bool v)
-    { failed = v; }
-
-    bool HasFailed() const
-    { return failed; }
-
     typedef PNotifierTemplate<SendReceiveStatus &> FilterNotifier;
-    #define PDECLARE_RTPFilterNotifier(cls, fn) PDECLARE_NOTIFIER2(RTP_DataFrame, cls, fn, RTP_Session::SendReceiveStatus &)
-    #define PCREATE_RTPFilterNotifier(fn) PCREATE_NOTIFIER2(fn, RTP_Session::SendReceiveStatus &)
+    #define PDECLARE_RTPFilterNotifier(cls, fn) PDECLARE_NOTIFIER2(RTP_DataFrame, cls, fn, OpalRTPSession::SendReceiveStatus &)
+    #define PCREATE_RTPFilterNotifier(fn) PCREATE_NOTIFIER2(fn, OpalRTPSession::SendReceiveStatus &)
 
     void AddFilter(const FilterNotifier & filter);
 
@@ -981,26 +843,41 @@ class RTP_Session : public PObject
     virtual void SendBYE();
 
   protected:
-    void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
-    PBoolean InsertReportPacket(RTP_ControlFrame & report);
+  protected:
+    void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
+    bool InsertReportPacket(RTP_ControlFrame & report);
+    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
+    virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
 #if OPAL_RTCP_XR
     void InsertExtendedReportPacket(RTP_ControlFrame & report);
     void OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset);    
 #endif
 
-    PString             m_encoding;
-    PMutex              m_encodingMutex;
-    RTP_Encoding      * m_encodingHandler;
+    virtual void ApplyQOS(const PIPSocket::Address & addr);
+    virtual bool InternalReadData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus InternalReadData2(RTP_DataFrame & frame);
+    virtual SendReceiveStatus ReadControlPDU();
+    virtual SendReceiveStatus ReadDataOrControlPDU(
+      BYTE * framePtr,
+      PINDEX frameSize,
+      bool fromDataChannel
+    );
+
+    virtual bool WriteDataOrControlPDU(
+      const BYTE * framePtr,
+      PINDEX frameSize,
+      bool toDataChannel
+    );
+
 
     unsigned           sessionID;
     bool               isAudio;
     unsigned           m_timeUnits;
     PString            canonicalName;
     PString            toolName;
-    RTP_UserData     * userData;
-    PBoolean           autoDeleteUserData;
 
     typedef PSafePtr<RTP_JitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
@@ -1010,8 +887,8 @@ class RTP_Session : public PObject
     DWORD         lastSentTimestamp;
     bool          allowAnySyncSource;
     bool          allowOneSyncSourceChange;
-    PBoolean      allowRemoteTransmitAddressChange;
-    PBoolean      allowSequenceChange;
+    bool          allowRemoteTransmitAddressChange;
+    bool          allowSequenceChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -1032,7 +909,7 @@ class RTP_Session : public PObject
 
     PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
-    PBoolean      oobTimeStampBaseEstablished; // true if timeStampOffs has been established by media
+    bool          oobTimeStampBaseEstablished; // true if timeStampOffs has been established by media
     DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
     PTimeInterval oobTimeStampBase;            // base time for oob timestamp
 
@@ -1077,185 +954,16 @@ class RTP_Session : public PObject
     DWORD    lastTransitTime;
     
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
-    PBoolean ignorePayloadTypeChanges;
+    bool ignorePayloadTypeChanges;
 
-    PMutex reportMutex;
-    PTimer reportTimer;
+    PMutex       m_reportMutex;
+    PSimpleTimer m_reportTimer;
 
-    PBoolean closeOnBye;
-    PBoolean byeSent;
-    bool                failed;      ///<  set to true if session has received too many ICMP destination unreachable
+    bool closeOnBye;
+    bool byeSent;
 
     list<FilterNotifier> m_filters;
-};
 
-/**This class is for the IETF Real Time Protocol interface on UDP/IP.
- */
-class RTP_UDP : public RTP_Session
-{
-  PCLASSINFO(RTP_UDP, RTP_Session);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new RTP channel.
-     */
-    RTP_UDP(
-      const Params & options ///< Parameters to construct with session.
-    );
-
-    /// Destroy the RTP
-    ~RTP_UDP();
-  //@}
-
-  /**@name Overrides from class RTP_Session */
-  //@{
-    /**Read a data frame from the RTP channel.
-       Any control frames received are dispatched to callbacks and are not
-       returned by this function. It will block until a data frame is
-       available or an error occurs.
-      */
-    virtual PBoolean ReadData(RTP_DataFrame & frame);
-    virtual PBoolean Internal_ReadData(RTP_DataFrame & frame);
-
-    /** Write a data frame to the RTP channel.
-      */
-    virtual PBoolean WriteData(RTP_DataFrame & frame);
-    virtual PBoolean Internal_WriteData(RTP_DataFrame & frame);
-
-    /** Write data frame to the RTP channel outside the normal stream of media
-      * Used for RFC2833 packets
-      */
-    virtual PBoolean WriteOOBData(RTP_DataFrame & frame, bool setTimeStamp = true);
-
-    /**Write a control frame from the RTP channel.
-      */
-    virtual PBoolean WriteControl(RTP_ControlFrame & frame);
-
-    /**Close down the RTP session.
-      */
-    virtual bool Close(
-      PBoolean reading    ///<  Closing the read side of the session
-    );
-
-    /**Get the session description name.
-      */
-    virtual PString GetLocalHostName();
-  //@}
-
-    /**Change the QoS settings
-      */
-    virtual PBoolean ModifyQOS(RTP_QOS * rtpqos);
-
-  /**@name New functions for class */
-  //@{
-    /**Open the UDP ports for the RTP session.
-      */
-    virtual PBoolean Open(
-      PIPSocket::Address localAddress,  ///<  Local interface to bind to
-      WORD portBase,                    ///<  Base of ports to search
-      WORD portMax,                     ///<  end of ports to search (inclusive)
-      BYTE ipTypeOfService,             ///<  Type of Service byte
-      PNatMethod * natMethod = NULL,    ///<  NAT traversal method to use createing sockets
-      RTP_QOS * rtpqos = NULL           ///<  QOS spec (or NULL if no QoS)
-    );
-  //@}
-
-   /**Reopens an existing session in the given direction.
-      */
-    virtual void Reopen(PBoolean isReading);
-  //@}
-
-  /**@name Member variable access */
-  //@{
-    /**Get local address of session.
-      */
-    virtual PIPSocket::Address GetLocalAddress() const { return localAddress; }
-
-    /**Set local address of session.
-      */
-    virtual void SetLocalAddress(
-      const PIPSocket::Address & addr
-    ) { localAddress = addr; }
-
-    /**Get remote address of session.
-      */
-    PIPSocket::Address GetRemoteAddress() const { return remoteAddress; }
-
-    /**Get local data port of session.
-      */
-    virtual WORD GetLocalDataPort() const { return localDataPort; }
-
-    /**Get local control port of session.
-      */
-    virtual WORD GetLocalControlPort() const { return localControlPort; }
-
-    /**Get remote data port of session.
-      */
-    virtual WORD GetRemoteDataPort() const { return remoteDataPort; }
-
-    /**Get remote control port of session.
-      */
-    virtual WORD GetRemoteControlPort() const { return remoteControlPort; }
-
-    /**Get data UDP socket of session.
-      */
-    virtual PUDPSocket & GetDataSocket() { return *dataSocket; }
-
-    /**Get control UDP socket of session.
-      */
-    virtual PUDPSocket & GetControlSocket() { return *controlSocket; }
-
-    /**Set the remote address and port information for session.
-      */
-    virtual PBoolean SetRemoteSocketInfo(
-      PIPSocket::Address address,   ///<  Addre ss of remote
-      WORD port,                    ///<  Port on remote
-      PBoolean isDataPort               ///<  Flag for data or control channel
-    );
-
-    /**Apply QOS - requires address to connect the socket on Windows platforms
-     */
-    virtual void ApplyQOS(
-      const PIPSocket::Address & addr
-    );
-  //@}
-
-    virtual int GetDataSocketHandle() const
-    { return dataSocket != NULL ? dataSocket->GetHandle() : -1; }
-
-    virtual int GetControlSocketHandle() const
-    { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
-
-    friend class RTP_Encoding;
-
-    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
-    virtual int Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
-
-    virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    virtual SendReceiveStatus Internal_ReadDataPDU(RTP_DataFrame & frame);
-
-    virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
-    virtual SendReceiveStatus Internal_OnReadTimeout(RTP_DataFrame & frame);
-
-    virtual SendReceiveStatus ReadControlPDU();
-    virtual SendReceiveStatus ReadDataOrControlPDU(
-      BYTE * framePtr,
-      PINDEX frameSize,
-      PBoolean fromDataChannel
-    );
-
-    virtual bool WriteDataPDU(RTP_DataFrame & frame);
-    virtual bool WriteDataOrControlPDU(
-      const BYTE * framePtr,
-      PINDEX frameSize,
-      bool toDataChannel
-    );
-
-    virtual void SetEncoding(const PString & newEncoding);
-
-
-  protected:
     PIPSocket::Address localAddress;
     WORD               localDataPort;
     WORD               localControlPort;
@@ -1279,49 +987,24 @@ class RTP_UDP : public RTP_Session
     int  badTransmitCounter;
     PTime badTransmitStart;
 
-    PTimer timerWriteDataIdle;
-    PDECLARE_NOTIFIER(PTimer,  RTP_UDP, OnWriteDataIdle);
+  private:
+    OpalRTPSession(const OpalRTPSession & other);
+    void operator=(const OpalRTPSession &) { }
+
+  friend class RTP_JitterBuffer;
 };
 
-/////////////////////////////////////////////////////////////////////////////
 
-class RTP_UDP;
-
-class RTP_Encoding
-{
-  public:
-    RTP_Encoding();
-    virtual ~RTP_Encoding();
-    virtual void ApplyStringOptions(const PStringToString & /*stringOptions*/) {}
-    virtual void OnStart(RTP_Session & _rtpSession);
-    virtual void OnFinish();
-    virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    virtual PBoolean WriteData(RTP_DataFrame & frame, bool oob);
-    virtual PBoolean WriteDataPDU(RTP_DataFrame & frame);
-    virtual void OnWriteDataIdle() {}
-    virtual void SetWriteDataIdleTimer(PTimer &) {}
-    virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
-    virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-    virtual RTP_Session::SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
-    virtual PBoolean ReadData(RTP_DataFrame & frame);
-    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
-
-    PMutex      mutex;
-    unsigned    refCount;
-
-  protected:
-    RTP_UDP     * rtpUDP;
-};
-
-PFACTORY_LOAD(RTP_Encoding);
+//typedef OpalRTPSession RTP_Session; // Backward compatibility
+//typedef OpalRTPSession RTP_UDP; // Backward compatibility
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-class SecureRTP_UDP : public RTP_UDP
+#if 0
+class SecureRTP_UDP : public OpalRTPSession
 {
-  PCLASSINFO(SecureRTP_UDP, RTP_UDP);
+  PCLASSINFO(SecureRTP_UDP, OpalRTPSession);
 
   public:
   /**@name Construction */
@@ -1329,7 +1012,9 @@ class SecureRTP_UDP : public RTP_UDP
     /**Create a new RTP channel.
      */
     SecureRTP_UDP(
-      const Params & options ///< Parameters to construct with session.
+      OpalConnection & connection,    ///< Connection that owns the sesion
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
     );
 
     /// Destroy the RTP
@@ -1341,6 +1026,7 @@ class SecureRTP_UDP : public RTP_UDP
   protected:
     OpalSecurityMode * securityParms;
 };
+#endif
 
 #endif // OPAL_RTP_RTP_H
 

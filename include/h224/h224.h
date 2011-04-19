@@ -55,7 +55,10 @@ class OpalH224MediaType : public OpalRTPAVPMediaType
     static const OpalMediaType & MediaType();
 
 #if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress);
+    SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress,
+      OpalMediaSession * session
+    ) const;
 #endif
 };
 

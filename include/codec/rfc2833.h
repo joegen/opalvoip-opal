@@ -44,7 +44,8 @@ class OpalMediaFormat;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC2833Info : public PObject {
+class OpalRFC2833Info : public PObject
+{
     PCLASSINFO(OpalRFC2833Info, PObject);
   public:
     // the following values are mandated by RFC 2833
@@ -89,7 +90,8 @@ class OpalRFC2833Info : public PObject {
 
 class OpalRTPConnection;
 
-class OpalRFC2833Proto : public PObject {
+class OpalRFC2833Proto : public PObject
+{
     PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
     OpalRFC2833Proto(
@@ -123,7 +125,7 @@ class OpalRFC2833Proto : public PObject {
       RTP_DataFrame::PayloadTypes type ///<  new payload type
     ) { m_payloadType = type; }
 
-    const RTP_Session::FilterNotifier & GetReceiveHandler() const { return m_receiveHandler; }
+    const OpalRTPSession::FilterNotifier & GetReceiveHandler() const { return m_receiveHandler; }
 
     PString GetTxCapability() const;
     PString GetRxCapability() const;
@@ -145,7 +147,7 @@ class OpalRFC2833Proto : public PObject {
     std::vector<bool>           m_txCapabilitySet;
     std::vector<bool>           m_rxCapabilitySet;
     PNotifier                   m_receiveNotifier;
-    RTP_Session::FilterNotifier m_receiveHandler;
+    OpalRTPSession::FilterNotifier m_receiveHandler;
 
     enum {
       ReceiveIdle,
@@ -166,14 +168,14 @@ class OpalRFC2833Proto : public PObject {
       TransmitEnding3,
     } m_transmitState;
 
-    RTP_Session * m_rtpSession;
-    PTimer        m_asyncTransmitTimer;
-    PTimer        m_asyncDurationTimer;
-    DWORD         m_transmitTimestamp;
-    bool          m_rewriteTransmitTimestamp;
-    PTimeInterval m_asyncStart;
-    BYTE          m_transmitCode;
-    unsigned      m_transmitDuration;
+    OpalRTPSession * m_rtpSession;
+    PTimer           m_asyncTransmitTimer;
+    PTimer           m_asyncDurationTimer;
+    DWORD            m_transmitTimestamp;
+    bool             m_rewriteTransmitTimestamp;
+    PTimeInterval    m_asyncStart;
+    BYTE             m_transmitCode;
+    unsigned         m_transmitDuration;
 
     PMutex m_mutex;
 };

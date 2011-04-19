@@ -73,6 +73,15 @@ class OpalRTPEndPoint : public OpalEndPoint
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /** Create a new underlying media session instance.
+        Default behaviour returns NULL.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      OpalConnection & connection,    ///< COnnection that owns the new media session
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    );
+
     /**Call back for closed a media stream.
 
        The default behaviour checks for local RTP session then calls the
@@ -110,10 +119,6 @@ class OpalRTPEndPoint : public OpalEndPoint
       PBoolean incoming                       ///< Incoming/outgoing connection
     );
 
-#ifdef OPAL_ZRTP
-    virtual bool GetZRTPEnabled() const;
-#endif
-
     /**Indicate is a local RTP connection.
        This is called when a new media stream has been created and it has been
        detected that media will be flowing between two RTP sessions within the
@@ -137,16 +142,12 @@ class OpalRTPEndPoint : public OpalEndPoint
     bool CheckForLocalRTP(const OpalRTPMediaStream & stream);
 
     // Check for local RTP connection. Internal function.
-    void CheckEndLocalRTP(OpalConnection & connection, RTP_UDP * rtp);
+    void CheckEndLocalRTP(OpalConnection & connection, OpalRTPSession * rtp);
 
-    void SetConnectionByRtpLocalPort(RTP_Session * rtp, OpalConnection * connection);
+    void SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConnection * connection);
   //@}
 
   protected:
-#ifdef OPAL_ZRTP
-    bool zrtpEnabled;
-#endif
-
     struct LocalRtpInfo {
       LocalRtpInfo(OpalConnection & connection) : m_connection(connection), m_previousResult(-1) { }
 

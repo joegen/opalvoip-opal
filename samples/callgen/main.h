@@ -39,7 +39,6 @@ class MyCall : public OpalCall
     virtual void OnEstablishedCall();
     virtual void OnReleased(OpalConnection & connection);
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
-    virtual void OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session);
 
     MyManager          & manager;
     unsigned             index;

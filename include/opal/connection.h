@@ -953,6 +953,13 @@ class OpalConnection : public PSafeObject
       bool isSource                      ///< Stream is a source/sink
     );
 
+    /** Create a new underlying RTP session instance.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    );
+
     /** Indicate whether a particular media type can auto-start.
         This is typically used for things like video or fax to contol if on
         initial connection, that media type is opened straight away. Streams
@@ -1188,6 +1195,15 @@ class OpalConnection : public PSafeObject
     virtual bool SendVideoUpdatePicture(
       unsigned sessionID = 0, ///< Session for media stream, 0 is use first Video stream
       bool force = false      ///< Indicate is a picture loss or forced I-Frame
+    ) const;
+
+    /**Callback from the RTP session after an IntraFrameRequest is receieved.
+       The default behaviour executes an OpalVideoUpdatePicture command on the
+       connection's source video stream if it exists.
+      */
+    virtual void OnRxIntraFrameRequest(
+      const OpalMediaSession & session,   ///<  Session with statistics
+      bool force                          ///<  Force Intra frame, or just indicate picture loss
     ) const;
 #endif
 

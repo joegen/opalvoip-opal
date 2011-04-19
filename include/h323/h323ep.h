@@ -148,6 +148,14 @@ class H323EndPoint : public OpalRTPEndPoint
       unsigned int options = NULL,      ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions = NULL
     );
+
+    /** Create a new underlying RTP session instance.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      OpalConnection & connection,
+      unsigned sessionId,             ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType ///< Media type for session
+    );
   //@}
 
   /**@name Set up functions */
@@ -753,18 +761,6 @@ class H323EndPoint : public OpalRTPEndPoint
       H323Connection & connection,    ///<  Connection for the channel
       const H323Channel & channel     ///<  Channel being started
     );
-
-    /**Callback from the RTP session for statistics monitoring.
-       This is called every so many packets on the transmitter and receiver
-       threads of the RTP session indicating that the statistics have been
-       updated.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnRTPStatistics(
-      const H323Connection & connection,  ///<  Connection for the channel
-      const RTP_Session & session         ///<  Session with statistics
-    ) const;
 
     /**Call back from GK admission confirm to notify the 
      * Endpoint it is behind a NAT (GNUGK Gatekeeper).
@@ -1429,6 +1425,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
+    P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const H323Connection &, const OpalRTPSession &) const);
 };
 
 #endif // OPAL_H323

@@ -251,6 +251,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\opal\mediasession.cxx" />
     <ClCompile Include="..\asn\gcc.cxx" />
     <ClCompile Include="..\asn\h225_1.cxx" />
     <ClCompile Include="..\asn\h225_2.cxx" />
@@ -501,6 +502,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\opal\mediasession.h" />
     <ClInclude Include="..\..\include\asn\gcc.h" />
     <ClInclude Include="..\..\include\asn\h225.h" />
     <ClInclude Include="..\..\include\asn\h235.h" />

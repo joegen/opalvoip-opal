@@ -537,6 +537,9 @@
     <ClCompile Include="..\codec\speex\libspeex\smallft.c">
       <Filter>Source Files\Codec\Speex</Filter>
     </ClCompile>
+    <ClCompile Include="..\opal\mediasession.cxx">
+      <Filter>Source Files\OPAL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -952,6 +955,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\opal\buildopts.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\mediasession.h">
+      <Filter>Header Files\OPAL</Filter>
     </ClInclude>
     <ClInclude Include="..\..\revision.h">
       <Filter>Header Files</Filter>

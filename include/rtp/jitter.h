@@ -244,11 +244,11 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
     PCLASSINFO(RTP_JitterBuffer, OpalJitterBufferThread);
  public:
     RTP_JitterBuffer(
-      RTP_Session & session,   ///<  Associated RTP session tor ead data from
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      OpalRTPSession & session, ///<  Associated RTP session for data to be read from
+      unsigned minJitterDelay,  ///<  Minimum delay in RTP timestamp units
+      unsigned maxJitterDelay,  ///<  Maximum delay in RTP timestamp units
+      unsigned timeUnits = 8,   ///<  Time units, usually 8 or 16
+      PINDEX packetSize = 2048  ///<  Max RTP packet size
     );
     ~RTP_JitterBuffer();
 
@@ -262,7 +262,7 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
 
  protected:
    /**This class extracts data from the outside world by reading from this session variable */
-   RTP_Session & m_session;
+   OpalRTPSession & m_session;
 };
 
 #endif // OPAL_RTP_JITTER_H
