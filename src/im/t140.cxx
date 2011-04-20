@@ -96,7 +96,8 @@ SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTra
 T140String::T140String()
   : length(0)
 { 
-  AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
+  AppendUnicode16(ZERO_WIDTH_NO_BREAK);
+  SetAt(length, '\0');
 }
 
 T140String::T140String(const PBYTEArray & bytes)
@@ -108,6 +109,7 @@ T140String::T140String(const PBYTEArray & bytes)
       ch != ZERO_WIDTH_NO_BREAK)
     AppendUnicode16(ZERO_WIDTH_NO_BREAK);
   AppendUTF((const BYTE *)bytes, bytes.GetSize());
+  SetAt(length, '\0');
 }
 
 T140String::T140String(const BYTE * data, PINDEX len)
@@ -119,6 +121,7 @@ T140String::T140String(const BYTE * data, PINDEX len)
       ch != ZERO_WIDTH_NO_BREAK)
     AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
   AppendUTF((const BYTE *)data, len);
+  SetAt(length, '\0');
 }
 
 T140String::T140String(const char * chars)
@@ -130,6 +133,7 @@ T140String::T140String(const char * chars)
       ch != ZERO_WIDTH_NO_BREAK)
     AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
   AppendUTF((const BYTE *)chars, strlen(chars));
+  SetAt(length, '\0');
 }
 
 T140String::T140String(const PString & str)
@@ -141,17 +145,11 @@ T140String::T140String(const PString & str)
       ch != ZERO_WIDTH_NO_BREAK)
     AppendUnicode16(ZERO_WIDTH_NO_BREAK); 
   AppendUTF((const BYTE *)(const char *)str, str.GetLength());
+  SetAt(length, '\0');
 }
 
 PINDEX T140String::AppendUTF(const BYTE * utf, PINDEX utfLen)
 {
-  WORD ch;
-  if (utfLen >= 3 &&
-      GetUTF(utf, utfLen, ch) == 3 &&
-      ch == ZERO_WIDTH_NO_BREAK) {
-    utf += 3; 
-    utfLen -= 3;
-  }
   if (utfLen > 0) {
     memcpy(GetPointer(length+utfLen)+length, utf, utfLen);
     length += utfLen;
@@ -196,8 +194,8 @@ PINDEX T140String::SetUTF(BYTE * ptr, WORD c)
   }
 
   //if (c <= 0xffff) {
-  ptr[0] = 0xe0 | (ch >> 4) | (cl >> 6); 
-  ptr[1] = 0x80 | (ch << 2) | (cl >> 6); 
+  ptr[0] = 0xe0 | (ch >> 4); 
+  ptr[1] = 0x80 | ((ch & 0xf) << 2) | (cl >> 6); 
   ptr[2] = 0x80 | (cl & 0x3f);
   return 3;
 }
@@ -223,7 +221,7 @@ PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
 
   // 0x80 .. 0x7ff
   if (ptr[0] <= 0xdf) {
-    ch = (ptr[0] << 6) | (ptr[1] & 0x3f);
+    ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
     return 2;
   }
 
@@ -231,7 +229,7 @@ PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
     return 0;
 
   // 0x800 .. 0xffff
-  ch = (ptr[0] << 12) | ((ptr[1] & 0x3f) << 6) || (ptr[2] & 0x3f);
+  ch = ((ptr[0] & 0xf) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
 
   return 3;
 }
