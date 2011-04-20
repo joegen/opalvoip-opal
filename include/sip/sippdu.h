@@ -210,6 +210,15 @@ class SIPURL : public PURL
 };
 
 
+class SIPURLList : public std::list<SIPURL>
+{
+  public:
+    bool FromString(const PString & str, bool reversed = false);
+    PString ToString() const;
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////
 // SIPMIMEInfo
 
@@ -286,7 +295,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     PString GetContact() const;
-    bool GetContacts(std::list<SIPURL> & contacts) const;
+    bool GetContacts(SIPURLList & contacts) const;
     void SetContact(const PString & v);
 
     PString GetSubject() const;
@@ -334,12 +343,15 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetProxyAuthenticate() const;
     void SetProxyAuthenticate(const PString & v);
 
-    PStringList GetRoute() const;
+    PString GetRoute() const;
+    bool GetRoute(SIPURLList & proxies) const;
     void SetRoute(const PString & v);
-    void SetRoute(const PStringList & v);
+    void SetRoute(const SIPURLList & proxies);
 
-    PStringList GetRecordRoute(bool reversed) const;
-    void SetRecordRoute(const PStringList & v);
+    PString GetRecordRoute() const;
+    bool GetRecordRoute(SIPURLList & proxies, bool reversed) const;
+    void SetRecordRoute(const PString & v);
+    void SetRecordRoute(const SIPURLList & proxies);
 
     unsigned GetCSeqIndex() const { return GetCSeq().AsUnsigned(); }
 
@@ -423,23 +435,7 @@ class SIPMIMEInfo : public PMIMEInfo
       const PString & newValue      ///< New value for parameter
     );
 
-    /**Extract a list of unique URLs, comma separated and escaped with <>.
-      */
-    static bool ExtractURLs(
-      const PString & str,
-      std::list<SIPURL> & urls
-    );
-
   protected:
-    /** return list of route values from internal comma-delimited list
-	 */
-    PStringList GetRouteList(const char * name, bool reversed) const;
-
-    /** store string list as one comma-delimited string of route values
-        value formed as "<v[0]>,<v[1]>,<v[2]>" etc
-	 */
-    void SetRouteList(const char * name, const PStringList & v);
-
     PStringSet GetTokenSet(const char * field) const;
     void AddTokenSet(const char * field, const PString & token);
     void SetTokenSet(const char * field, const PStringSet & tokens);
@@ -616,7 +612,7 @@ class SIP_PDU : public PSafeObject
       If first route is strict, exchange with URI.
       Returns true if routeSet.
       */
-    bool SetRoute(const PStringList & routeSet);
+    bool SetRoute(const SIPURLList & routeSet);
     bool SetRoute(const SIPURL & proxy);
 
     /**Set mime allow field to all supported methods.
@@ -715,6 +711,7 @@ class SIPDialogContext
 {
   public:
     SIPDialogContext();
+    SIPDialogContext(const SIPMIMEInfo & mime);
 
     PString AsString() const;
     bool FromString(
@@ -742,8 +739,8 @@ class SIPDialogContext
     void SetRemoteURI(const SIPURL & url);
     bool SetRemoteURI(const PString & uri);
 
-    const PStringList & GetRouteSet() const { return m_routeSet; }
-    void SetRouteSet(const PStringList & routes) { m_routeSet = routes; }
+    const SIPURLList & GetRouteSet() const { return m_routeSet; }
+    void SetRouteSet(const PString & str) { m_routeSet.FromString(str); }
 
     const SIPURL & GetProxy() const { return m_proxy; }
     void SetProxy(const SIPURL & proxy, bool addToRouteSet);
@@ -774,7 +771,7 @@ class SIPDialogContext
     PString     m_localTag;
     SIPURL      m_remoteURI;
     PString     m_remoteTag;
-    PStringList m_routeSet;
+    SIPURLList  m_routeSet;
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
     OpalTransportAddress m_externalTransportAddress;
