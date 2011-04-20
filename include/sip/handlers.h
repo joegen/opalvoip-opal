@@ -205,7 +205,8 @@ public:
 
   const SIPRegister::Params & GetParams() const { return m_parameters; }
 
-  const std::list<SIPURL> & GetContacts() const { return m_contactAddresses; }
+  const SIPURLList & GetContacts() const { return m_contactAddresses; }
+  const SIPURLList & GetServiceRoute() const { return m_serviceRoute; }
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
@@ -213,7 +214,8 @@ protected:
 
   SIPRegister::Params m_parameters;
   unsigned            m_sequenceNumber;
-  std::list<SIPURL>   m_contactAddresses;
+  SIPURLList          m_contactAddresses;
+  SIPURLList          m_serviceRoute;
 };
 
 
