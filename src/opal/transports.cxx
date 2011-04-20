@@ -809,9 +809,6 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
     return NULL;
 
   PIPSocket::Address addr;
-  if (remoteAddress.GetIpAddress(addr) && addr.IsLoopback())
-    return new OpalTransportUDP(endpoint, addr);
-
   PString iface;
   if (localAddress.GetIpAddress(addr))
     iface = addr.AsString(true);
