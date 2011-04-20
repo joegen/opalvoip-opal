@@ -624,6 +624,70 @@ void SIPURL::SetTag(const PString & tag)
 
 /////////////////////////////////////////////////////////////////////////////
 
+bool SIPURLList::FromString(const PString & str, bool reversed)
+{
+  PStringArray lines = str.Lines();
+  for (PINDEX i = 0; i < lines.GetSize(); i++) {
+    PString line = lines[0];
+
+    PINDEX previousPos = (PINDEX)-1;
+    PINDEX comma = previousPos;
+    do {
+      PINDEX pos = line.FindOneOf(",\"<", previousPos+1);
+      if (pos != P_MAX_INDEX && line[pos] != ',') {
+        if (line[pos] == '<')
+          previousPos = line.Find('>', pos);
+        else {
+          PINDEX lastQuote = pos;
+          do { 
+            lastQuote = line.Find('"', lastQuote+1);
+          } while (lastQuote != P_MAX_INDEX && line[lastQuote-1] == '\\');
+          previousPos = lastQuote;
+        }
+        if (previousPos != P_MAX_INDEX)
+          continue;
+        pos = previousPos;
+      }
+
+      SIPURL uri = line(comma+1, pos-1);
+      if (!uri.GetPortSupplied())
+        uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
+
+      if (reversed)
+        push_front(uri);
+      else {
+        double q = uri.GetFieldParameters().GetReal("q");
+        SIPURLList::iterator it = begin();
+        while (it != end() && it->GetFieldParameters().GetReal("q") > q)
+          ++it;
+        push_back(uri);
+      }
+
+      comma = previousPos = pos;
+    } while (comma != P_MAX_INDEX);
+  }
+
+  return !empty();
+}
+
+
+PString SIPURLList::ToString() const
+{
+  PStringStream strm;
+  bool outputCommas = false;
+  for (const_iterator it = begin(); it != end(); ++it) {
+    if (outputCommas)
+      strm << ", ";
+    else
+      outputCommas = true;
+    strm << it->AsQuotedString();
+  }
+  return strm;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
   : compactForm(_compactForm)
 {
@@ -763,52 +827,9 @@ PString SIPMIMEInfo::GetContact() const
 }
 
 
-bool SIPMIMEInfo::GetContacts(std::list<SIPURL> & contacts) const
+bool SIPMIMEInfo::GetContacts(SIPURLList & contacts) const
 {
-  return ExtractURLs(GetString("Contact"), contacts);
-}
-
-
-bool SIPMIMEInfo::ExtractURLs(const PString & str, std::list<SIPURL> & urls)
-{
-  PStringArray lines = str.Lines();
-  for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    PString line = lines[0];
-
-    PINDEX previousPos = (PINDEX)-1;
-    PINDEX comma = previousPos;
-    do {
-      PINDEX pos = line.FindOneOf(",\"<", previousPos+1);
-      if (pos != P_MAX_INDEX && line[pos] != ',') {
-        if (line[pos] == '<')
-          previousPos = line.Find('>', pos);
-        else {
-          PINDEX lastQuote = pos;
-          do { 
-            lastQuote = line.Find('"', lastQuote+1);
-          } while (lastQuote != P_MAX_INDEX && line[lastQuote-1] == '\\');
-          previousPos = lastQuote;
-        }
-        if (previousPos != P_MAX_INDEX)
-          continue;
-        pos = previousPos;
-      }
-
-      SIPURL uri = line(comma+1, pos-1);
-      if (!uri.GetPortSupplied())
-        uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
-
-      double q = uri.GetFieldParameters().GetReal("q");
-      std::list<SIPURL>::iterator it = urls.begin();
-      while (it != urls.end() && it->GetFieldParameters().GetReal("q") > q)
-        ++it;
-      urls.push_back(uri);
-
-      comma = previousPos = pos;
-    } while (comma != P_MAX_INDEX);
-  }
-
-  return !urls.empty();
+  return contacts.FromString(GetContact());
 }
 
 
@@ -952,9 +973,9 @@ void SIPMIMEInfo::SetCSeq(const PString & v)
 }
 
 
-PStringList SIPMIMEInfo::GetRoute() const
+PString SIPMIMEInfo::GetRoute() const
 {
-  return GetRouteList("Route", false);
+  return Get("Route");
 }
 
 
@@ -965,58 +986,36 @@ void SIPMIMEInfo::SetRoute(const PString & v)
 }
 
 
-void SIPMIMEInfo::SetRoute(const PStringList & v)
+void SIPMIMEInfo::SetRoute(const SIPURLList & proxies)
+{
+  if (!proxies.empty())
+    SetRoute(proxies.ToString());
+}
+
+
+PString SIPMIMEInfo::GetRecordRoute() const
+{
+  return Get("Record-Route");
+}
+
+
+bool SIPMIMEInfo::GetRecordRoute(SIPURLList & proxies, bool reversed) const
+{
+  return proxies.FromString(GetRecordRoute(), reversed);
+}
+
+
+void SIPMIMEInfo::SetRecordRoute(const PString & v)
 {
   if (!v.IsEmpty())
-    SetRouteList("Route",  v);
+    SetAt("Record-Route",  v);
 }
 
 
-PStringList SIPMIMEInfo::GetRecordRoute(bool reversed) const
+void SIPMIMEInfo::SetRecordRoute(const SIPURLList & proxies)
 {
-  return GetRouteList("Record-Route", reversed);
-}
-
-
-void SIPMIMEInfo::SetRecordRoute(const PStringList & v)
-{
-  if (!v.IsEmpty())
-    SetRouteList("Record-Route",  v);
-}
-
-
-PStringList SIPMIMEInfo::GetRouteList(const char * name, bool reversed) const
-{
-  PStringList routeSet;
-
-  PString s = GetString(name);
-  PINDEX left;
-  PINDEX right = 0;
-  while ((left = s.Find('<', right)) != P_MAX_INDEX &&
-         (right = s.Find('>', left)) != P_MAX_INDEX &&
-         (right - left) > 5) {
-    PString * pstr = new PString(s(left+1, right-1));
-    if (reversed)
-      routeSet.Prepend(pstr);
-    else
-      routeSet.Append(pstr);
-  }
-
-  return routeSet;
-}
-
-
-void SIPMIMEInfo::SetRouteList(const char * name, const PStringList & v)
-{
-  PStringStream s;
-
-  for (PStringList::const_iterator via = v.begin(); via != v.end(); ++via) {
-    if (!s.IsEmpty())
-      s << ',';
-    s << '<' << *via << '>';
-  }
-
-  SetAt(name,  s);
+  if (!proxies.empty())
+    SetRecordRoute(proxies.ToString());
 }
 
 
@@ -1826,28 +1825,28 @@ void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
   m_mime.SetCallID(requestMIME.GetCallID());
   m_mime.SetCSeq(requestMIME.GetCSeq());
   m_mime.SetVia(requestMIME.GetVia());
-  m_mime.SetRecordRoute(requestMIME.GetRecordRoute(false));
+  m_mime.SetRecordRoute(requestMIME.GetRecordRoute());
 }
 
 
-bool SIP_PDU::SetRoute(const PStringList & set)
+bool SIP_PDU::SetRoute(const SIPURLList & set)
 {
-  PStringList routeSet = set;
-
-  if (routeSet.IsEmpty())
+  if (set.empty())
     return false;
 
-  SIPURL firstRoute = routeSet.front();
-  if (!firstRoute.GetParamVars().Contains("lr")) {
+  SIPURL firstRoute = set.front();
+  if (firstRoute.GetParamVars().Contains("lr"))
+    m_mime.SetRoute(set);
+  else {
     // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
-    routeSet.MakeUnique();
-    routeSet.RemoveHead();
-    routeSet.AppendString(m_uri.AsString());
+    SIPURLList routeSet = set;
+    routeSet.erase(routeSet.begin());
+    routeSet.push_back(m_uri.AsString());
     m_uri = firstRoute;
     m_uri.Sanitise(SIPURL::RouteURI);
+    m_mime.SetRoute(routeSet);
   }
 
-  m_mime.SetRoute(routeSet);
   return true;
 }
 
@@ -2368,6 +2367,18 @@ SIPDialogContext::SIPDialogContext()
 }
 
 
+SIPDialogContext::SIPDialogContext(const SIPMIMEInfo & mime)
+  : m_callId(mime.GetCallID())
+  , m_requestURI(mime.GetContact())
+  , m_localURI(mime.GetTo())
+  , m_localTag(m_localURI.GetParamVars()("tag"))
+  , m_remoteURI(mime.GetFrom())
+  , m_remoteTag(m_remoteURI.GetParamVars()("tag"))
+{
+  mime.GetRecordRoute(m_routeSet, true);
+}
+
+
 PString SIPDialogContext::AsString() const
 {
   PStringStream str;
@@ -2379,7 +2390,7 @@ PString SIPDialogContext::AsString() const
   url.SetParamVar("rx-cseq",   m_lastReceivedCSeq);
 
   unsigned index = 0;
-  for (PStringList::const_iterator it = m_routeSet.begin(); it != m_routeSet.end(); ++it)
+  for (SIPURLList::const_iterator it = m_routeSet.begin(); it != m_routeSet.end(); ++it)
     url.SetParamVar(psprintf("route-set-%u", ++index), *it);
 
   return url.AsString();
@@ -2405,7 +2416,7 @@ bool SIPDialogContext::FromString(const PString & str)
   PString route;
   unsigned index = 0;
   while (!(route = params(psprintf("route-set-%u", ++index))).IsEmpty())
-    m_routeSet.AppendString(route);
+    m_routeSet.push_back(route);
 
   return IsEstablished();
 }
@@ -2489,17 +2500,13 @@ bool SIPDialogContext::SetRemoteURI(const PString & uri)
 void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 {
   if (!proxy.IsEmpty()) {
-
     PTRACE(3, "SIP\tOutbound proxy for dialog set to " << proxy);
 
     m_proxy = proxy;  
 
     // Default routeSet if there is a proxy
-    if (addToRouteSet && m_routeSet.IsEmpty()) {
-      PStringStream str;
-      str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
-      m_routeSet += str;
-    }
+    if (addToRouteSet && m_routeSet.empty())
+      m_routeSet.push_back(SIPURL(proxy.GetHostAddress(), proxy.GetPort()));
   }
 }
 
@@ -2510,10 +2517,10 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
 
   SetCallID(mime.GetCallID());
 
-  if (m_routeSet.IsEmpty()) {
+  if (m_routeSet.empty()) {
     // get the route set from the Record-Route response field according to 12.1.2
     // requests in a dialog do not modify the initial route set according to 12.2
-    m_routeSet = mime.GetRecordRoute(pdu.GetMethod() == SIP_PDU::NumMethods);
+    m_routeSet.FromString(mime.GetRecordRoute(), pdu.GetMethod() == SIP_PDU::NumMethods);
   }
 
   /* Update request URI
@@ -2590,7 +2597,7 @@ OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress() const
     return addr;
 
   SIPURL uri;
-  if (m_routeSet.IsEmpty())
+  if (m_routeSet.empty())
     uri = m_requestURI;
   else
     uri = m_routeSet.front();

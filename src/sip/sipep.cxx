@@ -715,12 +715,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   // speaking we should check the from-tag and to-tags as well due to it being a dialog.
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(mime.GetCallID(), PSafeReadWrite);
   if (handler == NULL) {
-    SIPDialogContext dialog;
-    dialog.SetRequestURI(mime.GetContact());
-    dialog.SetLocalURI(mime.GetTo());
-    dialog.SetRemoteURI(mime.GetFrom());
-    dialog.SetCallID(mime.GetCallID());
-    dialog.SetRouteSet(mime.GetRecordRoute(true));
+    SIPDialogContext dialog(mime);
 
     handler = new SIPNotifyHandler(*this, dialog.GetRemoteURI().AsString(), eventPackage, dialog);
     handler.SetSafetyMode(PSafeReadWrite);
@@ -1790,30 +1785,32 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
   // When we start adding things like P-Asserted-Identity, this function will change
   // Right now it just does the Contact field
 
-  if (pdu.GetMIME().Has("Contact"))
-    return;
+  SIPMIMEInfo & mime = pdu.GetMIME();
 
   if (!PAssert(transport.IsOpen(), PLogicError))
     return;
 
-  SIPURL contact;
+  PString user = SIPURL(mime.GetFrom()).GetUserName();
+  PString domain = SIPURL(mime.GetTo()).GetHostName();
 
-  PString user = SIPURL(pdu.GetMIME().GetFrom()).GetUserName();
-  PString domain = SIPURL(pdu.GetMIME().GetTo()).GetHostName();
-
+  const SIPRegisterHandler * registrar = NULL;
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   // If precise AOR not found, locate the name used for the domain.
   if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-
   if (handler != NULL) {
-    const SIPRegisterHandler * registrar = dynamic_cast<const SIPRegisterHandler *>(&*handler);
-    if (PAssertNULL(registrar) != NULL) {
+    registrar = dynamic_cast<const SIPRegisterHandler *>(&*handler);
+    PAssertNULL(registrar);
+  }
+
+  if (!mime.Has("Contact")) {
+    SIPURL contact;
+    if (registrar != NULL) {
       PIPSocket::Address ip;
       bool transportLocal = transport.GetRemoteAddress().GetIpAddress(ip) && manager.IsLocalAddress(ip);
 
-      const std::list<SIPURL> & contacts = registrar->GetContacts();
-      for (std::list<SIPURL>::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
+      const SIPURLList & contacts = registrar->GetContacts();
+      for (SIPURLList::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
         OpalTransportAddress contactAddress = it->GetHostAddress();
         if (contactAddress.GetProto(true) == transport.GetProtoPrefix() &&
             contactAddress.GetIpAddress(ip) &&
@@ -1823,13 +1820,16 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
         }
       }
     }
+
+    if (contact.IsEmpty())
+      contact = SIPURL(user, transport.GetLocalAddress());
+
+    contact.Sanitise(SIPURL::ContactURI);
+    mime.SetContact(contact.AsQuotedString());
   }
 
-  if (contact.IsEmpty())
-    contact = SIPURL(user, transport.GetLocalAddress());
-
-  contact.Sanitise(SIPURL::ContactURI);
-  pdu.GetMIME().SetContact(contact.AsQuotedString());
+  if (!mime.Has("Route") && registrar != NULL)
+    mime.SetRoute(registrar->GetServiceRoute());
 }
 
 
