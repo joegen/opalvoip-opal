@@ -23,9 +23,6 @@
     <ClCompile Include="h261vic.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\trace.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vic\bv.c">
       <Filter>VIC Files\C Files</Filter>
     </ClCompile>
@@ -52,9 +49,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\common\trace.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="vic\bsd-endian.h">
       <Filter>VIC Files\H Files</Filter>
     </ClInclude>
