@@ -134,6 +134,8 @@ void SimpleOpalProcess::Main()
              "-sip-listen:"
              "-sip-proxy:"
              "-sip-domain:"
+             "-sip-contact-nomultiple."
+             "-sip-contact-noprivate."  
              "-sip-user-agent:"
              "-sip-ui:"
              "-stun:"
@@ -232,6 +234,8 @@ void SimpleOpalProcess::Main()
             "     --sip-ui type        : Set type of user indications to use for SIP. Can be one of 'rfc2833', 'info-tone', 'info-string'.\n"
             "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "     --sip-domain str     : set authentication domain/realm\n"
+            "     --sip-contact-nomultiple : do not send multiple contacts in Contact field\n"
+            "     --sip-contact-noprivate  : do not send private contacts in Contact field\n"
             "\n"
 #endif
 
@@ -706,6 +710,10 @@ PBoolean MyManager::Initialise(PArgList & args)
       params.m_addressOfRecord = args.GetOptionString('u');
       params.m_password = args.GetOptionString('p');
       params.m_realm = args.GetOptionString("sip-domain");
+      if (args.HasOption("sip-contact-nomultiple"))
+        params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+      else if (args.HasOption("sip-contact-noprivate"))
+        params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts  ;
       PString aor;
       if (sipEP->Register(params, aor))
         cout << "Using SIP registrar " << params.m_registrarAddress << " for " << aor << endl;
