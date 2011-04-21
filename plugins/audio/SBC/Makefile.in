@@ -19,7 +19,9 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile.in,v $
+# $Revision$
+# $Author$
+# $Date$
 #
 
 AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
@@ -35,17 +37,16 @@ CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@ -I@prefix@/include
 CXXFLAGS 	=@CXXFLAGS@ -I@prefix@/include
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 
 SRCS	= sbccodec.cxx sbc.c sbc_primitives.c sbc_primitives_mmx.c sbc_primitives_neon.c
 
 EXTRACCFLAGS	= -I$(PLUGINDIR)
 EXTRALIBS 	= -lsamplerate
 
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/SBC
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
@@ -72,9 +73,9 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
 else
-	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
 
 endif
 

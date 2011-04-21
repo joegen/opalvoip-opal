@@ -1,5 +1,5 @@
 #
-# Makefile for GSM 06.10
+# Makefile for ffmpeg H.263 (1998 aka H.263+)
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -19,6 +19,10 @@
 #
 # Contributor(s): Matthias Schneider.
 #
+# $Revision$
+# $Author$
+# $Date$
+#
 
 VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
@@ -32,17 +36,16 @@ BASENAME	=h263-1998
 SONAME		=$(BASENAME)
 COMMONDIR	=../common
 PLUGINDIR	=../../
-OBJDIR 		=./obj
+OBJDIR 		=../../../bin/plugins/H.263-1998
 PLUGINDIR	=../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@ 
 CXX	 	=@CXX@ 
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
-LDFLAGS		=@LDFLAGS@ -lavcodec -lavutil
+LDFLAGS		=@LDFLAGS@ @LDSO@ -lavcodec -lavutil
 EXTRACFLAGS	=-I$(PLUGINDIR)
 HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
 
@@ -83,9 +86,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) -pthread -o $@ $^ $(LDFLAGS) $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
 else	
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(LDFLAGS) $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
 endif
     
 install: $(PLUGIN)
