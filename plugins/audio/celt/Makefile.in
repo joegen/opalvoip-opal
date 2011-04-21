@@ -18,10 +18,9 @@ SONAME	= $(BASENAME)
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS         =@LDFLAGS@ @LDSO@
 LIBS            =
 
 SRCS	= celtcodec.c
@@ -48,9 +47,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(LIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(LIBS)
 else	
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(LIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 endif
 

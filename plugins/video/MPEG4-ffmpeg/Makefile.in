@@ -39,10 +39,9 @@ PLUGINDIR=../../
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS         =@LDFLAGS@ @LDSO@
 
 vpath   %.cxx $(COMMONDIR)
 vpath   %.o   $(OBJDIR)
@@ -61,7 +60,7 @@ ifneq (,$(LIBAVCODEC_SOURCE_DIR))
 EXTRACCFLAGS    += -I$(LIBAVCODEC_SOURCE_DIR) -I$(LIBAVCODEC_SOURCE_DIR)/libavutil
 endif
 
-OBJDIR = ./obj
+OBJDIR = ../../../bin/plugins/MPEG4
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
@@ -80,9 +79,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) -pthread -o $@ $^ $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
 else	
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
 endif
 
 install:
