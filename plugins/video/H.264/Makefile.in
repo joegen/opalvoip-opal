@@ -22,6 +22,7 @@
 # $Revision$
 # $Author$
 # $Date$
+#
 
 VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
@@ -33,7 +34,7 @@ DL_LIBS =@DL_LIBS@
 SHAREDDIR	= ./shared
 COMMONDIR	= ../common
 PLUGINDIR	= ../../
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/H.264
 WIN32=@WIN32@
 SUBDIRS		+= gpl
 
@@ -43,10 +44,9 @@ SONAME	=$(BASENAME)
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@ -I ../../../include $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"$(VC_PLUGIN_DIR)"'
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
 
 vpath	%.cxx $(SHAREDDIR)
@@ -82,9 +82,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 $(PLUGIN): $(OBJECTS)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) -pthread $(LDFLAGS) -o $@ $^ $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
 else
-	$(Q_LD)$(CXX) $(LDSO) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
 endif
 
 

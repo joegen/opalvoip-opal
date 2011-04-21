@@ -19,6 +19,10 @@
 #
 # Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
+# $Revision$
+# $Author$
+# $Date$
+#
 
 VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
@@ -26,7 +30,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 target_os=@target_os@
 
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/THEORA
 
 BASENAME=theora
 SONAME	=$(BASENAME)
@@ -36,10 +40,9 @@ PLUGINDIR=../..
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 THEORA_LIBS     =@THEORA_LIBS@
 THEORA_CFLAGS   =@THEORA_CFLAGS@
 
@@ -73,9 +76,9 @@ OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdi
 
 $(PLUGIN): $(OBJECTS)
 ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) $(LDSO) -pthread -o $@ $^ $(THEORA_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(THEORA_LIBS)
 else	
-	$(Q_LD)$(CXX) $(LDFLAGS) $(LDSO) $@ -o $@ $^ $(THEORA_LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(THEORA_LIBS)
 endif
     
 install:
