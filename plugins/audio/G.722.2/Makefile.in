@@ -1,9 +1,9 @@
 #
 # Makefile for G.722 codec plugin
 #
-# $Revision: 1.1 $
-# $Author: willamowius $
-# $Date: 2010/05/23 22:28:58 $
+# $Revision$
+# $Author$
+# $Date$
 #
 
 AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
@@ -16,15 +16,14 @@ SONAME	= g7222
 STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
 SRCDIR	= ./AMR-WB
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/G.722.2
 PLUGINDIR=../..
 
 CC		=@CC@
 CXX		=@CXX@
-LDSO		=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS         =@LDFLAGS@ @LDSO@
 EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	= G7222Codec.cpp \
@@ -71,9 +70,9 @@ all: $(PLUGIN)
 
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
 else
-	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
 
 endif	
 

@@ -6,6 +6,7 @@
 # $Revision$
 # $Author$
 # $Date$
+#
 
 AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
 prefix=@prefix@
@@ -14,7 +15,7 @@ libdir=@libdir@
 target_os=@target_os@
 
 OBJDIR	= ./obj
-SRCDIR  = ./src
+SRCDIR  = ../../../bin/plugins/GSM-AMR
 PLUGINDIR=../..
 
 BASENAME= gsmamrcodec
@@ -23,10 +24,9 @@ SONAME	= $(BASENAME)
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 
 SRCS	= amrcodec.c \
 	interf_enc.c \
@@ -60,9 +60,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ -lm
+	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ -lm
 else	
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ -lm
+	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ -lm
 
 endif	
 

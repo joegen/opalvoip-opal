@@ -22,6 +22,7 @@
 # $Revision$
 # $Author$
 # $Date$
+#
 
 AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
 prefix=@prefix@
@@ -36,16 +37,15 @@ SONAME	= gsm0610
 H323_EMBEDDED_GSM=@H323_EMBEDDED_GSM@
 
 SRCDIR		= ./src
-OBJDIR		= ./obj
+OBJDIR		= ../../../bin/plugins/GSM0610
 PLUGINDIR       =../..
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	+= gsm06_10_codec.c
@@ -115,9 +115,9 @@ $(PLUGIN): $(OBJECTS)
 
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
 else 
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
 
 endif
 
