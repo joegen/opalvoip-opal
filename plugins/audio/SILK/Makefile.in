@@ -18,15 +18,14 @@ SILK_LIB_FILE=./SILK_SDK/lib$(SILK_LIB_BASE).a
 SONAME	= silk
 STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/SILK
 PLUGINDIR=../..
 
 CC		=@CC@
 CXX		=@CXX@
-LDSO		=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 EXTRACFLAGS     =-I$(PLUGINDIR)
 EXTRALIBS       =-L$(dir $(SILK_LIB_FILE)) -l$(SILK_LIB_BASE)
 
@@ -54,9 +53,9 @@ all: $(PLUGIN)
 
 $(PLUGIN): $(OBJECTS) $(SILK_LIB_FILE)
 ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ (EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ (EXTRALIBS)
 else
-	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
 
 endif	
 
