@@ -34,15 +34,14 @@ SONAME	= g722
 STDCCFLAGS += @STDCCFLAGS@ -fPIC
 
 SRCDIR	= ./VoIPCodecs
-OBJDIR	= ./obj
+OBJDIR	= ../../../bin/plugins/G.722
 PLUGINDIR=../..
 
 CC		=@CC@
 CXX		=@CXX@
-LDSO		=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
+LDFLAGS		=@LDFLAGS@ @LDSO@
 EXTRACFLAGS     =-I$(PLUGINDIR)
 
 SRCS	+= g722codec.c \
@@ -72,9 +71,9 @@ all: $(PLUGIN)
 $(PLUGIN): $(OBJECTS)
 ifeq (solaris,$(findstring solaris,$(target_os)))
 
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
 else
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
+	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
 
 endif	
 
