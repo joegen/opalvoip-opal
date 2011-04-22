@@ -14,8 +14,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 target_os=@target_os@
 
-OBJDIR	= ./obj
-SRCDIR  = ../../../bin/plugins/GSM-AMR
+SRCDIR	= ./src
+OBJDIR  = ../../../bin/plugins/GSM-AMR
 PLUGINDIR=../..
 
 BASENAME= gsmamrcodec
