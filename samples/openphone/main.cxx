@@ -179,6 +179,8 @@ DEF_FIELD(VideoGrabSource);
 DEF_FIELD(VideoGrabFrameRate);
 DEF_FIELD(VideoGrabFrameSize);
 DEF_FIELD(VideoGrabPreview);
+DEF_FIELD(VideoGrabBitRate);
+DEF_FIELD(VideoMaxBitRate);
 DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
 DEF_FIELD(VideoAutoReceive);
@@ -632,6 +634,8 @@ MyManager::MyManager()
   , m_remoteVideoFrameY(INT_MIN)
   , m_SecondaryVideoGrabPreview(false)
   , m_SecondaryVideoOpening(false)
+  , m_VideoMaxBitRate(1024)
+  , m_VideoTargetBitRate(256)
   , m_ExtendedVideoRoles(e_DisabledExtendedVideoRoles)
 #if PTRACING
   , m_enableTracing(false)
@@ -946,6 +950,8 @@ bool MyManager::Initialise()
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
   config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   wxT("CIF16"));
+  config->Read(VideoGrabBitRateKey, &m_VideoTargetBitRate);
+  config->Read(VideoMaxBitRateKey, &m_VideoMaxBitRate);
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
   if (config->Read(VideoAutoTransmitKey, &onoff))
@@ -3339,6 +3345,8 @@ bool MyManager::AdjustVideoFormats()
       mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), minHeight);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), m_VideoMaxBitRate*1000U);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_VideoTargetBitRate*1000U);
 
       switch (m_ExtendedVideoRoles) {
         case e_DisabledExtendedVideoRoles :
@@ -3932,6 +3940,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != false);
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != false);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
+  INIT_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate);
+  INIT_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate);
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
@@ -4379,6 +4389,8 @@ bool OptionsDialog::TransferDataFromWindow()
 //  SAVE_FIELD(VideoFlipRemote, );
   SAVE_FIELD(VideoMinFrameSize, m_manager.m_VideoMinFrameSize = );
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
+  SAVE_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate = );
+  SAVE_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate = );
 
   ////////////////////////////////////////
   // Fax fields
