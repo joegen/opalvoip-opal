@@ -125,7 +125,14 @@ PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
     else {
       PStringArray transports = GetDefaultTransport().Tokenise(',');
       for (PINDEX j = 0; j < transports.GetSize(); j++) {
-        OpalTransportAddress iface(interfaces[i], GetDefaultSignalPort(), transports[j]);
+        PString transport = transports[j];
+        WORD port = GetDefaultSignalPort();
+        PINDEX colon = transport.Find(':');
+        if (colon != P_MAX_INDEX) {
+          port = (WORD)transport.Mid(colon+1).AsUnsigned();
+          transport.Delete(colon, P_MAX_INDEX);
+        }
+        OpalTransportAddress iface(interfaces[i], port, transport);
         if (StartListener(iface))
           startedOne = PTrue;
       }
