@@ -37,7 +37,7 @@ class H264EncCtx
   public:
      H264EncCtx();
      ~H264EncCtx();
-     bool Load();
+     bool Load(unsigned instance);
      bool isLoaded() { return loaded; };
      void call(unsigned msg);
      void call(unsigned msg, unsigned value);

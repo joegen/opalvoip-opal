@@ -70,12 +70,12 @@ H264EncCtx::~H264EncCtx()
   closeAndRemovePipes();
 }
 
-bool H264EncCtx::Load()
+bool H264EncCtx::Load(unsigned instance)
 {
   if (loaded)
     return true;
 
-  snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d", GetCurrentProcessId());
+  snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d-%u", GetCurrentProcessId(), instance);
 
   if (!createPipes()) {
   
