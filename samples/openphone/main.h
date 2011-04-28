@@ -646,6 +646,8 @@ class OptionsDialog : public wxDialog
     bool      m_VideoFlipRemote;
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
+    int       m_VideoGrabBitRate;
+    int       m_VideoMaxBitRate;
 
     wxComboBox * m_videoGrabDevice;
     wxChoice   * m_videoSourceChoice;
@@ -1124,6 +1126,8 @@ class MyManager : public wxFrame, public OpalManager
     PwxString m_VideoGrabFrameSize;
     PwxString m_VideoMinFrameSize;
     PwxString m_VideoMaxFrameSize;
+    int       m_VideoMaxBitRate;
+    int       m_VideoTargetBitRate;
     bool AdjustVideoFormats();
 
     enum ExtendedVideoRoles {
