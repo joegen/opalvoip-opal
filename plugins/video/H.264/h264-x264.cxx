@@ -106,26 +106,6 @@ static struct PluginCodec_information LicenseInfo = {
 ///////////////////////////////////////////////////////////////////////////////
 
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H264);
-H264EncCtx H264EncCtxInstance;
-CriticalSection InitMutex;
-
-
-static bool InitLibs()
-{
-  WaitAndSignal mutex(InitMutex);
-
-  if (!FFMPEGLibraryInstance.Load()) {
-    PTRACE(1, MY_CODEC_LOG, "Codec\tDisabled");
-    return false;
-  }
-
-  if (!H264EncCtxInstance.Load()) {
-    PTRACE(1, MY_CODEC_LOG, "Codec\tDisabled");
-    return false;
-  }
-
-  return true;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -760,6 +740,8 @@ class MyEncoder : public PluginCodec
     unsigned m_maxRTPSize;
     unsigned m_tsto;
 
+    H264EncCtx m_encoder;
+
   public:
     MyEncoder(const PluginCodec_Definition * defn)
       : PluginCodec(defn)
@@ -784,13 +766,13 @@ class MyEncoder : public PluginCodec
          be done in the normal C++ constructor. */
 
       // ABR with bit rate tolerance = 1 is CBR...
-      if (InitLibs()) {
-        H264EncCtxInstance.call(H264ENCODERCONTEXT_CREATE);
+      if (FFMPEGLibraryInstance.Load() && m_encoder.Load((unsigned)this)) {
+        m_encoder.call(H264ENCODERCONTEXT_CREATE);
         return true;
       }
 
       PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
-      return true;
+      return false;
     }
 
 
@@ -884,14 +866,14 @@ class MyEncoder : public PluginCodec
          of them changed. This would do whatever is needed to set parmaeters
          for the actual codec. */
 
-      H264EncCtxInstance.call(SET_PROFILE_LEVEL, (m_profile << 16) + (m_constraints << 8) + m_level);
-      H264EncCtxInstance.call(SET_FRAME_WIDTH, m_width);
-      H264EncCtxInstance.call(SET_FRAME_HEIGHT, m_height);
-      H264EncCtxInstance.call(SET_FRAME_RATE, m_frameRate);
-      H264EncCtxInstance.call(SET_TARGET_BITRATE, m_bitRate/1000);
-      H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, m_maxRTPSize);
-      H264EncCtxInstance.call(SET_TSTO, m_tsto);
-      H264EncCtxInstance.call(APPLY_OPTIONS);
+      m_encoder.call(SET_PROFILE_LEVEL, (m_profile << 16) + (m_constraints << 8) + m_level);
+      m_encoder.call(SET_FRAME_WIDTH, m_width);
+      m_encoder.call(SET_FRAME_HEIGHT, m_height);
+      m_encoder.call(SET_FRAME_RATE, m_frameRate);
+      m_encoder.call(SET_TARGET_BITRATE, m_bitRate/1000);
+      m_encoder.call(SET_MAX_FRAME_SIZE, m_maxRTPSize);
+      m_encoder.call(SET_TSTO, m_tsto);
+      m_encoder.call(APPLY_OPTIONS);
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
                               "prof=" << m_profile << " "
                               "lev=" << m_level << " "
@@ -910,13 +892,13 @@ class MyEncoder : public PluginCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      int ret;
+      int ret = 0;
       unsigned headerSize = PluginCodec_RTP_MinHeaderSize;
-      H264EncCtxInstance.call(ENCODE_FRAMES,
-                              (const u_char *)fromPtr, fromLen,
-                              (u_char *)toPtr, toLen,
-                              headerSize,
-                              flags, ret);
+      m_encoder.call(ENCODE_FRAMES,
+                     (const u_char *)fromPtr, fromLen,
+                     (u_char *)toPtr, toLen,
+                     headerSize,
+                     flags, ret);
       return ret != 0;
     }
 };
@@ -956,7 +938,7 @@ class MyDecoder : public PluginCodec
 
     virtual bool Construct()
     {
-      if (!InitLibs())
+      if (!FFMPEGLibraryInstance.Load())
         return false;
 
       /* Complete construction of object after it has been created. This
