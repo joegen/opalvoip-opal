@@ -154,7 +154,7 @@ void RTCP_XR_Metrics::SetJitterDelay (DWORD delay)
   jitterDelay = delay;
   
   /* If the Id factor has changed, create a new Id period */
-  if (IdFactor() != lastId) {
+  if (abs(IdFactor() - lastId) < 1e-14) {
     PTime now;
     createIdPeriod(lastJitterBufferChangeTimestamp, now);
     lastJitterBufferChangeTimestamp = now;
