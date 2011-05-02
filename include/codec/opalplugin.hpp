@@ -50,10 +50,11 @@
 
 #if PLUGINCODEC_TRACING
   extern PluginCodec_LogFunction PluginCodec_LogFunctionInstance;
+  extern int PluginCodec_SetLogFunction(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len);
 
 #define PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF \
   PluginCodec_LogFunction PluginCodec_LogFunctionInstance; \
-  static int PluginCodec_SetLogFunction(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len) \
+  int PluginCodec_SetLogFunction(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len) \
   { \
     if (len == NULL || *len != sizeof(PluginCodec_LogFunction)) \
       return false; \
@@ -113,12 +114,14 @@ class PluginCodec_MediaFormat
     }
 
 
+    /// Determine if codec is valid for the specified protocol
     virtual bool IsValidForProtocol(const char * /*protocol*/)
     {
       return true;
     }
 
 
+    /// Utility function to adjust option strings, used by ToNormalised()/ToCustomised().
     bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed))
     {
       if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
@@ -146,9 +149,11 @@ class PluginCodec_MediaFormat
     }
 
 
+    /// Adjust normalised options calculated from codec specific options.
     virtual bool ToNormalised(OptionMap & original, OptionMap & changed) = 0;
 
 
+    // Adjust codec specific options calculated from normalised options.
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed) = 0;
 
 
@@ -232,12 +237,24 @@ class PluginCodec
     }
 
 
+    /// Complete construction of the plug in codec.
     virtual bool Construct()
     {
       return true;
     }
 
 
+    /** Terminate operation of plug in codec.
+        This is generally not needed but sometimes (e.g. fax) there is some
+        clean up required to be done on completion of the codec run.
+      */
+    static bool Terminate()
+    {
+      return true;
+    }
+
+
+    /// Convert from one media format to another.
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -245,12 +262,33 @@ class PluginCodec
                              unsigned & flags) = 0;
 
 
+    /// Gather any statistics as a string into the provide buffer.
+    virtual bool GetStatistics(char * /*bufferPtr*/, unsigned /*bufferSize*/)
+    {
+      return true;
+    }
+
+
+    /// Get the required output buffer size to be passed into Transcode.
     virtual size_t GetOutputDataSize()
     {
       return 576-20-16; // Max safe MTU size (576 bytes as per RFC879) minus IP & UDP headers
     }
 
 
+    /** Set the instance ID for the codec.
+        This is used to match up the encode and decoder pairs of instances for
+        a given call. While most codecs like G.723.1 are purely unidirectional,
+        some a bidirectional and have information flow between encoder and
+        decoder.
+      */
+    virtual bool SetInstanceID(const char * /*idPtr*/, unsigned /*idLen*/)
+    {
+      return true;
+    }
+
+
+    /// Set all the options for the codec.
     virtual bool SetOptions(const char * const * options)
     {
       m_optionsSame = true;
@@ -268,12 +306,14 @@ class PluginCodec
     }
 
 
+    /// Callback for if any options are changed.
     virtual bool OnChangedOptions()
     {
       return true;
     }
 
 
+    /// Set an individual option of teh given name.
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
@@ -452,25 +492,56 @@ class PluginCodec
     }
 
 
-    static int SetOptions(const PluginCodec_Definition *, 
-                                 void * context,
-                                 const char * , 
-                                 void * parm, 
-                                 unsigned * len)
+    static int SetOptions(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
     {
       PluginCodec * codec = (PluginCodec *)context;
       return len != NULL && *len == sizeof(const char **) && parm != NULL &&
              codec != NULL && codec->SetOptions((const char * const *)parm);
     }
 
-    static int ValidForProtocol(const PluginCodec_Definition * defn, 
-                                 void *,
-                                 const char * , 
-                                 void * parm, 
-                                 unsigned * len)
+    static int ValidForProtocol(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
     {
       return len != NULL && *len == sizeof(const char *) && parm != NULL && defn->userData != NULL &&
              ((PluginCodec_MediaFormat *)defn->userData)->IsValidForProtocol((const char *)parm);
+    }
+
+    static int SetInstanceID(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+    {
+      PluginCodec * codec = (PluginCodec *)context;
+      return len != NULL && parm != NULL &&
+             codec != NULL && codec->SetInstanceID((const char *)parm, *len);
+    }
+
+    static int GetStatistics(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+    {
+      PluginCodec * codec = (PluginCodec *)context;
+      return len != NULL && parm != NULL &&
+             codec != NULL && codec->GetStatistics((char *)parm, *len);
+    }
+
+    static int Terminate(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
+    {
+      PluginCodec * codec = (PluginCodec *)context;
+      return codec != NULL && codec->Terminate();
+    }
+
+    static struct PluginCodec_ControlDefn * GetControls()
+    {
+      static PluginCodec_ControlDefn ControlsTable[] = {
+        { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  PluginCodec::GetOutputDataSize },
+        { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised },
+        { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, PluginCodec::ToCustomised },
+        { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions },
+        { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions },
+        { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions },
+        { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol },
+        { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,       PluginCodec::SetInstanceID },
+        { PLUGINCODEC_CONTROL_GET_STATISTICS,        PluginCodec::GetStatistics },
+        { PLUGINCODEC_CONTROL_TERMINATE_CODEC,       PluginCodec::Terminate },
+        PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
+        { NULL }
+      };
+      return ControlsTable;
     }
 
   protected:
@@ -480,22 +551,6 @@ class PluginCodec
     unsigned m_maxBitRate;
     unsigned m_frameTime;
 };
-
-
-#define PLUGINCODEC_DEFINE_CONTROL_TABLE(name) \
-  PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF \
-  static PluginCodec_ControlDefn name[] = { \
-    { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  PluginCodec::GetOutputDataSize }, \
-    { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised }, \
-    { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, PluginCodec::ToCustomised }, \
-    { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions }, \
-    { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions }, \
-    { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions }, \
-    { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol }, \
-    PLUGINCODEC_CONTROL_LOG_FUNCTION_INC \
-    { NULL } \
-  }
-
 
 
 #endif // OPAL_CODEC_OPALPLUGIN_HPP
