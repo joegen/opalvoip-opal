@@ -118,8 +118,15 @@ bool OpalMediaSession::Shutdown(bool /*reading*/)
 }
 
 
-void OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
+bool OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
 {
+  return true;
+}
+
+
+bool OpalMediaSession::SetRemoteControlAddress(const OpalTransportAddress &)
+{
+  return true;
 }
 
 

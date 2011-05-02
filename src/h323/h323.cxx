@@ -4461,7 +4461,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (PAssertNULL(session) == NULL)
     return NULL;
 
-  session->SetRemoteMediaAddress(transport.GetRemoteAddress());
   if (!session->Open(transport.GetLocalAddress(false))) {
     ReleaseMediaSession(sessionID);
     return NULL;

@@ -279,10 +279,11 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
 }
 
 
-void OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & transportAddress)
+bool OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & transportAddress)
 {
   PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
   m_remoteAddress = transportAddress;
+  return true;
 }
 
 

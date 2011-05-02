@@ -1880,16 +1880,25 @@ OpalTransportAddress OpalRTPSession::GetRemoteMediaAddress() const
 }
 
 
-void OpalRTPSession::SetRemoteMediaAddress(const OpalTransportAddress & address)
+bool OpalRTPSession::SetRemoteMediaAddress(const OpalTransportAddress & address)
 {
-  address.GetIpAndPort(remoteAddress, remoteDataPort);
-  remoteControlPort = (WORD)(remoteDataPort+1);
+  PIPSocket::Address ip;
+  WORD port = remoteDataPort;
+  return address.GetIpAndPort(ip, port) && InternalSetRemoteAddress(ip, port, true);
+}
+
+
+bool OpalRTPSession::SetRemoteControlAddress(const OpalTransportAddress & address)
+{
+  PIPSocket::Address ip;
+  WORD port = remoteControlPort;
+  return address.GetIpAndPort(ip, port) && InternalSetRemoteAddress(ip, port, false);
 }
 
 
 OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
-                                             unsigned /*sessionID*/, 
-                                             bool isSource)
+                                                    unsigned /*sessionID*/, 
+                                                    bool isSource)
 {
   m_mediaType = mediaFormat.GetMediaType();
   return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection),
@@ -2131,7 +2140,7 @@ PString OpalRTPSession::GetLocalHostName()
 }
 
 
-bool OpalRTPSession::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, bool isDataPort)
+bool OpalRTPSession::InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort)
 {
   if (remoteIsNAT) {
     PTRACE(2, "RTP_UDP\tSession " << sessionID << ", ignoring remote socket info as remote is behind NAT");
