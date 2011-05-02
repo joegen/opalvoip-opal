@@ -462,4 +462,5 @@ EXPORTS
     _ceilf
     _expf
     _powf
+    _fabsf
     
