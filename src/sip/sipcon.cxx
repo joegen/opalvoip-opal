@@ -905,7 +905,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
     if (sending && recving)
       localMedia->SetDirection(SDPMediaDescription::SendRecv);
-    if (recving)
+    else if (recving)
       localMedia->SetDirection(SDPMediaDescription::RecvOnly);
     else if (sending)
       localMedia->SetDirection(SDPMediaDescription::SendOnly);
