@@ -393,7 +393,8 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
-    virtual void SetRemoteMediaAddress(const OpalTransportAddress & address);
+    virtual bool SetRemoteMediaAddress(const OpalTransportAddress & address);
+    virtual bool SetRemoteControlAddress(const OpalTransportAddress & address);
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
@@ -407,14 +408,6 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Operations */
   //@{
-    /**Set the remote address and port information for session.
-      */
-    virtual bool SetRemoteSocketInfo(
-      PIPSocket::Address address,   ///<  Addre ss of remote
-      WORD port,                    ///<  Port on remote
-      bool isDataPort               ///<  Flag for data or control channel
-    );
-
     /**Sets the size of the jitter buffer to be used by this RTP session.
        A session defaults to not having any jitter buffer enabled for reading
        and the ReadBufferedData() function simply calls ReadData().
@@ -843,8 +836,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual void SendBYE();
 
   protected:
-
-  protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     bool InsertReportPacket(RTP_ControlFrame & report);
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
@@ -856,6 +847,7 @@ class OpalRTPSession : public OpalMediaSession
     void OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset);    
 #endif
 
+    bool InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort);
     virtual void ApplyQOS(const PIPSocket::Address & addr);
     virtual bool InternalReadData(RTP_DataFrame & frame);
     virtual SendReceiveStatus InternalReadData2(RTP_DataFrame & frame);

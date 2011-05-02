@@ -297,7 +297,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual bool Close();
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
-    virtual void SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
 
     PURL GetLocalURL() const { return m_localUrl; }
     PURL GetRemoteURL() const { return m_remoteUrl; }

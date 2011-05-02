@@ -129,7 +129,8 @@ class OpalMediaSession : public PObject
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
     virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
-    virtual void SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual bool SetRemoteControlAddress(const OpalTransportAddress &);
 
     typedef PList<PChannel> Transport;
     virtual void AttachTransport(Transport & transport);

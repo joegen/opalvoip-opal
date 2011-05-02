@@ -650,7 +650,10 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
       PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address: "
                 << oldRemoteMediaAddress << "!=" << remoteMediaAddress);
       ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, dynamic_cast<OpalRTPSession *>(session));
-      session->SetRemoteMediaAddress(remoteMediaAddress);
+      if (!session->SetRemoteMediaAddress(remoteMediaAddress)) {
+        ReleaseMediaSession(sessionId);
+        return NULL;
+      }
     }
   }
 
@@ -792,7 +795,6 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
       return false;
     }
 
-    mediaSession->SetRemoteMediaAddress(GetTransport().GetRemoteAddress());
     if (!mediaSession->Open(GetDefaultSDPConnectAddress())) {
       PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
       return false;
