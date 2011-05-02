@@ -107,6 +107,7 @@ static struct PluginCodec_information LicenseInfo = {
 
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H264);
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -766,7 +767,7 @@ class MyEncoder : public PluginCodec
          be done in the normal C++ constructor. */
 
       // ABR with bit rate tolerance = 1 is CBR...
-      if (FFMPEGLibraryInstance.Load() && m_encoder.Load((unsigned)this)) {
+      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this)) {
         m_encoder.call(H264ENCODERCONTEXT_CREATE);
         return true;
       }
@@ -1078,8 +1079,6 @@ class MyDecoder : public PluginCodec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PLUGINCODEC_DEFINE_CONTROL_TABLE(MyControls);
-
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
   {
@@ -1113,7 +1112,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_generic,      // h323CapabilityType 
     &H323GenericData                    // h323CapabilityData
@@ -1149,7 +1148,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_generic,      // h323CapabilityType 
     &H323GenericData                    // h323CapabilityData
@@ -1185,7 +1184,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -1221,7 +1220,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -1257,7 +1256,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -1293,7 +1292,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
