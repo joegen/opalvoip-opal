@@ -4894,7 +4894,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
   PVideoDevice::OpenArgs grabberArgs;
   grabberArgs.deviceName = m_VideoGrabber.mb_str(wxConvUTF8);
   grabberArgs.videoFormat = (PVideoDevice::VideoFormat)m_VideoGrabFormat;
-  grabberArgs.channelNumber = m_VideoGrabSource;
+  grabberArgs.channelNumber = m_VideoGrabSource-1;
   grabberArgs.rate = m_VideoGrabFrameRate;
   PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
   grabberArgs.flip = m_VideoFlipLocal;
