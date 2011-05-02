@@ -1441,12 +1441,6 @@ bool SIPConnection::WriteINVITE()
     mime.SetContact(contact.AsQuotedString());
   }
 
-  SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
-  if (!redir.IsEmpty())
-    invite->GetMIME().SetReferredBy(redir.AsQuotedString());
-
-  invite->GetMIME().SetAlertInfo(m_alertInfo, m_appearanceCode);
-
   // It may happen that constructing the INVITE causes the connection
   // to be released (e.g. there are no UDP ports available for the RTP sessions)
   // Since the connection is released immediately, a INVITE must not be
@@ -1464,6 +1458,71 @@ bool SIPConnection::WriteINVITE()
 
   PTRACE(2, "SIP\tDid not start INVITE transaction on " << transport);
   return PFalse;
+}
+
+
+void SIPConnection::OnCreatingINVITE(SIPInvite & request)
+{
+  PTRACE(3, "SIP\tCreating INVITE request");
+
+  SIPMIMEInfo & mime = request.GetMIME();
+
+  switch (m_prackMode) {
+    case e_prackDisabled :
+      break;
+
+    case e_prackRequired :
+      mime.AddRequire("100rel");
+      // Then add supported as well
+
+    case e_prackSupported :
+      mime.AddSupported("100rel");
+  }
+
+  mime.AddSupported("replaces");
+  for (PStringToString::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
+    PCaselessString key = it->first;
+    if (key.NumCompare(HeaderPrefix) == EqualTo) {
+      PString data = it->second;
+      if (!data.IsEmpty()) {
+        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), data);
+        if (key == SIP_HEADER_REPLACES)
+          mime.AddRequire("replaces");
+      }
+    }
+  }
+
+  if (IsPresentationBlocked()) {
+    // Should do more as per RFC3323, but this is all for now
+    SIPURL from = mime.GetFrom();
+    if (!from.GetDisplayName(false).IsEmpty())
+      from.SetDisplayName("Anonymous");
+    mime.SetFrom(from.AsQuotedString());
+  }
+
+  SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
+  if (!redir.IsEmpty())
+    mime.SetReferredBy(redir.AsQuotedString());
+
+  mime.SetAlertInfo(m_alertInfo, m_appearanceCode);
+
+  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
+  if (!externalSDP.IsEmpty())
+    request.SetEntityBody(externalSDP);
+  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+    if (m_needReINVITE)
+      ++m_sdpVersion;
+
+    SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
+    if (OnSendOfferSDP(*sdp)) {
+      request.m_sessions = m_sessions;
+      request.SetSDP(sdp);
+    }
+    else {
+      delete sdp;
+      Release(EndedByCapabilityExchange);
+    }
+  }
 }
 
 
@@ -2945,65 +3004,6 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 
   PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
   return true;
-}
-
-
-void SIPConnection::OnCreatingINVITE(SIPInvite & request)
-{
-  PTRACE(3, "SIP\tCreating INVITE request");
-
-  SIPMIMEInfo & mime = request.GetMIME();
-
-  switch (m_prackMode) {
-    case e_prackDisabled :
-      break;
-
-    case e_prackRequired :
-      mime.AddRequire("100rel");
-      // Then add supported as well
-
-    case e_prackSupported :
-      mime.AddSupported("100rel");
-  }
-
-  mime.AddSupported("replaces");
-  for (PStringToString::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
-    PCaselessString key = it->first;
-    if (key.NumCompare(HeaderPrefix) == EqualTo) {
-      PString data = it->second;
-      if (!data.IsEmpty()) {
-        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), data);
-        if (key == SIP_HEADER_REPLACES)
-          mime.AddRequire("replaces");
-      }
-    }
-  }
-
-  if (IsPresentationBlocked()) {
-    // Should do more as per RFC3323, but this is all for now
-    SIPURL from = mime.GetFrom();
-    if (!from.GetDisplayName(false).IsEmpty())
-      from.SetDisplayName("Anonymous");
-    mime.SetFrom(from.AsQuotedString());
-  }
-
-  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
-  if (!externalSDP.IsEmpty())
-    request.SetEntityBody(externalSDP);
-  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
-    if (m_needReINVITE)
-      ++m_sdpVersion;
-
-    SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
-    if (OnSendOfferSDP(*sdp)) {
-      request.m_sessions = m_sessions;
-      request.SetSDP(sdp);
-    }
-    else {
-      delete sdp;
-      Release(EndedByCapabilityExchange);
-    }
-  }
 }
 
 
