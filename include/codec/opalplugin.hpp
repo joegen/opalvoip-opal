@@ -251,6 +251,12 @@ class PluginCodec
     }
 
 
+    virtual bool SetInstanceID(const char * idPtr, unsigned idPtr)
+    {
+      return true;
+    }
+
+
     virtual bool SetOptions(const char * const * options)
     {
       m_optionsSame = true;
@@ -473,6 +479,17 @@ class PluginCodec
              ((PluginCodec_MediaFormat *)defn->userData)->IsValidForProtocol((const char *)parm);
     }
 
+    static int SetInstanceID(const PluginCodec_Definition * defn, 
+                             void *,
+                             const char * , 
+                             void * parm, 
+                             unsigned * len)
+    {
+      PluginCodec * codec = (PluginCodec *)context;
+      return len != NULL && parm != NULL &&
+             codec != NULL && codec->SetInstanceID((const char *)parm, *len);
+    }
+
   protected:
     const PluginCodec_Definition * m_definition;
 
@@ -492,6 +509,7 @@ class PluginCodec
     { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions }, \
     { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions }, \
     { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol }, \
+    { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,       PluginCodec::SetInstanceID }, \
     PLUGINCODEC_CONTROL_LOG_FUNCTION_INC \
     { NULL } \
   }
