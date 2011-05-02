@@ -140,10 +140,8 @@ PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
 
   H323TransportAddress transAddr = pdu;
 
-  PIPSocket::Address ip;
-  WORD port = 0;
-  if (transAddr.GetIpAndPort(ip, port) && ip.IsValid() && port != 0)
-    return SetRemoteSocketInfo(ip, port, isDataPort);
+  if (isDataPort ? SetRemoteMediaAddress(transAddr) : SetRemoteControlAddress(transAddr))
+    return true;
 
   PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");
   return PFalse;
