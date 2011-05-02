@@ -343,8 +343,6 @@ class MyDecoder : public PluginCodec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PLUGINCODEC_DEFINE_CONTROL_TABLE(MyControls);
-
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
   {
@@ -378,7 +376,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_generic,      // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -414,7 +412,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_generic,      // h323CapabilityType 
     NULL                                // h323CapabilityData
