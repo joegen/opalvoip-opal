@@ -77,6 +77,9 @@ static struct PluginCodec_information LicenseInfo = {
 };
 
 
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const UseInBandFEC =
@@ -326,8 +329,6 @@ class MyDecoder : public PluginCodec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PLUGINCODEC_DEFINE_CONTROL_TABLE(MyControls);
-
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
   {
@@ -361,7 +362,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -397,7 +398,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -433,7 +434,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyEncoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -469,7 +470,7 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     PluginCodec::Create<MyDecoder>,     // create codec function
     PluginCodec::Destroy,               // destroy codec
     PluginCodec::Transcode,             // encode/decode
-    MyControls,                         // codec controls
+    PluginCodec::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
