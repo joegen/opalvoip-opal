@@ -613,12 +613,12 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   transport.DisallowDeleteObjects();
 
   PObject * channel = transport.RemoveHead();
-  dataSocket = dynamic_cast<PUDPSocket *>(channel);
+  dataSocket = dynamic_cast<PNATUDPSocket *>(channel);
   if (dataSocket == NULL)
     delete channel;
 
   channel = transport.RemoveHead();
-  controlSocket = dynamic_cast<PUDPSocket *>(channel);
+  controlSocket = dynamic_cast<PNATUDPSocket *>(channel);
   if (controlSocket == NULL)
     delete channel;
 
@@ -1964,8 +1964,10 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   localDataPort    = firstPort;
   localControlPort = (WORD)(firstPort + 1);
 
-  PIPSocket::Address bindingAddress = localAddress;
-  if (natMethod != NULL && natMethod->IsAvailable(localAddress)) {
+  PIPSocket::Address bindingAddress;
+  natMethod->GetInterfaceAddress(bindingAddress);
+
+  if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
     switch (natMethod->GetRTPSupport()) {
       case PNatMethod::RTPIfSendMedia :
         /* This NAT variant will work if we send something out through the
@@ -1977,7 +1979,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
         // Then do case for full cone support and create STUN sockets
 
       case PNatMethod::RTPSupported :
-        if (natMethod->CreateSocketPair(dataSocket, controlSocket, localAddress)) {
+        if (natMethod->CreateSocketPair(dataSocket, controlSocket, bindingAddress)) {
           PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
           dataSocket->GetLocalAddress(localAddress, localDataPort);
           controlSocket->GetLocalAddress(localAddress, localControlPort);
@@ -1985,7 +1987,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
         else {
           PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
-          if (natMethod->CreateSocket(dataSocket, localAddress) && natMethod->CreateSocket(controlSocket, localAddress)) {
+          if (natMethod->CreateSocket(dataSocket, bindingAddress) && natMethod->CreateSocket(controlSocket, bindingAddress)) {
             dataSocket->GetLocalAddress(localAddress, localDataPort);
             controlSocket->GetLocalAddress(localAddress, localControlPort);
           }
@@ -2012,8 +2014,8 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   }
 
   if (dataSocket == NULL || controlSocket == NULL) {
-    dataSocket = new PUDPSocket();
-    controlSocket = new PUDPSocket();
+    dataSocket = new PNATUDPSocket_Null(PNatMethod::eComponent_RTP);
+    controlSocket = new PNATUDPSocket_Null(PNatMethod::eComponent_RTCP);
     while (!   dataSocket->Listen(bindingAddress, 1, localDataPort) ||
            !controlSocket->Listen(bindingAddress, 1, localControlPort)) {
       dataSocket->Close();
@@ -2230,7 +2232,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFram
 
   switch (selectStatus) {
     case -2 :
-      return ReadControlPDU();
+      switch (ReadControlPDU()) {
+        case e_ProcessPacket :
+          return shutdownRead ? e_AbortTransport : e_IgnorePacket;
+        case e_AbortTransport :
+          return e_AbortTransport;
+        case e_IgnorePacket :
+          return e_IgnorePacket;
+      }
+      break;
 
     case -3 :
       if (ReadControlPDU() == e_AbortTransport)
@@ -2242,7 +2252,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFram
         case e_ProcessPacket :
           return shutdownRead ? e_AbortTransport : OnReceiveData(frame);
         case e_IgnorePacket :
-          e_IgnorePacket ;
+          return e_IgnorePacket ;
         case e_AbortTransport :
           return e_AbortTransport;
       }
