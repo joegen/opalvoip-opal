@@ -25,13 +25,13 @@
 #include <vector>
 #include <list>
 
-#include "../common/rtpframe.h"
+class PluginCodec_RTP;
 
 class RFC2190Depacketizer {
   public:
     RFC2190Depacketizer();
     void NewFrame();
-    int SetPacket(const RTPFrame & outputFrame, bool & requestIFrame, bool & isIFrame);
+    int SetPacket(const PluginCodec_RTP & outputFrame, bool & requestIFrame, bool & isIFrame);
 
     std::vector<unsigned char> frame;
 
@@ -49,7 +49,7 @@ class RFC2190Packetizer
     RFC2190Packetizer();
     ~RFC2190Packetizer();
     int Open(unsigned long timeStamp, unsigned long maxLen);
-    int GetPacket(RTPFrame & outputFrame, unsigned int & flags);
+    int GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags);
 
     unsigned char * m_buffer;
     size_t m_bufferSize;

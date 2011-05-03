@@ -104,7 +104,7 @@ PString DisplayableString(const char * str)
 }
 
 
-PString DisplayLicenseInfo(PluginCodec_information * info)
+PString DisplayLicenseInfo(const PluginCodec_information * info)
 {
   PStringStream str;
   if (info == NULL) 
@@ -134,7 +134,7 @@ PString DisplayLicenseInfo(PluginCodec_information * info)
 }
 
 
-void DisplayCodecDefn(PluginCodec_Definition & defn)
+void DisplayCodecDefn(const PluginCodec_Definition & defn)
 {
   PBoolean isVideo = PFalse;
 
@@ -384,7 +384,7 @@ void DisplayPlugInInfo(const PString & name, PPluginModuleManager::PluginListTyp
         return;
       }
       unsigned int count;
-      PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
+      const PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
       if (codecs == NULL || count == 0) {
         cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
         return;

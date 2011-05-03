@@ -19,12 +19,18 @@
  *
  */
 
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include <iostream>
 #include <string.h>
 #include <malloc.h>
 using namespace std;
 
 #include "rfc2190.h"
+
+#include <codec/opalplugin.hpp>
+
 
 #define MAX_PACKET_LEN 1024
 
@@ -255,7 +261,7 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
   return 0;
 }
 
-int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
+int RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags)
 {
   while ((fragments.size() != 0) && (currFrag != fragments.end())) {
       
@@ -270,7 +276,7 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
                   (fragPtr[1] == 0x00) &&
                   ((fragPtr[2] & 0x80) == 0x80));
 
-    size_t payloadRemaining = outputFrame.GetFrameLen() - outputFrame.GetHeaderSize();
+    size_t payloadRemaining = outputFrame.GetMaxSize() - outputFrame.GetPacketSize();
 
     // offset of the data
     size_t offs = modeA ? 4 : 8;
@@ -351,7 +357,7 @@ int RFC2190Depacketizer::LostSync(bool & requestIframe, const char * /*reason*/)
   return 0;
 }
 
-int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIFrame, bool & isIFrame)
+int RFC2190Depacketizer::SetPacket(const PluginCodec_RTP & inputFrame, bool & requestIFrame, bool & isIFrame)
 {
   requestIFrame = false;
   isIFrame      = false;

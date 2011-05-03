@@ -24,7 +24,6 @@
 #define __H263PFrame_H__ 1
 
 #include "../common/ffmpeg.h"
-#include "../common/rtpframe.h"
 
 
 extern "C" {
@@ -62,6 +61,7 @@ public:
   Bitstream ();
   void SetBytes (uint8_t* data, uint32_t dataLen, uint8_t sbits, uint8_t ebits);
   void GetBytes (uint8_t** data, uint32_t * dataLen);
+  bool GetBit() { return GetBits(1) != 0; }
   uint32_t GetBits (uint32_t numBits);
   uint32_t PeekBits (uint32_t numBits);
   void PutBits(uint32_t posBits, uint32_t numBits, uint32_t value);
@@ -123,8 +123,8 @@ public:
   ~H263PFrame();
 
   void BeginNewFrame();
-  void GetRTPFrame (RTPFrame & frame, unsigned int & flags);
-  bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
+  void GetRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
+  bool SetFromRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
 
   bool HasRTPFrames ()
   {

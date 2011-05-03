@@ -8,21 +8,32 @@
  *
  * Copyright (C) 2004-2006 Post Increment
  *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and limitations
- * under the License.
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
  *
- * The Original Code is Open Phone Abstraction Library.
+ * - Neither the name of the Xiph.org Foundation nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
  *
- * The Initial Developer of the Original Code is Post Increment
- *
- * Contributor(s): ______________________________________.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * $Revision$
  * $Author$
@@ -310,7 +321,7 @@ struct PluginCodec_Definition {
   unsigned int version;                     // codec structure version
 
   // start of version 1 fields
-  struct PluginCodec_information * info;   // license information
+  const struct PluginCodec_information * info;   // license information
 
   unsigned int flags;                      // b0-3: 0 = audio,        1 = video
                                            // b4:   0 = raw input,    1 = RTP input
@@ -365,7 +376,7 @@ struct PluginCodec_Definition {
   // to this structure without an API version change!!!!
 };
 
-typedef struct PluginCodec_Definition * (* PluginCodec_GetCodecFunction)(unsigned int *, unsigned int);
+typedef const struct PluginCodec_Definition * (* PluginCodec_GetCodecFunction)(unsigned int *, unsigned int);
 typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
 
 ///////////////////////////////////////////////////////////////////
@@ -597,13 +608,15 @@ enum {
 #define PluginCodec_RTP_GetHeaderLength(ptr)      ((((unsigned char*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
 #define PluginCodec_RTP_GetPayloadPtr(ptr)          ((unsigned char*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
 #define PluginCodec_RTP_GetPayloadType(ptr)        (((unsigned char*)(ptr))[1] & 0x7f)
-#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((unsigned char*)(ptr))[1] = (((unsigned char*)(ptr))[1] & 0x80) | (type & 0x7f))
+#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x80) | (type & 0x7f)))
 #define PluginCodec_RTP_GetMarker(ptr)            ((((unsigned char*)(ptr))[1] & 0x80) != 0)
-#define PluginCodec_RTP_SetMarker(ptr, mark)       (((unsigned char*)(ptr))[1] = (((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0))
+#define PluginCodec_RTP_SetMarker(ptr, mark)       (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0)))
 #define PluginCodec_RTP_GetTimestamp(ptr)         ((((unsigned char*)(ptr))[4] << 24) | (((unsigned char*)(ptr))[5] << 16) | (((unsigned char*)(ptr))[6] << 8) | ((unsigned char*)(ptr))[7])
-#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((unsigned char*)(ptr))[4] = ((ts) >> 24)),(((unsigned char*)(ptr))[5] = ((ts) >> 16)),(((unsigned char*)(ptr))[6] = ((ts) >> 8)),(((unsigned char*)(ptr))[7] = (ts)))
+#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((unsigned char*)(ptr))[4] = (unsigned char)((ts) >> 24)),(((unsigned char*)(ptr))[5] = (unsigned char)((ts) >> 16)),(((unsigned char*)(ptr))[6] = (unsigned char)((ts) >> 8)),(((unsigned char*)(ptr))[7] = (unsigned char)(ts)))
 #define PluginCodec_RTP_GetSequenceNumber(ptr)    ((((unsigned char*)(ptr))[2] << 8) | ((unsigned char*)(ptr))[3])
-#define PluginCodec_RTP_SetSequenceNumber(ptr, sn)((((unsigned char*)(ptr))[2] = ((sn) >> 8)),(((unsigned char*)(ptr))[3] = (sn)))
+#define PluginCodec_RTP_SetSequenceNumber(ptr, sn)((((unsigned char*)(ptr))[2] = (unsigned char)((sn) >> 8)),(((unsigned char*)(ptr))[3] = (unsigned char)(sn)))
+#define PluginCodec_RTP_GetSSRC(ptr)              ((((unsigned char*)(ptr))[8] << 24) | (((unsigned char*)(ptr))[9] << 16) | (((unsigned char*)(ptr))[10] << 8) | ((unsigned char*)(ptr))[11])
+#define PluginCodec_RTP_SetSSRC(ptr, ssrc)        ((((unsigned char*)(ptr))[8] = (unsigned char)((ssrc) >> 24)),(((unsigned char*)(ptr))[9] = (unsigned char)((ssrc) >> 16)),(((unsigned char*)(ptr))[10] = (unsigned char)((ssrc) >> 8)),(((unsigned char*)(ptr))[11] = (unsigned char)(ssrc)))
 
 
 /////////////////
@@ -630,12 +643,6 @@ inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(const PluginCodec_Video_FrameHe
 extern "C" {
 #endif
 
-#define PLUGIN_CODEC_VIDEO_SET_FRAME_SIZE_FN    "set_frame_size"    // argument is struct PluginCodec_VideoSetFrameInfo
-struct PluginCodec_Video_SetFrameInfo {
-  int width;
-  int height;
-};
-
 
 /////////////////
 //
@@ -649,14 +656,14 @@ struct PluginCodec_Video_SetFrameInfo {
 #  define PLUGIN_CODEC_IMPLEMENT(name) \
 unsigned int Opal_StaticCodec_##name##_GetAPIVersion() \
 { return PWLIB_PLUGIN_API_VERSION; } \
-static struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/); \
-struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * p1, unsigned p2) \
+static const struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/); \
+struct const PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * p1, unsigned p2) \
 { return PLUGIN_CODEC_GET_CODEC_FN(p1,p2); } \
 
 #  define PLUGIN_CODEC_IMPLEMENT_ALL(name, table, ver) \
 unsigned int Opal_StaticCodec_##name##_GetAPIVersion() \
 { return PWLIB_PLUGIN_API_VERSION; } \
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * count, unsigned version) \
+PLUGIN_CODEC_DLL_API const struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * count, unsigned version) \
 { *count = sizeof(table)/sizeof(struct PluginCodec_Definition); return version < ver ? NULL : table; }
 
 
@@ -668,7 +675,7 @@ PLUGIN_CODEC_DLL_API unsigned int PLUGIN_CODEC_API_VER_FN() \
 
 #  define PLUGIN_CODEC_IMPLEMENT_ALL(name, table, ver) \
 PLUGIN_CODEC_IMPLEMENT(name) \
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version) \
+PLUGIN_CODEC_DLL_API const struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version) \
 { *count = sizeof(table)/sizeof(struct PluginCodec_Definition); return version < ver ? NULL : table; }
 
 

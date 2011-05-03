@@ -8,21 +8,32 @@
  *
  * Copyright (C) 2010 Vox Lucida
  *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and limitations
- * under the License.
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
  *
- * The Original Code is Open Phone Abstraction Library.
+ * - Neither the name of the Xiph.org Foundation nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
  *
- * The Initial Developer of the Original Code is Vox Lucida
- *
- * Contributor(s): ______________________________________.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * $Revision$
  * $Author$
@@ -550,6 +561,52 @@ class PluginCodec
     bool     m_optionsSame;
     unsigned m_maxBitRate;
     unsigned m_frameTime;
+};
+
+
+class PluginCodec_RTP
+{
+    unsigned char * m_packet;
+    unsigned        m_maxSize;
+    unsigned        m_headerSize;
+    unsigned        m_payloadSize;
+
+  public:
+    PluginCodec_RTP(const void * packet, unsigned size)
+      : m_packet((unsigned char *)packet)
+      , m_maxSize(size)
+      , m_headerSize(PluginCodec_RTP_GetHeaderLength(m_packet))
+      , m_payloadSize(size - m_headerSize)
+    {
+    }
+
+    __inline unsigned GetMaxSize() const           { return m_headerSize+m_payloadSize; }
+    __inline unsigned GetPacketSize() const        { return m_headerSize+m_payloadSize; }
+    __inline unsigned GetHeaderSize() const        { return m_headerSize; }
+    __inline unsigned GetPayloadSize() const       { return m_payloadSize; }
+    __inline bool     SetPayloadSize(unsigned size)
+    {
+      if (m_headerSize+size > m_maxSize)
+        return false;
+      m_payloadSize = size;
+      return true;
+    }
+
+    __inline unsigned GetPayloadType() const         { return PluginCodec_RTP_GetPayloadType(m_packet);        }
+    __inline void     SetPayloadType(unsigned type)  {        PluginCodec_RTP_SetPayloadType(m_packet, type);  }
+    __inline bool     GetMarker() const              { return PluginCodec_RTP_GetMarker(m_packet);             }
+    __inline void     SetMarker(bool mark)           {        PluginCodec_RTP_SetMarker(m_packet, mark);       }
+    __inline unsigned GetTimestamp() const           { return PluginCodec_RTP_GetTimestamp(m_packet);          }
+    __inline void     SetTimestamp(unsigned ts)      {        PluginCodec_RTP_SetTimestamp(m_packet, ts);      }
+    __inline unsigned GetSequenceNumber() const      { return PluginCodec_RTP_GetSequenceNumber(m_packet);     }
+    __inline void     SetSequenceNumber(unsigned sn) {        PluginCodec_RTP_SetSequenceNumber(m_packet, sn); }
+    __inline unsigned GetSSRC() const                { return PluginCodec_RTP_GetSSRC(m_packet);               }
+    __inline void     SetSSRC(unsigned ssrc)         {        PluginCodec_RTP_SetSSRC(m_packet, ssrc);         }
+
+    __inline unsigned char * GetPayloadPtr() const   { return m_packet + m_headerSize; }
+
+    __inline PluginCodec_Video_FrameHeader * GetVideoHeader() const { return (PluginCodec_Video_FrameHeader *)GetPayloadPtr(); }
+    __inline unsigned char * GetVideoFrameData() const { return m_packet + m_headerSize + sizeof(PluginCodec_Video_FrameHeader); }
 };
 
 

@@ -103,7 +103,7 @@ void theoraFrame::SetFromFrame (ogg_packet* framePacket) {
   if ((_frameCount % THEORA_SEND_CONFIG_INTERVAL) == 0) _configSent = false;
 }
 
-void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool sendPackedConfig) {
+void theoraFrame::assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, bool sendPackedConfig) {
   uint8_t* dataPtr = frame.GetPayloadPtr() ;
   uint16_t len = 0;
   dataPtr[0] = 0xde;
@@ -160,7 +160,7 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
   frame.SetPayloadSize(len + 6);
 }
 
-void theoraFrame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
+void theoraFrame::GetRTPFrame(PluginCodec_RTP & frame, unsigned int & flags)
 {
   flags = 0;
   flags |= IsIFrame() ?  isIFrame : 0;
@@ -181,7 +181,7 @@ void theoraFrame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
     _encodedData.pos = 0;
   }
 }
-bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool isPackedConfig)
+bool theoraFrame::disassembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, bool isPackedConfig)
 {
   uint8_t* dataPtr = frame.GetPayloadPtr();
   theoraFT fragmentType = (theoraFT)((dataPtr[3] & 0xC0) >> 6); 
@@ -295,7 +295,7 @@ bool theoraFrame::disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool
   return false;
 }
 
-bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/) {
+bool theoraFrame::SetFromRTPFrame(PluginCodec_RTP & frame, unsigned int & /*flags*/) {
 
   // packet too short
   if (frame.GetPayloadSize() < 6) {

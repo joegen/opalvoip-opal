@@ -43,8 +43,6 @@
 
 #include "theora_plugin.h"
 
-#include "rtpframe.h"
-
 #include <stdlib.h>
 #if defined(_WIN32) || defined(_WIN32_WCE)
   #include <malloc.h>
@@ -159,10 +157,10 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   ogg_packet framePacket;
 
   // create RTP frame from source buffer
-  RTPFrame srcRTP(src, srcLen);
+  PluginCodec_RTP srcRTP(src, srcLen);
 
   // create RTP frame from destination buffer
-  RTPFrame dstRTP(dst, dstLen);
+  PluginCodec_RTP dstRTP(dst, dstLen);
 
   dstLen = 0;
 
@@ -176,19 +174,12 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   if  (_txTheoraFrame->HasRTPFrames())
   {
     _txTheoraFrame->GetRTPFrame(dstRTP, flags);
-    dstLen = dstRTP.GetFrameLen();
+    dstLen = dstRTP.GetPacketSize();
     return 1;
   }
 
-  if (srcRTP.GetPayloadSize() < sizeof(frameHeader))
-  {
-   PTRACE(1, "THEORA", "Encoder\tVideo grab too small, Close down video transmission thread");
-   return 0;
-  }
-
-  frameHeader * header = (frameHeader *)srcRTP.GetPayloadPtr();
-  if (header->x != 0 || header->y != 0)
-  {
+  PluginCodec_Video_FrameHeader * header = srcRTP.GetVideoHeader();
+  if (header->x != 0 || header->y != 0) {
     PTRACE(1, "THEORA", "Encoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
     return 0;
   }
@@ -213,10 +204,9 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   yuv.uv_height = (int) (_theoraInfo.height / 2);
   yuv.y_stride  = header->width;
   yuv.uv_stride = (int) (header->width /2);
-  yuv.y         = (unsigned char *)(((unsigned char *)header) + sizeof(frameHeader));
-  yuv.u         = (unsigned char *)((((unsigned char *)header) + sizeof(frameHeader)) 
-                           + (int)(yuv.y_stride*header->height)); 
-  yuv.v         = (unsigned char *)(yuv.u + (int)(yuv.uv_stride *header->height/2)); 
+  yuv.y         = dstRTP.GetVideoFrameData();
+  yuv.u         = yuv.y + yuv.y_stride*header->height;
+  yuv.v         = yuv.u + yuv.uv_stride*header->height/2;
 
   ret = theora_encode_YUVin( &_theoraState, &yuv );
   if (ret != 0) {
@@ -244,7 +234,7 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   if (_txTheoraFrame->HasRTPFrames())
   {
     _txTheoraFrame->GetRTPFrame(dstRTP, flags);
-    dstLen = dstRTP.GetFrameLen();
+    dstLen = dstRTP.GetPacketSize();
     return 1;
   }
 
@@ -285,10 +275,10 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   WaitAndSignal m(_mutex);
 
   // create RTP frame from source buffer
-  RTPFrame srcRTP(src, srcLen);
+  PluginCodec_RTP srcRTP(src, srcLen);
 
   // create RTP frame from destination buffer
-  RTPFrame dstRTP(dst, dstLen, 0);
+  PluginCodec_RTP dstRTP(dst, dstLen);
   dstLen = 0;
 
   if (!_rxTheoraFrame->SetFromRTPFrame(srcRTP, flags)) {
@@ -400,64 +390,60 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 
   PTRACE(4, "THEORA", "Decoder\tNo more OGG packets to decode");
 
-  if (gotFrame) {
-
-    int size = _theoraInfo.width * _theoraInfo.height;
-    int frameBytes = (int) (size * 3 / 2);
-    PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
-
-    PTRACE(4, "THEORA", "Decoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
-
-    header->x = header->y = 0;
-    header->width = _theoraInfo.width;
-    header->height = _theoraInfo.height;
-
-    unsigned int i = 0;
-    int width2 = (header->width >> 1);
-
-    uint8_t* dstY = (uint8_t*) OPAL_VIDEO_FRAME_DATA_PTR(header);
-    uint8_t* dstU = (uint8_t*) dstY + size;
-    uint8_t* dstV = (uint8_t*) dstU + (size >> 2);
-
-    uint8_t* srcY = yuv.y;
-    uint8_t* srcU = yuv.u;
-    uint8_t* srcV = yuv.v;
-
-    for (i = 0 ; i < header->height ; i+=2) {
-
-      memcpy (dstY, srcY, header->width); 
-      srcY +=yuv.y_stride; 
-      dstY +=header->width;
-
-      memcpy (dstY, srcY, header->width); 
-      srcY +=yuv.y_stride; 
-      dstY +=header->width;
-
-      memcpy(dstU, srcU, width2); 
-      srcU+=yuv.uv_stride;
-      dstU+=width2; 
-
-      memcpy (dstV, srcV, width2); 
-      srcV += yuv.uv_stride;
-      dstV +=width2; 
-    }
-
-    dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
-    dstRTP.SetTimestamp(srcRTP.GetTimestamp());
-    dstRTP.SetMarker(1);
-    dstLen = dstRTP.GetFrameLen();
-    flags = PluginCodec_ReturnCoderLastFrame;
-    _frameCounter++;
-    _gotAGoodFrame = true;
-    return 1;
-  } 
-  else { /*gotFrame */
-
+  if (!gotFrame) {
     PTRACE(1, "THEORA", "Decoder\tDid not get a decoded frame");
     flags = (_gotAGoodFrame ? requestIFrame : 0);
     _gotAGoodFrame = false;
     return 1;
   }
+
+  PTRACE(4, "THEORA", "Decoder\tDecoded Frame with resolution: " << _theoraInfo.width << "x" << _theoraInfo.height);
+
+  int size = _theoraInfo.width * _theoraInfo.height;
+  int frameBytes = (int) (size * 3 / 2);
+
+  PluginCodec_Video_FrameHeader * header = dstRTP.GetVideoHeader();
+  header->x = header->y = 0;
+  header->width = _theoraInfo.width;
+  header->height = _theoraInfo.height;
+
+  unsigned int i = 0;
+  int width2 = (header->width >> 1);
+
+  uint8_t* dstY = (uint8_t*) dstRTP.GetVideoFrameData();
+  uint8_t* dstU = (uint8_t*) dstY + size;
+  uint8_t* dstV = (uint8_t*) dstU + (size >> 2);
+
+  uint8_t* srcY = yuv.y;
+  uint8_t* srcU = yuv.u;
+  uint8_t* srcV = yuv.v;
+
+  for (i = 0 ; i < header->height ; i+=2) {
+
+    memcpy (dstY, srcY, header->width); 
+    srcY +=yuv.y_stride; 
+    dstY +=header->width;
+
+    memcpy (dstY, srcY, header->width); 
+    srcY +=yuv.y_stride; 
+    dstY +=header->width;
+
+    memcpy(dstU, srcU, width2); 
+    srcU+=yuv.uv_stride;
+    dstU+=width2; 
+
+    memcpy (dstV, srcV, width2); 
+    srcV += yuv.uv_stride;
+    dstV +=width2; 
+  }
+
+  dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
+  dstRTP.SetMarker(true);
+  dstLen = dstRTP.GetPacketSize();
+  flags = PluginCodec_ReturnCoderLastFrame;
+  _frameCounter++;
+  _gotAGoodFrame = true;
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
