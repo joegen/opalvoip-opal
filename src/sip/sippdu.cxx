@@ -3207,6 +3207,7 @@ SIPInvite::SIPInvite(SIPConnection & connection)
 
 SIPTransaction * SIPInvite::CreateDuplicate() const
 {
+  m_connection->m_sessions = m_sessions;
   SIPTransaction * newTransaction = new SIPInvite(*m_connection);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated

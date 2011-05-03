@@ -978,7 +978,7 @@ class SIPInvite : public SIPTransaction
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
-    OpalRTPConnection::SessionMap m_sessions;
+    mutable OpalRTPConnection::SessionMap m_sessions;
 };
 
 
