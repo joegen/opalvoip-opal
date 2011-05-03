@@ -31,7 +31,7 @@
 
 #include "h264pipe_win32.h"
 
-#include "rtpframe.h"
+#include "shared/rtpframe.h"
 
 #include <string.h>
 #include <stdio.h>

@@ -35,7 +35,6 @@
 
 #include <stdint.h>
 #include <vector>
-#include "rtpframe.h"
 
 extern "C"
 {
@@ -97,17 +96,17 @@ public:
 
   void SetFromFrame (ogg_packet* framePacket);
   bool HasRTPFrames () { return (_encodedData.len > 0); }
-  void GetRTPFrame (RTPFrame & frame, unsigned int & flags);
+  void GetRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
 
-  bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
+  bool SetFromRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
   bool HasOggPackets ();
   void GetOggPacket(ogg_packet* oggPacket);
   void SetIsIFrame (bool isAnIFrame) { _isIFrame = isAnIFrame; }
   bool IsIFrame () {return (_isIFrame); }
 
 private:
-  void assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool sendPackedConfig);
-  bool disassembleRTPFrame(RTPFrame & frame, data_t & frameData, bool isPackedConfig);
+  void assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, bool sendPackedConfig);
+  bool disassembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, bool isPackedConfig);
 
     // general stuff
   uint64_t _timestamp;

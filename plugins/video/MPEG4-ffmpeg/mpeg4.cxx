@@ -70,7 +70,6 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
 
 #include <stdlib.h>
 #include "dyna.h"
-#include "rtpframe.h"
 
 typedef unsigned char BYTE;
 
@@ -308,7 +307,6 @@ class MPEG4EncoderContext
     unsigned int m_frameWidth;
     unsigned int m_frameHeight;
 
-    unsigned long m_lastTimeStamp;
     bool m_isIFrame;
 
     enum StdSize { 
@@ -779,11 +777,15 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
       return false;
 
     // create frames frame from their respective buffers
-    RTPFrame srcRTP(src, srcLen);
-    RTPFrame dstRTP(dst, dstLen);
+    PluginCodec_RTP srcRTP(src, srcLen);
+    PluginCodec_RTP dstRTP(dst, dstLen);
 
     // create the video frame header from the source and update video size
-    PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
+    PluginCodec_Video_FrameHeader * header = srcRTP.GetVideoHeader();
+    if (header->x != 0 || header->y != 0) {
+      PTRACE(1, "MPEG4", "Encoder\tVideo grab of partial frame unsupported, Close down video transmission thread");
+      return 0;
+    }
     m_frameWidth  = header->width;
     m_frameHeight = header->height;
 
@@ -795,11 +797,10 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             // set our dynamic parameters, restart the codec if we need to
             SetDynamicEncodingParams(true);
         }
-        m_lastTimeStamp = srcRTP.GetTimestamp();
         m_lastPktOffset = 0; 
 
         // generate the raw picture
-        memcpy(m_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), m_rawFrameLen);
+        memcpy(m_rawFrameBuffer, srcRTP.GetVideoFrameData(), m_rawFrameLen);
 
         // Should the next frame be an I-Frame?
         if ((flags & PluginCodec_CoderForceIFrame) || (m_frameNum == 0))
@@ -842,13 +843,10 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
       m_packetSizes.pop_front();
 
       // if too large, split it
-      unsigned maxRtpSize = dstLen - dstRTP.GetHeaderSize();
-      if (pktLen > maxRtpSize) {
-          m_packetSizes.push_front(pktLen - maxRtpSize);
-          pktLen = maxRtpSize;
+      if (!dstRTP.SetPayloadSize(pktLen)) {
+        m_packetSizes.push_front(pktLen - dstRTP.GetPayloadSize());
+        pktLen = dstRTP.GetPayloadSize();
       }
-
-      dstRTP.SetPayloadSize(pktLen); 
 
       // Copy the encoded data from the buffer into the outgoign RTP 
       memcpy(dstRTP.GetPayloadPtr(), &m_encFrameBuffer[m_lastPktOffset], pktLen);
@@ -861,11 +859,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
           flags |= PluginCodec_ReturnCoderLastFrame;
       }
 
-      // set timestamp and adjust dstLen to include header size
-      dstRTP.SetTimestamp(m_lastTimeStamp);
-
-      dstLen = dstRTP.GetHeaderSize() + pktLen;
-
+      dstLen = dstRTP.GetPacketSize();
     }
     
     return 1;
@@ -1458,8 +1452,8 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
         return 0;
 
     // Creates our frames
-    RTPFrame srcRTP(src, srcLen);
-    RTPFrame dstRTP(dst, dstLen, RTP_DYNAMIC_PAYLOAD);
+    PluginCodec_RTP srcRTP(src, srcLen);
+    PluginCodec_RTP dstRTP(dst, dstLen);
     dstLen = 0;
     flags = 0;
     
@@ -1470,8 +1464,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
     if(m_lastPktOffset + srcPayloadSize < m_encFrameLen)
     {
         // Copy the payload data into the buffer and update the offset
-        memcpy(m_encFrameBuffer + m_lastPktOffset, srcRTP.GetPayloadPtr(),
-               srcPayloadSize);
+        memcpy(m_encFrameBuffer + m_lastPktOffset, srcRTP.GetPayloadPtr(), srcPayloadSize);
         m_lastPktOffset += srcPayloadSize;
     }
     else {
@@ -1525,12 +1518,11 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
             // it's stride time
             int frameBytes = (m_frameWidth * m_frameHeight * 3) / 2;
-            PluginCodec_Video_FrameHeader * header
-                = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
+            PluginCodec_Video_FrameHeader * header = dstRTP.GetVideoHeader();
             header->x = header->y = 0;
             header->width = m_frameWidth;
             header->height = m_frameHeight;
-            unsigned char *dstData = OPAL_VIDEO_FRAME_DATA_PTR(header);
+            unsigned char *dstData = dstRTP.GetVideoFrameData();
             for (int i=0; i<3; i ++) {
                 unsigned char *srcData = m_avpicture->data[i];
                 int dst_stride = i ? m_frameWidth >> 1 : m_frameWidth;
@@ -1550,12 +1542,9 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                 }
             }
             // Treating the screen as an RTP is weird
-            dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader)
-                                  + frameBytes);
-            dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
-            dstRTP.SetTimestamp(srcRTP.GetTimestamp());
+            dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
             dstRTP.SetMarker(true);
-            dstLen = dstRTP.GetFrameLen();
+            dstLen = dstRTP.GetPacketSize();
             flags = PluginCodec_ReturnCoderLastFrame;
             m_gotAGoodFrame = true;
         }
@@ -1611,11 +1600,11 @@ static int decoder_set_options(
       else if(STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         context->SetFrameHeight(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Error Recovery") == 0)
-        context->SetErrorRecovery(atoi(options[i+1]));
+        context->SetErrorRecovery(atoi(options[i+1]) != 0);
       else if(STRCMPI(options[i], "Error Threshold") == 0)
         context->SetErrorThresh(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Disable Resize") == 0)
-        context->SetDisableResize(atoi(options[i+1]));
+        context->SetDisableResize(atoi(options[i+1]) != 0);
     }
   }
   return 1;
