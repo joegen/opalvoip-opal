@@ -53,8 +53,15 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
-  : OpalLocalEndPoint(mgr, prefix),
-    defaultVXML("<?xml version=\"1.0\"?>\n"
+  : OpalLocalEndPoint(mgr, prefix)
+{
+  defaultMediaFormats += OpalPCM16;
+  defaultMediaFormats += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+  defaultMediaFormats += OpalCiscoNSE;
+#endif
+
+  SetDefaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
                 "  <form id=\"root\">\n"
                 "    <audio src=\"file:welcome.wav\">\n"
@@ -62,15 +69,7 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "    </audio>\n"
                 "    <record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"file:recording.wav\" maxtime=\"10s\"/>\n"
                 "  </form>\n"
-                "</vxml>\n")
-{
-  defaultMediaFormats += OpalPCM16;
-  defaultMediaFormats += OpalPCM16_48KHZ;
-  defaultMediaFormats += OpalPCM16S_48KHZ;
-  defaultMediaFormats += OpalRFC2833;
-#if OPAL_T38_CAPABILITY
-  defaultMediaFormats += OpalCiscoNSE;
-#endif
+                 "</vxml>\n");
 
   PTRACE(4, "IVR\tCreated endpoint.");
 }
@@ -122,15 +121,32 @@ OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
 }
 
 
+static OpalMediaFormatList IncludeMediaFormatsFromVXML(const PString & vxml)
+{
+  OpalMediaFormatList mediaFormats;
+
+  mediaFormats += OpalPCM16;
+  mediaFormats += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+  mediaFormats += OpalCiscoNSE;
+#endif
+
+  OpalMediaFormatList allFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  for (OpalMediaFormatList::iterator format = allFormats.begin(); format != allFormats.end(); ++format) {
+    if (vxml.Find("<--" + format->GetName() + "-->") != P_MAX_INDEX)
+      mediaFormats += *format;
+  }
+
+  return mediaFormats;
+}
+
+
 void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 {
   inUseFlag.Wait();
-  defaultVXML = vxml;
 
-  if (vxml.Find("<--G.722.1-->") != P_MAX_INDEX)
-    defaultMediaFormats += OPAL_G7231;
-  if (vxml.Find("<--G.729-->") != P_MAX_INDEX)
-    defaultMediaFormats += OPAL_G729;
+  defaultVXML = vxml;
+  defaultMediaFormats = IncludeMediaFormatsFromVXML(vxml);
 
   inUseFlag.Signal();
 }
@@ -160,15 +176,15 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      const PString & vxml,
                                      unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
-  : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I'),
-    endpoint(ep),
-    m_vxmlScript(vxml),
-    m_vxmlMediaFormats(ep.GetMediaFormats()),
+  : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I')
+  , endpoint(ep)
+  , m_vxmlScript(vxml)
+  , m_vxmlMediaFormats(IncludeMediaFormatsFromVXML(vxml))
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
+  , m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -205,7 +221,9 @@ bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
   if (remoteParty.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
 
-  return StartVXML(remoteParty.Mid(prefixLength));
+  PString vxml = remoteParty.Mid(prefixLength);
+  m_vxmlMediaFormats = IncludeMediaFormatsFromVXML(vxml);
+  return StartVXML(vxml);
 }
 
 
