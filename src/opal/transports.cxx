@@ -411,13 +411,19 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     }
   }
 
-  if (host[0] == '*' || host == "0.0.0.0"
-#ifdef P_HAS_IPV6
-	  || host == ":" || host == "::"  || host == "[::]"
-#endif
-	  ) {
+  if (host[0] == '*') {
     ip = PIPSocket::GetDefaultIpAny();
     return PTrue;
+  }
+
+  if (host == "0.0.0.0") {
+    ip = PIPSocket::Address::GetAny(4);
+    return true;
+  }
+
+  if (host == "::" || host == "[::]") {
+    ip = PIPSocket::Address::GetAny(6);
+    return true;
   }
 
   if (device.IsEmpty()) {
