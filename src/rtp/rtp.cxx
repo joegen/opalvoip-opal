@@ -613,12 +613,12 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   transport.DisallowDeleteObjects();
 
   PObject * channel = transport.RemoveHead();
-  dataSocket = dynamic_cast<PNATUDPSocket *>(channel);
+  dataSocket = dynamic_cast<PUDPSocket *>(channel);
   if (dataSocket == NULL)
     delete channel;
 
   channel = transport.RemoveHead();
-  controlSocket = dynamic_cast<PNATUDPSocket *>(channel);
+  controlSocket = dynamic_cast<PUDPSocket *>(channel);
   if (controlSocket == NULL)
     delete channel;
 
@@ -2014,8 +2014,8 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   }
 
   if (dataSocket == NULL || controlSocket == NULL) {
-    dataSocket = new PNATUDPSocket_Null(PNatMethod::eComponent_RTP);
-    controlSocket = new PNATUDPSocket_Null(PNatMethod::eComponent_RTCP);
+    dataSocket = new PUDPSocket();
+    controlSocket = new PUDPSocket();
     while (!   dataSocket->Listen(bindingAddress, 1, localDataPort) ||
            !controlSocket->Listen(bindingAddress, 1, localControlPort)) {
       dataSocket->Close();
