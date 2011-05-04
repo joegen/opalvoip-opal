@@ -2603,16 +2603,16 @@ SIPTransaction::~SIPTransaction()
 
 PBoolean SIPTransaction::Start()
 {
-    if (state == Completed)
+  if (state == Completed)
     return PTrue;
 
-    if (connection != NULL)
-      connection->OnStartTransaction(*this);
+  if (connection != NULL)
+    connection->OnStartTransaction(*this);
 
-    endpoint.AddTransaction(this);
+  endpoint.AddTransaction(this);
 
-    if (state != NotStarted) {
-      PAssertAlways(PLogicError);
+  if (state != NotStarted) {
+    PAssertAlways(PLogicError);
     return PFalse;
   }
 
