@@ -38,8 +38,15 @@ pain.
 
 Seriously. Many have tried and failed.
 
-The best way to use FFMpeg on Windows is to use a precompiled shared library
-version from the Unoffical FFmpeg Win32 Build site:
+There are two easy ways to get the binaries. Either get it from:
+
+    http://www.h323plus.org/source/download/ffmpeg_x264.zip
+
+which is recommended if you also wish to use the H.264 codec based on x264.
+
+
+Alternatively, if you require a later version of FFMPEG, you can use a
+precompiled shared library version from the Unoffical FFmpeg Win32 Build site:
 
     http://ffmpeg.arrozcru.org/autobuilds/
 
@@ -55,7 +62,7 @@ The first archive contains the DLL's, copy th e following:
     avutil-*.dll
     avcore-*.dll
 
-to the C:\PTLib_Plugins directory. Or whereever you have installed the
+to the C:\PTLib_Plugins directory. Or where ever you have installed the
 OPAL plug-ins.
 
 The second archive is unpacked into:
@@ -64,6 +71,7 @@ The second archive is unpacked into:
 
 You can then compile the H.263-1998 and MPEG4 projects in the OPAL plugins
 solution. The H.264 takes a little more effort, see it's ReadMe.txt file.
+
 
 
 If you really need to make patches to the code, so need to build from source,
