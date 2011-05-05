@@ -100,7 +100,7 @@ class OpalJitterBuffer : public PSafeObject
       */
     virtual PBoolean WriteData(
       const RTP_DataFrame & frame,   ///< Frame to feed into jitter buffer
-      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet arrival
+      const PTimeInterval & tick = 0 ///< Real time tick for packet arrival
     );
 
     /**Read a data frame from the jitter buffer.
@@ -109,7 +109,7 @@ class OpalJitterBuffer : public PSafeObject
       */
     virtual PBoolean ReadData(
       RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
-      const PTimeInterval & tick = PTimer::Tick() ///< Real time tick for packet removal
+      const PTimeInterval & tick = 0 ///< Real time tick for packet removal
     );
 
     /**Get current delay for jitter buffer.
@@ -165,6 +165,7 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_bufferOverruns;
     DWORD    m_consecutiveMarkerBits;
     DWORD    m_maxConsecutiveMarkerBits;
+    DWORD    m_consecutiveLatePackets;
 
     DWORD    m_averageFrameTime;
     DWORD    m_lastTimestamp;
