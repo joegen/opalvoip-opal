@@ -1965,9 +1965,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   localControlPort = (WORD)(firstPort + 1);
 
   PIPSocket::Address bindingAddress;
-  natMethod->GetInterfaceAddress(bindingAddress);
-
-  if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
+  if (natMethod != NULL && natMethod->GetInterfaceAddress(bindingAddress) && natMethod->IsAvailable(bindingAddress)) {
     switch (natMethod->GetRTPSupport()) {
       case PNatMethod::RTPIfSendMedia :
         /* This NAT variant will work if we send something out through the
