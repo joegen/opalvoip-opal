@@ -1036,6 +1036,10 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the endpoint terminal type.
      */
+    void SetTerminalType(TerminalTypes type) { terminalType = type; }
+
+    /**Get the endpoint terminal type.
+     */
     TerminalTypes GetTerminalType() const { return terminalType; }
 
     /**Determine if endpoint is terminal type.
