@@ -1054,12 +1054,12 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (!IsNullString(command.m_param.m_general.m_mediaMask))
     SetMediaFormatMask(PString(command.m_param.m_general.m_mediaMask).Lines());
 
-  OpalMediaTypeFactory::KeyList_T allMediaTypes = OpalMediaType::GetList();
+  OpalMediaTypeList allMediaTypes = OpalMediaType::GetList();
 
   for (OpalMediaType::AutoStartMode autoStart = OpalMediaType::Receive; autoStart < OpalMediaType::ReceiveTransmit; ++autoStart) {
     strm.MakeEmpty();
 
-    OpalMediaTypeFactory::KeyList_T::iterator iterMediaType;
+    OpalMediaTypeList::iterator iterMediaType;
     for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
       OpalMediaTypeDefinition * definition = OpalMediaType::GetDefinition(*iterMediaType);
       if ((definition->GetAutoStart()&autoStart) != 0) {
@@ -1242,7 +1242,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
     else {
       OpalMediaType mediaType = mediaName.ToLower();
-      if (OpalMediaTypeFactory::CreateInstance(mediaType) != NULL) {
+      if (OpalMediaType::GetDefinition(mediaType) != NULL) {
         // Known media type name, change all codecs of that type
         for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
           if (it->GetMediaType() == mediaType) {

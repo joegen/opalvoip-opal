@@ -83,13 +83,13 @@ const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType ty
 
 OpalMediaTypeDefinition * OpalMediaType::GetDefinition() const
 {
-  return OpalMediaTypeFactory::CreateInstance(*this);
+  return OpalMediaTypesFactory::CreateInstance(*this);
 }
 
 
 OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key)
 {
-  return OpalMediaTypeFactory::CreateInstance(key);
+  return OpalMediaTypesFactory::CreateInstance(key);
 }
 
 
@@ -99,6 +99,23 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(unsigned sessionId)
   SessionIDToMediaTypeMap_T & typeMap = GetSessionIDToMediaTypeMap();
   SessionIDToMediaTypeMap_T::iterator iter = typeMap.find(sessionId);
   return iter != typeMap.end() ? iter->second : NULL;
+}
+
+
+OpalMediaTypeList OpalMediaType::GetList()
+{
+  OpalMediaTypesFactory::KeyList_T types = OpalMediaTypesFactory::GetKeyList();
+  OpalMediaTypesFactory::KeyList_T::iterator it;
+
+  it = std::find(types.begin(), types.end(), Audio());
+  if (it != types.end())
+    std::swap(*types.begin(), *it);
+
+  it = std::find(types.begin(), types.end(), Video());
+  if (it != types.end())
+    std::swap(*(types.begin()+1), *it);
+
+  return types;
 }
 
 
