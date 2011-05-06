@@ -388,7 +388,7 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Overrides from class OpalMediaSession */
   //@{
-    virtual bool Open(const OpalTransportAddress & localAddress);
+    virtual bool Open(const PString & localInterface);
     virtual bool Close();
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const;

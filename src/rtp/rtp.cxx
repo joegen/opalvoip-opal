@@ -1940,7 +1940,7 @@ bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
 }
 
 
-bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
+bool OpalRTPSession::Open(const PString & localInterface)
 {
   PWaitAndSignal mutex(dataMutex);
 
@@ -1952,9 +1952,6 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   byeSent = false;
   shutdownRead = false;
   shutdownWrite = false;
-
-  // save local address
-  localTransportAddress.GetIpAddress(localAddress);
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
   PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
@@ -1968,7 +1965,8 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   localDataPort    = firstPort;
   localControlPort = (WORD)(firstPort + 1);
 
-  if (natMethod != NULL && natMethod->IsAvailable(localAddress)) {
+  PIPSocket::Address bindingAddress = localInterface;
+  if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
     switch (natMethod->GetRTPSupport()) {
       case PNatMethod::RTPIfSendMedia :
         /* This NAT variant will work if we send something out through the
@@ -1980,17 +1978,17 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
         // Then do case for full cone support and create STUN sockets
 
       case PNatMethod::RTPSupported :
-        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, localAddress)) {
+        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress)) {
           PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
-          dataSocket->GetLocalAddress(localAddress, localDataPort);
-          controlSocket->GetLocalAddress(localAddress, localControlPort);
+          dataSocket->GetLocalAddress(bindingAddress, localDataPort);
+          controlSocket->GetLocalAddress(bindingAddress, localControlPort);
         }
         else {
           PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
-          if (natMethod->CreateSocket(dataSocket, localAddress) && natMethod->CreateSocket(controlSocket, localAddress)) {
-            dataSocket->GetLocalAddress(localAddress, localDataPort);
-            controlSocket->GetLocalAddress(localAddress, localControlPort);
+          if (natMethod->CreateSocket(dataSocket, bindingAddress) && natMethod->CreateSocket(controlSocket, bindingAddress)) {
+            dataSocket->GetLocalAddress(bindingAddress, localDataPort);
+            controlSocket->GetLocalAddress(bindingAddress, localControlPort);
           }
           else {
             delete dataSocket;
@@ -2009,7 +2007,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
             talk to the real RTP destination. All we can so is bind to the
             local interface the NAT is on and hope the NAT router is doing
             something sneaky like symmetric port forwarding. */
-        natMethod->GetInterfaceAddress(localAddress);
+        natMethod->GetInterfaceAddress(bindingAddress);
         break;
     }
   }
@@ -2017,8 +2015,8 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   if (dataSocket == NULL || controlSocket == NULL) {
     dataSocket = new PUDPSocket();
     controlSocket = new PUDPSocket();
-    while (!   dataSocket->Listen(localAddress, 1, localDataPort) ||
-           !controlSocket->Listen(localAddress, 1, localControlPort)) {
+    while (!   dataSocket->Listen(bindingAddress, 1, localDataPort) ||
+           !controlSocket->Listen(bindingAddress, 1, localControlPort)) {
       dataSocket->Close();
       controlSocket->Close();
 
@@ -2027,7 +2025,7 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
         PTRACE(1, "RTPCon\tNo ports available for RTP session " << m_sessionId << ","
                   " base=" << manager.GetRtpIpPortBase() << ","
                   " max=" << manager.GetRtpIpPortMax() << ","
-                  " bind=" << localAddress << ","
+                  " bind=" << bindingAddress << ","
                   " for " << m_connection);
         return false; // Used up all the available ports!
       }
@@ -2052,8 +2050,9 @@ bool OpalRTPSession::Open(const OpalTransportAddress & localTransportAddress)
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
 
+  dataSocket->GetLocalAddress(localAddress);
   manager.TranslateIPAddress(localAddress, remoteAddress);
-  
+
   PTRACE(3, "RTP_UDP\tSession " << sessionID << " created: "
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);

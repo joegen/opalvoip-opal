@@ -124,7 +124,7 @@ class OpalMediaSession : public PObject
       const OpalMediaType & mediaType ///< Media type for session
     );
 
-    virtual bool Open(const OpalTransportAddress & localAddress);
+    virtual bool Open(const PString & localInterface);
     virtual bool Close();
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
