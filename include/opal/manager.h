@@ -1187,6 +1187,19 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
 
+    bool SetNATServer(
+      const PString & method,
+      const PString & server
+    );
+
+
+    /**Get the current host name and optional port for the STUN server.
+      */
+    PString GetNATServer() const 
+    { 
+      return (m_natMethod == NULL) ? PString::Empty() : m_natServer; 
+    }
+
     /**Set the STUN server address, is of the form host[:port]
        Note that if the STUN server is found then the translationAddress
        is automatically set to the router address as determined by STUN.
@@ -1197,11 +1210,14 @@ class OpalManager : public PObject
 
     /**Get the current host name and optional port for the STUN server.
       */
-    const PString & GetSTUNServer() const { return stunServer; }
+    PString GetSTUNServer() const 
+    { 
+      return (dynamic_cast<PSTUNClient *>(m_natMethod) == NULL) ? PString::Empty() : m_natServer; 
+    }
 
     /**Return the STUN client instance in use.
       */
-    PSTUNClient * GetSTUNClient() const { return stun; }
+    PSTUNClient * GetSTUNClient() const { PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); return stun; }
 
     /**Get the TCP port number base for H.245 channels
      */
@@ -1533,8 +1549,8 @@ class OpalManager : public PObject
 
     PString            translationHost;
     PIPSocket::Address translationAddress;
-    PString            stunServer;
-    PSTUNClient      * stun;
+    PString            m_natServer;
+    PNatMethod       * m_natMethod;
     InterfaceMonitor * interfaceMonitor;
 
     RouteTable m_routeTable;
