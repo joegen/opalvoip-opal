@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "rtpframe.h"
+#include "shared/rtpframe.h"
 #include "h264pipe_unix.h"
 #include <string.h>
 #include <codec/opalplugin.hpp>

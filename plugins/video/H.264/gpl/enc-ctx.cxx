@@ -22,7 +22,7 @@
 #include "plugin-config.h"
 
 #include "enc-ctx.h"
-#include "rtpframe.h"
+#include "shared/rtpframe.h"
 
 #include <stdio.h>
 #include <stdlib.h>
