@@ -43,6 +43,7 @@
 #include <opal/mediasession.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
+#include <ptclib/pnat.h>
 #include <rtp/metrics.h>
 
 #include <list>
