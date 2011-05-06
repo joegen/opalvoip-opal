@@ -1036,7 +1036,7 @@ class SIPRegister : public SIPTransaction
                                              contact field. Correct behaviour is to return
                                              a contact with the fields it can accept in
                                              the 200 OK */
-      e_CannotRegisterPrivateContacts   /**< Registrar refuses to register any RFC
+      e_CannotRegisterPrivateContacts   /**< Registrar refuses to register any RFC 1918
                                              contact field. Correct behaviour is to return
                                              a contact with the fields it can accept in
                                              the 200 OK */
