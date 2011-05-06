@@ -1843,7 +1843,9 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // Save the sessions etc we are actually using of all the forked INVITES sent
   SDPSessionDescription * sdp = response.GetSDP(m_localMediaFormats);
   if (sdp != NULL) {
-    m_sessions = ((SIPInvite &)transaction).m_sessions;
+    SessionMap & sessionsInTransaction = ((SIPInvite &)transaction).m_sessions;
+    if (m_sessions.empty() && !sessionsInTransaction.empty())
+      m_sessions = sessionsInTransaction;
     if (remoteProductInfo.vendor.IsEmpty() && remoteProductInfo.name.IsEmpty()) {
       if (sdp->GetSessionName() != "-")
         remoteProductInfo.name = sdp->GetSessionName();
