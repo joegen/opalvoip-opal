@@ -48,8 +48,9 @@ class OpalConnection;
 //
 //  define the factory used for keeping track of OpalMediaTypeDefintions
 //
-typedef PFactory<OpalMediaTypeDefinition> OpalMediaTypeFactory;
-typedef OpalMediaTypeFactory::KeyList_T OpalMediaTypeList;
+class OpalMediaType;
+typedef PFactory<OpalMediaTypeDefinition, OpalMediaType> OpalMediaTypesFactory;
+typedef OpalMediaTypesFactory::KeyList_T OpalMediaTypeList;
 
 
 /** Define the type used to hold the media type identifiers, i.e. "audio", "video", "h.224", "fax" etc
@@ -81,7 +82,10 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
     static OpalMediaTypeDefinition * GetDefinition(unsigned sessionId);
 
-    static OpalMediaTypeFactory::KeyList_T GetList() { return OpalMediaTypeFactory::GetKeyList(); }
+    /** Get a list of all media types.
+        This also assures that Audio() and Video() are the first two elements.
+      */
+    static OpalMediaTypeList GetList();
 
 #if OPAL_SIP
     static OpalMediaType GetMediaTypeFromSDP(const std::string & key, const std::string & transport);
@@ -199,7 +203,7 @@ class OpalMediaTypeDefinition
 
 #define OPAL_INSTANTIATE_MEDIATYPE2(title, name, cls) \
 namespace OpalMediaTypeSpace { \
-  static PFactory<OpalMediaTypeDefinition>::Worker<cls> static_##title##_##cls(name, true); \
+  static OpalMediaTypesFactory::Worker<cls> static_##title##_##cls(name, true); \
 }; \
 
 #define OPAL_INSTANTIATE_MEDIATYPE(type, cls) \

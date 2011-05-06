@@ -732,23 +732,14 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut)
   else {
     PTRACE(4, "SIP\tOffering all configured media:\n" << setfill(',') << m_localMediaFormats << setfill(' '));
 
-    // always offer audio first
-    sdpOK = OnSendOfferSDPSession(OpalMediaType::Audio(), 0, sdpOut, false);
-
-#if OPAL_VIDEO
-    // always offer video second (if enabled)
-    if (OnSendOfferSDPSession(OpalMediaType::Video(), 0, sdpOut, false))
-      sdpOK = true;
-#endif
-
-    // offer other formats
-    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
-    for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
-      OpalMediaType mediaType = *iter;
-      if (mediaType != OpalMediaType::Video() && mediaType != OpalMediaType::Audio()) {
-        if (OnSendOfferSDPSession(mediaType, 0, sdpOut, false))
-          sdpOK = true;
-      }
+    // Create media sessions based on available media types and make sure audio and video are first two sessions
+    OpalMediaTypeList mediaTypes = CreateAllMediaSessions();
+    unsigned sessionId = 0;
+    for (OpalMediaTypeList::iterator iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
+      if (OnSendOfferSDPSession(*iterMediaType, ++sessionId, sdpOut, false))
+        sdpOK = true;
+      else
+        ReleaseMediaSession(sessionId);
     }
   }
 
@@ -761,21 +752,6 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
                                         SDPSessionDescription & sdp,
                                                          bool   offerOpenMediaStreamOnly)
 {
-  OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
-  if (sessionId == 0 && autoStart == OpalMediaType::DontOffer)
-    return false;
-
-  // See if any media formats of this session id, so don't create unused RTP session
-  if (!m_localMediaFormats.HasType(mediaType)) {
-    PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
-    return PFalse;
-  }
-
-  PTRACE(3, "SIP\tOffering media type " << mediaType << " in SDP");
-
-  if (sessionId == 0)
-    sessionId = sdp.GetMediaDescriptions().GetSize()+1;
-
   MediaInformation gatewayInfo;
   if (ownerCall.IsMediaBypassPossible(*this, sessionId)) {
     PSafePtr<OpalRTPConnection> otherParty = GetOtherPartyConnectionAs<OpalRTPConnection>();
@@ -789,7 +765,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   if (!gatewayInfo.data.IsEmpty())
     sdpContactAddress = gatewayInfo.data;
   else {
-    mediaSession = UseMediaSession(sessionId, mediaType);
+    mediaSession = offerOpenMediaStreamOnly ? UseMediaSession(sessionId, mediaType) : GetMediaSession(sessionId);
     if (mediaSession == NULL) {
       PTRACE(1, "SIP\tCould not create RTP session " << sessionId << " for media type " << mediaType);
       return false;
@@ -806,12 +782,6 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   if (sdpContactAddress.IsEmpty()) {
     PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << sessionId << " with no transport address");
     return false;
-  }
-
-  if (mediaSession == NULL) {
-    PTRACE(1, "SIP\tCould not create media session " << sessionId << " for media type " << mediaType << ", released " << *this);
-    Release(OpalConnection::EndedByTransportFail);
-    return PFalse;
   }
 
   SDPMediaDescription * localMedia = mediaType.GetDefinition()->CreateSDPMediaDescription(sdpContactAddress, mediaSession);
@@ -866,7 +836,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   }
   else {
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
-    localMedia->SetDirection((SDPMediaDescription::Direction)autoStart);
+    localMedia->SetDirection((SDPMediaDescription::Direction)GetAutoStart(mediaType));
   }
 
   if (mediaType == OpalMediaType::Audio()) {

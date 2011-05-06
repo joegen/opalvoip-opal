@@ -65,19 +65,19 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 
 OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const std::string & transport)
 {
-  OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaTypeFactory::GetKeyList();
-  OpalMediaTypeFactory::KeyList_T::iterator r;
+  OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+  OpalMediaTypeList::iterator iterMediaType;
 
-  for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
-    if (OpalMediaType::GetDefinition(*r)->GetSDPType() == sdp)
-      return OpalMediaType(*r);
+  for (iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
+    if (iterMediaType->GetDefinition()->GetSDPType() == sdp)
+      return OpalMediaType(*iterMediaType);
   }
 
   std::string s = sdp + "|" + transport;
 
-  for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
-    if (OpalMediaType::GetDefinition(*r)->GetSDPType() == s)
-      return OpalMediaType(*r);
+  for (iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
+    if (OpalMediaType::GetDefinition(*iterMediaType)->GetSDPType() == s)
+      return OpalMediaType(*iterMediaType);
   }
 
   return OpalMediaType();
