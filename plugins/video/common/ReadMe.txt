@@ -38,6 +38,7 @@ pain.
 
 Seriously. Many have tried and failed.
 
+
 There are two easy ways to get the binaries. Either get it from:
 
     http://www.h323plus.org/source/download/ffmpeg_x264.zip
@@ -54,7 +55,6 @@ As a rule use the latest snapshot, but there are never any guarantees. All
 I can say is at time of writing the following worked:
 
     ffmpeg-r26400-swscale-r32676-mingw32-shared.7z
-    ffmpeg-r26400-swscale-r32676-mingw32-shared-dev.7z
 
 The first archive contains the DLL's, copy th e following:
 
@@ -65,7 +65,17 @@ The first archive contains the DLL's, copy th e following:
 to the C:\PTLib_Plugins directory. Or where ever you have installed the
 OPAL plug-ins.
 
-The second archive is unpacked into:
+
+Finally, to build the plug ins you need some header files. These are available
+from the Unoffical FFmpeg Win32 Build site:
+
+    http://ffmpeg.arrozcru.org/autobuilds/
+
+with archive:
+
+    ffmpeg-r26400-swscale-r32676-mingw32-shared-dev.7z
+
+This archive is unpacked into:
 
         ...\opal\plugins\video\common\ffmpeg
 
