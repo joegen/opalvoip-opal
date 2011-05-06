@@ -1,13 +1,48 @@
+Introduction
+============
+
+This document describes how to compile plugin codecs that require FFMPEG on both Opal 
+on Windows and Linux.
+
+
+
+Credits
+=======
+
+Many thanks to the H323Plus team for making thes H.264/ffmpeg binaries available.
+The original link is:
+
+   http://www.h323plus.org/source/download/ffmpeg_x264.zip
+
+
+Many thanks to the FFMPEG autobuild maintainers for the sources 
+The source used to create these above binaries is available from:
+
+    http://www.opalvoip.org/bin/ffmpeg-r26400-swscale-r32676.tar.bz2
+
+The original link is:
+
+    http://ffmpeg.arrozcru.org/autobuilds/ffmpeg/sources/ffmpeg-r26400-swscale-r32676.tar.bz2
+
+
+
 Building and installing FFmpeg on Linux
 =======================================
 
-If you have a package for you favourite distribution, use that, the configure
-script should find it. If not, and this is likely, as you need the development
-version, not just the ffmpeg binary program, which i sthe most common, then
-you need to get the tar ball and compile.
+IMPORTANT NOTE: Some Opal video codecs need more than just ffmpeg to compile.
+                For instance, H.264 needs the x264 library. See the codec-specific
+                ReadMe.txt files for more information.
 
+If your favourite distribution has a devel package for fmpeg, your best approach 
+is to use it and allow the Opal plugin configure to find it.
 
-The following is known to work, download the following:
+If it does not find it, then make sure you have the development package installed and
+not just the binary program.
+
+If you are not able to get a package for your distro (unlikely), then you need to get the tar ball 
+and compile it yourself
+
+The following download is known to work:
 
     http://www.ffmpeg.org/releases/ffmpeg-0.6.1.tar.bz2
 
@@ -33,21 +68,28 @@ Go to the OPAL directory and re-execute ./configure and make.
 Building and installing FFmpeg on Windows
 =========================================
 
-Most importantly, don't try to compile FFMpeg for Windows unless you enjoy
-pain.
+There is one easy way to get ffmpeg on Windows; there is one not-so-easy way, 
+and there is one very hard way.
 
-Seriously. Many have tried and failed.
-
-
-There are two easy ways to get the binaries. Either get it from:
-
-    http://www.h323plus.org/source/download/ffmpeg_x264.zip
-
-which is recommended if you also wish to use the H.264 codec based on x264.
+Please choose the easy way. Pretty please. 
 
 
-Alternatively, if you require a later version of FFMPEG, you can use a
-precompiled shared library version from the Unoffical FFmpeg Win32 Build site:
+
+1) Easy way: get precompiled ffmpeg binaries from:
+
+    http://www.opalvoip.org/bin/ffmpeg_x264.zip
+
+Add the following directory to the include path for the compiler
+for the "H.264 (x264) Video Codec" project, or whatever codec project you are compiling
+
+     ...\opal\plugins\video\common\ffmpeg
+
+This directory is already populated with header files that are known to work with the above binaries.
+
+
+
+2) Not so easy way: If you require a particualr version of FFMPEG, you can use a precompiled shared 
+library version  from the Unoffical FFmpeg Win32 Build site:
 
     http://ffmpeg.arrozcru.org/autobuilds/
 
@@ -75,18 +117,22 @@ with archive:
 
     ffmpeg-r26400-swscale-r32676-mingw32-shared-dev.7z
 
-This archive is unpacked into:
+This archive is unpacked into the following directory, replacing it's current contents 
 
         ...\opal\plugins\video\common\ffmpeg
 
-You can then compile the H.263-1998 and MPEG4 projects in the OPAL plugins
-solution. The H.264 takes a little more effort, see it's ReadMe.txt file.
+
+Add the following directory to the include path for the compiler
+for the "H.264 (x264) Video Codec" project, or whatever codec project you are compiling
 
 
+
+3) Very hard way - compile FFMPEG for Windows yourself.
 
 If you really need to make patches to the code, so need to build from source,
 start at http://ffmpeg.arrozcru.org/wiki/ and keep working at it, hard ...
 
+Good luck!
 
 
                                    _o0o_
