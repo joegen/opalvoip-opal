@@ -396,11 +396,14 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::Notif
   if (tupleElement != NULL) {
     PXMLElement * statusElement = tupleElement->GetElement("status");
 
-    PCaselessString value = statusElement->GetElement("basic")->GetData();
-    if (value == "open")
-      info.m_state = SIPPresenceInfo::Available;
-    else if (value == "closed")
-      info.m_state = SIPPresenceInfo::NoPresence;
+    PXMLElement * basicElement = tupleElement->GetElement("basic");
+    if (basicElement != NULL) {
+      PCaselessString value = basicElement->GetData();
+      if (value == "open")
+        info.m_state = SIPPresenceInfo::Available;
+      else if (value == "closed")
+        info.m_state = SIPPresenceInfo::NoPresence;
+    }
 
     PXMLElement * noteElement;
     if ((noteElement = statusElement->GetElement("note")) != NULL ||
