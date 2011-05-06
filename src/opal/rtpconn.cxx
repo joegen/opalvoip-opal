@@ -114,6 +114,41 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 }
 
 
+OpalMediaTypeList OpalRTPConnection::CreateAllMediaSessions()
+{
+  OpalMediaTypeList openedMediaTypes;
+  OpalMediaTypeList allMediaTypes = OpalMediaType::GetList();
+
+  for (OpalMediaTypeList::iterator iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
+    const OpalMediaType & mediaType = *iterMediaType;
+    if (GetAutoStart(mediaType) == OpalMediaType::DontOffer) {
+      PTRACE(4, "RTPCon\tNot offerring " << mediaType);
+      continue;
+    }
+
+    // See if any media formats of this session id, so don't create unused RTP session
+    if (!m_localMediaFormats.HasType(mediaType)) {
+      PTRACE(3, "RTPCon\tNo media formats of type " << mediaType << ", not creating media sesion");
+      continue;
+    }
+
+    unsigned sessionId = GetNextSessionID(mediaType, true);
+    if (sessionId == 0)
+      sessionId = GetNextSessionID(mediaType, false);
+    if (!ownerCall.IsMediaBypassPossible(*this, sessionId) &&
+        !UseMediaSession(sessionId, mediaType) != NULL) {
+      PTRACE(1, "RTPCon\tCould not create RTP session for media type " << mediaType);
+      continue;
+    }
+
+    openedMediaTypes.push_back(mediaType);
+    ++sessionId;
+  }
+
+  return openedMediaTypes;
+}
+
+
 OpalMediaSession * OpalRTPConnection::GetMediaSession(unsigned sessionID) const
 {
   SessionMap::const_iterator it = m_sessions.find(sessionID);
@@ -149,7 +184,7 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
 
   OpalMediaSession * session = def->CreateMediaSession(*this, sessionId);
   if (session == NULL) {
-    PTRACE(1, "RTP\tMedia definition cannot create session for " << mediaType);
+    PTRACE(1, "RTPCon\tMedia definition cannot create session for " << mediaType);
     return NULL;
   }
 
@@ -161,13 +196,13 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
 bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessionID)
 {
   if (m_sessions.find(toSessionID) != m_sessions.end()) {
-    PTRACE(2, "RTP\tAttempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
+    PTRACE(2, "RTPCon\tAttempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
     return false;
   }
 
   SessionMap::iterator it = m_sessions.find(fromSessionID);
   if (it == m_sessions.end()) {
-    PTRACE(2, "RTP\tAttempt to renumber unknown session " << fromSessionID << " to session ID " << toSessionID);
+    PTRACE(2, "RTPCon\tAttempt to renumber unknown session " << fromSessionID << " to session ID " << toSessionID);
     return false;
   }
 
@@ -197,7 +232,7 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 {
   SessionMap::iterator it = m_sessions.find(sessionID);
   if (it == m_sessions.end()) {
-    PTRACE(2, "RTP\tAttempt to release unknown session " << sessionID);
+    PTRACE(2, "RTPCon\tAttempt to release unknown session " << sessionID);
     return;
   }
 

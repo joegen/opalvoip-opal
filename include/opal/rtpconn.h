@@ -98,6 +98,13 @@ class OpalRTPConnection : public OpalConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
+    /**Create all media sessions for available media types.
+       Note that the sessions are not opened, just created.
+
+       @returns a list of the media types for which sessions where created.
+      */
+    OpalMediaTypeList CreateAllMediaSessions();
+
     /**Get an RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */

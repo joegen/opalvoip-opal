@@ -685,8 +685,8 @@ OpalMediaSession * OpalConnection::CreateMediaSession(unsigned sessionId, const 
 
 void OpalConnection::AutoStartMediaStreams(bool force)
 {
-  OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaType::GetList();
-  for (OpalMediaTypeFactory::KeyList_T::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
+  OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+  for (OpalMediaTypeList::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
     OpalMediaType mediaType = *iter;
     if ((GetAutoStart(mediaType)&OpalMediaType::Transmit) != 0 && (force || GetMediaStream(mediaType, true) == NULL))
       ownerCall.OpenSourceMediaStreams(*this, mediaType, mediaType.GetDefinition()->GetDefaultSessionId());
@@ -1716,8 +1716,8 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
           else if ((tokens[i] *= "offer") || (tokens[i] *= "inactive"))
             SetAutoStart(mediaType, OpalMediaType::OfferInactive);
           else if (tokens[i] *= "exclusive") {
-            OpalMediaTypeFactory::KeyList_T types = OpalMediaType::GetList();
-            for (OpalMediaTypeFactory::KeyList_T::iterator r = types.begin(); r != types.end(); ++r)
+            OpalMediaTypeList types = OpalMediaType::GetList();
+            for (OpalMediaTypeList::iterator r = types.begin(); r != types.end(); ++r)
               SetAutoStart(*r, *r == mediaType ? OpalMediaType::ReceiveTransmit : OpalMediaType::DontOffer);
           }
         }
