@@ -46,6 +46,8 @@
 #include <h323/channels.h>
 #endif
 
+#include <algorithm>
+
 
 OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
 

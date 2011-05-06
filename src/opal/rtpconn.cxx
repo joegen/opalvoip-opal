@@ -136,7 +136,7 @@ OpalMediaTypeList OpalRTPConnection::CreateAllMediaSessions()
     if (sessionId == 0)
       sessionId = GetNextSessionID(mediaType, false);
     if (!ownerCall.IsMediaBypassPossible(*this, sessionId) &&
-        !UseMediaSession(sessionId, mediaType) != NULL) {
+         UseMediaSession(sessionId, mediaType) == NULL) {
       PTRACE(1, "RTPCon\tCould not create RTP session for media type " << mediaType);
       continue;
     }
