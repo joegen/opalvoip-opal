@@ -100,7 +100,7 @@ OpalMediaSession::OpalMediaSession(OpalConnection & connection, unsigned session
 {
 }
 
-bool OpalMediaSession::Open(const OpalTransportAddress &)
+bool OpalMediaSession::Open(const PString &)
 {
   return true;
 }

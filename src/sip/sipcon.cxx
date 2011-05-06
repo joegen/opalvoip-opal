@@ -657,7 +657,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     }
   }
 
-  if (!session->Open(GetDefaultSDPConnectAddress())) {
+  if (!session->Open(transport->GetInterface())) {
     ReleaseMediaSession(sessionId);
     return NULL;
   }
@@ -771,7 +771,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
       return false;
     }
 
-    if (!mediaSession->Open(GetDefaultSDPConnectAddress())) {
+    if (!mediaSession->Open(transport->GetInterface())) {
       PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
       return false;
     }
