@@ -199,6 +199,7 @@ DEF_FIELD(FaxAutoAnswerMode);
 
 static const wxChar PresenceGroup[] = wxT("/Presence");
 DEF_FIELD(PresenceAOR);
+DEF_FIELD(LastPresenceState);
 static const PConstString PresenceActiveKey("Active");
 
 static const wxChar CodecsGroup[] = wxT("/Codecs");
@@ -1006,12 +1007,16 @@ bool MyManager::Initialise()
         PwxString name;
         if (config->GetFirstEntry(name, idx)) {
           do {
-            presentity->GetAttributes().Set(name.p_str(), PwxString(config->Read(name)));
+            if (name != LastPresenceStateKey)
+              presentity->GetAttributes().Set(name.p_str(), PwxString(config->Read(name)));
           } while (config->GetNextEntry(name, idx));
         }
-        if (presentity->GetAttributes().GetBoolean(PresenceActiveKey))
+        if (presentity->GetAttributes().GetBoolean(PresenceActiveKey)) {
           LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
                     << " presence for identity " << aor << endl;
+          if (config->Read(LastPresenceStateKey, &value1))
+            presentity->SetLocalPresence((OpalPresenceInfo::State)value1);
+        }
       }
     }
 
@@ -5613,8 +5618,28 @@ bool PresenceDialog::TransferDataFromWindow()
   OpalPresenceInfo::State state = OpalPresenceInfo::FromString(m_status);
   if (state != OpalPresenceInfo::InternalError)
     presentity->SetLocalPresence(state);
-  else
+  else {
     presentity->SetLocalPresence(OpalPresenceInfo::Available, m_status.p_str());
+    state = OpalPresenceInfo::Available;
+  }
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(PresenceGroup);
+
+  int presIndex = 0;
+  for (;;) {
+    wxString groupName;
+    groupName.sprintf(wxT("%04u"), presIndex);
+    if (!config->HasGroup(groupName))
+      break;
+
+    config->SetPath(groupName);
+    PwxString aor;
+    if (config->Read(PresenceAORKey, &aor) && aor == presentity->GetAOR()) {
+      config->Write(LastPresenceStateKey, state);
+      break;
+    }
+  }
 
   return true;
 }
