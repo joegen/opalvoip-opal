@@ -5651,7 +5651,7 @@ bool PresenceDialog::TransferDataFromWindow()
     config->SetPath(groupName);
     PwxString aor;
     if (config->Read(PresenceAORKey, &aor) && aor == presentity->GetAOR()) {
-      config->Write(LastPresenceStateKey, state);
+      config->Write(LastPresenceStateKey, (int)state);
       break;
     }
   }
