@@ -232,6 +232,17 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Call back to handle received media data.
        If false is returned the media stream will be closed.
 
+       Note: For audio media, if \p data is NULL then that indicates there is
+       no incoming audio available from the jitter buffer. The application
+       should output silence for a time. The \p written value should still
+       contain the bytes of silence emitted, even though it ewill be larger
+       that \p length.
+       
+       Also, it is expected that this function be real time. That is if 320
+       bytes of PCM-16 are written, this function should take 20ms to execute.
+       If not then the jitter buffer will not operate correctly and audio will
+       not be of high quality.
+
        The default implementation returns false.
       */
     virtual bool OnWriteMediaData(
