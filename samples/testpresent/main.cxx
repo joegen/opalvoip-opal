@@ -338,7 +338,7 @@ void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdList(PCLI::Arguments & args, INT)
+void TestPresEnt::CmdList(PCLI::Arguments &, INT)
 {
   for (PDictionary<PString, OpalPresentity>::iterator it = m_presentities.end(); it != m_presentities.end(); ++it) {
     PString key = it->first;
