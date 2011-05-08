@@ -1935,17 +1935,26 @@ OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
 {
 }
 
-void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/)
+
+void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
 {
-  m_manager.SetSTUNServer(m_manager.GetSTUNServer());
+  PNatMethod * nat = m_manager.GetNatMethod();
+  if (nat != NULL) {
+    PIPSocket::Address addr;
+    if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
+      nat->Open(entry.GetAddress());
+  }
 }
 
-void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & /*entry*/)
+
+void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
-  //PSTUNClient * stun = m_manager.GetSTUNClient();
-  //PIPSocket::Address addr;
-  //if (stun != NULL && stun->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
-  //  stun->InvalidateCache();
+  PNatMethod * nat = m_manager.GetNatMethod();
+  if (nat != NULL) {
+    PIPSocket::Address addr;
+    if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
+      nat->Close();
+  }
 }
 
 
