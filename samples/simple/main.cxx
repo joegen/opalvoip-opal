@@ -539,8 +539,8 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (args.HasOption("stun"))
     SetSTUNServer(args.GetOptionString("stun"));
 
-  if (stun != NULL)
-    cout << stun->GetServer() << " replies " << stun->GetNatTypeName();
+  if (m_natMethod != NULL)
+    cout << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatTypeName();
   else
     cout << "None";
   cout << '\n';
@@ -632,7 +632,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     cerr << " port is " << port << endl;
 
     if (port > 0)
-      iax2EP = new IAX2EndPoint(*this, port);
+      iax2EP = new IAX2EndPoint(*this, (WORD)port);
     else
       iax2EP = new IAX2EndPoint(*this);
     
