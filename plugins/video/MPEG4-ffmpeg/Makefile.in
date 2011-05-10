@@ -24,74 +24,26 @@
 # $Date$
 #
 
-VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
-DL_LIBS =@DL_LIBS@
+BASENAME := mpeg4_ffmpeg
 
-BASENAME= mpeg4-ffmpeg
-SONAME	=$(BASENAME)
-COMMONDIR=../common
-PLUGINDIR=../../
+COMMONDIR := ../common
+SRCDIR    := .
+SRCS      := mpeg4.cxx $(COMMONDIR)/dyna.cxx
 
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS         =@LDFLAGS@ @LDSO@
-
-vpath   %.cxx $(COMMONDIR)
-vpath   %.o   $(OBJDIR)
-
-SRCS	+= mpeg4.cxx \
-	   $(COMMONDIR)/dyna.cxx \
-
-LIBAVCODEC_CFLAGS     = @LIBAVCODEC_CFLAGS@
-LIBAVCODEC_SOURCE_DIR = @LIBAVCODEC_SOURCE_DIR@
+CFLAGS  += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
+LDFLAGS += @DL_LIBS@
 
 # Add LIBAVCODEC_SOURCE_DIR to the include path so we can #include <libavcodec/...h>
 # Also add libavutil, so ffmpeg headers can #include "log.h".
-EXTRACCFLAGS    += $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR)
-
+LIBAVCODEC_SOURCE_DIR := @LIBAVCODEC_SOURCE_DIR@
 ifneq (,$(LIBAVCODEC_SOURCE_DIR))
-EXTRACCFLAGS    += -I$(LIBAVCODEC_SOURCE_DIR) -I$(LIBAVCODEC_SOURCE_DIR)/libavutil
+CFLAGS += -I$(LIBAVCODEC_SOURCE_DIR) -I$(LIBAVCODEC_SOURCE_DIR)/libavutil
 endif
 
-OBJDIR = ../../../bin/plugins/MPEG4
+vpath   %.cxx $(COMMONDIR)
 
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.cxx
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -pthread -c $< -o $@
-
-PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
-STATIC	= ./lib$(BASENAME)_video_s.a
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
-else	
-	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
-endif
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @VC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################

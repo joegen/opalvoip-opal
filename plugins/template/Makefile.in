@@ -1,72 +1,38 @@
 #
-# Makefile for Template codec plugin
+# Template Makefile for plug in codec
+#
+# Copyright (C) 2011 Vox Lucida
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is OPAL.
+#
+# The Initial Developer of the Original Code is Robert Jongbloed
+#
+# Contributor(s): ______________________________________.
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+BASENAME := codec_template
 
-SONAME	= template
-STDCCFLAGS += @STDCCFLAGS@ -fPIC
+SRCDIR := ./
+SRCS   := template_codec.cpp
 
-OBJDIR	= ./obj
-PLUGINDIR=../..
+#INSTALL_DIR := @AC_PLUGIN_DIR@
+#INSTALL_DIR := @VC_PLUGIN_DIR@
+#INSTALL_DIR := @FAX_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
-CC		=@CC@
-CXX		=@CXX@
-LDSO		=@LDSO@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@
-EXTRACFLAGS     =-I$(PLUGINDIR)
-EXTRALIBS       =
-
-SRCS	= template.cpp
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.o : %.cpp
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
-
-PLUGIN	= ./$(SONAME)_ptplugin.$(PLUGINEXT)
-
-OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS)))))
-
-all: $(PLUGIN)
-
-$(PLUGIN): $(OBJECTS) $(SILK_LIB_FILE)
-ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDSO) $@ -o $@ $^ (EXTRALIBS)
-else
-	$(Q_LD)$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
-
-endif	
-
-$(SILK_LIB_FILE):
-	$(MAKE) -C $(dir $@)
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
-
+###########################################

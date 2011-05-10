@@ -24,71 +24,18 @@
 # $Date$
 #
 
-VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
-
-OBJDIR	= ../../../bin/plugins/THEORA
-
 BASENAME=theora
-SONAME	=$(BASENAME)
-COMMONDIR=../common
-PLUGINDIR=../..
 
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@
-THEORA_LIBS     =@THEORA_LIBS@
-THEORA_CFLAGS   =@THEORA_CFLAGS@
+SRCDIR := .
+SRCS   := theora_frame.cxx theora_plugin.cxx
 
-EXTRACCFLAGS    += -I$(COMMONDIR) -I$(PLUGINDIR) -pthread $(THEORA_CFLAGS)
+COMMONDIR := ../common
 
-vpath	%.cxx $(COMMONDIR)
-vpath	%.o   $(OBJDIR)
+CFLAGS  += @THEORA_CFLAGS@ -I$(COMMONDIR)
+LDFLAGS += @THEORA_LIBS@
 
-SRCS    += theora_frame.cxx \
-           theora_plugin.cxx
-
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.cxx
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
-STATIC	= ./lib$(BASENAME)_video_s.a
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
-
-$(PLUGIN): $(OBJECTS)
-ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(THEORA_LIBS)
-else	
-	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(THEORA_LIBS)
-endif
-    
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @VC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################

@@ -24,57 +24,16 @@
 # $Date$
 #
 
-FAX_PLUGIN_DIR=@FAX_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-CXXFLAGS =@CXXFLAGS@
+BASENAME := spandsp
 
-SONAME	= spandsp
-STDCCFLAGS += -fPIC @STDCCFLAGS@
+SRCDIR	:= .
+SRCS	:= spandsp_fax.cpp
 
-SRCDIR	= .
-OBJDIR	= ../../../bin/plugins/fax_spandsp
+CFLAGS  += -D__STDC_LIMIT_MACROS
+LDFLAGS += -lspandsp -ltiff
 
-CXXFLAGS += -D__STDC_LIMIT_MACROS
-
-CC		=@CC@
-CXX		=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@
-EXTRALIBS       = -lspandsp -ltiff
-
-SRCS	+= spandsp_fax.cpp
-
-vpath	%.o $(OBJDIR)
-vpath	%.cpp $(SRCDIR)
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.cpp
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I ../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
-
-PLUGIN	= ./spandsp_fax_pwplugin.$(PLUGINEXT)
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(FAX_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @FAX_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################
