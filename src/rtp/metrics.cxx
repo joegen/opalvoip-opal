@@ -43,7 +43,7 @@ class RTP_DataFrame;
 
 RTCP_XR_Metrics::RTCP_XR_Metrics()
 {		
-  PTRACE(4, "RTP\tRTCP_XR_Metrics created.");
+  PTRACE(4, "VoIP Metrics\tRTCP_XR_Metrics created.");
   
   gmin = 16;
   lost = 1;
@@ -75,9 +75,6 @@ RTCP_XR_Metrics::RTCP_XR_Metrics()
   lastId = 0;
   lastIe = 0;
   
-  PTime lsrTime(0);
-  PTimeInterval dlsrTime(0);
-  
   packetsReceivedInGap = 0;
   packetsLostInGap = 0;
    
@@ -89,7 +86,7 @@ RTCP_XR_Metrics::RTCP_XR_Metrics()
 RTCP_XR_Metrics::~RTCP_XR_Metrics()
 {
   PTRACE_IF(3, packetsReceived != 0 || packetsLost != 0,
-            "RTP\tRTCP_XR_Metrics final statistics:\n"
+            "VoIP Metrics\tRTCP_XR_Metrics final statistics:\n"
             "   R Factor = "<< (PUInt32b) EndOfCallRFactor() << "\n"
             "   MOS = "<< EndOfCallMOS());
 }
@@ -141,8 +138,8 @@ void RTCP_XR_Metrics::SetPayloadInfo(RTP_DataFrame frame)
     break;
     
     default:
-      PTRACE(2, "RTP\tVoIP Metrics, No Ie and Bpl data for payload type. "
-                "Unable to calculate R Factor and MOS score.");
+      PTRACE(3, "VoIP Metrics\tNo Ie and Bpl data for payload type " << frame.GetPayloadType() <<
+                ", unable to calculate R Factor and MOS score.");
       isPayloadTypeOK = false;          
   }  
   payloadSize = frame.GetPayloadSize();
@@ -230,14 +227,13 @@ PUInt16b RTCP_XR_Metrics::GetGapDuration()
   DWORD    count = 0;
   
   /* If we are within a burst, the last received packets after the last loss are assumed to be in gap */
+  PTime now;
   if (currentPeriodType == BURST) {
-    PTime now;
     totalDuration = totalDuration + (now - lastLossTimestamp).GetMilliSeconds();
     count ++;  
   }
   else {
     /* If we are in a gap, just account for it */
-    PTime now;
     totalDuration = totalDuration + (now - periodBeginTimestamp).GetMilliSeconds();
     count++;
   }
@@ -599,9 +595,8 @@ void RTCP_XR_Metrics::OnPacketLost()
 
 void RTCP_XR_Metrics::OnPacketLost(DWORD dropped)
 {
-  for (int i = 0; i < (signed int) dropped; i++) {
-    markov(PACKET_LOST);
-  }
+  for (DWORD i = 0; i < dropped; i++)
+    OnPacketLost();
 }
 
 
@@ -638,38 +633,41 @@ void RTCP_XR_Metrics::OnRxSenderReport(PUInt32b lsr, PUInt32b dlsr)
 void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
 {
   if (packetsReceived == 0) {
-    PTime periodBeginTimestamp;
+    periodBeginTimestamp.SetCurrentTime();
     currentPeriodType = GAP;
   }
   
-  if (event == PACKET_LOST || event == PACKET_DISCARDED) { 
+  switch (event) {
+    case PACKET_LOST :
+    case PACKET_DISCARDED :
+      c5 += packetsSinceLastLoss;
     
-    c5 += packetsSinceLastLoss;
-    
-    if (packetsSinceLastLoss >= gmin || packetsReceived <= gmin) {
+      if (packetsSinceLastLoss >= gmin || packetsReceived <= gmin) {
       
-      if (currentPeriodType == BURST) {
-        /* The burst period ended with the last packet loss */ 
-        createIePeriod(createTimePeriod(currentPeriodType, periodBeginTimestamp, lastLossTimestamp));
-        /* mark as a gap */
-        currentPeriodType = GAP;
-        periodBeginTimestamp = lastLossTimestamp;
-        ResetCounters();
-      }
+        if (currentPeriodType == BURST) {
+          /* The burst period ended with the last packet loss */ 
+          createIePeriod(createTimePeriod(currentPeriodType, periodBeginTimestamp, lastLossTimestamp));
+          /* mark as a gap */
+          currentPeriodType = GAP;
+          periodBeginTimestamp = lastLossTimestamp;
+          ResetCounters();
+        }
       
-      if (lost == 1) {
-        c14++;
-        packetsLostInGap++;
+        if (lost == 1) {
+          c14++;
+          packetsLostInGap++;
+        }
+        else {	
+          c13++;
+          packetsLostInBurst++;          
+        } 
+        lost = 1;
+        c11 += packetsSinceLastLoss;
+        packetsReceivedInGap += packetsSinceLastLoss;
       }
-      else {	
-        c13++;
-        packetsLostInBurst++;          
-      } 
-      lost = 1;
-      c11 += packetsSinceLastLoss;
-      packetsReceivedInGap += packetsSinceLastLoss;
-    }
-    else if (event == PACKET_RECEIVED) {
+      break;
+
+    case PACKET_RECEIVED :
       if (currentPeriodType == GAP) {
         /* The burst period ended with the packet received before the last loss */
         createIePeriod(createTimePeriod(currentPeriodType, periodBeginTimestamp, lastLossTimestamp));     
@@ -679,8 +677,7 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
         ResetCounters();
       }
       
-      PTime now;
-      lastLossInBurstTimestamp = now;  
+      lastLossInBurstTimestamp.SetCurrentTime();
       lost ++;
       
       if (lost > 8) {
@@ -695,13 +692,9 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
         packetsReceivedInBurst += packetsSinceLastLoss;        
       }
       packetsLostInBurst++;
-    }
-    else {
-      PTRACE(2, "RTP\tVoIP Metrics, Unknown packet event: " << event);
-    }   
-    packetsSinceLastLoss = 0;
-    PTime now;
-    lastLossTimestamp = now;
+
+      packetsSinceLastLoss = 0;
+      lastLossTimestamp.SetCurrentTime();
   }
   
   /* calculate additional transaction counts */
