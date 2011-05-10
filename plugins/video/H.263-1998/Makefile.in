@@ -24,81 +24,28 @@
 # $Date$
 #
 
-VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+BASENAME := h263_ffmpeg
 
-DL_LIBS =@DL_LIBS@
+COMMONDIR := ../common
+SRCDIR    := .
+SRCS      := h263-1998.cxx \
+	     h263pframe.cxx \
+	     rfc2190.cxx \
+	     $(COMMONDIR)/mpi.cxx \
+	     $(COMMONDIR)/dyna.cxx
 
-BASENAME	=h263-1998
-SONAME		=$(BASENAME)
-COMMONDIR	=../common
-PLUGINDIR	=../../
-OBJDIR 		=../../../bin/plugins/H.263-1998
-PLUGINDIR	=../..
+CFLAGS  += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
+LDFLAGS += @DL_LIBS@
 
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@ 
-CXX	 	=@CXX@ 
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@ -lavcodec -lavutil
-EXTRACFLAGS	=-I$(PLUGINDIR)
 HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
-
-ifdef HAVE_LIBAVCODEC_RTP_MODE
-STDCCFLAGS += -DLIBAVCODEC_RTP_MODE=1
+ifeq ($(HAVE_LIBAVCODEC_RTP_MODE),yes)
+CFLAGS += -DLIBAVCODEC_RTP_MODE=1
 endif
-
-ifdef TRACE_FILE
-CFLAGS         += -DTRACE_FILE=1
-endif
-
-EXTRACCFLAGS    += $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR)
 
 vpath   %.cxx $(COMMONDIR)
-vpath   %.o   $(OBJDIR)
 
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-SRCS	+= h263-1998.cxx \
-	   h263pframe.cxx \
-	   rfc2190.cxx \
-	   $(COMMONDIR)/mpi.cxx \
-	   $(COMMONDIR)/dyna.cxx
-
-$(OBJDIR)/%.o : %.cxx
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) $(EXTRACFLAGS) -pthread -c $< -o $@
-
-PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
-STATIC	= ./lib$(BASENAME)_video_s.a
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
-else	
-	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
-endif
-    
-install: $(PLUGIN)
-	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @VC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################
