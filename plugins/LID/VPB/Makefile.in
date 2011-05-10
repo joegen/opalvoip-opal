@@ -39,60 +39,13 @@
 #
 #
 
-STDCCFLAGS =@STDCCFLAGS@
-CXXFLAGS = @CXXFLAGS@
+BASENAME := vpb
 
-LID_PLUGIN_DIR=@LID_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+SRCDIR := .
+SRCS   := vpb.cpp
 
-CC=@CC@
-CXX=@CXX@
-PLUGINEXT=so
-SONAME	= vpb
-SRCDIR	= ./src
-OBJDIR	= ./obj
-LDSO=@LDSO@
-
-SRCS	+= vpb.cpp
-
-vpath	%.o $(OBJDIR)
-vpath	%.cpp $(SRCDIR)
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ; 
-endif
-
-
-$(OBJDIR)/%.o : %.cpp
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(CXXFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) -c $< -o $@
-
-PLUGIN	= ./vpb_lid_pwplugin.$(PLUGINEXT)
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-
-ifeq (solaris,$(findstring solaris,$(target_os)))
-
-	$(Q_LD)$(CC) $(LDSO) $@ -o $@ $^ $(EXTRALIBS)
-else	
-	$(Q_LD)$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
-
-endif	
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @LID_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################
