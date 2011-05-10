@@ -24,77 +24,27 @@
 # $Date$
 #
 
-AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+BASENAME := iLBC
 
 SRCDIR	= ./iLBC
-OBJDIR	= ../../../bin/plugins/iLBC
-PLUGINDIR = ../..
 
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
-SONAME		= iLBC
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@
-EXTRACFLAGS     =-I$(PLUGINDIR)
+CFLAGS += @ILBC_CFLAGS@
+LDFLAGS += @ILBC_LIBS@
+ILBC_SYSTEM :=@ILBC_SYSTEM@
 
-ILBC_CFLAGS=@ILBC_CFLAGS@
-ILBC_LIBS=@ILBC_LIBS@
-ILBC_SYSTEM=@ILBC_SYSTEM@
-
-SRCS	= ilbccodec.c
+SRCS := ilbccodec.c
 
 ifeq ($(ILBC_SYSTEM),no)
-SRCS	+= $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
-	  $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
-	  $(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
-	  $(SRCDIR)/iCBConstruct.c $(SRCDIR)/iCBSearch.c $(SRCDIR)/iLBC_decode.c $(SRCDIR)/iLBC_encode.c \
-	  $(SRCDIR)/LPCdecode.c $(SRCDIR)/LPCencode.c $(SRCDIR)/lsf.c $(SRCDIR)/packing.c \
-	  $(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
-
-EXTRALIBS =
-else
-EXTRACFLAGS += $(IBLC_CFLAGS)
-EXTRALIBS = $(ILBC_LIBS)
+SRCS += $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
+	$(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
+	$(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
+	$(SRCDIR)/iCBConstruct.c $(SRCDIR)/iCBSearch.c $(SRCDIR)/iLBC_decode.c $(SRCDIR)/iLBC_encode.c \
+	$(SRCDIR)/LPCdecode.c $(SRCDIR)/LPCencode.c $(SRCDIR)/lsf.c $(SRCDIR)/packing.c \
+	$(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
 endif
 
-vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -c -I../../../include $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -o $@ $<
-
-PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
-
-OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-ifeq (solaris,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
-else	
-	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
-endif	
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @AC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################

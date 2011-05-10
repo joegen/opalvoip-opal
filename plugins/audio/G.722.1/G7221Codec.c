@@ -288,13 +288,13 @@ static struct PluginCodec_Option BitRateOption32k =
   "32000"                     // Maximum value
 };
 
-static struct PluginCodec_Option * const OptionTable24k[] =
+static struct PluginCodec_Option const * const OptionTable24k[] =
 {
   &BitRateOption24k,
   NULL
 };
 
-static struct PluginCodec_Option * const OptionTable32k[] =
+static struct PluginCodec_Option const * const OptionTable32k[] =
 {
   &BitRateOption32k,
   NULL

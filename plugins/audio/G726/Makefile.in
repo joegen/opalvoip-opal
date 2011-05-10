@@ -24,70 +24,19 @@
 # $Date$
 #
 
-AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+BASENAME := g726
 
-SONAME	= g726
-STDCCFLAGS += @STDCCFLAGS@ -fPIC
+SRCDIR := ./g726
+SRCS := g726codec.c \
+	g711.c \
+	$(SRCDIR)/g726_16.c \
+	$(SRCDIR)/g726_24.c \
+	$(SRCDIR)/g726_32.c \
+	$(SRCDIR)/g726_40.c \
+	$(SRCDIR)/g72x.c 
 
-SRCDIR	= ./g726
-OBJDIR	= ../../../bin/plugins/G.726
-PLUGINDIR=../..
-
-CC		=@CC@
-CFLAGS          =@CFLAGS@
-CXX		=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@
-EXTRACFLAGS     =-I$(PLUGINDIR)
-
-SRCS	+= g726codec.c \
-	   g711.c \
-	   $(SRCDIR)/g726_16.c \
-	   $(SRCDIR)/g726_24.c \
-	   $(SRCDIR)/g726_32.c \
-	   $(SRCDIR)/g726_40.c \
-	   $(SRCDIR)/g72x.c 
-
-vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
-
-PLUGIN	= ./g726_audio_pwplugin.$(PLUGINEXT)
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-
-ifeq (solaris,$(findstring solaris,$(target_os)))
-
-	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS)
-else	
-	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS)
-
-endif	
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @AC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################
