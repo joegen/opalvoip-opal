@@ -24,99 +24,49 @@
 # $Date$
 #
 
-AC_PLUGIN_DIR=@AC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
+BASENAME := lpc10
 
-SONAME	= lpc10
+SRCDIR := ./src
+SRCS   := ./lpc_10_codec.c \
+	  $(SRCDIR)/f2clib.c \
+	  $(SRCDIR)/analys.c \
+	  $(SRCDIR)/bsynz.c \
+	  $(SRCDIR)/chanwr.c \
+	  $(SRCDIR)/dcbias.c \
+	  $(SRCDIR)/decode_.c \
+	  $(SRCDIR)/deemp.c \
+	  $(SRCDIR)/difmag.c \
+	  $(SRCDIR)/dyptrk.c \
+	  $(SRCDIR)/encode_.c \
+	  $(SRCDIR)/energy.c \
+	  $(SRCDIR)/ham84.c \
+	  $(SRCDIR)/hp100.c \
+	  $(SRCDIR)/invert.c \
+	  $(SRCDIR)/irc2pc.c \
+	  $(SRCDIR)/ivfilt.c \
+	  $(SRCDIR)/lpcdec.c \
+	  $(SRCDIR)/lpcenc.c \
+	  $(SRCDIR)/lpcini.c \
+	  $(SRCDIR)/lpfilt.c \
+	  $(SRCDIR)/median.c \
+	  $(SRCDIR)/mload.c \
+	  $(SRCDIR)/onset.c \
+	  $(SRCDIR)/pitsyn.c \
+	  $(SRCDIR)/placea.c \
+	  $(SRCDIR)/placev.c \
+	  $(SRCDIR)/preemp.c \
+	  $(SRCDIR)/prepro.c \
+	  $(SRCDIR)/random.c \
+	  $(SRCDIR)/rcchk.c \
+	  $(SRCDIR)/synths.c \
+	  $(SRCDIR)/tbdm.c \
+	  $(SRCDIR)/voicin.c \
+	  $(SRCDIR)/vparms.c \
 
-SRCDIR	= ./src
-OBJDIR	= ../../../bin/plugins/LPC_10
-PLUGINDIR=../..
+CFLAGS += -I.
 
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@
-LDFLAGS		=@LDFLAGS@ @LDSO@
-EXTRACFLAGS     =-I$(PLUGINDIR)
-
-HEADER_FILES	+= $(LPC10_INCDIR)/lpc10.h
-
-SRCS	+= lpc_10_codec.c \
-	   $(SRCDIR)/f2clib.c \
-	   $(SRCDIR)/analys.c \
-	   $(SRCDIR)/bsynz.c \
-	   $(SRCDIR)/chanwr.c \
-	   $(SRCDIR)/dcbias.c \
-	   $(SRCDIR)/decode_.c \
-	   $(SRCDIR)/deemp.c \
-	   $(SRCDIR)/difmag.c \
-	   $(SRCDIR)/dyptrk.c \
-	   $(SRCDIR)/encode_.c \
-	   $(SRCDIR)/energy.c \
-	   $(SRCDIR)/ham84.c \
-	   $(SRCDIR)/hp100.c \
-	   $(SRCDIR)/invert.c \
-	   $(SRCDIR)/irc2pc.c \
-	   $(SRCDIR)/ivfilt.c \
-	   $(SRCDIR)/lpcdec.c \
-	   $(SRCDIR)/lpcenc.c \
-	   $(SRCDIR)/lpcini.c \
-	   $(SRCDIR)/lpfilt.c \
-	   $(SRCDIR)/median.c \
-	   $(SRCDIR)/mload.c \
-	   $(SRCDIR)/onset.c \
-	   $(SRCDIR)/pitsyn.c \
-	   $(SRCDIR)/placea.c \
-	   $(SRCDIR)/placev.c \
-	   $(SRCDIR)/preemp.c \
-	   $(SRCDIR)/prepro.c \
-	   $(SRCDIR)/random.c \
-	   $(SRCDIR)/rcchk.c \
-	   $(SRCDIR)/synths.c \
-	   $(SRCDIR)/tbdm.c \
-	   $(SRCDIR)/voicin.c \
-	   $(SRCDIR)/vparms.c \
-
-vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I. -I../../../include -I./src $(STDCCFLAGS) $(EXTRACFLAGS) $(CFLAGS) -c $< -o $@
-
-PLUGIN	= ./lpc10_audio_pwplugin.$(PLUGINEXT)
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
-
-$(PLUGIN): $(OBJECTS)
-
-ifeq (solaris,$(findstring solaris,$(target_os)))
-
-	$(Q_LD)$(CC) $(LDFLAGS) $@ -o $@ $^ $(EXTRALIBS) -lm
-else	
-	$(Q_LD)$(CC) $(LDFLAGS) -o $@ $^ $(EXTRALIBS) -lm
-
-endif	
-
-install:
-	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+INSTALL_DIR := @AC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################

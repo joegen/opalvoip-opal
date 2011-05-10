@@ -10,6 +10,7 @@ AC_CANONICAL_TARGET()
 
 m4_include(../opal.m4)
 
+OPAL_FIND_PTLIB()
 OPAL_DETERMINE_DEBUG()
 CFLAGS="$DEFAULT_CFLAGS $CFLAGS"
 CXXFLAGS="$DEFAULT_CFLAGS $CXXFLAGS"
@@ -44,10 +45,14 @@ VC_PLUGIN_DIR="${PLUGIN_DIR}/codecs/video"
 LID_PLUGIN_DIR="${PLUGIN_DIR}/lid"
 FAX_PLUGIN_DIR="${PLUGIN_DIR}/fax"
 
+PLUGINDIR=`pwd`
+
 AC_SUBST(prefix)
 AC_SUBST(exec_prefix)
 AC_SUBST(libdir)
-AC_SUBST(target_os)
+AC_SUBST(OSTYPE)
+AC_SUBST(MACHTYPE)
+AC_SUBST(PLUGINDIR)
 AC_SUBST(AC_PLUGIN_DIR)
 AC_SUBST(VC_PLUGIN_DIR)
 AC_SUBST(LID_PLUGIN_DIR)
@@ -60,8 +65,8 @@ WIN32=no
 LDSO=
 case "$target_os" in
 	solaris*)
-          STDCCFLAGS="$STDCCFLAGS -KPIC"
-	  LDSO="-Bdynamic -G -h"
+          CFLAGS="$CFLAGS -KPIC"
+	  LDSO='-Bdynamic -G -h $@'
           PLUGINEXT=so
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
           AC_FUNC_FORK()
@@ -69,10 +74,10 @@ case "$target_os" in
 
         darwin*)  
 	  CFLAGS="$CFLAGS -fno-common -dynamic"
-          LDSO="-dynamiclib -multiply_defined suppress"
-	  STDCCFLAGS="$STDCCFLAGS -fPIC -D__MACOSX__"
+          LDSO='-dynamiclib -multiply_defined suppress'
+	  CFLAGS="$CFLAGS -fPIC -D__MACOSX__"
 	  case "$target_cpu" in
-	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
+	   x86 | i686 | i586 | i486 | i386 ) CFLAGS="${CFLAGS} -m486" ;;
           esac
 	  PLUGINEXT=dylib 
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
@@ -80,7 +85,7 @@ case "$target_os" in
         ;;
 
         cygwin*|mingw**)
-	  LDSO="-module -avoid-version -shared"
+	  LDSO='-module -avoid-version -shared'
 	  PLUGINEXT=dll
 	  WIN32=yes
           AC_CHECK_HEADERS([malloc.h])
@@ -88,7 +93,7 @@ case "$target_os" in
         ;;
 
         *)
-          STDCCFLAGS="$STDCCFLAGS -fPIC"
+          CFLAGS="$CFLAGS -fPIC"
           LDSO='-shared -Wl,-soname,$(SONAME)'
           PLUGINEXT=so
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
@@ -98,7 +103,6 @@ esac
 AC_SUBST(LDSO)
 AC_SUBST(PLUGINEXT)
 AC_SUBST(CFLAGS)
-AC_SUBST(STDCCFLAGS)
 AC_SUBST(WIN32)
 
 
@@ -663,6 +667,7 @@ dnl Header file
 dnl ########################################################################
 dnl Output configured files
 
+AC_CONFIG_FILES(plugin-inc.mak)
 AC_CONFIG_HEADERS(plugin-config.h)
 AC_OUTPUT()
 

@@ -683,14 +683,14 @@ Word16 extract_l (Word32 L_var1)
 
 /*___________________________________________________________________________
  |                                                                           |
- |   Function Name : round                                                   |
+ |   Function Name : round16                                                 |
  |                                                                           |
  |   Purpose :                                                               |
  |                                                                           |
  |   Round the lower 16 bits of the 32 bit input number into the MS 16 bits  |
  |   with saturation. Shift the resulting bits right by 16 and return the 16 |
  |   bit number:                                                             |
- |               round(L_var1) = extract_h(L_add(L_var1,32768))              |
+ |               round16(L_var1) = extract_h(L_add(L_var1,32768))            |
  |                                                                           |
  |   Complexity weight : 1                                                   |
  |                                                                           |
@@ -711,7 +711,7 @@ Word16 extract_l (Word32 L_var1)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-Word16 round (Word32 L_var1)
+Word16 round16 (Word32 L_var1)
 {
     Word16 var_out;
     Word32 L_rounded;
@@ -727,7 +727,7 @@ Word16 round (Word32 L_var1)
 #endif
     return (var_out);
 }
-/* ------------------------- End of round() ------------------------- */
+/* ------------------------- End of round16() ------------------------- */
 
 
 /*___________________________________________________________________________
@@ -1609,7 +1609,7 @@ Word16 shr_r (Word16 var1, Word16 var2)
  |   result to L_var3 with saturation. Round the LS 16 bits of the result    |
  |   into the MS 16 bits with saturation and shift the result right by 16.   |
  |   Return a 16 bit result.                                                 |
- |            mac_r(L_var3,var1,var2) = round(L_mac(L_var3,var1,var2))       |
+ |            mac_r(L_var3,var1,var2) = round16(L_mac(L_var3,var1,var2))     |
  |                                                                           |
  |   Complexity weight : 2                                                   |
  |                                                                           |
@@ -1669,7 +1669,7 @@ Word16 mac_r (Word32 L_var3, Word16 var1, Word16 var2)
  |   bit result to L_var3 with saturation. Round the LS 16 bits of the res-  |
  |   ult into the MS 16 bits with saturation and shift the result right by   |
  |   16. Return a 16 bit result.                                             |
- |            msu_r(L_var3,var1,var2) = round(L_msu(L_var3,var1,var2))       |
+ |            msu_r(L_var3,var1,var2) = round16(L_msu(L_var3,var1,var2))     |
  |                                                                           |
  |   Complexity weight : 2                                                   |
  |                                                                           |

@@ -24,82 +24,32 @@
 # $Date$
 #
 
-VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-target_os=@target_os@
-DL_LIBS =@DL_LIBS@
+BASENAME := h264_x264
 
-SHAREDDIR	= ./shared
-COMMONDIR	= ../common
-PLUGINDIR	= ../../
-OBJDIR	= ../../../bin/plugins/H.264
+SHAREDDIR := ./shared
+COMMONDIR := ../common
+SRCDIR    := .
+SRCS    += h264-x264.cxx \
+           $(SHAREDDIR)/h264frame.cxx \
+           $(COMMONDIR)/dyna.cxx \
+
+SUBDIRS := gpl
+
+CFLAGS  += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"$(VC_PLUGIN_DIR)"'
+LDFLAGS += @DL_LIBS@
+
 WIN32=@WIN32@
-SUBDIRS		+= gpl
-
-BASENAME=h264
-SONAME	=$(BASENAME)
-
-CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
-CXX	 	=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@ -I ../../../include $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -I$(PLUGINDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"$(VC_PLUGIN_DIR)"'
-LDFLAGS		=@LDFLAGS@ @LDSO@
-LIBAVCODEC_CFLAGS=@LIBAVCODEC_CFLAGS@
+ifeq ($(WIN32),yes)
+SRCS += h264pipe_win32.cxx
+else
+SRCS += h264pipe_unix.cxx
+endif
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
-vpath	%.o   $(OBJDIR)
 
-SRCS    += $(SHAREDDIR)/h264frame.cxx \
-           h264-x264.cxx \
-           $(COMMONDIR)/dyna.cxx \
-
-ifeq ($(WIN32),yes)
-SRCS    += h264pipe_win32.cxx
-else
-SRCS    += h264pipe_unix.cxx
-endif
-
-
-ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
-endif
-
-
-$(OBJDIR)/%.o : %.cxx
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -pthread -c $< -o $@
-
-PLUGIN	= ./$(BASENAME)_video_ptplugin.$(PLUGINEXT)
-STATIC	= ./lib$(BASENAME)_video_s.a
-
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
-
-$(PLUGIN): $(OBJECTS)
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
-ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) $(LDFLAGS) -pthread -o $@ $^ $(DL_LIBS)
-else
-	$(Q_LD)$(CXX) $(LDFLAGS) $@ -o $@ $^ $(DL_LIBS)
-endif
-
-
-install:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
-	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-
-uninstall:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) uninstall; fi ; )
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
-
-clean:
-	rm -f $(OBJECTS) $(PLUGIN)
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
+INSTALL_DIR := @VC_PLUGIN_DIR@
+PLUGINDIR   := @PLUGINDIR@
+include $(PLUGINDIR)/plugin-inc.mak
 
 ###########################################
-                        
