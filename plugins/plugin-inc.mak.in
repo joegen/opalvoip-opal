@@ -38,6 +38,11 @@ OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/$(BASENAME)
 
 SONAME	= $(BASENAME)_ptplugin
 
+PLUGIN_NAME = $(SONAME).$(PLUGINEXT)
+PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
+
+all: $(SUBDIRS) $(PLUGIN_PATH)
+
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^$(SRCDIR)/^^` ;
@@ -61,13 +66,16 @@ $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(Q_LD)$(CXX) -c $(CXXFLAGS) $(CFLAGS) -o $@ $<
 
-PLUGIN_NAME = $(SONAME).$(PLUGINEXT)
-PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
-
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS))))))
 
 $(PLUGIN_PATH): $(OBJECTS)
 	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^
+
+ifneq ($(SUBDIRS),)
+.PHONY: $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@
+endif
 
 install:
 	@$(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
