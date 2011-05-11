@@ -378,6 +378,8 @@ void SIPConnection::OnReleased()
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
+  SIPBye * bye = NULL;
+
   switch (releaseMethod) {
     case ReleaseWithNothing :
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
@@ -416,11 +418,16 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
-      (new SIPBye(*this))->Start();
+      bye = new SIPBye(*this);
+      if (!bye->Start()) {
+        delete bye;
+        bye = NULL;
+      }
+
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         /* If we never even received a "100 Trying" from a remote, then just abort
-           the transaction, do not wait, it is probably on an interface that the
-           remote is not physically on. */
+            the transaction, do not wait, it is probably on an interface that the
+            remote is not physically on. */
         if (!invitation->IsCompleted())
           invitation->Abort();
       }
@@ -461,6 +468,9 @@ void SIPConnection::OnReleased()
   }
 
   NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
+
+  if (bye != NULL)
+    bye->WaitForCompletion();
 
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't ket other bits wait for it.
