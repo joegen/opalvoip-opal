@@ -2647,6 +2647,8 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   , m_retry(1)
   , m_remoteAddress(conn.GetDialog().GetRemoteTransportAddress())
 {
+  PAssert(m_connection != NULL, "Transaction created on connection pending deletion.");
+
   m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
