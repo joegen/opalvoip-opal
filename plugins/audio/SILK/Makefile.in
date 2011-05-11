@@ -31,6 +31,8 @@ SRCS   := SILKCodec.cpp
 
 LDFLAGS += -L./SILK_SDK -lSKP_SILK_SDK
 
+SUBDIRS := ./SILK_SDK
+
 INSTALL_DIR := @AC_PLUGIN_DIR@
 PLUGINDIR   := @PLUGINDIR@
 include $(PLUGINDIR)/plugin-inc.mak
