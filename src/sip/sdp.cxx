@@ -467,12 +467,12 @@ bool SDPBandwidth::Parse(const PString & param)
 }
 
 
-void SDPBandwidth::SetMin(const PCaselessString & type, unsigned value)
+void SDPBandwidth::SetMax(const PCaselessString & type, unsigned value)
 {
   iterator it = find(type);
   if (it == end())
     (*this)[type] = value;
-  else if (it->second > value)
+  else if (it->second < value)
     it->second = value;
 }
 
@@ -1237,12 +1237,16 @@ bool SDPVideoMediaDescription::PreEncode()
       const OpalMediaOption & option = mediaFormat.GetOption(i);
       PCaselessString name = option.GetName();
       if (name.NumCompare(SDPBandwidthPrefix, sizeof(SDPBandwidthPrefix)-1) == EqualTo)
-        bandwidth.SetMin(name.Mid(sizeof(SDPBandwidthPrefix)-1), option.AsString().AsUnsigned());
+        bandwidth.SetMax(name.Mid(sizeof(SDPBandwidthPrefix)-1), option.AsString().AsUnsigned());
     }
 
+    /**We set the bandwidth parameter to the largest of all the formats offerred.
+       And individual format may be able to further retrict the bandwidth in it's
+       FMTP line, e.g. H.264 can use a max-br=XXX option.
+      */
     unsigned bw = mediaFormat.GetBandwidth();
-    bandwidth.SetMin(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
-    bandwidth.SetMin(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
+    bandwidth.SetMax(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
+    bandwidth.SetMax(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
   }
 
   return true;
