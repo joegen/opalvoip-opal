@@ -31,7 +31,7 @@ libdir        := @libdir@
 CC            := @CC@
 CXX           := @CXX@
 CFLAGS        += @CFLAGS@ -I@prefix@/include -I$(PLUGINDIR)
-LDFLAGS       += @LDFLAGS@ @LDSO@ -lsamplerate
+LDFLAGS       += @LDFLAGS@ @LDSO@
 PLUGINEXT     :=@PLUGINEXT@
 
 OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/$(BASENAME)
