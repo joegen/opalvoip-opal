@@ -794,7 +794,6 @@ enable_option_checking
 with_plugin_installdir
 enable_shared
 enable_versioncheck
-enable_debug
 enable_localspeexdsp
 enable_zrtp
 with_zrtp_includedir
@@ -1474,7 +1473,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-shared         whether to build a shared library
   --enable-versioncheck   enable ptlib versioncheck
-  --enable-debug          Enable debug build
   --enable-localspeexdsp  Force use local version of Speex DSP library for
                           echo cancellation rather than system version
   --enable-zrtp           enable ZRTP protocol support
@@ -2114,7 +2112,6 @@ if test -z "$PKG_CONFIG" ; then
 $as_echo "$as_me: error: OPAL must have pkg-config installed" >&2;}
    { (exit 1); exit 1; }; }
 fi
-
 
 
 
@@ -4950,10 +4947,275 @@ fi
             RELEASE_LIBS="$PTLIB_LIBS"
           fi
 
-          if test "x${DEBUG_BUILD}" = xyes; then
-            DEFAULT_LIBS="$DEBUG_LIBS"
+
+          ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+          if test "x${PTLIBDIR}" != "x" ; then
+            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
+          fi
+
+                    old_CXXFLAGS="$CXXFLAGS"
+          old_LIBS="$LIBS"
+          old_LDFLAGS="$LDFLAGS"
+
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+          echo -n "Checking for linkable PTLib ..."
+
+          DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
+          RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
+
+           suffix=""""""
+	   if test "x$suffix" == "x" ; then
+             LIBS=`$PKG_CONFIG ptlib "" --libs`
+           else
+             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
+           fi
+
+
+           cat >conftest.$ac_ext <<_ACEOF
+
+                            #include <ptbuildopts.h>
+                            #include <ptlib.h>
+
+                            int main()
+                            {
+                              PString str("");
+                            }
+
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  found=1
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	found=0
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+
+          if test "x$found" == "x1" ; then
+            DEFAULT_LIBS=$LIBS
+            echo "opt, shared"
           else
-            DEFAULT_LIBS="$RELEASE_LIBS"
+
+           suffix="_d"""
+	   if test "x$suffix" == "x" ; then
+             LIBS=`$PKG_CONFIG ptlib "" --libs`
+           else
+             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
+           fi
+
+
+           cat >conftest.$ac_ext <<_ACEOF
+
+                            #include <ptbuildopts.h>
+                            #include <ptlib.h>
+
+                            int main()
+                            {
+                              PString str("");
+                            }
+
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  found=1
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	found=0
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+
+            if test "x$found" == "x1" ; then
+              DEFAULT_LIBS=$LIBS
+              echo "debug, shared"
+            else
+              DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
+              RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
+
+           suffix="""_s"
+	   if test "x$suffix" == "x" ; then
+             LIBS=`$PKG_CONFIG ptlib --static --libs`
+           else
+             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
+           fi
+
+
+           cat >conftest.$ac_ext <<_ACEOF
+
+                            #include <ptbuildopts.h>
+                            #include <ptlib.h>
+
+                            int main()
+                            {
+                              PString str("");
+                            }
+
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  found=1
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	found=0
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+
+              if test "x$found" == "x1" ; then
+                DEFAULT_LIBS=$LIBS
+                echo "release, static"
+              else
+
+           suffix="_d_s"
+	   if test "x$suffix" == "x" ; then
+             LIBS=`$PKG_CONFIG ptlib --static --libs`
+           else
+             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
+           fi
+
+
+           cat >conftest.$ac_ext <<_ACEOF
+
+                            #include <ptbuildopts.h>
+                            #include <ptlib.h>
+
+                            int main()
+                            {
+                              PString str("");
+                            }
+
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  found=1
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	found=0
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+
+                if test "x$found" == "x1" ; then
+                  DEFAULT_LIBS=$LIBS
+                  echo "release, static"
+                else
+                  echo "could not be found"
+                  exit -1
+                fi
+              fi
+            fi
+          fi
+
+          CXXFLAGS="$old_CXXFLAGS"
+          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
+
+          if test "x${PTLIBDIR}" != "x" ; then
+            export PKG_CONFIG_LIBDIR=$old_PKG_CONFIG_LIBDIR
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
@@ -5379,42 +5641,6 @@ fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
-
-          # Check whether --enable-debug was given.
-if test "${enable_debug+set}" = set; then
-  enableval=$enable_debug; DEBUG_BUILD=$enableval
-else
-  DEBUG_BUILD=no
-fi
-
-           case "$OSTYPE" in
-               solaris)
-                 opal_release_flags="-O3 -DSOLARIS"
-                 opal_debug_flags="-g -D_DEBUG -DSOLARIS"
-               ;;
-               *)
-                 opal_release_flags="-Os"
-                 opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
-               ;;
-           esac
-
-          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
-          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
-
-          if test "x${DEBUG_BUILD}" = xyes; then
-            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
-          else
-            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
-          fi
-
-
-          { $as_echo "$as_me:$LINENO: checking Debugging support" >&5
-$as_echo_n "checking Debugging support... " >&6; }
-          { $as_echo "$as_me:$LINENO: result: $DEBUG_BUILD" >&5
-$as_echo "$DEBUG_BUILD" >&6; }
-
-
-
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
 
@@ -5427,81 +5653,11 @@ $as_echo "$PTLIB_VERSION" >&6; }
 
 
 
-
           old_CXXFLAGS="$CXXFLAGS"
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
-
-          ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-          cat >conftest.$ac_ext <<_ACEOF
-int main() {}
-
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  opal_ptlib_exists=yes
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	opal_ptlib_exists=no
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-
-          CXXFLAGS="$old_CXXFLAGS"
-          LIBS="$old_LIBS"
-
-
-	  if test "x$opal_ptlib_exists" != "xyes" ; then
-            { { $as_echo "$as_me:$LINENO: error: Could not find a linkable ptlib in specified environment to verify symbols (debug ptlib: ${DEBUG_BUILD})" >&5
-$as_echo "$as_me: error: Could not find a linkable ptlib in specified environment to verify symbols (debug ptlib: ${DEBUG_BUILD})" >&2;}
-   { (exit 1); exit 1; }; }
-	  fi
-
-
-
-          old_CXXFLAGS="$CXXFLAGS"
-          old_LIBS="$LIBS"
-
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5574,11 +5730,7 @@ $as_echo "$opal_ptlib_option" >&6; }
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5652,11 +5804,7 @@ $as_echo "$opal_ptlib_option" >&6; }
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5735,11 +5883,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5818,11 +5962,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5901,11 +6041,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -5984,11 +6120,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6067,11 +6199,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6150,11 +6278,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6233,11 +6357,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6316,11 +6436,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6399,11 +6515,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6482,11 +6594,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -6565,11 +6673,7 @@ _ACEOF
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -10376,11 +10480,7 @@ if test "x$OPAL_H323" = "xyes" ; then
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

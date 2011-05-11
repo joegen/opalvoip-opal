@@ -93,41 +93,6 @@ AC_DEFUN([OPAL_GET_LIBNAME],
           fi
          ])
 
-dnl OPAL_DETERMINE_DEBUG
-dnl Determine desired debug level, default is -g -O2
-dnl Arguments: 
-dnl Return:    $DEFAULT_CFLAGS
-dnl            $DEBUG_BUILD
-
-AC_DEFUN([OPAL_DETERMINE_DEBUG],
-         [
-          AC_ARG_ENABLE([debug],
-                        [AC_HELP_STRING([--enable-debug],[Enable debug build])],
-                        [DEBUG_BUILD=$enableval],
-                        [DEBUG_BUILD=no])
-           case "$OSTYPE" in
-               solaris)
-                 opal_release_flags="-O3 -DSOLARIS"
-                 opal_debug_flags="-g -D_DEBUG -DSOLARIS"
-               ;;
-               *)
-                 opal_release_flags="-Os"
-                 opal_debug_flags="-g3 -ggdb -O0 -D_DEBUG"
-               ;;
-           esac
-
-          DEBUG_CFLAGS="$DEBUG_CFLAGS $opal_debug_flags"
-          RELEASE_CFLAGS="$RELEASE_CFLAGS $opal_release_flags"
-
-          if test "x${DEBUG_BUILD}" = xyes; then
-            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_debug_flags"
-          else
-            DEFAULT_CFLAGS="$DEFAULT_CFLAGS $opal_release_flags"
-          fi
-
-          OPAL_MSG_CHECK([Debugging support], [$DEBUG_BUILD])
-         ])
-
 dnl OPAL_DETERMINE_VERSION
 dnl Determine OPAL's version number
 dnl Arguments: $OPALDIR
@@ -269,6 +234,39 @@ AC_DEFUN([OPAL_CHECK_BSR],
          ])
 
 
+dnl OPAL_CHECK_PTLIB_EXISTENCE
+dnl Check for existence of PTLib variant
+dnl Arguments: 
+dnl            $1 debug suffix
+dnl            $2 link suffix 
+dnl            $3 pkg-config flags
+dnl         
+dnl Return:    
+dnl
+AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
+         [
+           suffix="$1$2"
+	   if test "x$suffix" == "x" ; then
+             LIBS=`$PKG_CONFIG ptlib $3 --libs`
+           else
+             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix $3 --libs`
+           fi
+
+
+           AC_LINK_IFELSE([
+                            #include <ptbuildopts.h>
+                            #include <ptlib.h>
+
+                            int main()
+                            {
+                              PString str("");
+                            }
+                           ], 
+                           [found=1],
+                           [found=0])
+
+          ])
+
 dnl ########################################################################
 dnl PTLIB
 dnl ########################################################################
@@ -350,11 +348,61 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
             RELEASE_LIBS="$PTLIB_LIBS"
           fi
+
+          dnl determine which variant of ptlib is installed (static/dynamic, release/debug)
           
-          if test "x${DEBUG_BUILD}" = xyes; then
-            DEFAULT_LIBS="$DEBUG_LIBS"
-          else
-            DEFAULT_LIBS="$RELEASE_LIBS"
+          AC_LANG(C++)
+
+          if test "x${PTLIBDIR}" != "x" ; then
+            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
+            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
+          fi
+
+          dnl check if dynamic library is available
+          old_CXXFLAGS="$CXXFLAGS"
+          old_LIBS="$LIBS"
+          old_LDFLAGS="$LDFLAGS" 
+
+          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+          echo -n "Checking for linkable PTLib ..."
+
+          DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
+          RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
+          OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
+          if test "x$found" == "x1" ; then
+            DEFAULT_LIBS=$LIBS
+            echo "opt, shared"
+          else 
+            OPAL_CHECK_PTLIB_EXISTENCE([_d], [""], [""]) 
+            if test "x$found" == "x1" ; then
+              DEFAULT_LIBS=$LIBS
+              echo "debug, shared"
+            else
+              DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
+              RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
+              OPAL_CHECK_PTLIB_EXISTENCE([""], [_s], [--static])
+              if test "x$found" == "x1" ; then
+                DEFAULT_LIBS=$LIBS
+                echo "release, static"
+              else
+                OPAL_CHECK_PTLIB_EXISTENCE([_d], [_s], [--static])
+                if test "x$found" == "x1" ; then
+                  DEFAULT_LIBS=$LIBS
+                  echo "release, static"
+                else
+                  echo "could not be found"
+                  exit -1
+                fi
+              fi
+            fi
+          fi
+
+          CXXFLAGS="$old_CXXFLAGS"
+          LDFLAGS="$old_LDFLAGS"
+          LIBS="$old_LIBS"
+
+          if test "x${PTLIBDIR}" != "x" ; then
+            export PKG_CONFIG_LIBDIR=$old_PKG_CONFIG_LIBDIR
           fi
 
           echo "Version:  ${PTLIB_VERSION}"
@@ -362,7 +410,7 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           echo "CXXFLAGS: ${PTLIB_CXXFLAGS}"
           echo "DEBUG:    ${DEBUG_LIBS}"
           echo "RELEASE:  ${RELEASE_LIBS}"
-         ])
+])
 
 
 dnl OPAL_CHECK_PTLIB
@@ -380,11 +428,7 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           AC_LANG(C++)
           AC_LINK_IFELSE([
@@ -423,11 +467,7 @@ AC_DEFUN([OPAL_CHECK_PTLIB_MANDATORY],
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           AC_LANG(C++)
           AC_LINK_IFELSE([
@@ -460,11 +500,8 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
           old_LIBS="$LIBS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          if test "x${DEBUG_BUILD}" = xyes; then
-            LIBS="$LIBS $DEBUG_LIBS"
-          else
-            LIBS="$LIBS $RELEASE_LIBS"
-          fi
+
+          LIBS="$LIBS $DEFAULT_LIBS"
 
           AC_LANG(C++)
           AC_LINK_IFELSE([int main() {}
@@ -472,9 +509,9 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
                          [opal_ptlib_exists=yes],
                          [opal_ptlib_exists=no])
 
+
           CXXFLAGS="$old_CXXFLAGS"
           LIBS="$old_LIBS"
-
 
 	  if test "x$opal_ptlib_exists" != "xyes" ; then
             AC_MSG_ERROR([Could not find a linkable ptlib in specified environment to verify symbols (debug ptlib: ${DEBUG_BUILD})])

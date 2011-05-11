@@ -162,7 +162,6 @@ AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
 
 OPAL_SIMPLE_OPTION([shared],[OPAL_SHARED_LIB], [whether to build a shared library])
 
-
 dnl ########################################################################
 dnl Check for PTLIB
 dnl ########################################################################
@@ -262,15 +261,12 @@ fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
-OPAL_DETERMINE_DEBUG()
-
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
 
 
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
-OPAL_CHECK_PTLIB_EXISTS()
 OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
 OPAL_CHECK_PTLIB_MANDATORY([STUN],    [ptclib/pstun.h],[PSTUNClient client;])
 OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
