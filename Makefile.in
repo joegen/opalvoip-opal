@@ -555,7 +555,12 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # This target was intetionally put here since make dumbly executes the first it finds
 # when called without an explicit target.
 
-default:  Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) subdirs
+default:  Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
+
+ifeq ($(P_SHARED_LIB),1)
+default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
+endif
+
 
 subdirs:
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
@@ -697,18 +702,28 @@ graphdocs: FORCE
 FORCE:
 
 opt:
-	$(MAKE) DEBUG_BUILD=no
+	$(MAKE) DEBUG_BUILD=no P_SHARED_LIB=1
+
+optnoshared:
+	$(MAKE) DEBUG_BUILD=no P_SHAREDLIB=0
 
 optdepend:
 	$(MAKE) DEBUG_BUILD=no depend
 
 debug:
-	$(MAKE) DEBUG_BUILD=yes
+	$(MAKE) DEBUG_BUILD=yes P_SHARED_LIB=1
+
+debugnoshared:
+	$(MAKE) DEBUG_BUILD=yes P_SHAREDLIB=0
 
 debugdepend:
 	$(MAKE) DEBUG_BUILD=yes depend
 
 both: opt debug
+
+bothnoshared:
+	$(MAKE) DEBUG_BUILD=yes P_SHAREDLIB=0
+	$(MAKE) DEBUG_BUILD=no P_SHAREDLIB=0
 
 all: optdepend opt debugdepend debug
 
