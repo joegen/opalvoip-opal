@@ -54,7 +54,7 @@ class SDPBandwidth : public std::map<PCaselessString, unsigned>
     unsigned operator[](const PCaselessString & type) const;
     friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
     bool Parse(const PString & param);
-    void SetMin(const PCaselessString & type, unsigned value);
+    void SetMax(const PCaselessString & type, unsigned value);
 };
 
 /////////////////////////////////////////////////////////
