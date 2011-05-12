@@ -229,7 +229,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   , m_sendInBandDTMF(true)
   , m_emittedInBandDTMF(0)
 #endif
+#if OPAL_PTLIB_DTMF
   , m_dtmfSendNotifier(PCREATE_NOTIFIER(OnSendInBandDTMF))
+#endif
 #if OPAL_HAS_MIXER
   , m_recordAudioNotifier(PCREATE_NOTIFIER(OnRecordAudio))
 #if OPAL_VIDEO
@@ -1570,10 +1572,12 @@ void OpalConnection::OnApplyStringOptions()
       SetSendUserInputMode(SendUserInputAsTone);
     else if (str == "Q.931")
       SetSendUserInputMode(SendUserInputAsQ931);
+#if OPAL_PTLIB_DTMF
     else if (str == "InBand") {
       SetSendUserInputMode(SendUserInputInBand);
       m_sendInBandDTMF = true;
     }
+#endif
 
 #if OPAL_PTLIB_DTMF
     m_sendInBandDTMF   = m_stringOptions.GetBoolean(OPAL_OPT_ENABLE_INBAND_DTMF, m_sendInBandDTMF);
