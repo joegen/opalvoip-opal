@@ -78,6 +78,10 @@ else
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
 endif
 
+ifeq ($(OPAL_SHARED_LIB),0)
+  OPAL_OBJDIR:=$(OPAL_OBJDIR)_s
+  OPAL_DEPDIR:=$(OPAL_DEPDIR)_s
+endif
 
 REVISION_FILE = $(OPALDIR)/revision.h
 
@@ -555,10 +559,13 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # This target was intetionally put here since make dumbly executes the first it finds
 # when called without an explicit target.
 
-default:  Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
-
-ifeq ($(P_SHARED_LIB),1)
+ifeq ($(OPAL_SHARED_LIB),"")
+default: opt
+else
+default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
+ifeq ($(OPAL_SHARED_LIB),1)
 default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
+endif
 endif
 
 
@@ -597,7 +604,7 @@ endif
 
 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 
-ifeq ($(OPAL_SHARED_LIB),yes)
+ifeq ($(OPAL_SHARED_LIB),1)
 
   $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT)
 	rm -f $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) ; ln -sf  $(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
@@ -702,19 +709,19 @@ graphdocs: FORCE
 FORCE:
 
 opt:
-	$(MAKE) DEBUG_BUILD=no P_SHARED_LIB=1
+	$(MAKE) DEBUG_BUILD=no OPAL_SHARED_LIB=1
 
 optnoshared:
-	$(MAKE) DEBUG_BUILD=no P_SHAREDLIB=0
+	$(MAKE) DEBUG_BUILD=no OPAL_SHARED_LIB=0
 
 optdepend:
 	$(MAKE) DEBUG_BUILD=no depend
 
 debug:
-	$(MAKE) DEBUG_BUILD=yes P_SHARED_LIB=1
+	$(MAKE) DEBUG_BUILD=yes OPAL_SHARED_LIB=1
 
 debugnoshared:
-	$(MAKE) DEBUG_BUILD=yes P_SHAREDLIB=0
+	$(MAKE) DEBUG_BUILD=yes OPAL_SHARED_LIB=0
 
 debugdepend:
 	$(MAKE) DEBUG_BUILD=yes depend

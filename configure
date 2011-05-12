@@ -726,7 +726,6 @@ OPAL_LIBDIR
 PTLIB_LIBS
 PTLIB_CFLAGS
 PTLIBDIR
-OPAL_SHARED_LIB
 BUILD_TYPE
 OPAL_VERSION
 OPALDIR
@@ -792,7 +791,6 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_plugin_installdir
-enable_shared
 enable_versioncheck
 enable_localspeexdsp
 enable_zrtp
@@ -1471,7 +1469,6 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-shared         whether to build a shared library
   --enable-versioncheck   enable ptlib versioncheck
   --enable-localspeexdsp  Force use local version of Speex DSP library for
                           echo cancellation rather than system version
@@ -4524,7 +4521,6 @@ OPAL_G711PLC=yes
 OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
 OPAL_ZRTP=no
-OPAL_SHARED_LIB=yes
 OPAL_JAVA=yes
 OPAL_RUBY=yes
 OPAL_HAS_MSRP=yes
@@ -4607,50 +4603,6 @@ _ACEOF
 
 { $as_echo "$as_me:$LINENO: result: ${EXPANDED_PLUGIN_DIR}" >&5
 $as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
-
-
-
-          if test "x$OPAL_SHARED_LIB" = "x"; then
-            { { $as_echo "$as_me:$LINENO: error: No default specified for OPAL_SHARED_LIB, please correct configure.ac" >&5
-$as_echo "$as_me: error: No default specified for OPAL_SHARED_LIB, please correct configure.ac" >&2;}
-   { (exit 1); exit 1; }; }
-	  fi
-          # Check whether --enable-shared was given.
-if test "${enable_shared+set}" = set; then
-  enableval=$enable_shared; OPAL_SHARED_LIB=$enableval
-fi
-
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:$LINENO: shared support disabled due to disabled dependency " >&5
-$as_echo "$as_me: shared support disabled due to disabled dependency " >&6;}
-	      OPAL_SHARED_LIB=no
-	    fi
-	  fi
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:$LINENO: shared support disabled due to disabled dependency " >&5
-$as_echo "$as_me: shared support disabled due to disabled dependency " >&6;}
-	      OPAL_SHARED_LIB=no
-	    fi
-	  fi
-
-
-          { $as_echo "$as_me:$LINENO: checking whether to build a shared library" >&5
-$as_echo_n "checking whether to build a shared library... " >&6; }
-          { $as_echo "$as_me:$LINENO: result: $OPAL_SHARED_LIB" >&5
-$as_echo "$OPAL_SHARED_LIB" >&6; }
-
-
-          if test "x$OPAL_SHARED_LIB" = "xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define OPAL_SHARED_LIB 1
-_ACEOF
-
-          fi
 
 
 
