@@ -972,6 +972,7 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
   if (highVolume)
     m_player.SetVolume(100);
 
+#if OPAL_PTLIB_DTMF
   PTones toneData;
   if (toneData.Generate(m_callProgressTones[tone])) {
     while (!m_stopTone.Wait(0)) {
@@ -984,6 +985,7 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
   else {
     PTRACE(2, "LID Plugin\tTone generation for \"" << m_callProgressTones[tone] << "\"failed.");
   }
+#endif
 
   m_player.Abort();
 
