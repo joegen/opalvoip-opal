@@ -3227,13 +3227,14 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
   request.SendResponse(*transport, status);
 
   if (status == SIP_PDU::Successful_OK) {
+#if OPAL_PTLIB_DTMF
     // Have INFO user input, disable the in-band tone detcetor to avoid double detection
     m_detectInBandDTMF = false;
-
     OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
     if (stream != NULL && stream->RemoveFilter(m_dtmfDetectNotifier, OPAL_PCM16)) {
       PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this);
     }
+#endif
   }
 }
 

@@ -440,7 +440,7 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 
   PTRACE_IF(2, connection == NULL, "OpalMan\tCould not create connection for \"" << partyA << '"');
 
-  OpalConnection::CallEndReason endReason = endReason = call->GetCallEndReason();
+  OpalConnection::CallEndReason endReason = call->GetCallEndReason();
   if (endReason == OpalConnection::NumCallEndReasons)
     endReason = OpalConnection::EndedByTemporaryFailure;
   call->Clear(endReason);

@@ -78,8 +78,13 @@ const unsigned JitterRoundingGuardBits = 4;
         : inPos(0)
         , outPos(0)
       {
+        std::vector<Info>::size_type size;
+#if P_CONFIG_FILE
         PConfig env(PConfig::Environment);
-        std::vector<Info>::size_type size = env.GetInteger("OPAL_JITTER_ANALYSER_SIZE", 1000);
+        size = env.GetInteger("OPAL_JITTER_ANALYSER_SIZE", 1000);
+#else
+        size = 1000;
+#endif
         if (size > 100000)
           size = 100000;
         in.resize(size);
