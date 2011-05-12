@@ -78,11 +78,6 @@ else
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
 endif
 
-ifeq ($(OPAL_SHARED_LIB),0)
-  OPAL_OBJDIR:=$(OPAL_OBJDIR)_s
-  OPAL_DEPDIR:=$(OPAL_DEPDIR)_s
-endif
-
 REVISION_FILE = $(OPALDIR)/revision.h
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
@@ -562,10 +557,11 @@ $(OPAL_DEPDIR)/%.dep : %.c
 ifeq ($(OPAL_SHARED_LIB),"")
 default: opt
 else
-default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
+default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 ifeq ($(OPAL_SHARED_LIB),1)
 default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 endif
+default: subdirs
 endif
 
 
