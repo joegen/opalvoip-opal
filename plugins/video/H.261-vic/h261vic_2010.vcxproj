@@ -135,7 +135,6 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_WARNINGS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\common\trace.cxx" />
     <ClCompile Include="vic\bv.c" />
     <ClCompile Include="vic\huffcode.c" />
     <ClCompile Include="vic\dct.cxx">
@@ -158,7 +157,6 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\common\trace.h" />
     <ClInclude Include="vic\bsd-endian.h" />
     <ClInclude Include="vic\config.h" />
     <ClInclude Include="vic\dct.h" />
