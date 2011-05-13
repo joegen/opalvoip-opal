@@ -27,22 +27,6 @@
 #ifndef _OpalEcho_MAIN_H
 #define _OpalEcho_MAIN_H
 
-#define	NEW_API		((OPAL_MAJOR >=3) && (OPAL_MINOR >= 7))
-
-#if NEW_API
-  #ifdef __GNUC__
-    #warning "using new api"
-  #else
-    #pragma message("using new api")
-  #endif
-#else
-  #ifdef __GNUC__
-    #warning "using new api"
-  #else
-    #pragma message("using old api")
-  #endif
-#endif
-
 class EchoConnection;
 
 class EchoEndPoint : public OpalLocalEndPoint
@@ -55,12 +39,9 @@ class EchoEndPoint : public OpalLocalEndPoint
 
     virtual OpalLocalConnection * CreateConnection(
       OpalCall & call,    ///<  Owner of connection
-      void * userData     ///<  Arbitrary data to pass to connection
-#if NEW_API
-      ,
+      void * userData,     ///<  Arbitrary data to pass to connection
       unsigned options,
       OpalConnection::StringOptions * stringOptions
-#endif
     );
 
     bool OnReadMediaFrame(
