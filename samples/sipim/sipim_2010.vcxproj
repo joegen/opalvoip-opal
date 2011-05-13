@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>sipim</ProjectName>
+    <ProjectName>Instant Messaging</ProjectName>
     <ProjectGuid>{D4F638A4-B109-4348-9247-FFC163676723}</ProjectGuid>
     <RootNamespace>sipim</RootNamespace>
     <Keyword>Win32Proj</Keyword>
@@ -48,6 +48,8 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">sipim</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">sipim</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

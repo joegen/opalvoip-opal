@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>testpresent</ProjectName>
+    <ProjectName>Presence Test</ProjectName>
     <ProjectGuid>{1650298C-5F43-47B8-974E-155D1FA0D672}</ProjectGuid>
     <RootNamespace>testpresent</RootNamespace>
     <Keyword>Win32Proj</Keyword>
@@ -48,6 +48,8 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">testpresent</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">testpresent</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
