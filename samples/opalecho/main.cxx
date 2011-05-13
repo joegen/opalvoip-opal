@@ -59,12 +59,9 @@ class EchoConnection : public OpalLocalConnection
     EchoConnection(
       OpalCall & call,         ///<  Owner calll for connection
       EchoEndPoint & endpoint, ///<  Owner endpoint for connection
-      void * userData
-#if NEW_API
-      ,         ///<  Arbitrary data to pass to connection
+      void * userData,         ///<  Arbitrary data to pass to connection
       unsigned options,
       OpalConnection::StringOptions * stringOptions
-#endif
     );
 
     ~EchoConnection();
@@ -387,19 +384,13 @@ cout << "setting frame size to " << width << "x" << height << endl;
 ///////////////////////////////////////////////////////////////
 
 OpalLocalConnection * EchoEndPoint::CreateConnection(OpalCall & call,
-                                                         void * userData
-#if NEW_API
-                                                       ,
+                                                         void * userData,
                                                        unsigned options,
                                 OpalConnection::StringOptions * stringOptions
-#endif
 )
 {
-PTRACE(1, "Creating EchoConnection");
-  return new EchoConnection(call, *this, userData
-#if NEW_API
-  , options, stringOptions
-#endif
+  PTRACE(4, "Creating EchoConnection");
+  return new EchoConnection(call, *this, userData, options, stringOptions
   );
 }
 
@@ -432,18 +423,11 @@ bool EchoEndPoint::OnWriteMediaFrame(
 
 EchoConnection::EchoConnection(OpalCall & call,
                            EchoEndPoint & endpoint,
-                                   void * userData
-#if NEW_API
-                                         ,
+                                   void * userData,
                                  unsigned options,
           OpalConnection::StringOptions * stringOptions
-#endif
 )
-  : OpalLocalConnection(call, endpoint, userData
-#if NEW_API
-, options, stringOptions
-#endif
-)
+  : OpalLocalConnection(call, endpoint, userData, options, stringOptions)
   , m_endpoint(endpoint)
 {
 }
