@@ -554,7 +554,7 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # This target was intetionally put here since make dumbly executes the first it finds
 # when called without an explicit target.
 
-ifeq ($(OPAL_SHARED_LIB),"")
+ifeq ($(OPAL_SHARED_LIB),)
 default: opt
 else
 default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
