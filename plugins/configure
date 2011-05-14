@@ -606,6 +606,7 @@ THEORA_CFLAGS
 X264_LINK_STATIC
 DL_LIBS
 HAVE_LIBDL
+STDCCFLAGS
 X264_LIB_NAME
 X264_LIBS
 X264_CFLAGS
@@ -9419,6 +9420,7 @@ $as_echo "$as_me: H.264 support disabled since static linking was disabled and l
 else
   HAVE_H264=no
 fi
+
 
 
 
