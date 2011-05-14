@@ -7,11 +7,11 @@ fi
 
 PKG_PROG_PKG_CONFIG()
 AC_CANONICAL_TARGET()
+PTLIB_REC_VERSION="2.7.1"
 
 m4_include(../opal.m4)
 
 OPAL_FIND_PTLIB()
-OPAL_DETERMINE_DEBUG()
 CFLAGS="$DEFAULT_CFLAGS $CFLAGS"
 CXXFLAGS="$DEFAULT_CFLAGS $CXXFLAGS"
 
@@ -430,6 +430,8 @@ OPAL_SIMPLE_OPTION([default-to-full-capabilties],[DEFAULT_TO_FULL_CAPABILITIES],
 dnl     ########################
 dnl     libavcodec (ffmpeg)
 dnl     ########################
+ORIG_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="-D__STDC_CONSTANT_MACROS $CXXFLAGS"
 AC_ARG_ENABLE([libavcodec],
               [AC_HELP_STRING([--disable-libavcodec],[disable libavcodec support])],
               [HAVE_LIBAVCODEC=$enableval])
@@ -497,7 +499,7 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
   AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
   SUBDIRS+=" video/MPEG4-ffmpeg"
 fi
-
+CXXFLAGS="$ORIG_CXXFLAGS"
 
 dnl     ########################
 dnl     x264
