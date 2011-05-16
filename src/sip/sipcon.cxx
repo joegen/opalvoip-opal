@@ -421,7 +421,7 @@ void SIPConnection::OnReleased()
       bye = new SIPBye(*this);
       if (!bye->Start()) {
         delete bye;
-        bye = NULL;
+        bye.SetNULL();
       }
 
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
