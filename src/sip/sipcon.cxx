@@ -378,7 +378,7 @@ void SIPConnection::OnReleased()
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
-  SIPBye * bye = NULL;
+  PSafePtr<SIPBye> bye;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
@@ -469,8 +469,10 @@ void SIPConnection::OnReleased()
 
   NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
 
-  if (bye != NULL)
+  if (bye != NULL) {
     bye->WaitForCompletion();
+    bye.SetNULL();
+  }
 
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't ket other bits wait for it.
@@ -1960,6 +1962,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 {
   unsigned responseClass = response.GetStatusCode()/100;
 
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
@@ -1989,10 +1995,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     return;
   }
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -2657,10 +2659,6 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & /*response*/)
 {
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
-    return;
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
     return;
 
   PTRACE(3, "SIP\tReceived Trying response");
