@@ -2853,7 +2853,6 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
       m_state = Completed;
       m_statusCode = response.GetStatusCode();
-      m_completed.Signal();
     }
 
     if (m_connection != NULL)
@@ -2861,8 +2860,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     else
       m_endpoint.OnReceivedResponse(*this, response);
 
-    if (m_state == Completed)
+    if (m_state == Completed) {
       OnCompleted(response);
+      m_completed.Signal();
+    }
   }
   else {
     PTRACE(4, "SIP\tIgnoring duplicate response to " << GetMethod() << " transaction id=" << GetTransactionID());
