@@ -1,5 +1,5 @@
 #
-# Makefile for GSM 06.10
+# Makefile for x264 H.264 Video Codec Helper
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -27,26 +27,16 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
-target_os=@target_os@
-WIN32=@WIN32@
 
 SHAREDDIR	= ../shared
 COMMONDIR       = ../../common
 PLUGINDIR       = ../../../
-OBJDIR	= ./obj
-
-BASENAME=h264
-SONAME	=$(BASENAME)
+OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/h264_x264_gpl
 
 CC	 	=@CC@
-CFLAGS	 	=@CFLAGS@
 CXX	 	=@CXX@
-PLUGINEXT	=@PLUGINEXT@
-STDCCFLAGS	=@STDCCFLAGS@ @X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -DGPL_HELPER_APP
-LDFLAGS		=@LDFLAGS@
-X264_LIBS	=@X264_LIBS@
-X264_LINK_STATIC=@X264_LINK_STATIC@
-DL_LIBS	=@DL_LIBS@
+CFLAGS	 	=@CFLAGS@ @X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -I.. -DGPL_HELPER_APP
+LDFLAGS		=@LDFLAGS@ @DL_LIBS@
 
 
 vpath	%.cxx $(SHAREDDIR)
@@ -56,59 +46,55 @@ vpath	%.o   $(OBJDIR)
 SRCS   += $(SHAREDDIR)/h264frame.cxx \
 	  enc-ctx.cxx  \
 
-
+WIN32=@WIN32@
 ifeq ($(WIN32),yes)
+
 SRCS    += h264helper_win32.cxx
-PLUGIN	= ./$(BASENAME)_video_pwplugin_helper.exe
+TARGET	= h264_video_pwplugin_helper.exe
 
 else
-SRCS    += h264helper_unix.cxx
-PLUGIN	= ./$(BASENAME)_video_pwplugin_helper
 
+SRCS    += h264helper_unix.cxx
+TARGET	= h264_video_pwplugin_helper
+
+X264_LINK_STATIC=@X264_LINK_STATIC@
 ifneq ($(X264_LINK_STATIC),yes)
 SRCS   += x264loader_unix.cxx
+LDFLAGS += @X264_LIBS@
 endif
 
-X264_LIBS	+= $(DL_LIBS)
-
-endif
+endif # WIN32
 
 
 
 ifeq ($(VERBOSE),)
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [CC] `echo $(PLUGIN) | sed s^@OPALDIR@/^^` ;
+Q_CC = @echo [CC] `echo $< | sed s^$(OBJDIR)/^^` ;
+Q_LD = @echo [LD] `echo $@ | sed s^$(OBJDIR)/^^` ;
 endif
-
-
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include -I.. $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) -I../../../include  -I.. $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) $(CFLAGS) -c $< -o $@
 
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
-$(PLUGIN): $(OBJECTS)
-ifeq (,$(findstring solaris,$(target_os)))
-	$(Q_LD)$(CXX) -o $@ $^ $(LDFLAGS) $(X264_LIBS)
-else
-	$(Q_LD)$(CXX) $@ -o $@ $^ $(LDFLAGS) $(X264_LIBS)
-endif
+$(OBJDIR)/$(TARGET): $(OBJECTS)
+	$(Q_LD)$(CXX) -o $@ $^ $(LDFLAGS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(PLUGIN) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
+	install $(OBJDIR)/$(TARGET) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(PLUGIN)
+	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(TARGET)
 
 clean:
-	rm -f $(OBJECTS) $(PLUGIN)
+	rm -rf $(OBJDIR)
 
 ###########################################
 
