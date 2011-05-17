@@ -659,6 +659,9 @@ INSTALL_PROGRAM
 ac_ct_CC
 CFLAGS
 CC
+PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIBDIR
 OBJEXT
 EXEEXT
 ac_ct_CXX
@@ -666,9 +669,6 @@ CPPFLAGS
 LDFLAGS
 CXXFLAGS
 CXX
-PTLIB_LIBS
-PTLIB_CFLAGS
-PTLIBDIR
 target_os
 target_vendor
 target_cpu
@@ -757,15 +757,15 @@ enable_spandsp
 host_alias
 target_alias
 PKG_CONFIG
-PTLIBDIR
-PTLIB_CFLAGS
-PTLIB_LIBS
 CXX
 CXXFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
 CCC
+PTLIBDIR
+PTLIB_CFLAGS
+PTLIB_LIBS
 CC
 CFLAGS
 CXXCPP
@@ -1443,10 +1443,6 @@ Optional Packages:
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
-  PTLIBDIR    path to ptlib directory if installed ptlib shall not be used
-  PTLIB_CFLAGS
-              C compiler flags for PTLIB, overriding pkg-config
-  PTLIB_LIBS  linker flags for PTLIB, overriding pkg-config
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -1454,6 +1450,10 @@ Some influential environment variables:
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
+  PTLIBDIR    path to ptlib directory if installed ptlib shall not be used
+  PTLIB_CFLAGS
+              C compiler flags for PTLIB, overriding pkg-config
+  PTLIB_LIBS  linker flags for PTLIB, overriding pkg-config
   CC          C compiler command
   CFLAGS      C compiler flags
   CXXCPP      C++ preprocessor
@@ -3094,6 +3094,16 @@ else
 $as_echo "no" >&6; }
 fi
 
+fi
+fi
+CXX=$ac_cv_prog_CXX
+if test -n "$CXX"; then
+  { $as_echo "$as_me:$LINENO: result: $CXX" >&5
+$as_echo "$CXX" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
 
     test -n "$CXX" && break
   done
