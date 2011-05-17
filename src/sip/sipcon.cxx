@@ -352,22 +352,22 @@ bool SIPConnection::GarbageCollection()
 
 bool SIPConnection::SetTransport(const SIPURL & destination)
 {
+  OpalTransport * newTransport = NULL;
+  if (!destination.IsEmpty()) {
+    newTransport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
+    if (newTransport == NULL)
+      return false;
+  }
+
   if (deleteTransport && transport != NULL) {
     transport->CloseWait();
     delete transport;
   }
 
-  if (destination.IsEmpty())
-    transport = NULL;
-  else
-    transport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
+  transport = newTransport;
   deleteTransport = true;
 
-  if (transport != NULL)
-    return true;
-
-  Release(EndedByUnreachable);
-  return false;
+  return transport != NULL;
 }
 
 
@@ -1542,8 +1542,10 @@ PBoolean SIPConnection::SetUpConnection()
 
   originating = PTrue;
 
-  if (!SetTransport(transportAddress))
+  if (!SetTransport(transportAddress)) {
+    Release(EndedByUnreachable);
     return false;
+  }
 
   ++m_sdpVersion;
 
@@ -2833,9 +2835,12 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (response.GetMIME().GetRecordRoute().IsEmpty()) {  
     OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
     if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
-      PTRACE(2, "SIP\tINVITE response changed transport for call");
-      if (!SetTransport(newContactAddress))
-        return;
+      if (SetTransport(newContactAddress)) {
+        PTRACE(2, "SIP\tChanged transport for call to " << newContactAddress);
+      }
+      else {
+        PTRACE(2, "SIP\tCould not change transport for call to " << newContactAddress);
+      }
     }
   }
 
