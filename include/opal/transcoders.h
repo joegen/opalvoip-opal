@@ -340,6 +340,8 @@ class OpalTranscoder : public OpalMediaFormatPair
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
+
+    void CopyTimestamp(RTP_DataFrame & dst, const RTP_DataFrame & src, bool inToOut) const;
   //@}
 
   protected:
