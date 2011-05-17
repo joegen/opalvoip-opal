@@ -74,7 +74,7 @@ LIBS = \
 LDLIBDIRS = ./
 
 # Rules
-default install uninstall: all
+default: all
 
 all: $(TARGET) encoder decoder signalcompare
 
@@ -97,3 +97,5 @@ clean:
 		  $(SIGNALCMP_OBJS) $(TEST_OBJS) \
 		  encoder$(EXESUFFIX) decoder$(EXESUFFIX) signalcompare$(EXESUFFIX)
 
+install uninstall:
+	@true
