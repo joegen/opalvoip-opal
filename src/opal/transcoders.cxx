@@ -135,6 +135,19 @@ void OpalTranscoder::GetStatistics(OpalMediaStatistics & /*statistics*/) const
 #endif
 
 
+void OpalTranscoder::CopyTimestamp(RTP_DataFrame & dst, const RTP_DataFrame & src, bool inToOut) const
+{
+  unsigned timestamp = src.GetTimestamp();
+  if (m_inClockRate != m_outClockRate) {
+    if (inToOut)
+      timestamp = (unsigned)((PUInt64)timestamp*m_outClockRate/m_inClockRate);
+    else
+      timestamp = (unsigned)((PUInt64)timestamp*m_inClockRate/m_outClockRate);
+  }
+  dst.SetTimestamp(timestamp);
+}
+
+
 PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
   PWaitAndSignal mutex(updateMutex);
@@ -148,10 +161,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   }
 
   // set the output timestamp and marker bit
-  unsigned timestamp = input.GetTimestamp();
-  if (m_inClockRate != m_outClockRate)
-    timestamp = (unsigned)((PUInt64)timestamp*m_outClockRate/m_inClockRate);
-  output.front().SetTimestamp(timestamp);
+  CopyTimestamp(output.front(), input, true);
   output.front().SetMarker(input.GetMarker());
 
   // set the output payload type directly from the output media format
