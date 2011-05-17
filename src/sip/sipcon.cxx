@@ -352,22 +352,22 @@ bool SIPConnection::GarbageCollection()
 
 bool SIPConnection::SetTransport(const SIPURL & destination)
 {
+  OpalTransport * newTransport = NULL;
+  if (!destination.IsEmpty()) {
+    newTransport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
+    if (newTransport == NULL)
+      return false;
+  }
+
   if (deleteTransport && transport != NULL) {
     transport->CloseWait();
     delete transport;
   }
 
-  if (destination.IsEmpty())
-    transport = NULL;
-  else
-    transport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
+  transport = newTransport;
   deleteTransport = true;
 
-  if (transport != NULL)
-    return true;
-
-  Release(EndedByUnreachable);
-  return false;
+  return transport != NULL;
 }
 
 
@@ -378,7 +378,7 @@ void SIPConnection::OnReleased()
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
-  SIPBye * bye = NULL;
+  PSafePtr<SIPBye> bye;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
@@ -421,7 +421,7 @@ void SIPConnection::OnReleased()
       bye = new SIPBye(*this);
       if (!bye->Start()) {
         delete bye;
-        bye = NULL;
+        bye.SetNULL();
       }
 
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
@@ -469,8 +469,10 @@ void SIPConnection::OnReleased()
 
   NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
 
-  if (bye != NULL)
+  if (bye != NULL) {
     bye->WaitForCompletion();
+    bye.SetNULL();
+  }
 
   // Close media and indicate call ended, even though we have a little bit more
   // to go in clean up, don't ket other bits wait for it.
@@ -1534,8 +1536,10 @@ PBoolean SIPConnection::SetUpConnection()
 
   originating = PTrue;
 
-  if (!SetTransport(transportAddress))
+  if (!SetTransport(transportAddress)) {
+    Release(EndedByUnreachable);
     return false;
+  }
 
   ++m_sdpVersion;
 
@@ -1874,8 +1878,8 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
     }
     else {
+      transport->SetInterface(transaction.GetInterface()); // Make sure same as response
       SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
-      prack->SetInterface(transaction.GetInterface()); // Make sure same as response
       prack->Start();
     }
   }
@@ -1956,6 +1960,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 {
   unsigned responseClass = response.GetStatusCode()/100;
 
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
@@ -1985,10 +1993,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     return;
   }
-
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -2655,10 +2659,6 @@ void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & /*r
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
   PTRACE(3, "SIP\tReceived Trying response");
   NotifyDialogState(SIPDialogNotification::Proceeding);
 
@@ -2831,9 +2831,12 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (response.GetMIME().GetRecordRoute().IsEmpty()) {  
     OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
     if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
-      PTRACE(2, "SIP\tINVITE response changed transport for call");
-      if (!SetTransport(newContactAddress))
-        return;
+      if (SetTransport(newContactAddress)) {
+        PTRACE(2, "SIP\tChanged transport for call to " << newContactAddress);
+      }
+      else {
+        PTRACE(2, "SIP\tCould not change transport for call to " << newContactAddress);
+      }
     }
   }
 

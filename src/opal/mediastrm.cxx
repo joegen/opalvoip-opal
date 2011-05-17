@@ -1072,7 +1072,8 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
   PINDEX frameSize = frameTime*sizeof(short);
-  unsigned frameMilliseconds = frameTime*1000/mediaFormat.GetClockRate();
+  unsigned clockRate = mediaFormat.GetClockRate();
+  unsigned frameMilliseconds = (frameTime*1000+clockRate-1)/clockRate;
 
   /* For efficiency reasons we will not accept a packet size that is too small.
      We move it up to the next even multiple of the minimum, which has a danger
@@ -1082,7 +1083,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   if (frameMilliseconds < MinBufferTimeMilliseconds) {
     PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
     frameSize = minFrameCount*frameTime*sizeof(short);
-    frameMilliseconds = minFrameCount*frameTime*1000/mediaFormat.GetClockRate();
+    frameMilliseconds = (minFrameCount*frameTime*1000+clockRate-1)/clockRate;
   }
 
   // Quantise dataSize up to multiple of the frame time

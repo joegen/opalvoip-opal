@@ -910,7 +910,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
         patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
         if (!stream->WritePacket(*interFrame))
           return (writeSuccessful = false);
-        sourceFrame.SetTimestamp(interFrame->GetTimestamp());
+        primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
         continue;
       }
       intermediateFrames.RemoveAll();
@@ -924,7 +924,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     if (secondaryCodec == NULL) {
       if (!stream->WritePacket(*interFrame))
         return (writeSuccessful = false);
-      sourceFrame.SetTimestamp(interFrame->GetTimestamp());
+      primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
       continue;
     }
 
@@ -943,7 +943,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
       if (!stream->WritePacket(*finalFrame))
         return (writeSuccessful = false);
-      sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
+      secondaryCodec->CopyTimestamp(sourceFrame, *finalFrame, false);
     }
   }
 
