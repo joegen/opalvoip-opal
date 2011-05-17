@@ -47,7 +47,7 @@
 #define CLOCK_RATE              8000  // Clock rate is not samples/second in this case!
 #define BITS_PER_SECOND         64000 // raw bits per second
 #define FRAME_TIME              1000  // Microseconds in a millisecond
-#define SAMPLES_PER_FRAME       16    // Samples in a millisecond
+#define SAMPLES_PER_FRAME       32    // Samples in a millisecond
 #define	BYTES_PER_FRAME         8     // Bytes in a millisecond
 #define MAX_FRAMES_PER_PACKET   90    // 90 milliseconds, which means RTP packets smaller than 1500 bytes typical LAN maximum
 #define PREF_FRAMES_PER_PACKET  20    // 20 milliseconds
@@ -160,8 +160,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudioStreamed |  // audio codec
-    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
+    PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
@@ -196,8 +195,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudioStreamed |  // audio codec
-    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
+    PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
@@ -234,8 +232,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudioStreamed |  // audio codec
-    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
+    PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
@@ -270,8 +267,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PLUGIN_CODEC_VERSION_WIDEBAND,        // codec API version
     &licenseInfo,                         // license information
 
-    PluginCodec_MediaTypeAudioStreamed |  // audio codec
-    (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
+    PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
