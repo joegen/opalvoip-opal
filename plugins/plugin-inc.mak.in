@@ -60,11 +60,11 @@ $(OBJDIR)/%.o : %.c
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_LD)$(CXX) -c $(CXXFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CXX) -c $(CXXFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_LD)$(CXX) -c $(CXXFLAGS) $(CFLAGS) -o $@ $<
+	$(Q_CC)$(CXX) -c $(CXXFLAGS) $(CFLAGS) -o $@ $<
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS))))))
 
