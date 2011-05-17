@@ -104,8 +104,6 @@
 
 class PluginCodec_MediaFormat
 {
-    friend class PluginCodec;
-
   public:
     typedef struct PluginCodec_Option const * const * OptionsTable;
     typedef std::map<std::string, std::string> OptionMap;
@@ -124,6 +122,8 @@ class PluginCodec_MediaFormat
     {
     }
 
+
+    const void * GetOptionsTable() const { return m_options; }
 
     /// Determine if codec is valid for the specified protocol
     virtual bool IsValidForProtocol(const char * /*protocol*/)
@@ -228,6 +228,7 @@ class PluginCodec_MediaFormat
 
 /////////////////////////////////////////////////////////////////////////////
 
+template<typename NAME>
 class PluginCodec
 {
   protected:
@@ -497,7 +498,7 @@ class PluginCodec
       if (parm == NULL || len == NULL || *len != sizeof(struct PluginCodec_Option **))
         return false;
 
-      *(const void **)parm = codec->userData != NULL ? ((PluginCodec_MediaFormat *)codec->userData)->m_options : NULL;
+      *(const void **)parm = codec->userData != NULL ? ((PluginCodec_MediaFormat *)codec->userData)->GetOptionsTable() : NULL;
       *len = 0;
       return true;
     }

@@ -40,6 +40,8 @@
 
 #define MY_CODEC   silk                        // Name of codec (use C variable characters)
 
+class MY_CODEC { };
+
 static unsigned   MyVersion = PLUGIN_CODEC_VERSION_OPTIONS; // Minimum version for codec (should never change)
 static const char MyDescription[] = "SILK Audio Codec";     // Human readable description of codec
 static const char MyFormatName8k[] = "SILK-8";              // OpalMediaFormat name string to generate
@@ -168,7 +170,7 @@ static MyPluginMediaFormat MyMediaFormat;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyEncoder : public PluginCodec
+class MyEncoder : public PluginCodec<MY_CODEC>
 {
   protected:
     void * m_state;
@@ -176,7 +178,7 @@ class MyEncoder : public PluginCodec
 
   public:
     MyEncoder(const PluginCodec_Definition * defn)
-      : PluginCodec(defn)
+      : PluginCodec<MY_CODEC>(defn)
       , m_state(NULL)
     {
     }
@@ -233,7 +235,7 @@ class MyEncoder : public PluginCodec
       }
 
       // Base class sets bit rate and frame time
-      return PluginCodec::SetOption(optionName, optionValue);
+      return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
     }
 
 
@@ -266,14 +268,14 @@ class MyEncoder : public PluginCodec
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyDecoder : public PluginCodec
+class MyDecoder : public PluginCodec<MY_CODEC>
 {
   protected:
     void * m_state;
 
   public:
     MyDecoder(const PluginCodec_Definition * defn)
-      : PluginCodec(defn)
+      : PluginCodec<MY_CODEC>(defn)
     {
     }
 
@@ -359,10 +361,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadName,                      // IANA RTP payload name
 
-    PluginCodec::Create<MyEncoder>,     // create codec function
-    PluginCodec::Destroy,               // destroy codec
-    PluginCodec::Transcode,             // encode/decode
-    PluginCodec::GetControls(),         // codec controls
+    PluginCodec<MY_CODEC>::Create<MyEncoder>,     // create codec function
+    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
+    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
+    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -395,10 +397,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadName,                      // IANA RTP payload name
 
-    PluginCodec::Create<MyDecoder>,     // create codec function
-    PluginCodec::Destroy,               // destroy codec
-    PluginCodec::Transcode,             // encode/decode
-    PluginCodec::GetControls(),         // codec controls
+    PluginCodec<MY_CODEC>::Create<MyDecoder>,     // create codec function
+    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
+    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
+    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -431,10 +433,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadName,                      // IANA RTP payload name
 
-    PluginCodec::Create<MyEncoder>,     // create codec function
-    PluginCodec::Destroy,               // destroy codec
-    PluginCodec::Transcode,             // encode/decode
-    PluginCodec::GetControls(),         // codec controls
+    PluginCodec<MY_CODEC>::Create<MyEncoder>,     // create codec function
+    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
+    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
+    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -467,10 +469,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadName,                      // IANA RTP payload name
 
-    PluginCodec::Create<MyDecoder>,     // create codec function
-    PluginCodec::Destroy,               // destroy codec
-    PluginCodec::Transcode,             // encode/decode
-    PluginCodec::GetControls(),         // codec controls
+    PluginCodec<MY_CODEC>::Create<MyDecoder>,     // create codec function
+    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
+    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
+    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
