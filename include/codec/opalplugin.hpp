@@ -338,9 +338,14 @@ class PluginCodec
     }
 
 
-    bool SetOptionUnsigned(int & oldValue, const char * optionValue, unsigned minimum, unsigned maximum = UINT_MAX)
+    template <typename T>
+    bool SetOptionUnsigned(T & oldValue, const char * optionValue, unsigned minimum, unsigned maximum = UINT_MAX)
     {
-      return SetOptionUnsigned((unsigned &)oldValue, optionValue, minimum, maximum);
+      unsigned newValue = oldValue;
+      if (!SetOptionUnsigned(newValue, optionValue, minimum, maximum))
+        return false;
+      oldValue = (T)newValue;
+      return true;
     }
 
 
@@ -365,18 +370,13 @@ class PluginCodec
     }
 
 
-    bool SetOptionBoolean(int & oldValue, const char * optionValue)
-    {
-      return SetOptionBoolean((unsigned &)oldValue, optionValue);
-    }
-
-
-    bool SetOptionBoolean(unsigned & oldValue, const char * optionValue)
+    template <typename T>
+    bool SetOptionBoolean(T & oldValue, const char * optionValue)
     {
       bool opt = oldValue != 0;
       if (!SetOptionBoolean(opt, optionValue))
         return false;
-      oldValue = opt;
+      oldValue = (T)opt;
       return true;
     }
 
