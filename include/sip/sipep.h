@@ -564,15 +564,18 @@ class SIPEndPoint : public OpalRTPEndPoint
        avoided.
       */
     bool Unsubscribe(
-      const PString & aor          ///< Unique token for registration
+      const PString & aor,             ///< Unique token for registration
+      bool invalidateNotifiers = false ///< Notifiers in SIPSubscribe::Params are to be reset
     );
     bool Unsubscribe(
       SIPSubscribe::PredefinedPackages eventPackage,  ///< Event package being unsubscribed
-      const PString & aor                             ///< Address-of-record for subscription
+      const PString & aor,                            ///< Address-of-record for subscription
+      bool invalidateNotifiers = false                ///< Notifiers in SIPSubscribe::Params are to be reset
     );
     bool Unsubscribe(
       const PString & eventPackage,  ///< Event package being unsubscribed
-      const PString & aor            ///< Address-of-record for subscription
+      const PString & aor,             ///< Address-of-record for subscription
+      bool invalidateNotifiers = false ///< Notifiers in SIPSubscribe::Params are to be reset
     );
 
     /**Unsubscribe all current subscriptions.

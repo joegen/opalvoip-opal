@@ -1236,38 +1236,46 @@ bool SIPEndPoint::IsSubscribed(const PString & eventPackage, const PString & tok
 }
 
 
-bool SIPEndPoint::Unsubscribe(const PString & token)
+bool SIPEndPoint::Unsubscribe(const PString & token, bool invalidateNotifiers)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
-  if (handler != NULL)
-    return handler->ActivateState(SIPHandler::Unsubscribing);
-
-  PTRACE(1, "SIP\tCould not find active SUBSCRIBE of id " << token);
-  return PFalse;
+  return Unsubscribe(SIPEventPackage(), token, invalidateNotifiers);
 }
 
 
-bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage, const PString & token)
+bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage,
+                              const PString & token,
+                              bool invalidateNotifiers)
 {
-  return Unsubscribe(SIPEventPackage(eventPackage), token);
+  return Unsubscribe(SIPEventPackage(eventPackage), token, invalidateNotifiers);
 }
 
 
-bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & token)
+bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & token, bool invalidateNotifiers)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
   if (handler == NULL)
     handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
   else {
-    if (handler->GetEventPackage() != eventPackage)
+    if (!eventPackage.IsEmpty() && handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
   }
 
-  if (handler != NULL)
-    return handler->ActivateState(SIPHandler::Unsubscribing);
+  if (handler == NULL) {
+    PTRACE(1, "SIP\tCould not find active SUBSCRIBE of " << eventPackage << " package to " << token);
+    return false;
+  }
 
-  PTRACE(1, "SIP\tCould not find active SUBSCRIBE of " << eventPackage << " package to " << token);
-  return PFalse;
+  if (invalidateNotifiers) {
+    PSafePtr<SIPSubscribeHandler> subscription = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(handler);
+    if (subscription != NULL) {
+      SIPSubscribe::Params params(subscription->GetParams());
+      params.m_onNotify = NULL;
+      params.m_onSubcribeStatus = NULL;
+      subscription->UpdateParameters(params);
+    }
+  }
+
+  return handler->ActivateState(SIPHandler::Unsubscribing);
 }
 
 
