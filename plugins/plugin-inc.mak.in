@@ -79,7 +79,7 @@ endif
 
 install:
 	@$(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
-	mkdir -p $(DESTDIR)$(libdir)/$(AC_PLUGIN_DIR)
+	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
 	install $(PLUGIN_PATH) $(DESTDIR)$(libdir)/$(INSTALL_DIR)
 
 uninstall:
