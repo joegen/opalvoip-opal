@@ -248,26 +248,13 @@ bool SIP_Presentity::Close()
   m_notificationMutex.Wait();
 
   if (!m_watcherSubscriptionAOR.IsEmpty()) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe for own presence watcher");
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR);
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe for own presence watcher");
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR, true);
   }
 
   for (StringMap::iterator subs = m_presenceIdByAor.begin(); subs != m_presenceIdByAor.end(); ++subs) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' sending unsubscribe to " << subs->first);
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second);
-  }
-
-  const PTimeInterval LoopSleepTime(100);
-  const PTimeInterval LoopWaitTime(0, 10); // Seconds
-  int count = LoopWaitTime/LoopSleepTime;
-  while (!m_watcherSubscriptionAOR.IsEmpty() || !m_presenceIdByAor.empty()) {
-    if (--count <= 0) {
-      PTRACE(1, "SIPPres\t'" << m_aor << "' did not unsubscribe to everything.");
-      break;
-    }
-    m_notificationMutex.Signal();
-    PThread::Sleep(LoopSleepTime);
-    m_notificationMutex.Wait();
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe to " << subs->first);
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second, true);
   }
 
   m_notificationMutex.Signal();
@@ -335,6 +322,7 @@ void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const S
       PTRACE(status.m_reason >= 400 ? 2 : 3, "SIPPres\t'" << m_aor << "' "
              << (status.m_wasSubscribing ? "error " : "un")
              << "subscribing to presence of '" << aor->second << '\'');
+      m_endpoint->Unsubscribe(SIPSubscribe::Presence, status.m_addressofRecord, true);
       m_presenceIdByAor.erase(aor->second);
       m_presenceAorById.erase(aor);
     }
@@ -510,8 +498,10 @@ void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, cons
 
   OnPresenceChange(info);
 
-  if (!status.m_wasSubscribing)
+  if (!status.m_wasSubscribing) {
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, status.m_addressofRecord, true);
     m_watcherSubscriptionAOR.MakeEmpty();
+  }
 
   m_notificationMutex.Signal();
 }
