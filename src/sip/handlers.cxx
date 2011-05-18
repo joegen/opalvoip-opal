@@ -1041,6 +1041,8 @@ void SIPSubscribeHandler::UpdateParameters(const SIPSubscribe::Params & params)
     m_password = params.m_password; // Adjust the password if required 
 
   m_parameters.m_contactAddress = params.m_contactAddress;
+  m_parameters.m_onSubcribeStatus = params.m_onSubcribeStatus;
+  m_parameters.m_onNotify = params.m_onNotify;
 
   if (params.m_expire > 0)
     SetExpire(params.m_expire);
