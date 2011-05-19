@@ -253,15 +253,12 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
            fi
 
 
-           AC_LINK_IFELSE([
+           AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                             #include <ptbuildopts.h>
-                            #include <ptlib.h>
-
-                            int main()
-                            {
+                            #include <ptlib.h>]],
+                            [[
                               PString str("");
-                            }
-                           ], 
+                           ]])], 
                            [found=1],
                            [found=0])
 
@@ -431,16 +428,13 @@ AC_DEFUN([OPAL_CHECK_PTLIB],
           LIBS="$LIBS $DEFAULT_LIBS"
 
           AC_LANG(C++)
-          AC_LINK_IFELSE([
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                           #include <ptbuildopts.h>
                           #include <ptlib.h>
-                          #include <$2>
-
-                          int main()
-                          {
+                          #include <$2>]],
+                          [[
                             $3
-                          }
-                         ], 
+                         ]])], 
                          [opal_ptlib_option=yes],
                          [opal_ptlib_option=no])
 
@@ -470,16 +464,13 @@ AC_DEFUN([OPAL_CHECK_PTLIB_MANDATORY],
           LIBS="$LIBS $DEFAULT_LIBS"
 
           AC_LANG(C++)
-          AC_LINK_IFELSE([
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                           #include <ptbuildopts.h>
                           #include <ptlib.h>
-                          #include <$2>
-
-                          int main()
-                          {
+                          #include <$2>]],
+                          [[
                             $3
-                          }
-                         ], 
+                         ]])], 
                          [opal_ptlib_option=yes],
                          [opal_ptlib_option=no])
 
@@ -823,11 +814,11 @@ AC_DEFUN([OPAL_SPEEX_FLOAT],
           CFLAGS="$CFLAGS $SPEEXDSP_CFLAGS -Werror"
           LIBS="$LIBS $SPEEXDSP_LIBS"
           AC_CHECK_HEADERS([speex/speex.h], [speex_inc_dir="speex/"], [speex_inc_dir=])
-          AC_LINK_IFELSE([
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
                           #include <${speex_inc_dir}speex.h>
                           #include <${speex_inc_dir}speex_preprocess.h>
-                          #include <stdio.h>
-                          int main()
+                          #include <stdio.h>]],
+                          [[int main()
                           {
                             SpeexPreprocessState *st;
                             spx_int16_t *x;
@@ -835,7 +826,7 @@ AC_DEFUN([OPAL_SPEEX_FLOAT],
                             speex_preprocess(st, x, echo);
                             return 0;
                           }
-                          ], [opal_speexdsp_float=yes], [opal_speexdsp_float=no])
+                          ]])], [opal_speexdsp_float=yes], [opal_speexdsp_float=no])
           CFLAGS="$old_CFLAGS"
           LIBS="$old_LIBS"
           OPAL_MSG_CHECK([Speex has float], [$opal_speexdsp_float])
