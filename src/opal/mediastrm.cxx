@@ -1046,6 +1046,8 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, channel, autoDel)
   , m_soundChannelBuffers(buffers)
   , m_soundChannelBufferTime(bufferTime)
+  , m_failSafeRate(mediaFormat.GetTimeUnits())
+  , m_failSafeDelay(50, 10)
 {
 }
 
@@ -1066,6 +1068,8 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                        true)
   , m_soundChannelBuffers(buffers)
   , m_soundChannelBufferTime(bufferTime)
+  , m_failSafeRate(mediaFormat.GetTimeUnits())
+  , m_failSafeDelay(50, 10)
 {
 }
 
@@ -1104,6 +1108,18 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
          << dataSize << ", buffer size set to " << frameSize << " and " << soundChannelBuffers << " buffers.");
   return OpalMediaStream::SetDataSize(dataSize, frameTime) &&
          ((PSoundChannel *)m_channel)->SetBuffers(frameSize, soundChannelBuffers);
+}
+
+
+PBoolean OpalAudioMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & written)
+{
+  if (!OpalRawMediaStream::WriteData(data, length, written))
+    return false;
+
+  /* Note if the audio device is working correctly, then this actually will have
+     no effect, it will always be delaying 0ms */
+  m_failSafeDelay.Delay(length/sizeof(short)/m_failSafeRate);
+  return true;
 }
 
 
