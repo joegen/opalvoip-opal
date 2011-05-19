@@ -78,7 +78,7 @@ $(OBJDIR)/%.dep : %.cxx
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(OBJDIR)/$(PROG): $(OBJECTS)
-	 $(CXX) $^ $(LDFLAGS) -o $@
+	 $(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 distclean:
 	$(MAKE) DEBUG_BUILD=no  STATIC_BUILD=no  clean
