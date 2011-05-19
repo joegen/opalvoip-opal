@@ -2827,24 +2827,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       return;
   }
 
-  PTRACE(3, "SIP\tHandling " << response.GetStatusCode() << " response for " << transaction.GetMethod());
-
-  /* See if the contact address provided in the response changes the transport
-     type. Do this only if no Record-Route header is set. Otherwise we will
-     continue to send SIP Messages to the proxy. */
-  if (response.GetMIME().GetRecordRoute().IsEmpty()) {  
-    OpalTransportAddress newContactAddress = SIPURL(response.GetMIME().GetContact()).GetHostAddress();
-    if (!newContactAddress.IsCompatible(transport->GetLocalAddress())) {
-      if (SetTransport(newContactAddress)) {
-        PTRACE(2, "SIP\tChanged transport for call to " << newContactAddress);
-      }
-      else {
-        PTRACE(2, "SIP\tCould not change transport for call to " << newContactAddress);
-      }
-    }
-  }
-
-  PTRACE(3, "SIP\tReceived INVITE OK response");
+  PTRACE(3, "SIP\tReceived INVITE OK response for " << transaction.GetMethod());
   releaseMethod = ReleaseWithBYE;
   sessionTimer = 10000;
 
