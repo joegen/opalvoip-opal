@@ -2507,6 +2507,7 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
     // get the route set from the Record-Route response field according to 12.1.2
     // requests in a dialog do not modify the initial route set according to 12.2
     m_routeSet.FromString(mime.GetRecordRoute(), pdu.GetMethod() == SIP_PDU::NumMethods);
+    PTRACE(4, "SIP\tRoute set is " << m_routeSet.ToString());
   }
 
   /* Update request URI
@@ -2575,18 +2576,26 @@ OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress() const
 {
   // In order of priority ...
 
-  if (!m_externalTransportAddress.IsEmpty())
+  if (!m_externalTransportAddress.IsEmpty()) {
+    PTRACE(4, "SIP\tRemote dialog address external: " << m_externalTransportAddress);
     return m_externalTransportAddress;
+  }
 
   OpalTransportAddress addr = m_proxy.GetHostAddress();
-  if (!addr.IsEmpty())
+  if (!addr.IsEmpty()) {
+    PTRACE(4, "SIP\tRemote dialog address proxied: " << addr);
     return addr;
+  }
 
   SIPURL uri;
-  if (m_routeSet.empty())
+  if (m_routeSet.empty()) {
     uri = m_requestURI;
-  else
+    PTRACE(4, "SIP\tRemote dialog address from target: " << uri);
+  }
+  else {
     uri = m_routeSet.front();
+    PTRACE(4, "SIP\tRemote dialog address from route set: " << uri);
+  }
 
 
   uri.AdjustToDNS();
@@ -3219,9 +3228,16 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
           return false;
 
         m_remoteAddress = m_connection->GetDialog().GetRemoteTransportAddress();
-        m_connection->UnlockReadOnly();
+        if (m_transport.GetLocalAddress().IsCompatible(m_remoteAddress))
+          PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
+        else {
+          PTRACE(3, "SIP\tChanging transport to remote address " << m_remoteAddress);
+          if (!m_connection->SetTransport(m_remoteAddress)) {
+            PTRACE(2, "SIP\tCould not change transport to " << m_remoteAddress);
+          }
+        }
 
-        PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
+        m_connection->UnlockReadOnly();
       }
 
       // ACK constructed following 13.2.2.4 or 17.1.1.3
