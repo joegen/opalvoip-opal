@@ -628,7 +628,7 @@ bool SIPURLList::FromString(const PString & str, bool reversed)
 {
   PStringArray lines = str.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    PString line = lines[0];
+    PString line = lines[i];
 
     PINDEX previousPos = (PINDEX)-1;
     PINDEX comma = previousPos;
