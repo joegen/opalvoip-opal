@@ -13,6 +13,44 @@ fi
 
 m4_include(opal.m4)
 
+
+AC_ARG_ENABLE([ios],
+	      AS_HELP_STRING([--enable-ios=iphone|simulator],[enable iOS support for iPhone])
+	     )
+
+if test "x$enable_ios" = "x" ; then
+  IOS_PLATFORM=
+elif test "$enable_ios" = "iphone" ; then
+  IOS_PLATFORM=iPhoneOS
+  IOS_ARCH=armv6
+elif test "$enable_ios" = "simulator" ; then
+  IOS_PLATFORM=Simulator
+  IOS_ARCH=i686
+else
+  AC_MSG_ERROR([Unknown iOS variant $enable_ios - use either iphone or simulator])
+fi
+
+if test "x$IOS_PLATFORM" != "x" ; then
+  IOS_DEVROOT="`xcode-select -print-path`/Platforms/${IOS_PLATFORM}.platform/Developer"
+  IOS_VER="`xcodebuild -showsdks | grep iphoneos | sort | tail -n 1 | awk '{ print $2}' `"
+  if test "x$IOS_VER" == "x" ; then
+    AC_MSG_ERROR([Unable to determine iOS version number])
+  fi
+  AC_MSG_NOTICE(configuring for $IOS_PLATFORM version $IOS_VER)
+
+  IOS_SDKROOT=${IOS_DEVROOT}/SDKs/iPhoneOS${IOS_VER}.sdk
+
+  CXX=["${IOS_DEVROOT}/usr/bin/g++ -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
+  CC=["${IOS_DEVROOT}/usr/bin/gcc -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
+  LD=["${IOS_DEVROOT}/usr/bin/ld -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
+  LDFLAGS="${LDFLAGS} -L${IOS_SDKROOT}/usr/lib"
+  ENDLDLIBS="-lresolv"
+
+  echo $CC
+  echo $CFLAGS
+  echo $LDFLAGS
+fi
+
 dnl Prevent CFLAGS and CXXFLAGS from being overwritten if undefined
 if test "x${CXXFLAGS}" = "x" ; then
   CXXFLAGS=
