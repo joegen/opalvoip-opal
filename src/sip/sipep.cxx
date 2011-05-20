@@ -1728,6 +1728,7 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTranspo
       return GetDefaultRegisteredPartyName(transport);
   }
 
+  PTRACE(4, "SIP\tGetting local URI from registeration: " << handler->GetAddressOfRecord());
   return handler->GetAddressOfRecord();
 }
 
@@ -1776,6 +1777,7 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
   }
 
   rpn.SetDisplayName(GetDefaultDisplayName());
+  PTRACE(4, "SIP\tGenerated default local URI: " << rpn);
   return rpn;
 }
 
