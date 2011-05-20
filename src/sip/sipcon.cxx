@@ -1407,7 +1407,8 @@ bool SIPConnection::WriteINVITE()
       myAddress.SetHostName(domain);
   }
 
-  myAddress.SetTag(GetToken());
+  // Tag must be set to token or the whole house of cards falls down
+  myAddress.SetTag(GetToken(), true);
   m_dialog.SetLocalURI(myAddress);
 
   NotifyDialogState(SIPDialogNotification::Trying);

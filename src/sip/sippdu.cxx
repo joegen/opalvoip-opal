@@ -615,10 +615,10 @@ PString SIPURL::GenerateTag()
 }
 
 
-void SIPURL::SetTag(const PString & tag)
+void SIPURL::SetTag(const PString & tag, bool force)
 {
-  if (!m_fieldParameters.Contains("tag"))
-    m_fieldParameters.SetAt("tag", tag);
+  if (force || !m_fieldParameters.Contains("tag"))
+    m_fieldParameters.SetAt("tag", tag.IsEmpty() ? GenerateTag() : tag);
 }
 
 
