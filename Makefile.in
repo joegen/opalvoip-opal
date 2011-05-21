@@ -554,6 +554,9 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # This target was intetionally put here since make dumbly executes the first it finds
 # when called without an explicit target.
 
+
+.PHONY: default
+
 ifeq ($(OPAL_SHARED_LIB),)
 default: opt
 else
@@ -564,6 +567,7 @@ endif
 default: subdirs
 endif
 
+.PHONY: subdirs $(SUBDIRS)
 
 subdirs:
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )

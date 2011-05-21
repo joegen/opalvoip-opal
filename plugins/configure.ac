@@ -2,19 +2,30 @@ AC_INIT(configure.ac)
 
 if test \! -e ./aclocal.m4 ; then
   echo "ERROR: you must run 'aclocal' before 'autoconf'"
-  exit
+  exit -1
+fi
+
+dnl extract recommended PTLIB version from parent directory
+if test \! -e ../configure ; then
+  echo "ERROR: unable to find '../configure'"
+else
+  PTLIB_REC_VERSION=`grep '^PTLIB_REC_VERSION=' ../configure | sed -e 's/^PTLIB_REC_VERSION=//' -e 's/\"//g'`
+  echo PTLIB_REC_VERSION $PTLIB_REC_VERSION
+  if test "x$PTLIB_REC_VERSION" = "x" ; then
+    echo "ERROR: unable to extract PTLIB_REC_VERSION from ../configure"
+    exit -1
+  fi
 fi
 
 PKG_PROG_PKG_CONFIG()
 AC_CANONICAL_TARGET()
-PTLIB_REC_VERSION="2.7.1"
 
 m4_include(../opal.m4)
 
-OPAL_CHECK_PTLIB_EXISTS()
 OPAL_FIND_PTLIB()
-CFLAGS="$DEFAULT_CFLAGS $CFLAGS"
-CXXFLAGS="$DEFAULT_CFLAGS $CXXFLAGS"
+
+CFLAGS="$CFLAGS $PTLIB_CFLAGS"
+CXXFLAGS="$CFLAGS $PTLIB_CXXFLAGS"
 
 AC_PROG_CXX
 AC_PROG_CC
@@ -111,7 +122,7 @@ dnl ########################################################################
 dnl Defaults
 dnl ########################################################################
 
-HAVE_VPB=yes
+HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
@@ -431,8 +442,6 @@ OPAL_SIMPLE_OPTION([default-to-full-capabilties],[DEFAULT_TO_FULL_CAPABILITIES],
 dnl     ########################
 dnl     libavcodec (ffmpeg)
 dnl     ########################
-ORIG_CXXFLAGS="$CXXFLAGS"
-CXXFLAGS="-D__STDC_CONSTANT_MACROS $CXXFLAGS"
 AC_ARG_ENABLE([libavcodec],
               [AC_HELP_STRING([--disable-libavcodec],[disable libavcodec support])],
               [HAVE_LIBAVCODEC=$enableval])
@@ -500,7 +509,7 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
   AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
   SUBDIRS+=" video/MPEG4-ffmpeg"
 fi
-CXXFLAGS="$ORIG_CXXFLAGS"
+
 
 dnl     ########################
 dnl     x264
@@ -534,7 +543,6 @@ else
   HAVE_H264=no
 fi
 
-AC_SUBST(STDCCFLAGS)
 AC_SUBST(HAVE_LIBDL)
 AC_SUBST(DL_LIBS)
 AC_SUBST(X264_LINK_STATIC)
