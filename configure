@@ -4917,6 +4917,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -4932,6 +4933,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5007,6 +5009,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5022,6 +5025,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5114,6 +5118,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5129,6 +5134,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5204,6 +5210,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5219,6 +5226,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
