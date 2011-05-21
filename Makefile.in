@@ -554,18 +554,22 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # This target was intetionally put here since make dumbly executes the first it finds
 # when called without an explicit target.
 
+
+.PHONY: default
+
 ifeq ($(OPAL_SHARED_LIB),)
 default: opt
 else
-default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
+default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
 ifeq ($(OPAL_SHARED_LIB),1)
 default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 endif
-default: subdirs
 endif
 
+.PHONY: subdirs $(SUBDIRS)
 
 subdirs:
+	@echo Making subdirs
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 
 clean:

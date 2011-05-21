@@ -89,7 +89,6 @@ OPAL_G711PLC=yes
 OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
 OPAL_ZRTP=no
-OPAL_SHARED_LIB=yes
 OPAL_JAVA=yes
 OPAL_RUBY=yes
 OPAL_HAS_MSRP=yes
@@ -158,9 +157,6 @@ fi
 
 AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
 AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
-
-
-OPAL_SIMPLE_OPTION([shared],[OPAL_SHARED_LIB], [whether to build a shared library])
 
 
 dnl ########################################################################
