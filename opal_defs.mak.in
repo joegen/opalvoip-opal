@@ -29,9 +29,6 @@
 ifndef DEBUG_BUILD
 DEBUG_BUILD             = @DEBUG_BUILD@
 endif
-ifndef OPAL_SHARED_LIB
-OPAL_SHARED_LIB         = @OPAL_SHARED_LIB@
-endif
 
 #detected by configure, needed by Makefile
 OSTYPE = @OSTYPE@
