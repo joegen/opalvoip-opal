@@ -4024,7 +4024,8 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
           old_LDFLAGS="$LDFLAGS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          echo -n "Checking for linkable PTLib ..."
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking linkable PTLib" >&5
+$as_echo_n "checking linkable PTLib... " >&6; }
 
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
@@ -4063,7 +4064,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
           if test "x$found" == "x1" ; then
             DEFAULT_LIBS=$LIBS
-            echo "opt, shared"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
+$as_echo "opt, shared" >&6; }
           else
 
            suffix="_d"""
@@ -4100,7 +4102,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
             if test "x$found" == "x1" ; then
               DEFAULT_LIBS=$LIBS
-              echo "debug, shared"
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
+$as_echo "debug, shared" >&6; }
             else
               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
@@ -4139,7 +4142,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
               if test "x$found" == "x1" ; then
                 DEFAULT_LIBS=$LIBS
-                echo "release, static"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
+$as_echo "release, static" >&6; }
               else
 
            suffix="_d_s"
@@ -4176,9 +4180,11 @@ rm -f core conftest.err conftest.$ac_objext \
 
                 if test "x$found" == "x1" ; then
                   DEFAULT_LIBS=$LIBS
-                  echo "release, static"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
+$as_echo "debug, static" >&6; }
                 else
-                  echo "could not be found"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
                   exit -1
                 fi
               fi
@@ -9328,11 +9334,12 @@ $as_echo_n "checking if libavcodec has rtp_mode... " >&6; };
   LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <libavcodec/avcodec.h>
+
+                  #include <linux/ixjuser.h>
 int
 main ()
 {
-int main(int ac,char **av) { AVCodecContext c; c.rtp_mode = 1; return 0; }
+AVCodecContext c; c.rtp_mode = 1;
   ;
   return 0;
 }
@@ -9952,7 +9959,7 @@ done
 int
 main ()
 {
-int main(int ac,char **av) { return 0; }
+ return 0;
   ;
   return 0;
 }
