@@ -570,7 +570,6 @@ endif
 .PHONY: subdirs $(SUBDIRS)
 
 subdirs:
-	@echo Making subdirs
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 
 clean:
