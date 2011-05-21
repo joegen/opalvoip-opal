@@ -97,7 +97,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
-PTLIB_REC_VERSION="2.7.1"
+PTLIB_REC_VERSION="2.10.1"
 
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
@@ -270,7 +270,6 @@ OPAL_DETERMINE_DEBUG()
 
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
-OPAL_CHECK_PTLIB_EXISTS()
 OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
 OPAL_CHECK_PTLIB_MANDATORY([STUN],    [ptclib/pstun.h],[PSTUNClient client;])
 OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
