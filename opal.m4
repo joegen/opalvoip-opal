@@ -82,7 +82,7 @@ dnl Define:    $1_LIB_NAME The actual name of the library file
 AC_DEFUN([OPAL_GET_LIBNAME],
          [
           AC_MSG_CHECKING(filename of $2 library)
-          AC_LANG_CONFTEST([int main () {return 0;}])
+          AC_LANG_CONFTEST([AC_LANG_SOURCE([[int main () {return 0;}]])])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $3>&AS_MESSAGE_LOG_FD
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
@@ -303,17 +303,19 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
             export PKG_CONFIG_PATH="${PTLIBDIR}"
 
-            if ! AC_RUN_LOG([$PKG_CONFIG ptlib --exists]); then
+            if ! $PKG_CONFIG --exists ptlib ; then
               AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
             fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
+            echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! AC_RUN_LOG([$PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}]); then
-                AC_MSG_ERROR([PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}])
-              fi
-            fi
+              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            else
+              PKG_CHECK_MODULES(PTLIB, ptlib)
+            fi            
 
 	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
 	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
@@ -484,31 +486,6 @@ AC_DEFUN([OPAL_CHECK_PTLIB_MANDATORY],
           fi
 
 					])
-
-AC_DEFUN([OPAL_CHECK_PTLIB_EXISTS],
-         [
-          old_CXXFLAGS="$CXXFLAGS"
-          old_LIBS="$LIBS"
-
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-
-          LIBS="$LIBS $DEFAULT_LIBS"
-
-          AC_LANG(C++)
-          AC_LINK_IFELSE([int main() {}
-                         ], 
-                         [opal_ptlib_exists=yes],
-                         [opal_ptlib_exists=no])
-
-
-          CXXFLAGS="$old_CXXFLAGS"
-          LIBS="$old_LIBS"
-
-	  if test "x$opal_ptlib_exists" != "xyes" ; then
-            AC_MSG_ERROR([Could not find a linkable ptlib in specified environment to verify symbols (debug ptlib: ${DEBUG_BUILD})])
-	  fi
-
-         ])
 
 dnl OPAL_CHECK_PTLIB_DEFINE
 dnl Verify if a specific #define in ptlib is defined
