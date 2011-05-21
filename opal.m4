@@ -245,7 +245,7 @@ dnl
 AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
          [
            suffix="$1$2"
-	   if test "x$suffix" == "x" ; then
+	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib $3 --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix $3 --libs`
@@ -367,24 +367,24 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
           OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
-          if test "x$found" == "x1" ; then
+          if test "x$found" = "x1" ; then
             DEFAULT_LIBS=$LIBS
             AC_MSG_RESULT([opt, shared])
           else 
             OPAL_CHECK_PTLIB_EXISTENCE([_d], [""], [""]) 
-            if test "x$found" == "x1" ; then
+            if test "x$found" = "x1" ; then
               DEFAULT_LIBS=$LIBS
               AC_MSG_RESULT([debug, shared])
             else
               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
               OPAL_CHECK_PTLIB_EXISTENCE([""], [_s], [--static])
-              if test "x$found" == "x1" ; then
+              if test "x$found" = "x1" ; then
                 DEFAULT_LIBS=$LIBS
                 AC_MSG_RESULT([release, static])
               else
                 OPAL_CHECK_PTLIB_EXISTENCE([_d], [_s], [--static])
-                if test "x$found" == "x1" ; then
+                if test "x$found" = "x1" ; then
                   DEFAULT_LIBS=$LIBS
                   AC_MSG_RESULT([debug, static])
                 else
