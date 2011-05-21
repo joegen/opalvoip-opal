@@ -220,14 +220,13 @@ AC_DEFUN([OPAL_CHECK_BSR],
          [
           BSR_TEST_SRC="
             #include <stdlib.h>
-            int main(int argc, char* argv[]) {
             #ifdef __GNUC__
                     unsigned int val = 0x00000FF0;
                     if (__builtin_clz(val) == 20)
                             exit(0);
             #endif
                     exit(1);
-            }"
+            "
           AC_RUN_IFELSE([AC_LANG_SOURCE([[$BSR_TEST_SRC]])],[opal_gcc_clz=yes],[opal_gcc_clz=no],[opal_gcc_clz=yes])
           OPAL_MSG_CHECK([for working bit scan intrinsic], [$opal_gcc_clz])
           AS_IF([test AS_VAR_GET([opal_gcc_clz]) = yes], [$1], [$2])[]
@@ -363,33 +362,33 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           old_LDFLAGS="$LDFLAGS" 
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          echo -n "Checking for linkable PTLib ..."
+          AC_MSG_CHECKING([linkable PTLib])
 
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
           OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
           if test "x$found" == "x1" ; then
             DEFAULT_LIBS=$LIBS
-            echo "opt, shared"
+            AC_MSG_RESULT([opt, shared])
           else 
             OPAL_CHECK_PTLIB_EXISTENCE([_d], [""], [""]) 
             if test "x$found" == "x1" ; then
               DEFAULT_LIBS=$LIBS
-              echo "debug, shared"
+              AC_MSG_RESULT([debug, shared])
             else
               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
               OPAL_CHECK_PTLIB_EXISTENCE([""], [_s], [--static])
               if test "x$found" == "x1" ; then
                 DEFAULT_LIBS=$LIBS
-                echo "release, static"
+                AC_MSG_RESULT([release, static])
               else
                 OPAL_CHECK_PTLIB_EXISTENCE([_d], [_s], [--static])
                 if test "x$found" == "x1" ; then
                   DEFAULT_LIBS=$LIBS
-                  echo "release, static"
+                  AC_MSG_RESULT([debug, static])
                 else
-                  echo "could not be found"
+                  AC_MSG_RESULT([not found])
                   exit -1
                 fi
               fi
@@ -499,16 +498,17 @@ AC_DEFUN([OPAL_CHECK_PTLIB_DEFINE],
           old_CXXFLAGS="$CXXFLAGS"
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           AC_LANG(C++)
-	  AC_TRY_COMPILE([
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+                         [[
 			  #include <ptbuildopts.h>
 			  #include <ptlib.h>
 			  #include <iostream>
-			 ],
-                         [
+			 ]],
+                         [[
                           #ifndef $2
 		          #error "$2 not defined"
 		          #endif
-                         ], 
+                         ]])], 
                          [opal_ptlib_option=yes],
                          [opal_ptlib_option=no])
 
@@ -612,7 +612,7 @@ AC_DEFUN([OPAL_CHECK_LIBAVCODEC],
          [
           AC_MSG_CHECKING(if libavcodec has $1)
   	  got_symbol=no
-          AC_LANG_CONFTEST([int main () {}])
+          AC_LANG_CONFTEST([AC_LANG_SOURCE([[]])])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&AS_MESSAGE_LOG_FD
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print @S|@3; }'`
@@ -795,14 +795,12 @@ AC_DEFUN([OPAL_SPEEX_FLOAT],
                           #include <${speex_inc_dir}speex.h>
                           #include <${speex_inc_dir}speex_preprocess.h>
                           #include <stdio.h>]],
-                          [[int main()
-                          {
+                          [[
                             SpeexPreprocessState *st;
                             spx_int16_t *x;
                             float *echo;
                             speex_preprocess(st, x, echo);
                             return 0;
-                          }
                           ]])], [opal_speexdsp_float=yes], [opal_speexdsp_float=no])
           CFLAGS="$old_CFLAGS"
           LIBS="$old_LIBS"
@@ -827,8 +825,8 @@ AC_DEFUN([OPAL_FIND_LIBDL],
           if test "$opal_dlfcn" = yes ; then
             AC_MSG_CHECKING(if dlopen is available)
             AC_LANG(C)
-            AC_TRY_COMPILE([#include <dlfcn.h>],
-                            [void * p = dlopen("lib", 0);], [opal_dlopen=yes], [opal_dlopen=no])
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],[[void * p = dlopen("lib", 0);]])],
+                              [opal_dlopen=yes], [opal_dlopen=no])
             if test "$opal_dlopen" = no ; then
               AC_MSG_RESULT(no)
             else
