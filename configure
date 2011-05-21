@@ -822,6 +822,10 @@ PTLIB_CFLAGS
 PTLIB_LIBS
 PTLIB_CFLAGS
 PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIB_LIBS
 CXXCPP
 CPPFLAGS
 SPEEXDSP_CFLAGS
@@ -4798,10 +4802,192 @@ fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
+            echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! $PKG_CONFIG --atleast-version=${PTLIB_REC_VERSION} ptlib ; then
-                as_fn_error $? "PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}" "$LINENO" 5
-              fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTLIB" >&5
+$as_echo_n "checking for PTLIB... " >&6; }
+
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (ptlib >= ${PTLIB_REC_VERSION}) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+            else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTLIB" >&5
+$as_echo_n "checking for PTLIB... " >&6; }
+
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (ptlib) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
             fi
 
 	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
