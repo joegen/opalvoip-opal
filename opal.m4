@@ -220,14 +220,13 @@ AC_DEFUN([OPAL_CHECK_BSR],
          [
           BSR_TEST_SRC="
             #include <stdlib.h>
-            int main(int argc, char* argv[]) {
             #ifdef __GNUC__
                     unsigned int val = 0x00000FF0;
                     if (__builtin_clz(val) == 20)
                             exit(0);
             #endif
                     exit(1);
-            }"
+            "
           AC_RUN_IFELSE([AC_LANG_SOURCE([[$BSR_TEST_SRC]])],[opal_gcc_clz=yes],[opal_gcc_clz=no],[opal_gcc_clz=yes])
           OPAL_MSG_CHECK([for working bit scan intrinsic], [$opal_gcc_clz])
           AS_IF([test AS_VAR_GET([opal_gcc_clz]) = yes], [$1], [$2])[]
@@ -612,7 +611,7 @@ AC_DEFUN([OPAL_CHECK_LIBAVCODEC],
          [
           AC_MSG_CHECKING(if libavcodec has $1)
   	  got_symbol=no
-          AC_LANG_CONFTEST([int main () {}])
+          AC_LANG_CONFTEST([AC_LANG_SOURCE([[]])])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&AS_MESSAGE_LOG_FD
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print @S|@3; }'`
@@ -795,14 +794,12 @@ AC_DEFUN([OPAL_SPEEX_FLOAT],
                           #include <${speex_inc_dir}speex.h>
                           #include <${speex_inc_dir}speex_preprocess.h>
                           #include <stdio.h>]],
-                          [[int main()
-                          {
+                          [[
                             SpeexPreprocessState *st;
                             spx_int16_t *x;
                             float *echo;
                             speex_preprocess(st, x, echo);
                             return 0;
-                          }
                           ]])], [opal_speexdsp_float=yes], [opal_speexdsp_float=no])
           CFLAGS="$old_CFLAGS"
           LIBS="$old_LIBS"
