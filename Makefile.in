@@ -560,10 +560,11 @@ $(OPAL_DEPDIR)/%.dep : %.c
 ifeq ($(OPAL_SHARED_LIB),)
 default: opt
 else
-default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) subdirs
+default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 ifeq ($(OPAL_SHARED_LIB),1)
 default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 endif
+default: subdirs
 endif
 
 .PHONY: subdirs $(SUBDIRS)
