@@ -2823,8 +2823,6 @@ fi
 
 
 
-
-
 # Check whether --enable-ios was given.
 if test "${enable_ios+set}" = set; then :
   enableval=$enable_ios;
@@ -4632,14 +4630,13 @@ $as_echo "yes" >&6; }
 
           BSR_TEST_SRC="
             #include <stdlib.h>
-            int main(int argc, char* argv) {
             #ifdef __GNUC__
                     unsigned int val = 0x00000FF0;
                     if (__builtin_clz(val) == 20)
                             exit(0);
             #endif
                     exit(1);
-            }"
+            "
           if test "$cross_compiling" = yes; then :
   opal_gcc_clz=yes
 else
@@ -4731,7 +4728,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
-PTLIB_REC_VERSION="2.7.1"
+PTLIB_REC_VERSION="2.11.0"
 
 
 if test "x$OPALDIR" = "x"; then
@@ -4813,6 +4810,7 @@ $as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
 
 
 
+
           # Check whether --enable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then :
   enableval=$enable_versioncheck; PTLIB_VERSION_CHECK=$enableval
@@ -4832,24 +4830,194 @@ fi
             old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
             export PKG_CONFIG_PATH="${PTLIBDIR}"
 
-            if ! { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG ptlib --exists"; } >&5
-  ($PKG_CONFIG ptlib --exists) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
+            if ! $PKG_CONFIG --exists ptlib ; then
               as_fn_error $? "No PTLIB library found in ${PTLIBDIR}" "$LINENO" 5
             fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
+            echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG ptlib --atleast-version=\${PTLIB_REC_VERSION}"; } >&5
-  ($PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}) 2>&5
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTLIB" >&5
+$as_echo_n "checking for PTLIB... " >&6; }
+
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-                as_fn_error $? "PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}" "$LINENO" 5
-              fi
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= \${PTLIB_REC_VERSION}\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= ${PTLIB_REC_VERSION}") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib >= ${PTLIB_REC_VERSION}" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REC_VERSION}" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (ptlib >= ${PTLIB_REC_VERSION}) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+            else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTLIB" >&5
+$as_echo_n "checking for PTLIB... " >&6; }
+
+if test -n "$PTLIB_CFLAGS"; then
+    pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PTLIB_LIBS"; then
+    pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
+        else
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PTLIB_PKG_ERRORS" >&5
+
+	as_fn_error $? "Package requirements (ptlib) were not met:
+
+$PTLIB_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables PTLIB_CFLAGS
+and PTLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
+else
+	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
+	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
             fi
 
 	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
@@ -5076,7 +5244,8 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
           old_LDFLAGS="$LDFLAGS"
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          echo -n "Checking for linkable PTLib ..."
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking linkable PTLib" >&5
+$as_echo_n "checking linkable PTLib... " >&6; }
 
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
@@ -5115,7 +5284,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
           if test "x$found" == "x1" ; then
             DEFAULT_LIBS=$LIBS
-            echo "opt, shared"
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
+$as_echo "opt, shared" >&6; }
           else
 
            suffix="_d"""
@@ -5152,7 +5322,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
             if test "x$found" == "x1" ; then
               DEFAULT_LIBS=$LIBS
-              echo "debug, shared"
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
+$as_echo "debug, shared" >&6; }
             else
               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
@@ -5191,7 +5362,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
               if test "x$found" == "x1" ; then
                 DEFAULT_LIBS=$LIBS
-                echo "release, static"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
+$as_echo "release, static" >&6; }
               else
 
            suffix="_d_s"
@@ -5228,9 +5400,11 @@ rm -f core conftest.err conftest.$ac_objext \
 
                 if test "x$found" == "x1" ; then
                   DEFAULT_LIBS=$LIBS
-                  echo "release, static"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
+$as_echo "debug, static" >&6; }
                 else
-                  echo "could not be found"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
                   exit -1
                 fi
               fi
@@ -7129,14 +7303,12 @@ done
 int
 main ()
 {
-int main()
-                          {
+
                             SpeexPreprocessState *st;
                             spx_int16_t *x;
                             float *echo;
                             speex_preprocess(st, x, echo);
                             return 0;
-                          }
 
   ;
   return 0;
