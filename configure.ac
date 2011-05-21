@@ -134,7 +134,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
-PTLIB_REC_VERSION="2.7.1"
+PTLIB_REC_VERSION="2.11.0"
 
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
@@ -195,6 +195,7 @@ fi
 
 AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
 AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
+
 
 
 dnl ########################################################################
