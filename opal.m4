@@ -303,14 +303,14 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
             export PKG_CONFIG_PATH="${PTLIBDIR}"
 
-            if ! AC_RUN_LOG([$PKG_CONFIG ptlib --exists]); then
+            if ! $PKG_CONFIG --exists ptlib ; then
               AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
             fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! AC_RUN_LOG([$PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}]); then
+              if ! $PKG_CONFIG --atleast-version=${PTLIB_REC_VERSION} ptlib ; then
                 AC_MSG_ERROR([PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}])
               fi
             fi

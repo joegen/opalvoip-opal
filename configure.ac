@@ -262,8 +262,6 @@ fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
-OPAL_DETERMINE_DEBUG()
-
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
 
