@@ -763,16 +763,24 @@ PKG_CONFIG_LIBDIR
 PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
+PTLIB_LIBS
 CXX
 CXXFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
 CCC
+CXX
+LDFLAGS
+LIBS
+CPPFLAGS
+CCC
 CC
 CFLAGS
+LIBS
 CXXCPP
 SPEEX_CFLAGS
+SPEEX_LIBS
 SPEEX_LIBS
 CELT_CFLAGS
 CELT_LIBS
@@ -3670,6 +3678,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -3685,6 +3694,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -3760,6 +3770,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -3775,6 +3786,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -3867,6 +3879,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -3882,6 +3895,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -3957,6 +3971,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -3972,6 +3987,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -9261,6 +9277,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables LIBAVUTIL_CFLAGS
 and LIBAVUTIL_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -9276,6 +9293,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	LIBAVUTIL_CFLAGS=$pkg_cv_LIBAVUTIL_CFLAGS
 	LIBAVUTIL_LIBS=$pkg_cv_LIBAVUTIL_LIBS
@@ -9316,19 +9334,18 @@ $as_echo_n "checking if libavcodec has rtp_mode... " >&6; };
   LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-AC_LANG_PROGRAM([[#include <libavcodec/avcodec.h>]],
-                  [[AVCodecContext c; c.rtp_mode = 1; return 0;]])
 
+                  #include <linux/ixjuser.h>
 int
 main ()
 {
-HAVE_LIBAVCODEC_RTP_MODE=1
+AVCodecContext c; c.rtp_mode = 1;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
-
+  HAVE_LIBAVCODEC_RTP_MODE=1
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   if test "x$HAVE_LIBAVCODEC_RTP_MODE" = "x1" ; then
@@ -9942,7 +9959,7 @@ done
 int
 main ()
 {
-int main(int ac,char **av) { return 0; }
+ return 0;
   ;
   return 0;
 }
