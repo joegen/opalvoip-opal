@@ -4837,22 +4837,14 @@ fi
             old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
             export PKG_CONFIG_PATH="${PTLIBDIR}"
 
-            if ! { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG ptlib --exists"; } >&5
-  ($PKG_CONFIG ptlib --exists) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
+            if ! $PKG_CONFIG --exists ptlib ; then
               as_fn_error $? "No PTLIB library found in ${PTLIBDIR}" "$LINENO" 5
             fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG ptlib --atleast-version=\${PTLIB_REC_VERSION}"; } >&5
-  ($PKG_CONFIG ptlib --atleast-version=${PTLIB_REC_VERSION}) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
+              if ! $PKG_CONFIG --atleast-version=${PTLIB_REC_VERSION} ptlib ; then
                 as_fn_error $? "PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}" "$LINENO" 5
               fi
             fi
@@ -5676,8 +5668,6 @@ else
 fi
 CFLAGS="$CFLAGS $SHARED_CFLAGS"
 CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
-
-OPAL_DETERMINE_DEBUG()
 
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
