@@ -2,7 +2,18 @@ AC_INIT(configure.ac)
 
 if test \! -e ./aclocal.m4 ; then
   echo "ERROR: you must run 'aclocal' before 'autoconf'"
-  exit
+  exit -1
+fi
+
+dnl extract recommended PTLIB version from parent directory
+if test \! -e ../configure ; then
+  echo "ERROR: unable to find '../configure'"
+else
+  PTLIB_REC_VERSION=`grep '^PTLIB_REC_VERSION=' ../configure | sed -e 's/^[^=]*=//' -e 's/\"//g'`
+  if test "x$PTLIB_REC_VERSION" = "x" ; then
+    echo "ERROR: unable to extract PTLIB_REC_VERSION from ../configure"
+    exit -1
+  fi
 fi
 
 PKG_PROG_PKG_CONFIG()
@@ -10,11 +21,10 @@ AC_CANONICAL_TARGET()
 
 m4_include(../opal.m4)
 
-OPAL_CHECK_PTLIB_EXISTS()
 OPAL_FIND_PTLIB()
-OPAL_DETERMINE_DEBUG()
-CFLAGS="$DEFAULT_CFLAGS $CFLAGS"
-CXXFLAGS="$DEFAULT_CFLAGS $CXXFLAGS"
+
+CFLAGS="$CFLAGS $PTLIB_CFLAGS"
+CXXFLAGS="$CFLAGS $PTLIB_CXXFLAGS"
 
 AC_PROG_CXX
 AC_PROG_CC
@@ -111,7 +121,7 @@ dnl ########################################################################
 dnl Defaults
 dnl ########################################################################
 
-HAVE_VPB=yes
+HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
