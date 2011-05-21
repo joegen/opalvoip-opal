@@ -309,11 +309,13 @@ AC_DEFUN([OPAL_FIND_PTLIB],
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
 
+            echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              if ! $PKG_CONFIG --atleast-version=${PTLIB_REC_VERSION} ptlib ; then
-                AC_MSG_ERROR([PTLIB Version check failed, recommended version is at least ${PTLIB_REC_VERSION}])
-              fi
-            fi
+              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            else
+              PKG_CHECK_MODULES(PTLIB, ptlib)
+            fi            
 
 	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
 	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
