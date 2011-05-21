@@ -363,33 +363,33 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           old_LDFLAGS="$LDFLAGS" 
 
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          echo -n "Checking for linkable PTLib ..."
+          AC_MSG_CHECKING([linkable PTLib])
 
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
           OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
           if test "x$found" == "x1" ; then
             DEFAULT_LIBS=$LIBS
-            echo "opt, shared"
+            AC_MSG_RESULT([opt, shared])
           else 
             OPAL_CHECK_PTLIB_EXISTENCE([_d], [""], [""]) 
             if test "x$found" == "x1" ; then
               DEFAULT_LIBS=$LIBS
-              echo "debug, shared"
+              AC_MSG_RESULT([debug, shared])
             else
               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
               OPAL_CHECK_PTLIB_EXISTENCE([""], [_s], [--static])
               if test "x$found" == "x1" ; then
                 DEFAULT_LIBS=$LIBS
-                echo "release, static"
+                AC_MSG_RESULT([release, static])
               else
                 OPAL_CHECK_PTLIB_EXISTENCE([_d], [_s], [--static])
                 if test "x$found" == "x1" ; then
                   DEFAULT_LIBS=$LIBS
-                  echo "release, static"
+                  AC_MSG_RESULT([debug, static])
                 else
-                  echo "could not be found"
+                  AC_MSG_RESULT([not found])
                   exit -1
                 fi
               fi
