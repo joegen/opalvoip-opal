@@ -660,9 +660,20 @@ endif
 
 install:
 	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
-	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(DESTDIR)$(libdir)
-	$(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)
-	ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(LIB_FILENAME_SHARED)
+	( if test -e $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(DESTDIR)$(libdir) ; \
+	fi )
+	( if test -e $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_STATIC) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_STATIC) $(DESTDIR)$(libdir) ; \
+	fi )
+	( if test -e $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir) ; \
+	  ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(LIB_FILENAME_SHARED) ; \
+	fi )
+	( if test -e $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED_PAT) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir) ; \
+	  ln -snf $(DEBUG_LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(DEBUG_LIB_FILENAME_SHARED) ; \
+	fi )
 	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
 
