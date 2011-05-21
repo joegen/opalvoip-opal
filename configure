@@ -4917,7 +4917,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -4933,7 +4932,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5009,7 +5007,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5025,7 +5022,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5118,7 +5114,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5134,7 +5129,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5210,7 +5204,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5226,7 +5219,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5270,7 +5262,7 @@ $as_echo_n "checking linkable PTLib... " >&6; }
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
 
            suffix=""""""
-	   if test "x$suffix" == "x" ; then
+	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib "" --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
@@ -5301,14 +5293,14 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-          if test "x$found" == "x1" ; then
+          if test "x$found" = "x1" ; then
             DEFAULT_LIBS=$LIBS
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
 $as_echo "opt, shared" >&6; }
           else
 
            suffix="_d"""
-	   if test "x$suffix" == "x" ; then
+	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib "" --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
@@ -5339,7 +5331,7 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-            if test "x$found" == "x1" ; then
+            if test "x$found" = "x1" ; then
               DEFAULT_LIBS=$LIBS
               { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
 $as_echo "debug, shared" >&6; }
@@ -5348,7 +5340,7 @@ $as_echo "debug, shared" >&6; }
               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
 
            suffix="""_s"
-	   if test "x$suffix" == "x" ; then
+	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib --static --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
@@ -5379,14 +5371,14 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-              if test "x$found" == "x1" ; then
+              if test "x$found" = "x1" ; then
                 DEFAULT_LIBS=$LIBS
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
 $as_echo "release, static" >&6; }
               else
 
            suffix="_d_s"
-	   if test "x$suffix" == "x" ; then
+	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib --static --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
@@ -5417,7 +5409,7 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-                if test "x$found" == "x1" ; then
+                if test "x$found" = "x1" ; then
                   DEFAULT_LIBS=$LIBS
                   { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
 $as_echo "debug, static" >&6; }
