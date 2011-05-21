@@ -487,9 +487,9 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
 
   AC_MSG_CHECKING(if libavcodec has rtp_mode);
   LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
-  AC_TRY_COMPILE([AC_LANG_PROGRAM([[#include <libavcodec/avcodec.h>]],
-                  [[AVCodecContext c; c.rtp_mode = 1; return 0;]])
-                 ],
+  AC_COMPILE_IFELSE([
+                  AC_LANG_PROGRAM([[#include <linux/ixjuser.h>]],
+                                  [[AVCodecContext c; c.rtp_mode = 1; ]])],
                   [HAVE_LIBAVCODEC_RTP_MODE=1])
   if test "x$HAVE_LIBAVCODEC_RTP_MODE" = "x1" ; then
     AC_MSG_RESULT(yes);
@@ -600,8 +600,8 @@ if test -d LID/IxJ ; then
 		       [HAVE_IXJ=yes],
 		       [AC_CHECK_HEADERS([ sys/telephony.h], [HAVE_IXJ=yes], [HAVE_IXJ=no])])
       if test "x$HAVE_IXJ" = "xyes" ; then
-        AC_TRY_COMPILE([#include <linux/ixjuser.h>],
-                       [int main(int ac,char **av) { return 0; }], [HAVE_IXJ=yes], [HAVE_IXJ=no])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/ixjuser.h>]], [[ return 0; ]])],
+                          [HAVE_IXJ=yes], [HAVE_IXJ=no])
       fi
     fi
   fi

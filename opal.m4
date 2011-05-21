@@ -498,16 +498,17 @@ AC_DEFUN([OPAL_CHECK_PTLIB_DEFINE],
           old_CXXFLAGS="$CXXFLAGS"
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           AC_LANG(C++)
-	  AC_TRY_COMPILE([
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+                         [[
 			  #include <ptbuildopts.h>
 			  #include <ptlib.h>
 			  #include <iostream>
-			 ],
-                         [
+			 ]],
+                         [[
                           #ifndef $2
 		          #error "$2 not defined"
 		          #endif
-                         ], 
+                         ]])], 
                          [opal_ptlib_option=yes],
                          [opal_ptlib_option=no])
 
@@ -824,8 +825,8 @@ AC_DEFUN([OPAL_FIND_LIBDL],
           if test "$opal_dlfcn" = yes ; then
             AC_MSG_CHECKING(if dlopen is available)
             AC_LANG(C)
-            AC_TRY_COMPILE([#include <dlfcn.h>],
-                            [void * p = dlopen("lib", 0);], [opal_dlopen=yes], [opal_dlopen=no])
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],[[void * p = dlopen("lib", 0);]])],
+                              [opal_dlopen=yes], [opal_dlopen=no])
             if test "$opal_dlopen" = no ; then
               AC_MSG_RESULT(no)
             else

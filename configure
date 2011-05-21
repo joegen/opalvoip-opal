@@ -813,11 +813,22 @@ CPPFLAGS
 CCC
 CC
 CFLAGS
+LDFLAGS
+LIBS
+CPPFLAGS
 CPP
+CPPFLAGS
 PTLIBDIR
 PTLIB_CFLAGS
 PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIB_LIBS
+PTLIB_CFLAGS
+PTLIB_LIBS
 CXXCPP
+CPPFLAGS
 SPEEXDSP_CFLAGS
 SPEEXDSP_LIBS'
 ac_subdirs_all='plugins'
@@ -4906,6 +4917,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -4921,6 +4933,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -4996,6 +5009,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5011,6 +5025,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5103,6 +5118,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5118,6 +5134,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5193,6 +5210,7 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5208,6 +5226,7 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
+
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -6639,7 +6658,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 			  #include <ptbuildopts.h>
