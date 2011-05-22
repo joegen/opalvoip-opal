@@ -53,7 +53,9 @@ PKG_FLAGS = --define-variable=suffix=$(SUFFIX)
 endif
 # Get required flags from library
 
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal)
+# The -I option allows to build the simple application in the same time as opal
+# (as used by distribution packagers)
+CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal) -I../../include
 LDFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
 
 
