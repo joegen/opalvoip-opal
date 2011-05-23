@@ -4153,7 +4153,7 @@ $as_echo "not found" >&6; }
 
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
-CXXFLAGS="$CFLAGS $PTLIB_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $PTLIB_CXXFLAGS -D__STDC_CONSTANT_MACROS"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -9032,7 +9032,7 @@ $as_echo_n "checking filename of libavcodec library... " >&6; }
 int
 main ()
 {
-return 0;
+
   ;
   return 0;
 }
@@ -9234,7 +9234,7 @@ $as_echo_n "checking filename of libavutil library... " >&6; }
 int
 main ()
 {
-return 0;
+
   ;
   return 0;
 }
@@ -9395,7 +9395,7 @@ $as_echo_n "checking filename of libx264 library... " >&6; }
 int
 main ()
 {
-return 0;
+
   ;
   return 0;
 }
