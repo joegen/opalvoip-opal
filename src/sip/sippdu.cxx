@@ -676,10 +676,14 @@ PString SIPURLList::ToString() const
   PStringStream strm;
   bool outputCommas = false;
   for (const_iterator it = begin(); it != end(); ++it) {
+    if (it->IsEmpty())
+      continue;
+
     if (outputCommas)
       strm << ", ";
     else
       outputCommas = true;
+
     strm << it->AsQuotedString();
   }
   return strm;
@@ -927,7 +931,7 @@ OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
   if (LocateFieldParameter(via, "received", start, val, end) && val < end)
     return OpalTransportAddress(via(val, end), port, "udp");
 
-  return OpalTransportAddress(via(via.Find(' ')+1, via.Find(':')-1), port, "udp");
+  return OpalTransportAddress(via(via.Find(' ')+1, via.FindOneOf(";:")-1), port, "udp");
 }
 
 
