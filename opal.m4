@@ -82,7 +82,7 @@ dnl Define:    $1_LIB_NAME The actual name of the library file
 AC_DEFUN([OPAL_GET_LIBNAME],
          [
           AC_MSG_CHECKING(filename of $2 library)
-          AC_LANG_CONFTEST([AC_LANG_SOURCE([[int main () {return 0;}]])])
+          AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[return 0;]])])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $3>&AS_MESSAGE_LOG_FD
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
@@ -612,7 +612,7 @@ AC_DEFUN([OPAL_CHECK_LIBAVCODEC],
          [
           AC_MSG_CHECKING(if libavcodec has $1)
   	  got_symbol=no
-          AC_LANG_CONFTEST([AC_LANG_SOURCE([[]])])
+          AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[]])])
           $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS $LIBAVCODEC_LIBS>&AS_MESSAGE_LOG_FD
           if test -x conftest$ac_exeext ; then
             libavcodec_libdir=`$LDD ./conftest$ac_exeext | grep libavcodec | awk '{print @S|@3; }'`
