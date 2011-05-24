@@ -24,17 +24,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fax Application", "samples\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IVR Application", "samples\ivropal\IvrOPAL_2010.vcxproj", "{D7F92DDD-CA73-4E2F-8940-4E2D1C863D25}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sipim", "samples\sipim\sipim_2010.vcxproj", "{D4F638A4-B109-4348-9247-FFC163676723}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Instant Messaging", "samples\sipim\sipim_2010.vcxproj", "{D4F638A4-B109-4348-9247-FFC163676723}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenPhone", "samples\openphone\OpenPhone_2010.vcxproj", "{56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "src\win32\opal_dll_2010.vcxproj", "{B2830E08-B1F1-492F-8849-F3D8461E450F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalecho", "samples\opalecho\opalecho_2010.vcxproj", "{072F7820-710F-416A-A348-A4D1D023C72B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Echo Application", "samples\opalecho\opalecho_2010.vcxproj", "{072F7820-710F-416A-A348-A4D1D023C72B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MCU Application", "samples\opalmcu\OPAL_MCU_2010.vcxproj", "{6C1D0918-6995-41C4-9068-6300F3E60D47}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testpresent", "samples\testpresent\testpresent_2010.vcxproj", "{1650298C-5F43-47B8-974E-155D1FA0D672}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Presence Test", "samples\testpresent\testpresent_2010.vcxproj", "{1650298C-5F43-47B8-974E-155D1FA0D672}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Codec Test", "samples\codectest\codectest_2010.vcxproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
 EndProject
