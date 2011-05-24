@@ -24,7 +24,7 @@
 # $Date$
 #
 
-BASE_NAME := ima_adpcm
+BASENAME := ima_adpcm
 
 SRCDIR := .
 SRCS   := ima_adpcm.c
