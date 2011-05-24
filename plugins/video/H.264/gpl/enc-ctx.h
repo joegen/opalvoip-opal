@@ -45,7 +45,7 @@ extern "C" {
 
 #if PTRACING
 #include <iostream>
-#define PTRACE(l,m,o) std::cerr << o
+#define PTRACE(l,m,o) std::cerr << o << std::endl
 #else
 #define PTRACE(l,m,o)
 #endif
