@@ -118,7 +118,7 @@ bool X264Library::Load()
 
 bool X264Library::Open(const char *name)
 {
-  PTRACE(4, "x264", "DYNA\tTrying to open x264 library " << name)
+  PTRACE(4, "x264", "DYNA\tTrying to open x264 library " << name);
 
   if ( strlen(name) == 0 )
     return false;
@@ -128,7 +128,7 @@ bool X264Library::Open(const char *name)
   if (_dynamicLibrary == NULL) {
     char * error = (char *) dlerror();
     if (error != NULL) {
-        PTRACE(4, "x264", "DYNA\tCould not load " << name << " - " << error)
+        PTRACE(4, "x264", "DYNA\tCould not load " << name << " - " << error);
     }
     else {
         PTRACE(4, "x264", "DYNA\tCould not load " << name);
