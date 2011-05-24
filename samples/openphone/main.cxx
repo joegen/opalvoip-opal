@@ -944,6 +944,8 @@ bool MyManager::Initialise()
     videoArgs.channelNumber = value1;
   if (config->Read(VideoGrabFrameRateKey, &value1))
     videoArgs.rate = value1;
+  if (videoArgs.rate == 0)
+    videoArgs.rate = 15;
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
   m_SecondaryVideoGrabber = videoArgs;
@@ -3352,6 +3354,7 @@ bool MyManager::AdjustVideoFormats()
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), m_VideoMaxBitRate*1000U);
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_VideoTargetBitRate*1000U);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), mediaFormat.GetClockRate()/GetVideoInputDevice().rate);
 
       switch (m_ExtendedVideoRoles) {
         case e_DisabledExtendedVideoRoles :
