@@ -541,12 +541,12 @@ public:
 #endif
 
 
-  static void ClampOptions(const LevelInfoStruct & info,
-                           unsigned maxWidth,
-                           unsigned maxHeight,
-                           unsigned & maxFrameSize,
-                           OptionMap & original,
-                           OptionMap & changed)
+  static void ClampSizes(const LevelInfoStruct & info,
+                         unsigned maxWidth,
+                         unsigned maxHeight,
+                         unsigned & maxFrameSize,
+                         OptionMap & original,
+                         OptionMap & changed)
   {
     unsigned macroBlocks = GetMacroBlocks(maxWidth, maxHeight);
     if (macroBlocks > maxFrameSize || maxWidth > info.m_MaxWidthHeight || maxHeight > info.m_MaxWidthHeight) {
@@ -571,15 +571,6 @@ public:
     ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
     ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_FRAME_WIDTH);
     ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_FRAME_HEIGHT);
-
-    // Frame rate
-    unsigned maxMBPS = std::max(info.m_MaxMBPS, String2Unsigned(original[MaxMBPS.m_name]));
-    ClampMin(90000*macroBlocks/maxMBPS, original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
-
-    // Bit rate
-    unsigned maxBitRate = std::max(info.m_MaxBitRate, String2Unsigned(original[MaxBR.m_name])*1000);
-    ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_MAX_BIT_RATE);
-    ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
   }
 
 
@@ -638,12 +629,22 @@ public:
     Change(LevelInfo[levelIndex].m_Name, original, changed, "Level");
 
     unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[MaxFS.m_name]));
-    ClampOptions(LevelInfo[levelIndex],
-                 String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH]),
-                 String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT]),
-                 maxFrameSizeInMB,
-                 original, changed);
+    ClampSizes(LevelInfo[levelIndex],
+               String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH]),
+               String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT]),
+               maxFrameSizeInMB,
+               original, changed);
 
+    // Frame rate
+    unsigned maxMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, String2Unsigned(original[MaxMBPS.m_name]));
+    ClampMin(GetMacroBlocks(String2Unsigned(original[PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH]),
+                            String2Unsigned(original[PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT]))*MyClockRate/maxMBPS,
+             original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
+
+    // Bit rate
+    unsigned maxBitRate = std::max(LevelInfo[levelIndex].m_MaxBitRate, String2Unsigned(original[MaxBR.m_name])*1000);
+    ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_MAX_BIT_RATE);
+    ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
     return true;
   }
 
@@ -689,10 +690,6 @@ public:
     }
     PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
 
-    unsigned bitRate = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_BIT_RATE]);
-    if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
-      Change(bitRate/1000, original, changed, MaxBR.m_name);
-
     // set the new level
     Change(LevelInfo[levelIndex].m_H241, original, changed, H241Level.m_name);
 
@@ -705,11 +702,21 @@ public:
     Change(sdpProfLevel, original, changed, SDPProfileAndLevel.m_name);
 
     // Clamp other variables (width/height etc) according to the adjusted profile/level
-    ClampOptions(LevelInfo[levelIndex], maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
+    ClampSizes(LevelInfo[levelIndex], maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
 
     // Do this afer the clamping, maxFrameSizeInMB may change
     if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize)
       Change(maxFrameSizeInMB, original, changed, MaxFS.m_name);
+
+    // Set exception to bit rate if necessary
+    unsigned bitRate = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_BIT_RATE]);
+    if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
+      Change(bitRate/1000, original, changed, MaxBR.m_name);
+
+    // Set exception to frame rate if necessary
+    unsigned mbps = maxFrameSizeInMB*MyClockRate/String2Unsigned(original[PLUGINCODEC_OPTION_FRAME_TIME]);
+    if (mbps > LevelInfo[levelIndex].m_MaxMBPS)
+      Change(mbps, original, changed, MaxMBPS.m_name);
 
     return true;
   }
