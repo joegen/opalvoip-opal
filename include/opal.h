@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 23
+#define OPAL_C_API_VERSION 24
 
 
 ///////////////////////////////////////
@@ -409,8 +409,8 @@ typedef enum OpalMessageType {
                                     the OpalGetMessage() function. See the OpalStatusTransferCall structure for
                                     more information. */
   OpalIndCompletedIVR,          /**<Indicates completion of the IVR (VXML) script. This message is returned in
-                                    the OpalGetMessage() function. The OpalMessage m_callToken field is set to
-                                    the token for the call. */
+                                    the OpalGetMessage() function. See the OpalStatusIVR structure for
+                                    more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
   OpalMessageTypeCount
@@ -1174,10 +1174,23 @@ typedef struct OpalStatusTransferCall {
                                                         transfer, e.g. party C in a consultation
                                                         transfer scenario. */
   const char * m_info;    /**< Protocol dependent information in the form:
-                                           key=value
-                                           key=value
-                                           etc*/
+                                           key=value\n
+                                           key=value\n
+                                           etc */
 } OpalStatusTransferCall;
+
+
+/**IVR information for the OpalIndCompletedIVR indication.
+   This is only returned from the OpalGetMessage() function.
+  */
+typedef struct OpalStatusIVR {
+  const char * m_callToken;   ///< Call token for call being cleared.
+  const char * m_variables;   /**< Final values for variables defined by the script.
+                                   These will be in the form:
+                                           varname=value\n
+                                           varname=value\n
+                                           etc */
+} OpalStatusIVR;
 
 
 /**Call clearance information for the OpalIndCallCleared indication.
@@ -1264,6 +1277,7 @@ struct OpalMessage {
     OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
     OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
     OpalStatusTransferCall   m_transferStatus;     ///< Used by OpalIndTransferCall
+    OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
   } m_param;
 };
 
