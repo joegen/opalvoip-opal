@@ -294,6 +294,8 @@ class OpalIVRConnection : public OpalLocalConnection
     virtual void OnEndDialog();
 
     const PString & GetVXML() const { return m_vxmlScript; }
+    const OpalVXMLSession & GetVXMLSession() const { return m_vxmlSession; }
+    OpalVXMLSession & GetVXMLSession() { return m_vxmlSession; }
 
     PTextToSpeech * GetTextToSpeech() const { return m_vxmlSession.GetTextToSpeech(); }
     PTextToSpeech * SetTextToSpeech(const PString & ttsName) { return m_vxmlSession.SetTextToSpeech(ttsName); }
