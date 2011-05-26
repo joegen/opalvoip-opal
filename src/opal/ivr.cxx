@@ -241,16 +241,13 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
       return false;
   }
 
-  PStringToString & vars = m_vxmlSession.GetSessionVars();
-
-  PString originator = m_stringOptions(OPAL_OPT_ORIGINATOR_ADDRESS, m_stringOptions("Remote-Address"));
-  if (!originator.IsEmpty()) {
-    PIPSocketAddressAndPort ap(originator);
-    vars.SetAt("Source-IP-Address", ap.GetAddress().AsString());
-    vars.SetAt("Source-IP-Port", ap.GetPort());
-  }
-
-  vars.SetAt("Time", PTime().AsString());
+  PURL remoteURL = GetRemotePartyURL();
+  m_vxmlSession.SetVar("session.connection.local.uri", GetLocalPartyURL());
+  m_vxmlSession.SetVar("session.connection.remote.ani", GetRemotePartyNumber());
+  m_vxmlSession.SetVar("session.connection.remote.uri", remoteURL);
+  m_vxmlSession.SetVar("session.connection.remote.ip", remoteURL.GetHostName());
+  m_vxmlSession.SetVar("session.connection.remote.port", remoteURL.GetPort());
+  m_vxmlSession.SetVar("session.time", PTime().AsString());
 
   bool ok;
 
@@ -270,14 +267,10 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
         ok = m_vxmlSession.LoadFile(vxmlFile);
       }
     }
-    else {
-      if (vxmlURL.GetScheme() != "file" || (vxmlURL.AsFilePath().GetType() *= ".vxml"))
-        ok = StartScript(vxmlToLoad);
-      else {
-        PTRACE(4, "IVR\tStarted using VXML URL: " << vxmlURL);
-        ok = m_vxmlSession.LoadURL(vxmlURL);
-      }
-    }
+    else if (vxmlURL.GetScheme() == "file" && (vxmlURL.AsFilePath().GetType() *= ".vxml"))
+      ok = m_vxmlSession.LoadURL(vxmlURL);
+    else
+      ok = StartScript(vxmlToLoad);
   }
 
   if (ok)
