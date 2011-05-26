@@ -379,30 +379,37 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::Notif
   PXMLElement * rootElement = xml.GetRootElement();
   info.m_entity = rootElement->GetAttribute("entity");
 
+  PXMLElement * noteElement = NULL;
+
   PCaselessString pidf;
   PXMLElement * tupleElement = rootElement->GetElement("tuple");
   if (tupleElement != NULL) {
     PXMLElement * statusElement = tupleElement->GetElement("status");
+    if (statusElement != NULL) {
+      PXMLElement * basicElement = statusElement->GetElement("basic");
+      if (basicElement != NULL) {
+        PCaselessString value = basicElement->GetData();
+        if (value == "open")
+          info.m_state = SIPPresenceInfo::Available;
+        else if (value == "closed")
+          info.m_state = SIPPresenceInfo::NoPresence;
+      }
 
-    PXMLElement * basicElement = tupleElement->GetElement("basic");
-    if (basicElement != NULL) {
-      PCaselessString value = basicElement->GetData();
-      if (value == "open")
-        info.m_state = SIPPresenceInfo::Available;
-      else if (value == "closed")
-        info.m_state = SIPPresenceInfo::NoPresence;
+      noteElement = statusElement->GetElement("note");
     }
 
-    PXMLElement * noteElement;
-    if ((noteElement = statusElement->GetElement("note")) != NULL ||
-        (noteElement = rootElement->GetElement("note")) != NULL ||
-        (noteElement = tupleElement->GetElement("note")) != NULL)
-      info.m_note = noteElement->GetData();
+    if (noteElement == NULL)
+      noteElement = tupleElement->GetElement("note");
 
     PXMLElement * contactElement = tupleElement->GetElement("contact");
     if (contactElement != NULL)
       info.m_contact = contactElement->GetData();
   }
+
+  if (noteElement == NULL)
+    noteElement = rootElement->GetElement("note");
+  if (noteElement != NULL)
+    info.m_note = noteElement->GetData();
 
   static PCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
   static PCaselessString dm  ("urn:ietf:params:xml:ns:pidf:data-model|");
