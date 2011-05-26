@@ -646,7 +646,12 @@ void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
 
   // Send message to app, which may (or may not) start a new IVR script
   OpalMessageBuffer message(OpalIndCompletedIVR);
-  SET_MESSAGE_STRING(message, m_param.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_ivrStatus.m_callToken, connection.GetCall().GetToken());
+
+  PStringStream varStr;
+  varStr << connection.GetVXMLSession().GetVariables();
+  SET_MESSAGE_STRING(message, m_param.m_ivrStatus.m_variables, varStr);
+
   m_manager.PostMessage(message);
 }
 
