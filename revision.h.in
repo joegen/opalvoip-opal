@@ -26,7 +26,7 @@
 #ifndef _OPAL_REVISION_H
 #define _OPAL_REVISION_H
 
-#define SVN_REVISION 24310
+#define SVN_REVISION 25899
 
 #endif  // _OPAL_REVISION_H
 
