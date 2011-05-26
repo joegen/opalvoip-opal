@@ -289,13 +289,13 @@ public:
       traceOpts |= PTrace::AppendToFile;
 
     PTrace::Initialise(level, filename, traceOpts);
-    PTRACE(3, "OpalC\tStart Up.");
+    PTRACE(1, "OpalC\tStart Up, OPAL version " << OpalGetVersion());
 #endif
   }
 
   ~PProcess_C()
   {
-    PTRACE(3, "OpalC\tShut Down.");
+    PTRACE(1, "OpalC\tShut Down.");
   }
 
 private:
