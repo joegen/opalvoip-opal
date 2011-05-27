@@ -376,26 +376,18 @@ if test -d audio/celt ; then
   PKG_CHECK_MODULES([CELT],
                     [celt],
                     [
-                     AC_SUBST(CELT_CFLAGS)
-                     AC_SUBST(CELT_LIBS)
-                     AC_DEFINE([HAVE_CELT], [1], [celt])
-                     HAVE_CELT=yes
-                     PKG_CHECK_EXISTS([celt < 0.5.0],
-                                       [
-                                        AC_DEFINE([HAVE_CELT_0_4_OR_SOONER], [1], [celt 0.4 or sooner found])
-                     ])
-                     PKG_CHECK_EXISTS([celt >= 0.5.0 celt < 0.7.0],
-                                       [
-                                        AC_DEFINE([HAVE_CELT_0_5_0_OR_0_6_0], [1], [celt 0.5.0 or 0.6.0 found])
-                     ])
+                      AC_SUBST(CELT_CFLAGS)
+                      AC_SUBST(CELT_LIBS)
                     ],
                     [
-                     HAVE_CELT=no
+                      HAVE_CELT=no
                     ])
 else
   HAVE_CELT=no
 fi
 if test "x${HAVE_CELT}" = "xyes" ; then
+  CELT_CFLAGS="${CELT_CFLAGS} -DCELT_VERSION=\"`pkg-config --modversion celt | \
+                  sed -e "s/\./*10000+/" -e "s/\./*100+/"`\""
   AC_CONFIG_FILES(audio/celt/Makefile)
   SUBDIRS+=" audio/celt"
 fi
