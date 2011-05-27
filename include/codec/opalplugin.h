@@ -605,18 +605,35 @@ enum {
 #define PluginCodec_RTP_MinHeaderSize  (12)
 #define PluginCodec_RTP_MaxPayloadSize (PluginCodec_RTP_MaxPacketSize - PluginCodec_RTP_MinHeaderSize)
 
-#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((unsigned char*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
-#define PluginCodec_RTP_GetPayloadPtr(ptr)          ((unsigned char*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
-#define PluginCodec_RTP_GetPayloadType(ptr)        (((unsigned char*)(ptr))[1] & 0x7f)
-#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x80) | (type & 0x7f)))
-#define PluginCodec_RTP_GetMarker(ptr)            ((((unsigned char*)(ptr))[1] & 0x80) != 0)
-#define PluginCodec_RTP_SetMarker(ptr, mark)       (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0)))
-#define PluginCodec_RTP_GetTimestamp(ptr)         ((((unsigned char*)(ptr))[4] << 24) | (((unsigned char*)(ptr))[5] << 16) | (((unsigned char*)(ptr))[6] << 8) | ((unsigned char*)(ptr))[7])
-#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((unsigned char*)(ptr))[4] = (unsigned char)((ts) >> 24)),(((unsigned char*)(ptr))[5] = (unsigned char)((ts) >> 16)),(((unsigned char*)(ptr))[6] = (unsigned char)((ts) >> 8)),(((unsigned char*)(ptr))[7] = (unsigned char)(ts)))
-#define PluginCodec_RTP_GetSequenceNumber(ptr)    ((((unsigned char*)(ptr))[2] << 8) | ((unsigned char*)(ptr))[3])
-#define PluginCodec_RTP_SetSequenceNumber(ptr, sn)((((unsigned char*)(ptr))[2] = (unsigned char)((sn) >> 8)),(((unsigned char*)(ptr))[3] = (unsigned char)(sn)))
-#define PluginCodec_RTP_GetSSRC(ptr)              ((((unsigned char*)(ptr))[8] << 24) | (((unsigned char*)(ptr))[9] << 16) | (((unsigned char*)(ptr))[10] << 8) | ((unsigned char*)(ptr))[11])
-#define PluginCodec_RTP_SetSSRC(ptr, ssrc)        ((((unsigned char*)(ptr))[8] = (unsigned char)((ssrc) >> 24)),(((unsigned char*)(ptr))[9] = (unsigned char)((ssrc) >> 16)),(((unsigned char*)(ptr))[10] = (unsigned char)((ssrc) >> 8)),(((unsigned char*)(ptr))[11] = (unsigned char)(ssrc)))
+#define PluginCodec_RTP_GetWORD(ptr, off)       ((((unsigned char*)(ptr))[off] << 8) | ((unsigned char*)(ptr))[off+1])
+
+#define PluginCodec_RTP_GetDWORD(ptr, off)      ((((unsigned char*)(ptr))[off  ] << 24)|\
+                                                 (((unsigned char*)(ptr))[off+1] << 16)|\
+                                                 (((unsigned char*)(ptr))[off+2] << 8 )|\
+                                                  ((unsigned char*)(ptr))[off+3])
+
+#define PluginCodec_RTP_SetWORD(ptr, off, val)  ((((unsigned char*)(ptr))[off  ] = (unsigned char)((val) >> 8 )),\
+                                                 (((unsigned char*)(ptr))[off+1] = (unsigned char) (val)      ))
+
+#define PluginCodec_RTP_SetDWORD(ptr, off, val) ((((unsigned char*)(ptr))[off  ] = (unsigned char)((val) >> 24)),\
+                                                 (((unsigned char*)(ptr))[off+1] = (unsigned char)((val) >> 16)),\
+                                                 (((unsigned char*)(ptr))[off+2] = (unsigned char)((val) >> 8 )),\
+                                                 (((unsigned char*)(ptr))[off+3] = (unsigned char) (val)      ))
+
+#define PluginCodec_RTP_GetCSRCHdrLength(ptr)      ((((unsigned char*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
+#define PluginCodec_RTP_GetExtHdrLength(ptr)       ((((unsigned char*)(ptr))[0] & 0x10) ? (PluginCodec_RTP_GetWORD(ptr, PluginCodec_RTP_GetCSRCLength(ptr)+2)+4) : 0)
+#define PluginCodec_RTP_GetHeaderLength(ptr)       (PluginCodec_RTP_GetCSRCLength(ptr) + PluginCodec_RTP_GetExtHdrLength(ptr))
+#define PluginCodec_RTP_GetPayloadPtr(ptr)           ((unsigned char*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
+#define PluginCodec_RTP_GetPayloadType(ptr)         (((unsigned char*)(ptr))[1] & 0x7f)
+#define PluginCodec_RTP_SetPayloadType(ptr, type)   (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x80) | (type & 0x7f)))
+#define PluginCodec_RTP_GetMarker(ptr)             ((((unsigned char*)(ptr))[1] & 0x80) != 0)
+#define PluginCodec_RTP_SetMarker(ptr, mark)        (((unsigned char*)(ptr))[1] = (unsigned char)((((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0)))
+#define PluginCodec_RTP_GetTimestamp(ptr)          PluginCodec_RTP_GetDWORD(ptr, 4)
+#define PluginCodec_RTP_SetTimestamp(ptr, ts)      PluginCodec_RTP_SetDWORD(ptr, 4, ts)
+#define PluginCodec_RTP_GetSequenceNumber(ptr)     PluginCodec_RTP_GetWORD(ptr, 2)
+#define PluginCodec_RTP_SetSequenceNumber(ptr, sn) PluginCodec_RTP_SetWORD(ptr, 2, sn)
+#define PluginCodec_RTP_GetSSRC(ptr)               PluginCodec_RTP_GetDWORD(ptr, 8)
+#define PluginCodec_RTP_SetSSRC(ptr, ssrc)         PluginCodec_RTP_SetDWORD(ptr, 8, ssrc)
 
 
 /////////////////
