@@ -52,7 +52,7 @@ static int init_mode(CELTContext *celt, const struct PluginCodec_Definition * co
 {
   int error = 0;
 
-#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+#if CELT_VERSION<700
   celt->mode = celt_mode_create(codec->sampleRate, 1, codec->parm.audio.samplesPerFrame, &error);
 #else
   celt->mode = celt_mode_create(codec->sampleRate, codec->parm.audio.samplesPerFrame, &error);
@@ -61,7 +61,9 @@ static int init_mode(CELTContext *celt, const struct PluginCodec_Definition * co
     return FALSE;
   }
 
+#if CELT_VERSION<800
   celt_mode_info(celt->mode, CELT_GET_FRAME_SIZE, &celt->frame_size);
+#endif
   celt->bytes_per_packet = (codec->bitsPerSec * celt->frame_size/codec->sampleRate + 4) / 8;
 
   return TRUE;
@@ -78,7 +80,7 @@ static void * celt_create_encoder(const struct PluginCodec_Definition * codec)
     return NULL;
   }
 
-#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+#if CELT_VERSION<700
   celt->encoder_state = celt_encoder_create(celt->mode);
 #else
   celt->encoder_state = celt_encoder_create(celt->mode, 1, NULL);
@@ -104,7 +106,7 @@ static void * celt_create_decoder(const struct PluginCodec_Definition * codec)
     return NULL;
   }
 
-#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+#if CELT_VERSION<700
   celt->decoder_state = celt_decoder_create(celt->mode);
 #else
   celt->decoder_state = celt_decoder_create(celt->mode, 1, NULL);
@@ -146,7 +148,7 @@ static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
                                                     unsigned int * flag)
 {
   CELTContext *celt = (CELTContext *)context;
-  unsigned byteCount;
+  int byteCount;
 
   if (*fromLen < codec->parm.audio.samplesPerFrame*sizeof(short))
     return FALSE;
@@ -154,16 +156,18 @@ static int celt_codec_encoder(const struct PluginCodec_Definition * codec,
   if (*toLen < celt->bytes_per_packet)
     return FALSE;
 
-#ifdef HAVE_CELT_0_4_OR_SOONER
+#if CELT_VERSION<500
   byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, (char *)toPtr, celt->bytes_per_packet);
-#elif HAVE_CELT_0_5_0_OR_0_6_0
+#elif CELT_VERSION<700
   byteCount = celt_encode(celt->encoder_state, (celt_int16_t *)fromPtr, NULL, (char *)toPtr, celt->bytes_per_packet);
-#else
+#elif CELT_VERSION<800
   byteCount = celt_encode(celt->encoder_state, (void *)fromPtr, NULL, (unsigned char *)toPtr, celt->bytes_per_packet);
+#else
+  byteCount = celt_encode(celt->encoder_state, (const celt_int16 *)fromPtr, *fromLen/2, (unsigned char *)toPtr, celt->bytes_per_packet);
 #endif
-  if (byteCount < 0) {
-	return 0;
-  }
+  if (byteCount < 0)
+    return 0;
+    
   *toLen = byteCount;
   *fromLen = codec->parm.audio.samplesPerFrame*sizeof(short);
 
@@ -187,10 +191,12 @@ static int celt_codec_decoder(const struct PluginCodec_Definition * codec,
   if (*fromLen == 0)
     return FALSE;
 
-#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+#if CELT_VERSION<700
   if (celt_decode(celt->decoder_state, (char *)fromPtr, *fromLen, (short *)toPtr) < 0)
-#else
+#elif CELT_VERSION<800
   if (celt_decode(celt->decoder_state, (unsigned char *)fromPtr, *fromLen, (short *)toPtr) < 0)
+#else
+  if (celt_decode(celt->decoder_state, (unsigned char *)fromPtr, *fromLen, (short *)toPtr, *toLen) < 0)
 #endif
     return 0;
 
@@ -207,7 +213,7 @@ static int valid_for_sip(
       void * parm, 
       unsigned * parmLen)
 {
-#if defined (HAVE_CELT_0_4_OR_SOONER) || defined (HAVE_CELT_0_5_0_OR_0_6_0)
+#if CELT_VERSION<700
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
 #else
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(unsigned char *))
