@@ -135,21 +135,27 @@ class PluginCodec_MediaFormat
     /// Utility function to adjust option strings, used by ToNormalised()/ToCustomised().
     bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed))
     {
-      if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+      if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***)) {
+        PTRACE(1, "Plugin", "Invalid parameters to AdjustOptions.");
         return false;
+      }
 
       OptionMap originalOptions;
       for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2)
         originalOptions[option[0]] = option[1];
 
       OptionMap changedOptions;
-      if (!(this->*adjuster)(originalOptions, changedOptions))
+      if (!(this->*adjuster)(originalOptions, changedOptions)) {
+        PTRACE(1, "Plugin", "Could not normalise/customise options.");
         return false;
+      }
 
       char ** options = (char **)calloc(changedOptions.size()*2+1, sizeof(char *));
       *(char ***)parm = options;
-      if (options == NULL)
+      if (options == NULL) {
+        PTRACE(1, "Plugin", "Could not allocate new option lists.");
         return false;
+      }
 
       for (OptionMap::iterator i = changedOptions.begin(); i != changedOptions.end(); ++i) {
         *options++ = strdup(i->first.c_str());
@@ -307,8 +313,10 @@ class PluginCodec
 
       // get the media format options after adjustment from protocol negotiation
       for (const char * const * option = options; *option != NULL; option += 2) {
-        if (!SetOption(option[0], option[1]))
+        if (!SetOption(option[0], option[1])) {
+          PTRACE(1, "Plugin", "Could not set option \"" << option[0] << "\" to \"" << option[1] << '"');
           return false;
+        }
       }
 
       if (m_optionsSame)
