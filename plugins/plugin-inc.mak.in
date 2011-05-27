@@ -30,7 +30,7 @@ libdir        := @libdir@
 
 CC            := @CC@
 CXX           := @CXX@
-CFLAGS        += @CFLAGS@ -I../../../include -I@prefix@/include -I$(PLUGINDIR)
+CFLAGS        += @CFLAGS@ -I@prefix@/include -I$(PLUGINDIR)/../include -I$(PLUGINDIR)
 LDFLAGS       += @LDFLAGS@ @LDSO@
 PLUGINEXT     :=@PLUGINEXT@
 
