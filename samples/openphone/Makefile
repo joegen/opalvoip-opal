@@ -43,16 +43,6 @@ SOURCES		:= main.cxx openphone.cxx
 
 VERSION_FILE	= $(OPALDIR)/version.h
 
-WX_CONFIG	+= wx-config
-ifdef DEBUG
-WX_CONFIG+=--debug=yes
-else
-WX_CONFIG+=--debug=no
-endif
-
-CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
-CFLAGS	 += $(shell $(WX_CONFIG) --cxxflags) -Wno-strict-aliasing -Wno-float-equal
-LDFLAGS  += $(shell $(WX_CONFIG) --libs)
 
 ifndef OPALDIR
 ifneq (,$(wildcard ../../version.h))
@@ -82,6 +72,18 @@ include $(OPALDIR)/opal_inc.mak
 endif
 
 
+WX_CONFIG=wx-config
+ifdef DEBUG
+WX_CONFIG+=--debug=yes
+else
+WX_CONFIG+=--debug=no
+endif
+
+CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS	 += $(shell $(WX_CONFIG) --cxxflags) -Wno-strict-aliasing -Wno-float-equal
+ENDLDLIBS+= $(shell $(WX_CONFIG) --libs)
+
+
 openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
 
@@ -94,11 +96,16 @@ bundle: $(PROG).app
 STRINGSFILE= #InfoPlist.strings
 
 $(PROG).app: $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
-	if test ! -d $@; then mkdir $@; fi
-	if test ! -d $@; then mkdir $@/Contents; fi
-	if test ! -d $@; then mkdir $@/Contents/MacOS; fi
-	if test ! -d $@; then mkdir $@/Contents/Resources; fi
-	if test ! -d $@; then mkdir $@/Contents/Resources/English.lproj; fi
+	@for dir in $@ \
+	           $@/Contents \
+	           $@/Contents/MacOS \
+	           $@/Contents/Resources \
+	           $@/Contents/Resources/English.lproj; do \
+	  if test ! -d $$dir; then \
+	    echo Creating $$dir; \
+	    mkdir $$dir; \
+	  fi \
+	done
 	cp Info.plist        $@/Contents/
 	cp version.plist     $@/Contents/
 	cp $(PROG).icns      $@/Contents/Resources/
