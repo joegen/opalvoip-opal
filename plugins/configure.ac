@@ -1,10 +1,5 @@
 AC_INIT(configure.ac)
 
-if test \! -e ./aclocal.m4 ; then
-  echo "ERROR: you must run 'aclocal' before 'autoconf'"
-  exit -1
-fi
-
 dnl extract recommended PTLIB version from parent directory
 if test \! -e ../configure ; then
   echo "ERROR: unable to find '../configure'"
