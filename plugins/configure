@@ -2695,11 +2695,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-if test \! -e ./aclocal.m4 ; then
-  echo "ERROR: you must run 'aclocal' before 'autoconf'"
-  exit -1
-fi
-
 if test \! -e ../configure ; then
   echo "ERROR: unable to find '../configure'"
 else
