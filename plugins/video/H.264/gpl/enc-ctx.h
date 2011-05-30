@@ -44,10 +44,12 @@ extern "C" {
 #endif
 
 #if PTRACING
-#include <iostream>
-#define PTRACE(l,m,o) std::cerr << o << std::endl
+  #include <iostream>
+  #define PTRACE_CHECK(level) ((level) < 4)
+  #define PTRACE(level, section, expr) std::cerr << section << '\t' << expr << std::endl
 #else
-#define PTRACE(l,m,o)
+  #define PTRACE_CHECK(level) true
+  #define PTRACE(level, section, expr)
 #endif
 
 

@@ -34,19 +34,12 @@
 #include <string.h>
 
 #ifdef GPL_HELPER_APP
+  #include "../gpl/enc-ctx.h"
   #ifndef _WIN32
-    #include "../gpl/enc-ctx.h"
     #include "../gpl/x264loader_unix.h"
     extern X264Library X264Lib;
   #else
     #define X264_NAL_ENCODE x264_nal_encode 
-  #endif
-  #if PLUGINCODEC_TRACING
-    #define PTRACE_CHECK(level) ((level) < 4)
-    #define PTRACE(level, section, expr) cerr << section << '\t' << expr
-  #else
-    #define PTRACE_CHECK(level) true
-    #define PTRACE(level, section, expr)
   #endif
 #else
   #include <codec/opalplugin.hpp>
