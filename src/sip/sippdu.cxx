@@ -2919,7 +2919,7 @@ void SIPTransaction::OnRetry(PTimer &, INT)
   }
 
   PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID()
-         << " timeout, making retry " << m_retry << ", timeout " << m_retryTimer);
+         << " timeout, making retry " << m_retry << ", timeout " << m_retryTimer << ", state " << m_state);
 
   if (m_state == Cancelling)
     ResendCANCEL();
@@ -3030,6 +3030,7 @@ void SIPTransaction::SetTerminated(States newState)
   }
 
   m_completed.Signal();
+  PTRACE(4, "SIP\tCompleted state for transaction id=" << GetTransactionID());
 }
 
 

@@ -56,6 +56,44 @@
 class OpalManager_C;
 
 
+ostream & operator<<(ostream & strm, OpalMessageType type)
+{
+  static const char * Types[] = {
+    "IndCommandError",
+    "CmdSetGeneralParameters",
+    "CmdSetProtocolParameters",
+    "CmdRegistration",
+    "IndRegistration",
+    "CmdSetUpCall",
+    "IndIncomingCall",
+    "CmdAnswerCall",
+    "CmdClearCall",
+    "IndAlerting",
+    "IndEstablished",
+    "IndUserInput",
+    "IndCallCleared",
+    "CmdHoldCall",
+    "CmdRetrieveCall",
+    "CmdTransferCall",
+    "CmdUserInput",
+    "IndMessageWaiting",
+    "IndMediaStream",
+    "CmdMediaStream",
+    "CmdSetUserData",
+    "IndLineAppearance",
+    "CmdStartRecording",
+    "CmdStopRecording",
+    "IndProceeding",
+    "CmdAlerting",
+    "IndOnHold",
+    "IndOffHold",
+    "IndTransferCall",
+    "IndCompletedIVR"
+  };
+  return strm << Types[type];
+}
+
+
 ostream & operator<<(ostream & strm, OpalRegistrationStates state)
 {
   static const char * States[] = { "Successful", "Removed", "Failed", "Retrying", "Restored" };
@@ -952,7 +990,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
   if (message == NULL)
     return NULL;
 
-  PTRACE(4, "OpalC API\tHandling message " << message->m_type << " from applicatiion");
+  PTRACE(4, "OpalC API\tHandling message " << message->m_type << " from application");
 
   OpalMessageBuffer response(message->m_type);
 

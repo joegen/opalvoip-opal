@@ -352,6 +352,8 @@ bool SIPConnection::GarbageCollection()
 
 bool SIPConnection::SetTransport(const SIPURL & destination)
 {
+  PTRACE(4, "SIP\tSetting new transport for destination \"" << destination << '"');
+
   OpalTransport * newTransport = NULL;
   if (!destination.IsEmpty()) {
     newTransport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
@@ -1686,6 +1688,8 @@ PString SIPConnection::GetIdentifier() const
 
 void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
+  PTRACE(4, "SIP\tOnTransactionFailed for transaction id=" << transaction.GetTransactionID());
+
   std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
   if (it != m_responses.end()) {
     it->second->SetStatusCode(transaction.GetStatusCode());
@@ -1711,6 +1715,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   if (IsReleased())
     return;
 
+  PTRACE(4, "SIP\tChecking for all forked INVITEs failing.");
   bool allFailed = true;
   {
     // The connection stays alive unless all INVITEs have failed
