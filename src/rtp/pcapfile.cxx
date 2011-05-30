@@ -286,7 +286,6 @@ OpalPCAPFile::DiscoveredRTPInfo::DiscoveredRTPInfo()
   m_ts_matches[0]   = m_ts_matches[1]   = 0;
   m_index[0] = m_index[1] = 0;
   m_format[0] = m_format[1] = m_type[0] = m_type[1] = "Unknown";
-  m_firstFrame[0] = m_firstFrame[1] = NULL;
 }
 
 
