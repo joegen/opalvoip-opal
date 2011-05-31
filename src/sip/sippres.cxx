@@ -58,7 +58,11 @@
 
 
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
+static bool Synonym_for_pres_URL = PFactory<OpalPresentity>::RegisterAs("pres", "sip");
 
+PURL_LEGACY_SCHEME(pres, true, false, true, true, false, true, true, false, false, false, 0)
+
+const PCaselessString & SIP_Presentity::PIDFEntityKey()    { static const PConstCaselessString s("PIDF-Entity");    return s; }
 const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }
 const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s("Presence Agent"); return s; }
 const PCaselessString & SIP_Presentity::XcapRootKey()      { static const PConstCaselessString s("XCAP Root");      return s; }
@@ -127,6 +131,7 @@ SIP_Presentity::~SIP_Presentity()
 PStringArray SIP_Presentity::GetAttributeNames() const
 {
   PStringArray names;
+  names.AppendString(PIDFEntityKey());
   names.AppendString(SubProtocolKey());
   names.AppendString(PresenceAgentKey());
   names.AppendString(AuthNameKey());
@@ -145,6 +150,7 @@ PStringArray SIP_Presentity::GetAttributeNames() const
 PStringArray SIP_Presentity::GetAttributeTypes() const
 {
   PStringArray names;
+  names.AppendString("URL");
   names.AppendString("Enum\nPeerToPeer,Agent,XCAP,OMA\nAgent");
   names.AppendString("String");
   names.AppendString("String");
@@ -195,20 +201,22 @@ bool SIP_Presentity::Open()
     // if none, use hostname portion of domain name
     PString agent = m_attributes.Get(PresenceAgentKey);
     if (agent.IsEmpty()) {
+      PString hostname = m_aor.GetHostName();
+      WORD port = m_aor.GetPort();
+      if (port == 0)
+        port = 5060;
+
 #if P_DNS
       PIPSocketAddressAndPortVector addrs;
-      if (PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", m_aor.GetPort(), addrs) && addrs.size() > 0) {
-        PTRACE(1, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' succeeded");
+      bool found = PDNS::LookupSRV(hostname, "_pres._sip", port, addrs) && addrs.size() > 0;
+      PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << hostname << "' " << (found ? "succeeded" : "failed"));
+      if (found)
         m_presenceAgent = addrs[0];
-      }
       else
 #endif
-      {
-        PTRACE(4, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName() << "' failed");
-        if (!m_presenceAgent.Parse(m_aor.GetHostName(), m_aor.GetPort())) {
-          PTRACE(3, "SIPPres\tCould not determine Presence Server from aor \"" << m_aor << '"');
-          return false;
-        }
+      if (!m_presenceAgent.Parse(hostname, port)) {
+        PTRACE(3, "SIPPres\tCould not determine Presence Server from aor \"" << m_aor << '"');
+        return false;
       }
     }
     else {
@@ -373,11 +381,13 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::Notif
   status.SendResponse(SIP_PDU::Successful_OK);
 
   SIPPresenceInfo info(SIPPresenceInfo::Unchanged);
-
-  info.m_target = m_aor.AsString();
+  SetPIDFEntity(info.m_target);
 
   PXMLElement * rootElement = xml.GetRootElement();
-  info.m_entity = rootElement->GetAttribute("entity");
+  if (!info.m_entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
+    PTRACE(1, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << "\" for " << m_aor);
+    return;
+  }
 
   PXMLElement * noteElement = NULL;
 
@@ -488,13 +498,36 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
 }
 
 
+void SIP_Presentity::SetPIDFEntity(PURL & entity)
+{
+  if (entity.Parse(m_attributes.Get(SIP_Presentity::PIDFEntityKey), "pres")) {
+    PTRACE(4, "SIPPres\tPIDF entity set via attribute to " << entity);
+    return;
+  }
+
+  if (m_aor.GetScheme() == "pres") {
+    entity = m_aor;
+    PTRACE(4, "SIPPres\tPIDF entity set via AOR to " << entity);
+  }
+
+  if (entity.Parse(m_aor.GetUserName() + '@' + m_aor.GetHostName(), "pres")) {
+    PTRACE(4, "SIPPres\tPIDF entity derived from AOR as " << entity);
+    return;
+  }
+
+  entity = m_aor;
+  PTRACE(4, "SIPPres\tPIDF entity set via failsafe AOR of " << entity);
+}
+
+
 void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
    if (status.m_reason == SIP_PDU::Information_Trying)
     return;
 
   OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
-  info.m_target = info.m_entity = m_aor.AsString();
+  SetPIDFEntity(info.m_entity);
+  info.m_target = info.m_entity;
 
   m_notificationMutex.Wait();
 
@@ -622,7 +655,8 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
   SIPPresenceInfo sipPresence(GetID());
-  sipPresence.m_entity = m_aor.AsString();
+  SetPIDFEntity(sipPresence.m_entity);
+  sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   if (m_subProtocol != e_PeerToPeer)
     sipPresence.m_presenceAgent = m_presenceAgent.AsString();
   sipPresence.m_state = cmd.m_state;
