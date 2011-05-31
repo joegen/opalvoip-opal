@@ -498,7 +498,11 @@ OpalRTPMediaSession::OpalRTPMediaSession(const OpalRTPMediaSession & obj)
 
 OpalRTPMediaSession::~OpalRTPMediaSession()
 {
-  delete rtpSession;
+  if (rtpSession != NULL) {
+    PTRACE(4, "RTP\tDeleting session " << rtpSession->GetSessionID());
+    ((OpalRTPEndPoint &)connection.GetEndPoint()).SetConnectionByRtpLocalPort(rtpSession, NULL);
+    delete rtpSession;
+  }
 }
 
 
@@ -514,7 +518,7 @@ void OpalRTPMediaSession::Attach(RTP_Session * rtp)
 void OpalRTPMediaSession::Close()
 {
   if (rtpSession != NULL) {
-    PTRACE(3, "RTP\tDeleting session " << rtpSession->GetSessionID());
+    PTRACE(3, "RTP\tClosing session " << rtpSession->GetSessionID());
     ((OpalRTPEndPoint &)connection.GetEndPoint()).SetConnectionByRtpLocalPort(rtpSession, NULL);
     if (rtpSession->GetPacketsReceived() > 0 || rtpSession->GetPacketsSent() > 0)
       rtpSession->SendBYE();
