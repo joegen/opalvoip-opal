@@ -27,7 +27,7 @@ library for TIFF file operations. Thus the first time you build it you should
 be connected to the Internet so the download can proceed.
 
 Then copy the following two files from:
-	opal\plugins\Release\SpanDSPFax_pwplugin.dll
+	opal\bin\plugins\Release\SpanDSPFax_ptplugin.dll
 	opal\plugins\fax\fax_spandsp\Release\libspandsp.dll
 
 to C:\PTLib_Plugins, or wherever you have set the PTPLUGINDIR environment
