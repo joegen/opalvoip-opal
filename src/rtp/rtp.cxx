@@ -48,6 +48,7 @@
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
 #include <opal/endpoint.h>
+#include <opal/rtpep.h>
 #include <opal/rtpconn.h>
 
 #include <algorithm>
@@ -2057,6 +2058,10 @@ bool OpalRTPSession::Open(const PString & localInterface)
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
 
+  OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
+  if (ep != NULL)
+    ep->SetConnectionByRtpLocalPort(this, &m_connection);
+
   return true;
 }
 
@@ -2064,6 +2069,12 @@ bool OpalRTPSession::Open(const PString & localInterface)
 bool OpalRTPSession::Close()
 {
   bool ok = Shutdown(true) | Shutdown(false);
+
+  if (ok) {
+    OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
+    if (ep != NULL)
+      ep->SetConnectionByRtpLocalPort(this, NULL);
+  }
 
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
