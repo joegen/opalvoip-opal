@@ -1844,7 +1844,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
   if (newPresentity == NULL)
     return NULL;
 
-  PTRACE(4, "OpalMan\tAdded presentity for " << newPresentity);
+  PTRACE(4, "OpalMan\tAdded presentity for " << *newPresentity);
   m_presentities.SetAt(presentity, newPresentity);
   return PSafePtr<OpalPresentity>(newPresentity, PSafeReadWrite);
 }
