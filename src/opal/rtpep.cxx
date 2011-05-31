@@ -189,8 +189,14 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(RTP_Session * session, OpalCon
 
   WORD localPort = rtp->GetLocalDataPort();
   inUseFlag.Wait();
-  if (connection == NULL)
-    m_connectionsByRtpLocalPort.erase(localPort);
+  if (connection == NULL) {
+    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(localPort);
+    if (it != m_connectionsByRtpLocalPort.end()) {
+      PTRACE(4, "RTPEp\tSession " << rtp->GetSessionID() << ", "
+                "forgetting local RTP port " << localPort << " on connection " << it->second.m_connection);
+      m_connectionsByRtpLocalPort.erase(it);
+    }
+  }
   else {
     std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
                 m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(localPort, *connection));
