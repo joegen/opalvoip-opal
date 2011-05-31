@@ -1573,7 +1573,7 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
   SIPSubscribe::Params params(SIPSubscribe::Presence);
-  params.m_addressOfRecord = info.m_entity; // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
+  params.m_addressOfRecord = info.m_contact.IsEmpty() ? info.m_entity : info.m_contact;
   params.m_expire          = expire;
   params.m_agentAddress    = info.m_presenceAgent;
   params.m_contentType     = "application/pidf+xml";
