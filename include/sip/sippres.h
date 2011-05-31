@@ -230,6 +230,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
       e_OMA
     };
 
+    static const PCaselessString & PIDFEntityKey();
     static const PCaselessString & SubProtocolKey();
     static const PCaselessString & PresenceAgentKey();
     static const PCaselessString & XcapRootKey();
@@ -268,6 +269,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
     PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
     void OnReceivedWatcherStatus(PXMLElement * watcher);
+    void SetPIDFEntity(PURL & entity);
     bool ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd);
     void InitRootXcap(XCAPClient & xcap);
     void InitBuddyXcap(
