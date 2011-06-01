@@ -303,7 +303,11 @@ bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
   return true;
 }
 
-bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
+bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
+{
+  if (frame.GetPayloadSize() == 0)
+    return true;
+
   uint8_t curNALType = *(frame.GetPayloadPtr()) & 0x1f;
 
   if (curNALType >= H264_NAL_TYPE_NON_IDR_SLICE &&
