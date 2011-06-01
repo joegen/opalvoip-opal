@@ -323,8 +323,10 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
   protected:
     bool EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    bool DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
 
     RTP_DataFrame * m_bufferRTP;
+    DWORD           m_lastDecodedTimestamp; // For missing marker bit detection
     PSimpleTimer    m_videoPictureLossTimer;
 
 #if PTRACING
