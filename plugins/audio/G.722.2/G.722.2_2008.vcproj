@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\G7222_ptplugin.dll"
+				OutputFile="$(OutDir)\g7222_ptplugin.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
@@ -147,7 +147,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\G7222_ptplugin.dll"
+				OutputFile="$(OutDir)\g7222_ptplugin.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="false"
 				SubSystem="0"
