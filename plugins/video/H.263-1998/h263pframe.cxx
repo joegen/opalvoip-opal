@@ -214,6 +214,8 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
 
 bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
 {
+  if (frame.GetPayloadSize() == 0)
+    return true;
 
   if (frame.GetPayloadSize()<3) {
     PTRACE(1, "H263+", "Deencap\tFrame too short (<3)");
