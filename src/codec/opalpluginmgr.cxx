@@ -852,6 +852,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
+  , m_lastDecodedTimestamp(UINT_MAX)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -995,6 +996,31 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   m_bufferRTP->SetPayloadSize(outputDataSize);
 
+  // Check for brain dead hosts that do not send marker bits
+  if (src.GetMarker())
+    m_lastDecodedTimestamp = UINT_MAX;
+  else {
+    DWORD newTimestamp = src.GetTimestamp();
+    if (m_lastDecodedTimestamp != UINT_MAX && m_lastDecodedTimestamp != newTimestamp) {
+      // Send an empty payload frame that has a marker bit
+      RTP_DataFrame marker(src, src.GetHeaderSize());
+      marker.SetMarker(true);
+      if (!DecodeFrame(marker, dstList))
+        return false;
+      if (m_bufferRTP == NULL) {
+        m_bufferRTP = new RTP_DataFrame(outputDataSize);
+        lastFrameWasIFrame = false;
+      }
+    }
+    m_lastDecodedTimestamp = newTimestamp;
+  }
+
+  return DecodeFrame(src, dstList);
+}
+
+
+bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
+{
   // call the codec function
   unsigned fromLen = src.GetHeaderSize() + src.GetPayloadSize();
   unsigned toLen = m_bufferRTP->GetSize();
@@ -1033,32 +1059,43 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
     lastFrameWasIFrame = true;
 
-  if (toLen > RTP_DataFrame::MinHeaderSize && (flags & PluginCodec_ReturnCoderLastFrame) != 0) {
-    // Do sanity check on returned data.
-    PINDEX headerSize = m_bufferRTP->GetHeaderSize();
-    if (PAssert(toLen > (unsigned)(headerSize+sizeof(OpalVideoTranscoder::FrameHeader)),
-                "Invalid return size from video plug in")) {
-      toLen -= headerSize;
-      OpalVideoTranscoder::FrameHeader * videoHeader = (OpalVideoTranscoder::FrameHeader *)m_bufferRTP->GetPayloadPtr();
-      if (PAssert(videoHeader->x == 0 && videoHeader->y == 0 &&
-                  videoHeader->width < 10000 && videoHeader->height < 10000 &&
-                  toLen >= (videoHeader->width*videoHeader->height*3/2+sizeof(OpalVideoTranscoder::FrameHeader)),
-                  "Invalid frame returned from video plug in")) {
-        m_bufferRTP->SetPayloadSize(toLen);
-        m_bufferRTP->SetTimestamp(src.GetTimestamp());
-        m_bufferRTP->SetPayloadType(GetPayloadType(false));
+  if ((flags & PluginCodec_ReturnCoderLastFrame) == 0)
+    return true;
 
-        dstList.Append(m_bufferRTP);
-        m_bufferRTP = NULL;
+  // Do sanity check on returned data.
+  if (!m_bufferRTP->SetPacketSize(toLen)) {
+    PTRACE(1, "OpalPlugin\tInvalid return size, error in plug in.");
+    return false;
+  }
 
-        m_totalFrames++;
+  size_t payloadSize = m_bufferRTP->GetPayloadSize();
+  if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)) {
+    PTRACE(1, "OpalPlugin\tInvalid video header size, error in plug in.");
+    return false;
+  }
 
-        if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
-          m_keyFrames++;
-          PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame");
-        }
-      }
-    }
+  OpalVideoTranscoder::FrameHeader * videoHeader = (OpalVideoTranscoder::FrameHeader *)m_bufferRTP->GetPayloadPtr();
+  if (videoHeader->x != 0 || videoHeader->y != 0 ||
+      videoHeader->width > 10000 || videoHeader->height > 10000) {
+    PTRACE(1, "OpalPlugin\tInvalid video header values, error in plug in.");
+    return false;
+  }
+
+  if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)+videoHeader->width*videoHeader->height*3/2) {
+    PTRACE(1, "OpalPlugin\tInvalid video frame size, error in plug in.");
+    return false;
+  }
+
+  m_bufferRTP->SetTimestamp(src.GetTimestamp());
+  m_bufferRTP->SetPayloadType(GetPayloadType(false));
+  dstList.Append(m_bufferRTP);
+  m_bufferRTP = NULL;
+
+  m_totalFrames++;
+
+  if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+    m_keyFrames++;
+    PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame");
   }
 
   return true;
