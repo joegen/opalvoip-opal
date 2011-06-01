@@ -422,7 +422,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
         )
     {
       for (int dir = 0; dir < 2; ++dir) {
-        if (info.m_firstFrame[dir] != NULL) {
+        if (!info.m_firstFrame[dir].IsEmpty()) {
           info.m_index[dir] = index++;
 
           RTP_DataFrame::PayloadTypes pt = info.m_firstFrame[dir].GetPayloadType();
@@ -446,23 +446,34 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
           }
           else {
             // try and identify media by inspection
-            const BYTE * data = info.m_firstFrame[dir].GetPayloadPtr();
             PINDEX size = info.m_firstFrame[dir].GetPayloadSize();
+            if (size > 6) {
+              const BYTE * data = info.m_firstFrame[dir].GetPayloadPtr();
 
-            // xxx00111 01000010 xxxx0000 - H.264
-            if (size > 6 && (data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0) {
-              info.m_type[dir] = OpalMediaType::Video();
-              OpalMediaFormatList::const_iterator r = formats.FindFormat("*h.264*");
-              if (r != formats.end())
-                info.m_format[dir] = r->GetName();
-            }
+              OpalMediaFormatList::const_iterator selectedFormat;
 
-            // 0x00 0x00 0x1b - MPEG4
-            else if (size > 6 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01) {
-              info.m_type[dir] = OpalMediaType::Video();
-              OpalMediaFormatList::const_iterator r = formats.FindFormat("*mpeg4*");
-              if (r != formats.end())
-                info.m_format[dir] = r->GetName();
+              // xxx00111 01000010 xxxx0000 - H.264
+              if ((data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0)
+                selectedFormat = formats.FindFormat("*h.264*");
+
+              // 00000000 00000000 00011011 - MPEG4
+              else if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
+                selectedFormat = formats.FindFormat("*mpeg4*");
+
+              // xxxxx100 00000000 100000xx  - RFC4629/H.263+
+              else if ((data[0]&0x07) == 4 && data[1] == 0x00 && (data[2]&0xfc) == 0x80) {
+                selectedFormat = formats.FindFormat("*263P*");
+                if (selectedFormat == formats.end()) {
+                  selectedFormat = formats.FindFormat("*263+*");
+                  if (selectedFormat == formats.end())
+                    selectedFormat = formats.FindFormat("*263*");
+                }
+              }
+
+              if (selectedFormat != formats.end()) {
+                info.m_type[dir] = OpalMediaType::Video();
+                info.m_format[dir] = selectedFormat->GetName();
+              }
             }
           }
         }
