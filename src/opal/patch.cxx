@@ -608,7 +608,11 @@ void OpalMediaPatch::Main()
        us, want to clear them as quickly as possible out of the UDP OS buffers
        or we overflow and lose some. Best compromise is to every X ms, sleep
        for X/10 ms so can not use more than about 90% of CPU. */
+#if P_CONFIG_FILE
     static const unsigned SampleTimeMS = PConfig(PConfig::Environment).GetInteger("OPAL_MEDIA_PATCH_CPU_CHECK", 1000);
+#else
+    static const unsigned SampleTimeMS = 1000;
+#endif
     static const unsigned ThresholdPercent = 90;
     if (PTimer::Tick() - lastTick > SampleTimeMS) {
       PThread::Times threadTimes;
