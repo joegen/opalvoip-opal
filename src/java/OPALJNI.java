@@ -284,6 +284,12 @@ class OPALJNI {
   public final static native String OpalStatusTransferCall_m_info_get(long jarg1, OpalStatusTransferCall jarg1_);
   public final static native long new_OpalStatusTransferCall();
   public final static native void delete_OpalStatusTransferCall(long jarg1);
+  public final static native void OpalStatusIVR_m_callToken_set(long jarg1, OpalStatusIVR jarg1_, String jarg2);
+  public final static native String OpalStatusIVR_m_callToken_get(long jarg1, OpalStatusIVR jarg1_);
+  public final static native void OpalStatusIVR_m_variables_set(long jarg1, OpalStatusIVR jarg1_, String jarg2);
+  public final static native String OpalStatusIVR_m_variables_get(long jarg1, OpalStatusIVR jarg1_);
+  public final static native long new_OpalStatusIVR();
+  public final static native void delete_OpalStatusIVR(long jarg1);
   public final static native void OpalStatusCallCleared_m_callToken_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
   public final static native String OpalStatusCallCleared_m_callToken_get(long jarg1, OpalStatusCallCleared jarg1_);
   public final static native void OpalStatusCallCleared_m_reason_set(long jarg1, OpalStatusCallCleared jarg1_, String jarg2);
@@ -336,6 +342,8 @@ class OPALJNI {
   public final static native long OpalMessage_m_param_m_recording_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_transferStatus_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusTransferCall jarg2_);
   public final static native long OpalMessage_m_param_m_transferStatus_get(long jarg1, OpalMessage_m_param jarg1_);
+  public final static native void OpalMessage_m_param_m_ivrStatus_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusIVR jarg2_);
+  public final static native long OpalMessage_m_param_m_ivrStatus_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native long new_OpalMessage_m_param();
   public final static native void delete_OpalMessage_m_param(long jarg1);
   public final static native long new_OpalMessagePtr__SWIG_0(int jarg1);

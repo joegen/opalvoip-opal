@@ -40,7 +40,33 @@
 #pragma once
 #endif
 
-#include <stdint.h>
+#ifndef _STDINT
+#define _STDINT
+
+typedef signed char int8_t;
+typedef short int16_t;
+typedef int int32_t;
+
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+
+typedef int64_t intmax_t;
+typedef uint64_t uintmax_t;
+
+#define INT64_MAX	0x7fffffffffffffff
+#define UINT64_MAX	0xffffffffffffffffU
+
+#define INT64_C(x)		((x) + (INT64_MAX - INT64_MAX))
+#define UINT64_C(x)		((x) + (UINT64_MAX - UINT64_MAX))
+
+#endif /* _STDINT */
+
+#pragma include_alias(<stdint.h>, <inttypes.h>)
+
 
 // 7.8 Format conversion of integer types
 
