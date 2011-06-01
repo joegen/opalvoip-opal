@@ -186,6 +186,15 @@ public class OpalMessage_m_param {
     return (cPtr == 0) ? null : new OpalStatusTransferCall(cPtr, false);
   }
 
+  public void setM_ivrStatus(OpalStatusIVR value) {
+    OPALJNI.OpalMessage_m_param_m_ivrStatus_set(swigCPtr, this, OpalStatusIVR.getCPtr(value), value);
+  }
+
+  public OpalStatusIVR getM_ivrStatus() {
+    long cPtr = OPALJNI.OpalMessage_m_param_m_ivrStatus_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalStatusIVR(cPtr, false);
+  }
+
   public OpalMessage_m_param() {
     this(OPALJNI.new_OpalMessage_m_param(), true);
   }

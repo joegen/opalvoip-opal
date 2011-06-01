@@ -40,12 +40,6 @@
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x10000000 -x . &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				Outputs="$(OutDir)\$(TargetName).dbg"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -859,12 +853,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				Outputs="$(OutDir)\$(TargetName).dbg"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
