@@ -5,6 +5,8 @@
 <?define SSLDir = "$(env.windir)\SYSTEM32" ?>
 <?define OPALDir = "..\.." ?>
 <?define PTLibDir = "..\..\..\ptlib" ?>
+<?define PluginDir = "C:\PTLib_Plugins" ?>
+
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
   <Product Name='Open Phone'
            Language='1033'
@@ -42,8 +44,8 @@
             </Component>
             <Component Id='G.722.2' Guid='*'>
               <File Id='G_722_2_DLL'
-		      Name='G7222_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\G7222_ptplugin.dll'
+		      Name='g7222_ptplugin.dll'
+		      Source='$(var.OPALDir)\bin\plugins\Release\g7222_ptplugin.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
@@ -77,7 +79,7 @@
             </Component>
             <Component Id='H.261' Guid='*'>
               <File Id='H.261_DLL'
-		      Name='h261vic_ptplugin.dll'
+		      Name='h261_vic_ptplugin.dll'
 		      Source='$(var.OPALDir)\bin\plugins\Release\h261vic_ptplugin.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
@@ -106,35 +108,35 @@
             <Component Id='AVCODEC' Guid='*'>
               <File Id='AVCODEC_DLL'
 		      Name='avcodec-52.dll'
-		      Source='C:\PTLib_Plugins\avcodec-52.dll'
+		      Source='$(var.PluginDir)\avcodec-52.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
             <Component Id='AVUTIL' Guid='*'>
               <File Id='AVUTIL_DLL'
 		      Name='avutil-50.dll'
-		      Source='C:\PTLib_Plugins\avutil-50.dll'
+		      Source='$(var.PluginDir)\avutil-50.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
             <Component Id='AVCORE' Guid='*'>
               <File Id='AVCORE_DLL'
 		      Name='avcore-0.dll'
-		      Source='C:\PTLib_Plugins\avutil-50.dll'
+		      Source='$(var.PluginDir)\avutil-50.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
 		      Name='libx264-102.dll'
-		      Source='C:\PTLib_Plugins\libx264-102.dll'
+		      Source='$(var.PluginDir)\libx264-102.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
             <Component Id='x264_helper' Guid='*'>
               <File Id='x264_EXE'
 		      Name='x264plugin_helper.exe'
-		      Source='C:\PTLib_Plugins\x264plugin_helper.exe'
+		      Source='$(var.PluginDir)\x264plugin_helper.exe'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
