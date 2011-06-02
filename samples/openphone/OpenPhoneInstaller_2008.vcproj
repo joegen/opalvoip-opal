@@ -12,11 +12,7 @@
 			Name="Win32"
 		/>
 	</Platforms>
-	<ToolFiles>
-		<ToolFile
-			RelativePath=".\wix.rules"
-		/>
-	</ToolFiles>
+
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
@@ -30,12 +26,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="WiX Light"
-			/>
-			<Tool
-				Name="WiX Candle"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -100,18 +90,16 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\OpenPhone.wixobj"
-			>
-		</File>
-		<File
 			RelativePath=".\OpenPhone.wxs"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
 				>
 				<Tool
-					Name="WiX Candle"
-					AdditionalOptions="-dMSVCRT_VER=90"
+					Name="VCCustomBuildTool"
+					Description="Compiling WiX ..."
+					CommandLine="&quot;$(WIX)\bin\candle&quot; -nologo -dMSVCRT_VER=90 -out &quot;$(IntDir)\$(InputName).wixobj&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;&quot;$(WIX)\bin\light&quot; -nologo -ext WixUIExtension -out &quot;$(OutDir)\OpenPhone.msi&quot; &quot;$(IntDir)\$(InputName).wixobj&quot;"
+					Outputs="$(OutDir)\OpenPhone.msi"
 				/>
 			</FileConfiguration>
 		</File>
