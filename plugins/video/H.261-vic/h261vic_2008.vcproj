@@ -73,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h261vic_ptplugin.dll"
+				OutputFile="$(OutDir)/h261_vic_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				RandomizedBaseAddress="1"
@@ -162,7 +162,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="wsock32.lib"
-				OutputFile="$(OutDir)/h261vic_ptplugin.dll"
+				OutputFile="$(OutDir)/h261_vic_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
