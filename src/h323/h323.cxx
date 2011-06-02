@@ -3582,6 +3582,8 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
     if (transmitterSidePaused || !capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
 
+    PINDEX previousCaps = remoteCapabilities.GetSize();
+
     if (!remoteCapabilities.Merge(remoteCaps))
       return PFalse;
 
@@ -3591,6 +3593,10 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       connectionState = HasExecutedSignalConnect;
       capabilityExchangeProcedure->Start(PTrue);
       masterSlaveDeterminationProcedure->Start(PFalse);
+    }
+    else if (connectionState > HasExecutedSignalConnect && remoteCapabilities.GetSize() > previousCaps) {
+      PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
+      OnSelectLogicalChannels();
     }
     else {
       if (localCapabilities.GetSize() > 0)
