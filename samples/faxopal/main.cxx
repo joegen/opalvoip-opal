@@ -107,7 +107,7 @@ void FaxOPAL::Main()
 
   m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
   m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
-
+  m_manager->SetMediaFormatMask(PStringArray("!G.711*"));
 
   if (args.HasOption('O')) {
     OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
@@ -193,6 +193,8 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
       break;
     default :
       cout << " T.30 error " << stats.m_fax.m_result;
+      if (!stats.m_fax.m_errorText.IsEmpty())
+        cout << " (" << stats.m_fax.m_errorText << ')';
   }
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
 }
