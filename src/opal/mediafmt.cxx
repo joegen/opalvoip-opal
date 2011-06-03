@@ -332,7 +332,8 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
   }
 
   if (assign) {
-    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" from " << *this << " to " << option);
+    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+              "from \"" << *this << "\" to \"" << option << '"');
     Assign(option);
   }
 
