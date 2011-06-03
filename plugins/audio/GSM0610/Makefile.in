@@ -31,24 +31,24 @@ SRCS   := gsm06_10_codec.c
 
 GSM_SYSTEM=@GSM_SYSTEM@
 ifeq ($(GSM_SYSTEM),no)
-SRCS	+= $(SRCDIR)/gsm_create.c \
-           $(SRCDIR)/gsm_destroy.c \
-	   $(SRCDIR)/gsm_decode.c \
-           $(SRCDIR)/gsm_encode.c \
-           $(SRCDIR)/gsm_option.c \
-	   $(SRCDIR)/code.c \
-           $(SRCDIR)/decode.c \
-           $(SRCDIR)/add.c \
-	   $(SRCDIR)/gsm_lpc.c \
-           $(SRCDIR)/rpe.c \
-           $(SRCDIR)/preprocess.c \
-           $(SRCDIR)/long_term.c \
-           $(SRCDIR)/short_term.c \
-           $(SRCDIR)/table.c
+SRCS += $(SRCDIR)/gsm_create.c \
+        $(SRCDIR)/gsm_destroy.c \
+        $(SRCDIR)/gsm_decode.c \
+        $(SRCDIR)/gsm_encode.c \
+        $(SRCDIR)/gsm_option.c \
+        $(SRCDIR)/code.c \
+        $(SRCDIR)/decode.c \
+        $(SRCDIR)/add.c \
+        $(SRCDIR)/gsm_lpc.c \
+        $(SRCDIR)/rpe.c \
+        $(SRCDIR)/preprocess.c \
+        $(SRCDIR)/long_term.c \
+        $(SRCDIR)/short_term.c \
+        $(SRCDIR)/table.c
 CFLAGS += -I./inc -DWAV49 -DNeedFunctionPrototypes=1
 else
-CFLAGS  += @GSM_CFLAGS@
-LDFLAGS += @GSM_LIBS@
+CFLAGS += @GSM_CFLAGS@
+LIBS   += @GSM_LIBS@
 endif
 
 INSTALL_DIR := @AC_PLUGIN_DIR@

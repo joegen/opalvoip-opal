@@ -29,8 +29,8 @@ BASENAME := spandsp
 SRCDIR	:= .
 SRCS	:= spandsp_fax.cpp
 
-CFLAGS  += -D__STDC_LIMIT_MACROS
-LDFLAGS += -lspandsp -ltiff
+CFLAGS += -D__STDC_LIMIT_MACROS
+LIBS   += -lspandsp -ltiff
 
 INSTALL_DIR := @FAX_PLUGIN_DIR@
 PLUGINDIR   := @PLUGINDIR@
