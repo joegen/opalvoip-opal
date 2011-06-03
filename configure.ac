@@ -224,7 +224,6 @@ case "$OSTYPE" in
           OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-Bdynamic -G -h \$(LIB_FILENAME_SHARED_PAT)"
 
-          DEBUG_CFLAGS="-D_DEBUG"
           HAVE_RANLIB=no
         ;;
 
@@ -299,6 +298,18 @@ CXXFLAGS="$CXXFLAGS $SHARED_CFLAGS"
 
 #-fno-exceptions per configure option
 # mingw: -mms-bitfields
+
+
+AC_MSG_CHECKING(if debug build accepts -g3 -ggdb -O0)
+AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[]])])
+$CXX  $CXXFLAGS  -g3 -ggdb -O0 conftest.$ac_ext > /dev/null 2>&1
+if test $? = 0 ; then
+  AC_MSG_RESULT(yes)
+  DEBUG_CFLAGS="-g3 -ggdb -O0 -D_DEBUG"
+else
+  AC_MSG_RESULT(no)
+  DEBUG_CFLAGS="-g -D_DEBUG"
+fi
 
 
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
