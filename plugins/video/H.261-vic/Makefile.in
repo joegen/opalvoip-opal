@@ -26,19 +26,18 @@
 
 BASENAME := h261_vic
 
-SRCDIR := ./vic
-SRCS   := ./h261vic.cxx \
-          $(SRCDIR)/encoder-h261.cxx \
-	  $(SRCDIR)/transmitter.cxx \
-          $(SRCDIR)/vid_coder.cxx \
-	  $(SRCDIR)/p64encoder.cxx \
-          $(SRCDIR)/p64.cxx \
-          $(SRCDIR)/dct.cxx \
-          $(SRCDIR)/huffcode.c \
-          $(SRCDIR)/bv.c \
-
 COMMONDIR := ../common
-vpath   %.cxx $(COMMONDIR)
+SRCDIR    := ./vic
+SRCS      := ./h261vic.cxx \
+             $(SRCDIR)/encoder-h261.cxx \
+             $(SRCDIR)/transmitter.cxx \
+             $(SRCDIR)/vid_coder.cxx \
+             $(SRCDIR)/p64encoder.cxx \
+             $(SRCDIR)/p64.cxx \
+             $(SRCDIR)/dct.cxx \
+             $(SRCDIR)/huffcode.c \
+             $(SRCDIR)/bv.c \
+
 
 CFLAGS += -I$(COMMONDIR)
 
