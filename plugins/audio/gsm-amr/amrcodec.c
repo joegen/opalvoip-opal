@@ -274,7 +274,7 @@ static struct PluginCodec_Option const amrVAD =
   VADStr,                     // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_AndMerge,       // Merge mode
-  "True",                     // Initial value
+  "1",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   H245_AMR_GSMAMRCOMFORTNOISE // H.245 Generic Capability number and scope bitsSE,
