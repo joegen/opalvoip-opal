@@ -69,7 +69,7 @@ $(OBJDIR)/%.o : %.cpp
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS))))))
 
 $(PLUGIN_PATH): $(SUBDIRS) $(OBJECTS)
-	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $(OBJECTS) $(LIBS)
 
 ifneq ($(SUBDIRS),)
 .PHONY: $(SUBDIRS)
