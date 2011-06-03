@@ -26,21 +26,20 @@
 
 BASENAME := iLBC
 
-SRCDIR	= ./iLBC
+SRCDIR := ./iLBC
+SRCS   := ilbccodec.c
 
 CFLAGS += @ILBC_CFLAGS@
-LDFLAGS += @ILBC_LIBS@
+LIBS   += @ILBC_LIBS@
+
 ILBC_SYSTEM :=@ILBC_SYSTEM@
-
-SRCS := ilbccodec.c
-
 ifeq ($(ILBC_SYSTEM),no)
 SRCS += $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
-	$(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
-	$(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
-	$(SRCDIR)/iCBConstruct.c $(SRCDIR)/iCBSearch.c $(SRCDIR)/iLBC_decode.c $(SRCDIR)/iLBC_encode.c \
-	$(SRCDIR)/LPCdecode.c $(SRCDIR)/LPCencode.c $(SRCDIR)/lsf.c $(SRCDIR)/packing.c \
-	$(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
+        $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
+        $(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
+        $(SRCDIR)/iCBConstruct.c $(SRCDIR)/iCBSearch.c $(SRCDIR)/iLBC_decode.c $(SRCDIR)/iLBC_encode.c \
+        $(SRCDIR)/LPCdecode.c $(SRCDIR)/LPCencode.c $(SRCDIR)/lsf.c $(SRCDIR)/packing.c \
+        $(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
 endif
 
 INSTALL_DIR := @AC_PLUGIN_DIR@

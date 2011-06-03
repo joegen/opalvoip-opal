@@ -29,13 +29,13 @@ BASENAME := h263_ffmpeg
 COMMONDIR := ../common
 SRCDIR    := .
 SRCS      := h263-1998.cxx \
-	     h263pframe.cxx \
-	     rfc2190.cxx \
-	     $(COMMONDIR)/mpi.cxx \
-	     $(COMMONDIR)/dyna.cxx
+             h263pframe.cxx \
+             rfc2190.cxx \
+             $(COMMONDIR)/mpi.cxx \
+             $(COMMONDIR)/dyna.cxx
 
-CFLAGS  += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LDFLAGS += @DL_LIBS@
+CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
+LIBS   += @DL_LIBS@
 
 HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
 ifeq ($(HAVE_LIBAVCODEC_RTP_MODE),yes)
