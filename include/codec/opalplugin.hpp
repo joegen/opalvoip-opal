@@ -612,6 +612,12 @@ class PluginCodec_RTP
     __inline unsigned GetSSRC() const                { return PluginCodec_RTP_GetSSRC(m_packet);               }
     __inline void     SetSSRC(unsigned ssrc)         {        PluginCodec_RTP_SetSSRC(m_packet, ssrc);         }
 
+    __inline void     SetExtended(unsigned type, unsigned sz)
+    {
+      PluginCodec_RTP_SetExtended(m_packet, type, sz);
+      m_headerSize = PluginCodec_RTP_GetHeaderLength(m_packet);
+    }
+
     __inline unsigned char * GetPayloadPtr() const   { return m_packet + m_headerSize; }
 
     __inline PluginCodec_Video_FrameHeader * GetVideoHeader() const { return (PluginCodec_Video_FrameHeader *)GetPayloadPtr(); }
