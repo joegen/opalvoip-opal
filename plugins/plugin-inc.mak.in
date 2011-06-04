@@ -41,7 +41,7 @@ SONAME	= $(BASENAME)_ptplugin
 PLUGIN_NAME = $(SONAME).$(PLUGINEXT)
 PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
 
-all: $(SUBDIRS) $(PLUGIN_PATH)
+all: $(PLUGIN_PATH)
 
 
 ifeq ($(VERBOSE),)
@@ -68,8 +68,8 @@ $(OBJDIR)/%.o : %.cpp
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS))))))
 
-$(PLUGIN_PATH): $(OBJECTS)
-	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+$(PLUGIN_PATH): $(SUBDIRS) $(OBJECTS)
+	$(Q_LD)$(CXX) $(LDFLAGS) -o $@ $(OBJECTS) $(LIBS)
 
 ifneq ($(SUBDIRS),)
 .PHONY: $(SUBDIRS)
