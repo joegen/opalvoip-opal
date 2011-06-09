@@ -29,38 +29,57 @@
 #include <opal/manager.h>
 #include <sip/sipep.h>
 
-class MyManager : public OpalManager
+#include <map>
+
+
+struct Statistics {
+  Statistics()
+    : m_status(SIP_PDU::Information_Trying)
+    , m_finishTime(0)
+    { }
+
+  SIP_PDU::StatusCodes m_status;
+  PTime                m_startTime;
+  PTime                m_finishTime;
+};
+
+typedef std::map<PString, Statistics> StatsMap;
+
+
+class MySIPEndPoint : public SIPEndPoint
 {
-  PCLASSINFO(MyManager, OpalManager)
+    PCLASSINFO(MySIPEndPoint, SIPEndPoint)
+  public:
+    MySIPEndPoint(OpalManager & mgr) : SIPEndPoint(mgr) { }
+
+    virtual void OnRegistrationStatus(const RegistrationStatus & status);
+    void PerformTest(const PArgList & args);
+    void MyRegister(const SIPURL & aor);
+    bool HasPending() const;
+
+    PString  m_password;
+    PString  m_contact;
+    PString  m_proxy;
+    StatsMap m_statistics;
 };
 
 
 class RegTest : public PProcess
 {
-  PCLASSINFO(RegTest, PProcess)
-
+    PCLASSINFO(RegTest, PProcess)
   public:
     RegTest();
-    ~RegTest();
 
     virtual void Main();
-
-  private:
-    MyManager * m_manager;
 };
+
 
 PCREATE_PROCESS(RegTest);
 
+
 RegTest::RegTest()
   : PProcess("OPAL RegTest", "RegTest", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
-  , m_manager(NULL)
 {
-}
-
-
-RegTest::~RegTest()
-{
-  delete m_manager;
 }
 
 
@@ -68,7 +87,12 @@ void RegTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse(
+  args.Parse("c-count:"
+             "C-contact:"
+             "I-interfaces:"
+             "p-password:"
+             "P-proxy:"
+             "v-verbose."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -81,89 +105,140 @@ void RegTest::Main()
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
 
-  if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
+  if (args.HasOption('h') || args.GetCount() == 0) {
+    cerr << "usage: " << GetFile().GetTitle() << " [ options ] aor [ ... ]\n"
             "\n"
             "Available options are:\n"
-            "  --help                  : print this help message.\n"
+            "  -c or --count n            : Count of users to register.\n"
+            "  -C or --contact url        : Pre-define REGISTER Contact header.\n"
+            "  -P or --proxy url          : Proxy to use for registration.\n"
+            "  -I or --interfaces iface   : Use specified interface(s)\n"
+            "  -p or --password pwd       : Pasword to use for all registrations\n"
+            "  -v or --verbose            : Indicate verbose output.\n"
 #if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"       
-            "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
+            "  -o or --output file        : file name for output of log messages\n"       
+            "  -t or --trace              : degree of verbosity in error log (more times for more detail)\n"     
 #endif
+            "  -h or --help               : print this help message.\n"
             "\n"
             "e.g. " << GetFile().GetTitle() << " sip:fred@bloggs.com\n"
+            "If --count is used, then users sip:fredXXXXX@bloggs.com are registered where\n"
+            "XXXXX is an integer from 1 to count.\n"
             ;
     return;
   }
 
-  MyManager m_manager;
-  SIPEndPoint * sipEp = new SIPEndPoint(m_manager);
-
-  sipEp->StartListener("");
-
-  PDictionary<POrdinalKey, PString> indexToAor;
-
-  const int max = 2;
-
-  //for (;;) 
   {
-
-    PINDEX i;
-    for (i = 0; i < max; ++i) {
-
-      PString username;
-      username.sprintf("user%i", i+1);
-
-      PString password;
-      password.sprintf("pwd%i", i+1);
-
-      PString aor;
-      aor = username + "@wanchai.postincrement.net";
-
-      PString contactAddress;
-      contactAddress = username + "@10.0.2.15";
-
-      SIPRegister::Params params;
-
-      params.m_addressOfRecord  = aor;
-      params.m_registrarAddress = "joejim2.postincrement.net";
-      params.m_contactAddress   = contactAddress;
-      params.m_authID           = username;
-      params.m_password         = password;
-      params.m_expire           = 120;
-      //params.m_restoreTime;
-      //params.m_minRetryTime;
-      //params.m_maxRetryTime;
-
-      PString returnedAOR;
-
-      if (!sipEp->Register(params, returnedAOR)) 
-        cerr << "Registration of " << aor << " failed" << endl;
-      else {
-        cerr << aor << " registered as " << returnedAOR << endl;
-        indexToAor.SetAt(i+1, new PString(returnedAOR));
-      }
-    }
-
-    Sleep(10000);
-
-    for (i = 0; i < max; ++i) {
-      PString * aor = indexToAor.GetAt(i+1);
-      if (aor == NULL)
-        cerr << "No AOR for index " << i+1 << endl;
-      else if (!sipEp->Unregister(*aor /*, 5000*/))
-        cerr << "Unregister for index " << i+1 << " failed" << endl;
-      else
-        cerr << "Unregister for index " << i+1 << " succeeded" << endl;
-      Sleep(100);
-      indexToAor.RemoveAt(POrdinalKey(i+1));
-    }
-
-    Sleep(10000);
+    OpalManager manager;
+    MySIPEndPoint * endpoint = new MySIPEndPoint(manager);
+    endpoint->PerformTest(args);
+    cout << "Unregistering ..." << endl;
   }
 
-  // Wait for call to come in and finish
-  cout << " completed.";
+  cout << "Test completed." << endl;
+}
+
+
+void MySIPEndPoint::PerformTest(const PArgList & args)
+{
+  StartListeners(args.GetOptionString('I').Lines());
+
+  m_password = args.GetOptionString('p');
+  m_contact = args.GetOptionString('C');
+  m_proxy = args.GetOptionString('P');
+
+  unsigned count = args.GetOptionString('c').AsUnsigned();
+
+  PTime startTime;
+
+  for (PINDEX arg = 0; arg < args.GetCount(); ++arg) {
+    SIPURL url;
+    if (!url.Parse(args[arg]))
+      cerr << "Could not parse \"" << args[arg] << "\" as a SIP address\n";
+    else if (count == 0)
+      MyRegister(url);
+    else {
+      PString nameFormat = url.GetUserName() + "%05u";
+      for (unsigned index = 0; index < count; ++index) {
+        url.SetUserName(psprintf(nameFormat, index));
+        MyRegister(url);
+      }
+    }
+  }
+
+  if (count > 0) {
+    PTimeInterval duration = PTime() - startTime;
+    cout << "Registration requests took " << duration << " seconds, "
+         << (1000.0*count/duration.GetMilliSeconds()) << "/second, "
+         << ((double)duration.GetMilliSeconds()/count) << "ms/REGISTER" << endl;
+  }
+
+  cout << "Waiting for all registrations to complete ..." << endl;
+
+  while (HasPending())
+    PThread::Sleep(1000);
+
+  if (args.HasOption('v'))
+    cout << "Registrations completed, details:" << endl;
+
+  double totalTime = 0;
+  unsigned divisor = 0;
+  unsigned failed = 0;
+  for (StatsMap::const_iterator it = m_statistics.begin(); it != m_statistics.end(); ++it) {
+    PTimeInterval duration = it->second.m_finishTime - it->second.m_startTime;
+    totalTime += duration.GetMilliSeconds();
+    ++divisor;
+    if (it->second.m_status != 200)
+      ++failed;
+    if (args.HasOption('v'))
+      cout << "aor: " << it->first
+           << "  status: " << it->second.m_status
+           << "  time: " << (it->second.m_finishTime - it->second.m_startTime) << "s\n";
+  }
+  cout << "Average registration time: " << (totalTime/divisor) << "ms, (" << failed << " failed)\n";
+}
+
+
+void MySIPEndPoint::MyRegister(const SIPURL & aor)
+{
+  SIPRegister::Params params;
+
+  params.m_addressOfRecord  = aor.AsString();
+  params.m_password         = m_password;
+  params.m_contactAddress   = m_contact;
+  params.m_proxyAddress     = m_proxy;
+  params.m_expire           = 300;
+
+  PString returnedAOR;
+
+  if (Register(params, returnedAOR))
+    m_statistics[returnedAOR]; // Create 
+  else
+    cerr << "Registration of " << aor << " failed" << endl;
+}
+
+
+void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  SIPEndPoint::OnRegistrationStatus(status);
+
+  StatsMap::iterator it = m_statistics.find(status.m_addressofRecord);
+  if (it == m_statistics.end())
+    return;
+
+  it->second.m_status = status.m_reason;
+  it->second.m_finishTime.SetCurrentTime();
+}
+
+
+bool MySIPEndPoint::HasPending() const
+{
+  for (StatsMap::const_iterator it = m_statistics.begin(); it != m_statistics.end(); ++it) {
+    if (it->second.m_status/100 == 1)
+      return true;
+  }
+
+  return false;
 }
 
 
