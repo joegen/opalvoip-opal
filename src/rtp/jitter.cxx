@@ -207,9 +207,9 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
   : m_timeUnits(units)
   , m_jitterGrowTime(10*units) // 10 milliseconds @ 8kHz
   , m_jitterShrinkPeriod(2000*units) // 2 seconds @ 8kHz
-  , m_jitterShrinkTime(5*units) // 5 milliseconds @ 8kHz
+  , m_jitterShrinkTime(-5*units) // 5 milliseconds @ 8kHz
   , m_silenceShrinkPeriod(5000*units) // 5 seconds @ 8kHz
-  , m_silenceShrinkTime(20*units) // 20 milliseconds @ 8kHz
+  , m_silenceShrinkTime(-20*units) // 20 milliseconds @ 8kHz
   , m_jitterDriftPeriod(500*units) // 0.5 second @ 8kHz
   , m_maxConsecutiveMarkerBits(10)
 #ifdef NO_ANALYSER
@@ -315,7 +315,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
 
       // Have been told there is explicit silence by marker, take opportunity
       // to reduce the current jitter delay.
-      m_currentJitterDelay -= m_silenceShrinkTime;
+      AdjustCurrentJitterDelay(m_silenceShrinkTime);
       PTRACE(3, "Jitter\tStart talk burst: ts=" << timestamp << ", decreasing delay="
              << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
     }
@@ -350,6 +350,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     else if (m_averageFrameTime == 0 || m_averageFrameTime > (DWORD)newFrameTime) {
       m_averageFrameTime = newFrameTime;
       PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms)");
+      AdjustCurrentJitterDelay(0);
     }
   }
   m_lastTimestamp = timestamp;
@@ -372,7 +373,27 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
 DWORD OpalJitterBuffer::CalculateRequiredTimestamp(DWORD playOutTimestamp) const
 {
   DWORD timestamp = playOutTimestamp + m_timestampDelta;
-  return timestamp > m_currentJitterDelay ? (timestamp - m_currentJitterDelay) : 0;
+  return timestamp > (DWORD)m_currentJitterDelay ? (timestamp - m_currentJitterDelay) : 0;
+}
+
+
+bool OpalJitterBuffer::AdjustCurrentJitterDelay(int delta)
+{
+  int minJitterDelay = max(m_minJitterDelay, 2*m_averageFrameTime);
+  int maxJitterDelay = max(m_minJitterDelay, m_maxJitterDelay);
+
+  if (delta < 0 && m_currentJitterDelay <= minJitterDelay)
+    return false;
+  if (delta > 0 && m_currentJitterDelay >= maxJitterDelay)
+    return false;
+
+  m_currentJitterDelay += delta;
+  if (m_currentJitterDelay < minJitterDelay)
+    m_currentJitterDelay = minJitterDelay;
+  else if (m_currentJitterDelay > maxJitterDelay)
+    m_currentJitterDelay = maxJitterDelay;
+
+  return true;
 }
 
 
@@ -397,12 +418,8 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
     PTRACE_IF(6, m_synchronisationState == e_SynchronisationDone, "Jitter\tBuffer is empty " COMMON_TRACE_INFO);
     ANALYSE(Out, requiredTimestamp, "Empty");
 
-    if (m_currentJitterDelay > m_minJitterDelay &&
-              (playOutTimestamp - m_bufferEmptiedTime) > m_silenceShrinkPeriod) {
-      if (m_currentJitterDelay < m_silenceShrinkTime)
-        m_currentJitterDelay = m_minJitterDelay;
-      else
-        m_currentJitterDelay -= m_silenceShrinkTime;
+    if ((playOutTimestamp - m_bufferEmptiedTime) > m_silenceShrinkPeriod &&
+         AdjustCurrentJitterDelay(m_silenceShrinkTime)) {
       PTRACE(4, "Jitter\tLong silence    " COMMON_TRACE_INFO << ", decreasing delay="
              << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
       m_bufferEmptiedTime = playOutTimestamp;
@@ -437,18 +454,12 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
   else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
     m_bufferFilledTime = playOutTimestamp;
 
-    if (m_currentJitterDelay <= m_minJitterDelay)
-      PTRACE(4, "Jitter\tPackets on time " COMMON_TRACE_INFO << ", cannot decrease delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
-    else {
-      if (m_currentJitterDelay < m_jitterShrinkTime)
-        m_currentJitterDelay = m_minJitterDelay;
-      else
-        m_currentJitterDelay -= m_jitterShrinkTime;
-      PTRACE(4, "Jitter\tPackets on time " COMMON_TRACE_INFO << "," " decreasing delay="
-             << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+    bool adjusted = AdjustCurrentJitterDelay(m_jitterShrinkTime);
+    PTRACE(4, "Jitter\tPackets on time " COMMON_TRACE_INFO << ", "
+           << (adjusted ? "decreasing" : "cannot decrease") << " delay="
+           << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+    if (adjusted)
       m_synchronisationState = e_SynchronisationShrink;
-    }
   }
 
   // Get the oldest packet
@@ -492,14 +503,13 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
         }
 
         // Packets late, need a bigger jitter buffer
-        m_currentJitterDelay += m_jitterGrowTime;
-        if (m_currentJitterDelay > m_maxJitterDelay)
-          m_currentJitterDelay = m_maxJitterDelay;
-
+#if PTRACING
+        bool adjusted =
+#endif
+        AdjustCurrentJitterDelay(m_jitterGrowTime);
         PTRACE(4, "Jitter\tPacket too late " COMMON_TRACE_INFO
                   << ", oldest=" << oldestFrame->first << ", "
-                  << (m_currentJitterDelay == m_maxJitterDelay
-                                           ? "cannot increase" : "increasing") << " delay="
+                  << (adjusted ? "increasing" : "cannot increase") << " delay="
                   << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
         ANALYSE(Out, oldestFrame->first, "Late");
         m_frames.erase(oldestFrame);
@@ -521,10 +531,10 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
          to have a clock of 8.01kHz and the receiver 7.99kHz so gradually the remote
          sends more data than we take out over time, gradually building up in the
          jitter buffer. So, drop a frame every now and then. */
-      if (m_frames.size() <= framesInBuffer+1)
+      if (m_frames.size() < framesInBuffer*2)
         break;
 
-      PTRACE(4, "Jitter\tClock overrun   " COMMON_TRACE_INFO << " > " << framesInBuffer << "+1");
+      PTRACE(4, "Jitter\tClock overrun   " COMMON_TRACE_INFO << " >= " << framesInBuffer << "*2");
       m_timestampDelta += m_averageFrameTime;
       // Do next case
 
