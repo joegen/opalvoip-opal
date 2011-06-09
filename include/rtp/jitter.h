@@ -147,20 +147,21 @@ class OpalJitterBuffer : public PSafeObject
 
   protected:
     DWORD CalculateRequiredTimestamp(DWORD playOutTimestamp) const;
+    bool AdjustCurrentJitterDelay(int delta);
 
     unsigned m_timeUnits;
     PINDEX   m_packetSize;
     DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
     DWORD    m_maxJitterDelay;      ///< Maximum jitter delay in timestamp units
-    DWORD    m_jitterGrowTime;      ///< Amaint to increase jitter delay by when get "late" packet
+    int      m_jitterGrowTime;      ///< Amaint to increase jitter delay by when get "late" packet
     DWORD    m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
                                     ///< consistently filled before shrinking
-    DWORD    m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
+    int      m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
     DWORD    m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
-    DWORD    m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
+    int      m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
     DWORD    m_jitterDriftPeriod;
 
-    DWORD    m_currentJitterDelay;
+    int      m_currentJitterDelay;
     DWORD    m_packetsTooLate;
     DWORD    m_bufferOverruns;
     DWORD    m_consecutiveMarkerBits;
