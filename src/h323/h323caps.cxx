@@ -628,7 +628,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
     if (PIsDescendant(&option, OpalMediaOptionBoolean)) {
       if (param->GetTag() == H245_ParameterValue::e_logical) {
         ((OpalMediaOptionBoolean &)option).SetValue(true);
-        break;
+        continue;
       }
     }
     else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
@@ -650,7 +650,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
 
       if (param->GetTag() == tag) {
         ((OpalMediaOptionUnsigned &)option).SetValue((const PASN_Integer &)*param);
-        break;
+        continue;
       }
     }
     else {
@@ -660,7 +660,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
           ((OpalMediaOptionOctets &)option).SetValue(octetString);
         else
           ((OpalMediaOption &)option).FromString(octetString.AsString());
-        break;
+        continue;
       }
     }
 
