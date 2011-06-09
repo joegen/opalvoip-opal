@@ -599,11 +599,13 @@ class SIP_PDU : public PSafeObject
     );
     void InitialiseHeaders(
       SIPDialogContext & dialog,
-      const PString & via = PString::Empty()
+      const PString & via = PString::Empty(),
+      unsigned cseq = 0
     );
     void InitialiseHeaders(
       SIPConnection & connection,
-      const OpalTransport & transport
+      const OpalTransport & transport,
+      unsigned cseq = 0
     );
     void InitialiseHeaders(
       const SIP_PDU & request
