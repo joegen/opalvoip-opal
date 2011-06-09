@@ -1795,24 +1795,23 @@ PString SIP_PDU::CreateVia(const OpalTransport & transport)
 }
 
 
-void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via)
+void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via, unsigned cseq)
 {
   // Assume the dialog URI's are already sanitised.
   m_uri = dialog.GetRequestURI();
   m_mime.SetTo(dialog.GetRemoteURI().AsQuotedString());
   m_mime.SetFrom(dialog.GetLocalURI().AsQuotedString());
   m_mime.SetCallID(dialog.GetCallID());
-  m_mime.SetCSeq(PString(dialog.GetNextCSeq()) & MethodNames[m_method]);
+  m_mime.SetCSeq(PString(cseq != 0 ? cseq : dialog.GetNextCSeq()) & MethodNames[m_method]);
   m_mime.SetMaxForwards(70);
   m_mime.SetVia(via);
   SetRoute(dialog.GetRouteSet());
 }
 
 
-void SIP_PDU::InitialiseHeaders(SIPConnection & connection,
-                                const OpalTransport & transport)
+void SIP_PDU::InitialiseHeaders(SIPConnection & connection, const OpalTransport & transport, unsigned cseq)
 {
-  InitialiseHeaders(connection.GetDialog(), CreateVia(transport));
+  InitialiseHeaders(connection.GetDialog(), CreateVia(transport), cseq);
   connection.GetEndPoint().AdjustToRegistration(transport, *this);
 }
 
@@ -3283,10 +3282,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
   : SIP_PDU(Method_ACK)
 {
-  if (response.GetStatusCode() < 300) {
-    InitialiseHeaders(*invite.GetConnection(), invite.GetTransport());
-    m_mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
-  }
+  if (response.GetStatusCode() < 300)
+    InitialiseHeaders(*invite.GetConnection(), invite.GetTransport(), invite.GetMIME().GetCSeqIndex());
   else {
     InitialiseHeaders(invite.GetURI(),
                       response.GetMIME().GetTo(),
