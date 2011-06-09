@@ -146,7 +146,7 @@ const OpalMediaFormat & GetOpalT140()
         : OpalMediaFormat(OPAL_T140, 
                           "t140", 
                           RTP_DataFrame::DynamicBase, 
-                          "text", 
+                          "t140", 
                           false,  
                           1440, 
                           512, 
