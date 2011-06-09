@@ -3274,7 +3274,10 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
     if (info != NULL) {
       SIPURL speedDialURL(sdInfo->m_Address.p_str());
-      if (info->m_entity == speedDialURL) {
+      if (info->m_entity == speedDialURL ||
+         (info->m_entity.GetScheme() == "pres" &&
+          info->m_entity.GetUserName() == speedDialURL.GetUserName() &&
+          info->m_entity.GetHostName() == speedDialURL.GetHostName())) {
         PwxString status = info->m_note;
 
         IconStates icon;
