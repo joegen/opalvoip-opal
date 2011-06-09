@@ -677,7 +677,8 @@ class SIP_PDU : public PSafeObject
     void Construct(
       Methods method,
       SIPConnection & connection,
-      const OpalTransport & transport
+      const OpalTransport & transport,
+      unsigned cseq = 0
     );
 
     /**Add and populate Route header following the given routeSet.

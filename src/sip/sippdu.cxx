@@ -1892,7 +1892,8 @@ void SIP_PDU::Construct(Methods meth,
 
 void SIP_PDU::Construct(Methods meth,
                         SIPConnection & connection,
-                        const OpalTransport & transport)
+                        const OpalTransport & transport,
+                        unsigned cseq)
 {
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
@@ -1922,7 +1923,7 @@ void SIP_PDU::Construct(Methods meth,
             dialog.GetRemoteURI().AsQuotedString(),
             dialog.GetLocalURI().AsQuotedString(),
             dialog.GetCallID(),
-            dialog.GetNextCSeq(),
+            cseq != 0 ? cseq : dialog.GetNextCSeq(),
             via.GetHostAddress());
 
   SetRoute(dialog.GetRouteSet()); // Possibly adjust the URI and the route
@@ -3413,10 +3414,8 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 
 SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 {
-  if (response.GetStatusCode() < 300) {
-    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport());
-    mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
-  }
+  if (response.GetStatusCode() < 300)
+    Construct(Method_ACK, *invite.GetConnection(), invite.GetTransport(), invite.GetMIME().GetCSeqIndex());
   else {
     Construct(Method_ACK,
               invite.GetURI(),
