@@ -1016,8 +1016,8 @@ bool MyManager::Initialise()
         if (presentity->GetAttributes().GetBoolean(PresenceActiveKey)) {
           LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
                     << " presence for identity " << aor << endl;
-          if (config->Read(LastPresenceStateKey, &value1))
-            presentity->SetLocalPresence((OpalPresenceInfo::State)value1);
+          presentity->SetLocalPresence((OpalPresenceInfo::State)config->Read(LastPresenceStateKey,
+                                                               (long)OpalPresenceInfo::Available));
         }
       }
     }
@@ -3280,41 +3280,50 @@ void MyManager::OnPresence(wxCommandEvent & theEvent)
           info->m_entity.GetHostName() == speedDialURL.GetHostName())) {
         PwxString status = info->m_note;
 
-        IconStates icon;
+        wxListItem item;
+        item.m_itemId = index;
+        item.m_mask = wxLIST_MASK_IMAGE;
+        if (!m_speedDials->GetItem(item))
+          continue;
+
+        IconStates oldIcon = (IconStates)item.m_image;
+
+        IconStates newIcon;
         switch (info->m_state) {
+          case OpalPresenceInfo::Unchanged :
+            newIcon = oldIcon;
+            break;
+
           case OpalPresenceInfo::NoPresence :
-            icon = Icon_Unavailable;
+            newIcon = Icon_Unavailable;
             break;
 
           case OpalPresenceInfo::Busy :
-            icon = Icon_Busy;
+            newIcon = Icon_Busy;
             break;
 
           case OpalPresenceInfo::Away :
-            icon = Icon_Away;
+            newIcon = Icon_Away;
             break;
 
           default :
             if (status.CmpNoCase(wxT("busy")) == 0)
-              icon = Icon_Busy;
+              newIcon = Icon_Busy;
             else if (status.CmpNoCase(wxT("away")) == 0)
-              icon = Icon_Away;
+              newIcon = Icon_Away;
             else
-              icon = Icon_Present;
+              newIcon = Icon_Present;
             break;
         }
 
         if (status.IsEmpty())
-          status = IconStatusNames[icon];
+          status = IconStatusNames[newIcon];
 
         if (m_speedDialDetail)
           m_speedDials->SetItem(index, e_StatusColumn, status);
 
-        wxListItem item;
-        item.m_itemId = index;
-        item.m_mask = wxLIST_MASK_IMAGE;
-        if (m_speedDials->GetItem(item) && item.m_image!= icon) {
-          m_speedDials->SetItemImage(index, icon);
+        if (oldIcon != newIcon) {
+          m_speedDials->SetItemImage(index, newIcon);
           LogWindow << "Presence notification received for " << info->m_entity << ", \"" << status << '"' << endl;
         }
         break;
