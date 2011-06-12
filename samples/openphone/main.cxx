@@ -1338,11 +1338,13 @@ void MyManager::SetNATHandling()
 
         PSTUNClient::NatTypes nat = SetSTUNServer(m_STUNServer);
 
-        LogWindow << "STUN server \"" << m_natMethod->GetServer() << "\" replies " << nat;
-        PIPSocket::Address externalAddress;
-        if (nat != PSTUNClient::BlockedNat && GetSTUNClient()->GetExternalAddress(externalAddress))
-          LogWindow << " with address " << externalAddress;
-        LogWindow << endl;
+        if (m_natMethod != NULL) {
+          LogWindow << "STUN server \"" << m_natMethod->GetServer() << "\" replies " << nat;
+          PIPSocket::Address externalAddress;
+          if (nat != PSTUNClient::BlockedNat && m_natMethod->GetExternalAddress(externalAddress))
+            LogWindow << " with address " << externalAddress;
+          LogWindow << endl;
+        }
       }
       SetTranslationHost(PString::Empty());
       break;
