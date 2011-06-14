@@ -253,6 +253,12 @@ bool SIP_Presentity::Close()
 
   StopThread();
 
+  if (!m_publishedTupleId.IsEmpty()) {
+    SIP_Presentity_OpalSetLocalPresenceCommand cmd;
+    cmd.m_state = OpalPresenceInfo::NoPresence;
+    Internal_SendLocalPresence(cmd);
+  }
+
   m_notificationMutex.Wait();
 
   if (!m_watcherSubscriptionAOR.IsEmpty()) {
@@ -266,6 +272,9 @@ bool SIP_Presentity::Close()
   }
 
   m_notificationMutex.Signal();
+
+  if (!m_publishedTupleId.IsEmpty() && m_subProtocol != e_PeerToPeer)
+    m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
 
   m_endpoint = NULL;
   return true;
@@ -668,7 +677,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
     sipPresence.m_tupleId = m_publishedTupleId;
 
   if (m_subProtocol != e_PeerToPeer)
-    m_endpoint->PublishPresence(sipPresence, cmd.m_state == OpalPresenceInfo::NoPresence ? 0 : GetExpiryTime());
+    m_endpoint->PublishPresence(sipPresence, GetExpiryTime());
   else
     m_endpoint->Notify(SIPURL(m_aor.AsString()), SIPSubscribe::Presence, sipPresence.AsXML());
 }
