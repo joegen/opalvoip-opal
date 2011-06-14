@@ -35,6 +35,8 @@
 
 #include <opal/buildopts.h>
 
+#ifdef P_WAVFILE
+
 #include <ptclib/pwavfile.h>
 
 
@@ -97,6 +99,8 @@ class OpalWAVFile : public PWAVFile
 
 
 PFACTORY_LOAD(PWAVFileConverterULaw);
+
+#endif
 
 
 #endif // OPAL_CODEC_OPALWAVFILE_H

@@ -1634,7 +1634,9 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
   #endif
       case PluginCodec_MediaTypeAudio:
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
+#ifdef P_WAVFILE
         OpalWAVFile::AddMediaFormat(isEncoder ? dst : src);
+#endif
         break;
       case PluginCodec_MediaTypeAudioStreamed:
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
