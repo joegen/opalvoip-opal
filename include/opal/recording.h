@@ -191,7 +191,11 @@ class OpalRecordManager
 };
 
 // Force linking of modules
+
+#ifdef P_WAVFILE
 PFACTORY_LOAD(OpalWAVRecordManager);
+#endif
+
 #ifdef P_VFW_CAPTURE
 PFACTORY_LOAD(OpalAVIRecordManager);
 #endif

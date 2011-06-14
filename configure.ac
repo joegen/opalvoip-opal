@@ -24,7 +24,7 @@ elif test "$enable_ios" = "iphone" ; then
   IOS_PLATFORM=iPhoneOS
   IOS_ARCH=armv6
 elif test "$enable_ios" = "simulator" ; then
-  IOS_PLATFORM=Simulator
+  IOS_PLATFORM=iPhoneSimulator
   IOS_ARCH=i686
 else
   AC_MSG_ERROR([Unknown iOS variant $enable_ios - use either iphone or simulator])
@@ -38,7 +38,7 @@ if test "x$IOS_PLATFORM" != "x" ; then
   fi
   AC_MSG_NOTICE(configuring for $IOS_PLATFORM version $IOS_VER)
 
-  IOS_SDKROOT=${IOS_DEVROOT}/SDKs/iPhoneOS${IOS_VER}.sdk
+  IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${IOS_PLATFORM}${IOS_VER}.sdk
 
   CXX=["${IOS_DEVROOT}/usr/bin/g++ -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
   CC=["${IOS_DEVROOT}/usr/bin/gcc -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
@@ -46,9 +46,9 @@ if test "x$IOS_PLATFORM" != "x" ; then
   LDFLAGS="${LDFLAGS} -L${IOS_SDKROOT}/usr/lib"
   ENDLDLIBS="-lresolv"
 
-  echo $CC
-  echo $CFLAGS
-  echo $LDFLAGS
+  dnl echo $CC
+  dnl echo $CFLAGS
+  dnl echo $LDFLAGS
 fi
 
 dnl Prevent CFLAGS and CXXFLAGS from being overwritten if undefined

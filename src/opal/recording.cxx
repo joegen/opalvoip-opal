@@ -33,7 +33,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_HAS_MIXER
+#if defined(OPAL_HAS_MIXER) && defined(P_WAVFILE)
 
 #include <opal/opalmixer.h>
 #include <opal/recording.h>
