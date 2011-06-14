@@ -1,5 +1,5 @@
 /*
- * main.h
+ * main.cxx
  *
  * OPAL application source file for testing Opal presentities
  *
