@@ -36,7 +36,7 @@
 
 #include <codec/g711codec.h>
 
-
+#ifdef P_WAVFILE
 
 #define new PNEW
 
@@ -420,5 +420,6 @@ bool OpalWAVFile::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   return false;
 }
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////
