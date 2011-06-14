@@ -42,7 +42,7 @@
 
 #define MAJOR_VERSION OPAL_MAJOR
 #define MINOR_VERSION OPAL_MINOR
-#define BUILD_TYPE    BetaCode
+#define BUILD_TYPE    ReleaseCode
 #define BUILD_NUMBER  OPAL_BUILD
 
 
