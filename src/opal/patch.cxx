@@ -475,7 +475,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 
   bool atLeastOne = false;
 
-  PList<Sink> & sinksToUse = m_bypassActive ? m_bypassToPatch->sinks : sinks;
+  PList<Sink> & sinksToUse = m_bypassActive && m_bypassToPatch != NULL ? m_bypassToPatch->sinks : sinks;
 
   for (PList<Sink>::iterator s = sinksToUse.begin(); s != sinksToUse.end(); ++s) {
     if (s->ExecuteCommand(command))
