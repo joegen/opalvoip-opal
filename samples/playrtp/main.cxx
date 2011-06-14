@@ -415,7 +415,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
     if (rtpStreamPayloadType != rtp.GetPayloadType()) {
       if (rtpStreamPayloadType != RTP_DataFrame::IllegalPayloadType) {
-        cout << "Payload type changed in mid file \"" << pcap.GetFilePath() << '"' << endl;
+        cout << "Payload type changed in mid file at sequence number " << thisSequenceNumber
+             << " in file\"" << pcap.GetFilePath() << '"' << endl;
         continue;
       }
       rtpStreamPayloadType = rtp.GetPayloadType();
