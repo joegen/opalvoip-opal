@@ -122,7 +122,7 @@
             <Component Id='AVCORE' Guid='*'>
               <File Id='AVCORE_DLL'
 		      Name='avcore-0.dll'
-		      Source='$(var.PluginDir)\avutil-50.dll'
+		      Source='$(var.PluginDir)\avcore-0.dll'
 		      DiskId='1'
 		      KeyPath='yes' />
             </Component>
