@@ -3652,7 +3652,8 @@ void H323Connection::OnSetLocalCapabilities()
   // Remove those things not in the other parties media format list
   for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
     H323Capability & capability = localCapabilities[c];
-    if (!formats.HasFormat(capability.GetMediaFormat())) {
+    OpalMediaFormat format = capability.GetMediaFormat();
+    if (format.GetMediaType() == OpalMediaType::UserInput() || !formats.HasFormat(format)) {
       localCapabilities.Remove(&capability);
       c--;
     }
@@ -3701,7 +3702,7 @@ void H323Connection::OnSetLocalCapabilities()
   }
 #endif
 
-  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
+  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, formats.HasFormat(OpalRFC2833));
 
   // Special test for the RFC2833 capability to get the correct dynamic payload type
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);

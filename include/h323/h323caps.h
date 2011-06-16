@@ -2039,9 +2039,10 @@ class H323_UserInputCapability : public H323Capability
   //@}
 
     static void AddAllCapabilities(
-      H323Capabilities & capabilities,        ///<  Table to add capabilities to
-      PINDEX descriptorNum,   ///<  The member of the capabilityDescriptor to add
-      PINDEX simultaneous     ///<  The member of the SimultaneousCapabilitySet to add
+      H323Capabilities & capabilities,  ///<  Table to add capabilities to
+      PINDEX descriptorNum,             ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,              ///<  The member of the SimultaneousCapabilitySet to add
+      bool includeRFC2833 = true
     );
 
   protected:
