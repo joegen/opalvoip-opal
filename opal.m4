@@ -915,11 +915,14 @@ AC_DEFUN([OPAL_FIND_SPANDSP],
               ],
               [opal_spandsp=no])
           LIBS=$saved_LIBS
+          saved_CXXFLAGS=$CXXFLAGS
+          CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS"
           if test "x${opal_spandsp}" = "xyes"; then
               SPANDSP_LIBS="-lspandsp"
-              AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no])
+              AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no], [#include <stdint.h>])
           fi
           AS_IF([test AS_VAR_GET([opal_spandsp]) = yes], [$1], [$2])[]
+          CXXFLAGS=$saved_CXXFLAGS
          ])
 
 
