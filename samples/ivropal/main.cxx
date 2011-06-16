@@ -113,7 +113,7 @@ void IvrOPAL::Main()
 
   // Wait for call to come in and finish
   m_manager->m_completed.Wait();
-  cout << " completed.";
+  cout << " completed." << endl;
 
   MyManager * mgr = m_manager;
   m_manager = NULL;
