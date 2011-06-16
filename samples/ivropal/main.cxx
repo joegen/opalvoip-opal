@@ -92,7 +92,7 @@ void IvrOPAL::Main()
 
 
   // Set up IVR
-  OpalIVREndPoint * ivr  = new OpalIVREndPoint(*m_manager);
+  MyIVREndPoint * ivr  = new MyIVREndPoint(*m_manager);
   ivr->SetDefaultVXML(args[0]);
 
 
@@ -101,19 +101,19 @@ void IvrOPAL::Main()
 
 
   if (args.GetCount() == 1)
-    cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ..." << flush;
+    cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ... " << flush;
   else {
     PString token;
     if (!m_manager->SetUpCall("ivr:", args[1], token)) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
-    cout << "Playing " << args[0] << " to " << args[1] << " ..." << flush;
+    cout << "Playing " << args[0] << " to " << args[1] << " ... " << flush;
   }
 
   // Wait for call to come in and finish
   m_manager->m_completed.Wait();
-  cout << " completed." << endl;
+  cout << "Completed." << endl;
 
   MyManager * mgr = m_manager;
   m_manager = NULL;
@@ -125,6 +125,15 @@ void MyManager::OnClearedCall(OpalCall & call)
 {
   if (call.GetPartyA().NumCompare("ivr") == EqualTo)
     m_completed.Signal();
+}
+
+
+void MyIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
+{
+  cout << "\nFinal variables:\n" << connection.GetVXMLSession().GetVariables() << endl;
+
+  // Do default action which is to clear the call.
+  OpalIVREndPoint::OnEndDialog(connection);
 }
 
 
