@@ -127,6 +127,8 @@ void FaxOPAL::Main()
     stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
   if (args.HasOption('E'))
     stringOptions.SetAt(OPAL_SUPPRESS_CED, "true");
+  if (args.HasOption('e'))
+    stringOptions.SetAt(OPAL_IGNORE_CED, "true");
   if (args.HasOption('X'))
     stringOptions.SetAt(OPAL_T38_SWITCH_TIME, args.GetOptionString('X').AsUnsigned());
 
