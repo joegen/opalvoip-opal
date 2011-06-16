@@ -60,6 +60,7 @@ class FaxOPAL : public PProcess
     ~FaxOPAL();
 
     virtual void Main();
+    virtual bool OnInterrupt(bool);
 
   private:
     MyManager * m_manager;
