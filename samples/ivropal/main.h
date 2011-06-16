@@ -35,6 +35,17 @@
 #endif
 
 
+class MyIVREndPoint : public OpalIVREndPoint
+{
+    PCLASSINFO(MyIVREndPoint, OpalIVREndPoint)
+
+  public:
+    MyIVREndPoint(OpalManager & manager) : OpalIVREndPoint(manager) { }
+
+    virtual void OnEndDialog(OpalIVRConnection & connection);
+};
+
+
 class MyManager : public OpalManagerConsole
 {
     PCLASSINFO(MyManager, OpalManagerConsole)
