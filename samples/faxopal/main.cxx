@@ -151,7 +151,17 @@ void FaxOPAL::Main()
   else
     m_manager->m_completed.Wait();
 
-  cout << " ... completed.";
+  cout << " ... completed." << endl;
+}
+
+
+bool FaxOPAL::OnInterrupt(bool)
+{
+  if (m_manager == NULL)
+    return false;
+
+  m_manager->m_completed.Signal();
+  return true;
 }
 
 
