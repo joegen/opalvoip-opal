@@ -37,6 +37,7 @@
 #include <opal/console_mgr.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
+#include <h323/gkclient.h>
 #include <lids/lidep.h>
 
 
@@ -47,32 +48,34 @@ OpalManagerConsole::OpalManagerConsole()
 
 PString OpalManagerConsole::GetArgumentSpec() const
 {
-  return "D-disable:"
-         "g-gk-host:"
-         "G-gk-id:"
-         "h-help."
-         "H-h323:"
-         "L-lines:"
-#if PTRACING
-         "o-output:"             "-no-output."
-#endif
+  return "u-user:"
          "p-password:"
+         "D-disable:"
          "P-prefer:"
-         "r-register:"
-         "S-sip:"
-#if PTRACING
-         "t-trace."              "-no-trace."
-#endif
-         "u-user:"
-
          "-inband-detect."
          "-inband-send."
-         "-country:"
-         "-no-fast."
-         "-proxy:"
-         "-sip-ui:"
+         "-tel:"
+#if OPAL_SIP
+         "S-sip:"
+         "r-register:"
          "-register-ttl:"
          "-register-mode:"
+         "-proxy:"
+         "-sip-ui:"
+#endif
+#if OPAL_H323
+         "g-gk-host:"
+         "G-gk-id:"
+         "H-h323:"
+         "-no-fast."
+         "-no-tunnel."
+         "-h323-ui:"
+#endif
+#if OPAL_LID
+         "L-lines:"
+         "-country:"
+#endif
+         "-stun:"
          "-translate:"
          "-portbase:"
          "-portmax:"
@@ -84,8 +87,11 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-rtp-max:" 
          "-rtp-tos:"
          "-rtp-size:"
-         "-stun:"
-         "-tel:";
+#if PTRACING
+         "t-trace."
+         "o-output:"
+#endif
+         "h-help.";
 }
 
 
@@ -118,6 +124,8 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "  -g or --gk-host host    : H.323 gatekeeper host.\n"
          "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
          "        --no-fast         : H.323 fast connect disabled.\n"
+         "        --no-tunnel       : H.323 tunnel for H.245 disabled.\n"
+         "        --h323-ui mode    : H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
 #endif
          "\n"
 
@@ -129,6 +137,7 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "\n"
 
          "IP options:\n"
+         "     --stun server        : Set NAT traversal STUN server\n"
          "     --translate ip       : Set external IP address if masqueraded\n"
          "     --portbase n         : Set TCP/UDP/RTP port base\n"
          "     --portmax n          : Set TCP/UDP/RTP port max\n"
@@ -140,12 +149,11 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "     --rtp-max n          : Set RTP port max (default base+199)\n"
          "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
          "     --rtp-size size      : Set RTP maximum payload size in bytes.\n"
-         "     --stun server        : Set NAT traversal STUN server\n"
          "\n"
          "Debug:\n"
 #if PTRACING
-         "  -o or --output file     : file name for output of log messages\n"       
          "  -t or --trace           : verbosity in error log (more times for more detail)\n"     
+         "  -o or --output file     : file name for output of log messages\n"       
 #endif
          "  -h or --help            : This help message.\n"
             ;
@@ -209,16 +217,22 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
             "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
             "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
             "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
-            "RTP payload size: " << GetMaxRtpPayloadSize() << "\n"
-            "STUN server: " << flush;
+            "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
   if (args.HasOption("stun")) {
-    PSTUNClient::NatTypes nat = SetSTUNServer(args.GetOptionString("stun"));
+    if (verbose)
+      cout << "STUN server: " << flush;
+    PSTUNClient::NatTypes natType = SetSTUNServer(args.GetOptionString("stun"));
     if (verbose) {
-      cout << "STUN server \"" << GetSTUNClient()->GetServer() << "\" replies " << nat;
-      PIPSocket::Address externalAddress;
-      if (nat != PSTUNClient::BlockedNat && GetSTUNClient()->GetExternalAddress(externalAddress))
-        cout << " with address " << externalAddress;
+      PNatMethod * natMethod = GetNatMethod();
+      if (natMethod == NULL)
+        cout << "Unavailable";
+      else {
+        cout << '"' << natMethod->GetServer() << "\" replies " << natType;
+        PIPSocket::Address externalAddress;
+        if (natType != PSTUNClient::BlockedNat && natMethod->GetExternalAddress(externalAddress))
+          cout << " with external address " << externalAddress;
+      }
       cout << endl;
     }
   }
@@ -230,7 +244,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     PIPSocket::InterfaceTable interfaceTable;
     if (PIPSocket::GetInterfaceTable(interfaceTable))
       cout << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
-                << setfill('\n') << interfaceTable << setfill(' ') << endl;
+           << setfill('\n') << interfaceTable << setfill(' ');
   }
 
   PCaselessString interfaces;
@@ -244,6 +258,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cerr << "Could not start SIP listeners." << endl;
       return false;
     }
+    if (verbose)
+      cout << "SIP listening on: " << setfill(',') << sip->GetListeners() << setfill(' ') << '\n';
 
     if (args.HasOption("sip-ui")) {
       PCaselessString str = args.GetOptionString("sip-ui");
@@ -261,8 +277,15 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       }
     }
 
-    if (args.HasOption('P'))
+    if (verbose)
+      cout << "SIP options: "
+           << sip->GetSendUserInputMode() << '\n';
+
+    if (args.HasOption('P')) {
       sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
+      if (verbose)
+        cout << "SIP proxy: " << sip->GetProxy() << '\n';
+    }
 
     if (args.HasOption('r')) {
       SIPRegister::Params params;
@@ -306,14 +329,43 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cerr << "Could not start H.323 listeners." << endl;
       return false;
     }
+    if (verbose)
+      cout << "H.323 listening on: " << setfill(',') << h323->GetListeners() << setfill(' ') << '\n';
 
     h323->DisableFastStart(args.HasOption("no-fast"));
+    h323->DisableH245Tunneling(args.HasOption("no-tunnel"));
 
-    if (args.HasOption('g') || args.HasOption('G')) {
-      if (!h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'))) {
-        cerr << "Could not complete gatekeeper registration" << endl;
+    if (args.HasOption("h323-ui")) {
+      PCaselessString str = args.GetOptionString("h323-ui");
+      if (str == "inband")
+        h323->SetSendUserInputMode(OpalConnection::SendUserInputInBand);
+      else if (str == "rfc2833")
+        h323->SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
+      else if (str == "h245-signal")
+        h323->SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
+      else if (str == "h245-string")
+        h323->SetSendUserInputMode(OpalConnection::SendUserInputAsString);
+      else {
+        cerr << "Unknown H.323 user indication mode \"" << str << '"' << endl;
         return false;
       }
+    }
+
+    if (verbose)
+      cout << "H.323 options: "
+           << (h323->IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
+           << (h323->IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
+           << h323->GetSendUserInputMode() << '\n';
+
+    if (args.HasOption('g') || args.HasOption('G')) {
+      if (verbose)
+        cout << "H.323 Gatekeeper: " << flush;
+      if (!h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'))) {
+        cerr << "\nCould not complete gatekeeper registration" << endl;
+        return false;
+      }
+      if (verbose)
+        cout << *h323->GetGatekeeper() << flush;
     }
   }
 #endif // OPAL_H323
@@ -326,27 +378,41 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cerr << "Could not start Line Interface Device(s)" << endl;
       return false;
     }
+    if (verbose)
+      cout << "Line Interface listening on: " << setfill(',') << lines->GetLines() << setfill(' ') << endl;
 
     PString country = args.GetOptionString("country");
     if (!country.IsEmpty()) {
       if (!lines->SetCountryCodeName(country))
         cerr << "Could not set LID to country name \"" << country << '"' << endl;
+      else if (verbose)
+        cout << "LID to country: " << lines->GetLine("*")->GetDevice().GetCountryCodeName() << endl;
     }
   }
 #endif // OPAL_LID
+
+  PString telProto = args.GetOptionString("tel");
+  if (!telProto.IsEmpty()) {
+    OpalEndPoint * ep = FindEndPoint(telProto);
+    if (ep == NULL) {
+      cerr << "The \"tel\" URI cannot be mapped to protocol \"" << telProto << '"' << endl;
+      return false;
+    }
+
+    AttachEndPoint(ep, "tel");
+    if (verbose)
+      cout << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
+  }
 
   if (args.HasOption('D'))
     SetMediaFormatMask(args.GetOptionString('D').Lines());
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
-
-  PString telProto = args.GetOptionString("tel");
-  if (!telProto.IsEmpty()) {
-    OpalEndPoint * ep = FindEndPoint(telProto);
-    if (ep != NULL)
-      AttachEndPoint(ep, "tel");
-    else
-      cerr << "The \"tel\" URI cannot be mapped to protocol \"" << telProto << '"' << endl;
+  if (verbose) {
+    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    formats.Remove(GetMediaFormatMask());
+    formats.Reorder(GetMediaFormatOrder());
+    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
   }
 
   return true;
