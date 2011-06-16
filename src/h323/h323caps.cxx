@@ -1922,11 +1922,25 @@ PBoolean H323_UserInputCapability::IsUsable(const H323Connection & connection) c
 }
 
 
+static PINDEX SetUserInputCapability(H323Capabilities & capabilities,
+                                     PINDEX descriptorNum,
+                                     PINDEX simultaneous,
+                                     H323_UserInputCapability::SubTypes subType)
+{
+  H323Capability * capability = capabilities.FindCapability(H323Capability::e_UserInput,
+                                               UserInputCapabilitySubTypeCodes[subType]);
+  if (capability == NULL)
+    capability = new H323_UserInputCapability(subType);
+  return capabilities.SetCapability(descriptorNum, simultaneous, capability);
+}
+
+
 void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilities,
                                                   PINDEX descriptorNum,
-                                                  PINDEX simultaneous)
+                                                  PINDEX simultaneous,
+                                                  bool includeRFC2833)
 {
-  PINDEX num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(HookFlashH245));
+  PINDEX num = SetUserInputCapability(capabilities, descriptorNum, simultaneous, HookFlashH245);
   if (descriptorNum == P_MAX_INDEX) {
     descriptorNum = num;
     simultaneous = P_MAX_INDEX;
@@ -1934,12 +1948,14 @@ void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilitie
   else if (simultaneous == P_MAX_INDEX)
     simultaneous = num+1;
 
-  num = capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(BasicString));
+  num = SetUserInputCapability(capabilities, descriptorNum, simultaneous, BasicString);
   if (simultaneous == P_MAX_INDEX)
     simultaneous = num;
 
-  capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(SignalToneH245));
-  capabilities.SetCapability(descriptorNum, simultaneous, new H323_UserInputCapability(SignalToneRFC2833));
+  SetUserInputCapability(capabilities, descriptorNum, simultaneous, SignalToneH245);
+
+  if (includeRFC2833)
+    SetUserInputCapability(capabilities, descriptorNum, simultaneous, SignalToneRFC2833);
 }
 
 
