@@ -853,6 +853,8 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
   , m_lastDecodedTimestamp(UINT_MAX)
+  , m_lastMarkerTimestamp(UINT_MAX)
+  , m_badMarkers(false)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -996,12 +998,27 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   m_bufferRTP->SetPayloadSize(outputDataSize);
 
-  // Check for brain dead hosts that do not send marker bits
-  if (src.GetMarker())
-    m_lastDecodedTimestamp = UINT_MAX;
-  else {
-    DWORD newTimestamp = src.GetTimestamp();
-    if (m_lastDecodedTimestamp != UINT_MAX && m_lastDecodedTimestamp != newTimestamp) {
+  // Check for brain dead hosts that do not send marker bits, or continuously send them!
+  DWORD newTimestamp = src.GetTimestamp();
+
+  if (!m_badMarkers) {
+    if (src.GetMarker()) {
+      // Got two consecutive packets with markers and same timestamp, wrong!
+      if (m_lastMarkerTimestamp == newTimestamp && m_lastDecodedTimestamp == newTimestamp)
+        m_badMarkers = true;
+      else
+        m_lastMarkerTimestamp = newTimestamp;
+    }
+    else {
+      // If never got a marker and timestamp changes, we are not getting markers at all
+      if (m_lastMarkerTimestamp == UINT_MAX && m_lastDecodedTimestamp != newTimestamp)
+        m_badMarkers = true;
+    }
+  }
+
+  // Markers useless, just use a change of timestamp
+  if (m_badMarkers) {
+    if (m_lastDecodedTimestamp != newTimestamp) {
       // Send an empty payload frame that has a marker bit
       RTP_DataFrame marker(src, src.GetHeaderSize());
       marker.SetMarker(true);
@@ -1012,8 +1029,11 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
         lastFrameWasIFrame = false;
       }
     }
-    m_lastDecodedTimestamp = newTimestamp;
+    if (m_lastMarkerTimestamp != UINT_MAX)
+      const_cast<RTP_DataFrame &>(src).SetMarker(false);
   }
+
+  m_lastDecodedTimestamp = newTimestamp;
 
   return DecodeFrame(src, dstList);
 }
