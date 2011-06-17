@@ -101,6 +101,8 @@ X264EncoderContext::X264EncoderContext()
   //_context.analyse.inter = 0;
   _context.analyse.b_psnr = 0;
 
+  x264_param_default_preset(&_context, "veryfast", "fastdecode,zerolatency");
+
   _codec = X264_ENCODER_OPEN(&_context);
   
   if (_codec == NULL) {
