@@ -107,7 +107,6 @@ void FaxOPAL::Main()
 
   m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
   m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
-  m_manager->SetMediaFormatMask(PStringArray("!G.711*"));
 
   if (args.HasOption('O')) {
     OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
