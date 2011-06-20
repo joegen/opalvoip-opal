@@ -3588,7 +3588,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
     else {
       SIPEventPackageHandler * packageHandler = SIPEventPackageFactory::CreateInstance(params.m_eventPackage);
       if (packageHandler == NULL)
-        m_mime.SetContentType("text/plain");
+        m_mime.SetContentType(PMIMEInfo::TextPlain());
       else {
         m_mime.SetContentType(packageHandler->GetContentType());
         delete packageHandler;

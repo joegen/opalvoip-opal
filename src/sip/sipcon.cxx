@@ -3321,7 +3321,7 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
   // populate the message type
   im->m_mimeType = mime.GetContentType();
   if (im->m_mimeType.IsEmpty())
-    im->m_mimeType = "text/plain";
+    im->m_mimeType = PMIMEInfo::TextPlain();
 
   // dispatch the message
   OpalIMContext::SentStatus stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, conversationId, PSafePtr<OpalConnection>(this));
