@@ -425,7 +425,7 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     T140String t140(incomingMSRP.m_body);
-    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString(PHTTP::ContentTypeTag, "text/plain"), t140);
+    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString(PHTTP::ContentTypeTag, PMIMEInfo::TextPlain()), t140);
     OpalMediaFormat fmt(m_rfc4103Context.m_mediaFormat);
     for (PINDEX i = 0; i < frames.GetSize(); ++i) {
       //connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
