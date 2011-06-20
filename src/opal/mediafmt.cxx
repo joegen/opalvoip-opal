@@ -763,8 +763,8 @@ const PString & OpalMediaFormat::MediaPacketizationOption()  { static const PCon
 const PString & OpalMediaFormat::MediaPacketizationsOption() { static const PConstString s(PLUGINCODEC_MEDIA_PACKETIZATIONS); return s; }
 #endif
 
-const PString & OpalMediaFormat::ProtocolOption()        { static const PConstString s("Protocol");           return s; }
-const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static const PConstString s("Max Tx Packet Size"); return s; }
+const PString & OpalMediaFormat::ProtocolOption()        { static const PConstString s("Protocol"); return s; }
+const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static const PConstString s(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE); return s; }
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
   : m_info(NULL)
