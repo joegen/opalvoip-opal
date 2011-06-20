@@ -748,15 +748,27 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   m_serviceRoute.FromString(mime("Service-Route"));
 
+  /* See if we are behind NAT and the Via header rport was present. This is
+     a STUN free mechanism for working behind firewalls. */
+  OpalTransportAddress externalAddress = mime.GetViaReceivedAddress();
+  bool useExternalAddress = !externalAddress.IsEmpty();
+
   SIPURLList replyContacts;
   mime.GetContacts(replyContacts);
 
+  /* RFC3261 does say the registrar must send back ALL registrations, however
+     we only deal with replies from the registrar that we actually requested.
+
+     Except! We look for special condition where registrar (e.g. OpenSIPS)
+     tries to be smart and adjusts the Contact field to be the external
+     address as per the via rport. IMHO this is a bug as it does not follow
+     what is implied by RFC3261/10.2.4 and 10.3 step 7. It should include the
+     original as well as the extra Contact. But it doesn't, so we have to deal. */
   SIPURLList contacts;
   for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
-    // RFC3261 does say the registrar must send back ALL registrations, however
-    // we only deal with replies from the registrar that we actually requested.
     SIPURLList::iterator request = std::find(m_contactAddresses.begin(), m_contactAddresses.end(), *reply);
-    if (request != m_contactAddresses.end())
+    if (request != m_contactAddresses.end() ||
+        (useExternalAddress && reply->GetHostAddress() == externalAddress))
       contacts.push_back(*reply);
   }
 
@@ -785,9 +797,6 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   // See if we are behind NAT and the Via header rport was present, and different
   // to our registered contact field. Some servers will refuse to work unless the
   // Contact agrees whith where the packet is physically coming from.
-  OpalTransportAddress externalAddress = mime.GetViaReceivedAddress();
-  bool useExternalAddress = !externalAddress.IsEmpty();
-
   if (useExternalAddress) {
     for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
       if (contact->GetHostAddress() == externalAddress) {
