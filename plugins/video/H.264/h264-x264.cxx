@@ -806,8 +806,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
         return SetOptionUnsigned(m_bitRate, optionValue, 1000);
 
-      if (STRCMPI(optionName, PLUGINCODEC_OPTION_MAX_FRAME_SIZE) == 0)
-        return SetOptionUnsigned(m_maxRTPSize, optionValue, 65535);
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
+        return SetOptionUnsigned(m_maxRTPSize, optionValue, 256, 8192);
 
       if (STRCMPI(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
