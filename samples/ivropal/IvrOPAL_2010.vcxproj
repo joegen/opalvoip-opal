@@ -158,6 +158,9 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="precompile.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="test.vxml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
