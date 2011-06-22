@@ -274,6 +274,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\test.vxml"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
