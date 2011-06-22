@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="IVR OPAL"
 	ProjectGUID="{D7F92DDD-CA73-4E2F-8940-4E2D1C863D25}"
 	TargetFrameworkVersion="131072"
@@ -199,9 +199,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			RelativePathToProject=".\src\win32\opal_dll_2008.vcproj"
 		/>
 	</References>
 	<Files>
@@ -271,6 +273,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\test.vxml"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
