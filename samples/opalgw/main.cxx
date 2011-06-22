@@ -81,14 +81,6 @@ static const char LIDKey[] = "Line Interface Devices";
 static const char VXMLKey[] = "VXML URL";
 
 static const char DialPeerKey[] = "Dial Peers";
-static const char DefaultIVRDialPeerKey[] = "Default IVR Alias";
-static const char DefaultPOTSDialPeerKey[] = "Default POTS Dial Peer";
-static const char DefaultPSTNDialPeerKey[] = "Default PSTN Dial Peer";
-static const char * const DialPeerDestination[] = { "None", "H.323", "SIP" };
-static const char DefaultH323DialPeerKey[] = "Default H.323 Dial Peer";
-static const char * const H323DialPeerDestination[] = { "None", "POTS", "PSTN", "SIP" };
-static const char DefaultSIPDialPeerKey[] = "Default SIP Dial Peer";
-static const char * const SIPDialPeerDestination[] = { "None", "POTS", "PSTN", "H.323" };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -194,9 +186,9 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
   if (certificateFile.IsEmpty())
     disableSSL = true;
-  else if (!SetServerCertificate(certificateFile, PTrue)) {
+  else if (!SetServerCertificate(certificateFile, true)) {
     PSYSTEMLOG(Fatal, "OpalGw\tCould not load certificate \"" << certificateFile << '"');
-    return PFalse;
+    return false;
   }
 #endif
 
@@ -206,7 +198,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 
   // Initialise the core of the system
   if (!manager.Initialise(cfg, rsrc))
-    return PFalse;
+    return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
   PServiceHTML html("System Parameters");
@@ -223,7 +215,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, PTrue), PHTTPSpace::Overwrite);
+    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -251,11 +243,11 @@ PBoolean OpalGw::Initialise(const char * initMsg)
     PSYSTEMLOG(Info, "Opened master socket for HTTP: " << httpListeningSocket->GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP port: " << httpListeningSocket->GetErrorText());
-    return PFalse;
+    return false;
   }
 
   PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
-  return PTrue;
+  return true;
 }
 
 
@@ -327,7 +319,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   // General parameters for all endpoint types
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), true);
   PStringArray formats = fieldArray->GetStrings(cfg);
   if (formats.GetSize() > 0)
     SetMediaFormatOrder(formats);
@@ -335,7 +327,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     fieldArray->SetStrings(cfg, GetMediaFormatOrder());
   rsrc->Add(fieldArray);
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), true);
   SetMediaFormatMask(fieldArray->GetStrings(cfg));
   rsrc->Add(fieldArray);
 
@@ -369,7 +361,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_H323
 
   // Add H.323 parameters
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), true);
   PStringArray aliases = fieldArray->GetStrings(cfg);
   if (aliases.IsEmpty())
     fieldArray->SetStrings(cfg, h323EP->GetAliasNames());
@@ -392,13 +384,13 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   h323EP->SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, h323EP->GetInitialBandwidth()/10)*10);
   rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, h323EP->GetInitialBandwidth()/10, "kb/s"));
   
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25), PFalse);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25), false);
   if (!h323EP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
   rsrc->Add(fieldArray);
 
-  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, true);
+  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, false);
   rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable));
 
   PString gkAddress = cfg.GetString(GatekeeperAddressKey);
@@ -432,7 +424,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
   if (!gkServer->Initialise(cfg, rsrc))
-    return PFalse;
+    return false;
 #endif
 
 #if OPAL_SIP
@@ -448,7 +440,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   registrar.m_registrarAddress = cfg.GetString(SIPRegistrarKey);
   rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar.m_registrarAddress));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), PFalse);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), false);
   if (!sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
@@ -468,7 +460,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_LID
   // Add POTS and PSTN endpoints
-  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), PFalse);
+  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), false);
   PStringArray devices = fieldArray->GetStrings(cfg);
   if (!potsEP->AddDeviceNames(devices)) {
     PSYSTEMLOG(Error, "No LID devices!");
@@ -480,116 +472,33 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_PTLIB_EXPAT
   // Create IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 25, vxml));
+  rsrc->Add(new PHTTPStringField(VXMLKey, 120, vxml));
   if (!vxml)
     ivrEP->SetDefaultVXML(vxml);
 #endif
 
 
   // Routing
-  PString ivrAlias = cfg.GetString(DefaultIVRDialPeerKey, "#");
-  rsrc->Add(new PHTTPStringField(DefaultIVRDialPeerKey, 10, ivrAlias));
-
-  static const PStringArray dialPeerDestination(
-                 PARRAYSIZE(DialPeerDestination),
-                            DialPeerDestination);
-  PINDEX potsRoute = dialPeerDestination.GetValuesIndex(cfg.GetString(DefaultPOTSDialPeerKey));
-  if (potsRoute == P_MAX_INDEX)
-    potsRoute = 1;
-  rsrc->Add(new PHTTPRadioField(DefaultPOTSDialPeerKey, dialPeerDestination, potsRoute));
-
-  PINDEX pstnRoute = dialPeerDestination.GetValuesIndex(cfg.GetString(DefaultPSTNDialPeerKey));
-  if (pstnRoute == P_MAX_INDEX)
-    pstnRoute = 0;
-  rsrc->Add(new PHTTPRadioField(DefaultPSTNDialPeerKey, dialPeerDestination, pstnRoute));
-  
-#if OPAL_H323
-  static const PStringArray h323DialPeerDestination(
-                 PARRAYSIZE(H323DialPeerDestination),
-                            H323DialPeerDestination);
-  PINDEX h323Route = h323DialPeerDestination.GetValuesIndex(cfg.GetString(DefaultH323DialPeerKey));
-  if (h323Route == P_MAX_INDEX)
-    h323Route = 0;
-  rsrc->Add(new PHTTPRadioField(DefaultH323DialPeerKey, h323DialPeerDestination, h323Route));
-#endif
-  
-#if OPAL_SIP
-  static const PStringArray sipDialPeerDestination(
-                 PARRAYSIZE(SIPDialPeerDestination),
-                            SIPDialPeerDestination);
-  PINDEX sipRoute = sipDialPeerDestination.GetValuesIndex(cfg.GetString(DefaultSIPDialPeerKey));
-  if (sipRoute == P_MAX_INDEX)
-    sipRoute = 0;
-  rsrc->Add(new PHTTPRadioField(DefaultSIPDialPeerKey, sipDialPeerDestination, sipRoute));
-#endif
-  
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), true);
   PStringArray routes = fieldArray->GetStrings(cfg);
+  if (routes.IsEmpty()) {
+    routes += ".*:# = ivr:";
+    routes += "pots:.*\\*.*\\*.* = sip:<dn2ip>";
+    routes += "pots:.* = sip:<da>";
+    routes += "pstn:.*\\*.*\\*.* = sip:<dn2ip>";
+    routes += "pstn:.* = sip:<da>";
+    routes += "h323:.* = sip:<da>";
+    routes += "sip:.* = sip:<da>";
+    fieldArray->SetStrings(cfg, routes);
+  }
   rsrc->Add(fieldArray);
-
-  if (!ivrAlias)
-    routes += ".*:" + ivrAlias + "  = ivr:";
-
-  switch (potsRoute) {
-#if OPAL_H323
-    case 1 :
-      routes += "pots:.*\\*.*\\*.* = h323:<dn2ip>";
-      routes += "pots:.*           = h323:<da>";
-      break;
-#endif
-#if OPAL_SIP
-    case 2 :
-      routes += "pots:.*\\*.*\\*.* = sip:<dn2ip>";
-      routes += "pots:.*           = sip:<da>";
-#endif
-  }
-
-  switch (pstnRoute) {
-#if OPAL_H323
-    case 1 :
-      routes += "pstn:.*\\*.*\\*.* = h323:<dn2ip>";
-      routes += "pstn:.*           = h323:<da>";
-      break;
-#endif
-#if OPAL_SIP
-    case 2 :
-      routes += "pstn:.*\\*.*\\*.* = sip:<dn2ip>";
-      routes += "pstn:.*           = sip:<da>";
-#endif
-  }
-
-#if OPAL_H323
-  switch (h323Route) {
-    case 1 :
-      routes += "h323:.*           = pots:<da>";
-      break;
-    case 2 :
-      routes += "h323:.*           = pstn:<da>";
-      break;
-    case 3 :
-      routes += "h323:.*           = sip:<da>";
-  }
-#endif
-
-#if OPAL_SIP
-  switch (sipRoute) {
-    case 1 :
-      routes += "sip:.*           = pots:<da>";
-      break;
-    case 2 :
-      routes += "sip:.*           = pstn:<da>";
-      break;
-    case 3 :
-      routes += "sip:.*           = h323:<da>";
-  }
-#endif
 
   if (!SetRouteTable(routes)) {
     PSYSTEMLOG(Error, "No legal entries in dial peers!");
   }
 
 
-  return PTrue;
+  return true;
 }
 
 // End of File ///////////////////////////////////////////////////////////////
