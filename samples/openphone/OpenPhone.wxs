@@ -29,10 +29,10 @@
           <Directory Id='INSTALLDIR' Name='Open Phone'>
             <Component Id='MainExecutable' Guid='*'>
               <File Id='OpenPhoneEXE'
-		    Name='OpenPhone.exe'
-		    Source='..\..\bin\OpenPhone\Release\OpenPhone.exe'
-		    DiskId='1'
-		    KeyPath='yes'>
+                  Name='OpenPhone.exe'
+                  Source='$(var.OPALDir)\bin\OpenPhone\Release\OpenPhone.exe'
+                  DiskId='1'
+                  KeyPath='yes'>
                 <Shortcut Id="startmenuOpenPhone"
                           Directory="ProgramMenuDir"
                           Name="OpenPhone"
@@ -42,201 +42,222 @@
                           Advertise="yes" />
               </File>
             </Component>
+            <Component Id='G.722' Guid='*'>
+              <File Id='G_722_DLL'
+                    Name='g722_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\g722_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
+            </Component>
+            <Component Id='G.722.1' Guid='*'>
+              <File Id='G_722_1_DLL'
+                    Name='g7221_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\g7221_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
+            </Component>
             <Component Id='G.722.2' Guid='*'>
               <File Id='G_722_2_DLL'
-		      Name='g7222_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\g7222_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='g7222_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\g7222_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
+            </Component>
+            <Component Id='G.726' Guid='*'>
+              <File Id='G_726_DLL'
+                    Name='g726_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\g726_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='GSM_AMR' Guid='*'>
               <File Id='GSM_AMR_DLL'
-		      Name='gsmamr_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\gsmamr_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='gsmamr_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\gsmamr_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='GSM0610' Guid='*'>
               <File Id='GSM0610_DLL'
-		      Name='gsm0610_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\gsm0610_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='gsm0610_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\gsm0610_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='iLBC' Guid='*'>
               <File Id='iLBC_DLL'
-		      Name='iLBC_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\iLBC_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='iLBC_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\iLBC_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='Speex' Guid='*'>
               <File Id='Speex_DLL'
-		      Name='speex_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\speex_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='speex_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\speex_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='H.261' Guid='*'>
               <File Id='H.261_DLL'
-		      Name='h261_vic_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\h261vic_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='h261_vic_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\h261_vic_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='H.263' Guid='*'>
               <File Id='H.263_DLL'
-		      Name='h263_ffmpeg_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\h263_ffmpeg_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='h263_ffmpeg_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\h263_ffmpeg_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='H.264' Guid='*'>
               <File Id='H.264_DLL'
-		      Name='h264_x264_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\h264_x264_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='h264_x264_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\h264_x264_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='MPEG4' Guid='*'>
               <File Id='MPEG4_DLL'
-		      Name='mpeg4_ffmpeg_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\mpeg4_ffmpeg_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='mpeg4_ffmpeg_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\mpeg4_ffmpeg_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='AVCODEC' Guid='*'>
               <File Id='AVCODEC_DLL'
-		      Name='avcodec-52.dll'
-		      Source='$(var.PluginDir)\avcodec-52.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='avcodec-52.dll'
+                    Source='$(var.PluginDir)\avcodec-52.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='AVUTIL' Guid='*'>
               <File Id='AVUTIL_DLL'
-		      Name='avutil-50.dll'
-		      Source='$(var.PluginDir)\avutil-50.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='avutil-50.dll'
+                    Source='$(var.PluginDir)\avutil-50.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='AVCORE' Guid='*'>
               <File Id='AVCORE_DLL'
-		      Name='avcore-0.dll'
-		      Source='$(var.PluginDir)\avcore-0.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='avcore-0.dll'
+                    Source='$(var.PluginDir)\avcore-0.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
-		      Name='libx264-102.dll'
-		      Source='$(var.PluginDir)\libx264-102.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='libx264-102.dll'
+                    Source='$(var.PluginDir)\libx264-102.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='x264_helper' Guid='*'>
               <File Id='x264_EXE'
-		      Name='x264plugin_helper.exe'
-		      Source='$(var.PluginDir)\x264plugin_helper.exe'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='x264plugin_helper.exe'
+                    Source='$(var.PluginDir)\x264plugin_helper.exe'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='SpanDSPFax' Guid='*'>
               <File Id='SpanDSPFax_DLL'
-		      Name='SpanDSPFax_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\SpanDSPFax_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='SpanDSPFax_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\SpanDSPFax_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='SpanDSPLib' Guid='*'>
               <File Id='SpanDSPLib_DLL'
-		      Name='libspandsp.dll'
-		      Source='$(var.OPALDir)\plugins\fax\fax_spandsp\release\libspandsp.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='libspandsp.dll'
+                    Source='$(var.OPALDir)\plugins\fax\fax_spandsp\release\libspandsp.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='CM' Guid='*'>
               <File Id='CM_DLL'
-		      Name='cm_hid_lid_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\cm_hid_lid_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='cm_hid_lid_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\cm_hid_lid_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='CM_HID' Guid='*'>
               <File Id='CM_HID_DLL'
-		      Name='CM_HID.dll'
-		      Source='$(var.OPALDir)\plugins\LID\CM_HID\CM_HID.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='CM_HID.dll'
+                    Source='$(var.OPALDir)\plugins\LID\CM_HID\CM_HID.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='TigerJet' Guid='*'>
               <File Id='TigerJet_DLL'
-		      Name='tj_lid_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\tj_lid_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='tj_lid_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\tj_lid_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='TigerJetDLL' Guid='*'>
               <File Id='TigerJetSys_DLL'
-		      Name='TjIpSys.dll'
-		      Source='$(var.OPALDir)\plugins\LID\TigerJet\TjIpSys.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='TjIpSys.dll'
+                    Source='$(var.OPALDir)\plugins\LID\TigerJet\TjIpSys.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='WindowsHID' Guid='*'>
               <File Id='WinHID_DLL'
-		      Name='winxp_hid_lid_ptplugin.dll'
-		      Source='$(var.OPALDir)\bin\plugins\Release\winxp_hid_lid_ptplugin.dll'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='winxp_hid_lid_ptplugin.dll'
+                    Source='$(var.OPALDir)\bin\plugins\Release\winxp_hid_lid_ptplugin.dll'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='OPAL' Guid='*'>
               <File Id='OPAL_DLL'
-		    Name='OPAL.DLL'
-		    Source='$(var.OPALDir)\lib\OPAL.DLL'
-		    DiskId='1'
-		    KeyPath='yes' />
+                    Name='OPAL.DLL'
+                    Source='$(var.OPALDir)\lib\OPAL.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='PTLib' Guid='*'>
               <File Id='PTLib_DLL'
-		      Name='PTLib.DLL'
-		      Source='$(var.PTLibDir)\lib\PTLib.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='PTLib.DLL'
+                    Source='$(var.PTLibDir)\lib\PTLib.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='Lua' Guid='*'>
               <File Id='Lua_DLL'
-		      Name='LUA5.1.DLL'
-		      Source='$(var.LuaDir)\LUA5.1.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='LUA5.1.DLL'
+                    Source='$(var.LuaDir)\LUA5.1.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='SASL' Guid='*'>
               <File Id='SASL_DLL'
-		      Name='LIBSASL.DLL'
-		      Source='$(var.SaslDir)\LIBSASL.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='LIBSASL.DLL'
+                    Source='$(var.SaslDir)\LIBSASL.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='OpenLDAP' Guid='*'>
               <File Id='OPENLDAP_DLL'
-		      Name='OPENLDAP.DLL'
-		      Source='$(var.LDAPDir)\OPENLDAP.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='OPENLDAP.DLL'
+                    Source='$(var.LDAPDir)\OPENLDAP.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='OpenSSL1' Guid='*'>
               <File Id='LIBEAY32_DLL'
-		      Name='LIBEAY32.DLL'
-		      Source='$(var.SSLDir)\LIBEAY32.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='LIBEAY32.DLL'
+                    Source='$(var.SSLDir)\LIBEAY32.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
             <Component Id='OpenSSL2' Guid='*'>
               <File Id='SSLEAY32_DLL'
-		      Name='SSLEAY32.DLL'
-		      Source='$(var.SSLDir)\SSLEAY32.DLL'
-		      DiskId='1'
-		      KeyPath='yes' />
+                    Name='SSLEAY32.DLL'
+                    Source='$(var.SSLDir)\SSLEAY32.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
             </Component>
           </Directory>
         </Directory>
@@ -266,7 +287,10 @@
     <Feature Id='Codecs'
              Title="OPAL Codec Plug-ins"
              Level='1'>
+      <ComponentRef Id='G.722' />
+      <ComponentRef Id='G.722.1' />
       <ComponentRef Id='G.722.2' />
+      <ComponentRef Id='G.726' />
       <ComponentRef Id='GSM_AMR' />
       <ComponentRef Id='GSM0610' />
       <ComponentRef Id='iLBC' />
