@@ -3357,6 +3357,9 @@ bool MyManager::AdjustVideoFormats()
 
   for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
     OpalMediaFormat mediaFormat = mm->mediaFormat;
+    unsigned frameRate = GetVideoInputDevice().rate;
+    if (frameRate == 0)
+      frameRate = 15;
     if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
@@ -3366,7 +3369,7 @@ bool MyManager::AdjustVideoFormats()
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), m_VideoMaxBitRate*1000U);
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_VideoTargetBitRate*1000U);
-      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), mediaFormat.GetClockRate()/GetVideoInputDevice().rate);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), mediaFormat.GetClockRate()/frameRate);
 
       switch (m_ExtendedVideoRoles) {
         case e_DisabledExtendedVideoRoles :
