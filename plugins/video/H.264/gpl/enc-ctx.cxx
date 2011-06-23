@@ -202,7 +202,9 @@ void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
 
 void X264EncoderContext::ApplyOptions()
 {
-  X264_ENCODER_CLOSE(_codec);
+  if (_codec != NULL)
+    X264_ENCODER_CLOSE(_codec);
+
   _codec = X264_ENCODER_OPEN(&_context);
   if (_codec == NULL) {
     PTRACE(1, "x264", "Encoder\tCouldn't init x264 encoder");
