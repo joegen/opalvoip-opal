@@ -1090,14 +1090,20 @@ OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest)
 {
-  PString adjustedPattern = '^';
+  PString adjustedPattern = '^' + pattern;
+
+  // The regular expression makes a \t a 't', but we want a tab character.
+  PINDEX tab = 0;
+  while ((tab = adjustedPattern.Find("\\t", tab)) != P_MAX_INDEX) {
+    if (adjustedPattern[tab-1] != '\\')
+      adjustedPattern.Splice("\t", tab, 2);
+    ++tab;
+  }
 
   // Test for backward compatibility format
   PINDEX colon = pattern.Find(':');
-  if (colon != P_MAX_INDEX && pattern.Find('\t', colon) == P_MAX_INDEX)
-    adjustedPattern += pattern.Left(colon+1) + ".*\t" + pattern.Mid(colon+1);
-  else
-    adjustedPattern += pattern;
+  if (colon != P_MAX_INDEX && adjustedPattern.Find('\t', colon) == P_MAX_INDEX)
+    adjustedPattern.Splice(".*\t", colon+1);
 
   adjustedPattern += '$';
 
