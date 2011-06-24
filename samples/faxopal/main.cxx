@@ -62,7 +62,7 @@ void FaxOPAL::Main()
                   "-station-id:"
                   "e-ignore-ced."
                   "E-suppress-ced."
-                  "O-fax-only."
+                  "F-no-fallback."
                   "T-timeout:"
                   "X-switch-time:") ||
        args.HasOption('h') ||
@@ -71,19 +71,33 @@ void FaxOPAL::Main()
     cerr << "usage: " << name << " [ options ] filename [ url ]\n"
             "\n"
             "Available options are:\n"
-            "  -d or --directory dir   : Set default directory for fax receive\n"
-            "  -a or --audio           : Send fax as G.711 audio\n"
-            "  -A or --no-audio        : Do not send fax as G.711 audio\n"
-            "  -O or --fax-only        : T.38 fax only mode, no audio phase\n"
-            "        --station-id id   : Set T.30 Station Identifier string\n"
-            "  -E or --suppress-ced    : Suppress transmission of CED tone\n"
-            "  -e or --ignore-ced      : Ignore receipt of CED tone\n"
-            "  -X or --switch-time n   : Set fail safe T.38 switch time in seconds\n"
-            "  -T or --timeout n       : Set timeout to wait for incoming fax in seconds\n"
+            "  -d or --directory dir      : Set default directory for fax receive.\n"
+            "        --station-id id      : Set T.30 Station Identifier string.\n"
+            "  -a or --audio              : Send fax as G.711 audio.\n"
+            "  -A or --no-audio           : No audio phase at all, starts T.38 immediately.\n"
+            "  -F or --no-fallback n      : Do not fall back to audio it T.38 switch fails.\n"
+            "  -E or --suppress-ced       : Suppress transmission of CED tone.\n"
+            "  -e or --ignore-ced         : Ignore receipt of CED tone, don't switch to T.38 mode.\n"
+            "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
+            "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
             "\n"
          << m_manager->GetArgumentUsage()
          << "\n"
-            "e.g. " << name << " send_fax.tif sip:fred@bloggs.com\n"
+            "Specific T.38 format options (using -O/--option):\n"
+            "  Station-Identifier    string (\"-\"\n"
+            "  Header-Info           string (\"\")\n"
+            "  Use-ECM               bool (1)\n"
+            "  T38FaxVersion         integer (0)\n"
+            "  T38FaxRateManagement  localTCF or transferredTCF (transferredTCF) \n"
+            "  T38MaxBitRate         integer (14400)\n"
+            "  T38FaxMaxBuffer       integer (2000\n"
+            "  T38FaxMaxDatagram     integer (528)\n"
+            "  T38FaxUdpEC           t38UDPFEC or t38UDPRedundancy (t38UDPRedundancy)\n"
+            "  T38FaxFillBitRemoval  bool (0)\n"
+            "  T38FaxTranscodingMMR  bool (0)\n"
+            "  T38FaxTranscodingJBIG bool (0)\n"
+            "\n"
+            "e.g. " << name << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
             "\n"
             "     " << name << " received_fax.tif\n\n";
     return;
@@ -108,7 +122,7 @@ void FaxOPAL::Main()
   m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
   m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
 
-  if (args.HasOption('O')) {
+  if (args.HasOption('A')) {
     OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
     OpalMediaType::Audio().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
   }
@@ -122,7 +136,7 @@ void FaxOPAL::Main()
     stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
   if (args.HasOption("station-id"))
     stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString("station-id"));
-  if (args.HasOption('A'))
+  if (args.HasOption('F'))
     stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
   if (args.HasOption('E'))
     stringOptions.SetAt(OPAL_SUPPRESS_CED, "true");
