@@ -25,17 +25,11 @@
  * $Date$
  */
 
-
-#define LOGGING 1
-#define LOG_LEVEL_DEBUG 5
-#define LOG_LEVEL_CONTEXT_ID 3
+#include <codec/opalplugin.h>
 
 extern "C" {
 #include "spandsp.h"
 };
-
-#include <codec/opalplugin.h>
-
 
 #include <stdlib.h>
 
@@ -43,7 +37,6 @@ extern "C" {
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
   #include <io.h>
-  #define strcasecmp _stricmp
   #define access _access
   #define W_OK 2
   #define R_OK 4
@@ -60,6 +53,13 @@ extern "C" {
 #include <map>
 
 
+#define LOGGING 1
+#define LOG_LEVEL_DEBUG 5
+#define LOG_LEVEL_CONTEXT_ID 3
+
+#define   PCM_TRANSMIT_ON_IDLE      true
+#define   DEFAULT_USE_ECM           true
+
 #define   T38_PAYLOAD_CODE          38
 
 #define   BITS_PER_SECOND           14400
@@ -68,12 +68,6 @@ extern "C" {
 #define   BYTES_PER_FRAME           320
 #define   PREF_FRAMES_PER_PACKET    1
 #define   MAX_FRAMES_PER_PACKET     1
-
-
-#define   PCM_TRANSMIT_ON_IDLE      true
-#define   USE_ECM                   false
-#define   SUPPORTED_MODEMS_PCM      (T30_SUPPORT_V27TER | T30_SUPPORT_V29)
-#define   SUPPORTED_MODEMS_NO_PCM   (SUPPORTED_MODEMS_PCM /*| T30_SUPPORT_V17*/)
 
 
 #if LOGGING
@@ -180,6 +174,43 @@ static struct PluginCodec_Option const TiffFileNameOption =
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
+
+static struct PluginCodec_Option const StationIdentifierOption =
+{
+  PluginCodec_StringOption,   // PluginCodec_OptionTypes
+  "Station-Identifier",       // Generic (human readable) option name
+  1,                          // Read Only flag
+  PluginCodec_AlwaysMerge,    // Merge mode
+  "",                         // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const HeaderInfoOption =
+{
+  PluginCodec_StringOption,   // PluginCodec_OptionTypes
+  "Header-Info",              // Generic (human readable) option name
+  1,                          // Read Only flag
+  PluginCodec_AlwaysMerge,    // Merge mode
+  "",                         // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
+static struct PluginCodec_Option const UseEcmOption =
+{
+  PluginCodec_StringOption,   // PluginCodec_OptionTypes
+  "Use-ECM",                  // Generic (human readable) option name
+  1,                          // Read Only flag
+  PluginCodec_AlwaysMerge,    // Merge mode
+  "",                         // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0                           // H.245 Generic Capability number and scope bits
+};
+
 
 static struct PluginCodec_Option const T38FaxVersion =
 {
@@ -302,6 +333,8 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
 static struct PluginCodec_Option const * const OptionTableTIFF[] = {
   &ReceivingOption,
   &TiffFileNameOption,
+  &HeaderInfoOption,
+  &UseEcmOption,
   NULL
 };
 
@@ -315,6 +348,9 @@ static struct PluginCodec_Option const * const OptionTableT38[] = {
   &T38FaxFillBitRemoval,
   &T38FaxTranscodingMMR,
   &T38FaxTranscodingJBIG,
+  &StationIdentifierOption,
+  &HeaderInfoOption,
+  &UseEcmOption,
   NULL
 };
 
@@ -368,6 +404,15 @@ class WaitAndSignal
 
 /////////////////////////////////////////////////////////////////
 
+static bool ParseBool(const char * str)
+{
+  return str != NULL && *str != '\0' &&
+            (toupper(*str) == 'Y' || toupper(*str) == 'T' || atoi(str) != 0);
+}
+
+
+/////////////////////////////////////////////////////////////////
+
 class FaxSpanDSP
 #if LOGGING
   : virtual public Tag
@@ -382,13 +427,30 @@ class FaxSpanDSP
 
     bool            m_useECM;
     int             m_supported_modems;
+    int             m_supported_image_sizes;
+    int             m_supported_resolutions;
+    int             m_supported_compressions;
 
   public:
     FaxSpanDSP()
       : m_referenceCount(1)
       , m_completed(false)
-      , m_useECM(USE_ECM)
-      , m_supported_modems(SUPPORTED_MODEMS_PCM)
+      , m_useECM(DEFAULT_USE_ECM)
+      , m_supported_modems(T30_SUPPORT_V27TER | T30_SUPPORT_V29)
+      , m_supported_image_sizes(T30_SUPPORT_US_LETTER_LENGTH |
+                                T30_SUPPORT_US_LEGAL_LENGTH |
+                                T30_SUPPORT_UNLIMITED_LENGTH |
+                                T30_SUPPORT_215MM_WIDTH |
+                                T30_SUPPORT_255MM_WIDTH |
+                                T30_SUPPORT_303MM_WIDTH)
+      , m_supported_resolutions(T30_SUPPORT_STANDARD_RESOLUTION |
+                                T30_SUPPORT_FINE_RESOLUTION |
+                                T30_SUPPORT_SUPERFINE_RESOLUTION |
+                                T30_SUPPORT_R8_RESOLUTION |
+                                T30_SUPPORT_R16_RESOLUTION)
+      , m_supported_compressions(T30_SUPPORT_T4_1D_COMPRESSION |
+                                 T30_SUPPORT_T4_2D_COMPRESSION |
+                                 T30_SUPPORT_T6_COMPRESSION)
     {
     }
 
@@ -437,6 +499,11 @@ class FaxSpanDSP
     {
       PTRACE(3, m_tag << " SetOption: " << option << "=" << value);
 
+      if (strcasecmp(option, UseEcmOption.m_name) == 0) {
+        m_useECM = ParseBool(value);
+        return true;
+      }
+
       return true;
     }
 
@@ -463,20 +530,34 @@ class FaxT38
 #endif
 {
   private:
-    unsigned        m_protoVersion;
-
-    int             m_sequence;
+    unsigned m_protoVersion;
+    unsigned m_RateManagement;
+    unsigned m_MaxBitRate;
+    unsigned m_MaxBuffer;
+    unsigned m_MaxDatagram;
+    unsigned m_UdpEC;
+    bool     m_FillBitRemoval;
+    bool     m_TranscodingMMR;
+    bool     m_TranscodingJBIG;
 
     t38_core_state_t * m_t38core;
-
+    int                m_sequence;
     std::queue< std::vector<uint8_t> > m_t38Queue;
 
 
   protected:
     FaxT38()
       : m_protoVersion(0)
-      , m_sequence(0)
+      , m_RateManagement(1)
+      , m_MaxBitRate(14400)
+      , m_MaxBuffer(2000)
+      , m_MaxDatagram(528)
+      , m_UdpEC(1)
+      , m_FillBitRemoval(false)
+      , m_TranscodingMMR(false)
+      , m_TranscodingJBIG(false)
       , m_t38core(NULL)
+      , m_sequence(0)
     {
     }
 
@@ -485,6 +566,51 @@ class FaxT38
     {
       if (strcasecmp(option, T38FaxVersion.m_name) == 0) {
         m_protoVersion = atoi(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxRateManagement.m_name) == 0) {
+        if (strcasecmp(value, "transferredTCF") == 0)
+          m_RateManagement = T38_DATA_RATE_MANAGEMENT_TRANSFERRED_TCF;
+        else if (strcasecmp(value, "localTCF") == 0)
+          m_RateManagement = T38_DATA_RATE_MANAGEMENT_LOCAL_TCF;
+        else
+          return false;
+        return true;
+      }
+
+      if (strcasecmp(option, T38MaxBitRate.m_name) == 0) {
+        m_MaxBitRate = atoi(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxMaxBuffer.m_name) == 0) {
+        m_MaxBuffer = atoi(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxMaxDatagram.m_name) == 0) {
+        m_MaxDatagram = atoi(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxUdpEC.m_name) == 0) {
+        m_UdpEC = atoi(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxFillBitRemoval.m_name) == 0) {
+        m_FillBitRemoval = ParseBool(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxTranscodingMMR.m_name) == 0) {
+        m_TranscodingMMR = ParseBool(value);
+        return true;
+      }
+
+      if (strcasecmp(option, T38FaxTranscodingJBIG.m_name) == 0) {
+        m_TranscodingJBIG = ParseBool(value);
         return true;
       }
 
@@ -497,6 +623,14 @@ class FaxT38
       m_t38core = t38core;
       InitLogging(t38_core_get_logging_state(m_t38core), m_tag);
       t38_set_t38_version(m_t38core, m_protoVersion);
+      t38_set_data_rate_management_method(m_t38core, m_RateManagement);
+      t38_set_fastest_image_data_rate(m_t38core, m_MaxBitRate);
+      t38_set_max_buffer_size(m_t38core, m_MaxBuffer);
+      t38_set_max_datagram_size(m_t38core, m_MaxDatagram);
+      // t38_set_XXXX(m_t38core, m_UdpEC); Don't know what this corresponds to!!
+      t38_set_fill_bit_removal(m_t38core, m_FillBitRemoval);
+      t38_set_mmr_transcoding(m_t38core, m_TranscodingMMR);
+      t38_set_jbig_transcoding(m_t38core, m_TranscodingJBIG);
 
       return true;
     }
@@ -522,7 +656,13 @@ class FaxT38
 
       uint16_t seq = uint16_t(m_sequence++);
 
+#ifdef _MSC_VER
+#pragma warning(disable:4244)
+#endif
       PluginCodec_RTP_SetSequenceNumber(toPtr, seq);
+#ifdef _MSC_VER
+#pragma warning(default:4244)
+#endif
 
       m_t38Queue.pop();
 
@@ -537,20 +677,16 @@ class FaxT38
     {
       int payloadSize = fromLen - PluginCodec_RTP_GetHeaderLength(fromPtr);
 
-      if (payloadSize < 0)
+      if (payloadSize < 0 || m_t38core == NULL)
         return false;
 
-      if (payloadSize > 0) {
-        if (t38_core_rx_ifp_packet(m_t38core,
-                                   PluginCodec_RTP_GetPayloadPtr(fromPtr),
-                                   payloadSize,
-                                   PluginCodec_RTP_GetSequenceNumber(fromPtr)) == -1)
-        {
-          return false;
-        }
-      }
+      if (payloadSize == 0)
+        return true;
 
-      return true;
+      return t38_core_rx_ifp_packet(m_t38core,
+                                    PluginCodec_RTP_GetPayloadPtr(fromPtr),
+                                    payloadSize,
+                                    PluginCodec_RTP_GetSequenceNumber(fromPtr)) != -1;
     }
 
 
@@ -647,6 +783,7 @@ class FaxTIFF : public FaxSpanDSP
     bool            m_receiving;
     std::string     m_tiffFileName;
     std::string     m_stationIdentifer;
+    std::string     m_headerInfo;
 
   protected:
     FaxTIFF()
@@ -672,7 +809,17 @@ class FaxTIFF : public FaxSpanDSP
       }
 
       if (strcasecmp(option, ReceivingOption.m_name) == 0) {
-        m_receiving = atoi(value) != 0;
+        m_receiving = ParseBool(value);
+        return true;
+      }
+
+      if (strcasecmp(option, StationIdentifierOption.m_name) == 0) {
+        m_stationIdentifer = value;
+        return true;
+      }		
+
+      if (strcasecmp(option, HeaderInfoOption.m_name) == 0) {
+        m_headerInfo = value;			
         return true;
       }
 
@@ -718,9 +865,22 @@ class FaxTIFF : public FaxSpanDSP
       t30_set_phase_b_handler(t30state, PhaseB, this);
       t30_set_phase_d_handler(t30state, PhaseD, this);
       t30_set_phase_e_handler(t30state, PhaseE, this);
+
       t30_set_tx_ident(t30state, m_stationIdentifer.c_str());
-      t30_set_ecm_capability(t30state, m_useECM);
+      PTRACE(4, m_tag << " Set station id to \"" << m_stationIdentifer << '"');
+
+      if (!m_headerInfo.empty()) {
+        if (t30_set_tx_page_header_info(t30state, m_headerInfo.c_str()) < 0)
+          PTRACE(1, m_tag << " Cannot set page header to  \"" << m_headerInfo << "\", maybe string is too long.");
+        else
+          PTRACE(4, m_tag << " Set page header info to \"" << m_headerInfo << '"');
+      }
+
       t30_set_supported_modems(t30state, m_supported_modems);
+      t30_set_supported_image_sizes(t30state, m_supported_image_sizes);
+      t30_set_supported_resolutions(t30state, m_supported_resolutions);
+      t30_set_supported_compressions(t30state, m_supported_compressions);
+      t30_set_ecm_capability(t30state, m_useECM);
 
       return true;
     }
@@ -969,7 +1129,7 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
       m_tag = tag;
 #endif
 
-      m_supported_modems = SUPPORTED_MODEMS_NO_PCM;
+      m_supported_modems |= T30_SUPPORT_V17;
 
       PTRACE(4, m_tag << " Created TIFF_T38");
     }
@@ -1769,5 +1929,4 @@ extern "C" {
 PLUGIN_CODEC_IMPLEMENT_ALL(SpanDSP, faxCodecDefn, MY_API_VERSION)
 
 };
-
- 	  	 
+ 
