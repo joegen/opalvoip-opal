@@ -241,8 +241,10 @@ PBoolean OpalLocalConnection::SetUpConnection()
 
     OnApplyStringOptions();
 
-    if (!endpoint.OnIncomingCall(*this))
+    if (!endpoint.OnIncomingCall(*this)) {
+      Release(EndedByLocalBusy);
       return false;
+    }
 
     if (!endpoint.IsDeferredAlerting())
       AlertingIncoming();
