@@ -149,10 +149,13 @@ class OpalLocalEndPoint : public OpalEndPoint
       const OpalLocalConnection & connection ///<  Connection having event
     );
 
-    /**Call back to indicate that remote is ringing.
-       If false is returned the call is aborted.
+    /**Call back to indicate that there is an incoming call.
+       Note this function should not block or it will impede the operation of
+       the stack.
 
-       The default implementation answers the call immediately.
+       The default implementation returns true;
+
+       @return false is returned the call is aborted with status of EndedByLocalBusy.
       */
     virtual bool OnIncomingCall(
       OpalLocalConnection & connection ///<  Connection having event
