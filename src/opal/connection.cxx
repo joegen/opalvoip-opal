@@ -973,9 +973,7 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 {
   patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
 
-  OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
-  if (mediaFormat.IsTransportable())
-    mediaFormat = patch.GetSink()->GetMediaFormat();
+  OpalMediaFormat mediaFormat = isSource ? patch.GetSource().GetMediaFormat() : patch.GetSink()->GetMediaFormat();
 
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (!mediaFormat.IsTransportable()) {
