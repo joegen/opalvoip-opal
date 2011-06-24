@@ -1218,11 +1218,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
         PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
                << ", incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
 
-        if (resequenceOutOfOrderPackets) {
-          packetsLost++;
-          packetsLostSinceLastRR++;
+        if (resequenceOutOfOrderPackets)
           return e_IgnorePacket; // Non fatal error, just ignore
-        }
 
         packetsOutOfOrder++;
       }
