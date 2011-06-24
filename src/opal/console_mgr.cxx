@@ -52,6 +52,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "p-password:"
          "D-disable:"
          "P-prefer:"
+         "O-option:"
          "-inband-detect."
          "-inband-send."
          "-tel:"
@@ -98,64 +99,65 @@ PString OpalManagerConsole::GetArgumentSpec() const
 PString OpalManagerConsole::GetArgumentUsage() const
 {
   return "Global options:\n"
-         "  -u or --user name       : Set local username, defaults to OS username.\n"
-         "  -p or --password pwd    : Set password for authentication.\n"
-         "  -D or --disable codec   : Disable use of specified codec.\n"
-         "  -P or --prefer codec    : Set preference order for codecs.\n"
-         "        --inband-detect   : Disable detection of in-band tones.\n"
-         "        --inband-send     : Disable transmission of in-band tones.\n"
-         "        --tel proto       : Protocol to use for tel: URI, e.g. sip\n"
+         "  -u or --user name          : Set local username, defaults to OS username.\n"
+         "  -p or --password pwd       : Set password for authentication.\n"
+         "  -D or --disable codec      : Disable use of specified media formats (codecs).\n"
+         "  -P or --prefer codec       : Set preference order for media formats (codecs).\n"
+         "  -O or --option fmt:opt=val : Set options for media format (codecs).\n"
+         "        --inband-detect      : Disable detection of in-band tones.\n"
+         "        --inband-send        : Disable transmission of in-band tones.\n"
+         "        --tel proto          : Protocol to use for tel: URI, e.g. sip\n"
          "\n"
 
 #if OPAL_SIP
          "SIP options:\n"
-         "  -S or --sip interface   : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
-         "  -r or --register server : SIP registration to server.\n"
-         "        --register-ttl n  : SIP registration Time To Live, default 300 seconds.\n"
-         "        --register-mode m : SIP registration mode (normal, single, public).\n"
-         "        --proxy url       : SIP outbound proxy.\n"
-         "        --sip-ui mode     : SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
+         "  -S or --sip interface      : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
+         "  -r or --register server    : SIP registration to server.\n"
+         "        --register-ttl n     : SIP registration Time To Live, default 300 seconds.\n"
+         "        --register-mode m    : SIP registration mode (normal, single, public).\n"
+         "        --proxy url          : SIP outbound proxy.\n"
+         "        --sip-ui mode        : SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
 #endif
          "\n"
 
 #if OPAL_H323
          "H.323 options:\n"
-         "  -H or --h323 interface  : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
-         "  -g or --gk-host host    : H.323 gatekeeper host.\n"
-         "  -G or --gk-id id        : H.323 gatekeeper identifier.\n"
-         "        --no-fast         : H.323 fast connect disabled.\n"
-         "        --no-tunnel       : H.323 tunnel for H.245 disabled.\n"
-         "        --h323-ui mode    : H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
+         "  -H or --h323 interface     : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
+         "  -g or --gk-host host       : H.323 gatekeeper host.\n"
+         "  -G or --gk-id id           : H.323 gatekeeper identifier.\n"
+         "        --no-fast            : H.323 fast connect disabled.\n"
+         "        --no-tunnel          : H.323 tunnel for H.245 disabled.\n"
+         "        --h323-ui mode       : H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
 #endif
          "\n"
 
 #if OPAL_LID
          "Line Interface options:\n"
-         "  -L or --lines devices   : Set Line Interface Devices, 'x' disables.\n"
-         "        --country code    : Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
+         "  -L or --lines devices      : Set Line Interface Devices, 'x' disables.\n"
+         "        --country code       : Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
 #endif
          "\n"
 
          "IP options:\n"
-         "     --stun server        : Set NAT traversal STUN server\n"
-         "     --translate ip       : Set external IP address if masqueraded\n"
-         "     --portbase n         : Set TCP/UDP/RTP port base\n"
-         "     --portmax n          : Set TCP/UDP/RTP port max\n"
-         "     --tcp-base n         : Set TCP port base (default 0)\n"
-         "     --tcp-max n          : Set TCP port max (default base+99)\n"
-         "     --udp-base n         : Set UDP port base (default 6000)\n"
-         "     --udp-max n          : Set UDP port max (default base+199)\n"
-         "     --rtp-base n         : Set RTP port base (default 5000)\n"
-         "     --rtp-max n          : Set RTP port max (default base+199)\n"
-         "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
-         "     --rtp-size size      : Set RTP maximum payload size in bytes.\n"
+         "     --stun server           : Set NAT traversal STUN server\n"
+         "     --translate ip          : Set external IP address if masqueraded\n"
+         "     --portbase n            : Set TCP/UDP/RTP port base\n"
+         "     --portmax n             : Set TCP/UDP/RTP port max\n"
+         "     --tcp-base n            : Set TCP port base (default 0)\n"
+         "     --tcp-max n             : Set TCP port max (default base+99)\n"
+         "     --udp-base n            : Set UDP port base (default 6000)\n"
+         "     --udp-max n             : Set UDP port max (default base+199)\n"
+         "     --rtp-base n            : Set RTP port base (default 5000)\n"
+         "     --rtp-max n             : Set RTP port max (default base+199)\n"
+         "     --rtp-tos n             : Set RTP packet IP TOS bits to n\n"
+         "     --rtp-size size         : Set RTP maximum payload size in bytes.\n"
          "\n"
          "Debug:\n"
 #if PTRACING
-         "  -t or --trace           : verbosity in error log (more times for more detail)\n"     
-         "  -o or --output file     : file name for output of log messages\n"       
+         "  -t or --trace              : verbosity in error log (more times for more detail)\n"     
+         "  -o or --output file        : file name for output of log messages\n"       
 #endif
-         "  -h or --help            : This help message.\n"
+         "  -h or --help               : This help message.\n"
             ;
 }
 
@@ -167,6 +169,47 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
                 PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
+
+  if (args.HasOption('O')) {
+    PStringArray options = args.GetOptionString('O').Lines();
+    for (PINDEX i = 0; i < options.GetSize(); ++i) {
+      PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
+      PStringArray subexpressions(4);
+      if (!parse.Execute(options[i], subexpressions)) {
+        cerr << "Invalid media format option \"" << options[i] << '"' << endl;
+        return false;
+      }
+
+      OpalMediaFormat format(subexpressions[1]);
+      if (!format.IsValid()) {
+        cerr << "Unknown media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      if (!format.HasOption(subexpressions[2])) {
+        cerr << "Unknown option name \"" << subexpressions[2] << "\""
+                " in media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      if (!format.SetOptionValue(subexpressions[2], subexpressions[3])) {
+        cerr << "Ilegal value \"" << subexpressions[3] << "\""
+                " for option name \"" << subexpressions[2] << "\""
+                " in media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      OpalMediaFormat::SetRegisteredMediaFormat(format);
+    }
+  }
+
+  if (args.HasOption('D'))
+    SetMediaFormatMask(args.GetOptionString('D').Lines());
+  if (args.HasOption('P'))
+    SetMediaFormatOrder(args.GetOptionString('P').Lines());
+  if (verbose) {
+    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    formats.Remove(GetMediaFormatMask());
+    formats.Reorder(GetMediaFormatOrder());
+    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
+  }
 
   if (args.HasOption("translate")) {
     SetTranslationAddress(args.GetOptionString("translate"));
@@ -310,11 +353,15 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
         }
       }
 
+      if (verbose)
+        cout << "SIP registrar: " << flush;
       PString aor;
       if (!sip->Register(params, aor, false)) {
         cerr << "Could not do SIP registration to " << params.m_addressOfRecord << endl;
         return false;
       }
+      if (verbose)
+        cout << aor << '\n';
     }
   }
 #endif // OPAL_SIP
@@ -402,17 +449,6 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     AttachEndPoint(ep, "tel");
     if (verbose)
       cout << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
-  }
-
-  if (args.HasOption('D'))
-    SetMediaFormatMask(args.GetOptionString('D').Lines());
-  if (args.HasOption('P'))
-    SetMediaFormatOrder(args.GetOptionString('P').Lines());
-  if (verbose) {
-    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    formats.Remove(GetMediaFormatMask());
-    formats.Reorder(GetMediaFormatOrder());
-    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
   }
 
   return true;
