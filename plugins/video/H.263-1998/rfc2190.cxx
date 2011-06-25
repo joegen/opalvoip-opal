@@ -24,7 +24,10 @@
 
 #include <iostream>
 #include <string.h>
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
 using namespace std;
 
 #include "rfc2190.h"
