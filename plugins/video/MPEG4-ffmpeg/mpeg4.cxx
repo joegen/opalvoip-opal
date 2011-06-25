@@ -1923,12 +1923,6 @@ extern "C" {
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition *
 PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  if (!FFMPEGLibraryInstance.Load()) {
-    *count = 0;
-    PTRACE(1, "MPEG4", "Disabled");
-    return NULL;
-  }
-
   // check version numbers etc
   if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;

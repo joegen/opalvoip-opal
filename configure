@@ -705,6 +705,8 @@ CPPFLAGS
 LDFLAGS
 CXXFLAGS
 CXX
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
 PKG_CONFIG
 target_alias
 host_alias
@@ -793,6 +795,8 @@ enable_samples
 host_alias
 target_alias
 PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
 CXX
 CXXFLAGS
 LDFLAGS
@@ -1477,6 +1481,10 @@ Optional Packages:
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -2598,6 +2606,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+
+
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -2710,7 +2722,6 @@ $as_echo "yes" >&6; }
 $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
-
 fi
 if test -z "$PKG_CONFIG" ; then
   { as_fn_set_status 1
@@ -4782,7 +4793,6 @@ $as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
 
 
 
-
           # Check whether --enable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then :
   enableval=$enable_versioncheck; PTLIB_VERSION_CHECK=$enableval
@@ -4793,14 +4803,11 @@ fi
 
                     if test "x${PTLIBDIR}" != "x" ; then
 
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-
-            # Should not need to set PKG_CONFIG_PATH, but some systems find the
-            # installed versions before the explicit version even though that
-            # is what PKG_CONFIG_LIBDIR is supposed to override.
-            old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
-            export PKG_CONFIG_PATH="${PTLIBDIR}"
+            if test "x${PKG_CONFIG_PATH}" != "x" ; then
+              export PKG_CONFIG_PATH="${PTLIBDIR}:${PKG_CONFIG_PATH}"
+            else
+              export PKG_CONFIG_PATH="${PTLIBDIR}"
+            fi
 
             if ! $PKG_CONFIG --exists ptlib ; then
               as_fn_error "No PTLIB library found in ${PTLIBDIR}" "$LINENO" 5
@@ -4852,6 +4859,8 @@ fi
 
 
 if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -4875,9 +4884,10 @@ installed software in a non-standard prefix.
 
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" "$LINENO" 5
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error "The pkg-config script could not be found or is too old.  Make sure it
@@ -4895,7 +4905,7 @@ else
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	:
+
 fi
             else
 
@@ -4939,6 +4949,8 @@ fi
 
 
 if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -4962,9 +4974,10 @@ installed software in a non-standard prefix.
 
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" "$LINENO" 5
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error "The pkg-config script could not be found or is too old.  Make sure it
@@ -4982,7 +4995,7 @@ else
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	:
+
 fi
             fi
 
@@ -4996,9 +5009,6 @@ fi
 
             RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
-
-            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_PATH="${old_PKG_CONFIG_PATH}"
 
                     else
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
@@ -5043,6 +5053,8 @@ fi
 
 
 if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -5066,9 +5078,10 @@ installed software in a non-standard prefix.
 
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" "$LINENO" 5
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error "The pkg-config script could not be found or is too old.  Make sure it
@@ -5086,7 +5099,7 @@ else
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	:
+
 fi
             else
 
@@ -5130,6 +5143,8 @@ fi
 
 
 if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -5153,9 +5168,10 @@ installed software in a non-standard prefix.
 
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" "$LINENO" 5
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error "The pkg-config script could not be found or is too old.  Make sure it
@@ -5173,7 +5189,7 @@ else
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	:
+
 fi
             fi
 
@@ -5193,11 +5209,6 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-
-          if test "x${PTLIBDIR}" != "x" ; then
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-          fi
 
                     old_CXXFLAGS="$CXXFLAGS"
           old_LIBS="$LIBS"
@@ -5374,10 +5385,6 @@ $as_echo "not found" >&6; }
           CXXFLAGS="$old_CXXFLAGS"
           LDFLAGS="$old_LDFLAGS"
           LIBS="$old_LIBS"
-
-          if test "x${PTLIBDIR}" != "x" ; then
-            export PKG_CONFIG_LIBDIR=$old_PKG_CONFIG_LIBDIR
-          fi
 
           echo "Version:  ${PTLIB_VERSION}"
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
@@ -7203,6 +7210,8 @@ fi
 
 
 if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
         _pkg_short_errors_supported=yes
@@ -7217,13 +7226,13 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEXDSP_PKG_ERRORS" >&5
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 
                                { $as_echo "$as_me:${as_lineno-$LINENO}: result: System Speex DSP library not found" >&5
 $as_echo "System Speex DSP library not found" >&6; }
 
 elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
                                { $as_echo "$as_me:${as_lineno-$LINENO}: result: System Speex DSP library not found" >&5
 $as_echo "System Speex DSP library not found" >&6; }
