@@ -624,7 +624,9 @@ class FaxT38
       InitLogging(t38_core_get_logging_state(m_t38core), m_tag);
       t38_set_t38_version(m_t38core, m_protoVersion);
       t38_set_data_rate_management_method(m_t38core, m_RateManagement);
+#ifdef HAS_T38_SET_FASTEST_IMAGE_DATA_RATE
       t38_set_fastest_image_data_rate(m_t38core, m_MaxBitRate);
+#endif
       t38_set_max_buffer_size(m_t38core, m_MaxBuffer);
       t38_set_max_datagram_size(m_t38core, m_MaxDatagram);
       // t38_set_XXXX(m_t38core, m_UdpEC); Don't know what this corresponds to!!

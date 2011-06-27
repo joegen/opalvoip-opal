@@ -621,6 +621,7 @@ dnl ########################################################################
 dnl     ########################
 dnl     spanDSP
 dnl     ########################
+AC_SUBST(SPANDSP_CFLAGS)
 if test -d fax/fax_spandsp ; then
   AC_ARG_ENABLE([spandsp],
                 [AC_HELP_STRING([--enable-spandsp],[enable spanDSP-based fax support])],
