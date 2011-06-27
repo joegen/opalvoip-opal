@@ -560,7 +560,7 @@ dnl Return:    none
 dnl Define:    LIBAVCODEC_HEADER The libavcodec header (e.g. libavcodec/avcodec.h)
 AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
          [LIBAVCODEC_HEADER=
-          old_CFLAGS="$CFLAGS"
+          old_CPPFLAGS="$CPPFLAGS"
           export CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
           AC_CHECK_HEADER([libavcodec/avcodec.h], 
                           [
@@ -582,7 +582,7 @@ AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
           if test x$LIBAVCODEC_HEADER = x; then
             AC_MSG_ERROR([Cannot find libavcodec header file])
           fi
-          export CFLAGS="$old_CPPFLAGS"
+          export CPPFLAGS="$old_CPPFLAGS"
          ])
          
 dnl OPAL_CHECK_LIBAVCODEC
