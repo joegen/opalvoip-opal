@@ -591,7 +591,8 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='HAVE_VPB
+ac_subst_vars='SPANDSP_CFLAGS
+HAVE_VPB
 CPP
 THEORA_LIBS
 THEORA_CFLAGS
@@ -10005,6 +10006,7 @@ fi
 
 
 
+
 if test -d fax/fax_spandsp ; then
   # Check whether --enable-spandsp was given.
 if test "${enable_spandsp+set}" = set; then :
@@ -10126,6 +10128,50 @@ done
 else
   HAVE_SPANDSP=no
 fi
+
+	  if test "x$opal_spandsp" = "xyes" ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for t38_set_fastest_image_data_rate in -lspandsp" >&5
+$as_echo_n "checking for t38_set_fastest_image_data_rate in -lspandsp... " >&6; }
+if test "${ac_cv_lib_spandsp_t38_set_fastest_image_data_rate+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lspandsp  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char t38_set_fastest_image_data_rate ();
+int
+main ()
+{
+return t38_set_fastest_image_data_rate ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_spandsp_t38_set_fastest_image_data_rate=yes
+else
+  ac_cv_lib_spandsp_t38_set_fastest_image_data_rate=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" >&5
+$as_echo "$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" >&6; }
+if test "x$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" = x""yes; then :
+  SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE
+fi
+
+          fi
+
           CXXFLAGS=$saved_CXXFLAGS
 
   fi
