@@ -906,6 +906,11 @@ AC_DEFUN([OPAL_FIND_SPANDSP],
               AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no], [#include <stdint.h>])
           fi
           AS_IF([test AS_VAR_GET([opal_spandsp]) = yes], [$1], [$2])[]
+
+	  if test "x$opal_spandsp" = "xyes" ; then
+            AC_CHECK_LIB(spandsp, t38_set_fastest_image_data_rate, [SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE], [])
+          fi
+
           CXXFLAGS=$saved_CXXFLAGS
          ])
 
