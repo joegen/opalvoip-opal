@@ -80,9 +80,8 @@ case "$target_os" in
         ;;
 
         darwin*)  
-	  CFLAGS="$CFLAGS -fno-common -dynamic"
+	  CFLAGS="$CFLAGS -fno-common -dynamic -fPIC -D__MACOSX__"
           LDSO='-dynamiclib -multiply_defined suppress'
-	  CFLAGS="$CFLAGS -fPIC -D__MACOSX__"
 	  case "$target_cpu" in
 	   x86 | i686 | i586 | i486 | i386 ) CFLAGS="${CFLAGS} -m486" ;;
           esac
