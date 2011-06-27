@@ -227,7 +227,7 @@ void OpalLineEndPoint::RemoveAllLines()
 PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 {
   if (!device.IsOpen()){
-    PTRACE(1, "LID EP\tAddLinesFromDevice device " << device.GetDeviceName() << "is not opened");
+    PTRACE(1, "LID EP\tAddLinesFromDevice device " << device.GetDeviceName() << " is not opened");
     return false;
   }  
 
@@ -680,7 +680,7 @@ PBoolean OpalLineConnection::PromptUserInput(PBoolean play)
       PTRACE(3, "LID Con\tPlaying dial tone");
       return true;
     }
-    PTRACE(2, "LID Con\tCould not dial ring tone");
+    PTRACE(2, "LID Con\tCould not start dial tone");
     return false;
   }
 
