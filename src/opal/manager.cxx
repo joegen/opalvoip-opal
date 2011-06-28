@@ -1086,7 +1086,7 @@ OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   }
 
   // Test for backward compatibility format
-  PINDEX colon = pattern.Find(':');
+  PINDEX colon = adjustedPattern.Find(':');
   if (colon != P_MAX_INDEX && adjustedPattern.Find('\t', colon) == P_MAX_INDEX)
     adjustedPattern.Splice(".*\t", colon+1);
 
