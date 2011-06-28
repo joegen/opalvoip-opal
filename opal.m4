@@ -917,7 +917,7 @@ AC_DEFUN([OPAL_FIND_SPANDSP],
           LIBS=$saved_LIBS
           if test "x${opal_spandsp}" = "xyes"; then
               SPANDSP_LIBS="-lspandsp"
-              AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no])
+              AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no], [#include <stdint.h>])
           fi
           AS_IF([test AS_VAR_GET([opal_spandsp]) = yes], [$1], [$2])[]
          ])
