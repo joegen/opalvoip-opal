@@ -1224,7 +1224,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     RouteEntry & entry = m_routeTable[routeIndex++];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
-      PTRACE(4, "OpalMan\tMatched regex \"" << entry.pattern << '"');
+      PTRACE(4, "OpalMan\tMatched regex \"" << entry.regex.GetPattern() << "\" (\"" << entry.pattern << "\")");
       if (entry.destination.NumCompare("label:") != EqualTo) {
         destination = entry.destination;
         break;
@@ -1235,7 +1235,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
       routeIndex = 0;
     }
     else {
-      PTRACE(4, "OpalMan\tDid not match regex \"" << entry.pattern << '"');
+      PTRACE(4, "OpalMan\tDid not match regex \"" << entry.regex.GetPattern() << "\" (\"" << entry.pattern << "\")");
     }
   }
 

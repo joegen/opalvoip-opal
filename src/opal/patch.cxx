@@ -211,6 +211,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
            << " using transcoder " << *sink->primaryCodec << ", data size=" << sinkStream->GetDataSize());
   }
   else {
+    PTRACE(4, "Patch\tCreating two stage transcoders for " << sourceFormat << "->" << destinationFormat << " with ID " << id);
     OpalMediaFormat intermediateFormat;
     if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat,
                                                 intermediateFormat)) {
@@ -240,7 +241,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
     if (sink->primaryCodec == NULL || sink->secondaryCodec == NULL)
       return false;
 
-    PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
+    PTRACE(3, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->primaryCodec->SetMaxOutputSize(sink->secondaryCodec->GetOptimalDataFrameSize(true));
     sink->primaryCodec->SetSessionID(source.GetSessionID());
