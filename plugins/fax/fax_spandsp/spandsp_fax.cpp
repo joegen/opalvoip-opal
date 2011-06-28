@@ -155,8 +155,8 @@ static struct PluginCodec_Option const ReceivingOption =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
   "Receiving",                // Generic (human readable) option name
-  1,                          // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  true,                       // Read Only flag
+  PluginCodec_OrMerge,        // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -167,8 +167,8 @@ static struct PluginCodec_Option const TiffFileNameOption =
 {
   PluginCodec_StringOption,   // PluginCodec_OptionTypes
   "TIFF-File-Name",           // Generic (human readable) option name
-  1,                          // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  true,                       // Read Only flag
+  PluginCodec_MaxMerge,       // Merge mode
   "",                         // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -179,7 +179,7 @@ static struct PluginCodec_Option const StationIdentifierOption =
 {
   PluginCodec_StringOption,   // PluginCodec_OptionTypes
   "Station-Identifier",       // Generic (human readable) option name
-  1,                          // Read Only flag
+  true,                       // Read Only flag
   PluginCodec_AlwaysMerge,    // Merge mode
   "",                         // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -191,7 +191,7 @@ static struct PluginCodec_Option const HeaderInfoOption =
 {
   PluginCodec_StringOption,   // PluginCodec_OptionTypes
   "Header-Info",              // Generic (human readable) option name
-  1,                          // Read Only flag
+  true,                       // Read Only flag
   PluginCodec_AlwaysMerge,    // Merge mode
   "",                         // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -201,11 +201,11 @@ static struct PluginCodec_Option const HeaderInfoOption =
 
 static struct PluginCodec_Option const UseEcmOption =
 {
-  PluginCodec_StringOption,   // PluginCodec_OptionTypes
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
   "Use-ECM",                  // Generic (human readable) option name
-  1,                          // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
-  "",                         // Initial value
+  false,                      // Read Only flag
+  PluginCodec_OrMerge,        // Merge mode
+  "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
@@ -216,7 +216,7 @@ static struct PluginCodec_Option const T38FaxVersion =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38FaxVersion",            // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -230,7 +230,7 @@ static struct PluginCodec_Option const T38FaxRateManagement =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
   "T38FaxRateManagement",     // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "transferredTCF",           // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -243,7 +243,7 @@ static struct PluginCodec_Option const T38MaxBitRate =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38MaxBitRate",            // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "14400",                    // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -257,7 +257,7 @@ static struct PluginCodec_Option const T38FaxMaxBuffer =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38FaxMaxBuffer",          // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "2000",                     // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -271,7 +271,7 @@ static struct PluginCodec_Option const T38FaxMaxDatagram =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38FaxMaxDatagram",        // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "528",                      // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -285,7 +285,7 @@ static struct PluginCodec_Option const T38FaxUdpEC =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
   "T38FaxUdpEC",              // Generic (human readable) option name
-  0,                          // Read Only flag
+  false,                      // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "t38UDPRedundancy",         // Initial value
   NULL,                       // SIP/SDP FMTP name
@@ -298,8 +298,8 @@ static struct PluginCodec_Option const T38FaxFillBitRemoval =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
   "T38FaxFillBitRemoval",     // Generic (human readable) option name
-  0,                          // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  false,                      // Read Only flag
+  PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -310,8 +310,8 @@ static struct PluginCodec_Option const T38FaxTranscodingMMR =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
   "T38FaxTranscodingMMR",     // Generic (human readable) option name
-  0,                          // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  false,                      // Read Only flag
+  PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -322,8 +322,8 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
   "T38FaxTranscodingJBIG",    // Generic (human readable) option name
-  0,                          // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  false,                      // Read Only flag
+  PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
