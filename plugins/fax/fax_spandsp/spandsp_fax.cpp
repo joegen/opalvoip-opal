@@ -54,7 +54,7 @@ extern "C" {
 
 
 #define LOGGING 1
-#define LOG_LEVEL_DEBUG 5
+#define LOG_LEVEL_DEBUG 6
 #define LOG_LEVEL_CONTEXT_ID 3
 
 #define   PCM_TRANSMIT_ON_IDLE      true
@@ -427,30 +427,13 @@ class FaxSpanDSP
 
     bool            m_useECM;
     int             m_supported_modems;
-    int             m_supported_image_sizes;
-    int             m_supported_resolutions;
-    int             m_supported_compressions;
 
   public:
     FaxSpanDSP()
       : m_referenceCount(1)
       , m_completed(false)
       , m_useECM(DEFAULT_USE_ECM)
-      , m_supported_modems(T30_SUPPORT_V27TER | T30_SUPPORT_V29)
-      , m_supported_image_sizes(T30_SUPPORT_US_LETTER_LENGTH |
-                                T30_SUPPORT_US_LEGAL_LENGTH |
-                                T30_SUPPORT_UNLIMITED_LENGTH |
-                                T30_SUPPORT_215MM_WIDTH |
-                                T30_SUPPORT_255MM_WIDTH |
-                                T30_SUPPORT_303MM_WIDTH)
-      , m_supported_resolutions(T30_SUPPORT_STANDARD_RESOLUTION |
-                                T30_SUPPORT_FINE_RESOLUTION |
-                                T30_SUPPORT_SUPERFINE_RESOLUTION |
-                                T30_SUPPORT_R8_RESOLUTION |
-                                T30_SUPPORT_R16_RESOLUTION)
-      , m_supported_compressions(T30_SUPPORT_T4_1D_COMPRESSION |
-                                 T30_SUPPORT_T4_2D_COMPRESSION |
-                                 T30_SUPPORT_T6_COMPRESSION)
+      , m_supported_modems(T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17)
     {
     }
 
@@ -507,7 +490,7 @@ class FaxSpanDSP
       return true;
     }
 
-    bool HasError(bool retval)
+    bool HasError(bool retval, const char * errorMsg = NULL)
     {
       if (m_completed)
         return true;
@@ -517,6 +500,10 @@ class FaxSpanDSP
 
       /// Error exit
       m_completed = true;
+      if (errorMsg != NULL) {
+        PTRACE(1, m_tag << " Error: " << errorMsg);
+      }
+
       return true;
     }
 };
@@ -561,6 +548,8 @@ class FaxT38
     {
     }
 
+
+    unsigned GetMaxBitRate() const { return m_MaxBitRate; }
 
     bool SetOption(const char * option, const char * value)
     {
@@ -784,11 +773,30 @@ class FaxTIFF : public FaxSpanDSP
     std::string     m_tiffFileName;
     std::string     m_stationIdentifer;
     std::string     m_headerInfo;
+    int             m_supported_image_sizes;
+    int             m_supported_resolutions;
+    int             m_supported_compressions;
 
   protected:
     FaxTIFF()
       : m_receiving(false)
       , m_stationIdentifer("-")
+      , m_supported_image_sizes(T30_SUPPORT_US_LETTER_LENGTH |
+                                T30_SUPPORT_US_LEGAL_LENGTH |
+                                T30_SUPPORT_UNLIMITED_LENGTH |
+                                T30_SUPPORT_A4_LENGTH |
+                                T30_SUPPORT_B4_LENGTH |
+                                T30_SUPPORT_215MM_WIDTH |
+                                T30_SUPPORT_255MM_WIDTH |
+                                T30_SUPPORT_303MM_WIDTH)
+      , m_supported_resolutions(T30_SUPPORT_STANDARD_RESOLUTION |
+                                T30_SUPPORT_FINE_RESOLUTION |
+                                T30_SUPPORT_SUPERFINE_RESOLUTION |
+                                T30_SUPPORT_R8_RESOLUTION |
+                                T30_SUPPORT_R16_RESOLUTION)
+      , m_supported_compressions(T30_SUPPORT_T4_1D_COMPRESSION |
+                                 T30_SUPPORT_T4_2D_COMPRESSION |
+                                 T30_SUPPORT_T6_COMPRESSION)
     {
     }
 
@@ -905,7 +913,7 @@ class FaxTIFF : public FaxSpanDSP
 
       memcpy(fromPtr, str.c_str(), len);
 
-      PTRACE(LOG_LEVEL_DEBUG, m_tag << " SpanDSP statistics:\n" << (char *)fromPtr);
+      PTRACE(4, m_tag << " SpanDSP statistics:\n" << (char *)fromPtr);
 
       return true;
     }
@@ -1096,8 +1104,10 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
       PTRACE(3, m_tag << " Opening T38_PCM/SpanDSP");
   
       m_t38State = t38_gateway_init(NULL, FaxT38::QueueT38, (FaxT38 *)this);
-      if (HasError(m_t38State != NULL))
+      if (HasError(m_t38State != NULL, "t38_gateway_init failed."))
         return false;
+
+      t38_gateway_set_supported_modems(m_t38State, m_supported_modems);
 
       if (HasError(FaxT38::Open(t38_gateway_get_t38_core_state(m_t38State))))
         return false;
@@ -1106,7 +1116,6 @@ class T38_PCM : public FaxSpanDSP, public FaxT38, public FaxPCM
 
       t38_gateway_set_transmit_on_idle(m_t38State, TransmitOnIdle());
       t38_gateway_set_ecm_capability(m_t38State, m_useECM);
-      t38_gateway_set_supported_modems(m_t38State, m_supported_modems);
       //t38_gateway_set_nsx_suppression(m_t38State, NULL, 0, NULL, 0);
 
       return true;
@@ -1128,8 +1137,6 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
 #if LOGGING
       m_tag = tag;
 #endif
-
-      m_supported_modems |= T30_SUPPORT_V17;
 
       PTRACE(4, m_tag << " Created TIFF_T38");
     }
@@ -1239,8 +1246,12 @@ class TIFF_T38 : public FaxTIFF, public FaxT38
 
       PTRACE(3, m_tag << " Opening TIFF_T38/SpanDSP for " << (IsReceiving() ? "receive" : "transmit"));
 
+      // If our max bit rate is 9600 then explicitly remove V.17 or spandsp does 14400 anyway
+      if (GetMaxBitRate() <= 9600)
+        m_supported_modems &= ~T30_SUPPORT_V17;
+
       m_t38State = t38_terminal_init(NULL, !IsReceiving(), FaxT38::QueueT38, (FaxT38 *)this);
-      if (HasError(m_t38State != NULL))
+      if (HasError(m_t38State != NULL, "t38_terminal_init failed."))
         return false;
 
       if (HasError(FaxTIFF::Open(t38_terminal_get_t30_state(m_t38State))))
@@ -1384,7 +1395,7 @@ class TIFF_PCM : public FaxTIFF, public FaxPCM
       PTRACE(3, m_tag << " Opening TIFF_PCM/SpanDSP for " << (IsReceiving() ? "receive" : "transmit"));
 
       m_faxState = fax_init(NULL, !IsReceiving());
-      if (HasError(m_faxState != NULL))
+      if (HasError(m_faxState != NULL, "t38_terminal_init failed."))
         return false;
 
       if (HasError(FaxTIFF::Open(fax_get_t30_state(m_faxState))))
