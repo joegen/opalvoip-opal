@@ -997,26 +997,17 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      if (mediaFormat != OpalPCM16)
-        PTRACE(3, "OpalCon\tCould not add detect DTMF filter for " << mediaFormat
-               << " on connection " << *this << ", patch " << patch);
-      else {
-        patch.AddFilter(m_dtmfDetectNotifier, OpalPCM16);
-        PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
-      }
+      patch.AddFilter(m_dtmfDetectNotifier, OpalPCM16);
+      PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
 
     if (m_sendInBandDTMF && !isSource) {
-      if (mediaFormat != OpalPCM16 &&
-          mediaFormat != OpalG711_ULAW_64K &&
-          mediaFormat != OpalG711_ALAW_64K)
-        PTRACE(3, "OpalCon\tCould not add send DTMF filter for " << mediaFormat
-               << " on connection " << *this << ", patch " << patch);
-      else {
+      if (mediaFormat == OpalG711_ULAW_64K || mediaFormat == OpalG711_ALAW_64K)
         m_dtmfSendFormat = mediaFormat;
-        patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
-        PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
-      }
+      else
+        m_dtmfSendFormat = OpalPCM16;
+      patch.AddFilter(m_dtmfSendNotifier, mediaFormat);
+      PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
 #endif
   }
