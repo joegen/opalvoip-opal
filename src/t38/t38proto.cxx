@@ -634,7 +634,7 @@ void OpalFaxConnection::OnEstablished()
     PString str = m_stringOptions(OPAL_T38_SWITCH_TIME);
     if (!str.IsEmpty()) {
       m_switchTimer.SetInterval(0, str.AsUnsigned());
-      PTRACE(3, "FAX\tStarting timer for CNG/CED tone");
+      PTRACE(3, "FAX\tStarting timer for auto-switch to T.38");
     }
   }
 }

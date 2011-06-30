@@ -199,19 +199,19 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        FindFormat().
 
        The '*' character indicates substrings, for example: "G.711*" would
-       match "G.711-uLaw-64k" and "G.711-ALaw-64k".
+       remove "G.711-uLaw-64k" and "G.711-ALaw-64k".
 
        The '@' character indicates a type of media format, so say "\@video"
-       would find the first video codec.
+       would remove all video codecs.
 
-       The '!' character indicates a negative test. That is the first entry
-       that does NOT match the string is returned. The string after the '!'
-       may contain '*' and '@' characters.
+       The '!' character indicates a negative test. That is the entres that do
+       NOT match the string are removed. The string after the '!' may contain
+       '*' and '@' characters.
 
-       I should be noted that when the ! operator is used, codecs are removed
-       at that time and later ! operators may not have an affect. For example
-       {"!G.729","!G.728"} will NOT give you two codecs but on G.729.
-      */
+       I should be noted that when the ! operator is used, they are combined
+       differently to the usual application of each entry in turn. Thus, the
+       array {"!A","!B"} will result in keeping <i>both</i> A and B formats.
+     */
     void Remove(
       const PStringArray & mask
     );
