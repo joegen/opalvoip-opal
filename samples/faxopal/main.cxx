@@ -120,6 +120,8 @@ void FaxOPAL::Main()
     return;
   }
 
+  static char const * FormatMask[] = { "!G.711*", "!@fax" };
+  m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
 
   m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
   m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
