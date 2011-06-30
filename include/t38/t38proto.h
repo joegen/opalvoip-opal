@@ -54,6 +54,7 @@ class OpalFaxConnection;
 
 
 #define OPAL_OPT_STATION_ID  "Station-Id"      ///< String option for fax station ID string
+#define OPAL_OPT_HEADER_INFO "Header-Info"     ///< String option for transmitted fax page header
 #define OPAL_NO_G111_FAX     "No-G711-Fax"     ///< Suppress G.711 fall back
 #define OPAL_SUPPRESS_CED    "Suppress-CED"    ///< Suppress transmission of CED tone
 #define OPAL_IGNORE_CED      "Ignore-CED"      ///< Ignore receipt of CED tone
@@ -206,10 +207,8 @@ class OpalFaxConnection : public OpalLocalConnection
   //@{
     virtual PString GetPrefixName() const;
 
-    virtual void OnApplyStringOptions();
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual void AdjustMediaFormats(bool local, const OpalConnection * otherConnection, OpalMediaFormatList & mediaFormats) const;
-    virtual void AcceptIncoming();
     virtual void OnEstablished();
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
@@ -248,17 +247,15 @@ class OpalFaxConnection : public OpalLocalConnection
   //@}
 
   protected:
-    PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSendCNGCED);
+    PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSwitchTimeout);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
+    void SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
 
     OpalFaxEndPoint & m_endpoint;
     PString           m_filename;
     bool              m_receiving;
-    PString           m_stationId;
     bool              m_disableT38;
-    PTimeInterval     m_releaseTimeout;
-    PTimeInterval     m_switchTimeout;
     OpalMediaFormat   m_tiffFileFormat;
 #if OPAL_STATISTICS
     void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
@@ -270,7 +267,8 @@ class OpalFaxConnection : public OpalLocalConnection
       e_SwitchingToT38,
       e_CompletedSwitch
     } m_state;
-    PTimer   m_faxTimer;
+
+    PTimer m_switchTimer;
 };
 
 
