@@ -61,7 +61,7 @@ void FaxOPAL::Main()
                   "d-directory:"
                   "-station-id:"
                   "-header-info:"
-                  "e-ignore-ced."
+                  "e-switch-on-ced."
                   "F-no-fallback."
                   "T-timeout:"
                   "X-switch-time:") ||
@@ -77,7 +77,7 @@ void FaxOPAL::Main()
             "  -a or --audio              : Send fax as G.711 audio.\n"
             "  -A or --no-audio           : No audio phase at all, starts T.38 immediately.\n"
             "  -F or --no-fallback n      : Do not fall back to audio it T.38 switch fails.\n"
-            "  -e or --ignore-ced         : Ignore receipt of CED tone, don't switch to T.38 mode.\n"
+            "  -e or --switch-on-ced      : Switch to T.38 on receipt of CED tone as caller.\n"
             "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
             "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
             "\n"
