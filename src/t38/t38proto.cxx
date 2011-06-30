@@ -659,7 +659,7 @@ void OpalFaxConnection::SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) 
 
   str = m_stringOptions(OPAL_OPT_HEADER_INFO);
   if (!str.IsEmpty()) {
-    mediaFormat.SetOptionString("Header-Info", m_stringOptions(str));
+    mediaFormat.SetOptionString("Header-Info", str);
     PTRACE(4, "FAX\tSet Header-Info: \"" << str << '"');
   }
 }

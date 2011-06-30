@@ -192,7 +192,7 @@ static struct PluginCodec_Option const HeaderInfoOption =
   PluginCodec_StringOption,   // PluginCodec_OptionTypes
   "Header-Info",              // Generic (human readable) option name
   true,                       // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  PluginCodec_MaxMerge,       // Merge mode
   "",                         // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -822,12 +822,12 @@ class FaxTIFF : public FaxSpanDSP
       }
 
       if (strcasecmp(option, StationIdentifierOption.m_name) == 0) {
-        m_stationIdentifer = value;
+        m_stationIdentifer = *value != '\0' ? value : "-";
         return true;
-      }		
+      }
 
       if (strcasecmp(option, HeaderInfoOption.m_name) == 0) {
-        m_headerInfo = value;			
+        m_headerInfo = value;
         return true;
       }
 
@@ -875,13 +875,13 @@ class FaxTIFF : public FaxSpanDSP
       t30_set_phase_e_handler(t30state, PhaseE, this);
 
       t30_set_tx_ident(t30state, m_stationIdentifer.c_str());
-      PTRACE(4, m_tag << " Set station id to \"" << m_stationIdentifer << '"');
+      PTRACE(4, m_tag << " Set Station-Identifier to \"" << m_stationIdentifer << '"');
 
       if (!m_headerInfo.empty()) {
         if (t30_set_tx_page_header_info(t30state, m_headerInfo.c_str()) < 0)
-          PTRACE(1, m_tag << " Cannot set page header to  \"" << m_headerInfo << "\", maybe string is too long.");
+          PTRACE(1, m_tag << " Cannot set Header-Info to  \"" << m_headerInfo << '"');
         else
-          PTRACE(4, m_tag << " Set page header info to \"" << m_headerInfo << '"');
+          PTRACE(4, m_tag << " Set Header-Info to \"" << m_headerInfo << '"');
       }
 
       t30_set_supported_modems(t30state, m_supported_modems);
