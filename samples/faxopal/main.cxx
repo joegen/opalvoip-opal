@@ -60,6 +60,7 @@ void FaxOPAL::Main()
                   "A-no-audio."
                   "d-directory:"
                   "-station-id:"
+                  "-header-info:"
                   "e-ignore-ced."
                   "E-suppress-ced."
                   "F-no-fallback."
@@ -73,6 +74,7 @@ void FaxOPAL::Main()
             "Available options are:\n"
             "  -d or --directory dir      : Set default directory for fax receive.\n"
             "        --station-id id      : Set T.30 Station Identifier string.\n"
+            "        --header-info msg    : Set transmitted fax page header string.\n"
             "  -a or --audio              : Send fax as G.711 audio.\n"
             "  -A or --no-audio           : No audio phase at all, starts T.38 immediately.\n"
             "  -F or --no-fallback n      : Do not fall back to audio it T.38 switch fails.\n"
@@ -136,6 +138,8 @@ void FaxOPAL::Main()
     stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
   if (args.HasOption("station-id"))
     stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString("station-id"));
+  if (args.HasOption("header-info"))
+    stringOptions.SetAt(OPAL_OPT_HEADER_INFO, args.GetOptionString("header-info"));
   if (args.HasOption('F'))
     stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
   if (args.HasOption('E'))
