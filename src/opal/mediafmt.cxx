@@ -1796,11 +1796,39 @@ void OpalMediaFormatList::Remove(const PStringArray & maskList)
 
   PTRACE(4,"MediaFormat\tRemoving codecs " << setfill(',') << maskList);
 
-  for (PINDEX i = 0; i < maskList.GetSize(); i++) {
-    OpalMediaFormatList::const_iterator fmt;
-    while ((fmt = FindFormat(maskList[i])) != end())
-      erase(fmt);
+  PINDEX i;
+  PStringList notMasks;
+  const_iterator fmt;
+
+  for (i = 0; i < maskList.GetSize(); i++) {
+    PString mask = maskList[i];
+    if (mask[0] == '!')
+      notMasks.AppendString(mask);
+    else {
+      while ((fmt = FindFormat(mask)) != end())
+        erase(fmt);
+    }
   }
+
+  switch (notMasks.GetSize()) {
+    case 0 :
+      return;
+
+    case 1 :
+      while ((fmt = FindFormat(notMasks[0])) != end())
+        erase(fmt);
+      return;
+  }
+
+  OpalMediaFormatList formatsToKeep;
+  for (i = 0; i < notMasks.GetSize(); i++) {
+    PString keeper = notMasks[i].Mid(1);
+    fmt = const_iterator();
+    while ((fmt = FindFormat(keeper, fmt)) != end())
+      formatsToKeep += *fmt;
+  }
+
+  *this = formatsToKeep;
 }
 
 
