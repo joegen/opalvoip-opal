@@ -324,8 +324,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cout << "SIP options: "
            << sip->GetSendUserInputMode() << '\n';
 
-    if (args.HasOption('P')) {
-      sip->SetProxy(args.GetOptionString('P'), args.GetOptionString('u'), args.GetOptionString('p'));
+    if (args.HasOption("proxy")) {
+      sip->SetProxy(args.GetOptionString("proxy"), args.GetOptionString('u'), args.GetOptionString('p'));
       if (verbose)
         cout << "SIP proxy: " << sip->GetProxy() << '\n';
     }
