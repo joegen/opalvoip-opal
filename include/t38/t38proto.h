@@ -56,8 +56,7 @@ class OpalFaxConnection;
 #define OPAL_OPT_STATION_ID  "Station-Id"      ///< String option for fax station ID string
 #define OPAL_OPT_HEADER_INFO "Header-Info"     ///< String option for transmitted fax page header
 #define OPAL_NO_G111_FAX     "No-G711-Fax"     ///< Suppress G.711 fall back
-#define OPAL_SUPPRESS_CED    "Suppress-CED"    ///< Suppress transmission of CED tone
-#define OPAL_IGNORE_CED      "Ignore-CED"      ///< Ignore receipt of CED tone
+#define OPAL_SWITCH_ON_CED   "Switch-On-CED"   ///< Try switch to T.38 on receipt of CED tone
 #define OPAL_T38_SWITCH_TIME "T38-Switch-Time" ///< Seconds for fail safe switch to T.38 mode
 
 #define OPAL_FAX_TIFF_FILE "TIFF-File"

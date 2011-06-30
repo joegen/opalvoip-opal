@@ -62,7 +62,6 @@ void FaxOPAL::Main()
                   "-station-id:"
                   "-header-info:"
                   "e-ignore-ced."
-                  "E-suppress-ced."
                   "F-no-fallback."
                   "T-timeout:"
                   "X-switch-time:") ||
@@ -78,7 +77,6 @@ void FaxOPAL::Main()
             "  -a or --audio              : Send fax as G.711 audio.\n"
             "  -A or --no-audio           : No audio phase at all, starts T.38 immediately.\n"
             "  -F or --no-fallback n      : Do not fall back to audio it T.38 switch fails.\n"
-            "  -E or --suppress-ced       : Suppress transmission of CED tone.\n"
             "  -e or --ignore-ced         : Ignore receipt of CED tone, don't switch to T.38 mode.\n"
             "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
             "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
@@ -108,8 +106,6 @@ void FaxOPAL::Main()
   if (!m_manager->Initialise(args, true))
     return;
 
-  PString prefix = args.HasOption('a') ? "fax" : "t38";
-
   // Create audio or T.38 fax endpoint.
   MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
   if (args.HasOption('d'))
@@ -123,43 +119,71 @@ void FaxOPAL::Main()
   static char const * FormatMask[] = { "!G.711*", "!@fax" };
   m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
 
-  m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
-  m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
+  PString prefix;
 
+  cout << "Fax Mode: ";
   if (args.HasOption('A')) {
     OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
     OpalMediaType::Audio().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
+    cout << "Offer T.38 only";
   }
-  OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
+  else if (args.HasOption('a')) {
+    cout << "Audio Only";
+    prefix = "fax";
+  }
+  else {
+    cout << "Swich to T.38";
+    prefix = "t38";
+  }
+  cout << '\n';
 
+  m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
+  m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
 
   OpalConnection::StringOptions stringOptions;
-  if (args.HasOption('I'))
-    stringOptions.SetAt(OPAL_OPT_DETECT_INBAND_DTMF, "false");
-  if (args.HasOption('i'))
-    stringOptions.SetAt(OPAL_OPT_SEND_INBAND_DTMF, "false");
-  if (args.HasOption("station-id"))
-    stringOptions.SetAt(OPAL_OPT_STATION_ID, args.GetOptionString("station-id"));
-  if (args.HasOption("header-info"))
-    stringOptions.SetAt(OPAL_OPT_HEADER_INFO, args.GetOptionString("header-info"));
-  if (args.HasOption('F'))
+
+  if (args.HasOption("station-id")) {
+    PString str = args.GetOptionString("station-id");
+    cout << "Station Identifier: " << str << '\n';
+    stringOptions.SetAt(OPAL_OPT_STATION_ID, str);
+  }
+
+  if (args.HasOption("header-info")) {
+    PString str = args.GetOptionString("header-info");
+    cout << "Transmit Header Info: " << str << '\n';
+    stringOptions.SetAt(OPAL_OPT_HEADER_INFO, str);
+  }
+
+  if (args.HasOption('F')) {
     stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
-  if (args.HasOption('E'))
-    stringOptions.SetAt(OPAL_SUPPRESS_CED, "true");
-  if (args.HasOption('e'))
-    stringOptions.SetAt(OPAL_IGNORE_CED, "true");
-  if (args.HasOption('X'))
-    stringOptions.SetAt(OPAL_T38_SWITCH_TIME, args.GetOptionString('X').AsUnsigned());
+    cout << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
+  }
+
+  if (args.HasOption('e')) {
+    stringOptions.SetAt(OPAL_SWITCH_ON_CED, "true");
+    cout << "Enabled switch to T.38 on receipt of CED\n";
+  }
+
+  if (args.HasOption('X')) {
+    unsigned seconds = args.GetOptionString('X').AsUnsigned();
+    stringOptions.SetAt(OPAL_T38_SWITCH_TIME, seconds);
+    cout << "Switch to T.38 after " << seconds << "seconds\n";
+  }
+  else
+    cout << "No T.38 switch timeout set\n";
 
   if (args.GetCount() == 1)
-    cout << "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
+    cout << "Receive directory: " << fax->GetDefaultDirectory() << "\n"
+            "\n"
+            "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
   else {
     PString token;
     if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token, NULL, 0, &stringOptions)) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
-    cout << "Sending " << args[0] << " to " << args[1] << " ... " << flush;
+    cout << "\n"
+            "Sending " << args[0] << " to " << args[1] << " ... " << flush;
   }
 
   // Wait for call to come in and finish
