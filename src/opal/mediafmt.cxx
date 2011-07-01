@@ -1751,6 +1751,23 @@ OpalMediaFormatList::OpalMediaFormatList(const OpalMediaFormat & format)
 }
 
 
+OpalMediaFormatList & OpalMediaFormatList::operator+=(const PString & wildcard)
+{
+  MakeUnique();
+
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  OpalMediaFormatList::const_iterator fmt;
+  while ((fmt = registeredFormats.FindFormat(wildcard, fmt)) != registeredFormats.end()) {
+    if (!HasFormat(*fmt))
+      OpalMediaFormatBaseList::Append(fmt->Clone());
+  }
+
+  return *this;
+}
+
+
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & format)
 {
   MakeUnique();
