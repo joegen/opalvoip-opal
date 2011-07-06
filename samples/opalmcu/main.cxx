@@ -383,7 +383,7 @@ void MyMixerEndPoint::CmdConfRemove(PCLI::Arguments & args, INT)
 void MyMixerEndPoint::CmdConfListen(PCLI::Arguments & args, INT)
 {
   PSafePtr<OpalMixerNode> node;
-  if (!CmdConfXXX(args, node, 2))
+  if (!CmdConfXXX(args, node, 1))
     return;
 
   for (PSafePtr<OpalConnection> connection = node->GetFirstConnection(); connection != NULL; ++connection) {
