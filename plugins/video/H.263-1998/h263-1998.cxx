@@ -1120,13 +1120,6 @@ H263_RFC2190_DecoderContext::~H263_RFC2190_DecoderContext()
 {
 }
 
-static bool ReturnEmptyFrame(PluginCodec_RTP & dstRTP, unsigned & dstLen, unsigned int & flags)
-{
-  flags |= PluginCodec_ReturnCoderLastFrame;
-  dstRTP.SetPayloadSize(0);
-  dstLen = 0;
-  return true;
-}
 
 bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
 {
@@ -1136,14 +1129,6 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   // create RTP frame from destination
   PluginCodec_RTP dstRTP(dst, dstLen);
 
-  if (dstLen < (12 + sizeof(PluginCodec_Video_FrameHeader))) {
-    flags = 0;
-    TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for video header");
-    ReturnEmptyFrame(dstRTP, dstLen, flags);
-  }
-
-  dstLen = 0;
-
   CODEC_TRACER_RTP(tracer, "Rx frame:", srcRTP, RFC2190Dump);
 
   // push new frame through the depacketiser
@@ -1151,7 +1136,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   int code = depacketizer.SetPacket(srcRTP, requestIFrame, isIFrame);
   if (code <= 0) {
     flags = requestIFrame ? PluginCodec_ReturnCoderRequestIFrame : 0;
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   if ((depacketizer.frame.size() < 3)  ||
@@ -1160,7 +1145,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
       (depacketizer.frame[2] & 0x80) != 0x80) {
     TRACE_AND_LOG(tracer, 1, "Frame does not start with correct code");
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   TRACE_AND_LOG(tracer, 4, "Decoder called with " << depacketizer.frame.size()  << " bytes");
@@ -1177,7 +1162,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (!gotPicture) {
     flags = PluginCodec_ReturnCoderRequestIFrame;
     TRACE_AND_LOG(tracer, 1, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   TRACE_AND_LOG(tracer, 4, "Decoder processed " << bytesDecoded << " bytes, creating frame at " << _context->width << "x" << _context->height);
@@ -1189,12 +1174,11 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
 #endif
   ) {
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
-  if (bytesDecoded == 0) {
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
-  }
+  if (bytesDecoded == 0)
+    return true;
 
   // if decoded frame size is not legal, request an I-Frame
   if ((_context->width <= 0) ||
@@ -1204,7 +1188,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
       (_context->height * _context->width > (CIF4_WIDTH * CIF4_HEIGHT))) {
     TRACE_AND_LOG(tracer, 1, "Received frame with invalid size");
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   // create RTP frame from destination buffer
@@ -1212,7 +1196,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (dstRTP.GetPayloadSize() - sizeof(PluginCodec_Video_FrameHeader) < frameBytes) {
     TRACE_AND_LOG(tracer, 1, "Destination buffer size " << dstRTP.GetPayloadSize() << " too small for frame of size " << _context->width  << "x" <<  _context->height);
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   PluginCodec_Video_FrameHeader * header = dstRTP.GetVideoHeader();
@@ -1224,7 +1208,7 @@ bool H263_RFC2190_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcL
   if (!dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes)) {
     flags = PluginCodec_ReturnCoderBufferTooSmall;
     TRACE_AND_LOG(tracer, 1, "Destination buffer " << dstLen << " insufficient for decoded data size " << header->width << "x" << header->height);
-    return ReturnEmptyFrame(dstRTP, dstLen, flags);
+    return true;
   }
 
   dstLen = dstRTP.GetPacketSize();
