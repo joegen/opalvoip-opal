@@ -97,7 +97,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       */
     OpalMediaFormatList & operator+=(
       const char * wildcard    ///< Wildcard for formats to add
-    ) { return operator+=(PConstString(wildcard)); }
+    ) { PConstString s(wildcard); return operator+=(s); }
 
     /**Add a format(s) to the list.
        If any format is invalid or already in the list then it is not added.
