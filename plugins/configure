@@ -591,7 +591,8 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SPANDSP_CFLAGS
+ac_subst_vars='SPANDSP_LIBS
+SPANDSP_CFLAGS
 HAVE_VPB
 CPP
 THEORA_LIBS
@@ -10106,7 +10107,6 @@ fi
           saved_CXXFLAGS=$CXXFLAGS
           CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS"
           if test "x${opal_spandsp}" = "xyes"; then
-              SPANDSP_LIBS="-lspandsp"
               for ac_header in spandsp.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "spandsp.h" "ac_cv_header_spandsp_h" "#include <stdint.h>
@@ -10130,6 +10130,7 @@ else
 fi
 
 	  if test "x$opal_spandsp" = "xyes" ; then
+            SPANDSP_LIBS="-lspandsp"
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for t38_set_fastest_image_data_rate in -lspandsp" >&5
 $as_echo_n "checking for t38_set_fastest_image_data_rate in -lspandsp... " >&6; }
 if test "${ac_cv_lib_spandsp_t38_set_fastest_image_data_rate+set}" = set; then :
@@ -10169,6 +10170,8 @@ $as_echo "$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" >&6; }
 if test "x$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" = x""yes; then :
   SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE
 fi
+
+
 
           fi
 
