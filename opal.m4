@@ -918,13 +918,15 @@ AC_DEFUN([OPAL_FIND_SPANDSP],
           saved_CXXFLAGS=$CXXFLAGS
           CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS"
           if test "x${opal_spandsp}" = "xyes"; then
-              SPANDSP_LIBS="-lspandsp"
               AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no], [#include <stdint.h>])
           fi
           AS_IF([test AS_VAR_GET([opal_spandsp]) = yes], [$1], [$2])[]
 
 	  if test "x$opal_spandsp" = "xyes" ; then
+            SPANDSP_LIBS="-lspandsp"
             AC_CHECK_LIB(spandsp, t38_set_fastest_image_data_rate, [SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE], [])
+            AC_SUBST(SPANDSP_CFLAGS)
+            AC_SUBST(SPANDSP_LIBS)
           fi
 
           CXXFLAGS=$saved_CXXFLAGS
