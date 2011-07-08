@@ -358,7 +358,7 @@ class OpalMediaOptionValue : public OpalMediaOption
     OpalMediaOptionValue(
       const char * name,
       bool readOnly,
-      MergeType merge = MinMerge,
+      OpalMediaOption::MergeType merge = OpalMediaOption::MinMerge,
       T value = T()
     )
       : OpalMediaOption(name, readOnly, merge)
@@ -432,12 +432,12 @@ template <typename T>
 class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
 {
     typedef OpalMediaOptionValue<T> BaseClass;
-    PCLASSINFO(OpalMediaOptionNumericalValue, BaseClass);
+    PCLASSINFO(OpalMediaOptionNumericalValue, OpalMediaOptionValue<T>);
   public:
     OpalMediaOptionNumericalValue(
       const char * name,
       bool readOnly,
-      MergeType merge = MinMerge,
+      OpalMediaOption::MergeType merge = OpalMediaOption::MinMerge,
       T value = 0,
       T minimum = std::numeric_limits<T>::min(),
       T maximum = std::numeric_limits<T>::max()
