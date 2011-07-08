@@ -333,10 +333,10 @@ class H323Capability : public PObject
     );
 
     /// Get the payload type for the capaibility
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { return GetMediaFormat().GetPayloadType(); }
 
     /// Set the payload type for the capaibility
-    void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { rtpPayloadType = pt; }
+    void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { GetWritableMediaFormat().SetPayloadType(pt); }
 
     /// Attach a QoS specification to this channel
     virtual void AttachQoS(RTP_QOS *) { }
@@ -352,7 +352,6 @@ class H323Capability : public PObject
 
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
-    RTP_DataFrame::PayloadTypes rtpPayloadType;
 
   private:
     mutable OpalMediaFormat m_mediaFormat;

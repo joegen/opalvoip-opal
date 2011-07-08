@@ -202,6 +202,10 @@ PString SDPMediaFormat::GetFMTP() const
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
     const PString & name = option.GetFMTPName();
+    // If the FMTP name for option is "FMTP" then it is the WHOLE thing
+    // any other options with FMTP names are ignored.
+    if (name == "FMTP")
+      return option.AsString();
     if (!name.IsEmpty() && !used.Contains(name)) {
       used.Include(name);
       PString value = option.AsString();
@@ -269,6 +273,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
     if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
       option.FromString(option.GetFMTPDefault());
   }
+
   // Set the frame size options from media's ptime & maxptime attributes
   if (m_parent.GetPTime() >= SDP_MIN_PTIME && mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
     unsigned frames = (m_parent.GetPTime() * mediaFormat.GetTimeUnits()) / mediaFormat.GetFrameTime();
@@ -276,6 +281,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
       frames = 1;
     mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), frames);
   }
+
   if (m_parent.GetMaxPTime() >= SDP_MIN_PTIME && mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
     unsigned frames = (m_parent.GetMaxPTime() * mediaFormat.GetTimeUnits()) / mediaFormat.GetFrameTime();
     if (frames < 1)
@@ -286,6 +292,15 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   // If format has an explicit FMTP option then we only use that, no high level parsing
   if (mediaFormat.SetOptionString("FMTP", m_fmtp))
     return;
+
+  // Look for a specific option with "FMTP" as it's name, it is the whole thing then
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    if (option.GetFMTPName() == "FMTP") {
+      mediaFormat.SetOptionValue(option.GetName(), m_fmtp);
+      return;
+    }
+  }
 
   // Save the RTCP feedback (RFC4585) capability.
   if (!m_rtcp_fb.IsEmpty())
