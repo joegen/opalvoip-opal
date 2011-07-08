@@ -1480,7 +1480,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
   }
 
   if (currentMedia != NULL) {
-    PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
+    PTRACE(3, "SDP\tParsed final media session with " << currentMedia->GetSDPMediaFormats().GetSize()
                                                 << " '" << currentMedia->GetSDPMediaType() << "' formats");
     if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
