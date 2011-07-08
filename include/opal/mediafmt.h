@@ -460,7 +460,7 @@ class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
       if (strm.fail())
         return;
       if (temp >= m_minimum && temp <= m_maximum)
-        m_value = temp;
+        this->m_value = temp;
       else
         strm.setstate(ios::badbit);
     }
@@ -468,21 +468,21 @@ class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
     void SetValue(T value)
     {
       if (value < m_minimum)
-        m_value = m_minimum;
+        this->m_value = m_minimum;
       else if (value > m_maximum)
-        m_value = m_maximum;
+        this->m_value = m_maximum;
       else
-        m_value = value;
+        this->m_value = value;
     }
 
     void SetMinimum(T m)
     {
-      m_minimum = m;
+      this->m_minimum = m;
     }
 
     void SetMaximum(T m)
     {
-      m_maximum = m;
+      this->m_maximum = m;
     }
 
   protected:
