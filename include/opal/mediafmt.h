@@ -359,15 +359,13 @@ class OpalMediaOptionValue : public OpalMediaOption
     OpalMediaOptionValue(
       const char * name,
       bool readOnly,
-      MergeType merge = MinMerge,
-      T value = 0,
-      T minimum = std::numeric_limits<T>::min(),
-      T maximum = std::numeric_limits<T>::max()
-    ) : OpalMediaOption(name, readOnly, merge),
-        m_value(value),
-        m_minimum(minimum),
-        m_maximum(maximum)
-    { }
+      OpalMediaOption::MergeType merge = OpalMediaOption::MinMerge,
+      T value = T()
+    )
+      : OpalMediaOption(name, readOnly, merge)
+      , m_value(value)
+    {
+    }
 
     virtual PObject * Clone() const
     {
@@ -381,27 +379,19 @@ class OpalMediaOptionValue : public OpalMediaOption
 
     virtual void ReadFrom(istream & strm)
     {
-      T temp = 0;
-      strm >> temp;
-      if (temp >= m_minimum && temp <= m_maximum)
-        m_value = temp;
-      else
-        strm.setstate(ios::badbit);
+      strm >> m_value;
     }
-
-    static __inline bool     Intersect(bool     a, bool     b) { return a && b; }
-    static __inline int      Intersect(int      a, int      b) { return a & b; }
-    static __inline unsigned Intersect(unsigned a, unsigned b) { return a & b; }
-    static __inline double   Intersect(double   a, double   b) { return std::min(a, b); }
 
     virtual bool Merge(const OpalMediaOption & option)
     {
       if (m_merge != IntersectionMerge)
         return OpalMediaOption::Merge(option);
+
       const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
       if (otherOption == NULL)
         return false;
-      SetValue(Intersect(GetValue(), otherOption->GetValue()));
+
+      m_value &= otherOption->m_value;
       return true;
     }
 
@@ -417,9 +407,8 @@ class OpalMediaOptionValue : public OpalMediaOption
       return EqualTo;
     }
 
-    virtual void Assign(
-      const OpalMediaOption & option
-    ) {
+    virtual void Assign(const OpalMediaOption & option)
+    {
       const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
       if (otherOption != NULL)
         m_value = otherOption->m_value;
@@ -428,6 +417,53 @@ class OpalMediaOptionValue : public OpalMediaOption
     T GetValue() const
     {
       return m_value;
+    }
+
+    void SetValue(T value)
+    {
+      m_value = value;
+    }
+
+  protected:
+    T m_value;
+};
+
+
+template <typename T>
+class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
+{
+    typedef OpalMediaOptionValue<T> BaseClass;
+    PCLASSINFO(OpalMediaOptionNumericalValue, OpalMediaOptionValue<T>);
+  public:
+    OpalMediaOptionNumericalValue(
+      const char * name,
+      bool readOnly,
+      OpalMediaOption::MergeType merge = OpalMediaOption::MinMerge,
+      T value = 0,
+      T minimum = std::numeric_limits<T>::min(),
+      T maximum = std::numeric_limits<T>::max()
+    )
+      : BaseClass(name, readOnly, merge, value)
+      , m_minimum(minimum)
+      , m_maximum(maximum)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new OpalMediaOptionNumericalValue(*this);
+    }
+
+    virtual void ReadFrom(istream & strm)
+    {
+      T temp = 0;
+      strm >> temp;
+      if (strm.fail())
+        return;
+      if (temp >= m_minimum && temp <= m_maximum)
+        m_value = temp;
+      else
+        strm.setstate(ios::badbit);
     }
 
     void SetValue(T value)
@@ -457,10 +493,23 @@ class OpalMediaOptionValue : public OpalMediaOption
 };
 
 
-typedef OpalMediaOptionValue<bool>     OpalMediaOptionBoolean;
-typedef OpalMediaOptionValue<int>      OpalMediaOptionInteger;
-typedef OpalMediaOptionValue<unsigned> OpalMediaOptionUnsigned;
-typedef OpalMediaOptionValue<double>   OpalMediaOptionReal;
+typedef OpalMediaOptionNumericalValue<bool>     OpalMediaOptionBoolean;
+typedef OpalMediaOptionNumericalValue<int>      OpalMediaOptionInteger;
+typedef OpalMediaOptionNumericalValue<unsigned> OpalMediaOptionUnsigned;
+
+// Wrapper class so we can implement intersection (&= operator) for floating point
+class OpalMediaOptionRealValue
+{
+    double m_value;
+  public:
+    OpalMediaOptionRealValue(double value = 0) : m_value(value) { }
+    operator double() const { return m_value; }
+    void operator&=(double other) { if (m_value > other) m_value = other; }
+    friend ostream & operator<<(ostream & strm, const OpalMediaOptionRealValue & value) { return strm << value.m_value; }
+    friend istream & operator>>(istream & strm,       OpalMediaOptionRealValue & value) { return strm >> value.m_value; }
+};
+
+typedef OpalMediaOptionNumericalValue<OpalMediaOptionRealValue> OpalMediaOptionReal;
 
 
 class OpalMediaOptionEnum : public OpalMediaOption
@@ -1092,13 +1141,19 @@ class OpalMediaFormat : public PContainer
       */
     bool HasOption(const PString & name) const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->FindOption(name) != NULL; }
 
-    /**
-      * Get a pointer to the specified media format option.
-      * Returns NULL if thee option does not exist.
+    /** Get a pointer to the specified media format option.
+        Returns NULL if thee option does not exist.
       */
     OpalMediaOption * FindOption(
       const PString & name
     ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? NULL : m_info->FindOption(name); }
+
+    /** Get a pointer to the specified media format option.
+        Returns NULL if thee option does not exist.
+      */
+    template <class T> T * FindOptionAs(
+      const PString & name
+    ) const { return dynamic_cast<T *>(FindOption(name)); }
 
     /** Returns true if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for

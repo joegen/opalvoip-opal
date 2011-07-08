@@ -44,65 +44,154 @@ static PINDEX NSECodeBase = 192;
 #define new PNEW
 
 
-static PString GetCapability(const std::vector<bool> & capabilitySet)
-{
-  PStringStream str;
+///////////////////////////////////////////////////////////////////////////////
 
-  PINDEX last = capabilitySet.size()-1;
+const PCaselessString & OpalRFC288EventsName() { static PConstCaselessString s("Events"); return s; }
+
+OpalRFC2833EventsMask::OpalRFC2833EventsMask(bool defaultValue)
+  : std::vector<bool>(NumEvents, defaultValue)
+{
+}
+
+
+OpalRFC2833EventsMask::OpalRFC2833EventsMask(const char * defaultValues)
+  : std::vector<bool>(NumEvents)
+{
+  PStringStream strm(defaultValues);
+  strm >> *this;
+}
+
+
+OpalRFC2833EventsMask & OpalRFC2833EventsMask::operator&=(const OpalRFC2833EventsMask & other)
+{
+  iterator lhs;
+  const_iterator rhs;
+  for (lhs = begin(), rhs = other.begin(); lhs != end() && rhs != end(); ++lhs,++rhs)
+    *lhs = *lhs && *rhs;
+  return *this;
+}
+
+
+ostream & operator<<(ostream & strm, const OpalRFC2833EventsMask & mask)
+{
+  PINDEX last = mask.size()-1;
   PINDEX i = 0;
+  bool needComma = false;
   while (i < last) {
-    if (!capabilitySet[i])
+    if (!mask[i])
       i++;
     else {
       PINDEX start = i++;
-      while (capabilitySet[i])
+      while (mask[i])
         i++;
-      if (!str.IsEmpty())
-        str += ",";
-      str.sprintf("%u", start);
+      if (needComma)
+        strm << ',';
+      else
+        needComma = true;
+      strm << start;
       if (i > start+1)
-        str.sprintf("-%u", i-1);
+        strm << '-' << (i-1);
     }
   }
 
-  return str;
+  return  strm;
 }
 
 
-static void SetCapability(const PString & codes, std::vector<bool> & xxCapabilitySet, bool merge)
+istream & operator>>(istream & strm, OpalRFC2833EventsMask & mask)
 {
-  std::vector<bool> capabilitySet;
-  capabilitySet.resize(xxCapabilitySet.size());
- 
-  if (codes.IsEmpty()) {
-    // RFC specified default: 0-15
-    for (size_t i = 0; i < 15; ++i)
-      capabilitySet[i] = true;
-  }
-  else if (codes != "-") {       // Allow for an empty set
-    PStringArray tokens = codes.Tokenise(',');
-    for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-      PString token = tokens[i];
-      unsigned code = token.AsUnsigned();
-      if (code < capabilitySet.size()) {
-        PINDEX dash = token.Find('-');
-        unsigned end = dash == P_MAX_INDEX ? code : token.Mid(dash+1).AsUnsigned();
-        if (end >= capabilitySet.size())
-          end = capabilitySet.size()-1;
-        while (code <= end)
-          capabilitySet[code++] = true;
-      }
-    }
-  }
+  mask.assign(OpalRFC2833EventsMask::NumEvents, false);
 
-  if (merge) {
-    for (size_t i = 0; i < capabilitySet.size(); ++i)
-      xxCapabilitySet[i] = xxCapabilitySet[i] && capabilitySet[i];
+  for (;;) {
+    unsigned eventCode;
+    strm >> eventCode;
+    if (strm.fail())
+      return strm;
+
+    strm >> ws;
+    switch (strm.peek()) {
+      default :
+        mask[eventCode] = true;
+        return strm;
+
+      case ',' :
+        mask[eventCode] = true;
+        break;
+
+      case '-' :
+        strm.ignore(1);
+
+        unsigned endCode;
+        strm >> endCode;
+        if (strm.fail())
+          return strm;
+
+        while (eventCode <= endCode)
+          mask[eventCode++] = true;
+
+        strm >> ws;
+        if (strm.peek() != ',')
+          return strm;
+    }
+
+    strm.ignore(1);
   }
-  else
-    xxCapabilitySet = capabilitySet;
 }
 
+
+static void AddEventsOption(OpalMediaFormat & mediaFormat,
+                            const char * defaultValues,
+                            const char * fmtpDefaults)
+{
+  OpalRFC288EventsOption * option = new OpalRFC288EventsOption(OpalRFC288EventsName(),
+                                                               false,
+                                                               OpalMediaOption::AndMerge,
+                                                               OpalRFC2833EventsMask(defaultValues));
+  option->SetFMTPName("FMTP");
+  option->SetFMTPDefault(fmtpDefaults);
+  mediaFormat.AddOption(option);
+}
+
+
+const OpalMediaFormat & GetOpalRFC2833()
+{
+  static struct OpalRFC2833MediaFormat : public OpalMediaFormat {
+    OpalRFC2833MediaFormat()
+      : OpalMediaFormat(OPAL_RFC2833,
+                        "userinput",
+                        (RTP_DataFrame::PayloadTypes)102,  // Set to this for Cisco compatibility
+                        "telephone-event",
+                        true,   // Needs jitter
+                        32*(1000/50), // bits/sec  (32 bits every 50ms)
+                        4,      // bytes/frame
+                        10*8,   // 10 millisecond
+                        OpalMediaFormat::AudioClockRate)
+    {
+      AddEventsOption(*this, "0-16,32,36", "0-15");  // Support DTMF 0-9,*,#,A-D & hookflash, CNG, CED
+    }
+  } const RFC2833;
+  return RFC2833;
+}
+
+const OpalMediaFormat & GetOpalCiscoNSE()
+{
+  static struct OpalCiscoNSEMediaFormat : public OpalMediaFormat {
+    OpalCiscoNSEMediaFormat()
+      : OpalMediaFormat(OPAL_CISCONSE,
+                        "userinput",
+                        (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
+                        "NSE",
+                        true,   // Needs jitter
+                        32*(1000/50), // bits/sec  (32 bits every 50ms)
+                        4,      // bytes/frame
+                        10*8,   // 10 millisecond
+                        OpalMediaFormat::AudioClockRate)
+    {
+      AddEventsOption(*this, "192,193", "192,193");
+    }
+  } const CiscoNSE;
+  return CiscoNSE;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -118,7 +207,9 @@ OpalRFC2833Info::OpalRFC2833Info(char t, unsigned d, unsigned ts)
 
 OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & rx, const OpalMediaFormat & fmt)
   : m_connection(conn)
-  , m_payloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_baseMediaFormat(fmt)
+  , m_txPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_rxPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_receiveNotifier(rx)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -143,9 +234,9 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
   m_asyncTransmitTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
   m_asyncDurationTimer.SetNotifier(PCREATE_NOTIFIER(AsyncTimeout));
 
-  m_rxCapabilitySet.resize(256);
-  SetRxCapability(fmt.GetOptionString("FMTP", "0-15"));
-  m_txCapabilitySet = m_rxCapabilitySet;
+  m_rxEvents.assign(16, true);
+  m_rxEvents.resize(256);
+  m_txEvents = m_rxEvents;
 }
 
 OpalRFC2833Proto::~OpalRFC2833Proto()
@@ -160,19 +251,19 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   if (m_rtpSession == NULL) {
     OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
     if (stream == NULL || (m_rtpSession = dynamic_cast<OpalRTPSession *>(m_connection.GetMediaSession(stream->GetSessionID()))) == NULL) {
-      PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833");
+      PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833 for " << m_baseMediaFormat);
       return false;
     }
   }
 
   // convert tone to correct code
-  PINDEX code = ASCIIToRFC2833(tone, m_txCapabilitySet[NSECodeBase]);
-  if (code == P_MAX_INDEX || !m_txCapabilitySet[code])
+  PINDEX code = ASCIIToRFC2833(tone, m_txEvents[NSECodeBase]);
+  if (code == P_MAX_INDEX || !m_txEvents[code])
     return false; // Silently ignore illegal tone values for this instance
 
   // if transmittter is ever in this state, then stop the duration timer
-  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(2, "RFC2833\tNo payload type, cannot send packet.");
+  if (m_txPayloadType == RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(2, "RFC2833\tNo payload type, cannot send packet for " << m_baseMediaFormat);
     return false;
   }
 
@@ -210,13 +301,13 @@ void OpalRFC2833Proto::SendAsyncFrame()
   PWaitAndSignal mutex(m_mutex);
 
   if (m_rtpSession == NULL) {
-    PTRACE(2, "RFC2833\tCannot send as not RTP session attached");
+    PTRACE(2, "RFC2833\tCannot send as no RTP session attached to " << m_baseMediaFormat);
     m_transmitState = TransmitIdle;
   }
 
   // if transmittter is ever in this state, then stop the duration timer
-  if (m_payloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(2, "RFC2833\tNo payload type for sent packet.");
+  if (m_txPayloadType == RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(2, "RFC2833\tNo payload type to send packet for " << m_baseMediaFormat);
     m_transmitState = TransmitIdle;
   }
 
@@ -226,7 +317,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
   }
 
   RTP_DataFrame frame(4);
-  frame.SetPayloadType(m_payloadType);
+  frame.SetPayloadType(m_txPayloadType);
 
   BYTE * payload = frame.GetPayloadPtr();
   payload[0] = m_transmitCode; // tone
@@ -270,7 +361,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
       break;
 
     default:
-      PAssertAlways("RFC2833\tunknown transmit state");
+      PAssertAlways("RFC2833\tUnknown transmit state.");
       return;
   }
 
@@ -282,7 +373,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     frame.SetTimestamp(m_transmitTimestamp);
 
   if (!m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp)) {
-    PTRACE(3, "RFC2833\tTransmission stopped by RTP session");
+    PTRACE(3, "RFC2833\tRTP session transmission stopped for " << m_baseMediaFormat);
     // Abort further transmission
     m_transmitState = TransmitIdle;
     m_asyncDurationTimer.Stop(false);
@@ -299,33 +390,65 @@ void OpalRFC2833Proto::SendAsyncFrame()
          "dur=" << m_transmitDuration << ", "
          "ts=" << frame.GetTimestamp() << ", "
          "mkr=" << frame.GetMarker() << ", "
-         "pt=" << m_payloadType);
+         "pt=" << m_txPayloadType <<
+         " for " << m_baseMediaFormat);
 }
 
 
-PString OpalRFC2833Proto::GetTxCapability() const
+OpalMediaFormat OpalRFC2833Proto::GetTxMediaFormat() const
 {
-  return GetCapability(m_txCapabilitySet);
+  OpalMediaFormat format = m_baseMediaFormat;
+  format.SetPayloadType(m_txPayloadType);
+  OpalRFC288EventsOption * opt = format.FindOptionAs<OpalRFC288EventsOption>(OpalRFC288EventsName());
+  if (PAssertNULL(opt) != NULL)
+    opt->SetValue(m_txEvents);
+  return format;
 }
 
 
-PString OpalRFC2833Proto::GetRxCapability() const
+OpalMediaFormat OpalRFC2833Proto::GetRxMediaFormat() const
 {
-  return GetCapability(m_rxCapabilitySet);
+  OpalMediaFormat format = m_baseMediaFormat;
+  format.SetPayloadType(m_rxPayloadType);
+  OpalRFC288EventsOption * opt = format.FindOptionAs<OpalRFC288EventsOption>(OpalRFC288EventsName());
+  if (PAssertNULL(opt) != NULL)
+    opt->SetValue(m_rxEvents);
+  return format;
 }
 
 
-void OpalRFC2833Proto::SetTxCapability(const PString & codes, bool merge)
+static void SetXxMediaFormat(const OpalMediaFormat & mediaFormat,
+                             RTP_DataFrame::PayloadTypes & payloadType,
+                             OpalRFC2833EventsMask & events)
 {
-  PTRACE(4, "RFC2833\tTx capability " << (merge ? "merged with" : "set to") << " \"" << codes << '"');
-  SetCapability(codes, m_txCapabilitySet, merge);
+  if (mediaFormat.IsValid()) {
+    payloadType = mediaFormat.GetPayloadType();
+    OpalRFC288EventsOption * opt = mediaFormat.FindOptionAs<OpalRFC288EventsOption>(OpalRFC288EventsName());
+    if (PAssertNULL(opt) != NULL)
+      events = opt->GetValue();
+  }
+  else {
+    payloadType = RTP_DataFrame::IllegalPayloadType;
+    events = OpalRFC2833EventsMask();
+  }
 }
 
 
-void OpalRFC2833Proto::SetRxCapability(const PString & codes)
+void OpalRFC2833Proto::SetTxMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PTRACE(4, "RFC2833\tRx capability set to \"" << codes << '"');
-  SetCapability(codes, m_rxCapabilitySet, false);
+  SetXxMediaFormat(mediaFormat, m_txPayloadType, m_txEvents);
+  PTRACE(4, "RFC2833\tSet tx pt=" << m_txPayloadType << ","
+            " events=\"" << m_txEvents << "\""
+            " for " << m_baseMediaFormat);
+}
+
+
+void OpalRFC2833Proto::SetRxMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  SetXxMediaFormat(mediaFormat, m_rxPayloadType, m_rxEvents);
+  PTRACE(4, "RFC2833\tSet rx pt=" << m_rxPayloadType << ","
+            " events=\"" << m_rxEvents << "\""
+            " for " << m_baseMediaFormat);
 }
 
 
@@ -391,7 +514,7 @@ void OpalRFC2833Proto::OnEndReceive(char tone, unsigned duration, unsigned times
 
 void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::SendReceiveStatus & status)
 {
-  if (frame.GetPayloadType() != m_payloadType || frame.GetPayloadSize() == 0)
+  if (frame.GetPayloadType() != m_rxPayloadType || frame.GetPayloadSize() == 0)
     return;
 
   status = OpalRTPSession::e_IgnorePacket;
@@ -399,15 +522,15 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
   PWaitAndSignal mutex(m_mutex);
 
   if (frame.GetPayloadSize() < 4) {
-    PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
+    PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small for " << m_baseMediaFormat);
     return;
   }
 
   const BYTE * payload = frame.GetPayloadPtr();
 
-  char tone = RFC2833ToASCII(payload[0], m_rxCapabilitySet[NSECodeBase]);
+  char tone = RFC2833ToASCII(payload[0], m_rxEvents[NSECodeBase]);
   if (tone == '\0') {
-    PTRACE(2, "RFC2833\tIgnoring packet with code " << payload[0] << " - unsupported event.");
+    PTRACE(2, "RFC2833\tIgnoring packet with code " << payload[0] << " - unsupported event for " << m_baseMediaFormat);
     return;
   }
   unsigned duration  = ((payload[2] <<8) + payload[3]) / 8;
@@ -416,12 +539,13 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 
   // RFC 2833 says to ignore below -55db
   if (volume > 55) {
-    PTRACE(2, "RFC2833\tIgnoring packet " << (unsigned)payload[0] << " with volume -" << volume << "db");
+    PTRACE(2, "RFC2833\tIgnoring packet " << (unsigned)payload[0] << " with volume -" << volume << "db for " << m_baseMediaFormat);
     return;
   }
 
   PTRACE(4, "RFC2833\tReceived " << ((payload[1] & 0x80) ? "end" : "tone") << ": code='" << (unsigned)payload[0]
-         << "', dur=" << duration << ", vol=" << volume << ", ts=" << timeStamp << ", mkr=" << frame.GetMarker());
+         << "', dur=" << duration << ", vol=" << volume << ", ts=" << timeStamp << ", mkr=" << frame.GetMarker()
+         << " for " << m_baseMediaFormat);
 
   // the only safe way to detect a new tone is the timestamp
   // because the packet with the marker bit could go missing and 
@@ -460,7 +584,8 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 
 void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
-  PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)m_receivedTone);
+  PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)m_receivedTone
+         << " for " << m_baseMediaFormat);
 
   PWaitAndSignal mutex(m_mutex);
 

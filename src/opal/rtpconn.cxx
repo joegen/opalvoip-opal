@@ -371,7 +371,7 @@ PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
   else
     info.data = info.control = address;
 
-  info.rfc2833 = rfc2833Handler->GetPayloadType();
+  info.rfc2833 = rfc2833Handler->GetRxMediaFormat().GetPayloadType();
   PTRACE(3, "RTPCon\tGetMediaInformation for session " << sessionID
          << " data=" << info.data << " rfc2833=" << info.rfc2833);
   return PTrue;

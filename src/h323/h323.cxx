@@ -3527,25 +3527,8 @@ PBoolean H323Connection::OnControlProtocolError(ControlProtocolErrors /*errorSou
   return PTrue;
 }
 
-static void SetRFC2833PayloadType(H323Capabilities & capabilities,
-                                  OpalRFC2833Proto & rfc2833handler)
-{
-  H323Capability * capability = capabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
-  if (capability != NULL) {
-    RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
-    if (rfc2833handler.GetPayloadType() != pt) {
-      PTRACE(3, "H323\tUser Input RFC2833 payload type set to " << pt);
-      rfc2833handler.SetPayloadType(pt);
-    }
-  }
-}
-
-
 void H323Connection::OnSendCapabilitySet(H245_TerminalCapabilitySet & /*pdu*/)
 {
-  // If we originated call, then check for RFC2833 capability and set payload type
-  if (!HadAnsweredCall())
-    SetRFC2833PayloadType(localCapabilities, *rfc2833Handler);
 }
 
 
@@ -3602,9 +3585,9 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (localCapabilities.GetSize() > 0)
         capabilityExchangeProcedure->Start(PFalse);
 
-      // If we terminated call, then check for RFC2833 capability and set payload type
-      if (HadAnsweredCall())
-        SetRFC2833PayloadType(remoteCapabilities, *rfc2833Handler);
+      // Adjust the RF2388 transitter to remotes capabilities.
+      H323Capability * capability = remoteCapabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
+      rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
     }
   }
 
@@ -3712,6 +3695,9 @@ void H323Connection::OnSetLocalCapabilities()
     if (otherParty != NULL && otherParty->GetMediaInformation(H323Capability::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
   }
+
+  // Adjust the RF2388 transitter to local capabilities.
+  rfc2833Handler->SetRxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
