@@ -486,7 +486,6 @@ class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
     }
 
   protected:
-    T m_value;
     T m_minimum;
     T m_maximum;
 };
