@@ -432,7 +432,7 @@ template <typename T>
 class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
 {
     typedef OpalMediaOptionValue<T> BaseClass;
-    PCLASSINFO(OpalMediaOptionNumericalValue, OpalMediaOptionValue<T>);
+    PCLASSINFO(OpalMediaOptionNumericalValue, BaseClass);
   public:
     OpalMediaOptionNumericalValue(
       const char * name,
