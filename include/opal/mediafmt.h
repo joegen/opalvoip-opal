@@ -433,7 +433,7 @@ template <typename T>
 class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
 {
     typedef OpalMediaOptionValue<T> BaseClass;
-    PCLASSINFO(OpalMediaOptionNumericalValue, OpalMediaOptionValue<T>);
+    PCLASSINFO(OpalMediaOptionNumericalValue, BaseClass);
   public:
     OpalMediaOptionNumericalValue(
       const char * name,
@@ -487,7 +487,6 @@ class OpalMediaOptionNumericalValue : public OpalMediaOptionValue<T>
     }
 
   protected:
-    T m_value;
     T m_minimum;
     T m_maximum;
 };

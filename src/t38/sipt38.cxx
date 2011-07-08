@@ -151,7 +151,29 @@ void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/,
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
+
+bool SDPFaxMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
+{
+  if (!SDPMediaDescription::PostDecode(mediaFormats))
+    return false;
+
+  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+    OpalMediaFormat & mediaFormat = format->GetWritableMediaFormat();
+    if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
+      for (PINDEX i = 0; i < t38Attributes.GetSize(); ++i) {
+        PString key = t38Attributes.GetKeyAt(i);
+        PString data = t38Attributes.GetDataAt(i);
+        if (!mediaFormat.SetOptionValue(key, data)) {
+          PTRACE(2, "T38\tCould not set option \"" << key << "\" to \"" << data << '"');
+        }
+      }
+      PTRACE(5, "T38\tMedia format set from SDP:\n" << setw(-1) << mediaFormat);
+    }
+  }
+
+  return true;
+}
+
 
 #endif // OPAL_T38_CAPABILITY
 #endif // OPAL_SIP
