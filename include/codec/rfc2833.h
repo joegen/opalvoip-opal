@@ -36,10 +36,28 @@
 
 #include <opal/buildopts.h>
 
+#include <opal/mediafmt.h>
 #include <rtp/rtp.h>
 
 
-class OpalMediaFormat;
+class OpalRTPConnection;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalRFC2833EventsMask : public std::vector<bool>
+{
+  public:
+    enum { NumEvents = 256 };
+    OpalRFC2833EventsMask(bool defaultValue = false);
+    OpalRFC2833EventsMask(const char * defaultValues);
+    OpalRFC2833EventsMask & operator&=(const OpalRFC2833EventsMask & other);
+    friend ostream & operator<<(ostream & strm, const OpalRFC2833EventsMask & mask);
+    friend istream & operator>>(istream & strm,       OpalRFC2833EventsMask & mask);
+};
+
+typedef OpalMediaOptionValue<OpalRFC2833EventsMask> OpalRFC288EventsOption;
+const PCaselessString & OpalRFC288EventsName();
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +106,8 @@ class OpalRFC2833Info : public PObject
     unsigned timestamp;
 };
 
-class OpalRTPConnection;
+
+///////////////////////////////////////////////////////////////////////////////
 
 class OpalRFC2833Proto : public PObject
 {
@@ -119,18 +138,12 @@ class OpalRFC2833Proto : public PObject
       unsigned timestamp
     );
 
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return m_payloadType; }
-
-    void SetPayloadType(
-      RTP_DataFrame::PayloadTypes type ///<  new payload type
-    ) { m_payloadType = type; }
-
     const OpalRTPSession::FilterNotifier & GetReceiveHandler() const { return m_receiveHandler; }
 
-    PString GetTxCapability() const;
-    PString GetRxCapability() const;
-    void SetTxCapability(const PString & codes, bool merge);
-    void SetRxCapability(const PString & codes);
+    OpalMediaFormat GetTxMediaFormat() const;
+    OpalMediaFormat GetRxMediaFormat() const;
+    void SetTxMediaFormat(const OpalMediaFormat & mediaFormat);
+    void SetRxMediaFormat(const OpalMediaFormat & mediaFormat);
 
     static PINDEX ASCIIToRFC2833(char tone, bool hasNSE);
     static char RFC2833ToASCII(PINDEX rfc2833, bool hasNSE);
@@ -143,9 +156,11 @@ class OpalRFC2833Proto : public PObject
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
     OpalRTPConnection         & m_connection;
-    RTP_DataFrame::PayloadTypes m_payloadType;
-    std::vector<bool>           m_txCapabilitySet;
-    std::vector<bool>           m_rxCapabilitySet;
+    OpalMediaFormat             m_baseMediaFormat;
+    RTP_DataFrame::PayloadTypes m_txPayloadType;
+    RTP_DataFrame::PayloadTypes m_rxPayloadType;
+    OpalRFC2833EventsMask       m_txEvents;
+    OpalRFC2833EventsMask       m_rxEvents;
     PNotifier                   m_receiveNotifier;
     OpalRTPSession::FilterNotifier m_receiveHandler;
 
