@@ -48,6 +48,7 @@
 #include <h323/transaddr.h>
 #include <t38/h323t38.h>
 #include <codec/opalplugin.h>
+#include <codec/rfc2833.h>
 
 
 #define DEFINE_G711_CAPABILITY(cls, code, capName) \
@@ -94,7 +95,6 @@ H323Capability::H323Capability()
 {
   assignedCapabilityNumber = 0; // Unassigned
   capabilityDirection = e_Unknown;
-  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
 }
 
 
@@ -1804,7 +1804,6 @@ H323_REGISTER_CAPABILITY(H323_UserInputCapability_SignalToneRFC2833, UIISubTypeN
 H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
 {
   subType = _subType;
-  rtpPayloadType = OpalRFC2833.GetPayloadType();
 }
 
 
@@ -1858,15 +1857,19 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
   if (subType == SignalToneRFC2833) {
     pdu.SetTag(H245_Capability::e_receiveRTPAudioTelephonyEventCapability);
     H245_AudioTelephonyEventCapability & atec = pdu;
-    atec.m_dynamicRTPPayloadType = rtpPayloadType;
-    atec.m_audioTelephoneEvent = "0-16"; // Support DTMF 0-9,*,#,A-D & hookflash
+    OpalMediaFormat mediaFormat = GetMediaFormat();
+    atec.m_dynamicRTPPayloadType = mediaFormat.GetPayloadType();
+    PString events;
+    if (!mediaFormat.GetOptionValue(OpalRFC288EventsName(), events))
+      return false;
+    atec.m_audioTelephoneEvent = events;
   }
   else {
     pdu.SetTag(H245_Capability::e_receiveUserInputCapability);
     H245_UserInputCapability & ui = pdu;
     ui.SetTag(UserInputCapabilitySubTypeCodes[subType]);
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -1889,8 +1892,9 @@ PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
   if (pdu.GetTag() == H245_Capability::e_receiveRTPAudioTelephonyEventCapability) {
     subType = SignalToneRFC2833;
     const H245_AudioTelephonyEventCapability & atec = pdu;
-    rtpPayloadType = (RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType;
-    // Really should verify atec.m_audioTelephoneEvent here
+    OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
+    mediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)(int)atec.m_dynamicRTPPayloadType);
+    mediaFormat.SetOptionValue(OpalRFC288EventsName(), atec.m_audioTelephoneEvent);
     return H323Capability::OnReceivedPDU(pdu);
   }
 

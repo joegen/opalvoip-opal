@@ -722,39 +722,31 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
                             SDPMediaDescription * localMedia = NULL,
                     RTP_DataFrame::PayloadTypes   nxePayloadCode = RTP_DataFrame::IllegalPayloadType)
 {
-  OpalMediaFormatList::const_iterator fmt = localMediaFormats.FindFormat(baseMediaFormat);
+  OpalMediaFormatList::const_iterator localFmt = localMediaFormats.FindFormat(baseMediaFormat);
   OpalMediaFormatList::const_iterator remFmt = remoteMediaFormats.FindFormat(baseMediaFormat);
 
-  if (fmt == localMediaFormats.end() || remFmt == remoteMediaFormats.end()) {
-    // Not in our local list, disable transmitter
-    handler->SetTxCapability("-", false);
+  if (localFmt == localMediaFormats.end() || remFmt == remoteMediaFormats.end()) {
+    // Not in our local list or remote list, disable transmitter
+    handler->SetTxMediaFormat(OpalMediaFormat());
     return;
   }
 
-  handler->SetTxCapability(remFmt->GetOptionString("FMTP", "0-15"), true);
+  OpalMediaFormat adjustedFormat = *localFmt;
+
+  if (remFmt != remoteMediaFormats.end()) {
+    handler->SetRxMediaFormat(*remFmt);
+    adjustedFormat.Merge(*remFmt);
+  }
 
   if (nxePayloadCode != RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing bypass RTP payload " << nxePayloadCode << " for " << *fmt);
-  }
-  else if ((nxePayloadCode = fmt->GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing default RTP payload " << nxePayloadCode << " for " << *fmt);
-
-  }
-  else if ((nxePayloadCode = handler->GetPayloadType()) != RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(3, "SIP\tUsing handler RTP payload " << nxePayloadCode << " for " << *fmt);
-  }
-  else {
-    PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for " << *fmt);
-    return;
-  }
-
-  handler->SetPayloadType(nxePayloadCode);
-
-  if (localMedia != NULL) {
-    OpalMediaFormat adjustedFormat = *fmt;
+    PTRACE(3, "SIP\tUsing bypass RTP payload " << nxePayloadCode << " for " << *localFmt);
     adjustedFormat.SetPayloadType(nxePayloadCode);
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
   }
+
+  handler->SetTxMediaFormat(adjustedFormat);
+
+  if (localMedia != NULL)
+    localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
 }
 
 
