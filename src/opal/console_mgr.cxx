@@ -92,6 +92,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "t-trace."
          "o-output:"
 #endif
+         "V-version."
          "h-help.";
 }
 
@@ -157,6 +158,7 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "  -t or --trace              : verbosity in error log (more times for more detail)\n"     
          "  -o or --output file        : file name for output of log messages\n"       
 #endif
+         "  -V or --version            : Display application version.\n"
          "  -h or --help               : This help message.\n"
             ;
 }
@@ -164,6 +166,19 @@ PString OpalManagerConsole::GetArgumentUsage() const
 
 bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 {
+  if (args.HasOption('V')) {
+    const PProcess & process = PProcess::Current();
+    cerr << process.GetName()
+         << " version " << process.GetVersion(true) << "\n"
+            "  by   " << process.GetManufacturer() << "\n"
+            "  on   " << process.GetOSClass() << ' ' << process.GetOSName()
+         << " (" << process.GetOSVersion() << '-' << process.GetOSHardware() << ")\n"
+            "  with PTLib v" << PProcess::GetLibVersion() << "\n"
+            "  and  OPAL  v" << OpalGetVersion()
+         << endl;
+    return false;
+  }
+
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
