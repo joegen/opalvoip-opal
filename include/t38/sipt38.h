@@ -61,6 +61,7 @@ class SDPFaxMediaDescription : public SDPMediaDescription
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
   protected:
     PStringToString t38Attributes;
