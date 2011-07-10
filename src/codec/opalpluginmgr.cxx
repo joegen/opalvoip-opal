@@ -1321,11 +1321,11 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       char buf[1000];
       if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
         PConstString msg(buf);
-        int result, errorCorrection;
+        int result, compression, errorCorrection;
         PINDEX position = 0;
         if (ExtractValue(msg, position, result) &&
             ExtractValue(msg, position, statistics.m_fax.m_bitRate) &&
-            ExtractValue(msg, position, statistics.m_fax.m_compression) &&
+            ExtractValue(msg, position, compression) &&
             ExtractValue(msg, position, errorCorrection) &&
             ExtractValue(msg, position, statistics.m_fax.m_txPages) &&
             ExtractValue(msg, position, statistics.m_fax.m_rxPages) &&
@@ -1340,7 +1340,15 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
             ExtractValue(msg, position, statistics.m_fax.m_errorCorrectionRetries))
         {
           statistics.m_fax.m_result = result; // Only set this if everything parsed correctly
+          statistics.m_fax.m_compression = (OpalMediaStatistics::FaxCompression)compression;
           statistics.m_fax.m_errorCorrection = errorCorrection != 0;
+
+          if ((position = msg.Find('=', position)) != P_MAX_INDEX) {
+            statistics.m_fax.m_stationId = msg(++position, msg.Find('\n', position)-1);
+            if ((position = msg.Find('=', position)) != P_MAX_INDEX)
+              statistics.m_fax.m_phase = msg[++position];
+          }
+
           statistics.m_fax.m_errorText = msg(msg.Find('(')+1, msg.Find(')')-1);
         }
       }

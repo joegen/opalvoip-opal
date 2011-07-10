@@ -63,7 +63,9 @@ void FaxOPAL::Main()
                   "-header-info:"
                   "e-switch-on-ced."
                   "F-no-fallback."
+                  "q-quiet."
                   "T-timeout:"
+                  "v-verbose."
                   "X-switch-time:") ||
        args.HasOption('h') ||
        args.GetCount() == 0) {
@@ -80,6 +82,8 @@ void FaxOPAL::Main()
             "  -e or --switch-on-ced      : Switch to T.38 on receipt of CED tone as caller.\n"
             "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
             "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
+            "  -q or --quiet              : Only output error conditions.\n"
+            "  -v or --verbose            : Output more information on call progress.\n"
             "\n"
          << m_manager->GetArgumentUsage()
          << "\n"
@@ -103,7 +107,10 @@ void FaxOPAL::Main()
     return;
   }
 
-  if (!m_manager->Initialise(args, true))
+  static char const * FormatMask[] = { "!G.711*", "!@fax" };
+  m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
+
+  if (!m_manager->Initialise(args, !args.HasOption('q')))
     return;
 
   // Create audio or T.38 fax endpoint.
@@ -116,10 +123,10 @@ void FaxOPAL::Main()
     return;
   }
 
-  static char const * FormatMask[] = { "!G.711*", "!@fax" };
-  m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
-
   PString prefix;
+
+  if (args.HasOption('q'))
+    cout.rdbuf(NULL);
 
   cout << "Fax Mode: ";
   if (args.HasOption('A')) {
@@ -133,7 +140,7 @@ void FaxOPAL::Main()
     prefix = "fax";
   }
   else {
-    cout << "Swich to T.38";
+    cout << "Switch to T.38";
     prefix = "t38";
   }
   cout << '\n';
@@ -176,7 +183,7 @@ void FaxOPAL::Main()
   if (args.GetCount() == 1)
     cout << "Receive directory: " << fax->GetDefaultDirectory() << "\n"
             "\n"
-            "Awaiting incoming fax, saving as " << args[0] << " ... " << flush;
+            "Awaiting incoming fax, saving as " << args[0];
   else {
     PString token;
     if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token, NULL, 0, &stringOptions)) {
@@ -184,18 +191,54 @@ void FaxOPAL::Main()
       return;
     }
     cout << "\n"
-            "Sending " << args[0] << " to " << args[1] << " ... " << flush;
+            "Sending " << args[0] << " to " << args[1];
+  }
+  cout << " ..." << endl;
+
+  map<PString, OpalMediaStatistics> lastStatisticsByToken;
+
+  // Wait for call to come in and finish (default one year)
+  PSimpleTimer timeout(0, args.GetOptionString('T', "31536000").AsUnsigned());
+  while (!m_manager->m_completed.Wait(1000)) {
+    if (timeout.HasExpired()) {
+      cout << " no call";
+      break;
+    }
+
+    if (args.HasOption('v')) {
+      PArray<PString> tokens = m_manager->GetAllCalls();
+      for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
+        PSafePtr<OpalCall> call = m_manager->FindCallWithLock(tokens[i], PSafeReadOnly);
+        if (call != NULL) {
+          PSafePtr<OpalFaxConnection> connection = call->GetConnectionAs<OpalFaxConnection>();
+          if (connection != NULL) {
+            PSafePtr<OpalMediaStream> stream = connection->GetMediaStream(OpalMediaType::Fax(), true);
+            if (stream != NULL) {
+              OpalMediaStatistics & lastStatistics = lastStatisticsByToken[tokens[i]];
+              OpalMediaStatistics statistics;
+              stream->GetStatistics(statistics);
+
+#define SHOW_STAT(message, member) \
+              if (lastStatistics.m_fax.member != statistics.m_fax.member) \
+                cout << message << ": " << statistics.m_fax.member << endl;
+              SHOW_STAT("Phase", m_phase);
+              SHOW_STAT("Station identifier", m_stationId);
+              SHOW_STAT("Tx pages", m_txPages);
+              SHOW_STAT("Rx pages", m_rxPages);
+              SHOW_STAT("Bit rate", m_bitRate);
+              SHOW_STAT("Compression", m_compression);
+              SHOW_STAT("Page width", m_pageWidth);
+              SHOW_STAT("Page height", m_pageHeight);
+
+              lastStatistics = statistics;
+            }
+          }
+        }
+      }
+    }
   }
 
-  // Wait for call to come in and finish
-  if (args.HasOption('T')) {
-    if (!m_manager->m_completed.Wait(args.GetOptionString('T')))
-      cout << "no call";
-  }
-  else
-    m_manager->m_completed.Wait();
-
-  cout << " ... completed." << endl;
+  cout << "\nCompleted." << endl;
 }
 
 
@@ -230,25 +273,25 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
-      cout << "failed to establish T.30";
+      cout << "Failed to establish T.30";
       break;
     case 0 :
-      cout << "success, "
+      cout << "Success, "
            << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
            << " of " << stats.m_fax.m_totalPages << " pages";
       break;
     case 41 :
-      cout << "failed to open TIFF file";
+      cout << "Failed to open TIFF file";
       break;
     case 42 :
     case 43 :
     case 44 :
     case 45 :
     case 46 :
-      cout << "illegal TIFF file";
+      cout << "Illegal TIFF file";
       break;
     default :
-      cout << " T.30 error " << stats.m_fax.m_result;
+      cout << "T.30 error " << stats.m_fax.m_result;
       if (!stats.m_fax.m_errorText.IsEmpty())
         cout << " (" << stats.m_fax.m_errorText << ')';
   }
