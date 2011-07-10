@@ -34,7 +34,7 @@
 
 /** PC Sound System endpoint.
  */
-class OpalPCSSEndPoint : OpalLocalEndPoint /Abstract/
+class OpalPCSSEndPoint : OpalLocalEndPoint
 {
   public:
   /**@name Construction */
