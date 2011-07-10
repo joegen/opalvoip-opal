@@ -31,11 +31,8 @@
 #include <opal/transports.h>
 %End
 
-class OpalTransportAddress 
+class OpalTransportAddress /NoDefaultCtors/
 {
-  private:
-	OpalTranportAddress & operator=(const OpalTransportAddress& );
-
   public:
   /**@name Construction */
   //@{
@@ -212,7 +209,7 @@ class OpalTransportAddress
    An application may create a descendent off this class and override
    functions as required for operating the channel protocol.
  */
-class OpalListener : PObject /Abstract,NoDefaultCtors/
+class OpalListener : PObject /NoDefaultCtors/
 {
   public:
   /**@name Construction */
@@ -295,7 +292,7 @@ class OpalListener : PObject /Abstract,NoDefaultCtors/
 };
 
 
-class OpalListenerIP : OpalListener /Abstract,NoDefaultCtors/
+class OpalListenerIP : OpalListener /NoDefaultCtors/
 {
   public:
   /**@name Construction */
@@ -462,7 +459,7 @@ class OpalListenerUDP : OpalListenerIP /NoDefaultCtors/
    A "transport" is an object that allows the transfer and processing of data
    from one entity to another.
  */
-class OpalTransport : PIndirectChannel /Abstract/
+class OpalTransport : PIndirectChannel
 {
 %ConvertToSubClassCode
 	const char * prefix = sipCpp->GetProtoPrefix();
@@ -612,6 +609,28 @@ class OpalTransport : PIndirectChannel /Abstract/
       */
     virtual PString GetLastReceivedInterface() const;
 
+	/**Read a protocol data unit from the transport.
+       This will read using the transports mechanism for PDU boundaries, for
+       example UDP is a single Read() call, while for TCP there is a TPKT
+       header that indicates the size of the PDU.
+
+       If false is returned but there is data returned in the \p packet
+       that indicates that the available buffer space was too small, e.g. an
+       EMSGSIZE error was returned by recvfrom.
+      */
+    virtual PBoolean ReadPDU(
+      PBYTEArray & packet   ///<  Packet read from transport
+    ) = 0;
+
+    /**Write a packet to the transport.
+       This will write using the transports mechanism for PDU boundaries, for
+       example UDP is a single Write() call, while for TCP there is a TPKT
+       header that indicates the size of the PDU.
+      */
+    virtual PBoolean WritePDU(
+      const PBYTEArray & pdu     ///<  Packet to write
+    ) = 0;
+	
     /**Determine of the transport is running with a background thread.
       */
     virtual PBoolean IsRunning() const;
@@ -627,7 +646,7 @@ class OpalTransport : PIndirectChannel /Abstract/
 typedef PArray<OpalTransportAddress> OpalTransportAddressArray;
 
 
-class OpalTransportIP : OpalTransport /Abstract/
+class OpalTransportIP : OpalTransport
 {
   public:
   /**@name Construction */

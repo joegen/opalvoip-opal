@@ -32,7 +32,7 @@
 #include <h323/transaddr.h>
 %End
 
-typedef OpalListener  H323Listener;
+typedef OpalListener H323Listener;
 typedef PList<OpalListenerTCP> H323ListenerList;
 typedef OpalTransport H323Transport;
 typedef OpalTransportUDP H323TransportUDP;
@@ -46,10 +46,6 @@ typedef OpalTransportUDP H323TransportUDP;
  */
 class H323TransportAddress : OpalTransportAddress
 {
-%TypeHeaderCode
-#include <ptlib.h>
-#include <h323/transaddr.h> 
-%End
   public:
     H323TransportAddress();
     H323TransportAddress(const char * addr, WORD port = 0, const char * proto = NULL);
