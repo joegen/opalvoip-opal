@@ -26,17 +26,17 @@
  * $Date$
  */
 
+%ModuleHeaderCode
+#include <ptlib.h>
+#include <h323/gkclient.h>
+%End
 
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class embodies the H.225.0 RAS protocol to gatekeepers.
   */
-class H323Gatekeeper
+class H323Gatekeeper /NoDefaultCtors/
 {
-%TypeHeaderCode
-#include <ptlib.h>
-#include <h323/gkclient.h> 
-%End
   public:
  
   /**@name Protocol operations */
@@ -152,18 +152,5 @@ class H323Gatekeeper
       */
     void SetIdentifier(const PString & id);
    
-  //@}
-  
-  private:
-     // Declared private to remove insantiation via python
-	/**@name Construction */
-  //@{
-    /**Create a new gatekeeper.
-     */
-    H323Gatekeeper();
-
-    /**Destroy gatekeeper.
-     */
-    ~H323Gatekeeper();
   //@}
 };
