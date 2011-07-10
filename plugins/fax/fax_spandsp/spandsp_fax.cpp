@@ -729,43 +729,54 @@ class FaxPCM
 
 /////////////////////////////////////////////////////////////////
 
-struct MyStats : public t30_stats_t
+class MyStats : private t30_stats_t
 {
-  MyStats(bool completed, bool receiving)
-    : m_completed(completed)
-    , m_receiving(receiving)
-  {
-  }
-
   bool m_completed;
   bool m_receiving;
+  char m_phase;
+  std::string m_stationId;
+
+public:
+  MyStats(t30_state_t * t30state, bool completed, bool receiving, char phase)
+    : m_completed(completed)
+    , m_receiving(receiving)
+    , m_phase(phase)
+  {
+    t30_get_transfer_statistics(t30state, this);
+    const char * stationId = t30_get_rx_ident(t30state);
+    if (stationId != NULL && *stationId != '\0')
+      m_stationId = stationId;
+  }
+
+
+  friend std::ostream & operator<<(std::ostream & strm, const MyStats & stats)
+  {
+    static const char * const CompressionNames[4] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
+
+    strm << "Status=";
+    if (stats.m_completed)
+      strm << stats.current_status << " (" << t30_completion_code_to_str(stats.current_status) << ')';
+    else
+      strm << "-1 (In progress)";
+    strm << "\n"
+            "Bit Rate=" << stats.bit_rate << "\n"
+            "Encoding=" << stats.encoding << ' ' << CompressionNames[stats.encoding&3] << "\n"
+            "Error Correction=" << stats.error_correcting_mode << "\n"
+            "Tx Pages=" << (stats.m_receiving ? -1 : stats.pages_tx) << "\n"
+            "Rx Pages=" << (stats.m_receiving ? stats.pages_rx : -1) << "\n"
+            "Total Pages=" << stats.pages_in_file << "\n"
+            "Image Bytes=" << stats.image_size << "\n"
+            "Resolution=" << stats.x_resolution << 'x' << stats.y_resolution << "\n"
+            "Page Size=" << stats.width << 'x' << stats.length << "\n"
+            "Bad Rows=" << stats.bad_rows << "\n"
+            "Most Bad Rows=" << stats.longest_bad_row_run << "\n"
+            "Correction Retries=" << stats.error_correcting_mode_retries << "\n"
+            "Station Identifier=" << stats.m_stationId << "\n"
+            "Phase=" << stats.m_phase;
+
+    return strm;
+  }
 };
-
-static std::ostream & operator<<(std::ostream & strm, const MyStats & stats)
-{
-  static const char * const CompressionNames[4] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
-
-  strm << "Status=";
-  if (stats.m_completed)
-    strm << stats.current_status << " (" << t30_completion_code_to_str(stats.current_status) << ')';
-  else
-    strm << "-1 (In progress)";
-  strm << "\n"
-          "Bit Rate=" << stats.bit_rate << "\n"
-          "Encoding=" << stats.encoding << ' ' << CompressionNames[stats.encoding&3] << "\n"
-          "Error Correction=" << stats.error_correcting_mode << "\n"
-          "Tx Pages=" << (stats.m_receiving ? -1 : stats.pages_tx) << "\n"
-          "Rx Pages=" << (stats.m_receiving ? stats.pages_rx : -1) << "\n"
-          "Total Pages=" << stats.pages_in_file << "\n"
-          "Image Bytes=" << stats.image_size << "\n"
-          "Resolution=" << stats.x_resolution << 'x' << stats.y_resolution << "\n"
-          "Page Size=" << stats.width << 'x' << stats.length << "\n"
-          "Bad Rows=" << stats.bad_rows << "\n"
-          "Most Bad Rows=" << stats.longest_bad_row_run << "\n"
-          "Correction Retries=" << stats.error_correcting_mode_retries;
-
-  return strm;
-}
 
 
 class FaxTIFF : public FaxSpanDSP
@@ -778,6 +789,7 @@ class FaxTIFF : public FaxSpanDSP
     int             m_supported_image_sizes;
     int             m_supported_resolutions;
     int             m_supported_compressions;
+    char            m_phase;
 
   protected:
     FaxTIFF()
@@ -799,6 +811,7 @@ class FaxTIFF : public FaxSpanDSP
       , m_supported_compressions(T30_SUPPORT_T4_1D_COMPRESSION |
                                  T30_SUPPORT_T4_2D_COMPRESSION |
                                  T30_SUPPORT_T6_COMPRESSION)
+      , m_phase('A')
     {
     }
 
@@ -901,8 +914,7 @@ class FaxTIFF : public FaxSpanDSP
       if (t30state == NULL)
         return false;
 
-      MyStats stats(m_completed, m_receiving);
-      t30_get_transfer_statistics(t30state, &stats);
+      MyStats stats(t30state, m_completed, m_receiving, m_phase);
       std::stringstream strm;
       strm << stats;
 
@@ -948,16 +960,16 @@ class FaxTIFF : public FaxSpanDSP
   private:
     void PhaseB(t30_state_t * t30state, int)
     {
-      MyStats stats(m_completed, m_receiving);
-      t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, m_tag << " SpanDSP entered Phase B:\n" << stats);
+      m_phase = 'B';
+      PTRACE(3, m_tag << " SpanDSP entered Phase B:\n"
+             << MyStats(t30state, m_completed, m_receiving, m_phase));
     }
 
     void PhaseD(t30_state_t * t30state, int)
     {
-      MyStats stats(m_completed, m_receiving);
-      t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, m_tag << " SpanDSP entered Phase D:\n" << stats);
+      m_phase = 'D';
+      PTRACE(3, m_tag << " SpanDSP entered Phase D:\n"
+             << MyStats(t30state, m_completed, m_receiving, m_phase));
     }
 
     void PhaseE(t30_state_t * t30state, int result)
@@ -965,9 +977,9 @@ class FaxTIFF : public FaxSpanDSP
       if (result >= 0)
         m_completed = true; // Finished, exit codec loops
 
-      MyStats stats(m_completed, m_receiving);
-      t30_get_transfer_statistics(t30state, &stats);
-      PTRACE(3, m_tag << " SpanDSP entered Phase E:\n" << stats);
+      m_phase = 'E';
+      PTRACE(3, m_tag << " SpanDSP entered Phase E:\n"
+             << MyStats(t30state, m_completed, m_receiving, m_phase));
     }
 };
 
