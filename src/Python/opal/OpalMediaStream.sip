@@ -36,7 +36,7 @@
    entities. For example, data being sent to an RTP session over a network
    would be through a media stream.
   */
-class OpalMediaStream : PSafeObject /Abstract/
+class OpalMediaStream : PSafeObject
 {
   protected:
   /**@name Construction */

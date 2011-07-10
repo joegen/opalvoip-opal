@@ -228,9 +228,18 @@ class H323Capability : PObject /Abstract/
    H323NonStandardAudioCapability or H323NonStandardVideoCapability which
    multiply inherit from this class.
  */
-class H323NonStandardCapabilityInfo /Abstract/
+class H323NonStandardCapabilityInfo
 {
   public:
+//    typedef PObject::Comparison (*CompareFuncType)(struct PluginCodec_H323NonStandardCodecData *);
+
+//    /**Create a new set of information about a non-standard codec.
+//      */
+//    H323NonStandardCapabilityInfo(
+//      CompareFuncType compareFunc,
+//      const BYTE * dataBlock,         ///< Non-Standard data for codec type
+//      PINDEX dataSize                 ///< Size of dataBlock. If 0 and dataBlock != NULL use strlen(dataBlock)
+//    );
 
     /**Create a new set of information about a non-standard codec.
       */
@@ -266,6 +275,45 @@ class H323NonStandardCapabilityInfo /Abstract/
     /**Destroy the capability information
      */
     virtual ~H323NonStandardCapabilityInfo();
+
+    /**This function gets the non-standard data field.
+
+       The default behaviour sets data to fixedData.
+      */
+    virtual PBoolean OnSendingPDU(
+      PBYTEArray & data  ///<  Data field in PDU to send
+    ) const;
+
+    /**This function validates and uses the non-standard data field.
+
+       The default behaviour returns true if data is equal to fixedData.
+      */
+    virtual PBoolean OnReceivedPDU(
+      const PBYTEArray & data  ///<  Data field in PDU received
+    );
+
+//    PBoolean IsMatch(const H245_NonStandardParameter & param) const;
+
+//    PObject::Comparison CompareParam(
+//      const H245_NonStandardParameter & param
+//    ) const;
+
+  protected:
+//    PBoolean OnSendingNonStandardPDU(
+//      PASN_Choice & pdu,
+//      unsigned nonStandardTag
+//    ) const;
+//    PBoolean OnReceivedNonStandardPDU(
+//      const PASN_Choice & pdu,
+//      unsigned nonStandardTag
+//    );
+
+    PObject::Comparison CompareInfo(
+      const H323NonStandardCapabilityInfo & obj
+    ) const;
+    PObject::Comparison CompareData(
+      const PBYTEArray & data  ///<  Data field in PDU received
+    ) const;
 };
 
 /**This class describes the interface to a generic codec used to
@@ -297,7 +345,6 @@ class H323GenericCapabilityInfo
  */
 class H323RealTimeCapability : H323Capability /Abstract/
 {
-
   public:
     H323RealTimeCapability();
     H323RealTimeCapability(const H323RealTimeCapability &rtc);

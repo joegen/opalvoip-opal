@@ -821,7 +821,7 @@ struct SIPParameters
     In either case the SIP_PDU ancestor is the sent or received request.
  */
 
-class SIPTransaction : SIP_PDU /Abstract/
+class SIPTransaction : SIP_PDU
 {
   public:
     SIPTransaction(
@@ -867,7 +867,7 @@ class SIPTransaction : SIP_PDU /Abstract/
     bool ResendCANCEL();
     void SetParameters(const SIPParameters & params);
 
-/*     enum States {
+     enum States {
       NotStarted,
       Trying,
       Proceeding,
@@ -881,7 +881,7 @@ class SIPTransaction : SIP_PDU /Abstract/
       Terminated_Aborted,
       NumStates
     };
-    virtual void SetTerminated(States newState); */
+    virtual void SetTerminated(States newState);
 };
 
 
