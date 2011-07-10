@@ -1,7 +1,7 @@
 pyvoip project is being released under the Python license. All I ask is that
 any patches or new features be shared, and give credit where credit is due.
 Any questions either email the opal dev list, or email me: dcassidy36@gmail.com.
-I will try and answer any questions as I can, but note I cannot offer
+I will try and answer any questions as I can.
 
 These opal python bindings depend on having the latest SIP source installed,
 which as of this writing is v4.12.3. You can optionally also use PyQt4, so you
