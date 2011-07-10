@@ -35,7 +35,7 @@
 /* Class to handle SIP REGISTER, SUBSCRIBE, MESSAGE, and renew
  * the 'bindings' before they expire.
  */
-class SIPHandler : PSafeObject /Abstract/
+class SIPHandler : PSafeObject
 {
 
 protected:

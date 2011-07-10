@@ -94,7 +94,7 @@ class OpalMediaType
 
 /** This class defines the type used to define the attributes of a media type
  */
-class OpalMediaTypeDefinition /Abstract/
+class OpalMediaTypeDefinition
 {
   public:
     /// Create a new media type definition
