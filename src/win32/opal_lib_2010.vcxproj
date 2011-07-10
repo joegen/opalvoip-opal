@@ -430,6 +430,7 @@
     <ClInclude Include="..\..\include\lids\lidep.h" />
     <ClInclude Include="..\..\include\lids\lidplugin.h" />
     <ClInclude Include="..\..\include\lids\lidpluginmgr.h" />
+    <ClInclude Include="..\..\include\opal.h" />
     <ClInclude Include="..\..\include\opal\buildopts.h" />
     <ClInclude Include="..\..\include\opal\call.h" />
     <ClInclude Include="..\..\include\opal\connection.h" />
