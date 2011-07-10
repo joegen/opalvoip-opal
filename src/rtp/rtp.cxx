@@ -511,8 +511,9 @@ OpalMediaStatistics::OpalMediaStatistics()
 #if OPAL_FAX
 OpalMediaStatistics::Fax::Fax()
   : m_result(OpalMediaStatistics::FaxNotStarted)
+  , m_phase(' ')
   , m_bitRate(9600)
-  , m_compression(1)
+  , m_compression(FaxCompressionUnknown)
   , m_errorCorrection(false)
   , m_txPages(-1)
   , m_rxPages(-1)
@@ -526,6 +527,16 @@ OpalMediaStatistics::Fax::Fax()
   , m_mostBadRows(0)
   , m_errorCorrectionRetries(0)
 {
+}
+
+ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compression)
+{
+  static const char * const Names[] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
+  if (compression >= 0 && compression < PARRAYSIZE(Names))
+    strm << Names[compression];
+  else
+    strm << (unsigned)compression;
+  return strm;
 }
 #endif
 
