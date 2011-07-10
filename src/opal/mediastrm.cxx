@@ -751,7 +751,7 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 bool OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 {
-  if (IsSink())
+  if (IsSink() || !RequiresPatchThread())
     return false;
 
   unsigned minJitter, maxJitter;
