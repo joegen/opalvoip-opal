@@ -774,12 +774,15 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
     m_jitterBuffer.SetNULL();
   }
   else {
-    PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
     resequenceOutOfOrderPackets = false;
-    if (m_jitterBuffer != NULL)
+    if (m_jitterBuffer != NULL) {
+      PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
-    else
+    }
+    else {
       m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, m_timeUnits, packetSize);
+      PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
+    }
   }
 }
 
