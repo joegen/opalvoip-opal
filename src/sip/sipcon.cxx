@@ -2342,7 +2342,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   // Replaces header string has already been validated in SIPEndPoint::OnReceivedINVITE
-  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(replaces, PSafeReadOnly);
+  PSafePtr<SIPConnection> replacedConnection = endpoint.GetSIPConnectionWithLock(replaces, PSafeReference);
   if (replacedConnection == NULL) {
     /* Allow for a race condition where between when SIPEndPoint::OnReceivedINVITE()
        is executed and here, the call to be replaced was released. */
