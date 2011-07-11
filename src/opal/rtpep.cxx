@@ -143,7 +143,8 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   PTRACE(3, "RTPEp\tSession " << stream.GetSessionID() << ", "
             "RTP ports " << localPort << " and " << remotePort
          << ' ' << (cached ? "cached" : "flagged") << " as "
-         << (result ? "bypassed" : "normal"));
+         << (result ? "bypassed" : "normal")
+         << " on connection " << connection);
 
   return result;
 }
@@ -161,7 +162,8 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-            "local RTP port " << it->first << " cache cleared.");
+            "local RTP port " << it->first << " cache cleared "
+            "on connection " << it->second.m_connection);
   it->second.m_previousResult = -1;
 
   it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
@@ -169,7 +171,8 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-            "remote RTP port " << it->first << " is local, ending bypass.");
+            "remote RTP port " << it->first << " is local, ending bypass "
+            "on connection " << it->second.m_connection);
   it->second.m_previousResult = -1;
   OnLocalRTP(connection, it->second.m_connection, rtp->GetSessionID(), false);
 }
