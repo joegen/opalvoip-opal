@@ -647,6 +647,8 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
      whatever the RTP sender throws at us. For sink, we set it to the
      maximum size based on MTU (or other criteria). */
   defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
+
+  PTRACE(5, "Media\tCreated RTP media session, RTP=" << &rtp);
 }
 
 
