@@ -221,8 +221,10 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
     dollar = prefix.GetLength()-1;
   }
 
+#if OPAL_PTLIB_SSL
   if (NumCompare("tcps$") == EqualTo) // For backward compatibility
     Splice(TlsPrefix(), 0, 5);
+#endif
 
   // use factory to create transport types
   transport = PFactory<OpalInternalTransport>::CreateInstance(Left(dollar+1).ToLower());
@@ -1742,6 +1744,7 @@ const PCaselessString & OpalListenerTLS::GetProtoPrefix() const
 }
 
 
-#endif
+#endif // OPAL_PTLIB_SSL
+
 
 ///////////////////////////////////////////////////////////////////////////////
