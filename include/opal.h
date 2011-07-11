@@ -543,6 +543,23 @@ typedef enum OpalMediaTiming {
       command.m_param.m_general.m_mediaMask = "RFC4175*";
       response = OpalSendMessage(hOPAL, &command);
       </code>
+
+   For m_mediaOrder and m_mediaMask, each '\n' seperated sub-string in the
+   array is checked using a simple wildcard matching algorithm.
+
+   The '*' character indicates substrings, for example: "G.711*" would remove
+   "G.711-uLaw-64k" and "G.711-ALaw-64k".
+
+   The '@' character indicates a type of media format, so say "\@video" would
+   remove all video codecs.
+
+   The '!' character indicates a negative test. That is the entres that do NOT
+   match the string are removed. The string after the '!' may contain '*' and
+   '@' characters.
+
+   It should be noted that when the ! operator is used, they are combined
+   differently to the usual application of each entry in turn. Thus, the string
+   "!A\n!B" will result in keeping <i>both</i> A and B formats.
   */
 typedef struct OpalParamGeneral {
   const char * m_audioRecordDevice;   /**< Audio recording device name */
