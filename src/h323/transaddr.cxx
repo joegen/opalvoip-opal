@@ -52,7 +52,7 @@ static PString BuildIP(const PIPSocket::Address & ip, unsigned port, const char 
   PStringStream str;
 
   if (proto == NULL)
-    str << "ip$"; // Compatible with both tcp$ and udp$
+    str << OpalTransportAddress::IpPrefix(); // Compatible with both tcp$ and udp$
   else {
     str << proto;
     if (str.Find('$') == P_MAX_INDEX)

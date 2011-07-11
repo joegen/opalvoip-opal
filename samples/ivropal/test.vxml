@@ -1,8 +1,40 @@
 <?xml version="1.0"?>
-<vxml version="1.0">
+<vxml version="2.1" xmlns="http://www.w3.org/2001/vxml">
+  <log expr="'Started test VXML script'" />
+  <menu id="MainMenu">
+    <prompt>This is the main menu.</prompt>
+    <choice dtmf="1" next="PlayFile">
+      Press 1 to play announcement
+    </choice>
+    <choice dtmf="2" next="RecordFile">
+      Press 2 to record a message
+    </choice>
+    <choice dtmf="3" next="DoTransfer">
+      Press 3 to transfer call
+    </choice>
+  </menu>
+
   <form id="PlayFile">
+    <log expr="'Playing WAV file'"/>
     <audio src="file:../callgen/ogm.wav"/>
-    <break time="30s"/>
+    <break time="10s"/>
     <audio src="file:../callgen/ogm.wav"/>
+    <goto next="MainMenu"/>
+  </form>
+
+  <form id="RecordFile">
+    <log expr="'Recording message'"/>
+    <record name="LeftMessage" finalsilence="5s" maxtime="60s">
+      <prompt src="file:../callgen/ogm.wav"/>
+      <filled>
+        <log expr="'Recorded '+LeftMessage$.duration+' seconds'"/>
+      </filled>
+    </record>
+    <goto next="MainMenu"/>
+  </form>
+
+  <form id="DoTransfer">
+    <log expr="'Doing transfer'"/>
+    <transfer dest="sip:500@ekiga.net" />
   </form>
 </vxml>

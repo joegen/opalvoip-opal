@@ -1069,11 +1069,6 @@ void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, INT param)
 #endif
 
 
-void OpalConnection::AttachRFC2833HandlerToPatch(PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
-{
-}
-
-
 OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
 {
   for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
@@ -1115,9 +1110,10 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
 }
 
 
-PBoolean OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
+bool OpalConnection::GetMediaTransportAddresses(const OpalMediaType & PTRACE_PARAM(mediaType),
+                                          OpalTransportAddressArray &) const
 {
-  PTRACE(4, "OpalCon\tIsMediaBypassPossible: default returns false");
+  PTRACE(4, "OpalCon\tGetMediaTransportAddresses for " << mediaType << " not allowed.");
   return false;
 }
 

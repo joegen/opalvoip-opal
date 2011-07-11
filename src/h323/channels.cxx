@@ -177,7 +177,7 @@ bool H323Channel::SetSessionID(unsigned /*sessionID*/)
 
 
 PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
-                                           OpalTransportAddress & /*control*/) const
+                                               OpalTransportAddress & /*control*/) const
 {
   return PFalse;
 }
@@ -334,8 +334,9 @@ PBoolean H323Channel::Open()
 H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
                                                      const H323Capability & cap,
                                                      Directions direction)
-  : H323Channel(conn, cap),
-    receiver(direction == IsReceiver)
+  : H323Channel(conn, cap)
+  , receiver(direction == IsReceiver)
+  , m_mediaFormat(capability->GetMediaFormat())
 {
 }
 
@@ -352,7 +353,7 @@ H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 
 PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
-  return SetBandwidthUsed(capability->GetMediaFormat().GetBandwidth()/100);
+  return SetBandwidthUsed(m_mediaFormat.GetBandwidth()/100);
 }
 
 
@@ -361,21 +362,22 @@ PBoolean H323UnidirectionalChannel::Open()
   if (opened)
     return true;
 
-  if (PAssertNULL(mediaStream) == NULL)
-    return false;
+  if (m_mediaStream == NULL)
+    m_mediaStream = connection.CreateMediaStream(m_mediaFormat, GetSessionID(), receiver);
 
   OpalCall & call = connection.GetCall();
 
   bool ok;
   if (GetDirection() == IsReceiver)
-    ok = call.OpenSourceMediaStreams(connection, capability->GetMediaFormat().GetMediaType(), GetSessionID(), mediaStream->GetMediaFormat());
+    ok = call.OpenSourceMediaStreams(connection, m_mediaFormat.GetMediaType(), GetSessionID(), m_mediaFormat);
   else {
     PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
-    ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, capability->GetMediaFormat().GetMediaType(), GetSessionID());
+    ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, m_mediaFormat.GetMediaType(), GetSessionID());
   }
 
   if (ok) {
-    capability->UpdateMediaFormat(mediaStream->GetMediaFormat());
+    m_mediaFormat = m_mediaStream->GetMediaFormat();
+    capability->UpdateMediaFormat(m_mediaFormat);
     return H323Channel::Open();
   }
 
@@ -390,7 +392,7 @@ PBoolean H323UnidirectionalChannel::Start()
   if (!Open())
     return PFalse;
 
-  if (!mediaStream->Start())
+  if (m_mediaStream == NULL || !m_mediaStream->Start())
     return PFalse;
 
   paused = PFalse;
@@ -403,10 +405,10 @@ void H323UnidirectionalChannel::InternalClose()
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
-  if (mediaStream != NULL) {
-    connection.CloseMediaStream(*mediaStream);
-    connection.RemoveMediaStream(*mediaStream);
-    mediaStream.SetNULL();
+  if (m_mediaStream != NULL) {
+    connection.CloseMediaStream(*m_mediaStream);
+    connection.RemoveMediaStream(*m_mediaStream);
+    m_mediaStream.SetNULL();
   }
 
   H323Channel::InternalClose();
@@ -415,7 +417,7 @@ void H323UnidirectionalChannel::InternalClose()
 
 OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 {
-  return mediaStream;
+  return m_mediaStream;
 }
 
 
@@ -634,12 +636,9 @@ PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
 
   rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
 
-  OpalMediaStream * mediaStream = GetMediaStream();
-  if (mediaStream != NULL) {
-    OpalMediaFormat adjustedMediaFormat = mediaStream->GetMediaFormat();
-    adjustedMediaFormat.SetPayloadType(rtpPayloadType);
-    mediaStream->UpdateMediaFormat(adjustedMediaFormat);
-  }
+  m_mediaFormat.SetPayloadType(rtpPayloadType);
+  if (m_mediaStream != NULL)
+    m_mediaStream->UpdateMediaFormat(m_mediaFormat);
 
   PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
   return PTrue;
@@ -651,12 +650,10 @@ PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
 H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
                                  const H323Capability & cap,
                                  Directions direction,
-                                 H323SessionHandler & session)
+                                 H323SessionPDUHandler & session)
   : H323_RealTimeChannel(conn, cap, direction)
   , m_session(session)
 {
-  // If we are the receiver of RTP data then we create a source media stream
-  mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), receiver);
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
@@ -686,9 +683,42 @@ bool H323_RTPChannel::SetSessionID(unsigned sessionID)
 }
 
 
+PBoolean H323_RTPChannel::GetMediaTransportAddress(OpalTransportAddress & data,
+                                                   OpalTransportAddress & control) const
+{
+  const OpalRTPSession & rtpSession = dynamic_cast<const OpalRTPSession &>(m_session);
+  data = rtpSession.GetRemoteMediaAddress();
+  control = rtpSession.GetRemoteControlAddress();
+  return true;
+}
+
+
 PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
-  return m_session.OnSendingPDU(*this, param) && H323_RealTimeChannel::OnSendingPDU(param);
+  if (!m_session.OnSendingPDU(*this, param))
+    return false;
+
+  if (GetDirection() != H323Channel::IsReceiver) {
+    // Set flag for we are going to stop sending audio on silence
+    if (m_mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
+      param.m_silenceSuppression = (connection.GetEndPoint().GetManager().GetSilenceDetectParams().m_mode != OpalSilenceDetector::NoSilenceDetection);
+    }
+  }
+
+  // Set dynamic payload type, if is one
+  RTP_DataFrame::PayloadTypes rtpPayloadType = GetDynamicRTPPayloadType();
+  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
+    param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
+  }
+
+  // Set the media packetization field if have an option to describe it.
+  param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
+  if (H323SetRTPPacketization(param.m_mediaPacketization, m_mediaFormat, rtpPayloadType))
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
+
+  return H323_RealTimeChannel::OnSendingPDU(param);
 }
 
 
@@ -702,271 +732,32 @@ void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & para
 PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
                                     unsigned & errorCode)
 {
-  return m_session.OnReceivedPDU(*this, param, errorCode) &&
-         H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
+  if (!m_session.OnReceivedPDU(*this, param, errorCode))
+    return false;
+
+  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
+    SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
+
+  PString mediaPacketization;
+  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
+      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
+    mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
+
+  if (m_mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption()) != mediaPacketization ||
+      m_mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption())  != mediaPacketization) {
+    m_mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), mediaPacketization);
+    m_mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization);
+    if (m_mediaStream != NULL)
+      m_mediaStream->UpdateMediaFormat(m_mediaFormat);
+  }
+
+  return H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
 }
 
 
 PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
   return m_session.OnReceivedAckPDU(*this, param) && H323_RealTimeChannel::OnReceivedAckPDU(param);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
-                                                 const H323Capability & capability,
-                                                 Directions direction,
-                                                 unsigned id)
-  : H323_RealTimeChannel(connection, capability, direction)
-{
-  Construct(connection, id);
-}
-
-
-H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
-                                                 const H323Capability & capability,
-                                                 Directions direction,
-                                                 unsigned id,
-                                                 const H323TransportAddress & data,
-                                                 const H323TransportAddress & control)
-  : H323_RealTimeChannel(connection, capability, direction),
-    externalMediaAddress(data),
-    externalMediaControlAddress(control)
-{
-  Construct(connection, id);
-}
-
-
-H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
-                                                 const H323Capability & capability,
-                                                 Directions direction,
-                                                 unsigned id,
-                                                 const PIPSocket::Address & ip,
-                                                 WORD dataPort)
-  : H323_RealTimeChannel(connection, capability, direction),
-    externalMediaAddress(ip, dataPort),
-    externalMediaControlAddress(ip, (WORD)(dataPort+1))
-{
-  Construct(connection, id);
-}
-
-void H323_ExternalRTPChannel::Construct(H323Connection & conn, unsigned id)
-{
-  mediaStream = new OpalNullMediaStream(conn, capability->GetMediaFormat(), id, receiver);
-  sessionID = id;
-
-  PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")
-         << " created using session " << GetSessionID());
-}
-
-
-unsigned H323_ExternalRTPChannel::GetSessionID() const
-{
-  return sessionID;
-}
-
-
-PBoolean H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & data,
-                                                       OpalTransportAddress & control) const
-{
-  data = remoteMediaAddress;
-  control = remoteMediaControlAddress;
-
-  if (data.IsEmpty() && control.IsEmpty())
-    return PFalse;
-
-  PIPSocket::Address ip;
-  WORD port;
-  if (data.IsEmpty()) {
-    if (control.GetIpAndPort(ip, port))
-      data = OpalTransportAddress(ip, (WORD)(port-1));
-  }
-  else if (control.IsEmpty()) {
-    if (data.GetIpAndPort(ip, port))
-      control = OpalTransportAddress(ip, (WORD)(port+1));
-  }
-
-  return PTrue;
-}
-
-
-PBoolean H323_ExternalRTPChannel::Start()
-{
-  PSafePtr<OpalRTPConnection> otherParty = connection.GetOtherPartyConnectionAs<OpalRTPConnection>();
-  if (otherParty == NULL)
-    return PFalse;
-
-  OpalRTPConnection::MediaInformation info;
-  if (!otherParty->GetMediaInformation(sessionID, info))
-    return PFalse;
-
-  externalMediaAddress = info.data;
-  externalMediaControlAddress = info.control;
-  return Open();
-}
-
-
-void H323_ExternalRTPChannel::Receive()
-{
-  // Do nothing
-}
-
-
-void H323_ExternalRTPChannel::Transmit()
-{
-  // Do nothing
-}
-
-
-PBoolean H323_ExternalRTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
-{
-  param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
-  param.m_mediaGuaranteedDelivery = PFalse;
-
-  param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-  param.m_silenceSuppression = PFalse;
-
-  // unicast must have mediaControlChannel
-  param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
-  externalMediaControlAddress.SetPDU(param.m_mediaControlChannel);
-
-  if (receiver) {
-    // set mediaChannel
-    param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-    externalMediaAddress.SetPDU(param.m_mediaChannel);
-  }
-
-  // Set dynamic payload type, if is one
-  RTP_DataFrame::PayloadTypes rtpPayloadType = GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
-    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
-    param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
-  }
-
-  // Set the media packetization field if have an option to describe it.
-  param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
-  if (H323SetRTPPacketization(param.m_mediaPacketization, GetCapability().GetMediaFormat(), GetDynamicRTPPayloadType()))
-    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
-
-  return H323_RealTimeChannel::OnSendingPDU(param);
-}
-
-
-void H323_ExternalRTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
-{
-  // set mediaControlChannel
-  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
-  externalMediaControlAddress.SetPDU(param.m_mediaControlChannel);
-
-  // set mediaChannel
-  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-  externalMediaAddress.SetPDU(param.m_mediaChannel);
-
-  H323_RealTimeChannel::OnSendOpenAck(param);
-}
-
-
-PBoolean H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
-                                          unsigned & errorCode)
-{
-  if (!H323_RealTimeChannel::OnReceivedPDU(param, errorCode))
-    return false;
-
-  if (!param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
-    PTRACE(1, "LogChan\tNo mediaControlChannel specified");
-    errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-    return PFalse;
-  }
-
-  remoteMediaControlAddress = param.m_mediaControlChannel;
-  if (remoteMediaControlAddress.IsEmpty())
-    return PFalse;
-
-  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
-    remoteMediaAddress = param.m_mediaChannel;
-    if (remoteMediaAddress.IsEmpty())
-      return PFalse;
-  }
-  else {
-    PIPSocket::Address addr;
-    WORD port;
-    if (!remoteMediaControlAddress.GetIpAndPort(addr, port))
-      return PFalse;
-    remoteMediaAddress = OpalTransportAddress(addr, port-1);
-  }
-
-  unsigned id = GetSessionID();
-  if (!remoteMediaAddress.IsEmpty() && (connection.GetMediaTransportAddresses().GetAt(id) == NULL))
-    connection.GetMediaTransportAddresses().SetAt(id, new OpalTransportAddress(remoteMediaAddress));
-
-  return true;
-}
-
-
-PBoolean H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
-{
-  if (!H323_RealTimeChannel::OnReceivedAckPDU(param))
-    return false;
-
-  if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
-    PTRACE(1, "LogChan\tNo mediaControlChannel specified");
-    return PFalse;
-  }
-
-  remoteMediaControlAddress = param.m_mediaControlChannel;
-  if (remoteMediaControlAddress.IsEmpty())
-    return PFalse;
-
-  if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
-    PTRACE(1, "LogChan\tNo mediaChannel specified");
-    return PFalse;
-  }
-
-  remoteMediaAddress = param.m_mediaChannel;
-  if (remoteMediaAddress.IsEmpty())
-    return PFalse;
-
-  unsigned id = param.m_sessionID;
-  if (!remoteMediaAddress.IsEmpty() && (connection.GetMediaTransportAddresses().GetAt(id) == NULL))
-    connection.GetMediaTransportAddresses().SetAt(id, new OpalTransportAddress(remoteMediaAddress));
-
-  return PTrue;
-}
-
-
-void H323_ExternalRTPChannel::SetExternalAddress(const H323TransportAddress & data,
-                                                 const H323TransportAddress & control)
-{
-  externalMediaAddress = data;
-  externalMediaControlAddress = control;
-
-  if (data.IsEmpty() || control.IsEmpty()) {
-    PIPSocket::Address ip;
-    WORD port;
-    if (data.GetIpAndPort(ip, port))
-      externalMediaControlAddress = H323TransportAddress(ip, (WORD)(port+1));
-    else if (control.GetIpAndPort(ip, port))
-      externalMediaAddress = H323TransportAddress(ip, (WORD)(port-1));
-  }
-}
-
-
-PBoolean H323_ExternalRTPChannel::GetRemoteAddress(PIPSocket::Address & ip,
-                                               WORD & dataPort) const
-{
-  if (!remoteMediaAddress)
-    return remoteMediaAddress.GetIpAndPort(ip, dataPort);
-
-  if (!remoteMediaControlAddress) {
-    if (remoteMediaControlAddress.GetIpAndPort(ip, dataPort)) {
-      dataPort--;
-      return PTrue;
-    }
-  }
-
-  return PFalse;
 }
 
 

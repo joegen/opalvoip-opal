@@ -146,7 +146,7 @@ H323GatekeeperGRQ::H323GatekeeperGRQ(H323GatekeeperListener & rasChannel,
 {
   // Check the return address, if not the same side of a NAT firewall, then
   // just use the physical reply address already set by ancestor.
-  H323TransportAddress rasAddress(grq.m_rasAddress, "udp");
+  H323TransportAddress rasAddress(grq.m_rasAddress, OpalTransportAddress::UdpPrefix());
   OpalManager & manager = rasChannel.GetEndPoint().GetManager();
   PIPSocket::Address senderIP, rasIP;
 
@@ -241,7 +241,7 @@ H323GatekeeperRRQ::H323GatekeeperRRQ(H323GatekeeperListener & rasChannel,
   PBoolean first = PTrue;
   PINDEX i;
   for (i = 0; i < rrq.m_rasAddress.GetSize(); i++) {
-    H323TransportAddress rasAddress(rrq.m_rasAddress[i], "udp");
+    H323TransportAddress rasAddress(rrq.m_rasAddress[i], OpalTransportAddress::UdpPrefix());
     if (rasChannel.GetTransport().IsCompatibleTransport(rasAddress)) {
       // Check the return address, if not the same side of a NAT firewall, then
       // just use the physical reply address already set by ancestor.
@@ -639,7 +639,7 @@ H323GatekeeperLRQ::H323GatekeeperLRQ(H323GatekeeperListener & rasChannel,
     lcf(((H323RasPDU &)confirm->GetPDU()).BuildLocationConfirm(lrq.m_requestSeqNum)),
     lrj(((H323RasPDU &)reject->GetPDU()).BuildLocationReject(lrq.m_requestSeqNum))
 {
-  H323TransportAddress addr(lrq.m_replyAddress, "udp");
+  H323TransportAddress addr(lrq.m_replyAddress, OpalTransportAddress::UdpPrefix());
   if (rasChannel.GetTransport().IsCompatibleTransport(addr))
     replyAddresses[0] = addr;
 }
@@ -2682,7 +2682,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
     for (PINDEX cap = 0; cap < info.grq.m_authenticationCapability.GetSize(); cap++) {
       for (PINDEX alg = 0; alg < info.grq.m_algorithmOIDs.GetSize(); alg++) {
         if (iterAuth->IsCapability(info.grq.m_authenticationCapability[cap], info.grq.m_algorithmOIDs[alg])) {
-          PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, "udp")
+          PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, OpalTransportAddress::UdpPrefix())
                  << " using authenticator " << *iterAuth);
           info.gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_authenticationMode);
           info.gcf.m_authenticationMode = info.grq.m_authenticationCapability[cap];
@@ -2699,7 +2699,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
     return H323GatekeeperRequest::Reject;
   }
   else {
-    PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, "udp"));
+    PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, OpalTransportAddress::UdpPrefix()));
     return H323GatekeeperRequest::Confirm;
   }
 }

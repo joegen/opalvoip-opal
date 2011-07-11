@@ -89,6 +89,84 @@ class OpalRTPConnection : public OpalConnection
   //@}
 
 
+  /**@name Overrides from OpalConnection */
+  //@{
+    /**Create a new media stream.
+       This will create a media stream of an appropriate subclass as required
+       by the underlying connection protocol. For instance H.323 would create
+       an OpalRTPStream.
+
+       The sessionID parameter may not be needed by a particular media stream
+       and may be ignored. In the case of an OpalRTPStream it us used.
+
+       Note that media streams may be created internally to the underlying
+       protocol. This function is not the only way a stream can come into
+       existance.
+     */
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      PBoolean isSource                        ///<  Is a source stream
+    );
+
+    /**Get transports for the media session on the connection.
+       This is primarily used by the media bypass feature controlled by the
+       OpalManager::AllowMediaBypass() function. It allows one side of the
+       call to get the transport address of the media on the other side, so it
+       can pass it on, bypassing the local host.
+
+       @return true if a transport address is available and may be used to pass
+               on to a remote system for direct access.
+     */
+    virtual bool GetMediaTransportAddresses(
+      const OpalMediaType & mediaType,       ///< Media type for session to return information
+      OpalTransportAddressArray & transports ///<  Information on media session
+    ) const;
+
+    /**Adjust media formats available on a connection.
+       This is called by a connection after it has called
+       OpalCall::GetMediaFormats() to get all media formats that it can use so
+       that an application may remove or reorder the media formats before they
+       are used to open media streams.
+
+       This function may also be executed by other connections in the call. If
+       this happens then the "otherConnection" parameter will be non-NULL. The
+       "local" parameter sense is relative to the "otherConnection" parameter,
+       if NULL then it is relative to "this".
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void AdjustMediaFormats(
+      bool local,                             ///<  Media formats a local ones to be presented to remote
+      const OpalConnection * otherConnection, ///<  Other connection we are adjusting media for
+      OpalMediaFormatList & mediaFormats      ///<  Media formats to use
+    ) const;
+
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams. This is usually called twice per media patch,
+       once for the source stream and once for the sink stream.
+
+       Note this is not called within the context of the patch thread and is
+       called before that thread has started.
+      */
+    virtual void OnPatchMediaStream(
+      PBoolean isSource,        ///< Is source/sink call
+      OpalMediaPatch & patch    ///<  New patch
+    );
+
+    /** Notifier function for OpalVideoUpdatePicture.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    void OnMediaCommand(OpalMediaCommand & command, INT extra);
+
+    virtual PBoolean SendUserInputTone(
+      char tone,        ///<  DTMF tone code
+      unsigned duration = 0  ///<  Duration of tone in milliseconds
+    );
+  //@}
+
+
   /**@name RTP Session Management */
   //@{
     /**Get next available session ID for the media type.
@@ -187,111 +265,6 @@ class OpalRTPConnection : public OpalConnection
     );
   //@}
 
-    /**Attaches the RFC 2833 handler to the media patch
-       This method may be called from subclasses, e.g. within
-       OnPatchMediaStream()
-      */
-    virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
-
-    virtual PBoolean SendUserInputTone(
-      char tone,        ///<  DTMF tone code
-      unsigned duration = 0  ///<  Duration of tone in milliseconds
-    );
-
-    /**Meda information structure for GetMediaInformation() function.
-      */
-    struct MediaInformation {
-      MediaInformation() { 
-        rfc2833  = RTP_DataFrame::IllegalPayloadType; 
-        ciscoNSE = RTP_DataFrame::IllegalPayloadType; 
-      }
-
-      OpalTransportAddress data;           ///<  Data channel address
-      OpalTransportAddress control;        ///<  Control channel address
-      RTP_DataFrame::PayloadTypes rfc2833; ///<  Payload type for RFC2833
-      RTP_DataFrame::PayloadTypes ciscoNSE; ///<  Payload type for RFC2833
-    };
-  //@}
-
-  /**@name Overrides from OpalConnection */
-  //@{
-    /**Get information on the media channel for the connection.
-       The default behaviour checked the mediaTransportAddresses dictionary
-       for the session ID and returns information based on that. It also uses
-       the rfc2833Handler variable for that part of the info.
-
-       It is up to the descendant class to assure that the mediaTransportAddresses
-       dictionary is set correctly before OnIncomingCall() is executed.
-     */
-    virtual PBoolean GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
-      MediaInformation & info ///<  Information on media channel
-    ) const;
-
-    /**See if the media can bypass the local host.
-
-       The default behaviour returns true if the session is audio or video.
-     */
-    virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
-    ) const;
-
-    /**Create a new media stream.
-       This will create a media stream of an appropriate subclass as required
-       by the underlying connection protocol. For instance H.323 would create
-       an OpalRTPStream.
-
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
-       Note that media streams may be created internally to the underlying
-       protocol. This function is not the only way a stream can come into
-       existance.
-     */
-    virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
-    );
-
-    /**Adjust media formats available on a connection.
-       This is called by a connection after it has called
-       OpalCall::GetMediaFormats() to get all media formats that it can use so
-       that an application may remove or reorder the media formats before they
-       are used to open media streams.
-
-       This function may also be executed by other connections in the call. If
-       this happens then the "otherConnection" parameter will be non-NULL. The
-       "local" parameter sense is relative to the "otherConnection" parameter,
-       if NULL then it is relative to "this".
-
-       The default behaviour calls the OpalEndPoint function of the same name.
-      */
-    virtual void AdjustMediaFormats(
-      bool local,                             ///<  Media formats a local ones to be presented to remote
-      const OpalConnection * otherConnection, ///<  Other connection we are adjusting media for
-      OpalMediaFormatList & mediaFormats      ///<  Media formats to use
-    ) const;
-
-    /**Call back when patching a media stream.
-       This function is called when a connection has created a new media
-       patch between two streams. This is usually called twice per media patch,
-       once for the source stream and once for the sink stream.
-
-       Note this is not called within the context of the patch thread and is
-       called before that thread has started.
-      */
-    virtual void OnPatchMediaStream(
-      PBoolean isSource,        ///< Is source/sink call
-      OpalMediaPatch & patch    ///<  New patch
-    );
-
-    /** Notifier function for OpalVideoUpdatePicture.
-        Calls the SendIntraFrameRequest on the rtp session
-      */
-    void OnMediaCommand(OpalMediaCommand & command, INT extra);
-  //@}
-
     class SessionMap : public map<unsigned, OpalMediaSession *>
     {
       public:
@@ -305,6 +278,13 @@ class OpalRTPConnection : public OpalConnection
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
+
+    /**Attaches the RFC 2833 handler to the media patch
+       This method may be called from subclasses, e.g. within
+       OnPatchMediaStream()
+      */
+    virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
+    void CheckForMediaBypass(OpalMediaSession & session);
 
     SessionMap m_sessions;
 

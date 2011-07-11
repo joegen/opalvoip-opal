@@ -1251,7 +1251,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
       PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
-             << ", dropped " << dropped << " packet(s) at " << sequenceNumber);
+             << ", " << dropped << " packet(s) missing at " << sequenceNumber);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
 #if OPAL_RTCP_XR
@@ -1875,13 +1875,19 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
 
 OpalTransportAddress OpalRTPSession::GetLocalMediaAddress() const
 {
-  return OpalTransportAddress(GetLocalAddress(), GetLocalDataPort(), "udp$");
+  if (localAddress.IsValid() && localDataPort != 0)
+    return OpalTransportAddress(localAddress, localDataPort, OpalTransportAddress::UdpPrefix());
+  else
+    return OpalTransportAddress();
 }
 
 
 OpalTransportAddress OpalRTPSession::GetRemoteMediaAddress() const
 {
-  return OpalTransportAddress(GetRemoteAddress(), GetRemoteDataPort(), "udp$");
+  if (remoteAddress.IsValid() && remoteDataPort != 0)
+    return OpalTransportAddress(remoteAddress, remoteDataPort, OpalTransportAddress::UdpPrefix());
+  else
+    return OpalTransportAddress();
 }
 
 
@@ -1890,6 +1896,15 @@ bool OpalRTPSession::SetRemoteMediaAddress(const OpalTransportAddress & address)
   PIPSocket::Address ip;
   WORD port = remoteDataPort;
   return address.GetIpAndPort(ip, port) && InternalSetRemoteAddress(ip, port, true);
+}
+
+
+OpalTransportAddress OpalRTPSession::GetRemoteControlAddress() const
+{
+  if (remoteAddress.IsValid() && remoteControlPort != 0)
+    return OpalTransportAddress(remoteAddress, remoteControlPort, OpalTransportAddress::UdpPrefix());
+  else
+    return OpalTransportAddress();
 }
 
 
@@ -1941,9 +1956,34 @@ bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
 }
 
 
+void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & transports)
+{
+  if (transports.IsEmpty())
+    return;
+
+  PWaitAndSignal mutex(dataMutex);
+
+  delete dataSocket;
+  delete controlSocket;
+  dataSocket = NULL;
+  controlSocket = NULL;
+
+  transports[0].GetIpAndPort(localAddress, localDataPort);
+  if (transports.GetSize() > 1)
+    transports[1].GetIpAndPort(localAddress, localControlPort);
+  else
+    localControlPort = (WORD)(localDataPort+1);
+
+  OpalMediaSession::SetExternalTransport(transports);
+}
+
+
 bool OpalRTPSession::Open(const PString & localInterface)
 {
   PWaitAndSignal mutex(dataMutex);
+
+  if (IsExternalTransport())
+    return true;
 
   if (dataSocket != NULL && controlSocket != NULL)
     return true;

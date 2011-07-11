@@ -649,7 +649,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
       if (FindEndPoint(b_party.Left(b_party.Find(':'))) != NULL)
         return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
 
-      PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << ", call=" << call);
+      PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
       return false;
     }
 
@@ -810,14 +810,13 @@ void OpalManager::AdjustMediaFormats(bool local,
 }
 
 
-PBoolean OpalManager::IsMediaBypassPossible(const OpalConnection & source,
-                                        const OpalConnection & destination,
-                                        unsigned sessionID) const
+bool OpalManager::AllowMediaBypass(const OpalConnection & PTRACE_PARAM(source),
+                                   const OpalConnection & PTRACE_PARAM(destination),
+                                    const OpalMediaType & PTRACE_PARAM(mediaType)) const
 {
-  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << sessionID);
-
-  return source.IsMediaBypassPossible(sessionID) &&
-         destination.IsMediaBypassPossible(sessionID);
+  PTRACE(3, "OpalMan\tAllowMediaBypass for " << mediaType << ", "
+            "from " << source << " to " << destination);
+  return true;
 }
 
 

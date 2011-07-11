@@ -107,6 +107,7 @@ OpalMediaSession::OpalMediaSession(OpalConnection & connection, unsigned session
   : m_connection(connection)
   , m_sessionId(sessionId)
   , m_mediaType(mediaType)
+  , m_isExternalTransport(false)
   , m_referenceCount(1)
 {
 }
@@ -123,15 +124,15 @@ bool OpalMediaSession::Close()
 }
 
 
-bool OpalMediaSession::Shutdown(bool /*reading*/)
+bool OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
 {
   return true;
 }
 
 
-bool OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
+OpalTransportAddress OpalMediaSession::GetRemoteControlAddress() const
 {
-  return true;
+  return OpalTransportAddress();
 }
 
 
@@ -149,6 +150,13 @@ void OpalMediaSession::AttachTransport(Transport &)
 OpalMediaSession::Transport OpalMediaSession::DetachTransport()
 {
   return Transport();
+}
+
+
+void OpalMediaSession::SetExternalTransport(const OpalTransportAddressArray & PTRACE_PARAM(transports))
+{
+  PTRACE(3, "Media\tSetting external transport to " << setfill(',') << transports);
+  m_isExternalTransport = true;
 }
 
 

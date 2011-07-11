@@ -415,7 +415,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
   // If nothing comes out of the above, e.g. when this is called very early
   // in the call sequence and there is no second connection in call yet, then
   // return all the possible media formats.
-  if (first)
+  if (commonFormats.IsEmpty())
     commonFormats = OpalTranscoder::GetPossibleFormats(manager.GetCommonMediaFormats(false, true));
 
   connection.AdjustMediaFormats(true, NULL, commonFormats);
@@ -667,17 +667,6 @@ void OpalCall::CloseMediaStreams()
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite))
     connection->CloseMediaStreams();
-}
-
-
-PBoolean OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
-                                     unsigned sessionID) const
-{
-  PTRACE(3, "Call\tIsMediaBypassPossible " << connection << " session " << sessionID);
-
-  PSafePtr<OpalConnection> otherConnection;
-  return EnumerateConnections(otherConnection, PSafeReadOnly, &connection) &&
-         manager.IsMediaBypassPossible(connection, *otherConnection, sessionID);
 }
 
 
