@@ -749,6 +749,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
     unsigned m_constraints;
     unsigned m_packetisationMode;
     unsigned m_maxRTPSize;
+    unsigned m_maxNALUSize;
     unsigned m_tsto;
 
     H264EncCtx m_encoder;
@@ -765,6 +766,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       , m_constraints(0)
       , m_packetisationMode(1)
       , m_maxRTPSize(1400)
+      , m_maxNALUSize(1400)
       , m_tsto(31)
     {
     }
@@ -808,6 +810,9 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
         return SetOptionUnsigned(m_maxRTPSize, optionValue, 256, 8192);
+
+      if (strcasecmp(optionName, MaxNaluSize.m_name) == 0)
+        return SetOptionUnsigned(m_maxNALUSize, optionValue, 256, 8192);
 
       if (STRCMPI(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
@@ -882,7 +887,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.call(SET_FRAME_HEIGHT, m_height);
       m_encoder.call(SET_FRAME_RATE, m_frameRate);
       m_encoder.call(SET_TARGET_BITRATE, m_bitRate/1000);
-      m_encoder.call(SET_MAX_FRAME_SIZE, m_maxRTPSize);
+      m_encoder.call(SET_MAX_FRAME_SIZE, std::min(m_maxRTPSize, m_maxNALUSize));
       m_encoder.call(SET_TSTO, m_tsto);
       m_encoder.call(APPLY_OPTIONS);
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
