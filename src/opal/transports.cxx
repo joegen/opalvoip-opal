@@ -211,8 +211,10 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 
   PINDEX dollar = Find('$');
   if (dollar == P_MAX_INDEX) {
-    PString prefix(proto == NULL ? TcpPrefix() : PConstString(proto));
-    if (prefix.Find('$') == P_MAX_INDEX)
+    PString prefix(proto);
+    if (prefix.IsEmpty())
+      prefix = TcpPrefix();
+    else if (prefix.Find('$') == P_MAX_INDEX)
       prefix += '$';
 
     Splice(prefix, 0);
