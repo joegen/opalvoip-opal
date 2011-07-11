@@ -109,7 +109,7 @@ class OpalTransportAddress : public PCaselessString
     PCaselessString GetProtoPrefix() const { return Left(Find('$')+1); }
 
     // For backward compatibility
-    const char * GetProto() const { return GetProtoPrefix(); }
+    PCaselessString GetProto(bool withDollar = false) const { return Left(Find('$')+(withDollar?1:0)); }
 
     /**Extract the ip address from transport address.
        Returns false, if the address is not an IP transport address.
