@@ -51,6 +51,8 @@ FaxOPAL::~FaxOPAL()
 
 void FaxOPAL::Main()
 {
+  SetTerminationValue(1);
+
   m_manager = new MyManager();
 
   PArgList & args = GetArguments();
@@ -195,6 +197,8 @@ void FaxOPAL::Main()
   }
   cout << " ..." << endl;
 
+  SetTerminationValue(2);
+
   map<PString, OpalMediaStatistics> lastStatisticsByToken;
 
   // Wait for call to come in and finish (default one year)
@@ -260,7 +264,7 @@ void MyManager::OnClearedCall(OpalCall & call)
       break;
 
     default :
-      cout << "call error " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
+      cerr << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
   m_completed.Signal();
@@ -273,27 +277,28 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
-      cout << "Failed to establish T.30";
+      cerr << "Failed to establish T.30";
       break;
     case 0 :
       cout << "Success, "
            << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
            << " of " << stats.m_fax.m_totalPages << " pages";
+      PProcess::Current().SetTerminationValue(0); // Indicate success
       break;
     case 41 :
-      cout << "Failed to open TIFF file";
+      cerr << "Failed to open TIFF file";
       break;
     case 42 :
     case 43 :
     case 44 :
     case 45 :
     case 46 :
-      cout << "Illegal TIFF file";
+      cerr << "Illegal TIFF file";
       break;
     default :
-      cout << "T.30 error " << stats.m_fax.m_result;
+      cerr << "T.30 error " << stats.m_fax.m_result;
       if (!stats.m_fax.m_errorText.IsEmpty())
-        cout << " (" << stats.m_fax.m_errorText << ')';
+        cerr << " (" << stats.m_fax.m_errorText << ')';
   }
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
 }
