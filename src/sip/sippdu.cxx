@@ -248,12 +248,15 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
     s << "sip";
 
     PCaselessString proto = address.GetProtoPrefix();
+#if OPAL_PTLIB_SSL
     if (proto == OpalTransportAddress::TlsPrefix()) {
       defaultPort = 5061;
       s << 's';
       // use default tranport=UDP
     }
-    else if (proto != OpalTransportAddress::UdpPrefix())
+    else
+#endif // OPAL_PTLIB_SSL
+    if (proto != OpalTransportAddress::UdpPrefix())
       transProto = proto.Left(proto.GetLength()-1); // Typically "tcp"
     // else use default UDP
 
