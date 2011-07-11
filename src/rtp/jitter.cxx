@@ -237,7 +237,7 @@ OpalJitterBuffer::~OpalJitterBuffer()
 
 void OpalJitterBuffer::PrintOn(ostream & strm) const
 {
-  strm << this
+  strm << "this=" << (void *)this
        << " packets=" << m_frames.size()
        << " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
                     << (m_currentJitterDelay/m_timeUnits) << '-'

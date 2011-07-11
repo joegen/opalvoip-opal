@@ -2774,6 +2774,7 @@ void SIPTransaction::WaitForCompletion()
   if (m_state == NotStarted)
     Start();
 
+  PTRACE(4, "SIP\tAwaiting completion of " << GetMethod() << " transaction id=" << GetTransactionID());
   m_completed.Wait();
 }
 
