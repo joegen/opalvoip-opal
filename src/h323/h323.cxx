@@ -185,6 +185,7 @@ H323Connection::H323Connection(OpalCall & call,
   , m_progressIndicator(0)
   , remoteMaxAudioDelayJitter(0)
   , uuiesRequested(0) // Empty set
+  , gkAccessTokenOID(ep.GetGkAccessTokenOID())
   , addAccessTokenToSetup(true) // Automatic inclusion of ACF access token in SETUP
   , signallingChannel(NULL)
   , controlChannel(NULL)
@@ -213,7 +214,6 @@ H323Connection::H323Connection(OpalCall & call,
   , callIntrusionProtectionLevel(endpoint.GetCallIntrusionProtectionLevel())
 #endif
   , m_fastStartChannelBeingOpened(NULL)
-  , gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
 #endif
