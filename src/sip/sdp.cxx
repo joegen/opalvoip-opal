@@ -270,8 +270,9 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
-    if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
-      option.FromString(option.GetFMTPDefault());
+    PString value = option.GetFMTPDefault();
+    if (!value.IsEmpty())
+      option.FromString(value);
   }
 
   // Set the frame size options from media's ptime & maxptime attributes
