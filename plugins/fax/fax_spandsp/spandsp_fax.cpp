@@ -212,6 +212,10 @@ static struct PluginCodec_Option const UseEcmOption =
 };
 
 
+/*T.38/D.2.3.5
+  T38FaxVersion is negotiated. The entity answering the offer shall return the
+  same or a lower version number.
+ */
 static struct PluginCodec_Option const T38FaxVersion =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
@@ -220,18 +224,22 @@ static struct PluginCodec_Option const T38FaxVersion =
   PluginCodec_MinMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "0",                        // Minimum value
   "1"                         // Maximum value
 };
 
+/*T.38/D.2.3.5
+  T38FaxRateManagement is declarative and the answer must contain the same value.
+  Note is also compulsory so has no default value.
+ */
 static struct PluginCodec_Option const T38FaxRateManagement =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
   "T38FaxRateManagement",     // Generic (human readable) option name
   false,                      // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  PluginCodec_AlwaysMerge,    // Merge mode
   "transferredTCF",           // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -239,12 +247,17 @@ static struct PluginCodec_Option const T38FaxRateManagement =
   "localTCF:transferredTCF"   // enum values
 };
 
+/*T.38/D.2.3.5
+  T38MaxBitRate is declarative and the answer is independent of the offer. The
+  parameter simply indicates the maximum transmission bit rate supported by
+  the endpoint.
+ */
 static struct PluginCodec_Option const T38MaxBitRate =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38MaxBitRate",            // Generic (human readable) option name
   false,                      // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  PluginCodec_NoMerge,        // Merge mode
   "14400",                    // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -253,40 +266,61 @@ static struct PluginCodec_Option const T38MaxBitRate =
   "56000"                     // Maximum value
 };
 
+/*T.38/D.2.3.5
+  T38FaxMaxBuffer is declarative and the answer is independent of the offer.
+  This parameter simply signals the buffer space available on the offering
+  endpoint and the answering endpoint. The answering endpoint may have more or
+  less buffer space than the offering endpoint. Each endpoint should be
+  considerate of the available buffer space on the opposite endpoint.
+ */
 static struct PluginCodec_Option const T38FaxMaxBuffer =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38FaxMaxBuffer",          // Generic (human readable) option name
   false,                      // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  PluginCodec_NoMerge,        // Merge mode
   "2000",                     // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "528",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
-  "100",                       // Minimum value
+  "100",                      // Minimum value
   "9999"                      // Maximum value
 };
 
+/*T.38/D.2.3.5
+  T38FaxMaxDatagram is declarative and the answer is independent of the offer.
+  This parameter signals the largest acceptable datagram for the offering
+  endpoint and the answering endpoint (i.e., the maximum size of the RTP
+  payload). The answering endpoint may accept a larger or smaller datagram
+  than the offering endpoint. Each endpoint should be considerate of the
+  maximum datagram size of the opposite endpoint.
+ */
 static struct PluginCodec_Option const T38FaxMaxDatagram =
 {
   PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
   "T38FaxMaxDatagram",        // Generic (human readable) option name
   false,                      // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
-  "528",                      // Initial value
+  PluginCodec_NoMerge,        // Merge mode
+  "1400",                     // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "528",                      // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                          // H.245 Generic Capability number and scope bits
   "10",                       // Minimum value
   "1500"                      // Maximum value
 };
 
+/*T.38/D.2.3.5
+  T38FaxUdpEC is negotiated only when using UDPTL as the transport. If the
+  answering endpoint supports the offered error correction mode, then it shall
+  return the same value in the answer, otherwise the T38FaxUdpEC parameter
+  shall not be present in the answer.
+ */
 static struct PluginCodec_Option const T38FaxUdpEC =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
   "T38FaxUdpEC",              // Generic (human readable) option name
   false,                      // Read Only flag
-  PluginCodec_MinMerge,       // Merge mode
+  PluginCodec_AlwaysMerge,    // Merge mode
   "t38UDPRedundancy",         // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -294,6 +328,11 @@ static struct PluginCodec_Option const T38FaxUdpEC =
   "t38UDPFEC:t38UDPRedundancy"// enum values
 };
 
+/*T.38/D.2.3.5
+  T38FaxFillBitRemoval is negotiated. If the answering entity does not support
+  this capability or if the capability was not in the offer, this parameter
+  shall not be present in the answer.
+ */
 static struct PluginCodec_Option const T38FaxFillBitRemoval =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
@@ -302,10 +341,15 @@ static struct PluginCodec_Option const T38FaxFillBitRemoval =
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
 
+/*T.38/D.2.3.5
+  T38FaxTranscodingMMR is negotiated. If the answering entity does not support
+  this capability or if the capability was not in the offer, this parameter
+  shall not be present in the answer.
+ */
 static struct PluginCodec_Option const T38FaxTranscodingMMR =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
@@ -314,10 +358,15 @@ static struct PluginCodec_Option const T38FaxTranscodingMMR =
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
 
+/*T.38/D.2.3.5
+  T38FaxTranscodingJBIG is negotiated. If the answering entity does not
+  support this capability or if the capability was not in the offer, this
+  parameter shall not be present in the answer.
+ */
 static struct PluginCodec_Option const T38FaxTranscodingJBIG =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
@@ -326,7 +375,7 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
   PluginCodec_AndMerge,       // Merge mode
   "0",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
 };
 

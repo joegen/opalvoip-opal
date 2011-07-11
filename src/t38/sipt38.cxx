@@ -145,8 +145,11 @@ void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/,
   if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
-      if (option.GetName().Left(3) *= "t38") 
-        t38Attributes.SetAt(option.GetName(), option.AsString());
+      if (option.GetName().Left(3) *= "t38") {
+        PString value = option.AsString();
+        if (value != option.GetFMTPDefault())
+          t38Attributes.SetAt(option.GetName(), option.AsString());
+      }
     }
   }
 }
