@@ -135,15 +135,18 @@ class OpalMediaSession : public PObject
 
     virtual bool Open(const PString & localInterface);
     virtual bool Close();
-    virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
     virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual OpalTransportAddress GetRemoteControlAddress() const;
     virtual bool SetRemoteControlAddress(const OpalTransportAddress &);
 
     typedef PList<PChannel> Transport;
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
+
+    bool IsExternalTransport() const { return m_isExternalTransport; }
+    virtual void SetExternalTransport(const OpalTransportAddressArray & transports);
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -165,6 +168,7 @@ class OpalMediaSession : public PObject
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+    bool             m_isExternalTransport;
     PAtomicInteger   m_referenceCount;
 
   private:

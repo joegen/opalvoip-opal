@@ -59,7 +59,7 @@ class H245_MiscellaneousIndication_type;
 class H323EndPoint;
 class H323Connection;
 class H323Capability;
-class H323SessionHandler;
+class H323SessionPDUHandler;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -420,7 +420,8 @@ class H323UnidirectionalChannel : public H323Channel
     virtual void InternalClose();
 
     bool               receiver;
-    OpalMediaStreamPtr mediaStream;
+    OpalMediaFormat    m_mediaFormat;
+    OpalMediaStreamPtr m_mediaStream;
 };
 
 
@@ -589,7 +590,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
       H323Connection & connection,        ///<  Connection to endpoint for channel
       const H323Capability & capability,  ///<  Capability channel is using
       Directions direction,               ///< Direction of channel
-      H323SessionHandler & session        ///< Session for channel
+      H323SessionPDUHandler & session     ///< Session for channel
     );
 
     /// Destroy the channel
@@ -613,99 +614,6 @@ class H323_RTPChannel : public H323_RealTimeChannel
     virtual bool SetSessionID(
       unsigned sessionID   ///< New session ID
     );
-  //@}
-
-  /**@name Overrides from class H323_RealTimeChannel */
-  //@{
-    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
-     */
-    virtual PBoolean OnSendingPDU(
-      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
-    ) const;
-
-    /**This is called when request to create a channel is received from a
-       remote machine and is about to be acknowledged.
-     */
-    virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-
-       The default behaviour sets the remote ports to send UDP packets to.
-     */
-    virtual PBoolean OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
-      unsigned & errorCode                              ///<  Error on failure
-    );
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-
-       The default behaviour sets the remote ports to send UDP packets to.
-     */
-    virtual PBoolean OnReceivedAckPDU(
-      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    );
-  //@}
-
-  protected:
-    H323SessionHandler & m_session;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-/**This class is for encpsulating the IETF Real Time Protocol interface as used
-by a remote host.
- */
-class H323_ExternalRTPChannel : public H323_RealTimeChannel
-{
-  PCLASSINFO(H323_ExternalRTPChannel, H323_RealTimeChannel);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new channel.
-     */
-    H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID                  ///<  Session ID for channel
-    );
-    /**Create a new channel.
-     */
-    H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID,                 ///<  Session ID for channel
-      const H323TransportAddress & data,  ///<  Data address
-      const H323TransportAddress & control///<  Control address
-    );
-    /**Create a new channel.
-     */
-    H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID,                 ///<  Session ID for channel
-      const PIPSocket::Address & ip,      ///<  IP address of media server
-      WORD dataPort                       ///<  Data port (control is dataPort+1)
-    );
-  //@}
-
-  /**@name Overrides from class H323Channel */
-  //@{
-    /**Indicate the session number of the channel.
-       Return session for channel. This returns the session ID of the
-       H323RTPSession member variable.
-     */
-    virtual unsigned GetSessionID() const;
 
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
@@ -717,26 +625,6 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
       OpalTransportAddress & data,        ///<  Data channel address
       OpalTransportAddress & control      ///<  Control channel address
     ) const;
-
-    /**Start the channel.
-      */
-    virtual PBoolean Start();
-
-    /**Handle channel data reception.
-
-       This is called by the thread started by the Start() function and is
-       typically a loop writing to the codec and reading from the transport
-       (eg RTP_session).
-      */
-    virtual void Receive();
-
-    /**Handle channel data transmission.
-
-       This is called by the thread started by the Start() function and is
-       typically a loop reading from the codec and writing to the transport
-       (eg an RTP_session).
-      */
-    virtual void Transmit();
   //@}
 
   /**@name Overrides from class H323_RealTimeChannel */
@@ -776,27 +664,8 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     );
   //@}
 
-    void SetExternalAddress(
-      const H323TransportAddress & data,  ///<  Data address
-      const H323TransportAddress & control///<  Control address
-    );
-
-    const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
-    const H323TransportAddress & GetRemoteMediaControlAddress() const { return remoteMediaControlAddress; }
-
-    PBoolean GetRemoteAddress(
-      PIPSocket::Address & ip,
-      WORD & dataPort
-    ) const;
-
   protected:
-    void Construct(H323Connection & conn, unsigned id);
-
-    unsigned             sessionID;
-    H323TransportAddress externalMediaAddress;
-    H323TransportAddress externalMediaControlAddress;
-    H323TransportAddress remoteMediaAddress;
-    H323TransportAddress remoteMediaControlAddress;
+    H323SessionPDUHandler & m_session;
 };
 
 

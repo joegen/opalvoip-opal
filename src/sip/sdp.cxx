@@ -117,7 +117,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
           PTRACE(3, "SDP\tConnection address of 0.0.0.0 specified for HOLD request.");
         }
         else {
-          OpalTransportAddress address(tokens[offset+2], port, "udp");
+          OpalTransportAddress address(tokens[offset+2], port, OpalTransportAddress::UdpPrefix());
           PTRACE(4, "SDP\tParsed connection address " << address);
           return address;
         }
@@ -514,7 +514,7 @@ PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
   PIPSocket::Address ip;
   WORD port = 0;
   if (transportAddress.GetIpAndPort(ip, port)) {
-    transportAddress = OpalTransportAddress(t, port);
+    transportAddress = OpalTransportAddress(t, port, OpalTransportAddress::UdpPrefix());
     return PTrue;
   }
   return PFalse;
@@ -576,7 +576,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
 
       PIPSocket::Address ip;
       if (transportAddress.GetIpAddress(ip))
-        transportAddress = OpalTransportAddress(ip, (WORD)port);
+        transportAddress = OpalTransportAddress(ip, (WORD)port, OpalTransportAddress::UdpPrefix());
   }
 
   CreateSDPMediaFormats(tokens);

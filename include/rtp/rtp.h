@@ -395,10 +395,13 @@ class OpalRTPSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress & address);
+    virtual OpalTransportAddress GetRemoteControlAddress() const;
     virtual bool SetRemoteControlAddress(const OpalTransportAddress & address);
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
+
+    virtual void SetExternalTransport(const OpalTransportAddressArray & transports);
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -667,12 +670,6 @@ class OpalRTPSession : public OpalMediaSession
     /**Get local address of session.
       */
     virtual PIPSocket::Address GetLocalAddress() const { return localAddress; }
-
-    /**Set local address of session.
-      */
-    virtual void SetLocalAddress(
-      const PIPSocket::Address & addr
-    ) { localAddress = addr; }
 
     /**Get remote address of session.
       */

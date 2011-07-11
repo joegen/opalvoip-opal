@@ -59,6 +59,13 @@ class OpalTransportAddress : public PCaselessString
 {
   PCLASSINFO(OpalTransportAddress, PCaselessString);
   public:
+    static const PCaselessString & IpPrefix();
+    static const PCaselessString & UdpPrefix();
+    static const PCaselessString & TcpPrefix();
+#if OPAL_PTLIB_SSL
+    static const PCaselessString & TlsPrefix();
+#endif
+
   /**@name Construction */
   //@{
     OpalTransportAddress();
@@ -99,7 +106,7 @@ class OpalTransportAddress : public PCaselessString
 
     /**Return the underlying protocol for the transport address.
       */
-    PCaselessString GetProto(bool withDollar = false) const { return Left(Find('$')+(withDollar?1:0)); }
+    PCaselessString GetProtoPrefix() const { return Left(Find('$')+1); }
 
     /**Extract the ip address from transport address.
        Returns false, if the address is not an IP transport address.
@@ -422,7 +429,7 @@ class OpalListenerIP : public OpalListener
   //@{
     WORD GetListenerPort() const { return listenerPort; }
 
-    virtual const char * GetProtoPrefix() const = 0;
+    virtual const PCaselessString & GetProtoPrefix() const = 0;
   //@}
 
 
@@ -509,7 +516,7 @@ class OpalListenerTCP : public OpalListenerIP
 
 
   protected:
-    virtual const char * GetProtoPrefix() const;
+    virtual const PCaselessString & GetProtoPrefix() const;
 
     PTCPSocket listener;
 };
@@ -609,7 +616,7 @@ class OpalListenerUDP : public OpalListenerIP
 
 
   protected:
-    virtual const char * GetProtoPrefix() const;
+    virtual const PCaselessString & GetProtoPrefix() const;
 
     PMonitoredSocketsPtr listenerBundle;
     PINDEX               m_bufferSize;
@@ -816,7 +823,7 @@ class OpalTransport : public PIndirectChannel
 
     /**Get the prefix for this transports protocol type.
       */
-    virtual const char * GetProtoPrefix() const = 0;
+    virtual const PCaselessString & GetProtoPrefix() const = 0;
 
     PMutex & GetWriteMutex() { return m_writeMutex; }
 
@@ -876,7 +883,7 @@ class OpalTransportIP : public OpalTransport
   protected:
     /**Get the prefix for this transports protocol type.
       */
-    virtual const char * GetProtoPrefix() const = 0;
+    virtual const PCaselessString & GetProtoPrefix() const = 0;
 
     PIPSocket::Address localAddress;  // Address of the local interface
     WORD               localPort;
@@ -951,7 +958,7 @@ class OpalTransportTCP : public OpalTransportIP
   protected:
     /**Get the prefix for this transports protocol type.
       */
-    virtual const char * GetProtoPrefix() const;
+    virtual const PCaselessString & GetProtoPrefix() const;
 
     /**This callback is executed when the Open() function is called with
        open channels. It may be used by descendent channels to do any
@@ -1137,7 +1144,7 @@ class OpalTransportUDP : public OpalTransportIP
   protected:
     /**Get the prefix for this transports protocol type.
       */
-    virtual const char * GetProtoPrefix() const;
+    virtual const PCaselessString & GetProtoPrefix() const;
 
     OpalManager & manager;
     PINDEX        m_bufferSize;
@@ -1240,17 +1247,17 @@ typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP, OpalT
 
 class PSSLContext;
 
-class OpalListenerTCPS : public OpalListenerTCP
+class OpalListenerTLS : public OpalListenerTCP
 {
-  PCLASSINFO(OpalListenerTCPS, OpalListenerTCP);
+  PCLASSINFO(OpalListenerTLS, OpalListenerTCP);
   public:
-    OpalListenerTCPS(
+    OpalListenerTLS(
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
       PBoolean exclusive = true               ///< Exclusive listening mode, no other process can accept on the port
     );
-    OpalListenerTCPS(
+    OpalListenerTLS(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
       const OpalTransportAddress & binding,     ///<  Local interface to listen on
       OpalTransportAddress::BindOptions option  ///< OPtions for binding
@@ -1258,10 +1265,10 @@ class OpalListenerTCPS : public OpalListenerTCP
 
     /** Destroy the listener thread.
       */
-    ~OpalListenerTCPS();
+    ~OpalListenerTLS();
 
     OpalTransport * Accept(const PTimeInterval & timeout);
-    const char * GetProtoPrefix() const;
+    virtual const PCaselessString & GetProtoPrefix() const;
 
   protected:
     void Construct();
@@ -1269,34 +1276,38 @@ class OpalListenerTCPS : public OpalListenerTCP
     PSSLContext * sslContext;
 };
 
-class OpalTransportTCPS : public OpalTransportTCP
+
+class OpalTransportTLS : public OpalTransportTCP
 {
-  PCLASSINFO(OpalTransportTCPS, OpalTransportTCP);
+  PCLASSINFO(OpalTransportTLS, OpalTransportTCP);
     public:
-      OpalTransportTCPS(
+      OpalTransportTLS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
         WORD port = 0,              ///<  Local port to bind to
         PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
       );
-      OpalTransportTCPS(
+      OpalTransportTLS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PTCPSocket * socket         ///<  Socket to use
       );
 
       /// Destroy the TCPS channel
-      ~OpalTransportTCPS();
+      ~OpalTransportTLS();
 
       PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
       PBoolean Connect();
       PBoolean OnOpen();
-      const char * GetProtoPrefix() const;
+      virtual const PCaselessString & GetProtoPrefix() const;
 
     protected:
       PSSLContext * sslContext;
 };
 
-typedef OpalInternalIPTransportTemplate<OpalListenerTCPS, OpalTransportTCPS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTCPSTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerTLS, OpalTransportTLS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTLSTransport;
+
+typedef OpalTransportTLS OpalTransportTCPS; // For backward compatibility
+typedef OpalListenerTLS OpalListenerTCPS;
 
 
 #endif // OPAL_PTLIB_SSL

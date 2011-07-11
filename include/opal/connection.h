@@ -1153,19 +1153,18 @@ class OpalConnection : public PSafeObject
       */
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
-    /**Attaches the RFC 2833 handler to the media patch
-       This method may be called from subclasses, e.g. within
-       OnPatchMediaStream()
-      */
-    virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
+    /**Get transports for the media session on the connection.
+       This is primarily used by the media bypass feature controlled by the
+       OpalManager::AllowMediaBypass() function. It allows one side of the
+       call to get the transport address of the media on the other side, so it
+       can pass it on, bypassing the local host.
 
-    /**See if the media can bypass the local host.
-
-       The default behaviour returns false indicating that media bypass is not
-       possible.
+       @return true if a transport address is available and may be used to pass
+               on to a remote system for direct access.
      */
-    virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
+    virtual bool GetMediaTransportAddresses(
+      const OpalMediaType & mediaType,       ///< Media type for session to return information
+      OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
 
 #if OPAL_VIDEO
@@ -1646,10 +1645,6 @@ class OpalConnection : public PSafeObject
     virtual OpalTransport & GetTransport() const
     { return *(OpalTransport *)NULL; }
 
-    PDICTIONARY(MediaAddressesDict, POrdinalKey, OpalTransportAddress);
-    MediaAddressesDict & GetMediaTransportAddresses()
-    { return mediaTransportAddresses; }
-
 #if OPAL_STATISTICS
     /**Get Video Update requests statistic.
       */
@@ -1770,7 +1765,6 @@ class OpalConnection : public PSafeObject
     OpalMediaFormat       m_filterMediaFormat;
 
     OpalMediaFormatList        m_localMediaFormats;
-    MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
 
     unsigned            minAudioJitterDelay;
@@ -1876,6 +1870,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool, RetrieveConnection(), false);
     P_REMOVE_VIRTUAL(bool, IsConnectionOnHold(bool), false);
     P_REMOVE_VIRTUAL_VOID(ApplyStringOptions(OpalConnection::StringOptions &));
+    P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(unsigned) const, false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

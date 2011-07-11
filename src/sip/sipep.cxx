@@ -160,7 +160,7 @@ PString SIPEndPoint::GetDefaultTransport() const
 {
   return "udp$,tcp$"
 #if OPAL_PTLIB_SSL
-         ",tcps$:5061"
+         ",tls$:5061"
 #endif
     ; 
 }
@@ -262,7 +262,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   OpalTransportAddress localAddress;
   if (!localInterface.IsEmpty()) {
     if (localInterface != "*") // Nasty kludge to get around infinite recursion in REGISTER
-      localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProto());
+      localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
   }
   else {
     PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(remoteURL.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
@@ -278,7 +278,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   OpalTransport * transport = NULL;
 
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    if (listener->GetLocalAddress().GetProto() *= remoteAddress.GetProto())
+    if (listener->GetLocalAddress().GetProtoPrefix() == remoteAddress.GetProtoPrefix())
       if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
         break;
   }
@@ -1773,7 +1773,7 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
   if (transport.GetRemoteAddress().GetIpAddress(transportAddress))
     GetManager().TranslateIPAddress(myAddress, transportAddress);
 
-  OpalTransportAddress addr(myAddress, myPort, transport.GetLocalAddress().GetProto());
+  OpalTransportAddress addr(myAddress, myPort, transport.GetLocalAddress().GetProtoPrefix());
   PString defPartyName(GetDefaultLocalPartyName());
   SIPURL rpn;
   PINDEX pos;
@@ -1822,7 +1822,7 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
       const SIPURLList & contacts = registrar->GetContacts();
       for (SIPURLList::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
         OpalTransportAddress contactAddress = it->GetHostAddress();
-        if (contactAddress.GetProto(true) == transport.GetProtoPrefix() &&
+        if (contactAddress.GetProtoPrefix() == transport.GetProtoPrefix() &&
             contactAddress.GetIpAddress(ip) &&
             manager.IsLocalAddress(ip) == transportLocal) {
           contact = *it;

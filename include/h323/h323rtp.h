@@ -57,9 +57,9 @@ class H323_RTPChannel;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class is for encpsulating the IETF Real Time Protocol interface.
+/**This class is for encpsulating the PDU handling of a session.
  */
-class H323SessionHandler
+class H323SessionPDUHandler
 {
   public:
   /**@name Operations */
@@ -117,7 +117,7 @@ class H323SessionHandler
 
 /**This class is for the IETF Real Time Protocol interface on UDP/IP.
  */
-class H323RTPSession : public OpalRTPSession, public H323SessionHandler
+class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
 {
   PCLASSINFO(H323RTPSession, OpalRTPSession);
 

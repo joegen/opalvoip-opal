@@ -678,8 +678,9 @@ class SIP_PDU : public PSafeObject
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
-    SDPSessionDescription * GetSDP(const OpalMediaFormatList & masterList);
+    SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
+    bool DecodeSDP(const OpalMediaFormatList & masterList);
 
   protected:
     Methods     m_method;                 // Request type, ==NumMethods for Response

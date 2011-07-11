@@ -335,7 +335,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   {
     PWaitAndSignal mutex(transport->GetWriteMutex());
 
-    H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
+    H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
     if (!transport->SetRemoteAddress(locatedAddress)) {
       PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
       return PFalse;
@@ -386,7 +386,7 @@ bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
     return false;
 
   for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    if (listeners[i].GetProto() != "tcp")
+    if (listeners[i].GetProtoPrefix() != OpalTransportAddress::TcpPrefix())
       continue;
 
     H225_TransportAddress pduAddr;

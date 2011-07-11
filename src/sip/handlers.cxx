@@ -810,7 +810,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     SIPURLList newContacts;
 
     for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
-      if (contact->GetHostAddress().GetProto() == "udp") {
+      if (contact->GetHostAddress().GetProtoPrefix() == OpalTransportAddress::UdpPrefix()) {
         contact->GetFieldParameters().Remove("expires");
 
         SIPURL newContact(contact->GetUserName(), externalAddress);

@@ -66,7 +66,7 @@ PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
   PTRACE(3, "RTP\tOnSendingPDU");
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
-  param.m_mediaGuaranteedDelivery = PFalse;
+  param.m_mediaGuaranteedDelivery = false;
 
   // unicast must have mediaControlChannel
   H323TransportAddress mediaControlAddress(GetLocalAddress(), GetLocalControlPort());
@@ -79,28 +79,8 @@ PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
     mediaAddress.SetPDU(param.m_mediaChannel);
   }
-  else {
-    // Set flag for we are going to stop sending audio on silence
-    OpalMediaStreamPtr mediaStream = channel.GetMediaStream();
-    if (mediaStream != NULL) {
-      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-      param.m_silenceSuppression = (connection.GetEndPoint ().GetManager ().GetSilenceDetectParams ().m_mode != OpalSilenceDetector::NoSilenceDetection);
-    }
-  }
 
-  // Set dynamic payload type, if is one
-  RTP_DataFrame::PayloadTypes rtpPayloadType = channel.GetDynamicRTPPayloadType();
-  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
-    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
-    param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
-  }
-
-  // Set the media packetization field if have an option to describe it.
-  param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
-  if (H323SetRTPPacketization(param.m_mediaPacketization, channel.GetMediaStream()->GetMediaFormat(), rtpPayloadType))
-    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
-
-  return PTrue;
+  return true;
 }
 
 
@@ -135,7 +115,7 @@ PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
   if (pdu.GetTag() != H245_TransportAddress::e_unicastAddress) {
     PTRACE(1, "RTP_UDP\tOnly unicast supported at this time");
     errorCode = H245_OpenLogicalChannelReject_cause::e_multicastChannelNotAllowed;
-    return PFalse;
+    return false;
   }
 
   H323TransportAddress transAddr = pdu;
@@ -144,7 +124,7 @@ PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
     return true;
 
   PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");
-  return PFalse;
+  return false;
 }
 
 
@@ -152,52 +132,36 @@ PBoolean H323RTPSession::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
-  PBoolean ok = PFalse;
+  bool ok = false;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
-    if (!ExtractTransport(param.m_mediaControlChannel, PFalse, errorCode)) {
+    if (!ExtractTransport(param.m_mediaControlChannel, false, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << channel);
-      return PFalse;
+      return false;
     }
-    ok = PTrue;
+    ok = true;
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
     if (ok && channel.GetDirection() == H323Channel::IsReceiver)
       PTRACE(2, "RTP_UDP\tIgnoring media transport for " << channel);
-    else if (!ExtractTransport(param.m_mediaChannel, PTrue, errorCode)) {
+    else if (!ExtractTransport(param.m_mediaChannel, true, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
-      return PFalse;
+      return false;
     }
-    ok = PTrue;
-  }
-
-  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
-    channel.SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
-
-  PString mediaPacketization;
-  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
-      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
-    mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
-
-  OpalMediaFormat mediaFormat = channel.GetMediaStream()->GetMediaFormat();
-  if (mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption()) != mediaPacketization ||
-      mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption())  != mediaPacketization) {
-    mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), mediaPacketization);
-    mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization);
-    channel.GetMediaStream()->UpdateMediaFormat(mediaFormat);
+    ok = true;
   }
 
   if (ok)
-    return PTrue;
+    return true;
 
   PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
 
   if (GetSessionID() == H323Capability::DefaultDataSessionID)
-    return PTrue;
+    return true;
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-  return PFalse;
+  return false;
 }
 
 
@@ -211,27 +175,27 @@ PBoolean H323RTPSession::OnReceivedAckPDU(H323_RTPChannel & channel,
   unsigned errorCode;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
-    if (!ExtractTransport(param.m_mediaControlChannel, PFalse, errorCode))
-      return PFalse;
+    if (!ExtractTransport(param.m_mediaControlChannel, false, errorCode))
+      return false;
   }
   else {
     PTRACE(1, "RTP_UDP\tNo mediaControlChannel specified");
     if (GetSessionID() != H323Capability::DefaultDataSessionID)
-      return PFalse;
+      return false;
   }
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaChannel specified");
-    return PFalse;
+    return false;
   }
 
-  if (!ExtractTransport(param.m_mediaChannel, PTrue, errorCode))
-    return PFalse;
+  if (!ExtractTransport(param.m_mediaChannel, true, errorCode))
+    return false;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType))
     channel.SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
 
-  return PTrue;
+  return true;
 }
 
 
