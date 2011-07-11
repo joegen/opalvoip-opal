@@ -52,7 +52,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL MCU", "samples\opalmcu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testpresent", "samples\testpresent\testpresent_2008.vcproj", "{1650298C-5F43-47B8-974E-155D1FA0D672}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "..\SVN-Trunk\opal\samples\externrtp\ExternRTP_2008.vcproj", "{5D8141BD-D748-4D04-A4C2-92165B444E91}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "samples\externrtp\ExternRTP_2008.vcproj", "{5D8141BD-D748-4D04-A4C2-92165B444E91}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
