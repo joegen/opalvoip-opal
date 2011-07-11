@@ -458,9 +458,11 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 
   PStringStream addr;
 
+#if OPAL_PTLIB_SSL
   if (scheme *= "sips")
     addr << OpalTransportAddress::TlsPrefix();
   else
+#endif
     addr << paramVars("transport", "udp") << '$';
 
   if (paramVars.Contains("maddr"))
