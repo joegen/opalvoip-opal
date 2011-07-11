@@ -78,10 +78,7 @@ OpalMediaSession * OpalRTPEndPoint::CreateMediaSession(OpalConnection & connecti
 static OpalRTPSession * GetRTPFromStream(const OpalMediaStream & stream)
 {
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtpStream == NULL)
-    return NULL;
-
-  return dynamic_cast<OpalRTPSession *>(&rtpStream->GetRtpSession());
+  return rtpStream == NULL ? NULL : &rtpStream->GetRtpSession();
 }
 
 

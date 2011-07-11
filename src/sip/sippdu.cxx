@@ -247,14 +247,14 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
     PStringStream s;
     s << "sip";
 
-    PCaselessString proto = address.GetProto();
-    if (proto == "tcps") {
+    PCaselessString proto = address.GetProtoPrefix();
+    if (proto == OpalTransportAddress::TlsPrefix()) {
       defaultPort = 5061;
       s << 's';
       // use default tranport=UDP
     }
-    else if (proto != "udp")
-      transProto = proto; // Typically "tcp"
+    else if (proto != OpalTransportAddress::UdpPrefix())
+      transProto = proto.Left(proto.GetLength()-1); // Typically "tcp"
     // else use default UDP
 
     s << ':';
@@ -456,7 +456,7 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   PStringStream addr;
 
   if (scheme *= "sips")
-    addr << "tcps$";
+    addr << OpalTransportAddress::TlsPrefix();
   else
     addr << paramVars("transport", "udp") << '$';
 
@@ -929,9 +929,9 @@ OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
     return OpalTransportAddress();
   
   if (LocateFieldParameter(via, "received", start, val, end) && val < end)
-    return OpalTransportAddress(via(val, end), port, "udp");
+    return OpalTransportAddress(via(val, end), port, OpalTransportAddress::UdpPrefix());
 
-  return OpalTransportAddress(via(via.Find(' ')+1, via.FindOneOf(";:")-1), port, "udp");
+  return OpalTransportAddress(via(via.Find(' ')+1, via.FindOneOf(";:")-1), port, OpalTransportAddress::UdpPrefix());
 }
 
 
@@ -1782,14 +1782,16 @@ PString SIP_PDU::CreateVia(const OpalTransport & transport)
 
   OpalTransportAddress via = transport.GetLocalAddress();
 
+  PCaselessString proto = via.GetProtoPrefix();
+  PINDEX protoLen = proto.GetLength();
   PStringStream str;
-  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/' << via.GetProto().ToUpper() << ' ';
+  str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/' << proto.Left(protoLen-1).ToUpper() << ' ';
   PIPSocket::Address ip;
   WORD port = 5060;
   if (via.GetIpAndPort(ip, port))
     str << ip.AsString(true) << ':' << port;
   else
-    str << via.Mid(via.GetProto(true).GetLength());
+    str << via.Mid(protoLen);
   str << ";branch=" << m_transactionID << ";rport";
   return str;
 }
@@ -2005,7 +2007,9 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
         }
       }
 
-      newAddress = OpalTransportAddress(viaAddress+":"+viaPort, defaultPort, (proto *= "TCP") ? "tcp$" : "udp$");
+      newAddress = OpalTransportAddress(viaAddress+":"+viaPort,
+                                        defaultPort, (proto *= "TCP") ? OpalTransportAddress::TcpPrefix()
+                                                                      : OpalTransportAddress::UdpPrefix());
     }
     else {
       // get Via from From field
@@ -2020,7 +2024,7 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
 
         SIPURL url(from);
 
-        newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, "udp$");
+        newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, OpalTransportAddress::UdpPrefix());
       }
     }
   }
@@ -2338,17 +2342,21 @@ PString SIP_PDU::GetTransactionID() const
 }
 
 
-SDPSessionDescription * SIP_PDU::GetSDP(const OpalMediaFormatList & masterList)
+bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & masterList)
 {
-  if (m_SDP == NULL && m_mime.GetContentType() == "application/sdp") {
-    m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
-    if (!m_SDP->Decode(m_entityBody, masterList)) {
-      delete m_SDP;
-      m_SDP = NULL;
-    }
-  }
+  if (m_SDP != NULL)
+    return true;
 
-  return m_SDP;
+  if (m_mime.GetContentType() != "application/sdp")
+    return false;
+
+  m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
+  if (m_SDP->Decode(m_entityBody, masterList))
+    return true;
+
+  delete m_SDP;
+  m_SDP = NULL;
+  return false;
 }
 
 

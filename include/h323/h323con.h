@@ -317,13 +317,18 @@ class H323Connection : public OpalRTPConnection
       OpalMediaStream & stream  ///< Stream to close
     );
 
-    /**Get information on the media channel for the connection.
-       The default behaviour returns true and fills the info structure if
-       there is a media channel active for the sessionID.
+    /**Get transports for the media session on the connection.
+       This is primarily used by the media bypass feature controlled by the
+       OpalManager::AllowMediaBypass() function. It allows one side of the
+       call to get the transport address of the media on the other side, so it
+       can pass it on, bypassing the local host.
+
+       @return true if a transport address is available and may be used to pass
+               on to a remote system for direct access.
      */
-    virtual PBoolean GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
-      MediaInformation & info ///<  Information on media channel
+    virtual bool GetMediaTransportAddresses(
+      const OpalMediaType & mediaType,       ///< Media type for session to return information
+      OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
   //@}
 
@@ -2044,16 +2049,15 @@ class H323Connection : public OpalRTPConnection
     H323Capabilities   remoteCapabilities; // Capabilities remote system supports
     unsigned           remoteMaxAudioDelayJitter;
     PTimer             roundTripDelayTimer;
-    WORD               maxAudioDelayJitter;
     unsigned           uuiesRequested;
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
-    PBoolean               addAccessTokenToSetup;
+    bool               addAccessTokenToSetup;
 
     H323Transport * signallingChannel;
     H323Transport * controlChannel;
     OpalListener  * controlListener;
-    PBoolean            h245Tunneling;
+    bool            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;
     H323SignalPDU * h245TunnelTxPDU;
     H323SignalPDU * setupPDU;
@@ -2075,28 +2079,30 @@ class H323Connection : public OpalRTPConnection
 
     unsigned   h225version;
     unsigned   h245version;
-    PBoolean       h245versionSet;
-    PBoolean doH245inSETUP;
-    PBoolean lastPDUWasH245inSETUP;
+    bool       h245versionSet;
+    bool       doH245inSETUP;
+    bool       lastPDUWasH245inSETUP;
 
-    PBoolean mustSendDRQ;
-    PBoolean mediaWaitForConnect;
-    PBoolean transmitterSidePaused;
-    bool     remoteTransmitPaused;
-    PBoolean earlyStart;
+    bool       mustSendDRQ;
+    bool       mediaWaitForConnect;
+    bool       transmitterSidePaused;
+    bool       remoteTransmitPaused;
+    bool       earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
-    PBoolean       endSessionNeeded;
+    bool       endSessionNeeded;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
 
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
-    PBoolean       isConsultationTransfer;
+    bool       isConsultationTransfer;
 
+#if OPAL_H450
     /** Call Intrusion flag and parameters */
-    PBoolean     isCallIntrusion;
+    bool     isCallIntrusion;
     unsigned callIntrusionProtectionLevel;
+#endif
 
     enum FastStartStates {
       FastStartDisabled,
@@ -2107,7 +2113,7 @@ class H323Connection : public OpalRTPConnection
     };
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
-    OpalMediaStreamPtr     fastStartMediaStream;
+    H323Channel          * m_fastStartChannelBeingOpened;
     
 #if PTRACING
     static const char * GetConnectionStatesName(ConnectionStates s);

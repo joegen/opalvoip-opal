@@ -144,7 +144,7 @@ PString H323EndPoint::GetDefaultTransport() const
 {
   return "tcp$"
 #if OPAL_PTLIB_SSL
-         ",tcps$:1300"
+         ",tls$:1300"
 #endif
     ;
 }
@@ -360,7 +360,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
 PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
-  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
+  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
   return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByAddress(h323addr);
 }
 
@@ -369,7 +369,7 @@ PBoolean H323EndPoint::SetGatekeeperZone(const PString & address,
                                      const PString & identifier,
                                      H323Transport * transport)
 {
-  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, "udp");
+  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
   return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
 }
 

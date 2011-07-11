@@ -305,6 +305,20 @@ class SIPConnection : public OpalRTPConnection
       OpalMediaStream & stream  ///< Stream to close
     );
 
+    /**Get transports for the media session on the connection.
+       This is primarily used by the media bypass feature controlled by the
+       OpalManager::AllowMediaBypass() function. It allows one side of the
+       call to get the transport address of the media on the other side, so it
+       can pass it on, bypassing the local host.
+
+       @return true if a transport address is available and may be used to pass
+               on to a remote system for direct access.
+     */
+    virtual bool GetMediaTransportAddresses(
+      const OpalMediaType & mediaType,       ///< Media type for session to return information
+      OpalTransportAddressArray & transports ///<  Information on media session
+    ) const;
+
     /**Pause media streams for connection.
       */
     virtual void OnPauseMediaStream(

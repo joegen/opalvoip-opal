@@ -135,11 +135,13 @@ OpalMediaTypeList OpalRTPConnection::CreateAllMediaSessions()
     unsigned sessionId = GetNextSessionID(mediaType, true);
     if (sessionId == 0)
       sessionId = GetNextSessionID(mediaType, false);
-    if (!ownerCall.IsMediaBypassPossible(*this, sessionId) &&
-         UseMediaSession(sessionId, mediaType) == NULL) {
+    OpalMediaSession * session = UseMediaSession(sessionId, mediaType);
+    if (session == NULL) {
       PTRACE(1, "RTPCon\tCould not create RTP session for media type " << mediaType);
       continue;
     }
+
+    CheckForMediaBypass(*session);
 
     openedMediaTypes.push_back(mediaType);
     ++sessionId;
@@ -189,7 +191,27 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
   }
 
   m_sessions[sessionId] = session;
+
   return session;
+}
+
+
+bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
+                                             OpalTransportAddressArray & transports) const
+{
+  // Can only do media bypass if we have fast connect
+  for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
+    if (session->second->GetMediaType() == mediaType) {
+      OpalTransportAddress address = session->second->GetRemoteMediaAddress();
+      if (!address.IsEmpty()) {
+        transports.AppendAddress(address);
+        PTRACE(3, "RTPCon\tGetMediaTransport for " << mediaType << " found " << setfill(',') << address);
+        return true;
+      }
+    }
+  }
+
+  return OpalConnection::GetMediaTransportAddresses(mediaType, transports);
 }
 
 
@@ -352,43 +374,10 @@ PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
 }
 
 
-PBoolean OpalRTPConnection::GetMediaInformation(unsigned sessionID,
-                                         MediaInformation & info) const
-{
-  if (!mediaTransportAddresses.Contains(sessionID)) {
-    PTRACE(2, "RTPCon\tGetMediaInformation for session " << sessionID << " - no channel.");
-    return PFalse;
-  }
-
-  const OpalTransportAddress & address = mediaTransportAddresses[sessionID];
-
-  PIPSocket::Address ip;
-  WORD port;
-  if (address.GetIpAndPort(ip, port)) {
-    info.data    = OpalTransportAddress(ip, (WORD)(port&0xfffe));
-    info.control = OpalTransportAddress(ip, (WORD)(port|0x0001));
-  }
-  else
-    info.data = info.control = address;
-
-  info.rfc2833 = rfc2833Handler->GetRxMediaFormat().GetPayloadType();
-  PTRACE(3, "RTPCon\tGetMediaInformation for session " << sessionID
-         << " data=" << info.data << " rfc2833=" << info.rfc2833);
-  return PTrue;
-}
-
-PBoolean OpalRTPConnection::IsMediaBypassPossible(unsigned) const
-{
-  return true;
-}
-
 OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                        unsigned sessionID,
                                                        PBoolean isSource)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-
   for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (mediaStream->GetSessionID() == sessionID && mediaStream->IsSource() == isSource && !mediaStream->IsOpen())
       return mediaStream;
@@ -400,7 +389,33 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
     return NULL;
   }
 
+  CheckForMediaBypass(*mediaSession);
+
   return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
+}
+
+
+void OpalRTPConnection::CheckForMediaBypass(OpalMediaSession & session)
+{
+  if (session.IsExternalTransport())
+    return;
+
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL)
+    return;
+
+  const OpalMediaType & mediaType = session.GetMediaType();
+  if (!endpoint.GetManager().AllowMediaBypass(*this, *otherConnection, mediaType))
+    return;
+
+  OpalTransportAddressArray transports;
+  if (!otherConnection->GetMediaTransportAddresses(mediaType, transports))
+    return;
+
+  // Make sure we do not include any transcoded format combinations
+  m_localMediaFormats.Remove(PString('@')+mediaType);
+  m_localMediaFormats += otherConnection->GetMediaFormats();
+  session.SetExternalTransport(transports);
 }
 
 

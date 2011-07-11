@@ -441,13 +441,6 @@ class OpalCall : public PSafeObject
     /**Close the media streams on the connections.
      */
     virtual void CloseMediaStreams();
-
-    /**See if the media can bypass the local host.
-     */
-    virtual PBoolean IsMediaBypassPossible(
-      const OpalConnection & connection,  ///<  Source connection
-      unsigned sessionID                  ///<  Session ID for media channel
-    ) const;
   //@}
 
   /**@name User indications */

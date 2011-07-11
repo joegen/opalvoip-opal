@@ -156,9 +156,9 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
 }
 
 
-OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection &, unsigned) const
+OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
 {
-  return NULL;
+  return connection.CreateMediaSession(sessionID, m_mediaType);
 }
 
 
@@ -183,7 +183,7 @@ OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
 
 OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
 {
-  OpalMediaSession * session = connection.CreateMediaSession(sessionID, m_mediaType);
+  OpalMediaSession * session = OpalMediaTypeDefinition::CreateMediaSession(connection, sessionID);
   if (session == NULL)
     session = new OpalRTPSession(connection, sessionID, m_mediaType);
   return session;

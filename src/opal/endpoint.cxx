@@ -193,7 +193,7 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
 
 PString OpalEndPoint::GetDefaultTransport() const
 {
-  return "tcp$";
+  return OpalTransportAddress::TcpPrefix();
 }
 
 PStringArray OpalEndPoint::GetDefaultListeners() const
@@ -275,7 +275,7 @@ static void AddTransportAddresses(OpalTransportAddressArray & interfaceAddresses
   if (!localAddress.GetIpAndPort(localIP, port))
     return;
 
-  PCaselessString proto = localAddress.GetProto();
+  PCaselessString proto = localAddress.GetProtoPrefix();
   PIPSocket::InterfaceTable interfaces;
   if (!localIP.IsAny() || !PIPSocket::GetInterfaceTable(interfaces)) {
     AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, localIP, port, proto);
@@ -330,7 +330,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
 
   if (!associatedLocalAddress.IsEmpty()) {
     for (listener = listeners.begin(); listener != listeners.end(); ++listener) {
-      if (listener->GetLocalAddress().GetProto() == associatedLocalAddress.GetProto())
+      if (listener->GetLocalAddress().GetProtoPrefix() == associatedLocalAddress.GetProtoPrefix())
         AddTransportAddresses(interfaceAddresses,
                               excludeLocalHost,
                               natInterfaceIP,
@@ -348,7 +348,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
   }
 
   for (listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    if (listener->GetLocalAddress().GetProto() == associatedLocalAddress.GetProto())
+    if (listener->GetLocalAddress().GetProtoPrefix() == associatedLocalAddress.GetProtoPrefix())
       AddTransportAddresses(interfaceAddresses,
                             excludeLocalHost,
                             natInterfaceIP,

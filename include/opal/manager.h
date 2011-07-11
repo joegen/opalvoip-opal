@@ -644,12 +644,21 @@ class OpalManager : public PObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
-    /**See if the media can bypass the local host.
+    /**Determine if media will bypass the local host.
+       Determine if media is to bypass this host when it is possible to do so.
+       For example if the two connections are SIP and H.323, they both use RTP
+       and the packets can go directly between the remote endpoints.
+
+       An application may override this function in order to conditionally
+       enable this feature, or for example if firewall traversal is in play,
+       or Lawful Intercept, or any application defined reason.
+
+       The default behaviour returns true, allowing bypass.
      */
-    virtual PBoolean IsMediaBypassPossible(
+    virtual bool AllowMediaBypass(
       const OpalConnection & source,      ///<  Source connection
       const OpalConnection & destination, ///<  Destination connection
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaType & mediaType     ///<  Media type for session
     ) const;
 
     /**Call back when opening a media stream.
@@ -1596,6 +1605,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
+    P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(const OpalConnection &,const OpalConnection &,unsigned) const, false);
 
 
 #ifdef OPAL_HAS_IM

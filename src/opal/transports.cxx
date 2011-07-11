@@ -50,18 +50,18 @@
 #include <ptclib/pstun.h>
 
 
-static const char IpPrefix[]  = "ip$";   // For backward compatibility with OpenH323
-static const char TcpPrefix[] = "tcp$";
-static const char UdpPrefix[] = "udp$";
+const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
+const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
+const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
 
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(TcpPrefix, true);
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix, true);
-static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix, true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(OpalTransportAddress::TcpPrefix(), true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalIPTransportFactory (OpalTransportAddress::IpPrefix (), true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(OpalTransportAddress::UdpPrefix(), true);
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/pssl.h>
-static const char TcpsPrefix[] = "tcps$";
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPSTransport> opalInternalTCPSTransportFactory(TcpsPrefix, true);
+const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTLSTransport> opalInternalTLSTransportFactory(OpalTransportAddress::TlsPrefix(), true);
 #endif
 
 /////////////////////////////////////////////////////////////////
@@ -132,17 +132,17 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   if (IsEmpty() || address.IsEmpty())
     return PTrue;
 
-  PCaselessString myPrefix = GetProto(true);
-  PCaselessString theirPrefix = address.GetProto(true);
+  PCaselessString myPrefix = GetProtoPrefix();
+  PCaselessString theirPrefix = address.GetProtoPrefix();
   return myPrefix == theirPrefix ||
-        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix 
+        (myPrefix    == IpPrefix() && (theirPrefix == TcpPrefix() || theirPrefix == UdpPrefix()
 #if OPAL_PTLIB_SSL
-                                     || theirPrefix == TcpsPrefix
+                                     || theirPrefix == TlsPrefix()
 #endif
                                     )) ||
-        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix 
+        (theirPrefix == IpPrefix() && (myPrefix    == TcpPrefix() || myPrefix    == UdpPrefix()
 #if OPAL_PTLIB_SSL
-                                     || myPrefix    == TcpsPrefix
+                                     || myPrefix    == TlsPrefix()
 #endif
                                     ));
 }
@@ -211,13 +211,16 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 
   PINDEX dollar = Find('$');
   if (dollar == P_MAX_INDEX) {
-    PString prefix(proto == NULL ? TcpPrefix : proto);
+    PString prefix(proto == NULL ? TcpPrefix() : proto);
     if (prefix.Find('$') == P_MAX_INDEX)
       prefix += '$';
 
     Splice(prefix, 0);
     dollar = prefix.GetLength()-1;
   }
+
+  if (NumCompare("tcps$") == EqualTo) // For backward compatibility
+    Splice(TlsPrefix(), 0, 5);
 
   // use factory to create transport types
   transport = PFactory<OpalInternalTransport>::CreateInstance(Left(dollar+1).ToLower());
@@ -400,9 +403,9 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     port = 0;
   else {
     if (!service) {
-      PCaselessString proto = address.GetProto();
-      if (proto *= "ip")
-        proto = "tcp";
+      PCaselessString proto = address.GetProtoPrefix();
+      if (proto == OpalTransportAddress::IpPrefix())
+        proto = OpalTransportAddress::TcpPrefix();
       port = PIPSocket::GetPortByService(proto, service);
     }
     if (port == 0) {
@@ -698,8 +701,8 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
     if (!localAddress.IsEmpty())
       return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
 #if OPAL_PTLIB_SSL
-    if (remoteAddress.NumCompare(TcpsPrefix) == EqualTo)
-      return new OpalTransportTCPS(endpoint);
+    if (remoteAddress.NumCompare(OpalTransportAddress::TlsPrefix()) == EqualTo)
+      return new OpalTransportTLS(endpoint);
 #endif
     return new OpalTransportTCP(endpoint);
   }
@@ -707,9 +710,9 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
 }
 
 
-const char * OpalListenerTCP::GetProtoPrefix() const
+const PCaselessString & OpalListenerTCP::GetProtoPrefix() const
 {
-  return TcpPrefix;
+  return OpalTransportAddress::TcpPrefix();
 }
 
 
@@ -803,7 +806,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, iface);
   transport->m_preReadPacket = pdu;
   transport->m_preReadOK = preReadOK;
-  transport->SetRemoteAddress(OpalTransportAddress(remoteAddr, remotePort, "udp"));
+  transport->SetRemoteAddress(OpalTransportAddress(remoteAddr, remotePort, OpalTransportAddress::UdpPrefix()));
   return transport;
 }
 
@@ -823,9 +826,9 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
 }
 
 
-const char * OpalListenerUDP::GetProtoPrefix() const
+const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 {
-  return UdpPrefix;
+  return OpalTransportAddress::UdpPrefix();
 }
 
 
@@ -1057,8 +1060,8 @@ PBoolean OpalTransportTCP::IsReliable() const
 
 PBoolean OpalTransportTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return (address.NumCompare(TcpPrefix) == EqualTo) ||
-         (address.NumCompare(IpPrefix)  == EqualTo);
+  return (address.NumCompare(OpalTransportAddress::TcpPrefix()) == EqualTo) ||
+         (address.NumCompare(OpalTransportAddress::IpPrefix())  == EqualTo);
 }
 
 
@@ -1206,9 +1209,9 @@ PBoolean OpalTransportTCP::OnOpen()
 }
 
 
-const char * OpalTransportTCP::GetProtoPrefix() const
+const PCaselessString & OpalTransportTCP::GetProtoPrefix() const
 {
-  return TcpPrefix;
+  return OpalTransportAddress::TcpPrefix();
 }
 
 
@@ -1263,8 +1266,8 @@ PBoolean OpalTransportUDP::IsReliable() const
 
 PBoolean OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return (address.NumCompare(UdpPrefix) == EqualTo) ||
-         (address.NumCompare(IpPrefix)  == EqualTo);
+  return (address.NumCompare(OpalTransportAddress::UdpPrefix()) == EqualTo) ||
+         (address.NumCompare(OpalTransportAddress::IpPrefix())  == EqualTo);
 }
 
 
@@ -1391,7 +1394,7 @@ OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
     WORD port;
     socket->GetLastReceived(addr, port);
     if (!addr.IsAny() && port != 0)
-      return OpalTransportAddress(addr, port, UdpPrefix);
+      return OpalTransportAddress(addr, port, OpalTransportAddress::UdpPrefix());
   }
 
   return OpalTransport::GetLastReceivedAddress();
@@ -1479,9 +1482,9 @@ PBoolean OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * us
 }
 
 
-const char * OpalTransportUDP::GetProtoPrefix() const
+const PCaselessString & OpalTransportUDP::GetProtoPrefix() const
 {
-  return UdpPrefix;
+  return OpalTransportAddress::UdpPrefix();
 }
 
 
@@ -1516,7 +1519,7 @@ static PBoolean SetSSLCertificate(PSSLContext & sslContext,
          sslContext.UsePrivateKey(certificateFile);
 }
 
-OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep,
+OpalTransportTLS::OpalTransportTLS(OpalEndPoint & ep,
                                      PIPSocket::Address binding,
                                      WORD port,
                                      PBoolean reuseAddr)
@@ -1526,7 +1529,7 @@ OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep,
 }
 
 
-OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep, PTCPSocket * socket)
+OpalTransportTLS::OpalTransportTLS(OpalEndPoint & ep, PTCPSocket * socket)
   : OpalTransportTCP(ep, PIPSocket::GetDefaultIpAny(), 0)
 {
   sslContext = new PSSLContext(PSSLContext::TLSv1);
@@ -1538,7 +1541,7 @@ OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep, PTCPSocket * socket)
 }
 
 
-OpalTransportTCPS::~OpalTransportTCPS()
+OpalTransportTLS::~OpalTransportTLS()
 {
   CloseWait();
   delete sslContext;
@@ -1546,13 +1549,14 @@ OpalTransportTCPS::~OpalTransportTCPS()
 }
 
 
-PBoolean OpalTransportTCPS::IsCompatibleTransport(const OpalTransportAddress & address) const
+PBoolean OpalTransportTLS::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return OpalTransportTCP::IsCompatibleTransport(address) || address.NumCompare(TcpsPrefix) == EqualTo;
+  return OpalTransportTCP::IsCompatibleTransport(address) ||
+         address.NumCompare(OpalTransportAddress::TlsPrefix()) == EqualTo;
 }
 
 
-PBoolean OpalTransportTCPS::Connect()
+PBoolean OpalTransportTLS::Connect()
 {
   if (IsOpen())
     return PTrue;
@@ -1607,7 +1611,7 @@ PBoolean OpalTransportTCPS::Connect()
   return Open(sslChannel);
 }
 
-PBoolean OpalTransportTCPS::OnOpen()
+PBoolean OpalTransportTLS::OnOpen()
 {
   PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(GetReadChannel());
   if (sslChannel == NULL)
@@ -1649,14 +1653,14 @@ PBoolean OpalTransportTCPS::OnOpen()
 }
 
 
-const char * OpalTransportTCPS::GetProtoPrefix() const
+const PCaselessString & OpalTransportTLS::GetProtoPrefix() const
 {
-  return TcpsPrefix;
+  return OpalTransportAddress::TlsPrefix();
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
+OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
                                  PIPSocket::Address binding,
                                  WORD port,
                                  PBoolean exclusive)
@@ -1666,7 +1670,7 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
 }
 
 
-OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
+OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
                                     const OpalTransportAddress & binding,
                                     OpalTransportAddress::BindOptions option)
   : OpalListenerTCP(ep, binding, option)
@@ -1675,13 +1679,13 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
 }
 
 
-OpalListenerTCPS::~OpalListenerTCPS()
+OpalListenerTLS::~OpalListenerTLS()
 {
   delete sslContext;
 }
 
 
-void OpalListenerTCPS::Construct()
+void OpalListenerTLS::Construct()
 {
   sslContext = new PSSLContext();
 
@@ -1692,7 +1696,7 @@ void OpalListenerTCPS::Construct()
 }
 
 
-OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)
+OpalTransport * OpalListenerTLS::Accept(const PTimeInterval & timeout)
 {
   if (!listener.IsOpen())
     return NULL;
@@ -1710,7 +1714,7 @@ OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)
     return NULL;
   }
 
-  OpalTransportTCPS * transport = new OpalTransportTCPS(endpoint);
+  OpalTransportTLS * transport = new OpalTransportTLS(endpoint);
   PSSLChannel * ssl = new PSSLChannel(sslContext);
   if (!ssl->Accept(socket)) {
     PTRACE(1, "TCPS\tAccept failed: " << ssl->GetErrorText());
@@ -1730,9 +1734,9 @@ OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)
   return NULL;
 }
 
-const char * OpalListenerTCPS::GetProtoPrefix() const
+const PCaselessString & OpalListenerTLS::GetProtoPrefix() const
 {
-  return TcpsPrefix;
+  return OpalTransportAddress::TlsPrefix();
 }
 
 
