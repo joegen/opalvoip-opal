@@ -270,7 +270,7 @@ class OpalMediaStatistics : PObject
   public:
     OpalMediaStatistics();
 
-    // General info (typically from RTP)
+    // General info (typicallly from RTP)
     PUInt64  m_totalBytes;
     unsigned m_totalPackets;
     unsigned m_packetsLost;
@@ -284,40 +284,50 @@ class OpalMediaStatistics : PObject
     // Audio
     unsigned m_averageJitter;
     unsigned m_maximumJitter;
+    unsigned m_jitterBufferDelay;
 
     // Video
     unsigned m_totalFrames;
     unsigned m_keyFrames;
 
     // Fax
-	enum {
+    enum {
       FaxNotStarted = -2,
       FaxInProgress = -1,
       FaxSuccessful = 0,
       FaxErrorBase  = 1
     };
-	
-    struct Fax {
-      Fax();
 
-      int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
-      int  m_bitRate;     // e.g. 14400, 9600
-      int  m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
-      bool m_errorCorrection;
-      int  m_txPages;
-      int  m_rxPages;
-      int  m_totalPages;
-      int  m_imageSize;   // In bytes
-      int  m_resolutionX; // Pixels per inch
-      int  m_resolutionY; // Pixels per inch
-      int  m_pageWidth;
-      int  m_pageHeight;
-      int  m_badRows;     // Total number of bad rows
-      int  m_mostBadRows; // Longest run of bad rows
-      int  m_errorCorrectionRetries;
-
-      PString m_errorText;
+    enum FaxCompression {
+      FaxCompressionUnknown,
+      FaxCompressionT4_1d,
+      FaxCompressionT4_2d,
+      FaxCompressionT6
     };
+
+    struct Fax {
+     Fax();
+
+     int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
+     char m_phase;       // 'A', 'B', 'D'
+     int  m_bitRate;     // e.g. 14400, 9600
+     OpalMediaStatistics::FaxCompression m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
+     bool m_errorCorrection;
+     int  m_txPages;
+     int  m_rxPages;
+     int  m_totalPages;
+     int  m_imageSize;   // In bytes
+     int  m_resolutionX; // Pixels per inch
+     int  m_resolutionY; // Pixels per inch
+     int  m_pageWidth;
+     int  m_pageHeight;
+     int  m_badRows;     // Total number of bad rows
+     int  m_mostBadRows; // Longest run of bad rows
+     int  m_errorCorrectionRetries;
+
+     PString m_stationId; // Remote station identifier
+     PString m_errorText;
+   };
 	
 	Fax m_fax;
 };

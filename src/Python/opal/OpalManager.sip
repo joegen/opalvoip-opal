@@ -156,6 +156,7 @@ class OpalManager : PObject /NoDefaultCtors/
       // unsigned options = 0,         ///<  options passed to connection
       // OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     // );
+
     virtual PBoolean SetUpCall(
       const PString & partyA,       ///<  The A party of call
       const PString & partyB,       ///<  The B party of call
@@ -163,18 +164,6 @@ class OpalManager : PObject /NoDefaultCtors/
       void * userData = NULL,       ///<  user data passed to Call and Connection
       unsigned options = 0,         ///<  options passed to connection
       OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
-    );
-
-    /**A call back function whenever a call is completed.
-       In telephony terminology a completed call is one where there is an
-       established link between two parties.
-
-       This called from the OpalCall::OnEstablished() function.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnEstablishedCall(
-      OpalCall & call   ///<  Call that was completed
     );
 
     /**Determine if a call is active.
@@ -190,16 +179,10 @@ class OpalManager : PObject /NoDefaultCtors/
       */
     PINDEX GetCallCount() const;
 
-
-    /**Determine if a call is established.
-       Return true if there is an active call with the specified token and
-       that call has at least two parties with media flowing between them.
-       Note that the call could clear any time (even milliseconds) after this
-       function returns true.
+    /**Get all tokens for active calls.
       */
-    virtual PBoolean IsCallEstablished(
-      const PString & token  ///<  Token for identifying call
-    );
+    PArray<PString> GetAllCalls() const;
+
 
     /**Find a call with the specified token.
        This searches the manager database for the call that contains the token
@@ -222,6 +205,28 @@ class OpalManager : PObject /NoDefaultCtors/
 	// else
 		// *sipErr = sipErrorFail;
 // %End
+
+        /**A call back function whenever a call is completed.
+          In telephony terminology a completed call is one where there is an
+          established link between two parties.
+
+          This called from the OpalCall::OnEstablished() function.
+
+          The default behaviour does nothing.
+         */
+       virtual void OnEstablishedCall(
+         OpalCall & call   ///<  Call that was completed
+       );
+
+       /**Determine if a call is established.
+          Return true if there is an active call with the specified token and
+          that call has at least two parties with media flowing between them.
+          Note that the call could clear any time (even milliseconds) after this
+          function returns true.
+         */
+       virtual PBoolean IsCallEstablished(
+         const PString & token  ///<  Token for identifying call
+       );
 
     /**Clear a call.
        This finds the call by using the token then calls the OpalCall::Clear()
