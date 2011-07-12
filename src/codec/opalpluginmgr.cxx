@@ -1004,17 +1004,21 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   if (!m_badMarkers) {
     if (src.GetMarker()) {
       // Got two consecutive packets with markers and same timestamp, wrong!
-      if (m_lastMarkerTimestamp == newTimestamp && m_lastDecodedTimestamp == newTimestamp)
-        m_badMarkers = true;
-      else
+      if (m_lastMarkerTimestamp != newTimestamp || m_lastDecodedTimestamp != newTimestamp)
         m_lastMarkerTimestamp = newTimestamp;
+      else {
+        PTRACE(2, "OpalPlugin\tContinuous RTP marker bits seen, ignoring from now on.");
+        m_badMarkers = true;
+      }
     }
     else {
       // If never got a marker and timestamp changes, we are not getting markers at all
       if (m_lastMarkerTimestamp == UINT_MAX &&
           m_lastDecodedTimestamp != UINT_MAX &&
-          m_lastDecodedTimestamp != newTimestamp)
+          m_lastDecodedTimestamp != newTimestamp) {
+        PTRACE(2, "OpalPlugin\tNo RTP marker bits seen, faking them to decoder.");
         m_badMarkers = true;
+      }
     }
   }
 
