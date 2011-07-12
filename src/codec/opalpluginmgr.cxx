@@ -1004,17 +1004,21 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   if (!m_badMarkers) {
     if (src.GetMarker()) {
       // Got two consecutive packets with markers and same timestamp, wrong!
-      if (m_lastMarkerTimestamp == newTimestamp && m_lastDecodedTimestamp == newTimestamp)
-        m_badMarkers = true;
-      else
+      if (m_lastMarkerTimestamp != newTimestamp || m_lastDecodedTimestamp != newTimestamp)
         m_lastMarkerTimestamp = newTimestamp;
+      else {
+        PTRACE(2, "OpalPlugin\tContinuous RTP marker bits seen, ignoring from now on: sn=" << src.GetSequenceNumber());
+        m_badMarkers = true;
+      }
     }
     else {
       // If never got a marker and timestamp changes, we are not getting markers at all
       if (m_lastMarkerTimestamp == UINT_MAX &&
           m_lastDecodedTimestamp != UINT_MAX &&
-          m_lastDecodedTimestamp != newTimestamp)
+          m_lastDecodedTimestamp != newTimestamp) {
+        PTRACE(2, "OpalPlugin\tNo RTP marker bits seen, faking them to decoder: sn=" << src.GetSequenceNumber());
         m_badMarkers = true;
+      }
     }
   }
 
@@ -1070,9 +1074,9 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
     // Don't send lots of consecutive OpalVideoPictureLoss commands
     if (m_videoPictureLossTimer.IsRunning())
-      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent OpalVideoPictureLoss was sent.");
+      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent OpalVideoPictureLoss was sent: sn=" << src.GetSequenceNumber());
     else {
-      PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame.");
+      PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << src.GetSequenceNumber());
       NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
       m_videoPictureLossTimer.SetInterval(0, 2);
     }
@@ -1117,7 +1121,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
     m_keyFrames++;
-    PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame");
+    PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame: sn=" << src.GetSequenceNumber());
   }
 
   return true;
