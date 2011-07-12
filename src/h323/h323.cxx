@@ -3557,18 +3557,18 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       capabilityExchangeProcedure->Start(true);
       masterSlaveDeterminationProcedure->Start(false);
     }
-    else if (connectionState > HasExecutedSignalConnect && remoteCapabilities.GetSize() > previousCaps) {
+    else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
       PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
       OnSelectLogicalChannels();
     }
     else {
       if (localCapabilities.GetSize() > 0)
         capabilityExchangeProcedure->Start(false);
-
-      // Adjust the RF2388 transitter to remotes capabilities.
-      H323Capability * capability = remoteCapabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
-      rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
     }
+
+    // Adjust the RF2388 transitter to remotes capabilities.
+    H323Capability * capability = remoteCapabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
+    rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
   }
 
   return true;
