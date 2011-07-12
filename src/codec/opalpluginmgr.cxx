@@ -1011,7 +1011,9 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
     }
     else {
       // If never got a marker and timestamp changes, we are not getting markers at all
-      if (m_lastMarkerTimestamp == UINT_MAX && m_lastDecodedTimestamp != newTimestamp)
+      if (m_lastMarkerTimestamp == UINT_MAX &&
+          m_lastDecodedTimestamp != UINT_MAX &&
+          m_lastDecodedTimestamp != newTimestamp)
         m_badMarkers = true;
     }
   }
