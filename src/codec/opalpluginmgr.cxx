@@ -1121,7 +1121,8 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
     m_keyFrames++;
-    PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame: sn=" << src.GetSequenceNumber());
+    PTRACE(5, "OpalPlugin\tVideo decoder returned I-Frame: "
+           << videoHeader->width << 'x' << videoHeader->height<< ", sn=" << src.GetSequenceNumber());
   }
 
   return true;
