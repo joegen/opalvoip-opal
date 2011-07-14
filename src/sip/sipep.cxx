@@ -1792,16 +1792,26 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 
 void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU & pdu)
 {
+  if (!PAssert(transport.IsOpen(), PLogicError))
+    return;
+
   // When we start adding things like P-Asserted-Identity, this function will change
   // Right now it just does the Contact field
 
   SIPMIMEInfo & mime = pdu.GetMIME();
 
-  if (!PAssert(transport.IsOpen(), PLogicError))
-    return;
+  SIPURL from(mime.GetFrom());
+  SIPURL to(mime.GetTo());
 
-  PString user = SIPURL(mime.GetFrom()).GetUserName();
-  PString domain = SIPURL(mime.GetTo()).GetHostName();
+  PString user, domain;
+  if (pdu.GetMethod() == SIP_PDU::NumMethods) {
+    user   = to.GetUserName();
+    domain = from.GetHostName();
+  }
+  else {
+    user   = from.GetUserName();
+    domain = to.GetHostName();
+  }
 
   const SIPRegisterHandler * registrar = NULL;
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
