@@ -485,8 +485,8 @@ PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
   if (stringOptions == NULL)
     stringOptions = &localOptions;
 
-  if ((*stringOptions)("stationid").IsEmpty())
-    stringOptions->SetAt("stationid", stationId);
+  if ((*stringOptions)(OPAL_OPT_STATION_ID).IsEmpty())
+    stringOptions->SetAt(OPAL_OPT_STATION_ID, stationId);
 
   stringOptions->SetAt(OPAL_OPT_DISABLE_JITTER, "1");
 
@@ -551,7 +551,8 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","
             " disabledT38=" << disableT38 << ","
-            " filename=\"" << filename << '"');
+            " filename=\"" << filename << '"'
+            << "\n" << setw(-1) << m_tiffFileFormat);
 }
 
 
@@ -605,8 +606,17 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
 }
 
 
+void OpalFaxConnection::OnApplyStringOptions()
+{
+  OpalLocalConnection::OnApplyStringOptions();
+  SetFaxMediaFormatOptions(m_tiffFileFormat);
+}
+
+
 void OpalFaxConnection::SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
+  PTRACE(4, "FAX\tSetting fax media format options from string options " << m_stringOptions);
+
   mediaFormat.SetOptionString("TIFF-File-Name", m_filename);
   mediaFormat.SetOptionBoolean("Receiving", m_receiving);
 
