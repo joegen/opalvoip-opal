@@ -1364,7 +1364,7 @@ class OpalConnection : public PSafeObject
     /**Read a sequence of user indications with timeouts.
       */
     virtual PString ReadUserInput(
-      const char * terminators = "#\r\n", ///<  Characters that can terminte input
+      const char * terminators = "YX#\r\n", ///<  Characters that can terminte input
       unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
