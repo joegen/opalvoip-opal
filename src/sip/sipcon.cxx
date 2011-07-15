@@ -477,8 +477,17 @@ void SIPConnection::OnReleased()
   }
 
   // Close media and indicate call ended, even though we have a little bit more
-  // to go in clean up, don't ket other bits wait for it.
+  // to go in clean up, don't let other bits wait for it.
   OpalRTPConnection::OnReleased();
+
+  // If forwardParty is a connection token, then must be INVITE with replaces scenario
+  PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(forwardParty);
+  if (replacerConnection != NULL) {
+    /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
+       dialog cases. OnReleased() is responsible for if the replaced connection is
+       sent a BYE or a CANCEL. */
+    replacerConnection->SetConnected();
+  }
 }
 
 
@@ -2372,9 +2381,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   PTRACE(3, "SIP\tEstablished connection " << *replacedConnection << " replaced by " << *this);
 
-  // Do OnRelease for other connection synchronously or there is
-  // confusion with media streams still open
-  replacedConnection->synchronousOnRelease = true;
+  // Set forward party to call token so the SetConnected() that completes the
+  // operation happens on the OnReleases() thread.
+  replacedConnection->forwardParty = GetToken();
   replacedConnection->Release(OpalConnection::EndedByCallForwarded);
 
   // Check if we are the target of an attended transfer, indicated by a referred-by header
@@ -2389,11 +2398,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     info.SetAt("Remote-Party", GetRemotePartyURL());
     OnTransferNotify(info);
   }
-
-  /* According to RFC 3891 we now send a 200 OK in both the earl and confirmed
-     dialog cases. OnReleased() is responsible for if the replaced connection is
-     sent a BYE or a CANCEL. */
-  SetConnected();
 }
 
 
