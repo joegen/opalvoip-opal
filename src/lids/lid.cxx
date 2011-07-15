@@ -240,6 +240,7 @@ PBoolean OpalLineInterfaceDevice::ReadBlock(unsigned line, void * buffer, PINDEX
       m_readDeblockingOffset = 0;
     }
     else {
+      readBytes = frameSize;
       if (!ReadFrame(line, bufferPtr, readBytes))
         return PFalse;
       bufferPtr += readBytes;

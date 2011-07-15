@@ -538,7 +538,8 @@ void OpalLineConnection::OnReleased()
 
 PString OpalLineConnection::GetDestinationAddress()
 {
-  return line.IsTerminal() ? ReadUserInput() : GetLocalPartyName();
+  PTRACE(2, "OpalLineConnection::GetDestinationAddress called: " << line.IsTerminal() << " " << m_dialedNumber);
+  return line.IsTerminal() ? m_dialedNumber : GetLocalPartyName();
 }
 
 
@@ -760,8 +761,12 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   SetPhase(SetUpPhase);
 
-  if (line.IsTerminal())
+  if (line.IsTerminal()) {
+    PTRACE(3, "LID Con\tWaiting for number to be entered");
     wasOffHook = true;
+    m_dialedNumber = ReadUserInput();
+    PTRACE(3, "LID Con\tEntered number is '" << m_dialedNumber << "'");
+  }
   else {
     PTRACE(4, "LID Con\tCounting rings.");
     // Count incoming rings
@@ -1027,6 +1032,7 @@ PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
     }
   }
   else {
+    length = size;
     if (line.ReadFrame(buffer, length)) {
       // In the case of G.723.1 remember the last SID frame we sent and send
       // it again if the hardware sends us a DTX frame.
@@ -1137,7 +1143,9 @@ PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
     else
       useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
 
-    PTRACE(3, "LineMedia\tStream frame size: rd="
+    PTRACE(3, "LineMedia\tStream "
+           << (IsSource() ? "read" : "write")
+           << " frame size " << dataSize << " : rd="
            << line.GetReadFrameSize() << " wr="
            << line.GetWriteFrameSize() << ", "
            << (useDeblocking ? "needs" : "no") << " reblocking.");
