@@ -594,7 +594,7 @@ PBoolean SIPConnection::SetConnected()
   }
 
   if (IsOriginating()) {
-    PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
+    PTRACE(2, "SIP\tSetConnected ignored on call we originated " << *this);
     return PTrue;
   }
 
@@ -603,11 +603,11 @@ PBoolean SIPConnection::SetConnected()
     return PFalse;
   
   if (GetPhase() >= ConnectedPhase) {
-    PTRACE(2, "SIP\tSetConnected ignored on already connected call.");
+    PTRACE(2, "SIP\tSetConnected ignored on already connected call " << *this);
     return PFalse;
   }
   
-  PTRACE(3, "SIP\tSetConnected");
+  PTRACE(3, "SIP\tSetConnected " << *this);
 
   // send the 200 OK response
   if (!SendInviteOK()) {
@@ -2372,6 +2372,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       Release(EndedByLocalBusy);
       return;
     }
+  }
+
+  if (!SetRemoteMediaFormats(originalInvite->GetSDP(GetLocalMediaFormats()))) {
+    Release(EndedByCapabilityExchange);
+    return;
   }
 
   PTRACE(3, "SIP\tEstablished connection " << *replacedConnection << " replaced by " << *this);
