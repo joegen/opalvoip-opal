@@ -180,7 +180,7 @@ static struct PluginCodec_Option const StationIdentifierOption =
   PluginCodec_StringOption,   // PluginCodec_OptionTypes
   "Station-Identifier",       // Generic (human readable) option name
   true,                       // Read Only flag
-  PluginCodec_AlwaysMerge,    // Merge mode
+  PluginCodec_MaxMerge,       // Merge mode
   "",                         // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
@@ -380,6 +380,7 @@ static struct PluginCodec_Option const T38FaxTranscodingJBIG =
 };
 
 static struct PluginCodec_Option const * const OptionTableTIFF[] = {
+  &StationIdentifierOption,
   &ReceivingOption,
   &TiffFileNameOption,
   &HeaderInfoOption,
