@@ -543,6 +543,7 @@ class OpalLineConnection : public OpalConnection
     OpalLine        & line;
     bool              wasOffHook;
     unsigned          minimumRingCount;
+    PString           m_dialedNumber;
     OpalLineInterfaceDevice::DialParams m_dialParams;
     OpalLineInterfaceDevice::CallProgressTones m_promptTone;
 
