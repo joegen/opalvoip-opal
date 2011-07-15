@@ -2898,7 +2898,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         m_completionTimer = m_endpoint.GetNonInviteTimeout();
     }
     else {
-      PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
+      PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completing.");
       m_state = Completed;
       m_statusCode = response.GetStatusCode();
     }
@@ -2911,6 +2911,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     if (m_state == Completed) {
       OnCompleted(response);
       m_completed.Signal();
+      PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
     }
   }
   else {
