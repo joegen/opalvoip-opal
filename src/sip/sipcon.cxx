@@ -2374,7 +2374,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
   }
 
-  if (!SetRemoteMediaFormats(originalInvite->GetSDP(GetLocalMediaFormats()))) {
+  if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
     Release(EndedByCapabilityExchange);
     return;
   }
