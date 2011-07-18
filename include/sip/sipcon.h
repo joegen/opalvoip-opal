@@ -237,8 +237,22 @@ class SIPConnection : public OpalRTPConnection
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 
-       If remoteParty is a valid call token, then the remote party is transferred
-       to that party (consultation transfer) and both calls are cleared.
+       A REFER command is sent to the remote endpoint to cause it to move the
+       call it has with this endpoint to a new address. This call will, in the
+       end, be cleared. The OnTransferNotify() function can be used to monitor
+       the progress of the transfer in case it fails.
+
+       If remoteParty is a valid call token, then this is short hand for
+       the REFER to the remote endpoint of this call to do an INVITE with
+       Replaces header to the remote party of the supplied tokens call. This
+       is used for consultation transfer where A calls B, B holds A, B calls C,
+       B transfers C to A. The last step is a REFER to C with call details of
+       A that are extracted from the A to B call leg. This short cut is
+       possible because A nd C may be other endpoints but both B's are in tis
+       instance of OPAL.
+       
+       In the end, both calls are cleared. The OnTransferNotify() function can
+       be used to monitor the progress of the transfer in case it fails.
      */
     virtual bool TransferConnection(
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
