@@ -116,32 +116,32 @@ void RTCP_XR_Metrics::SetPayloadInfo(RTP_DataFrame frame)
       Bpl = 25.1f;
       payloadBitrate = 64000;
     break;
-    
+
     case RTP_DataFrame::G7231:
       Ie = 15;
       Bpl = 16.1f;
       payloadBitrate = 6300;
       lookAheadTime = 7.5f;
     break;
-      
+
     case RTP_DataFrame::G729:
       Ie = 11;
       Bpl = 19;
       payloadBitrate = 8000;
       lookAheadTime = 5;
     break;
-      
+
     case RTP_DataFrame::GSM:
       Ie = 20;
       Bpl = 10;
       payloadBitrate = 13000;
     break;
-    
+
     default:
       PTRACE(3, "VoIP Metrics\tNo Ie and Bpl data for payload type " << frame.GetPayloadType() <<
                 ", unable to calculate R Factor and MOS score.");
-      isPayloadTypeOK = false;          
-  }  
+      isPayloadTypeOK = false;
+  }
   payloadSize = frame.GetPayloadSize();
 }
 
@@ -149,9 +149,9 @@ void RTCP_XR_Metrics::SetPayloadInfo(RTP_DataFrame frame)
 void RTCP_XR_Metrics::SetJitterDelay (DWORD delay)
 {
   jitterDelay = delay;
-  
+
   /* If the Id factor has changed, create a new Id period */
-  if (abs(IdFactor() - lastId) < 1e-14) {
+  if (fabs(IdFactor() - lastId) < 1e-14) {
     PTime now;
     createIdPeriod(lastJitterBufferChangeTimestamp, now);
     lastJitterBufferChangeTimestamp = now;
