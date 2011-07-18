@@ -532,12 +532,15 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
     if (sip != NULL) {
-      PTRACE(4, "SIP\tTransferring " << *this << " to " << *sip);
+      /* Note that the order of to-tag and remote-tag is counter intuitive. This is because
+        the call being referred to by the call token in remoteParty is not the A party in
+        the consultation transfer, but the B party. */
+      PTRACE(4, "SIP\tTransferring " << *this << " to remote of " << *sip);
       PStringStream referTo;
       referTo << sip->GetRemotePartyURL()
               << "?Replaces="     << PURL::TranslateString(sip->GetDialog().GetCallID(),    PURL::QueryTranslation)
-              << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation)
-              << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation);
+              << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation)
+              << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation);
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or NOT
       referTransaction->GetMIME().AddSupported("replaces");
