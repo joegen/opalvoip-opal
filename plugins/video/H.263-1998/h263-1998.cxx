@@ -334,9 +334,6 @@ void H263_Base_EncoderContext::SetTSTO (unsigned tsto)
   _context->qmax = round ( (31.0 - H263P_MIN_QUANT) / 31.0 * tsto + H263P_MIN_QUANT);
   _context->qmax = std::min( _context->qmax, 31);
 
-  _context->mb_qmin = _context->qmin;
-  _context->mb_qmax = _context->qmax;
-
   // Lagrange multipliers - this is how the context defaults do it:
   _context->lmin = _context->qmin * FF_QP2LAMBDA;
   _context->lmax = _context->qmax * FF_QP2LAMBDA; 
@@ -448,8 +445,6 @@ bool H263_Base_EncoderContext::OpenCodec()
   CODEC_TRACER(tracer, "GOP is " << _context->gop_size);
   CODEC_TRACER(tracer, "qmin set to " << _context->qmin);
   CODEC_TRACER(tracer, "qmax set to " << _context->qmax);
-  CODEC_TRACER(tracer, "mb_qmin set to " << _context->mb_qmin);
-  CODEC_TRACER(tracer, "mb_qmax set to " << _context->mb_qmax);
   CODEC_TRACER(tracer, "bit_rate set to " << _context->bit_rate);
   CODEC_TRACER(tracer, "bit_rate_tolerance set to " <<_context->bit_rate_tolerance);
   CODEC_TRACER(tracer, "rc_min_rate set to " << _context->rc_min_rate);
