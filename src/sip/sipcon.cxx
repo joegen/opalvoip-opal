@@ -710,13 +710,17 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
 
     // see if remote socket information has changed
     bool remoteSet = rtpSession->GetRemoteDataPort() != 0 && rtpSession->GetRemoteAddress().IsValid();
-    if (remoteSet)
-      remoteChanged = (rtpSession->GetRemoteAddress() != ip) || (rtpSession->GetRemoteDataPort() != port);
-    if (remoteChanged || !remoteSet) {
-      PTRACE_IF(3, remoteChanged, "SIP\tRemote changed IP address: "
-                << rtpSession->GetRemoteAddress() << "!=" << ip
-                << " || " << rtpSession->GetRemoteDataPort() << "!=" << port);
+    remoteChanged = remoteSet && ((rtpSession->GetRemoteAddress() != ip) ||
+                                  (rtpSession->GetRemoteDataPort() != port));
+
+    if (remoteChanged) {
+      PTRACE(3, "SIP\tRemote changed IP address: "
+             << rtpSession->GetRemoteAddress() << "!=" << ip
+             << " || " << rtpSession->GetRemoteDataPort() << "!=" << port);
       ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
+    }
+
+    if (remoteChanged || !remoteSet) {
       if (!rtpSession->SetRemoteSocketInfo(ip, port, true)) {
         PTRACE(1, "SIP\tCannot set remote ports on RTP session");
         return NULL;
