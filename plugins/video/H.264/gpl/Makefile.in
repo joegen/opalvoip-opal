@@ -36,7 +36,7 @@ OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/h264_x264_gpl
 CC	 	=@CC@
 CXX	 	=@CXX@
 CFLAGS	 	=@CFLAGS@ @X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -I.. -DGPL_HELPER_APP
-LDFLAGS		=@LDFLAGS@ @DL_LIBS@
+LDFLAGS		=@LDFLAGS@ @DL_LIBS@ @X264_LIBS@
 
 
 vpath	%.cxx $(SHAREDDIR)
@@ -60,7 +60,6 @@ TARGET	= h264_video_pwplugin_helper
 X264_LINK_STATIC=@X264_LINK_STATIC@
 ifneq ($(X264_LINK_STATIC),yes)
 SRCS   += x264loader_unix.cxx
-LDFLAGS += @X264_LIBS@
 endif
 
 endif # WIN32
