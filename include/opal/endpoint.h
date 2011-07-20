@@ -110,6 +110,12 @@ class OpalEndPoint : public PObject
     /**Add a set of listeners to the endoint.
        This allows for the automatic creating of incoming call connections. 
        If the list is empty then GetDefaultListeners() is used.
+
+       Note: while the \p interfaces parameter is a string array, each element
+       of the array should be compatible with OpalTransportAddress.
+
+       See OpalTransportAddress for more details on the syntax of an interface
+       definition.
       */
     PBoolean StartListeners(
       const PStringArray & interfaces ///<  Address of interface to listen on.
@@ -118,6 +124,9 @@ class OpalEndPoint : public PObject
     /**Add a listener to the endoint.
        This allows for the automatic creating of incoming call connections. /
        If the address is empty then the first entry of GetDefaultListeners() is used.
+
+       See OpalTransportAddress for more details on the syntax of an interface
+       definition.
       */
     PBoolean StartListener(
       const OpalTransportAddress & iface ///<  Address of interface to listen on.
