@@ -55,6 +55,97 @@ class OpalInternalTransport;
 
 ////////////////////////////////////////////////////////////////
 
+/**Describe a network transport address.
+   This describes a full definition of a network transport address, which is
+   usually more than just a host address. Broadly it consists of a low level
+   protocol and a protocol specific address/port.
+
+   At present only Internet Protocol based addresses are supported.
+
+   There are some semantic differences when this is being used as an address
+   to connect to, or as an address to listen on. The latter has several
+   "wildcard" variants so it is not necessary to explicitly know a-priori
+   everything about interfaces to start listening for incoming connections.
+
+   The syntax of the OpalTransportAddress string is:
+
+      transport-address = proto "$" proto-address
+
+      proto         = "ip" | "tcp" | "udp" | "tls" | token
+
+      proto-address = addrport | any-string
+      addrport      = addr [ ":" port ]
+
+      addr          = [ host ] [ "%" interface ]
+      host          = hostname | IPv4address | IPv6address | "*"
+
+      hostname      = *( domainlabel "." ) toplabel [ "." ]
+      domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
+      toplabel      = alpha | alpha *( alphanum | "-" ) alphanum
+
+      IPv4address   = 1*digit "." 1*digit "." 1*digit "." 1*digit
+
+      IPv6address   = "[" hexpart [ "%" scope-id ] "]"
+      hexpart       =  hexseq | hexseq "::" [ hexseq ] / "::" [ hexseq ]
+      hexseq        =  hex4 *( ":" hex4)
+      hex4          =  1*4 hexdigit
+      hexdigit      = digit | A-F | a-f
+      scope-id      = number | token
+
+      interface     = number | any-string
+
+      port          = number | token | "*"
+      number        = *digit
+
+      token       =  alpha * (alphanum)
+      alphanum    = alpha | digit
+      alpha       = A-Z | a-z
+      digit       = 0-9
+
+      any-string  = 1* (any-char)
+      any-char    = %20-%7f
+
+   The semantics of certain elements are as follows:
+      addr         Must have at least one of host or "%" interface-name
+      host = "*"   indicates INADDR_ANY, so is a wildcard match for all IP
+                   addresses.
+      port = "*"   indicates port 0. This is only allowed when the
+                   OpalTransportAddress is being used to "listen" on a socket.
+                   It indicates any port number will do and should be allocated
+                   by the operating system.
+      port = token Indicates a string as defined by getservbyname()
+      scope-id     Is dependent on the underlying operating system. For Win32
+                   this must be a number indicating the interface id, for Linux
+                   this may be string, e.g. "eth0". Generally, the scope-id is
+                   only required to disambiguate "link-local" addresses.
+      interface    The number here is not necessarily the same as the number in
+                   scope-id. It is the index into the table returned by the
+                   PIPSocket::GetInterfaceTable() function. The text version of
+                   the interface is dependent on the operating system. For Linux
+                   this is the expected "eth0" etc, for Win32 this can be a
+                   quite long and complex name string.
+
+   Examples:
+      tcp$*:1720
+          Listen  on all interfaces for TCP port 1720.
+      udp$127.0.0.1:5060
+          Indicate UDP port 5060 at local host
+      udp$%ppp0:5060
+          Listen on interface name ppp0, this may come on and off line at any
+          time, and change the actual IP address used at any time. The system
+          will do it's best to "do the right thing" in this situation.
+      udp$10.0.1.1%Win32 Interface Name:5060
+          Explicitly use address 10.0.1.1 on interface "Win32 interface name"
+      tcp$my.host.domain.com:1720"
+          A DNS lookup of my.host.domain.com is used to determine address.
+      udp$[::]:5060
+          Listen on all IPv6 interfaces. This differs from udp$*:5060 in that
+          only IPv6 interfaces are listened to. Similarly udp$0.0.0.0:5060
+          would only listen on IPv4 interfaces.
+      udp$[fe80::224:21ff:fe9e:3e7b%26]:5060
+          Send packet out on link-local address fe80::224:21ff:fe9e:3e7b and
+          interface id 26.
+  */
 class OpalTransportAddress : public PCaselessString
 {
   PCLASSINFO(OpalTransportAddress, PCaselessString);
