@@ -159,7 +159,7 @@ const OpalMediaFormat & GetOpalRFC2833()
     OpalRFC2833MediaFormat()
       : OpalMediaFormat(OPAL_RFC2833,
                         "userinput",
-                        (RTP_DataFrame::PayloadTypes)102,  // Set to this for Cisco compatibility
+                        (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
                         "telephone-event",
                         true,   // Needs jitter
                         32*(1000/50), // bits/sec  (32 bits every 50ms)
