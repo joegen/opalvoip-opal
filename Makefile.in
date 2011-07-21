@@ -356,6 +356,15 @@ SOURCES += $(OPAL_SRCDIR)/lids/capi_ep.cxx
 endif
 
 ##################
+# DAHDI
+
+ifeq ($(OPAL_DAHDI), yes)
+
+SOURCES += $(OPAL_SRCDIR)/lids/dahdi_ep.cxx
+
+endif
+
+##################
 # SRTP
 
 ifeq ($(OPAL_SRTP), yes)

@@ -136,6 +136,9 @@ OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
 PTLIB_REC_VERSION="2.11.0"
 
+# experimental options
+OPAL_DAHDI=no
+
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
 
@@ -444,6 +447,23 @@ if test "x$OPAL_CAPI" = "xyes" ; then
 fi
 
 AC_SUBST(OPAL_CAPI)
+
+
+dnl ########################################################################
+dnl See if DAHDI interface is available
+
+AC_ARG_ENABLE([dahdi],
+              [AC_HELP_STRING([--enable-dahdi],[enable DAHDI])],
+              [OPAL_DAHDI=$enableval])
+
+if test "x$OPAL_DAHDI" = "xyes" ; then
+  AC_CHECK_HEADERS([dahdi/user.h], [OPAL_DAHDI=yes], [OPAL_DAHDI=no])
+  if test "x$OPAL_DAHDI" = "xyes" ; then
+    AC_DEFINE([OPAL_DAHDI], [1])
+  fi
+fi
+
+AC_SUBST(OPAL_DAHDI)
 
 
 dnl ########################################################################
