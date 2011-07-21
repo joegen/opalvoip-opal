@@ -721,17 +721,18 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
     return;
   }
 
+  // Merge remotes format into ours.
+  // Note if this is our initial offer remote is the same as local.
   OpalMediaFormat adjustedFormat = *localFmt;
-
-  if (remFmt != remoteMediaFormats.end()) {
-    handler->SetRxMediaFormat(*remFmt);
-    adjustedFormat.Merge(*remFmt);
-  }
+  adjustedFormat.Update(*remFmt);
 
   handler->SetTxMediaFormat(adjustedFormat);
 
-  if (localMedia != NULL)
+  if (localMedia != NULL) {
+    // Set the receive handler to what we are sending to remote in our SDP
+    handler->SetRxMediaFormat(adjustedFormat);
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
+  }
 }
 
 
