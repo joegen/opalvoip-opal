@@ -641,6 +641,7 @@ OPAL_RUBY
 HAS_RUBY
 OPAL_JAVA
 SWIG
+OPAL_DAHDI
 OPAL_CAPI
 OPAL_SRTP
 OPAL_ZRTP
@@ -760,6 +761,7 @@ with_bn_includedir
 with_bn_libdir
 enable_srtp
 enable_capi
+enable_dahdi
 enable_java
 enable_ruby
 enable_video
@@ -1429,6 +1431,7 @@ Optional Features:
   --enable-zrtp           enable ZRTP protocol support
   --enable-srtp           enable SRTP protocol support
   --enable-capi           enable CAPI
+  --enable-dahdi          enable DAHDI
   --enable-java           enable Java JNI support
   --enable-ruby           enable Ruby support
   --enable-video          whether to enable video codec support
@@ -4718,6 +4721,9 @@ OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
 PTLIB_REC_VERSION="2.11.0"
 
+# experimental options
+OPAL_DAHDI=no
+
 
 if test "x$OPALDIR" = "x"; then
    OPALDIR=`pwd`
@@ -7590,6 +7596,37 @@ done
           else
             PKG_REQUIRES="$PKG_REQUIRES "
           fi
+
+  fi
+fi
+
+
+
+
+
+# Check whether --enable-dahdi was given.
+if test "${enable_dahdi+set}" = set; then :
+  enableval=$enable_dahdi; OPAL_DAHDI=$enableval
+fi
+
+
+if test "x$OPAL_DAHDI" = "xyes" ; then
+  for ac_header in dahdi/user.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "dahdi/user.h" "ac_cv_header_dahdi_user_h" "$ac_includes_default"
+if test "x$ac_cv_header_dahdi_user_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DAHDI_USER_H 1
+_ACEOF
+ OPAL_DAHDI=yes
+else
+  OPAL_DAHDI=no
+fi
+
+done
+
+  if test "x$OPAL_DAHDI" = "xyes" ; then
+    $as_echo "#define OPAL_DAHDI 1" >>confdefs.h
 
   fi
 fi
