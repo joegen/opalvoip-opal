@@ -503,6 +503,10 @@ fi
 dnl     ########################
 dnl     x264
 dnl     ########################
+if test "x${HAVE_LIBAVCODEC}" = "xno"; then
+  AC_MSG_RESULT(H.264 not built since libavcodec support is disabled)
+  HAVE_H264=no
+else
 if test -d video/H.264/gpl ; then
   AC_ARG_ENABLE([x264],
                 [AC_HELP_STRING([--disable-x264],[disable x264 support])],
@@ -530,6 +534,7 @@ if test -d video/H.264/gpl ; then
   fi
 else
   HAVE_H264=no
+fi
 fi
 
 AC_SUBST(HAVE_LIBDL)
