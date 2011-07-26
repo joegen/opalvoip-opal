@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 24
+#define OPAL_C_API_VERSION 25
 
 
 ///////////////////////////////////////
@@ -1047,6 +1047,10 @@ typedef struct OpalStatusMediaStream {
   OpalMediaStates m_state;       /**< For OpalIndMediaStream this indicates the status of the stream.
                                       For OpalCmdMediaStream this indicates the state to move to, see
                                       OpalMediaStates for more information. */
+  int             m_volume;      /**< Set the volume for the media stream as a percentage. Note this
+                                      is dependent on the stream type and may be ignored. Also, a
+                                      percentage of zero does not indicate muting, it indicates no
+                                      change in volume. Use -1, to mute. */
 } OpalStatusMediaStream;
 
 
