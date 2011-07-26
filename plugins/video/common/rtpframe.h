@@ -139,5 +139,18 @@ struct frameHeader {
   unsigned int  width;
   unsigned int  height;
 };
-	
+
+
+class Packetizer
+{
+  public:
+    virtual ~Packetizer() { }
+    virtual bool Reset(unsigned width, unsigned height) = 0;
+    virtual bool GetPacket(RTPFrame & frame, unsigned int & flags) = 0;
+    virtual unsigned char * GetBuffer() = 0;
+    virtual size_t GetMaxSize() = 0;
+    virtual bool SetLength(size_t len) = 0;
+};
+
+
 #endif /* __RTPFRAME_H__ */

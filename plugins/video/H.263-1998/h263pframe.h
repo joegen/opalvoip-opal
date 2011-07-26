@@ -31,17 +31,6 @@ extern "C" {
 #include LIBAVCODEC_HEADER
 };
 
-enum codecInFlags {
-  silenceFrame      = 1,
-  forceIFrame       = 2
-};
-
-enum codecOutFlags {
-  isLastFrame     = 1,
-  isIFrame        = 2,
-  requestIFrame   = 4
-};
-
 typedef struct data_t
 {
   uint8_t* ptr;
@@ -51,7 +40,7 @@ typedef struct data_t
 
 typedef struct header_data_t
 {
-  uint8_t* ptr;
+  uint8_t  buf[255];
   uint32_t len;
   uint32_t pebits;
 } header_data_t;
@@ -68,9 +57,9 @@ public:
   void SetPos(uint32_t pos);
   uint32_t GetPos();
 private:
-  data_t _data;
-  uint8_t _sbits;
-  uint8_t _ebits;
+  data_t  m_data;
+  uint8_t m_sbits;
+  uint8_t m_ebits;
 };
 
 static const char formats[8][64] = { "forbidden",
@@ -116,58 +105,48 @@ static const char PARs[16][64]   = { "forbidden",
                                      "reserved (1101)",
                                      "reserved (1110)",
                                      "Extended PAR" };
-class H263PFrame
+class H263PFrame : public Packetizer
 {
 public:
-  H263PFrame(uint32_t maxFrameSize);
+  H263PFrame();
   ~H263PFrame();
 
-  void BeginNewFrame();
-  void GetRTPFrame (RTPFrame & frame, unsigned int & flags);
+  bool Reset(unsigned width, unsigned height);
+  bool GetPacket(RTPFrame & frame, unsigned int & flags);
+  unsigned char * GetBuffer();
+  size_t GetMaxSize();
+  bool SetLength(size_t len);
+
   bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
 
   bool HasRTPFrames ()
   {
-    return (_encodedFrame.pos < _encodedFrame.len);
+    return (m_encodedFrame.pos < m_encodedFrame.len);
   }
 
-  uint8_t* GetFramePtr ()
+  uint32_t GetLength()
   {
-    memset (_encodedFrame.ptr + _encodedFrame.pos,0 , FF_INPUT_BUFFER_PADDING_SIZE);
-    return (_encodedFrame.ptr);
-  }
-
-  void SetFrameSize (uint32_t size) {
-    _encodedFrame.len = size;
-  }
-
-  uint32_t GetFrameSize () {
-    return (_encodedFrame.len);
+    return (m_encodedFrame.len);
   }
 
   void SetMaxPayloadSize (uint16_t maxPayloadSize) 
   {
-    _maxPayloadSize = maxPayloadSize;
+    m_maxPayloadSize = maxPayloadSize;
   }
 
-  void SetTimestamp (uint64_t timestamp) 
-  {
-    _timestamp = timestamp;
-  }
   
   bool hasPicHeader ();
   bool IsIFrame ();
 private:
   uint32_t parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen);
 
-  uint64_t _timestamp;
-  uint16_t _maxPayloadSize;
-  uint16_t _minPayloadSize;
-  uint32_t _maxFrameSize;
-  bool     _customClock;
-  data_t   _encodedFrame;
-  header_data_t _picHeader;
-  std::vector<uint32_t> _startCodes;
+  uint16_t m_maxPayloadSize;
+  uint16_t m_minPayloadSize;
+  uint32_t m_maxFrameSize;
+  bool     m_customClock;
+  data_t   m_encodedFrame;
+  header_data_t m_picHeader;
+  std::vector<uint32_t> m_startCodes;
 };
 
 #endif /* __H263PFrame_H__ */

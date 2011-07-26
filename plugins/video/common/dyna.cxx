@@ -113,12 +113,10 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   if (m_hDLL == NULL) {
 #ifndef _WIN32
     const char * err = dlerror();
-    if (err != NULL) {
-      PTRACE(1, m_codecString, "Error loading " << path << " - " << err);
-    }  
-    else {
-      PTRACE(1, m_codecString, "Error loading " << path);
-    }
+    if (err != NULL)
+      PTRACE(1, m_codecString, "dlopen error " << err);
+    else
+      PTRACE(1, m_codecString, "dlopen error loading " << path);
 #else /* _WIN32 */
     PTRACE(1, m_codecString, "Error loading " << path);
 #endif /* _WIN32 */
@@ -264,11 +262,14 @@ bool FFMPEGLibrary::Load()
     return false;
   }
 
-  if (seperateLibAvutil && !(
+  if (seperateLibAvutil &&
+        !(
 #ifdef LIBAVUTIL_LIB_NAME
-    m_libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
+          m_libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
 #endif
-    m_libAvutil.Open("avutil-50")) ) {
+          m_libAvutil.Open("libavutil") ||
+          m_libAvutil.Open("avutil-50")
+        ) ) {
     PTRACE(1, m_codecString, "Failed to load FFMPEG libavutil library");
     return false;
   }
@@ -467,13 +468,14 @@ int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict)
 {
   char dummy[16];
+  int res;
 
   WITH_ALIGNED_STACK({
-    int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
-
-    PTRACE(4, m_codecString, "DYNA\tEncoded " << buf_size << " bytes of YUV420P data into " << res << " bytes");
-    return res;
+    res = Favcodec_encode_video(ctx, buf, buf_size, pict);
   });
+
+  PTRACE(6, m_codecString, "DYNA\tEncoded into " << res << " bytes, max " << buf_size);
+  return res;
 }
 
 int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size)
