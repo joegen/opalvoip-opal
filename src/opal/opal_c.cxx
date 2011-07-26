@@ -1885,6 +1885,20 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
       stream->SetPaused(false);
       break;
   }
+
+  if (m_apiVersion < 25)
+    return;
+
+  if (command.m_param.m_mediaStream.m_volume != 0) {
+    unsigned volume;
+    if (command.m_param.m_mediaStream.m_volume < 0)
+      volume = 0;
+    else if (command.m_param.m_mediaStream.m_volume > 100)
+      volume = 100;
+    else
+      volume = command.m_param.m_mediaStream.m_volume;
+    connection->SetAudioVolume(stream->IsSource(), volume);
+  }
 }
 
 
