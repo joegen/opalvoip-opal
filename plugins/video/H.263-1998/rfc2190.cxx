@@ -25,6 +25,8 @@
 using namespace std;
 
 #include "rfc2190.h"
+#include <codec/opalplugin.h>
+
 
 #define MAX_PACKET_LEN 1024
 
@@ -111,17 +113,65 @@ static int FindGBSC(const unsigned char * base, int len, int & sbit)
 ///////////////////////////////////////////////////////////////////////////////////////3Y
 
 RFC2190Packetizer::RFC2190Packetizer()
+  : m_buffer(NULL)
+  , m_bufferSize(0)
+  , m_bufferLen(0)
+  , TR(0)
+  , frameSize(0)
+  , iFrame(0)
+  , annexD(0)
+  , annexE(0)
+  , annexF(0)
+  , annexG(0)
+  , pQuant(0)
+  , cpm(0)
+  , macroblocksPerGOB(0)
+  , fragPtr(NULL)
+  , m_currentMB(0)
+  , m_currentBytes(0)
 {
-  m_buffer = NULL;
 }
 
 RFC2190Packetizer::~RFC2190Packetizer()
 {
-  free(m_buffer);
+  if (m_buffer != NULL)
+    free(m_buffer);
 }
 
-int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
+bool RFC2190Packetizer::Reset(unsigned width, unsigned height)
 {
+  m_currentMB = 0;
+  m_currentBytes = 0;
+
+  fragments.resize(0);
+
+  size_t newOutputSize = width*height;
+
+  if (m_buffer != NULL && m_bufferSize < newOutputSize) {
+    free(m_buffer);
+    m_buffer = NULL;
+  }
+
+  if (m_buffer == NULL) {
+    m_bufferSize = newOutputSize;
+#if HAVE_POSIX_MEMALIGN
+    if (posix_memalign((void **)&m_packetizer.m_buffer, 64, m_packetizer.m_bufferSize) != 0) 
+#else
+    if ((m_buffer = (unsigned char *)malloc(m_bufferSize)) == NULL) 
+#endif
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+bool RFC2190Packetizer::SetLength(size_t newLen)
+{
+  m_bufferLen = newLen;
+
   // do a sanity check on the fragment data - must be equal to maxLen
   {
     unsigned long len = 0;
@@ -133,21 +183,18 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
 //      cout << "rfc2190: mismatch between encoder length and fragment length - " << len << "/" << maxLen << endl;
   }
   
-  // save timestamp
-  timestamp = _timestamp;
-
   const unsigned char * data = m_buffer;
   size_t dataLen = m_bufferSize;
 
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
   if (dataLen < 7)
-    return -1;
+    return false;
 
   // ensure data starts with PSC
   //     0         1         2
   // 0000 0000 0000 0000 1000 00..
   if (FindPSC(data, dataLen) != 0)
-    return -2;
+    return false;
 
   // get TR
   //     2         3    
@@ -158,13 +205,13 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
   //     3    
   // .... ..10
   if ((data[3] & 0x03) != 2)
-    return -3;
+    return false;
 
   // we don't do split screen, document indicator, full picture freeze
   //     4    
   // XXX. ....
   if ((data[4] & 0xe0) != 0)
-    return -4;
+    return false;
 
   // get image size
   //     4
@@ -172,7 +219,7 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
   frameSize = (data[4] >> 2) & 0x7;
   macroblocksPerGOB = MacroblocksPerGOBTable[frameSize];
   if (macroblocksPerGOB == -1)
-    return -6;
+    return false;
 
   // get I-frame flag
   //     4
@@ -194,7 +241,7 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
 
   // annex G not supported 
   if (annexG)
-    return -5;
+    return false;
 
   // get PQUANT
   //     5
@@ -210,7 +257,7 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
   //     6
   // .X.. ....
   if ((data[6] & 0x40) != 0) 
-    return -6;
+    return false;
 
 #if 0
   cout << "TR=" << TR 
@@ -252,15 +299,14 @@ int RFC2190Packetizer::Open(unsigned long _timestamp, unsigned long /*maxLen*/)
   currFrag = fragments.begin();
   fragPtr = m_buffer;
 
-  return 0;
+  return true;
 }
 
-int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
+bool RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
 {
   while ((fragments.size() != 0) && (currFrag != fragments.end())) {
       
     // set the timestamp
-    outputFrame.SetTimestamp(timestamp);
     fragment frag = *currFrag++;
 
 
@@ -317,17 +363,39 @@ int RFC2190Packetizer::GetPacket(RTPFrame & outputFrame, unsigned int & flags)
     // set marker bit
     flags = 0;
     if (currFrag == fragments.end()) {
-      flags |= 1;
+      flags |= PluginCodec_ReturnCoderLastFrame;
       outputFrame.SetMarker(1);
     }
     if (iFrame)
-      flags |= 2;
+      flags |= PluginCodec_ReturnCoderIFrame;
 
-    return 1;
+    return true;
   }
 
-  return 0;
+  return false;
 }
+
+
+void RFC2190Packetizer::RTPCallBack(void * data, int size, int mbCount)
+{
+  // sometimes, FFmpeg encodes the same frame multiple times
+  // we need to detect this in order to avoid duplicating the encoded data
+  if ((data == m_buffer) && (fragments.size() != 0)) {
+    m_currentMB = 0;
+    m_currentBytes = 0;
+    fragments.resize(0);
+  }
+
+  // add the fragment to the list
+  fragment frag;
+  frag.length = size;
+  frag.mbNum  = m_currentMB;
+  fragments.push_back(frag);
+
+  m_currentMB += mbCount;
+  m_currentBytes += size;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////3Y
 

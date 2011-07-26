@@ -43,14 +43,21 @@ class RFC2190Depacketizer {
     unsigned lastEbit;
 };
 
-class RFC2190Packetizer
+class RFC2190Packetizer : public Packetizer
 {
   public:
     RFC2190Packetizer();
     ~RFC2190Packetizer();
-    int Open(unsigned long timeStamp, unsigned long maxLen);
-    int GetPacket(RTPFrame & outputFrame, unsigned int & flags);
 
+    bool Reset(unsigned width, unsigned height);
+    bool GetPacket(RTPFrame & outputFrame, unsigned int & flags);
+    unsigned char * GetBuffer() { return m_buffer; }
+    size_t GetMaxSize() { return m_bufferSize; }
+    bool SetLength(size_t len);
+
+    void RTPCallBack(void * data, int size, int mbCount);
+
+  private:
     unsigned char * m_buffer;
     size_t m_bufferSize;
     size_t m_bufferLen;
@@ -67,10 +74,12 @@ class RFC2190Packetizer
     };
 
     typedef std::list<fragment> FragmentListType;
-    unsigned long timestamp;
     FragmentListType fragments;     // use list because we want fast insert and delete
     FragmentListType::iterator currFrag;
     unsigned char * fragPtr;
+
+    unsigned m_currentMB;
+    unsigned m_currentBytes;
 };
 
 #endif // _RFC2190_H_
