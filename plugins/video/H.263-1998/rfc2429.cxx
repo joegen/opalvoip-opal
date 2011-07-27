@@ -20,12 +20,59 @@
  *
  */
 
-#include "h263pframe.h"
+#include "rfc2429.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <iostream>
 #include <cmath>
+
+
+static const char formats[8][64] = { "forbidden",
+                                     "sub-QCIF",
+                                     "QCIF",
+                                     "CIF",
+                                     "4CIF",
+                                     "16CIF",
+                                     "reserved",
+                                     "extended PTYPE" };
+
+static const char picTypeCodes[8][64] = { "I-Picture",
+                                          "P-Picture",
+                                          "improved PB-frame",
+                                          "B-Picture",
+                                          "EI-Picture",
+                                          "EP-Picture",
+                                          "reserved (110)",
+                                          "reserved (111)" };
+
+static const char plusFormats[8][64] = { "forbidden",
+                                         "sub-QCIF",
+                                         "QCIF",
+                                         "CIF",
+                                         "4CIF",
+                                         "16CIF",
+                                         "custom format",
+                                         "reserved" };
+
+static const char PARs[16][64]   = { "forbidden",
+                                     "1:1 (Square)",
+                                     "12:11 (CIF for 4:3 picture)",
+                                     "10:11 (525-type for 4:3 picture)",
+                                     "16:11 (CIF stretched for 16:9 picture)",
+                                     "40:33 (525-type stretched for 16:9 picture)",
+                                     "reserved (0110)",
+                                     "reserved (0111)",
+                                     "reserved (1000)",
+                                     "reserved (1001)",
+                                     "reserved (1010)",
+                                     "reserved (1011)",
+                                     "reserved (1100)",
+                                     "reserved (1101)",
+                                     "reserved (1110)",
+                                     "Extended PAR" };
+
 
 
 Bitstream::Bitstream ()
@@ -126,7 +173,7 @@ uint32_t Bitstream::GetPos()
   return (m_data.pos);
 }
 
-H263PFrame::H263PFrame ()
+RFC2429Frame::RFC2429Frame ()
   : m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
   , m_minPayloadSize(0)
   , m_maxFrameSize(0)
@@ -135,13 +182,13 @@ H263PFrame::H263PFrame ()
   m_encodedFrame.ptr = NULL;
 }
 
-H263PFrame::~H263PFrame ()
+RFC2429Frame::~RFC2429Frame ()
 {
   if (m_encodedFrame.ptr)
     free(m_encodedFrame.ptr);
 }
 
-bool H263PFrame::Reset(unsigned width, unsigned height)
+bool RFC2429Frame::Reset(unsigned width, unsigned height)
 {
   m_encodedFrame.len = 0;
   m_encodedFrame.pos = 0;
@@ -164,7 +211,7 @@ bool H263PFrame::Reset(unsigned width, unsigned height)
   return true;
 }
 
-bool H263PFrame::GetPacket(RTPFrame & frame, unsigned int & flags)
+bool RFC2429Frame::GetPacket(RTPFrame & frame, unsigned int & flags)
 {
   if (m_encodedFrame.pos >= m_encodedFrame.len)
     return false;
@@ -235,38 +282,38 @@ bool H263PFrame::GetPacket(RTPFrame & frame, unsigned int & flags)
 
   flags = 0;
   flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;
-  flags |= IsIFrame() ? PluginCodec_ReturnCoderIFrame : 0;
+  flags |= IsIntraFrame() ? PluginCodec_ReturnCoderIFrame : 0;
   return true;
 }
 
-unsigned char * H263PFrame::GetBuffer()
+unsigned char * RFC2429Frame::GetBuffer()
 {
   memset (m_encodedFrame.ptr + m_encodedFrame.pos,0 , FF_INPUT_BUFFER_PADDING_SIZE);
   return (m_encodedFrame.ptr);
 }
 
-size_t H263PFrame::GetMaxSize()
+size_t RFC2429Frame::GetMaxSize()
 {
   return m_maxFrameSize;
 }
 
-bool H263PFrame::SetLength(size_t len)
+bool RFC2429Frame::SetLength(size_t len)
 {
   m_encodedFrame.len = len;
   return true;
 }
 
-bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
+bool RFC2429Frame::AddPacket(const RTPFrame & packet)
 {
-  if (frame.GetPayloadSize() == 0)
+  if (packet.GetPayloadSize() == 0)
     return true;
 
-  if (frame.GetPayloadSize()<3) {
+  if (packet.GetPayloadSize()<3) {
     PTRACE(2, "H.263-RFC2429", "Packet too short (<3)");
     return false;
   }
 
-  uint8_t* dataPtr = frame.GetPayloadPtr();
+  uint8_t* dataPtr = packet.GetPayloadPtr();
   uint8_t headerP = dataPtr[0] & 0x04;
   uint8_t headerV = dataPtr[0] & 0x02;
   uint8_t headerPLEN = ((dataPtr[0] & 0x01) << 5) + ((dataPtr[1] & 0xF8) >> 3);
@@ -282,7 +329,7 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
 
   if (headerV) dataPtr++; // We ignore the VRC
   if (headerPLEN > 0) {
-    if (frame.GetPayloadSize() < headerPLEN + (headerV ? 3U : 2U)) {
+    if (packet.GetPayloadSize() < headerPLEN + (headerV ? 3U : 2U)) {
       PTRACE(2, "H.263-RFC2429", "Packet too short (header)");
       return false;
     }
@@ -293,7 +340,7 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
     dataPtr += headerPLEN;
   }
 
-  remBytes = frame.GetPayloadSize() - headerPLEN - (headerV ? 3 : 2);
+  remBytes = packet.GetPayloadSize() - headerPLEN - (headerV ? 3 : 2);
 
   if ((m_encodedFrame.pos + (headerP ? 2 : 0) + remBytes) > (m_maxFrameSize - FF_INPUT_BUFFER_PADDING_SIZE)) {
     PTRACE(2, "H.263-RFC2429", "Trying to add " << remBytes 
@@ -314,9 +361,9 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
   m_encodedFrame.pos += remBytes;
   m_encodedFrame.len += remBytes;
 
-  if (frame.GetMarker())  { 
+  if (packet.GetMarker())  { 
     if ((headerP) && ((dataPtr[(headerP ? 0 : 2)] & 0xfc) == 0x80)) {
-      uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), frame.GetPayloadSize()- 2 - (headerP ? 0 : 2));
+      uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), packet.GetPayloadSize()- 2 - (headerP ? 0 : 2));
       PTRACE(6, "H.263-RFC2429", "Frame includes a picture header of " << hdrLen << " bits");
     }
     else {
@@ -327,20 +374,28 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & /*flags*/)
   return true;
 }
 
-bool H263PFrame::hasPicHeader () {
-  Bitstream headerBits;
-  headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
-  if ((headerBits.GetBits(16) == 0) && (headerBits.GetBits(6) == 32)) 
-    return true;
-  return false;
+void RFC2429Frame::NewFrame()
+{
+  Reset(CIF16_WIDTH, CIF16_HEIGHT);
 }
 
-bool H263PFrame::IsIFrame () {
+bool RFC2429Frame::IsValid()
+{
+  if (m_encodedFrame.len == 0)
+    return false;
+
   Bitstream headerBits;
-  if (hasPicHeader())
-    headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
-   else
-    return 0; // to be implemented
+  headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
+  return (headerBits.GetBits(16) == 0) && (headerBits.GetBits(6) == 32);
+}
+
+bool RFC2429Frame::IsIntraFrame()
+{
+  if (!IsValid())
+    return false;
+
+  Bitstream headerBits;
+  headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
   headerBits.SetPos(35);
   uint32_t PTYPEFormat = headerBits.GetBits(3); 
   if (PTYPEFormat == 7) { // This is the plustype
@@ -357,7 +412,7 @@ bool H263PFrame::IsIFrame () {
   }
 }
 
-uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen) 
+uint32_t RFC2429Frame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen) 
 {
   Bitstream headerBits;
   headerBits.SetBytes (headerPtr, headerMaxLen, 0, 0);

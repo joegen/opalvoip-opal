@@ -22,26 +22,11 @@
 #ifndef _RFC2190_H_
 #define _RFC2190_H_
 
+#include "h263-1998.h"
+
 #include <vector>
 #include <list>
 
-#include "../common/rtpframe.h"
-
-class RFC2190Depacketizer {
-  public:
-    RFC2190Depacketizer();
-    void NewFrame();
-    int SetPacket(const RTPFrame & outputFrame, bool & requestIFrame, bool & isIFrame);
-
-    std::vector<unsigned char> frame;
-
-  protected:
-    unsigned lastSequence;
-    int LostSync(bool & requestIFrame, const char * reason);
-    bool first;
-    bool skipUntilEndOfFrame;
-    unsigned lastEbit;
-};
 
 class RFC2190Packetizer : public Packetizer
 {
@@ -80,6 +65,27 @@ class RFC2190Packetizer : public Packetizer
 
     unsigned m_currentMB;
     unsigned m_currentBytes;
+};
+
+class RFC2190Depacketizer : public Depacketizer
+{
+  public:
+    RFC2190Depacketizer();
+
+    virtual void NewFrame();
+    virtual bool AddPacket(const RTPFrame & packet);
+    virtual bool IsValid();
+    virtual bool IsIntraFrame();
+    virtual BYTE * GetBuffer() { return &m_packet[0]; }
+    virtual size_t GetLength() { return m_packet.size(); }
+
+  protected:
+    std::vector<BYTE> m_packet;
+    unsigned m_lastSequence;
+    bool     m_first;
+    bool     m_skipUntilEndOfFrame;
+    unsigned m_lastEbit;
+    bool     m_isIFrame;
 };
 
 #endif // _RFC2190_H_
