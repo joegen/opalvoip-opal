@@ -136,16 +136,15 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
   <ItemGroup>
     <ClCompile Include="..\common\dyna.cxx" />
     <ClCompile Include="h263-1998.cxx" />
-    <ClCompile Include="h263pframe.cxx" />
+    <ClCompile Include="rfc2429.cxx" />
     <ClCompile Include="rfc2190.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\dyna.h" />
     <ClInclude Include="..\common\ffmpeg.h" />
     <ClInclude Include="h263-1998.h" />
-    <ClInclude Include="h263pframe.h" />
+    <ClInclude Include="rfc2429.h" />
     <ClInclude Include="rfc2190.h" />
-    <ClInclude Include="tracer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
