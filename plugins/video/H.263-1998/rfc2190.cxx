@@ -158,7 +158,7 @@ bool RFC2190Packetizer::Reset(unsigned width, unsigned height)
   if (m_buffer == NULL) {
     m_bufferSize = newOutputSize;
 #if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&m_packetizer.m_buffer, 64, m_packetizer.m_bufferSize) != 0) 
+    if (posix_memalign((void **)&m_buffer, 64, m_bufferSize) != 0) 
 #else
     if ((m_buffer = (unsigned char *)malloc(m_bufferSize)) == NULL) 
 #endif
