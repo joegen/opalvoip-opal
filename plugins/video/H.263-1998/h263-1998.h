@@ -49,28 +49,16 @@
 #ifndef __H263P_1998_H__
 #define __H263P_1998_H__ 1
 
-#include <codec/opalplugin.h>
-#include "h263pframe.h"
-#include "rfc2190.h"
+#include <codec/opalplugin.hpp>
+#include "../common/ffmpeg.h"
 #include "critsect.h"
-
-#if TRACE_FILE
-#include "tracer.h"
-#endif
 
 typedef unsigned char BYTE;
 
-#define H263P_CLOCKRATE        90000
-#define H263P_BITRATE         327600
-#define H263P_PAYLOAD_SIZE       600
-#define H263P_FRAME_RATE          25
-#define H263P_KEY_FRAME_INTERVAL 125
-#define H263P_MIN_QUANT            2
-
-#define H263_CLOCKRATE         90000
-#define H263_BITRATE          327600
-#define H263_PAYLOAD_SIZE        (600/8)
 #define RTP_RFC2190_PAYLOAD       34
+
+#define VIDEO_CLOCKRATE        90000
+#define H263_BITRATE          327600
 #define H263_KEY_FRAME_INTERVAL  125
 
 #define CIF_WIDTH       352
@@ -91,18 +79,21 @@ typedef unsigned char BYTE;
 #define SQCIF_WIDTH     128
 #define SQCIF_HEIGHT    96
 
-#define MAX_YUV420P_FRAME_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + (FF_INPUT_BUFFER_PADDING_SIZE*2))
-enum Annex {
-    D,
-    F,
-    I,
-    K,
-    J,
-    S,
-    T,
-    N,
-    P
+
+////////////////////////////////////////////////////////////////////////////
+
+class Packetizer
+{
+  public:
+    virtual ~Packetizer() { }
+    virtual bool Reset(unsigned width, unsigned height) = 0;
+    virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags) = 0;
+    virtual unsigned char * GetBuffer() = 0;
+    virtual size_t GetMaxSize() = 0;
+    virtual bool SetLength(size_t len) = 0;
 };
+
+////////////////////////////////////////////////////////////////////////////
 
 class H263_Base_EncoderContext
 {
@@ -110,17 +101,14 @@ class H263_Base_EncoderContext
     H263_Base_EncoderContext(const char * prefix);
     virtual ~H263_Base_EncoderContext();
 
-    virtual bool Open() = 0;
-    virtual bool Open(CodecID codecId);
+    virtual bool Init() = 0;
+    virtual bool Init(CodecID codecId);
 
-    virtual int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags) = 0;
-    void SetMaxKeyFramePeriod (unsigned period);
-    void SetTargetBitrate (unsigned rate);
-    void SetFrameWidth (unsigned width);
-    void SetFrameHeight (unsigned height);
-    void SetTSTO (unsigned tsto);
-    void EnableAnnex (Annex annex);
-    void DisableAnnex (Annex annex);
+    virtual bool SetOptions(const char * const * options);
+    virtual void SetOption(const char * option, const char * value);
+
+    virtual bool EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+
     bool OpenCodec();
     void CloseCodec();
 
@@ -129,23 +117,14 @@ class H263_Base_EncoderContext
 
     virtual void SetMaxRTPFrameSize (unsigned size) = 0;
 
-    int m_targetBitRate;
-
   protected:
-    virtual bool InitContext() = 0;
-
-    unsigned char * _inputFrameBuffer;
-    AVCodec        *_codec;
-    AVCodecContext *_context;
-    AVFrame        *_inputFrame;
-
-    int _frameCount;
-    int _width, _height;
-    CriticalSection _mutex;
-    const char * prefix;
-#if TRACE_FILE
-    Tracer tracer;
-#endif
+    const char     * m_prefix;
+    AVCodec        * m_codec;
+    AVCodecContext * m_context;
+    AVFrame        * m_inputFrame;
+    uint8_t        * m_alignedInputYUV;
+    Packetizer     * m_packetizer;
+    CriticalSection  m_mutex;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -155,16 +134,9 @@ class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
   public:
     H263_RFC2190_EncoderContext();
     ~H263_RFC2190_EncoderContext();
-    bool Open();
-    bool InitContext();
-    void SetMaxRTPFrameSize (unsigned size);
-    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-    void RTPCallBack(struct AVCodecContext *avctx, void * _data, int size, int mbCount);
-  protected:
     bool Init();
-    RFC2190Packetizer packetizer;
-    unsigned currentMb;
-    unsigned currentBytes;
+    void SetMaxRTPFrameSize (unsigned size);
+    static void RTPCallBack(AVCodecContext *avctx, void * data, int size, int mb_nb);
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -175,13 +147,22 @@ class H263_RFC2429_EncoderContext : public H263_Base_EncoderContext
     H263_RFC2429_EncoderContext();
     ~H263_RFC2429_EncoderContext();
 
-    bool Open();
-    bool InitContext();
-    void SetMaxRTPFrameSize (unsigned size);
-    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-  protected:
     bool Init();
-    H263PFrame * _txH263PFrame;
+    void SetMaxRTPFrameSize (unsigned size);
+};
+
+////////////////////////////////////////////////////////////////////////////
+
+class Depacketizer
+{
+  public:
+    virtual ~Depacketizer() { }
+    virtual void NewFrame() = 0;
+    virtual bool AddPacket(const PluginCodec_RTP & packet) = 0;
+    virtual bool IsValid() = 0;
+    virtual bool IsIntraFrame() = 0;
+    virtual BYTE * GetBuffer() = 0;
+    virtual size_t GetLength() = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -189,25 +170,21 @@ class H263_RFC2429_EncoderContext : public H263_Base_EncoderContext
 class H263_Base_DecoderContext
 {
   public:
-    H263_Base_DecoderContext(const char * prefix);
+    H263_Base_DecoderContext(const char * prefix, Depacketizer * depacketizer);
     ~H263_Base_DecoderContext();
 
-    virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags) = 0;
+    virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
   protected:
     bool OpenCodec();
     void CloseCodec();
 
-    AVCodec        *_codec;
-    AVCodecContext *_context;
-    AVFrame        *_outputFrame;
-
-    int _frameCount;
-    CriticalSection _mutex;
-    const char * prefix;
-#if TRACE_FILE
-    Tracer tracer;
-#endif
+    const char *     m_prefix;
+    AVCodec        * m_codec;
+    AVCodecContext * m_context;
+    AVFrame        * m_outputFrame;
+    Depacketizer   * m_depacketizer;
+    CriticalSection  m_mutex;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -216,11 +193,6 @@ class H263_RFC2190_DecoderContext : public H263_Base_DecoderContext
 {
   public:
     H263_RFC2190_DecoderContext();
-    ~H263_RFC2190_DecoderContext();
-    bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-
-  protected:
-    RFC2190Depacketizer depacketizer;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -229,48 +201,9 @@ class H263_RFC2429_DecoderContext : public H263_Base_DecoderContext
 {
   public:
      H263_RFC2429_DecoderContext();
-     ~H263_RFC2429_DecoderContext();
-
-     bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-  protected:
-    unsigned int _skippedFrameCounter;
-    bool _gotIFrame;
-    bool _gotAGoodFrame;
-    H263PFrame* _rxH263PFrame;
 };
 
 ////////////////////////////////////////////////////////////////////////////
 
-static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,
-                                   void * parm, unsigned * parmLen);
-static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
-                                   void * parm, unsigned * parmLen);
-static int free_codec_options    ( const struct PluginCodec_Definition *, void *, const char *, 
-                                   void * parm, unsigned * parmLen);
-
-static void * create_encoder     ( const struct PluginCodec_Definition *);
-static void destroy_encoder      ( const struct PluginCodec_Definition *, void * _context);
-static int codec_encoder         ( const struct PluginCodec_Definition *, void * _context,
-                                   const void * from, unsigned * fromLen,
-                                   void * to, unsigned * toLen,
-                                   unsigned int * flag);
-static int to_normalised_options ( const struct PluginCodec_Definition *, void *, const char *,
-                                   void * parm, unsigned * parmLen);
-static int to_customised_options ( const struct PluginCodec_Definition *, void *, const char *, 
-                                   void * parm, unsigned * parmLen);
-static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
-                                   void * parm, unsigned * parmLen);
-static int encoder_get_output_data_size ( const PluginCodec_Definition *, void *, const char *,
-                                   void *, unsigned *);
-
-static void * create_decoder     ( const struct PluginCodec_Definition *);
-static void destroy_decoder      ( const struct PluginCodec_Definition *, void * _context);
-static int codec_decoder         ( const struct PluginCodec_Definition *, void * _context, 
-                                   const void * from, unsigned * fromLen,
-                                   void * to, unsigned * toLen,
-                                   unsigned int * flag);
-static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, void *, const char *,
-                                   void *, unsigned *);
-/////////////////////////////////////////////////////////////////////////////
 
 #endif /* __H263P_1998_H__ */
