@@ -50,8 +50,8 @@
 #define __H263P_1998_H__ 1
 
 #include <codec/opalplugin.hpp>
-#include "h263pframe.h"
-#include "rfc2190.h"
+#include "../common/ffmpeg.h"
+#include "../common/rtpframe.h"
 #include "critsect.h"
 
 typedef unsigned char BYTE;
@@ -80,6 +80,21 @@ typedef unsigned char BYTE;
 #define SQCIF_WIDTH     128
 #define SQCIF_HEIGHT    96
 
+
+////////////////////////////////////////////////////////////////////////////
+
+class Packetizer
+{
+  public:
+    virtual ~Packetizer() { }
+    virtual bool Reset(unsigned width, unsigned height) = 0;
+    virtual bool GetPacket(RTPFrame & frame, unsigned int & flags) = 0;
+    virtual unsigned char * GetBuffer() = 0;
+    virtual size_t GetMaxSize() = 0;
+    virtual bool SetLength(size_t len) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
 
 class H263_Base_EncoderContext
 {
@@ -139,13 +154,27 @@ class H263_RFC2429_EncoderContext : public H263_Base_EncoderContext
 
 ////////////////////////////////////////////////////////////////////////////
 
+class Depacketizer
+{
+  public:
+    virtual ~Depacketizer() { }
+    virtual void NewFrame() = 0;
+    virtual bool AddPacket(const RTPFrame & packet) = 0;
+    virtual bool IsValid() = 0;
+    virtual bool IsIntraFrame() = 0;
+    virtual BYTE * GetBuffer() = 0;
+    virtual size_t GetLength() = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////
+
 class H263_Base_DecoderContext
 {
   public:
-    H263_Base_DecoderContext(const char * prefix);
+    H263_Base_DecoderContext(const char * prefix, Depacketizer * depacketizer);
     ~H263_Base_DecoderContext();
 
-    virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags) = 0;
+    virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
   protected:
     bool OpenCodec();
@@ -155,6 +184,7 @@ class H263_Base_DecoderContext
     AVCodec        * m_codec;
     AVCodecContext * m_context;
     AVFrame        * m_outputFrame;
+    Depacketizer   * m_depacketizer;
     CriticalSection  m_mutex;
 };
 
@@ -164,11 +194,6 @@ class H263_RFC2190_DecoderContext : public H263_Base_DecoderContext
 {
   public:
     H263_RFC2190_DecoderContext();
-    ~H263_RFC2190_DecoderContext();
-    bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-
-  protected:
-    RFC2190Depacketizer m_depacketizer;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -177,14 +202,6 @@ class H263_RFC2429_DecoderContext : public H263_Base_DecoderContext
 {
   public:
      H263_RFC2429_DecoderContext();
-     ~H263_RFC2429_DecoderContext();
-
-     bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-  protected:
-    unsigned     m_skippedFrameCounter;
-    bool         m_gotIFrame;
-    bool         m_gotAGoodFrame;
-    H263PFrame * m_rxH263PFrame;
 };
 
 ////////////////////////////////////////////////////////////////////////////

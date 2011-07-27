@@ -19,13 +19,11 @@
  *
  */
 
+#include "rfc2190.h"
+
 #include <iostream>
 #include <string.h>
 #include <malloc.h>
-using namespace std;
-
-#include "rfc2190.h"
-#include <codec/opalplugin.h>
 
 
 #define MAX_PACKET_LEN 1024
@@ -406,51 +404,55 @@ RFC2190Depacketizer::RFC2190Depacketizer()
 
 void RFC2190Depacketizer::NewFrame()
 {
-  frame.resize(0);
-  first               = true;
-  skipUntilEndOfFrame = false;
-  lastEbit            = 8;
+  m_packet.resize(0);
+  m_first               = true;
+  m_skipUntilEndOfFrame = false;
+  m_lastEbit            = 8;
+  m_isIFrame            = false;
 }
 
-int RFC2190Depacketizer::LostSync(bool & requestIframe, const char * /*reason*/)
+bool RFC2190Depacketizer::IsValid()
 {
-  skipUntilEndOfFrame = true;
-  requestIframe = true;
-  return 0;
+  return m_packet.size() > 2 && m_packet[0] == 0 && m_packet[1] == 0 && (m_packet[2] & 0x80) == 0x80;
 }
 
-int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIFrame, bool & isIFrame)
+bool RFC2190Depacketizer::IsIntraFrame()
 {
-  requestIFrame = false;
-  isIFrame      = false;
+  return m_isIFrame;
+}
 
+bool RFC2190Depacketizer::AddPacket(const RTPFrame & packet)
+{
   // ignore packets if required
-  if (skipUntilEndOfFrame) {
-    if (inputFrame.GetMarker()) 
+  if (m_skipUntilEndOfFrame) {
+    if (packet.GetMarker()) 
       NewFrame();
-    return 0;
+    return false;
   }
 
   // check if packet is in sequence. If not, skip til end of frame 
-  if (first) {
+  if (m_first) {
     NewFrame();    // make sure this is called before "first = false"
-    first = false;
-    lastSequence = inputFrame.GetSequenceNumber();
+    m_first = false;
+    m_lastSequence = packet.GetSequenceNumber();
   }
   else {
-    ++lastSequence;
-    if (inputFrame.GetSequenceNumber() != lastSequence) {
-      return LostSync(requestIFrame, "missed frame");
+    ++m_lastSequence;
+    if (packet.GetSequenceNumber() != m_lastSequence) {
+      m_skipUntilEndOfFrame = true;
+      return false;
     }
   }
 
-  unsigned payloadLen = inputFrame.GetPayloadSize();
+  unsigned payloadLen = packet.GetPayloadSize();
 
   // payload must be at least as long as mode A header + 1 byte
-  if (payloadLen < 5) 
-    return LostSync(requestIFrame, "payload too small");
+  if (payloadLen < 5) {
+    m_skipUntilEndOfFrame = true;
+    return false;
+  }
 
-  unsigned char * payload = inputFrame.GetPayloadPtr();
+  unsigned char * payload = packet.GetPayloadPtr();
   unsigned int sbit = (payload[0] >> 3) & 0x07;
   unsigned hdrLen;
 
@@ -458,7 +460,7 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
 
   // handle mode A frames
   if ((payload[0] & 0x80) == 0) {
-    isIFrame = (payload[1] & 0x10) == 0;
+    m_isIFrame = (payload[1] & 0x10) == 0;
     hdrLen = 4;
     mode = 'A';
 
@@ -476,54 +478,56 @@ int RFC2190Depacketizer::SetPacket(const RTPFrame & inputFrame, bool & requestIF
 
   // handle mode B frames
   else if ((payload[0] & 0x40) == 0) {
-    if (payloadLen < 9)
-      return LostSync(requestIFrame, "mode B payload too small");
-    isIFrame = (payload[4] & 0x80) == 0;
+    if (payloadLen < 9) {
+      m_skipUntilEndOfFrame = true;
+      return false;
+    }
+    m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 8;
     mode = 'B';
   }
 
   // handle mode C frames
   else {
-    if (payloadLen < 13)
-      return LostSync(requestIFrame, "mode C payload too small");
-    isIFrame = (payload[4] & 0x80) == 0;
+    if (payloadLen < 13) {
+      m_skipUntilEndOfFrame = true;
+      return false;
+    }
+    m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 12;
     mode = 'C';
   }
 
   // if ebit and sbit do not add up, then we have lost sync
-  if (((sbit + lastEbit) & 0x7) != 0) {
-    return LostSync(requestIFrame, "mismatched ebit and sbit");
+  if (((sbit + m_lastEbit) & 0x7) != 0) {
+    m_skipUntilEndOfFrame = true;
+    return false;
   }
 
   unsigned char * src = payload + hdrLen;
   size_t cpyLen = payloadLen - hdrLen;
 
   // handle first partial byte
-  if ((sbit != 0) && (frame.size() > 0)) {
+  if ((sbit != 0) && (m_packet.size() > 0)) {
     
     static unsigned char smasks[7] = { 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01 };
     unsigned smask = smasks[sbit-1];
-    frame[frame.size()-1] |= (*src & smask);
+    m_packet[m_packet.size()-1] |= (*src & smask);
     --cpyLen;
     ++src;
   }
 
   // copy whole bytes
   if (cpyLen > 0) {
-    size_t frameSize = frame.size();
-    frame.resize(frameSize + cpyLen);
-    memcpy(&frame[0] + frameSize, src, cpyLen);
+    size_t frameSize = m_packet.size();
+    m_packet.resize(frameSize + cpyLen);
+    memcpy(&m_packet[0] + frameSize, src, cpyLen);
   }
 
   // keep ebit for next time
-  lastEbit = payload[0] & 0x07;
+  m_lastEbit = payload[0] & 0x07;
 
   // return 0 if no frame yet, return 1 if frame is available
-  if (!inputFrame.GetMarker()) 
-    return 0;
-
-  return 1;
+  return true;
 }
 
