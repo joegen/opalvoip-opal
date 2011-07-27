@@ -213,7 +213,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\h263pframe.cxx"
+				RelativePath=".\rfc2429.cxx"
 				>
 			</File>
 			<File
@@ -237,7 +237,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\h263pframe.h"
+				RelativePath=".\rfc2429.h"
 				>
 			</File>
 			<File
@@ -246,10 +246,6 @@
 			</File>
 			<File
 				RelativePath=".\rfc2190.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tracer.h"
 				>
 			</File>
 		</Filter>

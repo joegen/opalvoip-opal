@@ -22,35 +22,27 @@
 #ifndef _RFC2190_H_
 #define _RFC2190_H_
 
+#include "h263-1998.h"
+
 #include <vector>
 #include <list>
 
-class PluginCodec_RTP;
 
-class RFC2190Depacketizer {
-  public:
-    RFC2190Depacketizer();
-    void NewFrame();
-    int SetPacket(const PluginCodec_RTP & outputFrame, bool & requestIFrame, bool & isIFrame);
-
-    std::vector<unsigned char> frame;
-
-  protected:
-    unsigned lastSequence;
-    int LostSync(bool & requestIFrame, const char * reason);
-    bool first;
-    bool skipUntilEndOfFrame;
-    unsigned lastEbit;
-};
-
-class RFC2190Packetizer
+class RFC2190Packetizer : public Packetizer
 {
   public:
     RFC2190Packetizer();
     ~RFC2190Packetizer();
-    int Open(unsigned long timeStamp, unsigned long maxLen);
-    int GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags);
 
+    bool Reset(unsigned width, unsigned height);
+    bool GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags);
+    unsigned char * GetBuffer() { return m_buffer; }
+    size_t GetMaxSize() { return m_bufferSize; }
+    bool SetLength(size_t len);
+
+    void RTPCallBack(void * data, int size, int mbCount);
+
+  private:
     unsigned char * m_buffer;
     size_t m_bufferSize;
     size_t m_bufferLen;
@@ -67,10 +59,33 @@ class RFC2190Packetizer
     };
 
     typedef std::list<fragment> FragmentListType;
-    unsigned long timestamp;
     FragmentListType fragments;     // use list because we want fast insert and delete
     FragmentListType::iterator currFrag;
     unsigned char * fragPtr;
+
+    unsigned m_currentMB;
+    unsigned m_currentBytes;
+};
+
+class RFC2190Depacketizer : public Depacketizer
+{
+  public:
+    RFC2190Depacketizer();
+
+    virtual void NewFrame();
+    virtual bool AddPacket(const PluginCodec_RTP & packet);
+    virtual bool IsValid();
+    virtual bool IsIntraFrame();
+    virtual BYTE * GetBuffer() { return &m_packet[0]; }
+    virtual size_t GetLength() { return m_packet.size(); }
+
+  protected:
+    std::vector<BYTE> m_packet;
+    unsigned m_lastSequence;
+    bool     m_first;
+    bool     m_skipUntilEndOfFrame;
+    unsigned m_lastEbit;
+    bool     m_isIFrame;
 };
 
 #endif // _RFC2190_H_

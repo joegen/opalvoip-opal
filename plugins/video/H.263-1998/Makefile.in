@@ -29,7 +29,7 @@ BASENAME := h263_ffmpeg
 COMMONDIR := ../common
 SRCDIR    := .
 SRCS      := h263-1998.cxx \
-             h263pframe.cxx \
+             rfc2429.cxx \
              rfc2190.cxx \
              $(COMMONDIR)/mpi.cxx \
              $(COMMONDIR)/dyna.cxx

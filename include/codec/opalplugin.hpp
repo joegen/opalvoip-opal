@@ -589,7 +589,7 @@ class PluginCodec_RTP
     {
     }
 
-    __inline unsigned GetMaxSize() const           { return m_headerSize+m_payloadSize; }
+    __inline unsigned GetMaxSize() const           { return m_maxSize; }
     __inline unsigned GetPacketSize() const        { return m_headerSize+m_payloadSize; }
     __inline unsigned GetHeaderSize() const        { return m_headerSize; }
     __inline unsigned GetPayloadSize() const       { return m_payloadSize; }
