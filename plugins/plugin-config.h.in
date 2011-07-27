@@ -33,9 +33,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* ffmpeg */
-#undef HAVE_LIBAVCODEC
-
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -117,6 +114,12 @@
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
 
+/* ffmpeg */
+#undef HAVE_LIBAVCODEC
+
+/* Stack alignment hack for libavcodec library */
+#undef LIBAVCODEC_STACKALIGN_HACK
+
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR
 
@@ -126,8 +129,8 @@
 /* Filename of the libavcodec library */
 #undef LIBAVCODEC_LIB_NAME
 
-/* Stack alignment hack for libavcodec library */
-#undef LIBAVCODEC_STACKALIGN_HACK
+/* Filename of the libavcodec library */
+#undef LIBAVUTIL_LIB_NAME
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
