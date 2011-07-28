@@ -202,6 +202,9 @@ static struct {
 
 /////////////////////////////////////////////////////////////////////////////
 
+const WORD SIPURL::DefaultPort = 5060;
+const WORD SIPURL::DefaultSecurePort = 5061;
+
 SIPURL::SIPURL()
 {
 }
@@ -242,7 +245,7 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
   WORD port;
   if (address.GetIpAndPort(ip, port)) {
     PString transProto;
-    WORD defaultPort = 5060;
+    WORD defaultPort = SIPURL::DefaultPort;
 
     PStringStream s;
     s << "sip";
@@ -250,7 +253,7 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
     PCaselessString proto = address.GetProtoPrefix();
 #if OPAL_PTLIB_SSL
     if (proto == OpalTransportAddress::TlsPrefix()) {
-      defaultPort = 5061;
+      defaultPort = SIPURL::DefaultSecurePort;
       s << 's';
       // use default tranport=UDP
     }
@@ -263,7 +266,7 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
     s << ':';
     if (!name.IsEmpty())
       s << name << '@';
-    s << ip.AsString(true);
+    s << ip.AsString(true, true);
 
     if (listenerPort == 0)
       listenerPort = port;
@@ -472,10 +475,11 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   else
     addr << "*";
 
+  addr << ':';
   if (port > 0)
-    addr << ':' << port;
+    addr << port;
   else
-    addr << ":5060";
+    addr << SIPURL::DefaultPort;
 
   return addr;
 }
@@ -537,7 +541,7 @@ void SIPURL::Sanitise(UsageContext context)
       if (GetPortSupplied()) {
         // Port not allowed for To or From, RFC3261, 19.1.1
         portSupplied = false;
-        port = scheme == "sips" ? 5061 : 5060;
+        port = scheme == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
       }
       break;
 
@@ -556,7 +560,7 @@ void SIPURL::Sanitise(UsageContext context)
          always the thing listening on a port, it is the 99.9% solution.
        */
       if (!GetPortSupplied())
-        SetPort(scheme == "sips" ? 5061 : 5060);
+        SetPort(scheme == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort);
       break;
 
     case RegisterURI :
@@ -599,10 +603,10 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
     return PFalse;
   }
 
-  PTRACE(4, "SIP\tAttempting SRV record entry " << entry << ": " << addrs[entry].AsString());
+  PTRACE(4, "SIP\tAttempting SRV record entry " << entry << ": " << addrs[entry]);
 
   // Adjust our host and port to what the DNS SRV record says
-  SetHostName(addrs[entry].GetAddress().AsString());
+  SetHostName(addrs[entry].GetAddress().AsString(true, true));
   SetPort(addrs[entry].GetPort());
   return true;
 }
@@ -656,7 +660,7 @@ bool SIPURLList::FromString(const PString & str, bool reversed)
 
       SIPURL uri = line(comma+1, pos-1);
       if (!uri.GetPortSupplied())
-        uri.SetPort(uri.GetScheme() == "sips" ? 5061 : 5060);
+        uri.SetPort(uri.GetScheme() == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort);
 
       if (reversed)
         push_front(uri);
@@ -1791,10 +1795,9 @@ PString SIP_PDU::CreateVia(const OpalTransport & transport)
   PINDEX protoLen = proto.GetLength();
   PStringStream str;
   str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/' << proto.Left(protoLen-1).ToUpper() << ' ';
-  PIPSocket::Address ip;
-  WORD port = 5060;
-  if (via.GetIpAndPort(ip, port))
-    str << ip.AsString(true) << ':' << port;
+  PIPSocketAddressAndPort addrport(SIPURL::DefaultPort);
+  if (via.GetIpAndPort(addrport))
+    str << addrport;
   else
     str << via.Mid(protoLen);
   str << ";branch=" << m_transactionID << ";rport";
@@ -1896,43 +1899,31 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   if (!m_mime.GetViaList(viaList))
     return;
 
-  PString viaFront = viaList.front();
-  PString via = viaFront;
-  PString port, ip;
-  PINDEX j = 0;
-  
-  if ((j = via.FindLast (' ')) != P_MAX_INDEX)
-    via = via.Mid(j+1);
-  if ((j = via.Find (';')) != P_MAX_INDEX)
-    via = via.Left(j);
-  if ((j = via.Find (':')) != P_MAX_INDEX) {
-    ip = via.Left(j);
-    port = via.Mid(j+1);
+  PString & via = viaList.front();
+  PINDEX space = via.Find(' ');
+  if (space == P_MAX_INDEX) {
+    PTRACE(2, "SIP\tIllegal via string \"" << via << '"');
+    return;
   }
-  else
-    ip = via;
 
-  PIPSocket::Address a (ip);
+  PIPSocketAddressAndPort addrport(via(space+1, via.Find(';', space)-1), SIPURL::DefaultPort);
+  if (!addrport.IsValid())
+    return;
+
   PIPSocket::Address remoteIp;
   WORD remotePort;
-  if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
-    PINDEX start, val, end;
-    if (LocateFieldParameter(viaFront, "rport", start, val, end)) {
-      // fill in empty rport and received for RFC 3581
-      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "rport", remotePort);
-      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", remoteIp);
-    }
-    else if (remoteIp != a ) // set received when remote transport address different from Via address 
-    {
-      viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", remoteIp);
-    }
-  }
-  else if (!a.IsValid()) {
-    // Via address given has domain name
-    viaFront = SIPMIMEInfo::InsertFieldParameter(viaFront, "received", via);
-  }
+  if (!transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort))
+    return;
 
-  viaList.front() = viaFront;
+  PINDEX start, val, end;
+  if (LocateFieldParameter(via, "rport", start, val, end)) {
+    // fill in empty rport and received for RFC 3581
+    via = SIPMIMEInfo::InsertFieldParameter(via, "rport", remotePort);
+    via = SIPMIMEInfo::InsertFieldParameter(via, "received", remoteIp);
+  }
+  else if (remoteIp != addrport.GetAddress()) // set received when remote transport address different from Via address 
+    via = SIPMIMEInfo::InsertFieldParameter(via, "received", remoteIp);
+
   m_mime.SetViaList(viaList);
 }
 
@@ -1953,84 +1944,37 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
   if (transport.IsReliable() && transport.IsOpen())
     newAddress = transport.GetRemoteAddress();
   else {
-    WORD defaultPort = transport.GetEndPoint().GetDefaultSignalPort();
-
-    PStringList viaList;
-    if (m_mime.GetViaList(viaList)) {
-      PString viaAddress = viaList.front();
-      PString proto = viaList.front();
-      PString viaPort = defaultPort;
-
-      PINDEX bracket = viaAddress.FindLast(']');
-      if (bracket == P_MAX_INDEX)
-        bracket = 0;
-
-      PINDEX pos = 0;
-      // get the address specified in the Via
-      if ((pos = viaAddress.FindLast (' ')) != P_MAX_INDEX)
-        viaAddress = viaAddress.Mid(pos+1);
-      if ((pos = viaAddress.Find (';')) != P_MAX_INDEX)
-        viaAddress = viaAddress.Left(pos);
-      if ((pos = viaAddress.Find (':')) != P_MAX_INDEX && (pos > bracket)) {
-        viaPort = viaAddress.Mid(pos+1);
-        viaAddress = viaAddress.Left(pos);
-      }
-
-      // get the protocol type from Via header
-      if ((pos = proto.FindLast (' ')) != P_MAX_INDEX)
-        proto = proto.Left(pos);
-      if ((pos = proto.FindLast('/')) != P_MAX_INDEX)
-        proto = proto.Mid(pos+1);
-
-      // maddr is present, no support for multicast yet
-      PString param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "maddr");
-      if (!param.IsEmpty()) 
-        viaAddress = param;
-
-      // received is present
-      bool received = false;
-      param = SIPMIMEInfo::ExtractFieldParameter(viaList.front(), "received");
-      if (!param.IsEmpty()) {
-        viaAddress = param;
-        received = true;
-      }
+    PString via = m_mime.GetFirstVia();
+    PINDEX space = via.Find(' ');
+    if (via.IsEmpty() || space == P_MAX_INDEX)
+      newAddress = transport.GetLastReceivedAddress(); // Send back from whence it came
+    else {
+      PIPSocketAddressAndPort addrport(SIPURL::DefaultPort);
 
       // rport is present. be careful to distinguish between not present and empty
-      PIPSocket::Address remoteIp;
-      WORD remotePort;
-      transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort);
-      {
-        PINDEX start, val, end;
-        if (LocateFieldParameter(viaList.front(), "rport", start, val, end)) {
-          param = viaList.front()(val, end);
-          if (!param.IsEmpty()) 
-            viaPort = param;
-          else
-            viaPort = remotePort;
-          if (!received) 
-            viaAddress = remoteIp.AsString();
-        }
+      PINDEX start, pos, end;
+      if (LocateFieldParameter(via, "rport", start, pos, end)) {
+        // rport is present. be careful to distinguish between not present and empty
+
+        transport.GetLastReceivedAddress().GetIpAndPort(addrport);
+
+        if (pos < end)
+          addrport.SetPort((WORD)via(pos, end).AsUnsigned());
+
+        // received is present as well
+        PString received = SIPMIMEInfo::ExtractFieldParameter(via, "received");
+        if (!received.IsEmpty())
+          addrport.SetAddress(received);
       }
+      else
+        addrport.Parse(via(space+1, via.Find(';', space)-1));
 
-      newAddress = OpalTransportAddress(viaAddress+":"+viaPort,
-                                        defaultPort, (proto *= "TCP") ? OpalTransportAddress::TcpPrefix()
-                                                                      : OpalTransportAddress::UdpPrefix());
-    }
-    else {
-      // get Via from From field
-      PString from = m_mime.GetFrom();
-      if (!from.IsEmpty()) {
-        PINDEX j = from.Find (';');
-        if (j != P_MAX_INDEX)
-          from = from.Left(j); // Remove all parameters
-        j = from.Find ('<');
-        if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
-          from += '>';
+      // get the protocol type from Via header
+      PString proto;
+      if ((pos = via.FindLast('/', space)) != P_MAX_INDEX)
+        proto = via(pos+1, space-1).ToLower();
 
-        SIPURL url(from);
-
-        newAddress = OpalTransportAddress(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), defaultPort, OpalTransportAddress::UdpPrefix());
-      }
+      newAddress = OpalTransportAddress(addrport.AsString(), 5060, proto);
     }
   }
 
@@ -2046,7 +1990,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
   strm << m_mime.GetCSeq() << ' ';
   if (m_method != NumMethods)
     strm << m_uri;
-  else if (m_statusCode != IllegalStatusCode)
+ else if (m_statusCode != IllegalStatusCode)
     strm << '<' << (unsigned)m_statusCode << '>';
   else
     strm << "<<Uninitialised>>";
@@ -3309,12 +3253,8 @@ SIPAck::SIPAck(SIPTransaction & invite, SIP_PDU & response)
 
     // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
     // as well as the initial Route
-    PStringList viaList;
-    if (invite.GetMIME().GetViaList(viaList))
-      m_mime.SetVia(viaList.front());
-
-    if (invite.GetMIME().GetRoute().GetSize() > 0)
-      m_mime.SetRoute(invite.GetMIME().GetRoute());
+    m_mime.SetVia(invite.GetMIME().GetFirstVia());
+    m_mime.SetRoute(invite.GetMIME().GetRoute());
   }
 
   // Add authentication if had any on INVITE

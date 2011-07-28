@@ -3883,7 +3883,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   PIPSocket::InterfaceTable ifaces;
   if (PIPSocket::GetInterfaceTable(ifaces)) {
     for (i = 0; i < ifaces.GetSize(); i++) {
-      PwxString addr = ifaces[i].GetAddress().AsString();
+      PwxString addr = ifaces[i].GetAddress().AsString(true);
       PwxString name = wxT("%");
       name += PwxString(ifaces[i].GetName());
       m_InterfaceAddress->Append(addr);

@@ -204,7 +204,7 @@ bool SIP_Presentity::Open()
       PString hostname = m_aor.GetHostName();
       WORD port = m_aor.GetPort();
       if (port == 0)
-        port = 5060;
+        port = SIPURL::DefaultPort;
 
 #if P_DNS
       PIPSocketAddressAndPortVector addrs;
