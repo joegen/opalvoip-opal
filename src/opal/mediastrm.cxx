@@ -1149,6 +1149,7 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
   , m_outputDevice(out)
   , m_autoDeleteInput(delIn)
   , m_autoDeleteOutput(delOut)
+  , m_needKeyFrame(false)
 {
   PAssert(in != NULL || out != NULL, PInvalidParameter);
 }
@@ -1243,6 +1244,17 @@ PBoolean OpalVideoMediaStream::Close()
 }
 
 
+PBoolean OpalVideoMediaStream::ExecuteCommand(const OpalMediaCommand & command)
+{
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    PTRACE_IF(3, !m_needKeyFrame, "Media\tKey frame forced in video stream");
+    m_needKeyFrame = true; // Reset when I-Frame is sent
+  }
+
+  return OpalMediaStream::ExecuteCommand(command);
+}
+
+
 PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
   if (!isOpen)
@@ -1270,17 +1282,18 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   frame->width = width;
   frame->height = height;
 
+  bool keyFrame = m_needKeyFrame;
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
-  unsigned flags = 0;
-  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags))
+  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, keyFrame))
     return false;
+
+  // If it gave us a key frame, stop asking.
+  if (keyFrame)
+    m_needKeyFrame = false;
 
   PTimeInterval currentGrabTime = PTimer::Tick();
   timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
   m_lastGrabTime = currentGrabTime;
-
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0)
-    ExecuteCommand(OpalVideoUpdatePicture());
 
   marker = true;
   length = bytesReturned;
@@ -1290,13 +1303,25 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (m_outputDevice == NULL)
     return true;
 
-  if (m_outputDevice->Start())
-    return m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
+  if (!m_outputDevice->Start()) {
+    PTRACE(1, "Media\tCould not start video display device");
+    if (m_autoDeleteOutput)
+      delete m_outputDevice;
+    m_outputDevice = NULL;
+    return false;
+  }
 
-  PTRACE(1, "Media\tCould not start video display device");
-  if (m_autoDeleteOutput)
-    delete m_outputDevice;
-  m_outputDevice = NULL;
+  bool keyFrameNeeded = false;
+  if (!m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, keyFrameNeeded))
+    return false;
+
+  if (keyFrameNeeded) {
+    // Find the complementary stream
+    OpalMediaStreamPtr stream = connection.GetMediaStream(GetID(), !IsSource());
+    if (stream != NULL)
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
+  }
+
   return true;
 }
 
