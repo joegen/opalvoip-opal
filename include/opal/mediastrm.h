@@ -910,6 +910,17 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual PBoolean Close();
 
+    /**Execute the command specified to the transcoder. The commands are
+       highly context sensitive, for example OpalVideoUpdatePicture would only
+       apply to a video transcoder.
+
+       The default behaviour checks for video fast update and then
+       passes the command on to the OpalMediaPatch.
+      */
+    virtual PBoolean ExecuteCommand(
+      const OpalMediaCommand & command    ///<  Command to execute.
+    );
+
     /**Read raw media data from the source media stream.
        The default behaviour simply calls ReadPacket() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
@@ -966,6 +977,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     bool                 m_autoDeleteInput;
     bool                 m_autoDeleteOutput;
     PTimeInterval        m_lastGrabTime;
+    bool                 m_needKeyFrame;
 };
 
 #endif // OPAL_VIDEO
