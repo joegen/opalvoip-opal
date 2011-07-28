@@ -133,18 +133,32 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
     return PTrue;
 
   PCaselessString myPrefix = GetProtoPrefix();
+  if (myPrefix == UdpPrefix() ||
+#if OPAL_PTLIB_SSL
+      myPrefix == TlsPrefix() ||
+#endif
+      myPrefix == TcpPrefix())
+    myPrefix = IpPrefix();
+
   PCaselessString theirPrefix = address.GetProtoPrefix();
-  return myPrefix == theirPrefix ||
-        (myPrefix    == IpPrefix() && (theirPrefix == TcpPrefix() || theirPrefix == UdpPrefix()
+  if (theirPrefix == UdpPrefix() ||
 #if OPAL_PTLIB_SSL
-                                     || theirPrefix == TlsPrefix()
+      theirPrefix == TlsPrefix() ||
 #endif
-                                    )) ||
-        (theirPrefix == IpPrefix() && (myPrefix    == TcpPrefix() || myPrefix    == UdpPrefix()
-#if OPAL_PTLIB_SSL
-                                     || myPrefix    == TlsPrefix()
-#endif
-                                    ));
+      theirPrefix == TcpPrefix())
+    theirPrefix = IpPrefix();
+
+  if (myPrefix != theirPrefix)
+    return false;
+
+  if (myPrefix != IpPrefix())
+    return true;
+
+  PIPSocket::Address myIP, theirIP;
+  if (!GetIpAddress(myIP) || !address.GetIpAddress(theirIP))
+    return false;
+
+  return myIP.IsAny() || theirIP.IsAny() || myIP.GetVersion() == theirIP.GetVersion();
 }
 
 
@@ -821,10 +835,12 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
   if (!GetLocalAddress().IsCompatible(remoteAddress))
     return NULL;
 
-  PIPSocket::Address addr;
   PString iface;
-  if (localAddress.GetIpAddress(addr))
-    iface = addr.AsString(true);
+  if (!localAddress.IsEmpty()) {
+    PIPSocket::Address addr;
+    if (localAddress.GetIpAddress(addr))
+      iface = addr.AsString(true);
+  }
 
   return new OpalTransportUDP(endpoint, listenerBundle, iface);
 }
