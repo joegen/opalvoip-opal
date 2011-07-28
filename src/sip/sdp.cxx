@@ -117,9 +117,13 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
           PTRACE(3, "SDP\tConnection address of 0.0.0.0 specified for HOLD request.");
         }
         else {
-          OpalTransportAddress address(tokens[offset+2], port, OpalTransportAddress::UdpPrefix());
-          PTRACE(4, "SDP\tParsed connection address " << address);
-          return address;
+          PIPSocket::Address ip(tokens[offset+2]);
+          if (ip.IsValid()) {
+            OpalTransportAddress address(ip, port, OpalTransportAddress::UdpPrefix());
+            PTRACE(4, "SDP\tParsed connection address " << address);
+            return address;
+          }
+          PTRACE(1, "SDP\tConnect address has invalid IP address \"" << tokens[offset+2] << '"');
         }
       }
       else
@@ -152,7 +156,7 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
   PIPSocket::Address ip;
   if (!address.IsEmpty() && address.GetIpAddress(ip) && ip.IsValid())
-    str << "IN IP" << ip.GetVersion() << ' ' << ip.AsString(PTrue);
+    str << "IN IP" << ip.GetVersion() << ' ' << ip.AsString(false, true);
   else
     str << "IN IP4 0.0.0.0";
 

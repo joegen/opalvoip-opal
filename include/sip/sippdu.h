@@ -70,6 +70,9 @@ class SIPURL : public PURL
 {
   PCLASSINFO(SIPURL, PURL);
   public:
+    static const WORD DefaultPort;
+    static const WORD DefaultSecurePort;
+
     SIPURL();
 
     /** str goes straight to Parse()

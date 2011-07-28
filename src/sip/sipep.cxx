@@ -88,7 +88,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
 #pragma warning(default:4355)
 #endif
 {
-  defaultSignalPort = 5060;
+  defaultSignalPort = SIPURL::DefaultPort;
   mimeForm = PFalse;
   maxRetries = 10;
 
@@ -278,15 +278,14 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   OpalTransport * transport = NULL;
 
   for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-    if (listener->GetLocalAddress().GetProtoPrefix() == remoteAddress.GetProtoPrefix())
-      if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
-        break;
+    if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
+      break;
   }
 
   if (transport == NULL) {
     // No compatible listeners, can't create a transport to send if we cannot hear the responses!
     PTRACE(2, "SIP\tNo compatible listener to create transport for " << remoteAddress);
-      return NULL;
+    return NULL;
   }
 
   if (!transport->SetRemoteAddress(remoteAddress)) {
@@ -1832,7 +1831,7 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
       const SIPURLList & contacts = registrar->GetContacts();
       for (SIPURLList::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
         OpalTransportAddress contactAddress = it->GetHostAddress();
-        if (contactAddress.GetProtoPrefix() == transport.GetProtoPrefix() &&
+        if (transport.GetLocalAddress().IsCompatible(contactAddress) &&
             contactAddress.GetIpAddress(ip) &&
             manager.IsLocalAddress(ip) == transportLocal) {
           contact = *it;
