@@ -495,7 +495,18 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     // Need to copy to local buffer to guarantee 16 byte alignment
     memcpy(m_inputFrame->data[0], OPAL_VIDEO_FRAME_DATA_PTR(header), header->width*header->height*3/2);
     m_inputFrame->pict_type = (flags & PluginCodec_CoderForceIFrame) ? FF_I_TYPE : FF_P_TYPE;
+
+    /*
     m_inputFrame->pts = (int64_t)srcRTP.GetTimestamp()*m_context->time_base.den/m_context->time_base.num/VIDEO_CLOCKRATE;
+
+    It would be preferable to use the above line which would get the correct bit rate if
+    the grabber is actually slower that the desired frame rate. But due to rounding
+    errors, this could end up with two consecutive frames with the same pts and FFMPEG
+    then spits the dummy and returns -1 error, which kills the stream. Sigh.
+
+    So, we just assume the frame rate is actually correct and use it for bit rate control.
+    */
+    m_inputFrame->pts = AV_NOPTS_VALUE;
 
     int encodedLen = FFMPEGLibraryInstance.AvcodecEncodeVideo(m_context,
                                                               m_packetizer->GetBuffer(),
