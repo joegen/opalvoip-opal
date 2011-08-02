@@ -3593,7 +3593,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-
           # Check whether --enable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then :
   enableval=$enable_versioncheck; PTLIB_VERSION_CHECK=$enableval
@@ -3604,14 +3603,11 @@ fi
 
                     if test "x${PTLIBDIR}" != "x" ; then
 
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-
-            # Should not need to set PKG_CONFIG_PATH, but some systems find the
-            # installed versions before the explicit version even though that
-            # is what PKG_CONFIG_LIBDIR is supposed to override.
-            old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
-            export PKG_CONFIG_PATH="${PTLIBDIR}"
+            if test "x${PKG_CONFIG_PATH}" != "x" ; then
+              export PKG_CONFIG_PATH="${PTLIBDIR}:${PKG_CONFIG_PATH}"
+            else
+              export PKG_CONFIG_PATH="${PTLIBDIR}"
+            fi
 
             if ! $PKG_CONFIG --exists ptlib ; then
               as_fn_error $? "No PTLIB library found in ${PTLIBDIR}" "$LINENO" 5
@@ -3818,9 +3814,6 @@ fi
             RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
 
-            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_PATH="${old_PKG_CONFIG_PATH}"
-
                     else
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
 
@@ -4025,11 +4018,6 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-          if test "x${PTLIBDIR}" != "x" ; then
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-          fi
-
                     old_CXXFLAGS="$CXXFLAGS"
           old_LIBS="$LIBS"
           old_LDFLAGS="$LDFLAGS"
@@ -4205,10 +4193,6 @@ $as_echo "not found" >&6; }
           CXXFLAGS="$old_CXXFLAGS"
           LDFLAGS="$old_LDFLAGS"
           LIBS="$old_LIBS"
-
-          if test "x${PTLIBDIR}" != "x" ; then
-            export PKG_CONFIG_LIBDIR=$old_PKG_CONFIG_LIBDIR
-          fi
 
           echo "Version:  ${PTLIB_VERSION}"
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
@@ -9080,7 +9064,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $LIBAVCODEC_LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $LIBAVCODEC_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
@@ -9119,8 +9103,8 @@ $as_echo "$as_me: libavcodec stack align hack disabled" >&6;}
                                            ;;
                      esac
                      LIBAVCODEC_HEADER=
-          old_CFLAGS="$CFLAGS"
-          CFLAGS="$CFLAGS $LIBAVCODEC_CFLAGS"
+          old_CPPFLAGS="$CPPFLAGS"
+          CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
           ac_fn_cxx_check_header_mongrel "$LINENO" "libavcodec/avcodec.h" "ac_cv_header_libavcodec_avcodec_h" "$ac_includes_default"
 if test "x$ac_cv_header_libavcodec_avcodec_h" = x""yes; then :
 
@@ -9148,7 +9132,7 @@ fi
           if test x$LIBAVCODEC_HEADER = x; then
             as_fn_error $? "Cannot find libavcodec header file" "$LINENO" 5
           fi
-          CFLAGS="$old_CFLAGS"
+          CPPFLAGS="$old_CPPFLAGS"
 
                      HAVE_LIBAVCODEC=yes
 
@@ -9287,7 +9271,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $LIBAVUTIL_LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $LIBAVUTIL_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
@@ -9352,6 +9336,11 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
 fi
 
 
+if test "x${HAVE_LIBAVCODEC}" = "xno"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: H.264 not built since libavcodec support is disabled" >&5
+$as_echo "H.264 not built since libavcodec support is disabled" >&6; }
+  HAVE_H264=no
+else
 if test -d video/H.264/gpl ; then
   # Check whether --enable-x264 was given.
 if test "${enable_x264+set}" = set; then :
@@ -9450,7 +9439,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $X264_LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $X264_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
@@ -9647,6 +9636,7 @@ $as_echo "$as_me: H.264 support disabled since static linking was disabled and l
   fi
 else
   HAVE_H264=no
+fi
 fi
 
 
