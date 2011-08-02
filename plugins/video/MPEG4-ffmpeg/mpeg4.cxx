@@ -60,6 +60,8 @@
 #include "plugin-config.h"
 #endif
 
+#include "dyna.h"
+#include "rtpframe.h"
 
 #include <codec/opalplugin.hpp>
 
@@ -67,10 +69,6 @@ extern "C" {
 PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
 };
 
-
-#include <stdlib.h>
-#include "dyna.h"
-#include "rtpframe.h"
 
 typedef unsigned char BYTE;
 

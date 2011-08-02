@@ -49,10 +49,10 @@
 #ifndef __H263P_1998_H__
 #define __H263P_1998_H__ 1
 
-#include <codec/opalplugin.hpp>
 #include "../common/ffmpeg.h"
 #include "../common/rtpframe.h"
 #include "critsect.h"
+
 
 typedef unsigned char BYTE;
 

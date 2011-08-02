@@ -40,10 +40,10 @@
 #include "plugin-config.h"
 #endif
 
-#include <codec/opalplugin.hpp>
-
 #include "ffmpeg.h"
 #include "dyna.h"
+
+#include <codec/opalplugin.hpp>
 
 #include "shared/h264frame.h"
 

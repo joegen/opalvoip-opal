@@ -42,6 +42,8 @@
 #define __DYNA_H__ 1
 
 #include "ffmpeg.h"
+#include "critsect.h"
+#include <codec/opalplugin.hpp>
 
 
 /////////////////////////////////////////////////////////////////
