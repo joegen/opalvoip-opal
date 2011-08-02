@@ -83,7 +83,7 @@ AC_DEFUN([OPAL_GET_LIBNAME],
          [
           AC_MSG_CHECKING(filename of $2 library)
           AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[]])])
-          $CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS -Wl,--no-as-needed $3>&AS_MESSAGE_LOG_FD
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $3 $LDFLAGS conftest.$ac_ext $LIBS>&AS_MESSAGE_LOG_FD
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
           else
@@ -283,7 +283,6 @@ dnl            $DEFAULT_LIBS
 
 AC_DEFUN([OPAL_FIND_PTLIB],
          [
-          m4_pattern_allow([PKG_CONFIG_LIBDIR])
 	  AC_ARG_VAR([PTLIBDIR], [path to ptlib directory if installed ptlib shall not be used])
           AC_ARG_ENABLE([versioncheck],
                         [AC_HELP_STRING([--enable-versioncheck], [enable ptlib versioncheck])],
@@ -293,14 +292,11 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           dnl This segment looks for PTLIB in PTLIBDIR
           if test "x${PTLIBDIR}" != "x" ; then
 
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-
-            # Should not need to set PKG_CONFIG_PATH, but some systems find the
-            # installed versions before the explicit version even though that
-            # is what PKG_CONFIG_LIBDIR is supposed to override.
-            old_PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
-            export PKG_CONFIG_PATH="${PTLIBDIR}"
+            if test "x${PKG_CONFIG_PATH}" != "x" ; then
+              export PKG_CONFIG_PATH="${PTLIBDIR}:${PKG_CONFIG_PATH}"
+            else
+              export PKG_CONFIG_PATH="${PTLIBDIR}"
+            fi
 
             if ! $PKG_CONFIG --exists ptlib ; then
               AC_MSG_ERROR([No PTLIB library found in ${PTLIBDIR}])
@@ -327,9 +323,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
             DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
             	    
-            export PKG_CONFIG_LIBDIR="${old_PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_PATH="${old_PKG_CONFIG_PATH}"
-
           dnl This segment looks for PTLIB on the system
           else
             if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
@@ -350,11 +343,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           dnl determine which variant of ptlib is installed (static/dynamic, release/debug)
           
           AC_LANG(C++)
-
-          if test "x${PTLIBDIR}" != "x" ; then
-            old_PKG_CONFIG_LIBDIR="${PKG_CONFIG_LIBDIR}"
-            export PKG_CONFIG_LIBDIR="${PTLIBDIR}"
-          fi
 
           dnl check if dynamic library is available
           old_CXXFLAGS="$CXXFLAGS"
@@ -398,10 +386,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           CXXFLAGS="$old_CXXFLAGS"
           LDFLAGS="$old_LDFLAGS"
           LIBS="$old_LIBS"
-
-          if test "x${PTLIBDIR}" != "x" ; then
-            export PKG_CONFIG_LIBDIR=$old_PKG_CONFIG_LIBDIR
-          fi
 
           echo "Version:  ${PTLIB_VERSION}"
           echo "CFLAGS:   ${PTLIB_CFLAGS}"
@@ -576,8 +560,8 @@ dnl Return:    none
 dnl Define:    LIBAVCODEC_HEADER The libavcodec header (e.g. libavcodec/avcodec.h)
 AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
          [LIBAVCODEC_HEADER=
-          old_CFLAGS="$CFLAGS"
-          CFLAGS="$CFLAGS $LIBAVCODEC_CFLAGS"
+          old_CPPFLAGS="$CPPFLAGS"
+          CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
           AC_CHECK_HEADER([libavcodec/avcodec.h], 
                           [
                            AC_DEFINE([LIBAVCODEC_HEADER], 
@@ -598,7 +582,7 @@ AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
           if test x$LIBAVCODEC_HEADER = x; then
             AC_MSG_ERROR([Cannot find libavcodec header file])
           fi
-          CFLAGS="$old_CFLAGS"
+          CPPFLAGS="$old_CPPFLAGS"
          ])
          
 dnl OPAL_CHECK_LIBAVCODEC
