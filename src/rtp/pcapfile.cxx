@@ -186,7 +186,7 @@ int OpalPCAPFile::GetDataLink(PBYTEArray & payload)
 {
   PBYTEArray dataLink;
   if (!ReadRawPacket(dataLink))
-    return false;
+    return -1;
 
   PINDEX headerLength = GetNetworkLayerHeaderSize();
   payload.Attach(&dataLink[headerLength], dataLink.GetSize()-headerLength);
@@ -205,11 +205,11 @@ int OpalPCAPFile::GetIP(PBYTEArray & payload)
 
   m_packetSrcIP = PIPSocket::Address(4, ip+12);
   if (!m_filterSrcIP.IsAny() && m_filterSrcIP != m_packetSrcIP)
-    return false;
+    return -1;
 
   m_packetDstIP = PIPSocket::Address(4, ip+16);
   if (!m_filterDstIP.IsAny() && m_filterDstIP != m_packetDstIP)
-    return false;
+    return -1;
 
   // Check for fragmentation
   bool isFragment = (ip[6] & 0x20) != 0;
@@ -250,11 +250,11 @@ int OpalPCAPFile::GetUDP(PBYTEArray & payload)
 
   m_packetSrcPort = Get<PUInt16b>(udp, 0);
   if (m_filterSrcPort != 0 && m_filterSrcPort != m_packetSrcPort)
-    return false;
+    return -1;
 
   m_packetDstPort = Get<PUInt16b>(udp, 2);
   if (m_filterDstPort != 0 && m_filterDstPort != m_packetDstPort)
-    return false;
+    return -1;
 
   int payloadLength = udp.GetSize() - 8;
   payload.Attach(&udp[8], payloadLength);
