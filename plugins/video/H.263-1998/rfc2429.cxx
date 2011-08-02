@@ -22,6 +22,8 @@
 
 #include "rfc2429.h"
 
+#include <codec/opalplugin.hpp>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -223,9 +225,8 @@ bool RFC2429Frame::GetPacket(RTPFrame & frame, unsigned int & flags)
   if (m_encodedFrame.pos == 0) {   
     m_startCodes.clear();          
     for (i=0; i < m_encodedFrame.len - 1; i++ ) {
-      if ((m_encodedFrame.ptr[i] == 0) && (m_encodedFrame.ptr[i+1]==0)) {
+      if (m_encodedFrame.ptr[i] == 0 && m_encodedFrame.ptr[i+1] == 0)
         m_startCodes.push_back(i);
-      }
     }  
     if (m_encodedFrame.len > m_maxPayloadSize)
       m_minPayloadSize = (uint16_t)(m_encodedFrame.len / ceil((float)m_encodedFrame.len / (float)m_maxPayloadSize));
@@ -244,8 +245,8 @@ bool RFC2429Frame::GetPacket(RTPFrame & frame, unsigned int & flags)
   // no extra header, no VRC
   // we do try to save the 2 bytes of the PSC though
   dataPtr [0] = 0;
-  if ((m_encodedFrame.ptr[m_encodedFrame.pos] == 0) 
-   && (m_encodedFrame.ptr[m_encodedFrame.pos + 1] == 0)) {
+  if ((m_encodedFrame.ptr[m_encodedFrame.pos] == 0) &&
+      (m_encodedFrame.ptr[m_encodedFrame.pos+1] == 0)) {
     dataPtr[0] |= 0x04;
     m_encodedFrame.pos +=2;
   }
@@ -266,19 +267,16 @@ bool RFC2429Frame::GetPacket(RTPFrame & frame, unsigned int & flags)
     m_startCodes.erase(m_startCodes.begin());
   }
   else {
-    if (m_encodedFrame.pos + (m_maxPayloadSize - 2) <= m_encodedFrame.len)
-      frame.SetPayloadSize(m_maxPayloadSize);
-     else
-      frame.SetPayloadSize(m_encodedFrame.len - m_encodedFrame.pos + 2 );
+    uint16_t payloadSize = m_encodedFrame.len - m_encodedFrame.pos + 2;
+    if (payloadSize > m_maxPayloadSize)
+      payloadSize = m_maxPayloadSize;
+    frame.SetPayloadSize(payloadSize);
   }
   PTRACE(6, "H.263-RFC2429", "Sending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << m_encodedFrame.pos);
   memcpy(frame.GetPayloadPtr() + 2, m_encodedFrame.ptr + m_encodedFrame.pos, frame.GetPayloadSize() - 2);
   m_encodedFrame.pos += frame.GetPayloadSize() - 2;
 
-  if (m_encodedFrame.len == m_encodedFrame.pos)  
-     frame.SetMarker(1);
-    else
-     frame.SetMarker(0);
+  frame.SetMarker(m_encodedFrame.len == m_encodedFrame.pos);
 
   flags = 0;
   flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;
@@ -314,20 +312,20 @@ bool RFC2429Frame::AddPacket(const RTPFrame & packet)
   }
 
   uint8_t* dataPtr = packet.GetPayloadPtr();
-  uint8_t headerP = dataPtr[0] & 0x04;
-  uint8_t headerV = dataPtr[0] & 0x02;
-  uint8_t headerPLEN = ((dataPtr[0] & 0x01) << 5) + ((dataPtr[1] & 0xF8) >> 3);
-  uint8_t headerPEBITS = (dataPtr[1] & 0x07);
-  uint32_t remBytes;
+  bool headerP = (dataPtr[0] & 0x04) != 0;
+  bool headerV = (dataPtr[0] & 0x02) != 0;
+  unsigned headerPLEN = ((dataPtr[0] & 0x01) << 5) + ((dataPtr[1] & 0xF8) >> 3);
+  unsigned headerPEBITS = (dataPtr[1] & 0x07);
   dataPtr += 2;
 
   PTRACE(6, "H.263-RFC2429",
-            "RFC 2429 Header: P: "     << (headerP ? 1 : 0)
-                         << " V: "     << (headerV ? 1 : 0)
-                         << " PLEN: "  << (uint32_t) headerPLEN
-                         << " PBITS: " << (uint32_t) headerPEBITS);
+            "RFC 2429 Header: P: "     << headerP
+                         << " V: "     << headerV
+                         << " PLEN: "  << headerPLEN
+                         << " PBITS: " << headerPEBITS);
 
-  if (headerV) dataPtr++; // We ignore the VRC
+  if (headerV)
+    dataPtr++; // We ignore the VRC
   if (headerPLEN > 0) {
     if (packet.GetPayloadSize() < headerPLEN + (headerV ? 3U : 2U)) {
       PTRACE(2, "H.263-RFC2429", "Packet too short (header)");
@@ -340,7 +338,7 @@ bool RFC2429Frame::AddPacket(const RTPFrame & packet)
     dataPtr += headerPLEN;
   }
 
-  remBytes = packet.GetPayloadSize() - headerPLEN - (headerV ? 3 : 2);
+  unsigned remBytes = packet.GetPayloadSize() - headerPLEN - (headerV ? 3 : 2);
 
   if ((m_encodedFrame.pos + (headerP ? 2 : 0) + remBytes) > (m_maxFrameSize - FF_INPUT_BUFFER_PADDING_SIZE)) {
     PTRACE(2, "H.263-RFC2429", "Trying to add " << remBytes 
@@ -362,7 +360,7 @@ bool RFC2429Frame::AddPacket(const RTPFrame & packet)
   m_encodedFrame.len += remBytes;
 
   if (packet.GetMarker())  { 
-    if ((headerP) && ((dataPtr[(headerP ? 0 : 2)] & 0xfc) == 0x80)) {
+    if (headerP && (dataPtr[0] & 0xfc) == 0x80) {
       uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), packet.GetPayloadSize()- 2 - (headerP ? 0 : 2));
       PTRACE(6, "H.263-RFC2429", "Frame includes a picture header of " << hdrLen << " bits");
     }
@@ -397,19 +395,14 @@ bool RFC2429Frame::IsIntraFrame()
   Bitstream headerBits;
   headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
   headerBits.SetPos(35);
-  uint32_t PTYPEFormat = headerBits.GetBits(3); 
-  if (PTYPEFormat == 7) { // This is the plustype
-    uint32_t UFEP = headerBits.GetBits(3); 
-    if (UFEP == 1) {
-        headerBits.SetPos(59);
-        return (headerBits.GetBits(3) == 0);
-     } else 
-        return (headerBits.GetBits(3) == 0);
+  if (headerBits.GetBits(3) == 7) { // This is the plustype
+    if (headerBits.GetBits(3) == 1)
+      headerBits.SetPos(59);
+    return headerBits.GetBits(3) == 0;
   }
-  else {
-    headerBits.SetPos(26);
-    return (headerBits.GetBits(1) == 0);
-  }
+
+  headerBits.SetPos(26);
+  return headerBits.GetBits(1) == 0;
 }
 
 uint32_t RFC2429Frame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen) 
