@@ -25,6 +25,8 @@
 
 #include "h263-1998.h"
 
+#include <vector>
+
 
 typedef struct data_t
 {
