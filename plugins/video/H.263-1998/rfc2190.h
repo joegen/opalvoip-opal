@@ -28,6 +28,9 @@
 #include <list>
 
 
+class PluginCodec_RTP;
+
+
 class RFC2190Packetizer : public Packetizer
 {
   public:
