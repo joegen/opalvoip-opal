@@ -1947,25 +1947,33 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   , m_parameters(params)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
-  callID = params.m_id;   // make sure the transation uses the conversation ID, so we can track it
+
+  if (params.m_id.IsEmpty())
+    m_parameters.m_id = GetCallID();
+  else
+    callID = params.m_id;   // make sure the transation uses the conversation ID, so we can track it
+
+  offlineExpire = 0; // No retries for offline, just give up
+
   SetState(Subscribed);
 }
 
 
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
-{ 
+{
   if (GetState() == Unsubscribing)
     return NULL;
 
+  // If message ID is zero, then it was sent once, don't do it again.
+  if (m_parameters.m_messageId == 0) {
+    PTRACE(4, "SIP\tMessage was already sent, not sending again.");
+    return NULL;
+  }
+
   SetExpire(originalExpire);
 
-  if (m_parameters.m_id.IsEmpty())
-    m_parameters.m_id = GetCallID();
-
   SIPMessage * msg = new SIPMessage(endpoint, transport, m_parameters);
-  if (msg != NULL)
-    m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
-
+  m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
   return msg;
 }
 
@@ -1973,16 +1981,11 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
 void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 {
   SIPHandler::OnFailed(reason);
-  endpoint.OnMESSAGECompleted(m_parameters, reason);
-}
 
-
-void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
-{
-  PSafeLockReadWrite lock(*this);
-  if (lock.IsLocked())
-    SetState(Unavailable);
-  endpoint.OnMESSAGECompleted(m_parameters, SIP_PDU::Failure_RequestTimeout);
+  if (m_parameters.m_messageId != 0) {
+    endpoint.OnMESSAGECompleted(m_parameters, reason);
+    m_parameters.m_messageId = 0;
+  }
 }
 
 
@@ -1990,7 +1993,21 @@ void SIPMessageHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 {
   SIPHandler::OnReceivedOK(transaction, response);
   endpoint.OnMESSAGECompleted(m_parameters, SIP_PDU::Successful_OK);
+  m_parameters.m_messageId = 0;
 }
+
+
+void SIPMessageHandler::UpdateParameters(const SIPMessage::Params & params)
+{
+  if (params.m_messageId != 0)
+    m_parameters.m_messageId = params.m_messageId;
+
+  if (!params.m_body.IsEmpty()) {
+    m_parameters.m_body = params.m_body;
+    m_parameters.m_contentType = params.m_contentType;
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -1999,6 +2016,9 @@ SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::P
   , m_parameters(params)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
+
+  offlineExpire = 0; // No retries for offline, just give up
+
   SetState(Subscribed);
 }
 
@@ -2025,14 +2045,6 @@ void SIPOptionsHandler::OnFailed(const SIP_PDU & response)
 {
   endpoint.OnOptionsCompleted(m_parameters, response);
   SIPHandler::OnFailed(response.GetStatusCode());
-}
-
-
-void SIPOptionsHandler::OnExpireTimeout(PTimer &, INT)
-{
-  PSafeLockReadWrite lock(*this);
-  if (lock.IsLocked())
-    SetState(Unavailable);
 }
 
 
