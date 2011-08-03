@@ -324,16 +324,11 @@ class SIPMessageHandler : public SIPHandler
 public:
   SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);
 
-  virtual void SetBody(const PString & body) { m_parameters.m_body = body; }
-  virtual void SetMessageId(PAtomicInteger::IntegerType id) { m_parameters.m_messageId = id; }
-
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed(SIP_PDU::StatusCodes);
-  virtual void OnExpireTimeout(PTimer &, INT);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 
-  const PString & GetLocalAddress() const { return m_parameters.m_localAddress; }
-  const PString & GetIdentifier() const { return m_parameters.m_id; }
+  void UpdateParameters(const SIPMessage::Params & params);
 
 protected:
   SIPMessage::Params m_parameters;
@@ -346,12 +341,9 @@ class SIPOptionsHandler : public SIPHandler
 public:
   SIPOptionsHandler(SIPEndPoint & ep, const SIPOptions::Params & params);
 
-  virtual void SetBody(const PString & body) { m_parameters.m_body = body; }
-
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual void OnFailed(const SIP_PDU & response);
-  virtual void OnExpireTimeout(PTimer &, INT);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 
 protected:

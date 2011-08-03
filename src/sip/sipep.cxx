@@ -1356,32 +1356,7 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 }
 
 
-PBoolean SIPEndPoint::Message(const PURL & to, const PString & type, const PString & body, PURL & from, PString & conversationId)
-{
-  OpalIM message;
-  message.m_to.Parse(to, "sip");
-  message.m_from.Parse(from, "sip");
-  message.m_mimeType       = type;
-  message.m_body           = body;
-  message.m_conversationId = conversationId;
-
-  bool stat = Message(message);
-
-  from           = message.m_from;
-  conversationId = message.m_conversationId;
-
-  return stat;
-}
-
-
 bool SIPEndPoint::Message(OpalIM & message)
-{
-  OpalIMContext::SentStatus status = SendMESSAGE(message);
-  return (status == OpalIMContext::SentOK) || (status == OpalIMContext::SentPending);
-}
-
-
-OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
 {
   // This function is assumed to be used by applications that don't 
   // know about OpalIMContext, and therefore, have no knowledge of
@@ -1396,17 +1371,11 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
   // assume the application knows what it is doing.
   //
 
-  if (message.m_to.IsEmpty())
-    return OpalIMContext::SentDestinationUnknown;
-
-  // don't send empty MESSAGE because some clients barf (cough...X-Lite...cough)
-  if (message.m_body.IsEmpty() && (message.m_body *= "text/plain"))
-    return OpalIMContext::SentOK;
-
   SIPMessage::Params params;
   OpalSIPIMContext::PopulateParams(params, message);
 
-  OpalIMContext::SentStatus stat = SendMESSAGE(params);
+  if (!SendMESSAGE(params))
+    return false;
 
   // conversation ID may have been changed
   message.m_conversationId = params.m_id;
@@ -1415,50 +1384,47 @@ OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(OpalIM & message)
   //if (message.m_from.IsEmpty())
   //  message.m_from = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
 
-  return stat;
+  return true;
 }
 
 
-OpalIMContext::SentStatus SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
+bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
 {
-  //
-  // if conversation ID has been set, assume the handler with the matching call ID is correct if the destination is the same, else create a new conversation
-  // if no conversation ID has been set, see if the destination AOR exists and use that handler (and it's call ID)
-  // 
-  PSafePtr<SIPHandler> handler;
-  if (!params.m_id.IsEmpty()) {
-    handler = activeSIPHandlers.FindSIPHandlerByCallID(params.m_id, PSafeReference);
-    if ((handler != NULL) && !(handler->GetAddressOfRecord().AsString() *= params.m_localAddress))
-      handler.SetNULL();
-  }
-  else {
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_remoteAddress, SIP_PDU::Method_MESSAGE, PSafeReference);
-    if (handler == NULL)
-      params.m_id = OpalGloballyUniqueID().AsString();
-    else
-      params.m_id = handler->GetCallID();
+  if (params.m_remoteAddress.IsEmpty()) {
+    PTRACE(2, "SIP\tCannot send MESSAGE to no-one.");
+    return false;
   }
 
+  // don't send empty MESSAGE because some clients barf (cough...X-Lite...cough)
+  if (params.m_body.IsEmpty()) {
+    PTRACE(2, "SIP\tCannot send empty MESSAGE.");
+    return false;
+  }
+
+  if (params.m_messageId == 0)
+    params.m_messageId = OpalIM::GetNextMessageId();
+
+  /* if conversation ID has been set, assume the handler with the matching
+     call ID is what was used last time. If no conversation ID has been set,
+     see if the destination AOR exists and use that handler (and it's
+     call ID). Else create a new conversation. */
+  PSafePtr<SIPHandler> handler;
+  if (params.m_id.IsEmpty())
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_remoteAddress, SIP_PDU::Method_MESSAGE, PSafeReference);
+  else
+    handler = activeSIPHandlers.FindSIPHandlerByCallID(params.m_id, PSafeReference);
 
   // create or update the handler if required
   if (handler == NULL) {
     handler = new SIPMessageHandler(*this, params);
     activeSIPHandlers.Append(handler);
   }
+  else
+    PSafePtrCast<SIPHandler, SIPMessageHandler>(handler)->UpdateParameters(params);
 
-  {
-    PSafePtr<SIPMessageHandler> messageHandler = PSafePtrCast<SIPHandler, SIPMessageHandler>(handler);
-    messageHandler->SetMessageId(params.m_messageId);
-  }
+  params.m_id = handler->GetCallID();
 
-  SIPMIMEInfo & mime = handler->m_mime;
-  mime.SetContentType(params.m_contentType);
-  handler->SetBody(params.m_body);
-
-  if (!handler->ActivateState(SIPHandler::Subscribing))
-    return OpalIMContext::SentNoTransport;
-
-  return OpalIMContext::SentPending;
+  return handler->ActivateState(SIPHandler::Subscribing);
 }
 
 

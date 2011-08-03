@@ -61,8 +61,9 @@ class OpalIM : public PObject
     OpalTransportAddress m_fromAddr;
     OpalTransportAddress m_toAddr;
 
-    static PAtomicInteger m_messageIdCounter;
     PAtomicInteger::IntegerType m_messageId;
+
+    static PAtomicInteger::IntegerType GetNextMessageId();
 };
 
 #if OPAL_HAS_IM
