@@ -43,8 +43,6 @@
 #ifndef __FFMPEG_H__
 #define __FFMPEG_H__ 1
 
-#include <codec/opalplugin.hpp>
-
 #include "platform.h"
 
 extern "C" {
@@ -54,13 +52,6 @@ extern "C" {
 #ifndef LIBAVCODEC_VERSION_INT
 #error Libavcodec include is not correct
 #endif
-
-#include "critsect.h"
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <vector>
 
 
 // Compile time version checking

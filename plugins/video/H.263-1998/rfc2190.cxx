@@ -21,6 +21,8 @@
 
 #include "rfc2190.h"
 
+#include <codec/opalplugin.hpp>
+
 #include <iostream>
 #include <string.h>
 #ifdef HAVE_MALLOC_H
