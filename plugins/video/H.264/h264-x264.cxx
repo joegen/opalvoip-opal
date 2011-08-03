@@ -751,6 +751,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
     unsigned m_maxRTPSize;
     unsigned m_maxNALUSize;
     unsigned m_tsto;
+    unsigned m_keyFramePeriod;
 
     H264EncCtx m_encoder;
 
@@ -768,6 +769,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       , m_maxRTPSize(1400)
       , m_maxNALUSize(1400)
       , m_tsto(31)
+      , m_keyFramePeriod(0)
     {
     }
 
@@ -816,6 +818,9 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
       if (STRCMPI(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+        return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
 
       if (strcasecmp(optionName, H241Level.m_name) == 0) {
         size_t i;
@@ -889,6 +894,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.call(SET_TARGET_BITRATE, m_bitRate/1000);
       m_encoder.call(SET_MAX_FRAME_SIZE, std::min(m_maxRTPSize, m_maxNALUSize));
       m_encoder.call(SET_TSTO, m_tsto);
+      m_encoder.call(SET_MAX_KEY_FRAME_PERIOD, m_keyFramePeriod);
       m_encoder.call(APPLY_OPTIONS);
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
                               "prof=" << m_profile << " "
