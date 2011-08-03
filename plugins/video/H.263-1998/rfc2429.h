@@ -28,6 +28,9 @@
 #include <vector>
 
 
+class PluginCodec_RTP;
+
+
 typedef struct data_t
 {
   uint8_t* ptr;
