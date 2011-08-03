@@ -61,7 +61,6 @@
 #endif
 
 #include "dyna.h"
-#include "rtpframe.h"
 
 #include <codec/opalplugin.hpp>
 

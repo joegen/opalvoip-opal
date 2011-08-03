@@ -80,6 +80,9 @@ typedef unsigned char BYTE;
 #define SQCIF_HEIGHT    96
 
 
+class PluginCodec_RTP;
+
+
 ////////////////////////////////////////////////////////////////////////////
 
 class Packetizer
