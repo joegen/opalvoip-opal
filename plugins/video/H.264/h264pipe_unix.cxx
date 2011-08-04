@@ -290,6 +290,7 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 
   if (access(gplProcess, R_OK|X_OK) < 0) {
     strcpy(&gplProcess[dirlen], VC_PLUGIN_DIR);
+    strcat(gplProcess, "/");
     strcat(gplProcess, GPL_PROCESS_FILENAME);
     if (access(gplProcess, R_OK|X_OK) ) { 
       PTRACE(4, "x264", "Couldn't find GPL process executable in " << gplProcess);
