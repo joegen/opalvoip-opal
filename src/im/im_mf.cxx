@@ -283,14 +283,20 @@ bool OpalIMMediaStream::WritePacket(RTP_DataFrame & frame)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-PAtomicInteger OpalIM::m_messageIdCounter;
-
 OpalIM::OpalIM()
   : m_type(Text)
-  , m_messageId(m_messageIdCounter++)
+  , m_messageId(GetNextMessageId())
 {
   PTRACE(3, "OpalIM\tcreate new IM");
 }
+
+
+PAtomicInteger::IntegerType OpalIM::GetNextMessageId()
+{
+  static PAtomicInteger messageIdCounter;
+  return ++messageIdCounter;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
