@@ -265,42 +265,39 @@ bool H264EncCtx::findGplProcess()
     }
   }
 
+  return checkGplProcessExists(".") ||
 #ifdef LIB_DIR
-  if (checkGplProcessExists(LIB_DIR)) 
-    return true;
+         checkGplProcessExists(LIB_DIR) ||
 #endif
-
-  if (checkGplProcessExists("/usr/lib")) 
-    return true;
-
-  if (checkGplProcessExists("/usr/local/lib")) 
-    return true;
-
-  return checkGplProcessExists(".");
+         checkGplProcessExists("/usr/lib") ||
+         checkGplProcessExists("/usr/local/lib");
 }
 
 bool H264EncCtx::checkGplProcessExists (const char * dir)
 {
-  struct stat buffer;
   memset(gplProcess, 0, sizeof(gplProcess));
-  strncpy(gplProcess, dir, sizeof(gplProcess));
 
-  if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
-    strcat(gplProcess, DIR_SEPERATOR);
-  strcat(gplProcess, VC_PLUGIN_DIR);
-
-  if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
-    strcat(gplProcess, DIR_SEPERATOR);
-  strcat(gplProcess, GPL_PROCESS_FILENAME);
-
-  if (stat(gplProcess, &buffer ) ) { 
-
-    PTRACE(4, "x264", "IPC\tPP: Couldn't find GPL process executable in " << gplProcess);
+  size_t dirlen = strlen(dir);
+  if (dirlen > sizeof(gplProcess)-strlen(VC_PLUGIN_DIR)-strlen(GPL_PROCESS_FILENAME)) {
+    PTRACE(1, "x264", "Directory too long");
     return false;
   }
 
-  PTRACE(4, "x264", "IPC\tPP: Found GPL process executable in  " << gplProcess);
+  strcpy(gplProcess, dir);
+  if (gplProcess[dirlen-1] != '/')
+    gplProcess[dirlen++] = '/';
+  strcat(gplProcess, GPL_PROCESS_FILENAME);
 
+  if (access(gplProcess, R_OK|X_OK) < 0) {
+    strcpy(&gplProcess[dirlen], VC_PLUGIN_DIR);
+    strcat(gplProcess, GPL_PROCESS_FILENAME);
+    if (access(gplProcess, R_OK|X_OK) ) { 
+      PTRACE(4, "x264", "Couldn't find GPL process executable in " << gplProcess);
+      return false;
+    }
+  }
+
+  PTRACE(4, "x264", "Found GPL process executable in  " << gplProcess);
   return true;
 }
 
