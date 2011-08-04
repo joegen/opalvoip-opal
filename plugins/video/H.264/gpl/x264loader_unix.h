@@ -40,7 +40,7 @@ class X264Library
     bool GetFunction(const char * name, Function & func);
 
     x264_t *(*Xx264_encoder_open)(x264_param_t *);
-    void (*Xx264_param_default)(x264_param_t *);
+    void (*Xx264_param_default_preset)(x264_param_t *, const char *, const char *);
     int (*Xx264_encoder_encode)( x264_t *, x264_nal_t **, int *, x264_picture_t *, x264_picture_t *);
     int (*Xx264_nal_encode)(void *, int *, int b_annexb, x264_nal_t *nal);
     int (*Xx264_encoder_reconfig)(x264_t *, x264_param_t *);

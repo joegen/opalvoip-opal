@@ -69,7 +69,7 @@ X264EncoderContext::X264EncoderContext()
   _inputFrame.i_qpplus1 = 0;
   _inputFrame.img.i_csp = X264_CSP_I420;
  
-   X264_PARAM_DEFAULT(&_context);
+   X264_PARAM_DEFAULT_PRESET(&_context, "veryfast", "fastdecode,zerolatency");
 
   // Default
   // ABR with bit rate tolerance = 1 is CBR...
@@ -100,8 +100,6 @@ X264EncoderContext::X264EncoderContext()
   //_context.rc.b_stat_write = 0;
   //_context.analyse.inter = 0;
   _context.analyse.b_psnr = 0;
-
-  x264_param_default_preset(&_context, "veryfast", "fastdecode,zerolatency");
 
   _codec = X264_ENCODER_OPEN(&_context);
   
