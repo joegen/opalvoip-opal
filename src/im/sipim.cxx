@@ -313,7 +313,7 @@ OpalIMContext::SentStatus OpalSIPIMContext::InternalSendOutsideCall(OpalIM * mes
   SIPMessage::Params params;
   PopulateParams(params, *message);
 
-  return ep->SendMESSAGE(params);
+  return ep->SendMESSAGE(params) ? SentPending : SentNoTransport;
 }
 
 

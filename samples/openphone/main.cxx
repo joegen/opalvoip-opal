@@ -1336,15 +1336,15 @@ void MyManager::SetNATHandling()
         GetEventHandler()->ProcessPendingEvents();
         Update();
 
-        PSTUNClient::NatTypes nat = SetSTUNServer(m_STUNServer);
-
-        if (m_natMethod != NULL) {
-          LogWindow << "STUN server \"" << m_natMethod->GetServer() << "\" replies " << nat;
+        if (!SetNATServer("STUN", m_STUNServer))
+          LogWindow << "STUN server offline or unsuitable NAT type";
+        else {
+          LogWindow << "STUN server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
           PIPSocket::Address externalAddress;
-          if (nat != PSTUNClient::BlockedNat && m_natMethod->GetExternalAddress(externalAddress))
+          if (m_natMethod->GetExternalAddress(externalAddress))
             LogWindow << " with address " << externalAddress;
-          LogWindow << endl;
         }
+        LogWindow << endl;
       }
       SetTranslationHost(PString::Empty());
       break;

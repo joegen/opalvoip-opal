@@ -662,22 +662,15 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
 
-    /**Send SIP message
+    /**Send IM text
      */
     virtual PBoolean Message(
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      PURL & from, 
-      PString & conversationId
-    );
-    virtual PBoolean Message(
       OpalIM & message
     );
-    OpalIMContext::SentStatus SendMESSAGE(
-      OpalIM & message
-    );
-    OpalIMContext::SentStatus SendMESSAGE(
+
+    /**Send SIP message
+     */
+    bool SendMESSAGE(
       SIPMessage::Params & params
     );
 
