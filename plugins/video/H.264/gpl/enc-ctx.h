@@ -71,7 +71,7 @@ extern "C" {
 
 #if X264_LINK_STATIC
   #define X264_ENCODER_OPEN x264_encoder_open 
-  #define X264_PARAM_DEFAULT x264_param_default
+  #define X264_PARAM_DEFAULT_PRESET x264_param_default_preset
   #define X264_ENCODER_ENCODE x264_encoder_encode
   #define X264_NAL_ENCODE x264_nal_encode
   #define X264_ENCODER_RECONFIG x264_encoder_reconfig
@@ -83,7 +83,7 @@ extern "C" {
 #else
   #include "x264loader_unix.h"
   #define X264_ENCODER_OPEN X264Lib.Xx264_encoder_open 
-  #define X264_PARAM_DEFAULT X264Lib.Xx264_param_default
+  #define X264_PARAM_DEFAULT_PRESET X264Lib.Xx264_param_default_preset
   #define X264_ENCODER_ENCODE X264Lib.Xx264_encoder_encode
   #define X264_NAL_ENCODE X264Lib.Xx264_nal_encode
   #define X264_ENCODER_RECONFIG X264Lib.Xx264_encoder_reconfig
