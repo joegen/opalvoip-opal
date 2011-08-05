@@ -112,6 +112,10 @@ AC_SUBST(PLUGINEXT)
 AC_SUBST(CFLAGS)
 AC_SUBST(WIN32)
 
+OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
+AC_SUBST(HAVE_LIBDL)
+AC_SUBST(DL_LIBS)
+
 
 dnl ########################################################################
 dnl Defaults
@@ -121,18 +125,7 @@ HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
-X264_LINK_STATIC=no
 LIBAVCODEC_STACKALIGN_HACK=no
-
-case "$target_os" in
-        darwin*) HAVE_VPB=no 
-                 ;;
-        cygwin*|mingw**)
-	         HAVE_VPB=no 
-                 X264_LINK_STATIC=yes
-                 ;;
-esac
-
 
 SUBDIRS=""
 AC_SUBST(SUBDIRS)
@@ -507,39 +500,28 @@ if test "x${HAVE_LIBAVCODEC}" = "xno"; then
   AC_MSG_RESULT(H.264 not built since libavcodec support is disabled)
   HAVE_H264=no
 else
-if test -d video/H.264/gpl ; then
-  AC_ARG_ENABLE([x264],
-                [AC_HELP_STRING([--disable-x264],[disable x264 support])],
-                [HAVE_H264=$enableval],
-                [HAVE_H264=yes])
-  PKG_CHECK_MODULES([X264],
-                    [x264 >= 0.48],
-                    [
-                     AC_SUBST(X264_CFLAGS)
-                     AC_SUBST(X264_LIBS)
-                     OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
-                     AC_SUBST(X264_LIB_NAME)
-                     OPAL_X264_LINKAGE
-                    ],
-                    [
-                     HAVE_H264=no
-                    ]
-                   )
-  if test "x$HAVE_H264" = "xyes" ; then
-    OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
-    if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
-      AC_MSG_NOTICE(H.264 support disabled since static linking was disabled and libdl was not found)
-      HAVE_H264=no
-    fi
+  if test -d video/H.264/gpl ; then
+    AC_ARG_ENABLE([x264],
+                  [AC_HELP_STRING([--disable-x264],[disable x264 support])],
+                  [HAVE_H264=$enableval],
+                  [HAVE_H264=yes])
+    PKG_CHECK_MODULES([X264],
+                      [x264 >= 0.102],
+                      [
+                       AC_SUBST(X264_CFLAGS)
+                       AC_SUBST(X264_LIBS)
+                       OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
+                       AC_SUBST(X264_LIB_NAME)
+                       OPAL_X264_LINKAGE
+                      ],
+                      [
+                       HAVE_H264=no
+                      ]
+                     )
+  else
+    HAVE_H264=no
   fi
-else
-  HAVE_H264=no
 fi
-fi
-
-AC_SUBST(HAVE_LIBDL)
-AC_SUBST(DL_LIBS)
-AC_SUBST(X264_LINK_STATIC)
 
 if test "x$HAVE_H264" = "xyes" ; then
   AC_CONFIG_FILES(video/H.264/Makefile)
