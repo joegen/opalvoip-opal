@@ -39,16 +39,15 @@ class H264EncCtx
      ~H264EncCtx();
      bool Load(void * instance);
      bool isLoaded() { return loaded; };
-     void call(unsigned msg);
-     void call(unsigned msg, unsigned value);
-     void call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret);
+     bool call(unsigned msg);
+     bool call(unsigned msg, unsigned value);
+     bool call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret);
 
   protected:
      bool createPipes();
      void closeAndRemovePipes();
-     void writeStream (const char* data, unsigned bytes);
-     void readStream (char* data, unsigned bytes);
-     void flushStream ();
+     bool writePipe(const void* data, unsigned bytes);
+     bool readPipe(void* data, unsigned bytes);
      bool findGplProcess();
      bool checkGplProcessExists (const char * dir);
      void execGplProcess();
@@ -57,15 +56,12 @@ class H264EncCtx
      char dlName [512];
      char ulName [512];
      char gplProcess [512];
-     std::ofstream dlStream;
-     std::ifstream ulStream;
-     unsigned width;
-     unsigned height;
-     unsigned size;
+     int m_pipeToProcess;
+     int m_pipeFromProcess;
      bool startNewFrame;
      bool loaded;
      bool pipesCreated;
-     bool pipesOpened;
+     pid_t m_pid;
      
      // only for signaling failed execution of helper process
      std::ifstream cpDLStream;

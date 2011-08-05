@@ -915,7 +915,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                              unsigned & flags)
     {
       int ret = 0;
-      unsigned headerSize = PluginCodec_RTP_MinHeaderSize;
+      unsigned headerSize = PluginCodec_RTP_GetHeaderLength(toPtr);
       m_encoder.call(ENCODE_FRAMES,
                      (const u_char *)fromPtr, fromLen,
                      (u_char *)toPtr, toLen,
