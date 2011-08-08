@@ -593,7 +593,7 @@ OPAL_SIMPLE_OPTION(rfc4103,OPAL_HAS_RFC4103, [whether to enable RFC4103 support]
 
 dnl MSWIN_DISPLAY  fax,T.38 FAX protocol
 dnl MSWIN_DEFINE   fax,OPAL_FAX
-OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
+OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY])
 
 dnl MSWIN_DISPLAY    h450,H.450
 dnl MSWIN_IF_FEATURE h450,h323

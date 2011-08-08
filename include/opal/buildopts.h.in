@@ -218,9 +218,7 @@
 #undef  OPAL_T38_CAPABILITY
 
 #if OPAL_T38_CAPABILITY
-  #if OPAL_PTLIB_ASN
-    #undef  OPAL_FAX
-  #endif
+  #undef  OPAL_FAX
 #endif
 
 #if !OPAL_FAX

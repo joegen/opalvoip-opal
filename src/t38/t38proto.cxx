@@ -61,6 +61,8 @@ static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_PTLIB_ASN
+
 OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
                                        const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
@@ -423,6 +425,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   return true;
 }
 
+#endif // OPAL_PTLIB_ASN
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -515,7 +518,9 @@ OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call,
 OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
+#if OPAL_PTLIB_ASN
   formats += OpalT38;
+#endif
   formats += TIFF_File_FormatName;
   return formats;
 }
@@ -542,11 +547,15 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_receiving(receiving)
   , m_disableT38(disableT38)
   , m_tiffFileFormat(TIFF_File_FormatName)
+#if OnSwitchTimeout
   , m_state(disableT38 ? e_CompletedSwitch : e_AwaitingSwitchToT38)
+#endif
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
+#if OpenFaxStreams
   m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout));
+#endif
 
   PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","
@@ -596,7 +605,13 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
     if ((m_state != e_SwitchingToT38 && it->GetMediaType() == OpalMediaType::Audio()) ||
         (*it == OpalG711_ULAW_64K || *it == OpalG711_ALAW_64K || *it == OpalRFC2833 || *it == OpalCiscoNSE))
       ++it;
-    else if (it->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *it == OpalT38))
+    else if (it->GetMediaType() != OpalMediaType::Fax()
+             || (m_disableT38
+#ifdef OPAL_PTLIB_ASN
+                              && *it == OpalT38
+#endif
+                                                )
+        )
       mediaFormats -= *it++;
     else
       SetFaxMediaFormatOptions(*it++);
@@ -637,7 +652,7 @@ void OpalFaxConnection::SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) 
 void OpalFaxConnection::OnEstablished()
 {
   OpalConnection::OnEstablished();
-
+#if OPAL_PTLIB_ASN
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
   if (m_state == e_AwaitingSwitchToT38) {
@@ -647,6 +662,7 @@ void OpalFaxConnection::OnEstablished()
       PTRACE(3, "FAX\tStarting timer for auto-switch to T.38");
     }
   }
+#endif
 }
 
 
@@ -665,6 +681,7 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 
 void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
+#if OPAL_PTLIB_ASN
   // Have switched to T.38 mode
   if (patch.GetSink()->GetMediaFormat() == OpalT38) {
     m_switchTimer.Stop(false);
@@ -673,6 +690,7 @@ void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
     PTRACE(4, "FAX\tStarted fax media stream for " << m_tiffFileFormat
            << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
   }
+#endif
 
   OpalConnection::OnStartMediaPatch(patch);
 }
@@ -773,7 +791,6 @@ void OpalFaxConnection::InternalGetStatistics(OpalMediaStatistics & statistics, 
 
 #endif
 
-
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
   if (m_state == e_AwaitingSwitchToT38) {
@@ -781,7 +798,6 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
     PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
   }
 }
-
 
 bool OpalFaxConnection::SwitchFaxMediaStreams(bool enableFax)
 {
@@ -792,6 +808,7 @@ bool OpalFaxConnection::SwitchFaxMediaStreams(bool enableFax)
   PTRACE(1, "FAX\tMode change request to " << (enableFax ? "fax" : "audio") << " failed");
   return false;
 }
+
 
 
 void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
@@ -822,7 +839,6 @@ void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
     UnlockReadWrite();
   }
 }
-
 
 #else
 

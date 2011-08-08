@@ -37,10 +37,7 @@
 
 #include <opal/buildopts.h>
 
-
 #if OPAL_FAX
-
-#include <ptlib/pipechan.h>
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
@@ -48,10 +45,12 @@
 
 
 class OpalTransport;
-class T38_IFPPacket;
-class PASN_OctetString;
 class OpalFaxConnection;
 
+#if OPAL_PTLIB_ASN
+class T38_IFPPacket;
+class PASN_OctetString;
+#endif
 
 #define OPAL_OPT_STATION_ID  "Station-Id"      ///< String option for fax station ID string
 #define OPAL_OPT_HEADER_INFO "Header-Info"     ///< String option for transmitted fax page header
@@ -215,8 +214,10 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
+
     virtual bool SwitchFaxMediaStreams(bool enableFax);
     virtual void OnSwitchedFaxMediaStreams(bool enabledFax);
+
     virtual void OnApplyStringOptions();
   //@}
 
@@ -249,18 +250,6 @@ class OpalFaxConnection : public OpalLocalConnection
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSwitchTimeout);
     PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
-    void SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
-
-
-    OpalFaxEndPoint & m_endpoint;
-    PString           m_filename;
-    bool              m_receiving;
-    bool              m_disableT38;
-    OpalMediaFormat   m_tiffFileFormat;
-#if OPAL_STATISTICS
-    void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
-    OpalMediaStatistics m_finalStatistics;
-#endif
 
     enum {
       e_AwaitingSwitchToT38,
@@ -269,11 +258,26 @@ class OpalFaxConnection : public OpalLocalConnection
     } m_state;
 
     PTimer m_switchTimer;
+
+    void SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
+
+    OpalFaxEndPoint & m_endpoint;
+    PString           m_filename;
+    bool              m_receiving;
+    bool              m_disableT38;
+    OpalMediaFormat   m_tiffFileFormat;
+
+#if OPAL_STATISTICS
+    void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
+    OpalMediaStatistics m_finalStatistics;
+#endif
+
 };
 
 
 typedef OpalFaxConnection OpalT38Connection; // For backward compatibility
 
+#if OPAL_PTLIB_ASN
 
 class T38_UDPTLPacket;
 
@@ -325,7 +329,6 @@ class OpalFaxSession : public OpalMediaSession
     PDECLARE_NOTIFIER(PTimer,  OpalFaxSession, OnWriteDataIdle);
 };
 
-
 class OpalFaxMediaStream : public OpalMediaStream
 {
     PCLASSINFO(OpalFaxMediaStream, OpalMediaStream);
@@ -345,7 +348,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     OpalFaxSession & m_session;
 };
 
-
+#endif // OPAL_PTLIB_ASN
 
 #endif // OPAL_FAX
 

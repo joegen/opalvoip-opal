@@ -406,8 +406,12 @@ endif
 # T.38 Fax
 
 ifeq ($(OPAL_FAX), yes)
-SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
-           $(ASN_SRCDIR)/t38.cxx
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
+
+ifeq ($(OPAL_PTLIB_ASN), yes)
+SOURCES += $(ASN_SRCDIR)/t38.cxx
+
+endif
 endif
 
 

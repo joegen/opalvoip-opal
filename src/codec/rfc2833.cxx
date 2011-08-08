@@ -147,8 +147,10 @@ static void AddEventsOption(OpalMediaFormat & mediaFormat,
                                                                false,
                                                                OpalMediaOption::AndMerge,
                                                                OpalRFC2833EventsMask(defaultValues));
+#if OPAL_SIP
   option->SetFMTPName("FMTP");
   option->SetFMTPDefault(fmtpDefaults);
+#endif
   mediaFormat.AddOption(option);
 }
 

@@ -44,7 +44,11 @@
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
+
+#ifdef P_STUN
 #include <ptclib/pstun.h>
+#endif
+
 #include <ptclib/url.h>
 
 #if OPAL_VIDEO
@@ -1190,6 +1194,8 @@ class OpalManager : public PObject
       const PIPSocket::Address & address
     );
 
+#ifdef P_NAT
+
     /**Return the NAT method to use.
        Returns NULL if address is a local address as per IsLocalAddress().
        Always returns the NAT method if address is zero.
@@ -1212,6 +1218,8 @@ class OpalManager : public PObject
       return (m_natMethod == NULL) ? PString::Empty() : m_natServer; 
     }
 
+#ifdef P_STUN
+
     /**Set the STUN server address, is of the form host[:port]
        Note that if the STUN server is found then the translationAddress
        is automatically set to the router address as determined by STUN.
@@ -1230,6 +1238,8 @@ class OpalManager : public PObject
     /**Return the STUN client instance in use.
       */
     PSTUNClient * GetSTUNClient() const { PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); return stun; }
+#endif
+#endif
 
     /**Get the TCP port number base for H.245 channels
      */
