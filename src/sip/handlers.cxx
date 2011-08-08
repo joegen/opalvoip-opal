@@ -1334,6 +1334,8 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 #if P_EXPAT
 
+// This package is on for backward compatibility, presence should now use the
+// the OpalPresence classes to manage SIP presence.
 class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 {
   virtual PCaselessString GetContentType() const
@@ -1352,56 +1354,22 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     SIPURL to = request.GetMIME().GetTo();
     to.Sanitise(SIPURL::ExternalURI);
 
-    SIPPresenceInfo info;
-    info.m_entity = from.AsString();
-    info.m_target = to.AsString();
+    list<SIPPresenceInfo> infoList;
 
     // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty()) {
-      handler.GetEndPoint().OnPresenceInfoReceived(info);
-      return true;
+    if (request.GetEntityBody().IsEmpty())
+      infoList.resize(1);
+    else {
+      PString error;
+      if (!SIPPresenceInfo::ParseXML(request.GetEntityBody(), infoList, error))
+        return false;
     }
 
-    PXML xml;
-    if (!xml.Load(request.GetEntityBody()))
-      return false;
-
-    PXMLElement * rootElement = xml.GetRootElement();
-    if (rootElement == NULL || rootElement->GetName() != "presence")
-      return false;
-
-    PXMLElement * tupleElement = rootElement->GetElement("tuple");
-    if (tupleElement == NULL)
-      return false;
-
-    PXMLElement * statusElement = tupleElement->GetElement("status");
-    if (statusElement == NULL)
-      return false;
-
-    PXMLElement * basicElement = statusElement->GetElement("basic");
-    if (basicElement != NULL) {
-      PCaselessString value = basicElement->GetData();
-      if (value == "open")
-        info.m_state = SIPPresenceInfo::Available;
-      else if (value == "closed")
-        info.m_state = SIPPresenceInfo::NoPresence;
-      else
-        info.m_state = SIPPresenceInfo::Unchanged;
+    for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
+      it->m_entity = from; // Really should not do this, but put in for backward compatibility
+      it->m_target = to;
+      handler.GetEndPoint().OnPresenceInfoReceived(*it);
     }
-
-    PXMLElement * noteElement = statusElement->GetElement("note");
-    if (!noteElement)
-      noteElement = rootElement->GetElement("note");
-    if (!noteElement)
-      noteElement = tupleElement->GetElement("note");
-    if (noteElement)
-      info.m_note = noteElement->GetData();
-
-    PXMLElement * contactElement = tupleElement->GetElement("contact");
-    if (contactElement != NULL)
-      info.m_contact = contactElement->GetData();
-
-    handler.GetEndPoint().OnPresenceInfoReceived(info);
     return true;
   }
 };
@@ -1791,12 +1759,11 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 ///////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger DefaultTupleIdentifier;
+static PAtomicInteger DefaultTupleIdentifier(PRandom::Number());
 
-SIPPresenceInfo::SIPPresenceInfo(const PString & personId, State state)
+SIPPresenceInfo::SIPPresenceInfo(State state)
   : OpalPresenceInfo(state)
   , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
-  , m_personId(personId)
 {
 }
 
@@ -1939,6 +1906,134 @@ PString SIPPresenceInfo::AsXML() const
   return xml;
 }
 
+
+#if P_EXPAT
+static void SetNoteFromElement(PXMLElement * element, PString & note)
+{
+  PXMLElement * noteElement = element->GetElement("note");
+  if (noteElement != NULL)
+    note = noteElement->GetData();
+}
+
+bool SIPPresenceInfo::ParseXML(const PString & body,
+                               list<SIPPresenceInfo> & infoList,
+                               PString & error)
+{
+  infoList.clear();
+
+  // Check for empty body, if so then is OK, just a ping ...
+  if (body.IsEmpty()) {
+    PTRACE(4, "SIPPres\tEmpty body on presence NOTIFY, ignoring");
+    return true;
+  }
+
+  static PXML::ValidationInfo const StatusValidation[] = {
+    { PXML::RequiredElement,            "basic" },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const TupleValidation[] = {
+    { PXML::RequiredNonEmptyAttribute,  "id" },
+    { PXML::Subtree,                    "status", { StatusValidation }, 1 },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const ActivitiesValidation[] = {
+    { PXML::OptionalElement,            "rpid:busy" },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const PersonValidation[] = {
+    { PXML::Subtree,                    "rpid:activities", { ActivitiesValidation }, 0, 1 },
+    { PXML::EndOfValidationList }
+  };
+
+  static PXML::ValidationInfo const PresenceValidation[] = {
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:pidf" },
+    { PXML::SetNamespace,               "dm",   { "urn:ietf:params:xml:ns:pidf:data-model" } },
+    { PXML::SetNamespace,               "rpid", { "urn:ietf:params:xml:ns:pidf:rpid" } },
+    { PXML::ElementName,                "presence" },
+    { PXML::RequiredNonEmptyAttribute,  "entity" },
+    { PXML::Subtree,                    "tuple",  { TupleValidation }, 0 },
+    { PXML::Subtree,                    "dm:person", { PersonValidation }, 0, 1 },
+    { PXML::EndOfValidationList }
+  };
+
+  PXML xml;
+  if (!xml.LoadAndValidate(body, PresenceValidation, error, PXML::WithNS))
+    return false;
+
+  SIPPresenceInfo info;
+
+  // Common info to all tuples
+  PXMLElement * rootElement = xml.GetRootElement();
+  if (!info.m_entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
+    error = "Invalid/unsupported entity";
+    PTRACE(1, "SIPPres\t" << error << " \"" << rootElement->GetAttribute("entity") << '"');
+    return false;
+  }
+
+  static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
+
+  State baseState = Available;
+
+  PXMLElement * person = rootElement->GetElement("urn:ietf:params:xml:ns:pidf:data-model|person");
+  if (person != NULL) {
+    PXMLElement * activities = person->GetElement(rpid + "activities");
+    if (activities != NULL) {
+      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+        if (!activities->GetElement(i)->IsElement())
+          continue;
+        PCaselessString name(((PXMLElement *)activities->GetElement(i))->GetName());
+        if (name.NumCompare(rpid) != PObject::EqualTo)
+          continue;
+        info.m_activities.AppendString(name);
+
+        State newState = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpid.GetLength()));
+        if (newState != SIPPresenceInfo::NoPresence && baseState == Available)
+          baseState = newState;
+      }
+    }
+  }
+
+  // ENumerate the tuples, each one gets an info instance
+  PXMLElement * tupleElement;
+  PINDEX tupleIndex = 0;
+  while ((tupleElement = rootElement->GetElement("tuple", tupleIndex++)) != NULL) {
+    info.m_state = SIPPresenceInfo::Unchanged;
+    info.m_note.MakeEmpty();
+
+    SetNoteFromElement(rootElement, info.m_note);
+    SetNoteFromElement(tupleElement, info.m_note);
+
+    PXMLElement * element = tupleElement->GetElement("status");
+    if (element != NULL) {
+      SetNoteFromElement(element, info.m_note);
+      if ((element = element->GetElement("basic")) != NULL) {
+        PCaselessString value = element->GetData();
+        if (value == "open")
+          info.m_state = baseState;
+        else if (value == "closed")
+          info.m_state = SIPPresenceInfo::NoPresence;
+      }
+    }
+
+    if ((element = tupleElement->GetElement("contact")) != NULL)
+      info.m_contact = element->GetData();
+    else
+      info.m_contact.MakeEmpty();
+
+    if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
+      info.m_when.SetCurrentTime();
+
+    infoList.push_back(info);
+  }
+
+  infoList.sort();
+
+  return true;
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////
 
