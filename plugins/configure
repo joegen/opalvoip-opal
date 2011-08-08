@@ -9659,6 +9659,11 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
 fi
 
 
+if test "x${HAVE_LIBAVCODEC}" = "xno"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: H.264 not built since libavcodec support is disabled" >&5
+$as_echo "H.264 not built since libavcodec support is disabled" >&6; }
+  HAVE_H264=no
+else
   if test -d video/H.264/gpl ; then
     # Check whether --enable-x264 was given.
 if test "${enable_x264+set}" = set; then :
