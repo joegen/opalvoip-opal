@@ -46,7 +46,11 @@
 #include <rtp/metrics.h>
 
 #include <ptclib/random.h>
-#include <ptclib/pstun.h>
+
+#ifdef P_NAT
+#include <ptclib/pnat.h>
+#endif
+
 #include <opal/endpoint.h>
 #include <opal/rtpep.h>
 #include <opal/rtpconn.h>
@@ -538,9 +542,11 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   localHasNAT       = false;
   badTransmitCounter = 0;
 
+#if P_NAT
   PNatMethod * natMethod = m_connection.GetEndPoint().GetManager().GetNatMethod();
   if (natMethod)
     natMethod->CreateSocketPairAsync(m_connection.GetToken());
+#endif
 }
 
 
@@ -1995,7 +2001,9 @@ bool OpalRTPSession::Open(const PString & localInterface)
   shutdownWrite = false;
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
+#ifdef P_NAT
   PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
+#endif
   WORD firstPort = manager.GetRtpIpPortPair();
 
   delete dataSocket;
@@ -2007,6 +2015,8 @@ bool OpalRTPSession::Open(const PString & localInterface)
   localControlPort = (WORD)(firstPort + 1);
 
   PIPSocket::Address bindingAddress = localInterface;
+
+#ifdef P_NAT
   if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
     switch (natMethod->GetRTPSupport()) {
       case PNatMethod::RTPIfSendMedia :
@@ -2052,6 +2062,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
         break;
     }
   }
+#endif
 
   if (dataSocket == NULL || controlSocket == NULL) {
     dataSocket = new PUDPSocket();

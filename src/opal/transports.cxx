@@ -47,7 +47,9 @@
 #include <opal/call.h>
 #include <opal/buildopts.h>
 
-#include <ptclib/pstun.h>
+#ifdef P_NAT
+#include <ptclib/pnat.h>
+#endif
 
 
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
@@ -604,6 +606,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
 {
   PIPSocket::Address localIP = localAddress;
 
+#ifdef P_NAT
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP)) {
     OpalManager & manager = endpoint.GetManager();
@@ -614,6 +617,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
       manager.TranslateIPAddress(localIP, remoteIP);
     }
   }
+#endif
 
   return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
 }
@@ -741,7 +745,11 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  WORD port,
                                  PBoolean exclusive)
   : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetNatMethod()))
+    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive
+#if P_NAT
+                                                                           , endpoint.GetManager().GetNatMethod()
+#endif
+                                                                                                                   ))
 {
 }
 
@@ -750,7 +758,11 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
   : OpalListenerIP(endpoint, binding, option)
-  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetNatMethod()))
+  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener
+#if P_NAT
+                                                                           , endpoint.GetManager().GetNatMethod()
+#endif
+                                                                                                                   ))
   , m_bufferSize(32768)
 {
 }
@@ -857,6 +869,7 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
   PIPSocket::Address localIP = PIPSocket::GetDefaultIpAny();
   WORD port = listenerPort;
 
+#ifdef P_NAT
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP)) {
     PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
@@ -865,6 +878,7 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
       listenerBundle->GetAddress(localIP.AsString(), localIP, port, true);
     }
   }
+#endif
 
   if (localIP.IsAny())
     listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
@@ -1247,7 +1261,11 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   , m_bufferSize(8192)
   , m_preReadOK(false)
 {
-  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr, manager.GetNatMethod());
+  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr
+#ifdef P_NAT
+                                                                                        , manager.GetNatMethod()
+#endif
+                                                                                                                );
   if (preOpen)
     sockets->Open(localPort);
   Open(new PMonitoredSocketChannel(sockets, PFalse));

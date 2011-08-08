@@ -140,7 +140,9 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "\n"
 
          "IP options:\n"
+#ifdef P_STUN
          "     --stun server           : Set NAT traversal STUN server\n"
+#endif
          "     --translate ip          : Set external IP address if masqueraded\n"
          "     --portbase n            : Set TCP/UDP/RTP port base\n"
          "     --portmax n             : Set TCP/UDP/RTP port max\n"
@@ -277,6 +279,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
             "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
             "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
+#ifdef P_STUN
   if (args.HasOption("stun")) {
     if (verbose)
       cout << "STUN server: " << flush;
@@ -294,6 +297,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cout << endl;
     }
   }
+#endif
 
   if (args.HasOption('u'))
     SetDefaultUserName(args.GetOptionString('u'));

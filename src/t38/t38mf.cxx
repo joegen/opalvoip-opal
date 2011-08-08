@@ -32,15 +32,16 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#include <t38/t38proto.h>
 #include <opal/mediafmt.h>
 #include <opal/mediasession.h>
-#include <t38/t38proto.h>
 
 
 #define new PNEW
 
 
 #if OPAL_T38_CAPABILITY
+#if OPAL_PTLIB_ASN
 
 #include <rtp/rtp.h>
 
@@ -87,7 +88,7 @@ OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, u
 }
 
 
-
+#endif // OPAL_PTLIB_ASN
 #endif // OPAL_T38_CAPABILITY
 
 

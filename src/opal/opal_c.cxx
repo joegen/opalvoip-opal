@@ -1145,6 +1145,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
   }
 
+#ifdef P_STUN
   SET_MESSAGE_STRING(response, m_param.m_general.m_stunServer, GetSTUNServer());
   if (!IsNullString(command.m_param.m_general.m_stunServer)) {
     if (!SetSTUNServer(command.m_param.m_general.m_stunServer)) {
@@ -1154,6 +1155,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     if (GetSTUNClient()->GetNatType() == PSTUNClient::BlockedNat)
       response.SetError("STUN indicates Blocked NAT.");
   }
+#endif
 
   response->m_param.m_general.m_tcpPortBase = GetTCPPortBase();
   response->m_param.m_general.m_tcpPortMax = GetTCPPortMax();
