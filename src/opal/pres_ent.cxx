@@ -145,6 +145,28 @@ OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString
 }
 
 
+PObject::Comparison OpalPresenceInfo::Compare(const PObject & obj) const
+{
+  const OpalPresenceInfo & other = dynamic_cast<const OpalPresenceInfo &>(obj);
+  if (m_entity < other.m_entity)
+    return LessThan;
+  if (m_entity > other.m_entity)
+    return GreaterThan;
+
+  if (m_target < other.m_target)
+    return LessThan;
+  if (m_target > other.m_target)
+    return GreaterThan;
+
+  if (m_when < other.m_when)
+    return LessThan;
+  if (m_when > other.m_when)
+    return GreaterThan;
+
+  return EqualTo;
+}
+
+
 ///////////////////////////////////////////////////////////////////////
 
 static PAtomicInteger::IntegerType g_idNumber = 1;
