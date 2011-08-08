@@ -35,34 +35,28 @@ OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/h264_x264_gpl
 
 CC	 	=@CC@
 CXX	 	=@CXX@
-CFLAGS	 	=@CFLAGS@ @X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -I.. -DGPL_HELPER_APP
-LDFLAGS		=@LDFLAGS@ @DL_LIBS@ @X264_LIBS@
+CFLAGS	 	=@X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -I.. -DGPL_HELPER_APP # -DPTRACING
+LDFLAGS		=@LDFLAGS@ @X264_LIBS@
 
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
-SRCS   += $(SHAREDDIR)/h264frame.cxx \
-	  enc-ctx.cxx  \
-
 WIN32=@WIN32@
 ifeq ($(WIN32),yes)
 
-SRCS    += h264helper_win32.cxx
+SRCS   += h264helper_win32.cxx
 TARGET	= h264_video_pwplugin_helper.exe
 
 else
 
-SRCS    += h264helper_unix.cxx
+SRCS   += h264helper_unix.cxx
 TARGET	= h264_video_pwplugin_helper
 
-X264_LINK_STATIC=@X264_LINK_STATIC@
-ifneq ($(X264_LINK_STATIC),yes)
-SRCS   += x264loader_unix.cxx
-endif
-
 endif # WIN32
+
+SRCS += enc-ctx.cxx ../shared/h264frame.cxx
 
 
 

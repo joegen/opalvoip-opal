@@ -594,12 +594,8 @@ ac_includes_default="\
 ac_subst_vars='SPANDSP_LIBS
 SPANDSP_CFLAGS
 HAVE_VPB
-CPP
 THEORA_LIBS
 THEORA_CFLAGS
-X264_LINK_STATIC
-DL_LIBS
-HAVE_LIBDL
 X264_LIB_NAME
 X264_LIBS
 X264_CFLAGS
@@ -625,10 +621,13 @@ LIBOBJS
 ILBC_LIBS
 ILBC_CFLAGS
 ILBC_SYSTEM
+CPP
 GSM_SYSTEM
 GSM_LIBS
 GSM_CFLAGS
 SUBDIRS
+DL_LIBS
+HAVE_LIBDL
 WIN32
 PLUGINEXT
 LDSO
@@ -766,6 +765,7 @@ CCC
 CC
 CFLAGS
 CXXCPP
+CPP
 SPEEX_CFLAGS
 SPEEX_LIBS
 CELT_CFLAGS
@@ -777,8 +777,7 @@ LIBAVUTIL_LIBS
 X264_CFLAGS
 X264_LIBS
 THEORA_CFLAGS
-THEORA_LIBS
-CPP'
+THEORA_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1457,6 +1456,7 @@ Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CXXCPP      C++ preprocessor
+  CPP         C preprocessor
   SPEEX_CFLAGS
               C compiler flags for SPEEX, overriding pkg-config
   SPEEX_LIBS  linker flags for SPEEX, overriding pkg-config
@@ -1475,7 +1475,6 @@ Some influential environment variables:
   THEORA_CFLAGS
               C compiler flags for THEORA, overriding pkg-config
   THEORA_LIBS linker flags for THEORA, overriding pkg-config
-  CPP         C preprocessor
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -1997,184 +1996,6 @@ $as_echo "$ac_res" >&6; }
 
 } # ac_fn_cxx_check_func
 
-# ac_fn_cxx_compute_int LINENO EXPR VAR INCLUDES
-# ----------------------------------------------
-# Tries to find the compile-time value of EXPR in a program that includes
-# INCLUDES, setting VAR accordingly. Returns whether the value could be
-# computed
-ac_fn_cxx_compute_int ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if test "$cross_compiling" = yes; then
-    # Depending upon the size, compute the lo and hi bounds.
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) >= 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_lo=0 ac_mid=0
-  while :; do
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_hi=$ac_mid; break
-else
-  as_fn_arith $ac_mid + 1 && ac_lo=$as_val
-			if test $ac_lo -le $ac_mid; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			as_fn_arith 2 '*' $ac_mid + 1 && ac_mid=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) < 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_hi=-1 ac_mid=-1
-  while :; do
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) >= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_lo=$ac_mid; break
-else
-  as_fn_arith '(' $ac_mid ')' - 1 && ac_hi=$as_val
-			if test $ac_mid -le $ac_hi; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			as_fn_arith 2 '*' $ac_mid && ac_mid=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  ac_lo= ac_hi=
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-# Binary search between lo and hi bounds.
-while test "x$ac_lo" != "x$ac_hi"; do
-  as_fn_arith '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo && ac_mid=$as_val
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_hi=$ac_mid
-else
-  as_fn_arith '(' $ac_mid ')' + 1 && ac_lo=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-done
-case $ac_lo in #((
-?*) eval "$3=\$ac_lo"; ac_retval=0 ;;
-'') ac_retval=1 ;;
-esac
-  else
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-static long int longval () { return $2; }
-static unsigned long int ulongval () { return $2; }
-#include <stdio.h>
-#include <stdlib.h>
-int
-main ()
-{
-
-  FILE *f = fopen ("conftest.val", "w");
-  if (! f)
-    return 1;
-  if (($2) < 0)
-    {
-      long int i = longval ();
-      if (i != ($2))
-	return 1;
-      fprintf (f, "%ld", i);
-    }
-  else
-    {
-      unsigned long int i = ulongval ();
-      if (i != ($2))
-	return 1;
-      fprintf (f, "%lu", i);
-    }
-  /* Do not output a trailing newline, as this causes \r\n confusion
-     on some platforms.  */
-  return ferror (f) || fclose (f) != 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
-  echo >>conftest.val; read $3 <conftest.val; ac_retval=0
-else
-  ac_retval=1
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-rm -f conftest.val
-
-  fi
-  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
-  as_fn_set_status $ac_retval
-
-} # ac_fn_cxx_compute_int
-
 # ac_fn_c_try_link LINENO
 # -----------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded.
@@ -2220,6 +2041,48 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_c_try_link
+
+# ac_fn_c_try_run LINENO
+# ----------------------
+# Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
+# that executables *can* be run.
+ac_fn_c_try_run ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if { { ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } && { ac_try='./conftest$ac_exeext'
+  { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then :
+  ac_retval=0
+else
+  $as_echo "$as_me: program exited with status $ac_status" >&5
+       $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+       ac_retval=$ac_status
+fi
+  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
+  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
+  as_fn_set_status $ac_retval
+
+} # ac_fn_c_try_run
 
 # ac_fn_c_try_cpp LINENO
 # ----------------------
@@ -2344,6 +2207,184 @@ fi
   eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
 
 } # ac_fn_c_check_header_mongrel
+
+# ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
+# --------------------------------------------
+# Tries to find the compile-time value of EXPR in a program that includes
+# INCLUDES, setting VAR accordingly. Returns whether the value could be
+# computed
+ac_fn_c_compute_int ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if test "$cross_compiling" = yes; then
+    # Depending upon the size, compute the lo and hi bounds.
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) >= 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_lo=0 ac_mid=0
+  while :; do
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=$ac_mid; break
+else
+  as_fn_arith $ac_mid + 1 && ac_lo=$as_val
+			if test $ac_lo -le $ac_mid; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			as_fn_arith 2 '*' $ac_mid + 1 && ac_mid=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) < 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=-1 ac_mid=-1
+  while :; do
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) >= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_lo=$ac_mid; break
+else
+  as_fn_arith '(' $ac_mid ')' - 1 && ac_hi=$as_val
+			if test $ac_mid -le $ac_hi; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			as_fn_arith 2 '*' $ac_mid && ac_mid=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  ac_lo= ac_hi=
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+# Binary search between lo and hi bounds.
+while test "x$ac_lo" != "x$ac_hi"; do
+  as_fn_arith '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo && ac_mid=$as_val
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=$ac_mid
+else
+  as_fn_arith '(' $ac_mid ')' + 1 && ac_lo=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+done
+case $ac_lo in #((
+?*) eval "$3=\$ac_lo"; ac_retval=0 ;;
+'') ac_retval=1 ;;
+esac
+  else
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+static long int longval () { return $2; }
+static unsigned long int ulongval () { return $2; }
+#include <stdio.h>
+#include <stdlib.h>
+int
+main ()
+{
+
+  FILE *f = fopen ("conftest.val", "w");
+  if (! f)
+    return 1;
+  if (($2) < 0)
+    {
+      long int i = longval ();
+      if (i != ($2))
+	return 1;
+      fprintf (f, "%ld", i);
+    }
+  else
+    {
+      unsigned long int i = ulongval ();
+      if (i != ($2))
+	return 1;
+      fprintf (f, "%lu", i);
+    }
+  /* Do not output a trailing newline, as this causes \r\n confusion
+     on some platforms.  */
+  return ferror (f) || fclose (f) != 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  echo >>conftest.val; read $3 <conftest.val; ac_retval=0
+else
+  ac_retval=1
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f conftest.val
+
+  fi
+  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
+  as_fn_set_status $ac_retval
+
+} # ac_fn_c_compute_int
 
 # ac_fn_c_check_header_compile LINENO HEADER VAR INCLUDES
 # -------------------------------------------------------
@@ -6674,22 +6715,167 @@ esac
 
 
 
+          opal_libdl=no
+          for ac_header in dlfcn.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "dlfcn.h" "ac_cv_header_dlfcn_h" "$ac_includes_default"
+if test "x$ac_cv_header_dlfcn_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DLFCN_H 1
+_ACEOF
+ opal_dlfcn=yes
+else
+  opal_dlfcn=no
+fi
+
+done
+
+          if test "$opal_dlfcn" = yes ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dlopen is available" >&5
+$as_echo_n "checking if dlopen is available... " >&6; }
+            ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <dlfcn.h>
+int
+main ()
+{
+void * p = dlopen("lib", 0);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  opal_dlopen=yes
+else
+  opal_dlopen=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+            if test "$opal_dlopen" = no ; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+            else
+              { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+              case "$OSTYPE" in
+                freebsd|openbsd|netbsd|Darwin)
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -lc" >&5
+$as_echo_n "checking for dlopen in -lc... " >&6; }
+if test "${ac_cv_lib_c_dlopen+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_c_dlopen=yes
+else
+  ac_cv_lib_c_dlopen=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_dlopen" >&5
+$as_echo "$ac_cv_lib_c_dlopen" >&6; }
+if test "x$ac_cv_lib_c_dlopen" = x""yes; then :
+
+                                opal_libdl=yes
+                                DL_LIBS="-lc"
+
+else
+  opal_libdl=no
+fi
+
+                ;;
+                *)
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+$as_echo_n "checking for dlopen in -ldl... " >&6; }
+if test "${ac_cv_lib_dl_dlopen+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_dl_dlopen=yes
+else
+  ac_cv_lib_dl_dlopen=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl_dlopen" >&5
+$as_echo "$ac_cv_lib_dl_dlopen" >&6; }
+if test "x$ac_cv_lib_dl_dlopen" = x""yes; then :
+
+                                opal_libdl=yes
+                                DL_LIBS="-ldl"
+
+else
+  opal_libdl=no
+fi
+
+                ;;
+               esac
+            fi
+          fi
+          if test $opal_libdl = yes; then :
+  HAVE_LIBDL=yes
+else
+  HAVE_LIBDL=no
+fi
+
+
+
+
+
+
 HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
-X264_LINK_STATIC=no
 LIBAVCODEC_STACKALIGN_HACK=no
-
-case "$target_os" in
-        darwin*) HAVE_VPB=no
-                 ;;
-        cygwin*|mingw**)
-	         HAVE_VPB=no
-                 X264_LINK_STATIC=yes
-                 ;;
-esac
-
 
 SUBDIRS=""
 
@@ -6756,7 +6942,7 @@ return gsm_create ();
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_gsm_gsm_create=yes
 else
   ac_cv_lib_gsm_gsm_create=no
@@ -6801,7 +6987,7 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
+if ac_fn_c_try_run "$LINENO"; then :
   opal_gsm=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -6863,7 +7049,7 @@ return gsm_create ();
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_gsm_gsm_create=yes
 else
   ac_cv_lib_gsm_gsm_create=no
@@ -6908,7 +7094,7 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_run "$LINENO"; then :
+if ac_fn_c_try_run "$LINENO"; then :
   opal_gsm=yes
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -6988,7 +7174,145 @@ if test "x${HAVE_iLBC}" = "xyes" ; then
 
   SUBDIRS+=" audio/iLBC"
 
-  # Check whether --enable-localilbc was given.
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to run the C preprocessor" >&5
+$as_echo_n "checking how to run the C preprocessor... " >&6; }
+# On Suns, sometimes $CPP names a directory.
+if test -n "$CPP" && test -d "$CPP"; then
+  CPP=
+fi
+if test -z "$CPP"; then
+  if test "${ac_cv_prog_CPP+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+      # Double quotes because CPP needs to be expanded
+    for CPP in "$CC -E" "$CC -E -traditional-cpp" "/lib/cpp"
+    do
+      ac_preproc_ok=false
+for ac_c_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+  # <limits.h> exists even on freestanding compilers.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+		     Syntax error
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+
+else
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether nonexistent headers
+  # can be detected and how.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ac_nonexistent.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  # Broken: success on invalid input.
+continue
+else
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then :
+  break
+fi
+
+    done
+    ac_cv_prog_CPP=$CPP
+
+fi
+  CPP=$ac_cv_prog_CPP
+else
+  ac_cv_prog_CPP=$CPP
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPP" >&5
+$as_echo "$CPP" >&6; }
+ac_preproc_ok=false
+for ac_c_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+  # <limits.h> exists even on freestanding compilers.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+		     Syntax error
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+
+else
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether nonexistent headers
+  # can be detected and how.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ac_nonexistent.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  # Broken: success on invalid input.
+continue
+else
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then :
+
+else
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "C preprocessor \"$CPP\" fails sanity check
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+# Check whether --enable-localilbc was given.
 if test "${enable_localilbc+set}" = set; then :
   enableval=$enable_localilbc; localilbc=$enableval
 else
@@ -7031,7 +7355,7 @@ return iLBC_encode ();
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_ilbc_iLBC_encode=yes
 else
   ac_cv_lib_ilbc_iLBC_encode=no
@@ -7054,7 +7378,7 @@ fi
               for ac_header in ilbc/iLBC_decode.h ilbc/iLBC_define.h ilbc/iLBC_encode.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_cxx_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
@@ -8277,7 +8601,7 @@ $as_echo_n "checking size of short... " >&6; }
 if test "${ac_cv_sizeof_short+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (short))" "ac_cv_sizeof_short"        "$ac_includes_default"; then :
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (short))" "ac_cv_sizeof_short"        "$ac_includes_default"; then :
 
 else
   if test "$ac_cv_type_short" = yes; then
@@ -8310,7 +8634,7 @@ $as_echo_n "checking size of int... " >&6; }
 if test "${ac_cv_sizeof_int+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (int))" "ac_cv_sizeof_int"        "$ac_includes_default"; then :
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (int))" "ac_cv_sizeof_int"        "$ac_includes_default"; then :
 
 else
   if test "$ac_cv_type_int" = yes; then
@@ -8343,7 +8667,7 @@ $as_echo_n "checking size of long... " >&6; }
 if test "${ac_cv_sizeof_long+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (long))" "ac_cv_sizeof_long"        "$ac_includes_default"; then :
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long))" "ac_cv_sizeof_long"        "$ac_includes_default"; then :
 
 else
   if test "$ac_cv_type_long" = yes; then
@@ -8376,7 +8700,7 @@ $as_echo_n "checking size of long long... " >&6; }
 if test "${ac_cv_sizeof_long_long+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if ac_fn_cxx_compute_int "$LINENO" "(long int) (sizeof (long long))" "ac_cv_sizeof_long_long"        "$ac_includes_default"; then :
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long long))" "ac_cv_sizeof_long_long"        "$ac_includes_default"; then :
 
 else
   if test "$ac_cv_type_long_long" = yes; then
@@ -8758,7 +9082,7 @@ return src_get_version ();
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_samplerate_src_get_version=yes
 else
   ac_cv_lib_samplerate_src_get_version=no
@@ -9104,7 +9428,7 @@ $as_echo "$as_me: libavcodec stack align hack disabled" >&6;}
                      LIBAVCODEC_HEADER=
           old_CPPFLAGS="$CPPFLAGS"
           export CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
-          ac_fn_cxx_check_header_mongrel "$LINENO" "libavcodec/avcodec.h" "ac_cv_header_libavcodec_avcodec_h" "$ac_includes_default"
+          ac_fn_c_check_header_mongrel "$LINENO" "libavcodec/avcodec.h" "ac_cv_header_libavcodec_avcodec_h" "$ac_includes_default"
 if test "x$ac_cv_header_libavcodec_avcodec_h" = x""yes; then :
 
 
@@ -9116,7 +9440,7 @@ fi
 
 
           if test x$LIBAVCODEC_HEADER = x; then
-            ac_fn_cxx_check_header_mongrel "$LINENO" "ffmpeg/avcodec.h" "ac_cv_header_ffmpeg_avcodec_h" "$ac_includes_default"
+            ac_fn_c_check_header_mongrel "$LINENO" "ffmpeg/avcodec.h" "ac_cv_header_ffmpeg_avcodec_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffmpeg_avcodec_h" = x""yes; then :
 
 
@@ -9305,7 +9629,7 @@ AVCodecContext c; c.rtp_mode = 1;
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
+if ac_fn_c_try_compile "$LINENO"; then :
   HAVE_LIBAVCODEC_RTP_MODE=1
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -9335,8 +9659,8 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
 fi
 
 
-if test -d video/H.264/gpl ; then
-  # Check whether --enable-x264 was given.
+  if test -d video/H.264/gpl ; then
+    # Check whether --enable-x264 was given.
 if test "${enable_x264+set}" = set; then :
   enableval=$enable_x264; HAVE_H264=$enableval
 else
@@ -9352,12 +9676,12 @@ if test -n "$X264_CFLAGS"; then
     pkg_cv_X264_CFLAGS="$X264_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.48\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "x264 >= 0.48") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.102\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "x264 >= 0.102") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_X264_CFLAGS=`$PKG_CONFIG --cflags "x264 >= 0.48" 2>/dev/null`
+  pkg_cv_X264_CFLAGS=`$PKG_CONFIG --cflags "x264 >= 0.102" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -9368,12 +9692,12 @@ if test -n "$X264_LIBS"; then
     pkg_cv_X264_LIBS="$X264_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.48\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "x264 >= 0.48") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"x264 >= 0.102\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "x264 >= 0.102") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_X264_LIBS=`$PKG_CONFIG --libs "x264 >= 0.48" 2>/dev/null`
+  pkg_cv_X264_LIBS=`$PKG_CONFIG --libs "x264 >= 0.102" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -9393,22 +9717,22 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        X264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "x264 >= 0.48" 2>&1`
+	        X264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "x264 >= 0.102" 2>&1`
         else
-	        X264_PKG_ERRORS=`$PKG_CONFIG --print-errors "x264 >= 0.48" 2>&1`
+	        X264_PKG_ERRORS=`$PKG_CONFIG --print-errors "x264 >= 0.102" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$X264_PKG_ERRORS" >&5
 
 
-                     HAVE_H264=no
+                       HAVE_H264=no
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-                     HAVE_H264=no
+                       HAVE_H264=no
 
 
 else
@@ -9468,173 +9792,10 @@ $as_echo "$as_me: x264 static linking disabled" >&6;}
 
 
 fi
-  if test "x$HAVE_H264" = "xyes" ; then
-
-
-          opal_libdl=no
-          for ac_header in dlfcn.h
-do :
-  ac_fn_cxx_check_header_mongrel "$LINENO" "dlfcn.h" "ac_cv_header_dlfcn_h" "$ac_includes_default"
-if test "x$ac_cv_header_dlfcn_h" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_DLFCN_H 1
-_ACEOF
- opal_dlfcn=yes
-else
-  opal_dlfcn=no
-fi
-
-done
-
-          if test "$opal_dlfcn" = yes ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dlopen is available" >&5
-$as_echo_n "checking if dlopen is available... " >&6; }
-            ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <dlfcn.h>
-int
-main ()
-{
-void * p = dlopen("lib", 0);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  opal_dlopen=yes
-else
-  opal_dlopen=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-            if test "$opal_dlopen" = no ; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-            else
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-              case "$OSTYPE" in
-                freebsd|openbsd|netbsd|Darwin)
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -lc" >&5
-$as_echo_n "checking for dlopen in -lc... " >&6; }
-if test "${ac_cv_lib_c_dlopen+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlopen ();
-int
-main ()
-{
-return dlopen ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_c_dlopen=yes
-else
-  ac_cv_lib_c_dlopen=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_dlopen" >&5
-$as_echo "$ac_cv_lib_c_dlopen" >&6; }
-if test "x$ac_cv_lib_c_dlopen" = x""yes; then :
-
-                                opal_libdl=yes
-                                DL_LIBS="-lc"
-
-else
-  opal_libdl=no
-fi
-
-                ;;
-                *)
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
-$as_echo_n "checking for dlopen in -ldl... " >&6; }
-if test "${ac_cv_lib_dl_dlopen+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlopen ();
-int
-main ()
-{
-return dlopen ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_dl_dlopen=yes
-else
-  ac_cv_lib_dl_dlopen=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl_dlopen" >&5
-$as_echo "$ac_cv_lib_dl_dlopen" >&6; }
-if test "x$ac_cv_lib_dl_dlopen" = x""yes; then :
-
-                                opal_libdl=yes
-                                DL_LIBS="-ldl"
-
-else
-  opal_libdl=no
-fi
-
-                ;;
-               esac
-            fi
-          fi
-          if test $opal_libdl = yes; then :
-  HAVE_LIBDL=yes
-else
-  HAVE_LIBDL=no
-fi
-
-    if test "x$X264_LINK_STATIC" != "xyes"&& test "x$HAVE_LIBDL" != "xyes" ; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: H.264 support disabled since static linking was disabled and libdl was not found" >&5
-$as_echo "$as_me: H.264 support disabled since static linking was disabled and libdl was not found" >&6;}
-      HAVE_H264=no
-    fi
+  else
+    HAVE_H264=no
   fi
-else
-  HAVE_H264=no
 fi
-
-
-
-
 
 if test "x$HAVE_H264" = "xyes" ; then
   ac_config_files="$ac_config_files video/H.264/Makefile"
@@ -9754,145 +9915,7 @@ $as_echo_n "checking IXJ... " >&6; }
 $as_echo "$HAVE_IXJ" >&6; }
 
     if test "x$HAVE_IXJ" = "xyes" ; then
-      ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to run the C preprocessor" >&5
-$as_echo_n "checking how to run the C preprocessor... " >&6; }
-# On Suns, sometimes $CPP names a directory.
-if test -n "$CPP" && test -d "$CPP"; then
-  CPP=
-fi
-if test -z "$CPP"; then
-  if test "${ac_cv_prog_CPP+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-      # Double quotes because CPP needs to be expanded
-    for CPP in "$CC -E" "$CC -E -traditional-cpp" "/lib/cpp"
-    do
-      ac_preproc_ok=false
-for ac_c_preproc_warn_flag in '' yes
-do
-  # Use a header file that comes with gcc, so configuring glibc
-  # with a fresh cross-compiler works.
-  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-  # <limits.h> exists even on freestanding compilers.
-  # On the NeXT, cc -E runs the code through the compiler's parser,
-  # not just through cpp. "Syntax error" is here to catch this case.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-		     Syntax error
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-
-else
-  # Broken: fails on valid input.
-continue
-fi
-rm -f conftest.err conftest.$ac_ext
-
-  # OK, works on sane cases.  Now check whether nonexistent headers
-  # can be detected and how.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ac_nonexistent.h>
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-  # Broken: success on invalid input.
-continue
-else
-  # Passes both tests.
-ac_preproc_ok=:
-break
-fi
-rm -f conftest.err conftest.$ac_ext
-
-done
-# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
-rm -f conftest.err conftest.$ac_ext
-if $ac_preproc_ok; then :
-  break
-fi
-
-    done
-    ac_cv_prog_CPP=$CPP
-
-fi
-  CPP=$ac_cv_prog_CPP
-else
-  ac_cv_prog_CPP=$CPP
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CPP" >&5
-$as_echo "$CPP" >&6; }
-ac_preproc_ok=false
-for ac_c_preproc_warn_flag in '' yes
-do
-  # Use a header file that comes with gcc, so configuring glibc
-  # with a fresh cross-compiler works.
-  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
-  # <limits.h> exists even on freestanding compilers.
-  # On the NeXT, cc -E runs the code through the compiler's parser,
-  # not just through cpp. "Syntax error" is here to catch this case.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#ifdef __STDC__
-# include <limits.h>
-#else
-# include <assert.h>
-#endif
-		     Syntax error
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-
-else
-  # Broken: fails on valid input.
-continue
-fi
-rm -f conftest.err conftest.$ac_ext
-
-  # OK, works on sane cases.  Now check whether nonexistent headers
-  # can be detected and how.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ac_nonexistent.h>
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-  # Broken: success on invalid input.
-continue
-else
-  # Passes both tests.
-ac_preproc_ok=:
-break
-fi
-rm -f conftest.err conftest.$ac_ext
-
-done
-# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
-rm -f conftest.err conftest.$ac_ext
-if $ac_preproc_ok; then :
-
-else
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "C preprocessor \"$CPP\" fails sanity check
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-for ac_header in linux/telephony.h
+      for ac_header in linux/telephony.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "linux/telephony.h" "ac_cv_header_linux_telephony_h" "$ac_includes_default"
 if test "x$ac_cv_header_linux_telephony_h" = x""yes; then :

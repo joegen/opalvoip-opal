@@ -64,8 +64,8 @@ bool X264Library::Load()
     PTRACE(1, "x264", "DYNA\tFailed to load x264_encoder_open");
     return false;
   }
-  if (!GetFunction("x264_param_default", (Function &)Xx264_param_default)) {
-    PTRACE(1, "x264", "DYNA\tFailed to load x264_param_default");
+  if (!GetFunction("x264_param_default_preset", (Function &)Xx264_param_default_preset)) {
+    PTRACE(1, "x264", "DYNA\tFailed to load x264_param_default_preset");
     return false;
   }
   if (!GetFunction("x264_encoder_encode", (Function &)Xx264_encoder_encode)) {
