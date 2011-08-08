@@ -1476,6 +1476,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
     return true;
   }
 
+#ifdef P_STUN
   PIPSocket::Address stunInterface;
   PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); 
   if (stun != NULL &&
@@ -1483,6 +1484,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
       stun->GetInterfaceAddress(stunInterface) &&
       stunInterface == localAddress)
     return stun->GetExternalAddress(localAddress); // Translate it!
+#endif
 
   return false; // Have nothing to translate it to
 }
@@ -1508,14 +1510,9 @@ void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
 }
 
 
-PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & ip) const
-{
-  if (ip.IsValid() && IsLocalAddress(ip))
-    return NULL;
+#ifdef P_NAT
 
-  return m_natMethod;
-}
-
+#ifdef P_STUN
 
 PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
@@ -1523,6 +1520,15 @@ PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
     return PSTUNClient::UnknownNat;
 
   return m_natMethod->GetNatType();
+}
+#endif
+
+PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & ip) const
+{
+  if (ip.IsValid() && IsLocalAddress(ip))
+    return NULL;
+
+  return m_natMethod;
 }
 
 bool OpalManager::SetNATServer(const PString & natType, const PString & server)
@@ -1562,6 +1568,8 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
 
   return type;
 }
+
+#endif  // P_NAT
 
 
 void OpalManager::PortInfo::Set(unsigned newBase,
@@ -1943,23 +1951,27 @@ OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
 
 void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
 {
+#ifdef P_NAT
   PNatMethod * nat = m_manager.GetNatMethod();
   if (nat != NULL) {
     PIPSocket::Address addr;
     if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
       nat->Open(entry.GetAddress());
   }
+#endif
 }
 
 
 void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
+#ifdef P_NAT
   PNatMethod * nat = m_manager.GetNatMethod();
   if (nat != NULL) {
     PIPSocket::Address addr;
     if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
       nat->Close();
   }
+#endif
 }
 
 

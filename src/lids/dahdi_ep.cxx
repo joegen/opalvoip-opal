@@ -65,8 +65,8 @@ bool DahdiLineInterfaceDevice::Open(const PString &)
 
   // open the device
   if (fd < 0) {
-    cerr << "Unable to open " << DeviceName << " : " << strerror(errno) << endl;
-    exit(1);
+    PTRACE(2, "DAHDI\tUnable to open " << DeviceName << " : " << strerror(errno));
+    return false;
   }
 
   // scan through all spans looking for available channels
@@ -141,7 +141,7 @@ bool DahdiLineInterfaceDevice::Open(const PString &)
     baseChannel += spanInfo.totalchans;
   }
 
-  cout << m_channelInfoList.size() << " channels defined" << endl;
+  PTRACE(3, "DAHDI\t" << m_channelInfoList.size() << " channels defined" << endl;
 
   // build the list of FDs to poll for events
   BuildPollFDs();
@@ -629,16 +629,6 @@ bool DahdiLineInterfaceDevice::ChannelInfo::DetectTones(void * buffer, int len)
   if (m_hasHardwareToneDetection)
     return true;
 
-#if 0
-  {
-    short * src = (short *)buffer;
-    for (size_t i = 0; i < len; ++i) {
-      cout << hex << *src++ << " ";
-    }
-    cout << endl;
-  }
-#endif
-
   PString tones = m_dtmfDecoder.Decode((const short *)buffer, len/2);
 
   if (tones.GetLength() > 0) {
@@ -669,7 +659,6 @@ bool DahdiLineInterfaceDevice::ChannelInfo::LookForEvent()
   switch (e) {
     case -1:
       PTRACE(2, "DAHDI\tChan " << m_channelNumber << " : unknown event");
-      cout << "error" << endl;
       break;
 
     case DAHDI_EVENT_NONE:

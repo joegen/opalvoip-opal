@@ -315,12 +315,15 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
     PIPSocket::Address remoteIP;
     associatedRemoteAddress.GetIpAddress(remoteIP);
 
+#ifdef P_NAT
     PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
     if (natMethod != NULL) {
       natMethod->GetInterfaceAddress(natInterfaceIP);
       natMethod->GetExternalAddress(natExternalIP);
     }
-    else if (manager.GetTranslationAddress().IsValid()) {
+    else
+#endif
+    if (manager.GetTranslationAddress().IsValid()) {
       natInterfaceIP = PIPSocket::GetDefaultIpAny();
       natExternalIP = manager.GetTranslationAddress();
     }

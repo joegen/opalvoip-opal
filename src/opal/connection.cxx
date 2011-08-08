@@ -706,7 +706,11 @@ bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
   }
 
   PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
+#if OPAL_PTLIB_ASN
   OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
+#else
+  OpalMediaFormat format = OpalG711uLaw;
+#endif
   if (!ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
     return false;
 

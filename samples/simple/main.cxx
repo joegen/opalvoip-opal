@@ -53,7 +53,11 @@
 
 #include <opal/transcoders.h>
 #include <lids/lidep.h>
+
+#ifdef P_STUN
 #include <ptclib/pstun.h>
+#endif
+
 #include <ptlib/config.h>
 #include <codec/opalpluginmgr.h>
 
@@ -295,7 +299,9 @@ void SimpleOpalProcess::Main()
             "     --rtp-base n         : Set RTP port base (default 5000)\n"
             "     --rtp-max n          : Set RTP port max (default base+199)\n"
             "     --rtp-tos n          : Set RTP packet IP TOS bits to n\n"
-	          "     --stun server        : Set STUN server\n"
+#ifdef P_STUN
+	    "     --stun server        : Set STUN server\n"
+#endif
             "\n"
             "Debug options:\n"
 #if PTRACING
@@ -534,8 +540,12 @@ PBoolean MyManager::Initialise(PArgList & args)
           "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
           "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
           "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
-          "STUN server: " << flush;
+#ifdef P_STUN
+          "STUN server: "
+#endif
+          << flush;
 
+#ifdef P_STUN
   if (args.HasOption("stun"))
     SetSTUNServer(args.GetOptionString("stun"));
 
@@ -544,6 +554,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   else
     cout << "None";
   cout << '\n';
+#endif
 
   OpalMediaFormatList allMediaFormats;
 
@@ -746,6 +757,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 #endif
 
 #if OPAL_FAX
+#if OPAL_PTLIB_ASN
   ///////////////////////////////////////
   // Create T38 protocol handler
   {
@@ -753,6 +765,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     faxEP = new OpalFaxEndPoint(*this);
     allMediaFormats += faxEP->GetMediaFormats();
   }
+#endif
 #endif
 
   ///////////////////////////////////////
