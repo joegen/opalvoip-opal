@@ -82,29 +82,6 @@ static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allo
 
 //////////////////////////////////////////////////////////////////////////////////////
 
-static bool ParseAndValidateXML(SIPSubscribe::NotifyCallbackInfo & status, PXML & xml, const PXML::ValidationInfo * validator)
-{
-  PString body = status.m_notify.GetEntityBody();
-
-  // Check for empty body, if so then is OK, just a ping ...
-  if (body.IsEmpty()) {
-    PTRACE(4, "SIPPres\tEmpty body on presence watcher NOTIFY, ignoring");
-    status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
-    return false;
-  }
-
-  PString error;
-  if (xml.LoadAndValidate(body, validator, error, PXML::WithNS))
-    return true;
-
-  status.m_response.SetEntityBody(error);
-  PTRACE(3, "SIPPres\tError parsing XML in presence notify: " << error);
-  return false;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-
-
 SIP_Presentity::SIP_Presentity()
   : m_endpoint(NULL)
   , m_subProtocol(e_OMA)
@@ -350,115 +327,22 @@ void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const S
 
 void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
-  static PXML::ValidationInfo const StatusValidation[] = {
-    { PXML::RequiredElement,            "basic" },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const TupleValidation[] = {
-    { PXML::RequiredNonEmptyAttribute,  "id" },
-    { PXML::Subtree,                    "status", { StatusValidation }, 1 },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const ActivitiesValidation[] = {
-    { PXML::OptionalElement,            "rpid:busy" },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const PersonValidation[] = {
-    { PXML::Subtree,                    "rpid:activities", { ActivitiesValidation }, 0, 1 },
-    { PXML::EndOfValidationList }
-  };
-
-  static PXML::ValidationInfo const PresenceValidation[] = {
-    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:pidf" },
-    { PXML::SetNamespace,               "dm",   { "urn:ietf:params:xml:ns:pidf:data-model" } },
-    { PXML::SetNamespace,               "rpid", { "urn:ietf:params:xml:ns:pidf:rpid" } },
-    { PXML::ElementName,                "presence" },
-    { PXML::RequiredNonEmptyAttribute,  "entity" },
-    { PXML::Subtree,                    "tuple",  { TupleValidation }, 0 },
-    { PXML::Subtree,                    "dm:person", { PersonValidation }, 0, 1 },
-    { PXML::EndOfValidationList }
-  };
-
-  PXML xml;
-  if (!ParseAndValidateXML(status, xml, PresenceValidation)) 
+  list<SIPPresenceInfo> infoList;
+  PString error;
+  if (!SIPPresenceInfo::ParseXML(status.m_notify.GetEntityBody(), infoList, error)) {
+    status.m_response.SetEntityBody(error);
     return;
+  }
 
   // send 200 OK now, and flag caller NOT to send the response
   status.SendResponse(SIP_PDU::Successful_OK);
 
-  SIPPresenceInfo info(SIPPresenceInfo::Unchanged);
-  SetPIDFEntity(info.m_target);
-
-  PXMLElement * rootElement = xml.GetRootElement();
-  if (!info.m_entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
-    PTRACE(1, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << "\" for " << m_aor);
-    return;
-  }
-
-  PXMLElement * noteElement = NULL;
-
-  PCaselessString pidf;
-  PXMLElement * tupleElement = rootElement->GetElement("tuple");
-  if (tupleElement != NULL) {
-    PXMLElement * statusElement = tupleElement->GetElement("status");
-    if (statusElement != NULL) {
-      PXMLElement * basicElement = statusElement->GetElement("basic");
-      if (basicElement != NULL) {
-        PCaselessString value = basicElement->GetData();
-        if (value == "open")
-          info.m_state = SIPPresenceInfo::Available;
-        else if (value == "closed")
-          info.m_state = SIPPresenceInfo::NoPresence;
-      }
-
-      noteElement = statusElement->GetElement("note");
-    }
-
-    if (noteElement == NULL)
-      noteElement = tupleElement->GetElement("note");
-
-    PXMLElement * contactElement = tupleElement->GetElement("contact");
-    if (contactElement != NULL)
-      info.m_contact = contactElement->GetData();
-  }
-
-  if (noteElement == NULL)
-    noteElement = rootElement->GetElement("note");
-  if (noteElement != NULL)
-    info.m_note = noteElement->GetData();
-
-  static PCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
-  static PCaselessString dm  ("urn:ietf:params:xml:ns:pidf:data-model|");
-  static const int rpidLen = rpid.GetLength();
-
-  PXMLElement * person = rootElement->GetElement(dm + "person");
-  if (person != NULL) {
-    PXMLElement * activities = person->GetElement(rpid + "activities");
-    if (activities != NULL) {
-      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-        if (!activities->GetElement(i)->IsElement())
-          continue;
-        PString name(((PXMLElement *)activities->GetElement(i))->GetName());
-        if (name.GetLength() < (rpidLen+1) || !(name.Left(rpidLen) *= rpid) || (name[rpidLen-1] != '|'))
-          continue;
-        SIPPresenceInfo::State state = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpidLen));
-        if (state == SIPPresenceInfo::NoPresence)
-          continue;
-        if ((info.m_activities.GetSize() == 0) && (info.m_state == SIPPresenceInfo::Available))
-          info.m_state = state;
-        else
-          info.m_activities.AppendString(OpalPresenceInfo::AsString(state));
-      }
-    }
-  }
-
-  PTRACE(3, "SIPPres\t'" << info.m_entity << "' request for presence of '" << m_aor << "' is " << info.m_state);
-
   m_notificationMutex.Wait();
-  OnPresenceChange(info);
+  for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
+    SetPIDFEntity(it->m_target);
+    PTRACE(3, "SIPPres\t'" << it->m_entity << "' request for presence of '" << m_aor << "' is " << it->m_state);
+    OnPresenceChange(*it);
+  }
   m_notificationMutex.Signal();
 }
 
@@ -558,6 +442,13 @@ void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, cons
 
 void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
 {
+  // Check for empty body, if so then is OK, just a ping ...
+  if (status.m_notify.GetEntityBody().IsEmpty()) {
+    PTRACE(4, "SIPPres\tEmpty body on presence watcher NOTIFY, ignoring");
+    status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
+    return;
+  }
+
   static PXML::ValidationInfo const WatcherValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id"  },
     { PXML::RequiredAttributeWithValue, "status",  { "pending\nactive\nwaiting\nterminated" } },
@@ -584,8 +475,12 @@ void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::No
   };
 
   PXML xml;
-  if (!ParseAndValidateXML(status, xml, WatcherInfoValidation))
+  PString error;
+  if (!xml.LoadAndValidate(status.m_notify.GetEntityBody(), WatcherInfoValidation, error, PXML::WithNS)) {
+    status.m_response.SetEntityBody(error);
+    PTRACE(3, "SIPPres\tError parsing XML in presence watcher NOTIFY: " << error);
     return;
+  }
 
   // send 200 OK now, and flag caller NOT to send the response
   status.SendResponse(SIP_PDU::Successful_OK);
@@ -663,7 +558,8 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
-  SIPPresenceInfo sipPresence(GetID());
+  SIPPresenceInfo sipPresence;
+  sipPresence.m_personId = GetID();
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   if (m_subProtocol != e_PeerToPeer)

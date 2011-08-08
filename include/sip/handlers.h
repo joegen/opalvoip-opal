@@ -452,7 +452,6 @@ class SIPPresenceInfo : public OpalPresenceInfo
 {
 public:
   SIPPresenceInfo(
-    const PString & personId = PString::Empty(),
     State state = Unchanged
   );
 
@@ -467,6 +466,14 @@ public:
   PString m_presenceAgent;
 
   PString AsXML() const;
+
+#if P_EXPAT
+  static bool ParseXML(
+    const PString & body,
+    list<SIPPresenceInfo> & info,
+    PString & error
+  );
+#endif
 
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
