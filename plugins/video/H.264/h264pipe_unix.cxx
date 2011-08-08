@@ -27,6 +27,8 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include "shared/rtpframe.h"
 #include "h264pipe_unix.h"
@@ -35,18 +37,16 @@
 
 #define HAVE_MKFIFO 1
 #define GPL_PROCESS_FILENAME "h264_video_pwplugin_helper"
-#define DIR_SEPERATOR "/"
 #define DIR_TOKENISER ":"
+
 
 H264EncCtx::H264EncCtx()
 {
-  width  = 0;
-  height = 0;
-  size = 0;
   startNewFrame = true;
   loaded = false;  
   pipesCreated = false;
-  pipesOpened = false;
+  m_pipeToProcess = m_pipeFromProcess = -1;
+  m_pid = -1;
 }
 
 H264EncCtx::~H264EncCtx()
@@ -62,126 +62,97 @@ bool H264EncCtx::Load(void * instance)
   snprintf ( dlName, sizeof(dlName), "/tmp/x264-dl-%d-%p", getpid(), instance);
   snprintf ( ulName, sizeof(ulName), "/tmp/x264-ul-%d-%p", getpid(), instance);
   if (!createPipes()) {
-  
     closeAndRemovePipes(); 
     return false;
   }
   pipesCreated = true;  
 
   if (!findGplProcess()) { 
-
-    PTRACE(1, "x264", "IPC\tPP: Couldn't find GPL process executable: " << GPL_PROCESS_FILENAME);
+    PTRACE(1, "x264", "Couldn't find GPL process executable: " << GPL_PROCESS_FILENAME);
     closeAndRemovePipes(); 
     return false;
   }
     // Check if file is executable!!!!
-  int pid = fork();
-
-  if(pid == 0) 
-
-    execGplProcess();
-
-  else if(pid < 0) {
-
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to fork");
+  m_pid = fork();
+  if (m_pid < 0) {
+    PTRACE(1, "x264", "Error when trying to fork");
     closeAndRemovePipes(); 
     return false;
   }
 
-  dlStream.open(dlName, std::ios::binary);
-  if (dlStream.fail()) { 
+  if (m_pid == 0) {
+    execGplProcess(); // Doesn't return
+    return false;
+  }
 
-    PTRACE(1, "x264", "IPC\tPP: Error when opening DL named pipe");
+  m_pipeToProcess = open(dlName, O_WRONLY);
+  if (m_pipeToProcess < 0) { 
+    PTRACE(1, "x264", "Error when opening DL named pipe - " << strerror(errno));
     closeAndRemovePipes(); 
     return false;
   }
-  ulStream.open(ulName, std::ios::binary);
-  if (ulStream.fail()) { 
 
-    PTRACE(1, "x264", "IPC\tPP: Error when opening UL named pipe");
+  m_pipeFromProcess = open(ulName, O_RDONLY);
+  if (m_pipeFromProcess < 0) { 
+    PTRACE(1, "x264", "Error when opening UL named pipe - " << strerror(errno));
     closeAndRemovePipes(); 
     return false;
   }
-  pipesOpened = true;
   
   unsigned msg = INIT;
-  unsigned status;
-  writeStream((char*) &msg, sizeof(msg));
-  flushStream();
-  readStream((char*) &msg, sizeof(msg));
-  readStream((char*) &status, sizeof(status));
-
-  if (status == 0) {
-    PTRACE(1, "x264", "IPC\tPP: GPL Process returned failure on initialization - plugin disabled");
-    closeAndRemovePipes(); 
-    return false;
+  unsigned status = 0;
+  if (writePipe(&msg, sizeof(msg)) &&
+      readPipe(&msg, sizeof(msg)) &&
+      readPipe(&status, sizeof(status)) &&
+      status != 0) {
+    PTRACE(1, "x264", "Successfully forked child process "<< m_pid << " and established communication");
+    loaded = true;  
+    return true;
   }
 
-  PTRACE(1, "x264", "IPC\tPP: Successfully forked child process "<<  pid << " and established communication");
-  loaded = true;  
-  return true;
+  PTRACE(1, "x264", "GPL Process returned failure on initialization - plugin disabled");
+  closeAndRemovePipes(); 
+  return false;
 }
 
-void H264EncCtx::call(unsigned msg)
+bool H264EncCtx::call(unsigned msg)
 {
   if (msg == H264ENCODERCONTEXT_CREATE) 
     startNewFrame = true;
-  writeStream((char*) &msg, sizeof(msg));
-  flushStream();
-  readStream((char*) &msg, sizeof(msg));
+  return writePipe(&msg, sizeof(msg)) && readPipe(&msg, sizeof(msg));
 }
 
-void H264EncCtx::call(unsigned msg, unsigned value)
+bool H264EncCtx::call(unsigned msg, unsigned value)
 {
-  switch (msg) {
-    case SET_FRAME_WIDTH:  width  = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
-    case SET_FRAME_HEIGHT: height = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
-   }
-  
-  writeStream((char*) &msg, sizeof(msg));
-  writeStream((char*) &value, sizeof(value));
-  flushStream();
-  readStream((char*) &msg, sizeof(msg));
+  return writePipe(&msg, sizeof(msg)) && writePipe(&value, sizeof(value)) && readPipe(&msg, sizeof(msg));
 }
      
-void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret)
+bool H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret)
 {
   if (startNewFrame) {
-
-    writeStream((char*) &msg, sizeof(msg));
-    if (size) {
-      writeStream((char*) &size, sizeof(size));
-      writeStream((char*) src, size);
-      writeStream((char*) &headerLen, sizeof(headerLen));
-      writeStream((char*) dst, headerLen);
-      writeStream((char*) &flags, sizeof(flags) );
-    }
-    else {
-      writeStream((char*) &srcLen, sizeof(srcLen));
-      writeStream((char*) src, srcLen);
-      writeStream((char*) &headerLen, sizeof(headerLen));
-      writeStream((char*) dst, headerLen);
-      writeStream((char*) &flags, sizeof(flags) );
-    }
+    if (!writePipe(&msg, sizeof(msg)) ||
+        !writePipe(&srcLen, sizeof(srcLen)) ||
+        !writePipe(src, srcLen) ||
+        !writePipe(&headerLen, sizeof(headerLen)) ||
+        !writePipe(dst, headerLen) ||
+        !writePipe(&flags, sizeof(flags)))
+      return false;
   }
   else {
-  
     msg = ENCODE_FRAMES_BUFFERED;
-    writeStream((char*) &msg, sizeof(msg));
+    if (!writePipe(&msg, sizeof(msg)))
+      return false;
   }
   
-  flushStream();
-  
-  readStream((char*) &msg, sizeof(msg));
-  readStream((char*) &dstLen, sizeof(dstLen));
-  readStream((char*) dst, dstLen);
-  readStream((char*) &flags, sizeof(flags));
-  readStream((char*) &ret, sizeof(ret));
+  if (!readPipe(&msg, sizeof(msg)) ||
+      !readPipe(&dstLen, sizeof(dstLen)) ||
+      !readPipe(dst, dstLen) ||
+      !readPipe(&flags, sizeof(flags)) ||
+      !readPipe(&ret, sizeof(ret)))
+    return false;
 
-  if (flags & 1) 
-    startNewFrame = true;
-   else
-    startNewFrame = false;
+  startNewFrame = (flags & 1) != 0;
+  return true;
 }
 
 bool H264EncCtx::createPipes()
@@ -189,24 +160,20 @@ bool H264EncCtx::createPipes()
   umask(0);
 #ifdef HAVE_MKFIFO
   if (mkfifo((const char*) &dlName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
-
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to create DL named pipe");
+    PTRACE(1, "x264", "Error when trying to create DL named pipe");
     return false;
   }
   if (mkfifo((const char*) &ulName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
-
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to create UL named pipe");
+    PTRACE(1, "x264", "Error when trying to create UL named pipe");
     return false;
   }
 #else
   if (mknod((const char*) &dlName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
-
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to create named pipe");
+    PTRACE(1, "x264", "Error when trying to create named pipe");
     return false;
   }
   if (mknod((const char*) &ulName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
-
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to create named pipe");
+    PTRACE(1, "x264", "Error when trying to create named pipe");
     return false;
   }
 #endif /* HAVE_MKFIFO */
@@ -215,38 +182,47 @@ bool H264EncCtx::createPipes()
 
 void H264EncCtx::closeAndRemovePipes()
 {
-  if (pipesOpened) {
-    dlStream.close();
-    if (dlStream.fail()) { PTRACE(1, "x264", "IPC\tPP: Error when closing DL named pipe"); }
-    ulStream.close();
-    if (ulStream.fail()) { PTRACE(1, "x264", "IPC\tPP: Error when closing UL named pipe"); }  
-    pipesOpened = false;
+  if (m_pipeToProcess >= 0) {
+    close(m_pipeToProcess);
+    m_pipeToProcess = -1;
   }
+
+  if (m_pipeFromProcess >= 0) {
+    close(m_pipeFromProcess);
+    m_pipeFromProcess = -1;
+  }
+
   if (pipesCreated) {
-    if (std::remove((const char*) &ulName) == -1) PTRACE(1, "x264", "IPC\tPP: Error when trying to remove UL named pipe - " << strerror(errno));
-    if (std::remove((const char*) &dlName) == -1) PTRACE(1, "x264", "IPC\tPP: Error when trying to remove DL named pipe - " << strerror(errno));
+    if (std::remove((const char*) &ulName) == -1)
+      PTRACE(1, "x264", "Error when trying to remove UL named pipe - " << strerror(errno));
+    if (std::remove((const char*) &dlName) == -1)
+      PTRACE(1, "x264", "Error when trying to remove DL named pipe - " << strerror(errno));
     pipesCreated = false;
   }
 }
 
-void H264EncCtx::readStream (char* data, unsigned bytes)
+bool H264EncCtx::readPipe(void* data, unsigned bytes)
 {
-  ulStream.read(data, bytes);
-  if (ulStream.fail()) { PTRACE(1, "x264", "IPC\tPP: Failure on reading - terminating"); closeAndRemovePipes();      }
-  if (ulStream.bad())  { PTRACE(1, "x264", "IPC\tPP: Bad flag set on reading - terminating"); closeAndRemovePipes(); }
-  if (ulStream.eof())  { PTRACE(1, "x264", "IPC\tPP: Received EOF - terminating"); closeAndRemovePipes();            }
+  int result = read(m_pipeFromProcess, data, bytes);
+  if (result == bytes)
+    return true;
+
+  PTRACE(1, "x264", "Error reading pipe (" << result << ") - " << strerror(errno));
+  if (kill(m_pid, 0) < 0)
+    PTRACE(1, "x264", "Sub-process no longer running!");
+  return false;
 }
 
-void H264EncCtx::writeStream (const char* data, unsigned bytes)
+bool H264EncCtx::writePipe(const void * data, unsigned bytes)
 {
-  dlStream.write(data, bytes);
-  if (dlStream.bad())  { PTRACE(1, "x264", "IPC\tPP: Bad flag set on writing - terminating"); closeAndRemovePipes(); }
-}
+  int result = write(m_pipeToProcess, data, bytes);
+  if (result == bytes)
+    return true;
 
-void H264EncCtx::flushStream ()
-{
-  dlStream.flush();
-  if (dlStream.bad())  { PTRACE(1, "x264", "IPC\tPP: Bad flag set on flushing - terminating"); closeAndRemovePipes(); }
+  PTRACE(1, "x264", "Error writing pipe (" << result << ") - " << strerror(errno));
+  if (kill(m_pid, 0) < 0)
+    PTRACE(1, "x264", "Sub-process no longer running!");
+  return false;
 }
 
 bool H264EncCtx::findGplProcess()
@@ -265,42 +241,40 @@ bool H264EncCtx::findGplProcess()
     }
   }
 
+  return checkGplProcessExists(".") ||
 #ifdef LIB_DIR
-  if (checkGplProcessExists(LIB_DIR)) 
-    return true;
+         checkGplProcessExists(LIB_DIR) ||
 #endif
-
-  if (checkGplProcessExists("/usr/lib")) 
-    return true;
-
-  if (checkGplProcessExists("/usr/local/lib")) 
-    return true;
-
-  return checkGplProcessExists(".");
+         checkGplProcessExists("/usr/lib") ||
+         checkGplProcessExists("/usr/local/lib");
 }
 
 bool H264EncCtx::checkGplProcessExists (const char * dir)
 {
-  struct stat buffer;
   memset(gplProcess, 0, sizeof(gplProcess));
-  strncpy(gplProcess, dir, sizeof(gplProcess));
 
-  if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
-    strcat(gplProcess, DIR_SEPERATOR);
-  strcat(gplProcess, VC_PLUGIN_DIR);
-
-  if (gplProcess[strlen(gplProcess)-1] != DIR_SEPERATOR[0]) 
-    strcat(gplProcess, DIR_SEPERATOR);
-  strcat(gplProcess, GPL_PROCESS_FILENAME);
-
-  if (stat(gplProcess, &buffer ) ) { 
-
-    PTRACE(4, "x264", "IPC\tPP: Couldn't find GPL process executable in " << gplProcess);
+  size_t dirlen = strlen(dir);
+  if (dirlen > sizeof(gplProcess)-strlen(VC_PLUGIN_DIR)-strlen(GPL_PROCESS_FILENAME)) {
+    PTRACE(1, "x264", "Directory too long");
     return false;
   }
 
-  PTRACE(4, "x264", "IPC\tPP: Found GPL process executable in  " << gplProcess);
+  strcpy(gplProcess, dir);
+  if (gplProcess[dirlen-1] != '/')
+    gplProcess[dirlen++] = '/';
+  strcat(gplProcess, GPL_PROCESS_FILENAME);
 
+  if (access(gplProcess, R_OK|X_OK) < 0) {
+    strcpy(&gplProcess[dirlen], VC_PLUGIN_DIR);
+    strcat(gplProcess, "/");
+    strcat(gplProcess, GPL_PROCESS_FILENAME);
+    if (access(gplProcess, R_OK|X_OK) ) { 
+      PTRACE(4, "x264", "Couldn't find GPL process executable in " << gplProcess);
+      return false;
+    }
+  }
+
+  PTRACE(4, "x264", "Found GPL process executable in  " << gplProcess);
   return true;
 }
 
@@ -310,7 +284,7 @@ void H264EncCtx::execGplProcess()
   unsigned status = 0;
   if (execl(gplProcess,"h264_video_pwplugin_helper", dlName,ulName, NULL) == -1) {
 
-    PTRACE(1, "x264", "IPC\tPP: Error when trying to execute GPL process  " << gplProcess << " - " << strerror(errno));
+    PTRACE(1, "x264", "Error when trying to execute GPL process  " << gplProcess << " - " << strerror(errno));
     cpDLStream.open(dlName, std::ios::binary);
     if (cpDLStream.fail()) { PTRACE(1, "x264", "IPC\tCP: Error when opening DL named pipe"); exit (1); }
     cpULStream.open(ulName,std::ios::binary);

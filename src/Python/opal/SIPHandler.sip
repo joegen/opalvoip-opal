@@ -225,26 +225,22 @@ class SIPMessageHandler : SIPHandler
 {
 public:
   SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);
-                    
-   virtual void SetBody(const PString & body);
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed (SIP_PDU::StatusCodes);
-  virtual void OnExpireTimeout(PTimer &, INT);
+
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  const PString & GetLocalAddress() const;
-  const PString & GetIdentifier() const;
+  void UpdateParameters(const SIPMessage::Params & params);
 };
 
 class SIPOptionsHandler : SIPHandler
 {
 	public:
 	  SIPOptionsHandler(SIPEndPoint & ep, const SIPOptions::Params & params);
-	  virtual void SetBody(const PString & body);
+
 	  virtual SIPTransaction * CreateTransaction (OpalTransport &);
 	  virtual void OnFailed(SIP_PDU::StatusCodes);
 	  virtual void OnFailed(const SIP_PDU & response /Out/);
-	  virtual void OnExpireTimeout(PTimer &, INT);
 	  virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 };
 
