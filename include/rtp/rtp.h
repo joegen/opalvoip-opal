@@ -1046,11 +1046,13 @@ class RTP_Session : public PObject
     PTimeInterval oobTimeStampBase;            // base time for oob timestamp
 
     // Statistics
+    PTime firstPacketSent;
     DWORD packetsSent;
     DWORD rtcpPacketsSent;
     DWORD octetsSent;
+    PTime firstPacketReceived;
     DWORD packetsReceived;
-    DWORD srPacketsReceived;
+    DWORD senderReportsReceived;
     DWORD octetsReceived;
     DWORD packetsLost;
     DWORD packetsLostByRemote;
