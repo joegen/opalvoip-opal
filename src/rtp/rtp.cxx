@@ -496,6 +496,10 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
   , reportTimeInterval(0, 12)  // Seconds
+  , lastSRTimestamp(0)
+  , lastSRReceiveTime(0)
+  , firstPacketSent(0)
+  , firstPacketReceived(0)
   , remoteAddress(0)
   , remoteTransmitAddress(0)
   , remoteIsNAT(false)
@@ -521,6 +525,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   expectedSequenceNumber = 0;
   lastRRSequenceNumber = 0;
   resequenceOutOfOrderPackets = true;
+  senderReportsReceived = 0;
   consecutiveOutOfOrderPackets = 0;
 
   ClearStatistics();
@@ -560,17 +565,24 @@ OpalRTPSession::~OpalRTPSession()
 {
   Close();
 
+#if PTRACING
+  PTime now;
+#endif
   PTRACE_IF(3, packetsSent != 0 || packetsReceived != 0,
       "RTP\tSession " << sessionID << ", final statistics:\n"
+      "    firstPacketSent    = " << firstPacketSent << "\n"
       "    packetsSent        = " << packetsSent << "\n"
       "    octetsSent         = " << octetsSent << "\n"
+      "    bitRateSent        = " << (8*octetsSent/(now-firstPacketSent).GetSeconds()) << "\n"
       "    averageSendTime    = " << averageSendTime << "\n"
       "    maximumSendTime    = " << maximumSendTime << "\n"
       "    minimumSendTime    = " << minimumSendTime << "\n"
       "    packetsLostByRemote= " << packetsLostByRemote << "\n"
       "    jitterLevelOnRemote= " << jitterLevelOnRemote << "\n"
+      "    firstPacketReceived= " << firstPacketReceived << "\n"
       "    packetsReceived    = " << packetsReceived << "\n"
       "    octetsReceived     = " << octetsReceived << "\n"
+      "    bitRateReceived    = " << (8*octetsReceived/(now-firstPacketReceived).GetSeconds()) << "\n"
       "    packetsLost        = " << packetsLost << "\n"
       "    packetsTooLate     = " << GetPacketsTooLate() << "\n"
       "    packetOverruns     = " << GetPacketOverruns() << "\n"
@@ -580,15 +592,17 @@ OpalRTPSession::~OpalRTPSession()
       "    minimumReceiveTime = " << minimumReceiveTime << "\n"
       "    averageJitter      = " << GetAvgJitterTime() << "\n"
       "    maximumJitter      = " << GetMaxJitterTime()
-     );
+   );
 }
 
 
 void OpalRTPSession::ClearStatistics()
 {
+  firstPacketSent.SetTimestamp(0);
   packetsSent = 0;
   rtcpPacketsSent = 0;
   octetsSent = 0;
+  firstPacketReceived.SetTimestamp(0);
   packetsReceived = 0;
   octetsReceived = 0;
   packetsLost = 0;
@@ -818,7 +832,7 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 
   receiver.jitter = jitterLevel >> JitterRoundingGuardBits; // Allow for rounding protection bits
   
-  if (srPacketsReceived > 0) {
+  if (senderReportsReceived > 0) {
     // Calculate the last SR timestamp
     PUInt32b lsr_ntp_sec  = (DWORD)(lastSRTimestamp.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
     PUInt32b lsr_ntp_frac = lastSRTimestamp.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
@@ -1004,7 +1018,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
       oobTimeStampOutBase         = frame.GetTimestamp();
       oobTimeStampBase            = PTimer::Tick();
     }
-    
+
+    firstPacketSent.SetCurrentTime();
+
     // display stuff
     PTRACE(3, "RTP\tSession " << sessionID << ", first sent data:"
               " ver=" << frame.GetVersion()
@@ -1113,6 +1129,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 
   // Check packet sequence numbers
   if (packetsReceived == 0) {
+    firstPacketReceived.SetCurrentTime();
     PTRACE(3, "RTP\tSession " << sessionID << ", first receive data:"
               " ver=" << frame.GetVersion()
            << " pt=" << frame.GetPayloadType()
@@ -1507,7 +1524,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           // Save the receive time
           lastSRTimestamp = sender.realTimestamp;
           lastSRReceiveTime.SetCurrentTime();
-          srPacketsReceived++;
+          senderReportsReceived++;
 
           sender.rtpTimestamp = sr.rtp_ts;
           sender.packetsSent = sr.psent;
