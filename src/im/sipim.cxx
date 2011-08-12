@@ -51,7 +51,11 @@
 
 #if OPAL_HAS_SIPIM
 
-const char SIP_IM[] = "sip-im";
+const char SIP_IM[] = "sip-im"; // RFC 3428
+
+static PConstCaselessString const ComposingMimeType("application/im-iscomposing+xml");
+static PConstCaselessString const DispositionMimeType("message/imdn+xml");
+
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -252,219 +256,340 @@ static PFactory<OpalIMContext>::Worker<OpalSIPIMContext> static_OpalSIPContext("
 
 OpalSIPIMContext::OpalSIPIMContext()
 {
-  m_attributes.Set("rx-composition-indication-state",   "idle");
-  m_attributes.Set("tx-composition-indication-state",   "idle");
-  m_attributes.Set("acceptable-content-types",          "text/plain\ntext/html\napplication/im-iscomposing+xml");
-  m_rxCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionTimerExpire));
-  m_txCompositionTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionTimerExpire));
-  m_txIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxIdleTimerExpire));
+  m_attributes.Set("acceptable-content-types", "text/plain\ntext/html\napplication/im-iscomposing+xml");
+  m_rxCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionIdleTimer));
+  m_txCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionIdleTimer));
 }
 
-void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, OpalIM & message)
+
+void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
+                                          const SIPMessage::Params & params,
+                                          SIP_PDU::StatusCodes reason)
 {
-  params.m_localAddress    = message.m_from.AsString();
+  // RFC3428
+  PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(
+                  endpoint.GetManager().GetIMManager().FindContextByIdWithLock(params.m_id));
+  if (context == NULL) {
+    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM context for \"" << params.m_id << '"');
+    return;
+  }
+
+  OpalIMContext::DispositionInfo result;
+  result.m_messageId = params.m_messageId;
+
+  switch (reason) {
+    case SIP_PDU::Failure_RequestTimeout:
+      result.m_disposition = TransmissionTimeout;
+      break;
+    case SIP_PDU::Failure_TemporarilyUnavailable:
+      result.m_disposition = DestinationUnavailable;
+      break;
+    default:
+      switch (reason/100) {
+        case 2:
+          result.m_disposition = DispositionAccepted;
+          break;
+        default:
+          result.m_disposition = GenericError;
+          break;
+      }
+  }
+
+  context->InternalOnMessageSent(result);
+}
+
+
+void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
+                                         SIPConnection * connection,
+                                         OpalTransport & transport,
+                                         SIP_PDU & pdu)
+{
+  // RFC3428
+  const SIPMIMEInfo & mime  = pdu.GetMIME();
+
+  OpalIMContext::MessageDisposition status;
+  PString errorInfo;
+  {
+    SIPURL to(mime.GetTo());
+    SIPURL from(mime.GetFrom());
+
+    OpalIM message;
+    message.m_conversationId = mime.GetCallID();
+    message.m_to             = to;
+    message.m_from           = from;
+    message.m_toAddr         = transport.GetLastReceivedAddress();
+    message.m_fromAddr       = transport.GetRemoteAddress();
+    message.m_fromName       = from.GetDisplayName();
+    message.m_bodies.SetAt(mime.GetContentType(), pdu.GetEntityBody());
+    status = endpoint.GetManager().GetIMManager().OnMessageReceived(message, connection, errorInfo);
+  }
+
+  SIPResponse * response = new SIPResponse(endpoint, SIP_PDU::Failure_BadRequest);
+
+  switch (status ) {
+    case OpalIMContext::DispositionAccepted:
+    case OpalIMContext::DispositionPending:
+      response->SetStatusCode(SIP_PDU::Successful_Accepted);
+      break;
+
+    case OpalIMContext::UnacceptableContent:
+      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+      response->GetMIME().SetAccept(errorInfo);
+      break;
+
+    default:
+      if (status < DispositionErrors)
+        response->SetStatusCode(SIP_PDU::Successful_OK);
+      break;
+  }
+
+  // After this, response is owned by transaction layer and will be deleted there
+  response->Send(transport, pdu);
+}
+
+
+void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
+{
+  SIPURL from = message.m_from;
+  from.SetDisplayName(m_localName);
+
+  params.m_localAddress    = from.AsQuotedString();
   params.m_addressOfRecord = params.m_localAddress;
   params.m_remoteAddress   = message.m_to.AsString();
   params.m_id              = message.m_conversationId;
   params.m_messageId       = message.m_messageId;
 
-  switch (message.m_type) {
-    case OpalIM::CompositionIndication_Idle:    // RFC 3994
-    case OpalIM::CompositionIndication_Active:  // RFC 3994
-      {
-        bool toActive = message.m_type == OpalIM::CompositionIndication_Active;
-        params.m_contentType = "application/im-iscomposing+xml";
-        params.m_body = "<?xml version='1.0' encoding='UTF-8'?>\n"
-                        "<isComposing xmlns='urn:ietf:params:xml:ns:im-iscomposing'\n"
-                        "  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\n";
+  if (message.m_bodies.Contains(PMIMEInfo::TextPlain())) {
+    params.m_contentType = PMIMEInfo::TextPlain();
+    params.m_body        = message.m_bodies[PMIMEInfo::TextPlain()];
+  }
+  else {
+    params.m_contentType = message.m_bodies.GetKeyAt(0);
+    params.m_body        = message.m_bodies.GetDataAt(0);
+  }
 
-        params.m_body += PString("    <state>") + (toActive ? "active" : "idle") + "</state>\n";
-
-        // DO NOT ENABLE THIS BECAUSE XLite barfs on it
-        //params.m_body += PString("    <lastactive>") + PTime().AsString(PTime::RFC3339) + "</lastactive>\n";
-
-        params.m_body +=         "    <refresh>60</refresh>\n"
-                         "</isComposing>";
-      }
-      break;
-
-    //case OpalIM::Disposition:  // RFC 5438
-    //  break;
-
-    case OpalIM::Text:
-    default:
-      params.m_contentType = message.m_mimeType;
-      params.m_body        = message.m_body;
-      break;
+  if (params.m_contentType != ComposingMimeType) {
+      m_txCompositionIdleTimeout.Stop(true);
+      m_txCompositionState = CompositionIndicationIdle();
   }
 }
 
 
-OpalIMContext::SentStatus OpalSIPIMContext::InternalSendOutsideCall(OpalIM * message)
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendOutsideCall(OpalIM & message)
 {
-  ResetTimers(*message);
-
   SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
   if (ep == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM without SIP endpoint");
-    return SentNoTransport;
+    return ConversationClosed;
   }
 
   SIPMessage::Params params;
-  PopulateParams(params, *message);
+  PopulateParams(params, message);
 
-  return ep->SendMESSAGE(params) ? SentPending : SentNoTransport;
+  return ep->SendMESSAGE(params) ? DispositionPending : TransportFailure;
 }
 
 
-OpalIMContext::SentStatus OpalSIPIMContext::InternalSendInsideCall(OpalIM * message)
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendInsideCall(OpalIM & message)
 {
-  ResetTimers(*message);
-
   PSafePtr<SIPConnection> conn = PSafePtrCast<OpalConnection, SIPConnection>(m_connection);
   if (conn == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM on non-SIP connection");
-    return SentFailedGeneric;
+    return ConversationClosed;
   }
 
   SIPMessage::Params params;
-  PopulateParams(params, *message);
+  PopulateParams(params, message);
 
   PSafePtr<SIPTransaction> transaction = new SIPMessage(*conn, params);
-  return transaction->Start() ? SentOK : SentFailedGeneric;  
+  return transaction->Start() ? DispositionPending : TransportFailure;  
 }
 
 
-void OpalSIPIMContext::ResetTimers(OpalIM & message)
+#if P_EXPAT
+
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM & message)
 {
-  if (message.m_type == OpalIM::Text) {
-    m_txCompositionTimeout.Stop(true);
-    m_txIdleTimeout.Stop(true);
-    m_attributes.Set("tx-composition-indication-state", "idle");
+  //RFC3994
+  static PXML::ValidationInfo const CompositionIndicationValidation[] = {
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:im-iscomposing" },
+    { PXML::ElementName,                "isComposing", },
+
+    { PXML::OptionalElement,                   "state"       },
+    { PXML::OptionalElement,                   "lastactive"  },
+    { PXML::OptionalElement,                   "contenttype" },
+    { PXML::OptionalElementWithBodyMatchingEx, "refresh",    { "[0-9]*" } },
+
+    { PXML::EndOfValidationList }
+  };
+
+  PXML xml;
+  PString error;
+  if (!xml.LoadAndValidate(message.m_bodies[ComposingMimeType], CompositionIndicationValidation, error, PXML::WithNS)) {
+    PTRACE(2, "OpalSIPIMContext\tXML error: " << error);
+    return InvalidContent;
   }
+
+  PCaselessString newState;
+
+  PXMLElement * element = xml.GetRootElement()->GetElement("state");
+  if (element != NULL)
+    newState = element->GetData().Trim();
+
+  if (newState == m_rxCompositionState) {
+    PTRACE(3, "OpalSIPIMContext\tComposition indication refreshed for \"" << newState << '"');
+    return DeliveryOK;
+  }
+
+  m_rxCompositionState = newState;
+
+  if (newState == CompositionIndicationIdle())
+    m_rxCompositionIdleTimeout.Stop(true);
+  else {
+    int timeout;
+    if ((element = xml.GetRootElement()->GetElement("refresh")) == NULL)
+      timeout = 15;
+    else {
+      timeout = element->GetData().AsInteger();
+      if (timeout < 15)
+        timeout = 15;
+    }
+
+    m_rxCompositionIdleTimeout.SetInterval(0, timeout);
+  }
+
+  OnCompositionIndication(newState);
+
+  return DeliveryOK;
 }
 
-#if P_EXPAT
 
-static PXML::ValidationInfo const CompositionIndicationValidation[] = {
-  { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:im-iscomposing" },
-  { PXML::ElementName,                "isComposing", },
-
-  { PXML::OptionalElement,                   "state"       },
-  { PXML::OptionalElement,                   "lastactive"  },
-  { PXML::OptionalElement,                   "contenttype" },
-  { PXML::OptionalElementWithBodyMatchingEx, "refresh",    { "[0-9]*" } },
-
-  { PXML::EndOfValidationList }
-};
-
-#endif
-
-OpalIMContext::SentStatus OpalSIPIMContext::OnIncomingIM(OpalIM & message)
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const OpalIM & message)
 {
-  if (message.m_mimeType == "application/im-iscomposing+xml") {
-#if P_EXPAT
-    PXML xml;
-    PString error;
-    if (!xml.LoadAndValidate(message.m_body, CompositionIndicationValidation, error, PXML::WithNS)) {
-      PTRACE(2, "OpalSIPIMContext\tXML error: " << error);
-      return SentInvalidContent;
-    }
-    PString state = "idle";
-    int timeout = 15;
+  //RFC5438
+  static PXML::ValidationInfo const DispositionValidation[] = {
+    { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:imdn" },
+    { PXML::ElementName,                "imdn", },
 
-    PXMLElement * element = xml.GetRootElement()->GetElement("state");
-    if ((element != NULL) && (element->GetData().Trim() == "active"))
-      state = "active";
+    { PXML::RequiredElement,            "message-id" },
+    { PXML::RequiredElement,            "datetime"   },
+    { PXML::OptionalElement,            "recipient-uri" },
+    { PXML::OptionalElement,            "original-recipient-uri" },
+    { PXML::OptionalElement,            "subject" },
 
-    element = xml.GetRootElement()->GetElement("refresh");
-    if (element != NULL)
-      timeout = element->GetData().Trim().AsInteger();
+    { PXML::EndOfValidationList }
+  };
 
-    if (state == m_attributes.Get("rx-composition-indication-state")) {
-      PTRACE(2, "OpalSIPIMContext\tcomposition indication refreshed");
-      return SentOK;
-    }
-    m_attributes.Set("rx-composition-indication-state", state);
-
-    if (state == "active")
-      m_rxCompositionTimeout = timeout * 1000;
-    else
-      m_rxCompositionTimeout.Stop(true);
-
-    OnCompositionIndicationChanged(state);
-
-    return SentOK;
-#else
-    PTRACE(2, "OpalSIPIMContext\tunsupported content type");
-    return SentInvalidContent;
-#endif
+  PXML xml;
+  PString error;
+  if (!xml.LoadAndValidate(message.m_bodies[DispositionMimeType], DispositionValidation, error, PXML::WithNS)) {
+    PTRACE(2, "OpalSIPIMContext\tXML error: " << error);
+    return InvalidContent;
   }
+
+  PXMLElement * rootElement = xml.GetRootElement();
+
+  DispositionInfo info;
+
+  PXMLElement * element = rootElement->GetElement("message-id");
+  if (element != NULL)
+    info.m_messageId = element->GetData().AsUnsigned();
+
+  element = rootElement->GetElement("deliveryNotification");
+  if (element != NULL)
+    info.m_disposition = element->GetElement("delivered") != NULL ? DeliveryOK : DeliveryFailed;
+
+  // Still largely incomplete!!
+
+  OnMessageDisposition(info);
+  return DeliveryOK;
+}
+
+#else // P_EXPAT
+
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM & message)
+{
+  return UnsupportedFeature;
+}
+
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const OpalIM & message)
+{
+  return UnsupportedFeature;
+}
+
+#endif // P_EXPAT
+
+
+OpalIMContext::MessageDisposition OpalSIPIMContext::OnMessageReceived(const OpalIM & message)
+{
+  if (message.m_bodies.Contains(ComposingMimeType))
+    return InternalOnCompositionIndication(message);
+
+  if (message.m_bodies.Contains(DispositionMimeType))
+    return InternalOnDisposition(message);
 
   // receipt of text always indicated idle
-  m_rxCompositionTimeout.Stop(true);
-  OnCompositionIndicationTimeout();
+  m_rxCompositionIdleTimeout.Stop(true);
+  if (m_rxCompositionState != CompositionIndicationIdle())
+    OnCompositionIndication(m_rxCompositionState = CompositionIndicationIdle());
 
   // forward the text
-  return OpalIMContext::OnIncomingIM(message);
-}
-
-void OpalSIPIMContext::OnRxCompositionTimerExpire(PTimer &, INT)
-{
-  m_manager->GetIMManager().OnCompositionIndicationTimeout(GetID());
-}
-
-void OpalSIPIMContext::OnCompositionIndicationTimeout()
-{
-  if (m_attributes.Get("rx-composition-indication-state") != "idle") {
-    m_attributes.Set("rx-composition-indication-state", "idle");
-    OnCompositionIndicationChanged("idle");
-  }
+  return OpalIMContext::OnMessageReceived(message);
 }
 
 
-/*
-OpalIMContext::SentStatus OpalSIPIMContext::SendText(bool active)
+void OpalSIPIMContext::OnRxCompositionIdleTimer(PTimer &, INT)
 {
-  m_txCompositionTimeout.Stop(true);
-  m_txIdleTimeout.Stop(true);
-  m_attributes.Set("tx-composition-indication-state", "idle");
+  OnCompositionIndication(m_rxCompositionState = CompositionIndicationIdle());
 }
-*/
 
-OpalIMContext::SentStatus OpalSIPIMContext::SendCompositionIndication(bool active)
+
+bool OpalSIPIMContext::SendCompositionIndication(const CompositionInfo & info)
 {
-  bool currentState = !(m_attributes.Get("tx-composition-indication-state", "idle") == "idle");
-
-  if (active == currentState)
-    return OpalIMContext::SentOK;
-
-  if (active) {
-    m_attributes.Set("tx-composition-indication-state", "active");
-    m_txCompositionTimeout = 1000 * 60;
-    m_txIdleTimeout = 1000 * 15;
-
+  int refreshTime = 0;
+  if (info.m_state == CompositionIndicationIdle()) {
+    if (m_txCompositionState == CompositionIndicationIdle())
+      return true;
+    m_txCompositionIdleTimeout.Stop(true);
   }
   else {
-    m_txCompositionTimeout.Stop(true);
-    m_txIdleTimeout.Stop(true);
+    m_lastActive.SetCurrentTime();
+
+    if (info.m_state == m_txCompositionState && m_txCompositionRefreshTimeout.IsRunning())
+      return true;
+
+    refreshTime = m_attributes.GetInteger("refresh-timeout", 60);
+    m_txCompositionRefreshTimeout.SetInterval(0, refreshTime);
+    m_txCompositionIdleTimeout.SetInterval(0, m_attributes.GetInteger("idle-timeout", 15));
   }
 
-  return OpalIMContext::SendCompositionIndication(active);
+  m_txCompositionState = info.m_state;
+
+  OpalIM * message = new OpalIM;
+
+  PStringStream body;
+  body << "<?xml version='1.0' encoding='UTF-8'?>\n"
+          "<isComposing xmlns='urn:ietf:params:xml:ns:im-iscomposing'\n"
+          "             xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\n"
+          "  <state>" << info.m_state << "</state>\n"
+          "  <lastactive>" << m_lastActive.AsString(PTime::RFC3339) << "</lastactive>\n";
+  if (!info.m_contentType.IsEmpty())
+    body << "  <contenttype>" << info.m_contentType << "</contenttype>\n";
+  if (refreshTime > 0)
+    body << "  <refresh>" << refreshTime << "</refresh>\n";
+  body << "</isComposing>";
+
+  message->m_bodies.SetAt(ComposingMimeType, body);
+
+  return Send(message) < DispositionErrors;
 }
 
 
-void OpalSIPIMContext::OnTxCompositionTimerExpire(PTimer &, INT)
+void OpalSIPIMContext::OnTxCompositionIdleTimer(PTimer &, INT)
 {
-  OpalIMContext::SendCompositionIndication(true);
-  m_txCompositionTimeout.SetMilliSeconds(1000 * 60);
+  SendCompositionIndication(CompositionIndicationIdle());
 }
 
-void OpalSIPIMContext::OnTxIdleTimerExpire(PTimer &, INT)
-{
-  m_txCompositionTimeout.Stop(true);
-  OpalIMContext::SendCompositionIndication(false);
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 

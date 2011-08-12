@@ -362,40 +362,16 @@ enum {
   ID_ON_HOLD,
   ID_CLEARED,
   ID_STREAMS_CHANGED,
-  ID_RX_MESSAGE,
-  ID_NEW_CONVERSATION,
-  ID_RX_COMP_IND_CHANGED,
-  ID_PRESENCE_MESSAGE,
-  ID_IMPAGE,
-  ID_IMSESSION,
+  ID_ASYNC_NOTIFICATION
 };
 
-DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
 DEFINE_EVENT_TYPE(wxEvtLogMessage)
-
-DECLARE_EVENT_TYPE(wxEvtStreamsChanged, -1)
 DEFINE_EVENT_TYPE(wxEvtStreamsChanged)
-
-DECLARE_EVENT_TYPE(wxEvtRinging, -1)
 DEFINE_EVENT_TYPE(wxEvtRinging)
-
-DECLARE_EVENT_TYPE(wxEvtEstablished, -1)
 DEFINE_EVENT_TYPE(wxEvtEstablished)
-
-DECLARE_EVENT_TYPE(wxEvtOnHold, -1)
 DEFINE_EVENT_TYPE(wxEvtOnHold)
-
-DECLARE_EVENT_TYPE(wxEvtCleared, -1)
 DEFINE_EVENT_TYPE(wxEvtCleared)
-
-DECLARE_EVENT_TYPE(wxEvtRxMessage, -1)
-DEFINE_EVENT_TYPE(wxEvtRxMessage)
-
-DECLARE_EVENT_TYPE(wxCompIndChangedMessage, -1)
-DEFINE_EVENT_TYPE(wxCompIndChangedMessage)
-
-DECLARE_EVENT_TYPE(wxPresenceMessage, -1)
-DEFINE_EVENT_TYPE(wxPresenceMessage)
+DEFINE_EVENT_TYPE(wxEvtAsyncNotification)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -549,9 +525,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("CallSpeedDialAudio"),  MyManager::OnCallSpeedDialAudio)
   EVT_MENU(XRCID("CallSpeedDialHandset"),MyManager::OnCallSpeedDialHandset)
   EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
-  EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
   EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
-  EVT_MENU(XRCID("SendIMSpeedDial"),     MyManager::OnSendIMSpeedDial)
   EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
   EVT_MENU(XRCID("NewSpeedDial"),        MyManager::OnNewSpeedDial)
@@ -583,7 +557,11 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
 
   EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
+#if OPAL_HAS_IM
+  EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
   EVT_MENU(XRCID("MenuStartMessage"),    MyManager::OnStartInstantMessage)
+  EVT_MENU(XRCID("SendIMSpeedDial"),     MyManager::OnSendIMSpeedDial)
+#endif // OPAL_HAS_IM
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
@@ -596,18 +574,17 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_COMMAND(ID_ON_HOLD,             wxEvtOnHold,             MyManager::OnEvtOnHold)
   EVT_COMMAND(ID_CLEARED,             wxEvtCleared,            MyManager::OnEvtCleared)
   EVT_COMMAND(ID_STREAMS_CHANGED,     wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
-  EVT_COMMAND(ID_RX_MESSAGE,          wxEvtRxMessage,          MyManager::OnRxMessage)
-  EVT_COMMAND(ID_RX_COMP_IND_CHANGED, wxCompIndChangedMessage, MyManager::OnRxCompositionIndicationChanged)
-  
-  EVT_COMMAND(ID_PRESENCE_MESSAGE, wxPresenceMessage,    MyManager::OnPresence)
+  EVT_COMMAND(ID_ASYNC_NOTIFICATION,  wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
   
 END_EVENT_TABLE()
 
 
 MyManager::MyManager()
   : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
+#if OPAL_FAX
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
+#endif // OPAL_FAX
   , m_speedDials(NULL)
   , m_speedDialDetail(false)
   , pcssEP(NULL)
@@ -696,6 +673,19 @@ void MyManager::PostEvent(const wxEventType & type, unsigned id, const PString &
   theEvent.SetString(PwxString(str));
   theEvent.SetClientData((void *)data);
   GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+
+void MyManager::AsyncNotifierSignal()
+{
+  PostEvent(wxEvtAsyncNotification, ID_ASYNC_NOTIFICATION);
+}
+
+
+void MyManager::OnEvtAsyncNotification(wxCommandEvent &)
+{
+  while (AsyncNotifierExecute())
+    ;
 }
 
 
@@ -1276,16 +1266,12 @@ bool MyManager::Initialise()
 
   AdjustVideoFormats();
 
-  GetIMManager().AddNotifier(PCREATE_NewConversationNotifier(OnNewConversation), "*");
+#if OPAL_HAS_IM
+  GetIMManager().AddNotifier(PCREATE_ConversationNotifier(OnConversation), "*");
+#endif
 
   LogWindow << "Ready ..." << endl;
   return true;
-}
-
-void MyManager::OnNewConversation(OpalIMManager &, OpalIMContext & context)
-{
-  context.SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
-  context.SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
 }
 
 
@@ -1705,17 +1691,17 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 }
 
                                   
-void MyManager::OnStartIM(wxCommandEvent & /*event*/)
-{
-  CallIMDialog dlg(this);
-  if (dlg.ShowModal())
-    GetOrCreateIMDialog(PString::Empty(), dlg.m_Presentity, dlg.m_Address);
-}
-
-
 void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
   PresenceDialog dlg(this);
+  dlg.ShowModal();
+}
+
+
+#if OPAL_HAS_IM
+void MyManager::OnStartIM(wxCommandEvent & /*event*/)
+{
+  CallIMDialog dlg(this);
   dlg.ShowModal();
 }
 
@@ -1759,9 +1745,12 @@ void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
 void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
-  if (info != NULL && !info->m_Presentity.IsEmpty() && !info->m_Address.IsEmpty())
-    GetOrCreateIMDialog(PString::Empty(), info->m_Presentity, info->m_Address);
+  if (info != NULL && !info->m_Presentity.IsEmpty() && !info->m_Address.IsEmpty()) {
+    if (OpalIMContext::Create(GetPresentity(info->m_Presentity), info->m_Address) == NULL)
+      wxMessageBox(wxString(wxT("Cannot send IMs to")) + info->m_Address, wxT("Error"));
+  }
 }
+#endif // OPAL_HAS_IM
 
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
@@ -2176,7 +2165,9 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
   }
 
   if ((m_autoAnswer && m_activeCall == NULL) || connection->GetStringOptions().Contains("Auto-Answer")) {
+#if OPAL_FAX
     m_currentAnswerMode = m_defaultAnswerMode;
+#endif
     m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
@@ -2239,8 +2230,10 @@ void MyManager::OnEstablishedCall(OpalCall & call)
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   PostEvent(wxEvtEstablished, ID_ESTABLISHED, call.GetToken());
 
+#if OPAL_FAX
   if (m_currentAnswerMode == AnswerFax)
     new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
+#endif // OPAL_FAX
 
 #if OPAL_SIP
   PSafePtr<SIPConnection> connection = call.GetConnectionAs<SIPConnection>(0);
@@ -2612,6 +2605,7 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 }
 
 
+#if OPAL_FAX
 void MyManager::OnUserInputTone(OpalConnection & connection, char tone, int duration)
 {
   if (toupper(tone) == 'X' && m_currentAnswerMode == AnswerDetect)
@@ -2641,6 +2635,7 @@ void MyManager::SwitchToFax()
   else
     LogWindow << "Could not switch to T.38 fax mode." << endl;
 }
+#endif // OPAL_FAX
 
 
 void MyManager::OnRequestHold(wxCommandEvent& /*event*/)
@@ -3145,107 +3140,6 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 #endif // OPAL_SIP
 
 
-IMDialog * MyManager::GetOrCreateIMDialog(const PString & previousConversationId,
-                                          const PString & local,
-                                          const PString & remote)
-{
-  if (local.IsEmpty() || remote.IsEmpty())
-    return NULL;
-
-  PString conversationId = previousConversationId;
-  if (conversationId.IsEmpty()) {
-    PSafePtr<OpalIMContext> imContext = OpalIMContext::Create(*this, local, remote);
-    if (imContext == NULL) {
-      wxMessageBox(wxString(wxT("Cannot send IMs to")) + PwxString(remote), wxT("Error"));
-      return NULL;
-    }
-
-    imContext->SetIncomingIMNotifier(PCREATE_IncomingIMNotifier(OnIncomingIM));
-    imContext->SetCompositionIndicationChangedNotifier(PCREATE_CompositionIndicationChangedNotifier(OnCompositionIndicationChanged));
-    conversationId = imContext->GetID();
-  }
-
-  {
-    PWaitAndSignal mutex(m_imDialogMapMutex);
-
-    IMDialogMap::iterator r = m_imDialogMap.find(conversationId);
-    if (r != m_imDialogMap.end()) {
-      PTRACE(3, "Using existing IMDialog");
-      r->second->Show();
-      return r->second;
-    }
-  }
-
-  PTRACE(3, "Creating new IMDialog");
-  IMDialog * dialog = new IMDialog(this, conversationId, "", local, remote, "");
-
-  {
-    m_imDialogMapMutex.Wait();
-    m_imDialogMap.insert(IMDialogMap::value_type(std::string((const char *)conversationId), dialog));
-    m_imDialogMapMutex.Signal();
-  }
-
-  dialog->Show();
-
-  return dialog;
-}
-
-void MyManager::RemoveIMDialog(IMDialog * dialog)
-{
-  m_imDialogMapMutex.Wait();
-  m_imDialogMap.erase(std::string((const char *)dialog->m_conversationId));
-  m_imDialogMapMutex.Signal();
-}
-
-void MyManager::OnIncomingIM(OpalIMContext &, const OpalIM & im)
-{
-  OpalIM * opalIM = new OpalIM(im);
-  PostEvent(wxEvtRxMessage, ID_RX_MESSAGE, PString::Empty(), opalIM);
-}
-
-void MyManager::OnRxMessage(wxCommandEvent & theEvent)
-{
-  OpalIM * im = (OpalIM *)theEvent.GetClientData();
-  LogWindow << "Received IM from " << (im->m_fromName.IsEmpty() ? im->m_fromAddr : im->m_fromName) << endl;
-  IMDialog * dialog = GetOrCreateIMDialog(im->m_conversationId, im->m_to, im->m_from);
-  if (dialog == NULL)
-    LogWindow << "No window for received IM" << endl;
-  else
-    dialog->AddTextToScreen(PwxString((const char *)im->m_body), false);
-
-  delete im;
-}
-
-
-void MyManager::OnCompositionIndicationChanged(OpalIMContext & context, const PString &)
-{
-  PostEvent(wxCompIndChangedMessage, ID_RX_COMP_IND_CHANGED, context.GetID(), NULL);
-}
-
-void MyManager::OnRxCompositionIndicationChanged(wxCommandEvent & theEvent)
-{
-  PwxString conversationId = theEvent.GetString();
-  bool idle;
-  PString from, to;
-  {
-    PSafePtr<OpalIMContext> context = GetIMManager().FindContextByIdWithLock(conversationId);
-    if (context == NULL) {
-      LogWindow << "Received composition indication for unknown conversation " << conversationId << endl;
-      return;
-    }
-    idle = !(context->GetAttributes().Get("rx-composition-indication-state", "idle") *= "active");
-    from = context->GetRemoteURL();
-    to   = context->GetLocalURL();
-  }
-  IMDialog * dialog = GetOrCreateIMDialog(conversationId, to, from);
-  if (dialog == NULL) {
-    LogWindow << "No window for received composition idle message" << endl;
-  } else {
-    dialog->SetCompositionIndication(idle);
-    LogWindow << "Composition " << (idle ? "idle" : "busy") << endl;
-  }
-}
-
 bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool start)
 {
   if (aor.IsEmpty() || uri.IsEmpty())
@@ -3277,79 +3171,68 @@ bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool s
 }
 
 
-void MyManager::OnPresenceChange(OpalPresentity &, const OpalPresenceInfo & info)
+void MyManager::OnPresenceChange(OpalPresentity &, OpalPresenceInfo info)
 {
-  PostEvent(wxPresenceMessage, ID_PRESENCE_MESSAGE, PString::Empty(), new OpalPresenceInfo(info));
-}
-
-
-void MyManager::OnPresence(wxCommandEvent & theEvent)
-{
-  OpalPresenceInfo * info = (OpalPresenceInfo *)theEvent.GetClientData();
-
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
-    if (info != NULL) {
-      SIPURL speedDialURL(sdInfo->m_Address.p_str());
-      if (info->m_entity == speedDialURL ||
-         (info->m_entity.GetScheme() == "pres" &&
-          info->m_entity.GetUserName() == speedDialURL.GetUserName() &&
-          info->m_entity.GetHostName() == speedDialURL.GetHostName())) {
-        PwxString status = info->m_note;
 
-        wxListItem item;
-        item.m_itemId = index;
-        item.m_mask = wxLIST_MASK_IMAGE;
-        if (!m_speedDials->GetItem(item))
-          continue;
+    SIPURL speedDialURL(sdInfo->m_Address.p_str());
+    if (info.m_entity == speedDialURL ||
+        (info.m_entity.GetScheme() == "pres" &&
+        info.m_entity.GetUserName() == speedDialURL.GetUserName() &&
+        info.m_entity.GetHostName() == speedDialURL.GetHostName())) {
+      PwxString status = info.m_note;
 
-        IconStates oldIcon = (IconStates)item.m_image;
+      wxListItem item;
+      item.m_itemId = index;
+      item.m_mask = wxLIST_MASK_IMAGE;
+      if (!m_speedDials->GetItem(item))
+        continue;
 
-        IconStates newIcon;
-        switch (info->m_state) {
-          case OpalPresenceInfo::Unchanged :
-            newIcon = oldIcon;
-            break;
+      IconStates oldIcon = (IconStates)item.m_image;
 
-          case OpalPresenceInfo::NoPresence :
-            newIcon = Icon_Unavailable;
-            break;
+      IconStates newIcon;
+      switch (info.m_state) {
+        case OpalPresenceInfo::Unchanged :
+          newIcon = oldIcon;
+          break;
 
-          case OpalPresenceInfo::Busy :
+        case OpalPresenceInfo::NoPresence :
+          newIcon = Icon_Unavailable;
+          break;
+
+        case OpalPresenceInfo::Busy :
+          newIcon = Icon_Busy;
+          break;
+
+        case OpalPresenceInfo::Away :
+          newIcon = Icon_Away;
+          break;
+
+        default :
+          if (status.CmpNoCase(wxT("busy")) == 0)
             newIcon = Icon_Busy;
-            break;
-
-          case OpalPresenceInfo::Away :
+          else if (status.CmpNoCase(wxT("away")) == 0)
             newIcon = Icon_Away;
-            break;
-
-          default :
-            if (status.CmpNoCase(wxT("busy")) == 0)
-              newIcon = Icon_Busy;
-            else if (status.CmpNoCase(wxT("away")) == 0)
-              newIcon = Icon_Away;
-            else
-              newIcon = Icon_Present;
-            break;
-        }
-
-        if (status.IsEmpty())
-          status = IconStatusNames[newIcon];
-
-        if (m_speedDialDetail)
-          m_speedDials->SetItem(index, e_StatusColumn, status);
-
-        if (oldIcon != newIcon) {
-          m_speedDials->SetItemImage(index, newIcon);
-          LogWindow << "Presence notification received for " << info->m_entity << ", \"" << status << '"' << endl;
-        }
-        break;
+          else
+            newIcon = Icon_Present;
+          break;
       }
+
+      if (status.IsEmpty())
+        status = IconStatusNames[newIcon];
+
+      if (m_speedDialDetail)
+        m_speedDials->SetItem(index, e_StatusColumn, status);
+
+      if (oldIcon != newIcon) {
+        m_speedDials->SetItemImage(index, newIcon);
+        LogWindow << "Presence notification received for " << info.m_entity << ", \"" << status << '"' << endl;
+      }
+      break;
     }
   }
-
-  delete info;
 }
 
 
@@ -5916,52 +5799,38 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_HAS_IM
+
+void MyManager::OnConversation(OpalIMContext & context, OpalIMManager::ConversationInfo info)
+{
+  PwxString id(context.GetID());
+
+  if (info.m_opening)
+    m_imDialogMap[id] = new IMDialog(this, context);
+  else {
+    m_imDialogMap[id]->Destroy();
+    m_imDialogMap.erase(id);
+  }
+}
+
+
 BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_BUTTON(XRCID("Send"), IMDialog::OnSend)
   EVT_TEXT_ENTER(XRCID("EnteredText"), IMDialog::OnTextEnter)
   EVT_TEXT(XRCID("EnteredText"), IMDialog::OnText)
   EVT_CLOSE(IMDialog::OnCloseWindow)
+  EVT_COMMAND(ID_ASYNC_NOTIFICATION,  wxEvtAsyncNotification,  IMDialog::OnEvtAsyncNotification)
 END_EVENT_TABLE()
 
-IMDialog::IMDialog(MyManager * manager, 
-               const PString & conversationId,
-       const OpalMediaFormat & m_format,
-               const PString & localName, 
-                  const PURL & remoteAddress, 
-               const PString & remoteName)
-  : m_conversationId(conversationId) 
-  , m_mediaFormat(m_format)
-  , m_manager(manager)
-  , m_remoteAddress(remoteAddress)
-  , m_us(localName)
-  , m_remoteAddrStr(remoteAddress.AsString())
+IMDialog::IMDialog(MyManager * manager, OpalIMContext & context)
+  : m_manager(*manager)
+  , m_context(context) 
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
 
   PStringStream str;
   str << "Conversation with ";
-  bool addBrackets = true;
-  if (!remoteName.IsEmpty()) {
-    str << remoteName;
-    m_them = PwxString(remoteName);
-  }
-  else {
-    PString user(remoteAddress.GetUserName());
-    if (!user.IsEmpty()) {
-      str << user;
-      m_them = PwxString(user);
-    }
-    else {
-      addBrackets = false;
-      m_them = PwxString(m_remoteAddrStr);
-    }
-  }
-
-  if (addBrackets) 
-    str << " (";
-  str << m_remoteAddrStr;
-  if (addBrackets) 
-    str << ")";
+  str << context.GetRemoteURL();
   SetTitle(PwxString(str));
 
   m_textArea    = FindWindowByNameAs<wxTextCtrl>(this, wxT("TextArea"));
@@ -5975,32 +5844,59 @@ IMDialog::IMDialog(MyManager * manager,
   m_theirStyle = m_defaultStyle;
   m_ourStyle.SetTextColour(*wxRED);
   m_theirStyle.SetTextColour(wxColour(0, 0xc0, 0));
+
+  context.SetMessageDispositionNotifier(PCREATE_MessageDispositionNotifier(OnMessageDisposition));
+  context.SetMessageReceivedNotifier(PCREATE_MessageReceivedNotifier(OnMessageReceived));
+  context.SetCompositionIndicationNotifier(PCREATE_CompositionIndicationNotifier(OnCompositionIndication));
+
+  Show();
 }
+
 
 IMDialog::~IMDialog()
 {
-  m_manager->RemoveIMDialog(this);
 }
+
 
 void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
 {
-  Destroy();
+  m_context.Close();
+  Hide();
 }
+
+
+void IMDialog::AsyncNotifierSignal()
+{
+  wxCommandEvent theEvent(wxEvtAsyncNotification, ID_ASYNC_NOTIFICATION);
+  theEvent.SetEventObject(this);
+  GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+
+void IMDialog::OnEvtAsyncNotification(wxCommandEvent &)
+{
+  while (AsyncNotifierExecute())
+    ;
+}
+
 
 void IMDialog::OnSend(wxCommandEvent &)
 {
   SendCurrentText();
 }
 
+
 void IMDialog::OnTextEnter(wxCommandEvent & WXUNUSED(event))
 {
   SendCurrentText();
 }
 
+
 void IMDialog::OnText(wxCommandEvent & WXUNUSED(event))
 {
-  SendCompositionIndicationChanged();
+  SendCompositionIndication();
 }
+
 
 void IMDialog::SendCurrentText()
 {
@@ -6008,67 +5904,73 @@ void IMDialog::SendCurrentText()
   m_enteredText->SetValue(wxT(""));
   AddTextToScreen(text, true);
 
-  PSafePtr<OpalIMContext> imContext = m_manager->GetIMManager().FindContextByIdWithLock(m_conversationId);
-  if (imContext == NULL)
-    AddTextToScreen(wxT("closed"), false);
-  else {
-    OpalIM * im = new OpalIM;
-    im->m_body     = text.p_str();
-    im->m_mimeType = "text/plain";
-    im->m_from     = m_us;
-    im->m_to       = PwxString(m_remoteAddress);
-
-    switch (imContext->Send(im)) {
-      case OpalIMContext::SentOK:
-      case OpalIMContext::SentPending:
-      case OpalIMContext::SentAccepted:
-        break;
-      case OpalIMContext::SentConnectionClosed:
-        AddTextToScreen(wxT("connection closed"), false);
-        break;
-      default:
-        AddTextToScreen(wxT("failed"), false);
-        break;
-    }
-  }
+  OpalIM * im = new OpalIM;
+  im->m_bodies.SetAt(PMIMEInfo::TextPlain(), text.p_str());
+  ShowDisposition(m_context.Send(im));
 }
 
 
-void IMDialog::SendCompositionIndicationChanged()
+void IMDialog::SendCompositionIndication()
 {
-  PSafePtr<OpalIMContext> imContext = m_manager->GetIMManager().FindContextByIdWithLock(m_conversationId);
-  if (imContext != NULL)
-    imContext->SendCompositionIndication(true);
+  OpalIMContext::CompositionInfo info(OpalIMContext::CompositionIndicationActive(), PMIMEInfo::TextPlain());
+  m_context.SendCompositionIndication(info);
 }
 
 
-void IMDialog::SetCompositionIndication(bool idle)
+void IMDialog::OnMessageDisposition(OpalIMContext &, OpalIMContext::DispositionInfo info)
 {
-  if (idle)
-    m_compositionIndication->SetLabel(wxT(""));
+  ShowDisposition(info.m_disposition);
+}
+
+
+void IMDialog::OnMessageReceived(OpalIMContext &, OpalIM im)
+{
+  AddTextToScreen(im.m_bodies(PMIMEInfo::TextPlain()), false);
+}
+
+
+void IMDialog::OnCompositionIndication(OpalIMContext &, OpalIMContext::CompositionInfo info)
+{
+  if (info.m_state == OpalIMContext::CompositionIndicationActive())
+    m_compositionIndication->SetLabel(PwxString(m_context.GetRemoteName()) + wxT(" is typing"));
   else
-    m_compositionIndication->SetLabel(wxString(m_them) + wxT(" is typing"));
+    m_compositionIndication->SetLabel(wxT(""));
 }
 
-void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
+
+void IMDialog::ShowDisposition(OpalIMContext::MessageDisposition status)
 {
-  PTime now;
-  PwxString nowStr = PTime().AsString("[hh:mm] ");
+  if (status < OpalIMContext::DispositionErrors)
+    return;
 
-  if (fromUs) {
-    m_textArea->SetDefaultStyle(m_ourStyle);
-  } else {
-    m_textArea->SetDefaultStyle(m_theirStyle);
+  switch (status) {
+    case OpalIMContext::ConversationClosed :
+      AddTextToScreen(wxT("Closed"), false);
+      break;
+
+    case OpalIMContext::TransportFailure :
+      AddTextToScreen(wxT("Network error"), false);
+      break;
+
+    case OpalIMContext::DestinationUnknown :
+      AddTextToScreen(wxT("User unkown"), false);
+      break;
+
+    case OpalIMContext::DestinationUnavailable :
+      AddTextToScreen(wxT("Unavailable"), false);
+      break;
+
+    default :
+      AddTextToScreen(wxT("Sent message failed"), false);
   }
+}
 
-  m_textArea->AppendText(nowStr);
 
-  if (fromUs) {
-    m_textArea->AppendText(PwxString(m_us));
-  } else {
-    m_textArea->AppendText(m_them);
-  }
-
+void IMDialog::AddTextToScreen(const PwxString & text, bool fromUs)
+{
+  m_textArea->SetDefaultStyle(fromUs ? m_ourStyle : m_theirStyle);
+  m_textArea->AppendText(PwxString(PTime().AsString("[hh:mm] ")));
+  m_textArea->AppendText(PwxString(fromUs ? m_context.GetLocalURL() : m_context.GetRemoteName()));
   m_textArea->AppendText(wxT(": "));
   m_textArea->SetDefaultStyle(m_defaultStyle);
   m_textArea->AppendText(text);
@@ -6078,11 +5980,13 @@ void IMDialog::AddTextToScreen(const wxString & text, bool fromUs)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallIMDialog, wxDialog)
+  EVT_BUTTON(XRCID("wxID_OK"), CallIMDialog::OnOK)
   EVT_CHOICE(XRCID("Presentity"), CallIMDialog::OnChanged)
   EVT_TEXT(XRCID("Address"), CallIMDialog::OnChanged)
 END_EVENT_TABLE()
 
 CallIMDialog::CallIMDialog(MyManager * manager)
+  : m_manager(*manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
@@ -6112,7 +6016,7 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 }
 
 
-void CallIMDialog::OnOK(int code)
+void CallIMDialog::OnOK(wxCommandEvent &)
 {
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentIMCallsGroup);
@@ -6130,7 +6034,11 @@ void CallIMDialog::OnOK(int code)
       config->Write(key, entry);
     }
   }
-  EndModal(code);
+
+  if (OpalIMContext::Create(m_manager.GetPresentity(m_Presentity), m_Address.p_str()) == NULL)
+    wxMessageBox(wxString(wxT("Cannot send IMs to")) + m_Address, wxT("Error"));
+
+  EndModal(wxID_OK);
 }
 
 
@@ -6139,6 +6047,8 @@ void CallIMDialog::OnChanged(wxCommandEvent & WXUNUSED(event))
   TransferDataFromWindow();
   m_ok->Enable(!m_Presentity.IsEmpty() && !m_Address.IsEmpty());
 }
+
+#endif // OPAL_HAS_IM
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6159,7 +6069,9 @@ CallPanelBase::CallPanelBase(MyManager & manager,
 BEGIN_EVENT_TABLE(AnswerPanel, CallPanelBase)
   EVT_BUTTON(XRCID("AnswerCall"), AnswerPanel::OnAnswer)
   EVT_BUTTON(XRCID("RejectCall"), AnswerPanel::OnReject)
+#if OPAL_FAX
   EVT_RADIOBOX(XRCID("AnswerAs"), AnswerPanel::OnChangeAnswerMode)
+#endif
 END_EVENT_TABLE()
 
 AnswerPanel::AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
@@ -6188,10 +6100,12 @@ void AnswerPanel::OnReject(wxCommandEvent & /*event*/)
 }
 
 
+#if OPAL_FAX
 void AnswerPanel::OnChangeAnswerMode(wxCommandEvent & theEvent)
 {
   m_manager.m_currentAnswerMode = (MyManager::FaxAnswerModes)theEvent.GetSelection();
 }
+#endif // OPAL_FAX
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6764,6 +6678,7 @@ STATISTICS_FIELD_BEG(RxFax, Packets)
   value.sprintf(m_printFormat, statistics.m_totalPackets);
 STATISTICS_FIELD_END(RxFax, Packets)
 
+#if OPAL_FAX
 STATISTICS_FIELD_BEG(RxFax, Pages)
   if (statistics.m_fax.m_rxPages < 0)
     value.Empty();
@@ -6814,6 +6729,7 @@ STATISTICS_FIELD_BEG(TxFax, Pages)
     }
   }
 STATISTICS_FIELD_END(TxFax, Pages)
+#endif // OPAL_FAX
 
 
 #ifdef _MSC_VER

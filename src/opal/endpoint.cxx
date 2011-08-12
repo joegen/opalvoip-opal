@@ -646,12 +646,11 @@ PString OpalEndPoint::GetSSLCertificate() const
 #endif
 
 
+#if OPAL_HAS_IM
+
 bool OpalEndPoint::Message(const PString & to, const PString & body)
 {
-  OpalIM message;
-  message.m_to   = to;
-  message.m_body = body;
-  return Message(message);
+  return manager.Message(to, body);
 }
 
 
@@ -663,25 +662,13 @@ PBoolean OpalEndPoint::Message(
   PString & conversationId
 )
 {
-  OpalIM message;
-  message.m_to             = to;
-  message.m_mimeType       = type;
-  message.m_body           = body;
-  message.m_from           = from;
-  message.m_conversationId = conversationId;
-
-  bool stat = Message(message);
-
-  from           = message.m_from;
-  conversationId = message.m_conversationId;
-
-  return stat;
+  return manager.Message(to, type, body, from, conversationId);
 }
 
 
-PBoolean OpalEndPoint::Message(OpalIM & /*Message*/)
+PBoolean OpalEndPoint::Message(OpalIM & message)
 {
-  return false;
+  return manager.Message(message);
 }
 
 
@@ -689,6 +676,8 @@ void OpalEndPoint::OnMessageReceived(const OpalIM & message)
 {
   manager.OnMessageReceived(message);
 }
+
+#endif // OPAL_HAS_IM
 
 
 /////////////////////////////////////////////////////////////////////////////

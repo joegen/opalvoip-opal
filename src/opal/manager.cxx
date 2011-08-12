@@ -54,6 +54,7 @@
 
 #include <ptclib/random.h>
 #include <ptclib/url.h>
+#include <ptclib/mime.h>
 
 #include "../../version.h"
 #include "../../revision.h"
@@ -243,7 +244,9 @@ OpalManager::OpalManager()
   SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
+#if OPAL_HAS_IM
   m_imManager = new OpalIMManager(*this);
+#endif
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
@@ -270,7 +273,10 @@ OpalManager::~OpalManager()
 
   delete m_natMethod;
   delete interfaceMonitor;
+
+#if OPAL_HAS_IM
   delete m_imManager;
+#endif
 
   PTRACE(4, "OpalMan\tDeleted manager.");
 }
@@ -292,15 +298,25 @@ PList<OpalEndPoint> OpalManager::GetEndPoints() const
 
 void OpalManager::ShutDownEndpoints()
 {
-  PTRACE(4, "OpalMan\tShutting down endpoints.");
+  PTRACE(3, "OpalMan\tShutting down manager.");
 
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
 
-  // Remove (and unsubscribe) all the presentities
-  m_presentities.RemoveAll();
-  m_presentities.DeleteObjectsToBeRemoved();
+#if OPAL_HAS_IM
+  // Shut down all IM
+  m_imManager->ShutDown();
+#endif
 
+  // Remove (and unsubscribe) all the presentities
+  PTRACE(4, "OpalIM\tShutting down all presentities");
+  for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity)
+    presentity->Close();
+  m_presentities.RemoveAll();
+  while (!m_presentities.DeleteObjectsToBeRemoved())
+    PThread::Sleep(100);
+
+  PTRACE(4, "OpalMan\tShutting down endpoints.");
   // Deregister the endpoints
   endpointsMutex.StartRead();
   for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
@@ -1771,7 +1787,10 @@ PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 void OpalManager::GarbageCollection()
 {
   m_presentities.DeleteObjectsToBeRemoved();
+
+#if OPAL_HAS_IM
   m_imManager->GarbageCollection();
+#endif
 
   bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
@@ -1887,11 +1906,18 @@ bool OpalManager::RemovePresentity(const PString & presentity)
 }
 
 
+#if OPAL_HAS_IM
+
+void OpalManager::OnConversation(OpalIMManager::ConversationInfo)
+{
+}
+
+
 PBoolean OpalManager::Message(const PString & to, const PString & body)
 {
   OpalIM message;
   message.m_to   = to;
-  message.m_body = body;
+  message.m_bodies.SetAt(PMIMEInfo::TextPlain(), body);
   return Message(message);
 }
 
@@ -1900,10 +1926,9 @@ PBoolean OpalManager::Message(const PURL & to, const PString & type, const PStri
 {
   OpalIM message;
   message.m_to             = to;
-  message.m_mimeType       = type;
-  message.m_body           = body;
   message.m_from           = from;
   message.m_conversationId = conversationId;
+  message.m_bodies.SetAt(type, body);
 
   bool stat = Message(message);
 
@@ -1922,9 +1947,7 @@ bool OpalManager::Message(OpalIM & message)
   if (context == NULL)
     return false;
 
-  OpalIMContext::SentStatus stat = context->Send(new OpalIM(message));
-
-  return (stat == OpalIMContext::SentOK) || (stat == OpalIMContext::SentPending);
+  return context->Send(new OpalIM(message)) < OpalIMContext::DispositionErrors;
 }
 
 
@@ -1938,6 +1961,8 @@ void OpalManager::OnMessageReceived(const OpalIM & message)
     }
   }
 }
+
+#endif // OPAL_HAS_IM
 
 
 /////////////////////////////////////////////////////////////////////////////

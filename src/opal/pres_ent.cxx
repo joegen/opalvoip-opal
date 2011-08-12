@@ -285,6 +285,9 @@ bool OpalPresentity::GetLocalPresence(OpalPresenceInfo::State & state, PString &
   return true;
 }
 
+
+#if OPAL_HAS_IM
+
 bool OpalPresentity::SendMessageTo(const OpalIM & message)
 {
   if (!IsOpen())
@@ -314,6 +317,8 @@ void OpalPresentity::SetReceivedMessageNotifier(const ReceivedMessageNotifier & 
   PWaitAndSignal mutex(m_notificationMutex);
   m_onReceivedMessageNotifier = notifier;
 }
+
+#endif // OPAL_HAS_IM
 
 
 void OpalPresentity::OnAuthorisationRequest(const AuthorisationRequest & request)
@@ -529,6 +534,8 @@ PString OpalPresentity::GetID() const
 }
 
 
+#if OPAL_HAS_IM
+
 void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd)
 {
   OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
@@ -548,6 +555,8 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
 
 
 OPAL_DEFINE_COMMAND(OpalSendMessageToCommand, OpalPresentity, Internal_SendMessageToCommand);
+
+#endif // OPAL_HAS_IM
 
 
 /////////////////////////////////////////////////////////////////////////////

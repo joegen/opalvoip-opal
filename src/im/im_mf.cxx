@@ -34,7 +34,7 @@
 #if OPAL_HAS_IM
 
 #include <opal/mediafmt.h>
-#include <opal/connection.h>
+#include <opal/endpoint.h>
 #include <opal/patch.h>
 #include <im/im.h>
 #include <im/msrp.h>
@@ -58,6 +58,7 @@ class IM##title##OpalMSRPEncoding : public OpalMSRPEncoding \
 { \
 }; \
 static PFactory<OpalMSRPEncoding>::Worker<IM##title##OpalMSRPEncoding> worker_##IM##title##OpalMSRPEncoding(encoding, true); \
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -159,6 +160,11 @@ const OpalMediaFormat & GetOpalT140()
 } 
 
 OPAL_INSTANTIATE_MEDIATYPE(t140, OpalT140MediaType);
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+const PCaselessString & OpalIMContext::CompositionIndicationActive() { static const PConstCaselessString s("active"); return s; }
+const PCaselessString & OpalIMContext::CompositionIndicationIdle()   { static const PConstCaselessString s("idle"); return s; }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -284,10 +290,8 @@ bool OpalIMMediaStream::WritePacket(RTP_DataFrame & frame)
 //////////////////////////////////////////////////////////////////////////////////////////
 
 OpalIM::OpalIM()
-  : m_type(Text)
-  , m_messageId(GetNextMessageId())
+  : m_messageId(GetNextMessageId())
 {
-  PTRACE(3, "OpalIM\tcreate new IM");
 }
 
 
@@ -301,43 +305,46 @@ PAtomicInteger::IntegerType OpalIM::GetNextMessageId()
 //////////////////////////////////////////////////////////////////////////////////////////
 
 OpalIMContext::OpalIMContext()
-  : m_incomingMessageNotifier(NULL)
-  , m_manager(NULL)
+  : m_manager(NULL)
   , m_currentOutgoingMessage(NULL)
 { 
-  m_id = OpalGloballyUniqueID().AsString();
+  m_conversationId = OpalGloballyUniqueID().AsString();
+  PTRACE(5, "OpalIM\tContext '" << m_conversationId << "' created");
 }
 
 
 OpalIMContext::~OpalIMContext()
 {
-  if (m_manager != NULL)
-    m_manager->GetIMManager().RemoveContext(this);
+  Close();
+  PTRACE(5, "OpalIM\tContext '" << m_conversationId << "' destroyed");
 }
 
 
 void OpalIMContext::ResetLastUsed()
 {
   PWaitAndSignal m(m_lastUsedMutex);
-  m_lastUsed = PTime();
+  m_lastUsed.SetCurrentTime();
 }
 
 
-PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, const PURL & localURL_, const PURL & remoteURL)
+PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager,
+                                              const PURL & localURL_,
+                                              const PURL & remoteURL,
+                                              bool byRemote)
 {
   PURL localURL(localURL_);
   PString userName = localURL.GetUserName();
 
   // must have a remote scheme
-  PString remoteScheme   = remoteURL.GetScheme();
-  if (remoteURL.GetScheme().IsEmpty()) {
-    PTRACE2(3, NULL, "OpalIMContext\tTo URL '" << remoteURL << "' has no scheme");
+  PCaselessString remoteScheme = remoteURL.GetScheme();
+  if (remoteScheme.IsEmpty()) {
+    PTRACE2(3, NULL, "OpalIM\tTo URL '" << remoteURL << "' has no scheme");
     return NULL;
   }
 
   // force local scheme to same as remote scheme
   if (localURL.GetScheme() != remoteScheme) {
-    PTRACE2(3, NULL, "OpalIMContext\tForcing local scheme to '" << remoteScheme << "'");
+    PTRACE2(3, NULL, "OpalIM\tForcing local scheme to '" << remoteScheme << "'");
     localURL.SetScheme(remoteScheme);
   }
 
@@ -351,22 +358,24 @@ PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, const PURL 
   // create the IM context
   PSafePtr<OpalIMContext> imContext = PFactory<OpalIMContext>::CreateInstance(remoteScheme);
   if (imContext == NULL) {
-    PTRACE2(3, NULL, "OpalIMContext\tCannot find IM handler for scheme '" << remoteScheme << "'");
+    PTRACE2(3, NULL, "OpalIM\tCannot find IM handler for scheme '" << remoteScheme << "'");
     return NULL;
   }
 
   // populate the context
   imContext->m_manager     = &manager;
   imContext->m_localURL    = localURL.AsString();
+  imContext->m_localName   = manager.GetDefaultDisplayName();
   imContext->m_remoteURL   = remoteURL.AsString();
+  imContext->m_remoteName  = remoteURL.GetUserName();
   imContext->GetAttributes().Set("scheme", remoteScheme);
-
-  // save the context into the lookup maps
-  manager.GetIMManager().AddContext(imContext);
 
   imContext->ResetLastUsed();
 
-  PTRACE2(3, imContext, "OpalIMContext\tCreated IM context '" << imContext->GetID() << "' for scheme '" << remoteScheme << "' from " << localURL << " to " << remoteURL);
+  // save the context into the lookup maps
+  manager.GetIMManager().AddContext(imContext, byRemote);
+
+  PTRACE2(3, imContext, "OpalIM\tCreated IM context '" << imContext->GetID() << "' for scheme '" << remoteScheme << "' from " << localURL << " to " << remoteURL);
 
   return imContext;
 }
@@ -381,24 +390,30 @@ PString OpalIMContext::CreateKey(const PString & local, const PString & remote)
   return key;
 }
 
-PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, PSafePtr<OpalConnection> conn)
+PSafePtr<OpalIMContext> OpalIMContext::Create(PSafePtr<OpalConnection> connection, bool byRemote)
 {
-  PSafePtr<OpalIMContext> context = OpalIMContext::Create(manager,
-                                                          conn->GetLocalPartyURL(), 
-                                                          conn->GetRemotePartyURL());
+  PSafePtr<OpalIMContext> context = Create(connection->GetEndPoint().GetManager(),
+                                           connection->GetLocalPartyURL(), 
+                                           connection->GetRemotePartyURL(),
+                                           byRemote);
   if (context != NULL) {
-    context->m_connection     = conn;
+    context->m_connection = connection;
     context->m_connection.SetSafetyMode(PSafeReference);
   }
   return context;
 }
 
 
-PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, PSafePtr<OpalPresentity> presentity, const PURL & remoteURL)
+PSafePtr<OpalIMContext> OpalIMContext::Create(PSafePtr<OpalPresentity> presentity,
+                                              const PURL & remoteURL,
+                                              bool byRemote)
 {
-  PSafePtr<OpalIMContext> context = OpalIMContext::Create(manager, presentity->GetAOR(), remoteURL);
+  PSafePtr<OpalIMContext> context = Create(presentity->GetManager(),
+                                           presentity->GetAOR(),
+                                           remoteURL,
+                                           byRemote);
   if (context != NULL) {
-    context->m_presentity     = presentity;
+    context->m_presentity = presentity;
     context->m_presentity.SetSafetyMode(PSafeReference);
   }
 
@@ -406,61 +421,67 @@ PSafePtr<OpalIMContext> OpalIMContext::Create(OpalManager & manager, PSafePtr<Op
 }
 
 
-OpalIMContext::SentStatus OpalIMContext::SendCompositionIndication(bool active)
+void OpalIMContext::Close()
 {
-  OpalIM * message = new OpalIM;
-  message->m_conversationId = GetID();
-  message->m_type   = active ? OpalIM::CompositionIndication_Active : OpalIM::CompositionIndication_Idle;
-  message->m_from   = GetLocalURL();
-  message->m_to     = GetRemoteURL();
-  return Send(message);
+  if (m_manager != NULL)
+    m_manager->GetIMManager().RemoveContext(this, false);
 }
 
 
-OpalIMContext::SentStatus OpalIMContext::Send(OpalIM * message)
+bool OpalIMContext::SendCompositionIndication(const CompositionInfo &)
+{
+  return false;
+}
+
+
+OpalIMContext::MessageDisposition OpalIMContext::Send(OpalIM * message)
 {
   ResetLastUsed();
 
-  // set content type, if not set
-  if ((message->m_type == OpalIM::Text) && message->m_mimeType.IsEmpty())
-    message->m_mimeType = "text/plain";
-
-  // set conversation ID
+  // make sure various fields are from this context
   message->m_conversationId = GetID();
+  message->m_from = GetLocalURL();
+  message->m_to = GetRemoteURL();
 
   // if outgoing message still pending, queue this message
   m_outgoingMessagesMutex.Wait();
   if (m_currentOutgoingMessage != NULL) {
     m_outgoingMessages.Enqueue(message);
     m_outgoingMessagesMutex.Signal();
-    return SentPending;
+    return DispositionPending;
   }
   m_currentOutgoingMessage = message;
   m_outgoingMessagesMutex.Signal();
 
-  return InternalSend();
+  MessageDisposition status = InternalSend();
+  if (status >= DispositionErrors) {
+    delete m_currentOutgoingMessage;
+    m_currentOutgoingMessage = NULL;
+  }
+  return status;
 }
 
 
-OpalIMContext::SentStatus OpalIMContext::InternalSend()
+OpalIMContext::MessageDisposition OpalIMContext::InternalSend()
 {
   PAssert(m_currentOutgoingMessage != NULL, "No message to send");
 
   // if sent outside connection, 
   if (m_connection == NULL) 
-    return InternalSendOutsideCall(m_currentOutgoingMessage);
+    return InternalSendOutsideCall(*m_currentOutgoingMessage);
 
   // make connection read write
   if (m_connection.SetSafetyMode(PSafeReadWrite)) {
     delete m_currentOutgoingMessage;
-    PTRACE(3, "OpalIMContext\tConnection to '" << m_attributes.Get("remote") << "' has been removed");
+    m_currentOutgoingMessage = NULL;
+    PTRACE(3, "OpalIM\tConnection to '" << m_attributes.Get("remote") << "' has been removed");
     m_connection.SetNULL();
-    return SentConnectionClosed;
+    return ConversationClosed;
   }
 
   /// TODO - send IM here
-  PTRACE(4, "OpalIMContext\tSending IM to '" << m_attributes.Get("remote") << "' via connection '" << m_connection << "'");
-  SentStatus stat = InternalSendInsideCall(m_currentOutgoingMessage);
+  PTRACE(4, "OpalIM\tSending IM to '" << m_attributes.Get("remote") << "' via connection '" << m_connection << "'");
+  MessageDisposition stat = InternalSendInsideCall(*m_currentOutgoingMessage);
 
   // make connection reference while not being used
   // as we have already sent the message, no need to check the error status - it will
@@ -470,17 +491,18 @@ OpalIMContext::SentStatus OpalIMContext::InternalSend()
   return stat;
 }
 
-void OpalIMContext::InternalOnMessageSent(const MessageSentInfo & info)
+void OpalIMContext::InternalOnMessageSent(const DispositionInfo & info)
 {
   // double check that message that was sent was the correct one
   m_outgoingMessagesMutex.Wait();
   if (m_currentOutgoingMessage == NULL) {
-    PTRACE(2, "OpalIMContext\tReceived sent confirmation when no message was sent");
+    PTRACE(2, "OpalIM\tReceived sent confirmation when no message was sent");
     m_outgoingMessagesMutex.Signal();
     return;
   }
-  if (m_currentOutgoingMessage->m_messageId != info.messageId) {
-    PTRACE(2, "OpalIMContext\tReceived sent confirmation for wrong message - " << m_currentOutgoingMessage->m_messageId << " instead of " << info.messageId);
+
+  if (m_currentOutgoingMessage->m_messageId != info.m_messageId) {
+    PTRACE(2, "OpalIM\tReceived sent confirmation for wrong message - " << m_currentOutgoingMessage->m_messageId << " instead of " << info.m_messageId);
     m_outgoingMessagesMutex.Signal();
     return;
   }
@@ -489,7 +511,7 @@ void OpalIMContext::InternalOnMessageSent(const MessageSentInfo & info)
   OpalIM * message = m_currentOutgoingMessage;
 
   // if there are more messages to send, get one started
-  if (m_outgoingMessages.GetSize() == 0) 
+  if (m_outgoingMessages.IsEmpty())
     m_currentOutgoingMessage = NULL;
   else
     m_currentOutgoingMessage = m_outgoingMessages.Dequeue();
@@ -498,7 +520,7 @@ void OpalIMContext::InternalOnMessageSent(const MessageSentInfo & info)
   m_outgoingMessagesMutex.Signal();
 
   // invoke callback for message sent
-  OnMessageSent(info);
+  OnMessageDisposition(info);
 
   // cleanup the message just cleared
   delete message;
@@ -508,30 +530,47 @@ void OpalIMContext::InternalOnMessageSent(const MessageSentInfo & info)
     InternalSend();
 }
 
-OpalIMContext::SentStatus OpalIMContext::InternalSendOutsideCall(OpalIM * /*message*/)
+
+OpalIMContext::MessageDisposition OpalIMContext::InternalSendOutsideCall(OpalIM & /*message*/)
 {
-  PTRACE(3, "OpalIMContext\tSending IM outside call to '" << m_attributes.Get("remote") << "' not supported");
-  return SentFailedGeneric;
+  PTRACE(3, "OpalIM\tSending IM outside call to '" << m_attributes.Get("remote") << "' not supported");
+  return UnsupportedFeature;
 }
 
 
-OpalIMContext::SentStatus OpalIMContext::InternalSendInsideCall(OpalIM * /*message*/)
+OpalIMContext::MessageDisposition OpalIMContext::InternalSendInsideCall(OpalIM & /*message*/)
 {
-  PTRACE(3, "OpalIMContext\tSending IM inside call to '" << m_attributes.Get("remote") << "' not supported");
-  return SentFailedGeneric;
+  PTRACE(3, "OpalIM\tSending IM inside call to '" << m_attributes.Get("remote") << "' not supported");
+  return UnsupportedFeature;
 }
 
 
-OpalIM * OpalIMContext::GetIncomingMessage()
+OpalIMContext::MessageDisposition OpalIMContext::OnMessageReceived(const OpalIM & message)
 {
-  return m_incomingMessages.Dequeue();
-}
+  if (!message.m_fromName.IsEmpty())
+    m_remoteName = message.m_fromName;
 
+  bool allBad = false;
+  for (PStringToString::const_iterator it = message.m_bodies.begin(); it != message.m_bodies.end(); ++it) {
+    if (CheckContentType(it->first))
+      allBad = false;
+    else
+      PTRACE(3, "OpalIM\tContent type '" << it->first << "' not acceptable for conversation id=" << GetID());
+  }
 
-bool OpalIMContext::AddIncomingIM(OpalIM * message)
-{
-  m_incomingMessages.Append(message);
-  return CheckContentType(message->m_mimeType);
+  if (allBad)
+    return UnacceptableContent;
+
+  PTRACE(2, "OpalIM\tReceived message for '" << GetID() << "'");
+
+  PWaitAndSignal mutex(m_notificationMutex);
+
+  if (m_messageReceivedNotifier.IsNULL())
+    m_manager->OnMessageReceived(message);
+  else
+    m_messageReceivedNotifier(*this, message);
+
+  return DeliveryOK;
 }
 
 
@@ -543,91 +582,42 @@ bool OpalIMContext::CheckContentType(const PString & contentType) const
 
 PStringArray OpalIMContext::GetContentTypes() const
 {
-  return GetAttributes().Get("acceptable-content-types", "text/plain").Lines();
+  return GetAttributes().Get("acceptable-content-types", PMIMEInfo::TextPlain()).Lines();
 }
 
 
-bool OpalIMContext::OnNewIncomingIM()
-{
-  OpalIM * message;
-
-  // dequeue the next message
-  {
-    PWaitAndSignal m(m_incomingMessagesMutex);
-    message = m_incomingMessages.Dequeue();
-    if (message == NULL)
-      return true;
-  }
-
-  ResetLastUsed();
-
-  return OnIncomingIM(*message);
-}
-
-
-void OpalIMContext::OnCompositionIndicationTimeout()
-{
-}
-
-
-void OpalIMContext::SetIncomingIMNotifier(const IncomingIMNotifier & notifier)
+void OpalIMContext::SetMessageReceivedNotifier(const MessageReceivedNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  m_incomingMessageNotifier = notifier;
+  m_messageReceivedNotifier = notifier;
 }
 
 
-OpalIMContext::SentStatus OpalIMContext::OnIncomingIM(OpalIM & message)
+void OpalIMContext::SetMessageDispositionNotifier(const MessageDispositionNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-
-  if (!GetAttributes().Has("preferred-content-type") && (!message.m_mimeType.IsEmpty()))
-    GetAttributes().Set("preferred-content-type", message.m_mimeType);
-
-  if (!m_incomingMessageNotifier.IsNULL())
-    m_incomingMessageNotifier(*this, message);
-
-  return OpalIMContext::SentPending;
+  m_messageDispositionNotifier = notifier;
 }
 
 
-void OpalIMContext::SetMessageSentNotifier(const MessageSentNotifier & notifier)
+void OpalIMContext::OnMessageDisposition(const DispositionInfo & info)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  m_messageSentNotifier = notifier;
+  if (!m_messageDispositionNotifier.IsNULL())
+    m_messageDispositionNotifier(*this, info);
 }
 
-
-void OpalIMContext::OnMessageSent(const MessageSentInfo & info)
+void OpalIMContext::OnCompositionIndication(const CompositionInfo & info)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  if (!m_messageSentNotifier.IsNULL())
-    m_messageSentNotifier(*this, info);
+  if (!m_compositionIndicationNotifier.IsNULL())
+    m_compositionIndicationNotifier(*this, info);
 }
 
-void OpalIMContext::OnCompositionIndicationChanged(const PString & state)
+void OpalIMContext::SetCompositionIndicationNotifier(const CompositionIndicationNotifier & notifier)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  if (!m_compositionIndicationChangedNotifier.IsNULL())
-    m_compositionIndicationChangedNotifier(*this, state);
-}
-
-void OpalIMContext::SetCompositionIndicationChangedNotifier(const CompositionIndicationChangedNotifier & notifier)
-{
-  PWaitAndSignal mutex(m_notificationMutex);
-  m_compositionIndicationChangedNotifier = notifier;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-OpalConnectionIMContext::OpalConnectionIMContext()
-{
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-OpalPresentityIMContext::OpalPresentityIMContext()
-{
+  m_compositionIndicationNotifier = notifier;
 }
 
 
@@ -646,32 +636,36 @@ OpalIMManager::~OpalIMManager()
 }
 
 
-void OpalIMManager::AddWork(IM_Work * work)
-{
-  m_imThreadPool.AddWork(work);
-}
-
-
-void OpalIMManager::AddContext(PSafePtr<OpalIMContext> imContext)
+void OpalIMManager::AddContext(PSafePtr<OpalIMContext> context, bool byRemote)
 {
   // set the key
-  PString key(OpalIMContext::CreateKey(imContext->m_localURL, imContext->m_remoteURL));
-  imContext->m_key = key;
+  context->m_key = OpalIMContext::CreateKey(context->m_localURL, context->m_remoteURL);
 
-  PTRACE(2, "OpalIM\tAdded IM context '" << imContext->GetID() << "' to manager");
+  PTRACE(2, "OpalIM\tAdded IM context '" << context->GetID() << "' to manager");
 
-  m_contextsByConversationId.SetAt(imContext->GetID(), imContext);
+  m_contextsByConversationId.SetAt(context->GetID(), context);
 
   PWaitAndSignal m(m_contextsByNamesMutex);
-  std::string skey((const char *)key);
-  m_contextsByNames.insert(ContextsByNames::value_type(skey, imContext->GetID()));
+  m_contextsByNames.insert(ContextsByNames::value_type(context->m_key, context->GetID()));
+
+  ConversationInfo info;
+  info.m_context = context;
+  info.m_opening = true;
+  info.m_byRemote = byRemote;
+  OnConversation(info);
 }
 
 
-void OpalIMManager::RemoveContext(OpalIMContext * context)
+void OpalIMManager::RemoveContext(OpalIMContext * context, bool byRemote)
 {
   if (m_deleting)
     return;
+
+  ConversationInfo info;
+  info.m_context = context;
+  info.m_opening = false;
+  info.m_byRemote = byRemote;
+  OnConversation(info);
 
   PString key = context->GetKey();
   PString id = context->GetID();
@@ -679,51 +673,69 @@ void OpalIMManager::RemoveContext(OpalIMContext * context)
   // remove local/remote pair from multimap
   {
     PWaitAndSignal m(m_contextsByNamesMutex);
-    ContextsByNames::iterator r = m_contextsByNames.find((const char *)key);
-    for (r = m_contextsByNames.find((const char *)key); 
-         (r != m_contextsByNames.end() && (r->first == (const char *)key));
-         ++r) {
-       if (r->second == id) {
-         m_contextsByNames.erase(r);
-         break;
-       }
+    ContextsByNames::iterator it = m_contextsByNames.find(key);
+    while (it != m_contextsByNames.end() && it->first == key) {
+       if (it->second != id)
+         ++it;
+       else
+         m_contextsByNames.erase(it++);
     }
   }
 
   // remove conversation ID from dictionary
-  m_contextsByConversationId.RemoveAt(id);
-
-  PTRACE(5, "OpalIM\tContext '" << id << "' removed");
+  if (m_contextsByConversationId.RemoveAt(id))
+    PTRACE(5, "OpalIM\tContext '" << id << "' removed");
 }
 
 
-void OpalIMManager::GarbageCollection()
+void OpalIMManager::OnConversation(const ConversationInfo & info)
+{
+  // get the scheme used by the context
+  PString scheme = info.m_context->GetAttributes().Get("scheme");
+
+  // call all of the notifiers 
+  bool useManagerCallback = true;
+  {
+    PWaitAndSignal m(m_notifierMutex);
+    ConversationMap::iterator it = m_notifiers.find(scheme);
+    if (it == m_notifiers.end())
+      it = m_notifiers.find(scheme = "*");
+    while (it != m_notifiers.end() && it->first == scheme) {
+      (it->second)(*info.m_context, info);
+      useManagerCallback = false;
+      ++it;
+    }
+  }
+
+  if (useManagerCallback)
+    m_manager.OnConversation(info);
+}
+
+
+void OpalIMManager::ShutDown()
+{
+  PTRACE(3, "OpalIM\tShutting down all IM contexts");
+  PSafePtr<OpalIMContext> context(m_contextsByConversationId, PSafeReadWrite);
+  while (context != NULL)
+    (context++)->Close();
+}
+
+
+bool OpalIMManager::GarbageCollection()
 {
   PTime now;
 
-  if ((now - m_lastGarbageCollection).GetMilliSeconds() < 30000)
-    return;
-
-  PStringArray conversations;
-  {
-    PSafePtr<OpalIMContext> context(m_contextsByConversationId, PSafeReadOnly);
+  if ((now - m_lastGarbageCollection).GetSeconds() > 30) {
+    PSafePtr<OpalIMContext> context(m_contextsByConversationId, PSafeReadWrite);
     while (context != NULL) {
-      conversations.AppendString(context->GetID());
-      ++context;
+      if ((now - context->m_lastUsed).GetSeconds() < context->GetAttributes().GetInteger("timeout", 3600))
+        ++context;
+      else
+        (context++)->Close();
     }
   }
 
-  for (PINDEX i = 0; i < conversations.GetSize(); ++i) {
-    PSafePtr<OpalIMContext> context = m_contextsByConversationId.FindWithLock(conversations[i], PSafeReadWrite);
-    if (context != NULL) {
-      int timeout = context->GetAttributes().Get("timeout", "300000").AsInteger();
-      PTimeInterval diff(now - context->m_lastUsed);
-      if (diff.GetMilliSeconds() > timeout)
-        m_contextsByConversationId.RemoveAt(conversations[i]);
-    }
-  }
-
-  m_contextsByConversationId.DeleteObjectsToBeRemoved();
+  return m_contextsByConversationId.DeleteObjectsToBeRemoved();
 }
 
 
@@ -748,48 +760,35 @@ PSafePtr<OpalIMContext> OpalIMManager::FindContextByNamesWithLock(const PString 
 }
 
 
-void OpalIMManager::AddNotifier(const NewConversationNotifier & notifier, const PString & scheme)
+void OpalIMManager::AddNotifier(const ConversationNotifier & notifier, const PString & scheme)
 {
-  NewConversationCallBack * callback = new NewConversationCallBack;
-  callback->m_scheme   = scheme;
-  callback->m_notifier = notifier;
-
   PWaitAndSignal mutex(m_notifierMutex);
-
-  for (PList<NewConversationCallBack>::iterator f = m_callbacks.begin(); f != m_callbacks.end(); ++f)
-    if (f->m_notifier == notifier && f->m_scheme == scheme)
-      return;
-
-  m_callbacks.Append(callback);
+  m_notifiers.insert(ConversationMap::value_type(scheme, notifier));
 }
 
 
-bool OpalIMManager::RemoveNotifier(const NewConversationNotifier & notifier, const PString & scheme)
+bool OpalIMManager::RemoveNotifier(const ConversationNotifier & notifier, const PString & scheme)
 {
+  bool removedOne = false;
+
   PWaitAndSignal mutex(m_notifierMutex);
 
-  for (PList<NewConversationCallBack>::iterator f = m_callbacks.begin(); f != m_callbacks.end(); ++f) {
-    if (f->m_notifier == notifier && f->m_scheme == scheme) {
-      m_callbacks.erase(f);
-      return true;
+  ConversationMap::iterator it = m_notifiers.find(scheme);
+  while (it != m_notifiers.end() && it->first == scheme) {
+    if (it->second != notifier)
+      ++it;
+    else {
+      m_notifiers.erase(it++);
+      removedOne = true;
     }
   }
 
-  return false;
-}
-
-static bool CheckFromTo(OpalIMContext & context, OpalIM & im)
-{
-  PString local  = context.GetAttributes().Get("local");
-  PString remote = context.GetAttributes().Get("remote");
-  return (local == im.m_to) && (remote == im.m_from);
+  return removedOne;
 }
 
 
 PSafePtr<OpalIMContext> OpalIMManager::FindContextForMessageWithLock(OpalIM & im, OpalConnection * conn)
 {
-  PSafePtr<OpalIMContext> context;
-
   // use connection-based information, if available
   if (conn != NULL) {
     if (im.m_conversationId.IsEmpty()) {
@@ -799,22 +798,14 @@ PSafePtr<OpalIMContext> OpalIMManager::FindContextForMessageWithLock(OpalIM & im
   }
 
   // see if conversation ID matches local/remote
-  if (!im.m_conversationId.IsEmpty()) {
-    context = FindContextByIdWithLock(im.m_conversationId);
-    if ((context != NULL) && !CheckFromTo(*context, im)) {
-      PTRACE(2, "OpalIM\tWARNING: Matched conversation ID for incoming message but did not match to/from");
-    }
-  }
+  PSafePtr<OpalIMContext> context = FindContextByIdWithLock(im.m_conversationId);
 
   // if no context, see if we can match from/to
   if (context == NULL) {
     context = FindContextByNamesWithLock(im.m_to, im.m_from);
     if (context != NULL) {
-      if (im.m_conversationId.IsEmpty())
-        im.m_conversationId = context->GetID();
-      else if (context->GetID() != im.m_conversationId) {
-        PTRACE(2, "OpalIM\tWARNING: Matched to/from for incoming message but did not match conversation ID");
-      }
+      PTRACE_IF(2, !im.m_conversationId, "OpalIM\tWARNING: Matched to/from addresses but did not match ID");
+      im.m_conversationId = context->GetID();
     }
   }
 
@@ -822,159 +813,46 @@ PSafePtr<OpalIMContext> OpalIMManager::FindContextForMessageWithLock(OpalIM & im
 }
 
 
-OpalIMContext::SentStatus OpalIMManager::OnIncomingMessage(OpalIM * im, PString & conversationId, PSafePtr<OpalConnection> conn)
+OpalIMContext::MessageDisposition
+          OpalIMManager::OnMessageReceived(OpalIM & message,
+                                           OpalConnection * connection,
+                                           PString & errorInfo)
 {
-  PSafePtr<OpalIMContext> context = FindContextForMessageWithLock(*im, conn);
-
-  bool contentTypeOK = false;
+  PSafePtr<OpalIMContext> context = FindContextForMessageWithLock(message, connection);
 
   // if context found, add message to it
-  if (context != NULL)
-    contentTypeOK = context->AddIncomingIM(im);
-  else {
-
+  if (context == NULL) {
     // create a context based on the connection
-    if (conn != NULL)
-      context = OpalIMContext::Create(m_manager, conn);
+    if (connection != NULL)
+      context = OpalIMContext::Create(connection);
     else
-      context = OpalIMContext::Create(m_manager, im->m_to, im->m_from);
+      context = OpalIMContext::Create(m_manager, message.m_to, message.m_from);
 
     if (context == NULL) {
-      PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << im->m_from);
-      delete im;
-      return OpalIMContext::SentNoTransport;
+      PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << message.m_from);
+      return OpalIMContext::DestinationUnknown;
     }
 
     // set message conversation ID to the correct (new) value
-    im->m_conversationId = context->GetID();
-
-    // save the connection (if any)
-    context->m_connection = conn;
-
-    // save the first message
-    contentTypeOK = context->AddIncomingIM(im);
-
-    // queue work for processing, using the conversation ID as the key
-    PTRACE(3, "OpalIM\tAdding new conversation work for conversation " << im->m_conversationId);
-    m_imThreadPool.AddWork(new NewConversation_Work(*this, im->m_conversationId));
+    message.m_conversationId = context->GetID();
   }
 
-  // return conversation ID
-  conversationId = context->GetID();
+  OpalIMContext::MessageDisposition status = context->OnMessageReceived(message);
 
   // check if content type was OK before "im" is given to the worker thread
-  OpalIMContext::SentStatus stat = OpalIMContext::SentPending;
-  if (!contentTypeOK)  {
-    PTRACE(3, "OpalIM\tContent type '" << im->m_mimeType << "' not acceptable for conversation " << im->m_conversationId);
-    stat = OpalIMContext::SentUnacceptableContent;
-  }
-
-  PTRACE(3, "OpalIM\tAdding new message work for conversation " << conversationId);
-  m_imThreadPool.AddWork(new NewIncomingIM_Work(*this, conversationId));
-
-  return stat;
-}
-
-
-void OpalIMManager::InternalOnNewConversation(const PString & conversationId)
-{
-  PSafePtr<OpalIMContext> context = FindContextByIdWithLock(conversationId);
-  if (context == NULL) {
-    PTRACE(2, "OpalIM\tCannot find IM context for '" << conversationId << "'");
-    return;
-  }
-  
-  // get the scheme used by the context
-  PString scheme = context->GetAttributes().Get("scheme");
-
-  // call all of the notifiers 
-  {
-    PWaitAndSignal m(m_notifierMutex);
-    if (m_callbacks.GetSize() > 0) {
-      for (PList<NewConversationCallBack>::iterator i = m_callbacks.begin(); i != m_callbacks.end(); i++)
-        if ((i->m_scheme == "*") || (i->m_scheme *= scheme))
-          (i->m_notifier)(*this, *context);
+  if (status == OpalIMContext::UnacceptableContent) {
+    PStringArray contentTypes = context->GetContentTypes();
+    if (contentTypes.IsEmpty())
+      errorInfo = PMIMEInfo::TextPlain();
+    else {
+      PStringStream strm;
+      strm << setfill(',') << contentTypes;
+      errorInfo = strm;
     }
-    return;
   }
 
-  // if no notifiers, call the OpalManager functions
-  OpalIM * im = context->GetIncomingMessage();
-  if (im != NULL) {
-    m_manager.OnMessageReceived(*im);
-    delete im;
-  }
+  return status;
 }
 
-
-void OpalIMManager::OnCompositionIndicationTimeout(const PString & conversationId)
-{
-  PTRACE(3, "OpalIM\tAdding composition indication timeout work for conversation " << conversationId);
-  m_imThreadPool.AddWork(new CompositionIndicationTimeout_Work(*this, conversationId));
-}
-
-
-void OpalIMManager::InternalOnCompositionIndicationTimeout(const PString & conversationId)
-{
-  PSafePtr<OpalIMContext> context = FindContextByIdWithLock(conversationId);
-  if (context == NULL) {
-    PTRACE(2, "OpalIM\tCannot find IM context for '" << conversationId << "'");
-    return;
-  }
-
-  context->OnCompositionIndicationTimeout();
-}
-
-
-void OpalIMManager::InternalOnNewIncomingIM(const PString & conversationId)
-{
-  PSafePtr<OpalIMContext> context = FindContextByIdWithLock(conversationId);
-  if (context == NULL) {
-    PTRACE(2, "OpalIM\tCannot find IM context for '" << conversationId << "'");
-    return;
-  }
-
-  PTRACE(2, "OpalIM\tReceived message for '" << conversationId << "'");
-  context->OnNewIncomingIM();
-}
-
-
-void OpalIMManager::InternalOnMessageSent(const PString & conversationId, const OpalIMContext::MessageSentInfo & info)
-{
-  PSafePtr<OpalIMContext> context = FindContextByIdWithLock(conversationId);
-  if (context == NULL) {
-    PTRACE(2, "OpalIM\tCannot find IM context for '" << conversationId << "'");
-    return;
-  }
-
-  context->InternalOnMessageSent(info);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-OpalIMManager::IM_Work::IM_Work(OpalIMManager & mgr, const PString & conversationId)
-  : m_mgr(mgr)
-  , m_conversationId(conversationId)
-{
-}
-
-
-OpalIMManager::IM_Work::~IM_Work()
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-void OpalIMManager::IncomingText::Execute(OpalIMManager & mgr)
-{
-  RTP_DataFrameList frames = m_rfc4103Context[0].ConvertToFrames(contentType, body);
-
-  for (PINDEX i = 0; i < frames.GetSize(); ++i) {
-    //OnReceiveExternalIM(OpalT140, (RTP_IMFrame &)frames[i]);
-  }
-}
-*/
 
 #endif // OPAL_HAS_IM

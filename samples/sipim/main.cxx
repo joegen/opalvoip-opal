@@ -382,7 +382,7 @@ void SipIM::CmdSend(PCLI::Arguments & args, INT)
 
   PINDEX i = 1;
   while (i < args.GetCount())
-    message.m_body = message.m_body & args[i++];
+    message.m_bodies[PMIMEInfo::TextPlain()] = message.m_bodies[PMIMEInfo::TextPlain()] & args[i++];
 
   if (!m_manager->Message(message))
     args.GetContext() << "IM failed" << endl;

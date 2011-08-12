@@ -95,31 +95,45 @@ class OpalSIPIMMediaSession : public OpalMediaSession
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OpalSIPIMContext : public OpalConnectionIMContext
+class OpalSIPIMContext : public OpalIMContext
 {
   public:
     OpalSIPIMContext();
 
-    virtual SentStatus SendCompositionIndication(bool active = true);
+    virtual bool SendCompositionIndication(const CompositionInfo & info);
 
-    static void PopulateParams(SIPMessage::Params & params, OpalIM & message);
+    static void OnMESSAGECompleted(
+      SIPEndPoint & endpoint,
+      const SIPMessage::Params & params,
+      SIP_PDU::StatusCodes reason
+    );
+    static void OnReceivedMESSAGE(
+      SIPEndPoint & endpoint,
+      SIPConnection * connection,
+      OpalTransport & transport,
+      SIP_PDU & pdu
+    );
 
   protected:
-    virtual SentStatus InternalSendOutsideCall(OpalIM * message);
-    virtual SentStatus InternalSendInsideCall(OpalIM * message);
+    virtual MessageDisposition InternalSendOutsideCall(OpalIM & message);
+    virtual MessageDisposition InternalSendInsideCall(OpalIM & message);
 
-    virtual SentStatus OnIncomingIM(OpalIM & message);
-    void OnCompositionIndicationTimeout();
+    virtual MessageDisposition OnMessageReceived(const OpalIM & message);
 
-    void ResetTimers(OpalIM & message);
+    virtual MessageDisposition InternalOnCompositionIndication(const OpalIM & message);
+    virtual MessageDisposition InternalOnDisposition(const OpalIM & message);
 
-    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnRxCompositionTimerExpire);
-    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxCompositionTimerExpire);
-    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxIdleTimerExpire);
+    void PopulateParams(SIPMessage::Params & params, const OpalIM & message);
 
-    PTimer m_rxCompositionTimeout;
-    PTimer m_txCompositionTimeout;
-    PTimer m_txIdleTimeout;
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnRxCompositionIdleTimer);
+    PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxCompositionIdleTimer);
+
+    PString m_rxCompositionState;
+    PTimer m_rxCompositionIdleTimeout;
+    PString m_txCompositionState;
+    PTimer m_txCompositionIdleTimeout;
+    PSimpleTimer m_txCompositionRefreshTimeout;
+    PTime m_lastActive;
 
     RFC4103Context m_rfc4103Context;
 };
