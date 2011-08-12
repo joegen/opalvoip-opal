@@ -647,6 +647,8 @@ class OpalEndPoint : public PObject
     );
   //@}
 
+
+#if OPAL_HAS_IM
   /**@name Instant Messaging */
   //@{
     /**Send text message
@@ -672,6 +674,8 @@ class OpalEndPoint : public PObject
       const OpalIM & message
     );
   //@}
+#endif // OPAL_HAS_IM
+
 
   /**@name Other services */
   //@{

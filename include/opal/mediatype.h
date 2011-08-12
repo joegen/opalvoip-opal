@@ -153,11 +153,6 @@ class OpalMediaTypeDefinition
     void SetAutoStart(OpalMediaType::AutoStartMode v) { m_autoStart = v; }
     void SetAutoStart(OpalMediaType::AutoStartMode v, bool on) { if (on) m_autoStart |= v; else m_autoStart -= v; }
 
-    /** Indicate type uses RTP for transport.
-        If false, then it uses a generic OpaMediaSession
-      */
-    virtual bool UsesRTP() const { return true; }
-
     /** Create a media session suitable for the media type.
       */
     virtual OpalMediaSession * CreateMediaSession(

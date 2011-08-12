@@ -2173,6 +2173,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
 SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::Params & params)
   : SIPHandler(SIP_PDU::Method_MESSAGE, endpoint, params, params.m_id)
   , m_parameters(params)
+  , m_messageSent(false)
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
   m_parameters.m_id = GetCallID();
@@ -2189,7 +2190,7 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
     return NULL;
 
   // If message ID is zero, then it was sent once, don't do it again.
-  if (m_parameters.m_messageId == 0) {
+  if (m_messageSent) {
     PTRACE(4, "SIP\tMessage was already sent, not sending again.");
     return NULL;
   }
@@ -2206,10 +2207,11 @@ void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 {
   SIPHandler::OnFailed(reason);
 
-  if (m_parameters.m_messageId != 0) {
-    GetEndPoint().OnMESSAGECompleted(m_parameters, reason);
-    m_parameters.m_messageId = 0;
-  }
+  if (m_messageSent)
+    return;
+
+  GetEndPoint().OnMESSAGECompleted(m_parameters, reason);
+  m_messageSent = true;
 }
 
 
@@ -2217,19 +2219,20 @@ void SIPMessageHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 {
   SIPHandler::OnReceivedOK(transaction, response);
   GetEndPoint().OnMESSAGECompleted(m_parameters, SIP_PDU::Successful_OK);
-  m_parameters.m_messageId = 0;
+  m_messageSent = true;
 }
 
 
 void SIPMessageHandler::UpdateParameters(const SIPMessage::Params & params)
 {
-  if (params.m_messageId != 0)
-    m_parameters.m_messageId = params.m_messageId;
+  m_parameters.m_messageId = params.m_messageId;
 
   if (!params.m_body.IsEmpty()) {
     m_parameters.m_body = params.m_body;
     m_parameters.m_contentType = params.m_contentType;
   }
+
+  m_messageSent = false;
 }
 
 

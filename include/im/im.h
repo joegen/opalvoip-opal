@@ -34,42 +34,487 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_IM
+
 #include <ptclib/url.h>
 #include <ptclib/threadpool.h>
 
 #include <opal/transports.h>
+#include <opal/mediastrm.h>
+#include <im/rfc4103.h>
 
+
+class OpalPresentity;
+
+
+/////////////////////////////////////////////////////////////////////
+
+/** Class representing an Instant Message event.
+    Whenever something happens with an IM conversation, this encapsulates all
+    the information relevant to the event. For example the text of the instant
+    message would arrive this way, and also status indication such as
+    composition indication.
+  */
 class OpalIM : public PObject
 {
   public:
     OpalIM();
 
-    enum Type {
-      Text,
-      CompositionIndication_Idle,   // aka RFC 3994
-      CompositionIndication_Active, // aka RFC 3994
-      Disposition                   // aka RFC 5438
-    } m_type;
+    PString m_conversationId;         ///< Identifier for the conversation of messages
 
-    PURL    m_to;
-    PURL    m_from;
-    PString m_fromName;
-    PString m_mimeType;
-    PString m_body;
-    PString m_conversationId;
+    PURL                  m_to;       ///< URL for destination of message
+    OpalTransportAddress  m_toAddr;   ///< Physical address for destination of message
+    PURL                  m_from;     ///< URL for source of message
+    OpalTransportAddress  m_fromAddr; ///< Physical address for source of message
+    PString               m_fromName; ///< Alias (human readable) name for source of message
+    PStringToString       m_bodies;   ///< Map of MIME types to body text, e.g. "text/plain", "Hello Bob!"
 
-    OpalTransportAddress m_fromAddr;
-    OpalTransportAddress m_toAddr;
-
-    PAtomicInteger::IntegerType m_messageId;
+    PAtomicInteger::IntegerType m_messageId;  /**< Unique identifier for OpalIM instance for matching
+                                                   multiple simultaneous message states. */
 
     static PAtomicInteger::IntegerType GetNextMessageId();
 };
 
-#if OPAL_HAS_IM
 
-#include <opal/mediastrm.h>
-#include <im/rfc4103.h>
+/////////////////////////////////////////////////////////////////////
+
+/** Class representing an Instant Messaging "conversation".
+    This keeps the context for Instant Messages between two entities. It is an
+    abstract class whose concrete classes are dependant on the individual
+    protocol being used for the messages. The URL "scheme" field is usually
+    used to distinguish the protocol.
+  */
+class OpalIMContext : public PSafeObject
+{
+  PCLASSINFO(OpalIMContext, PSafeObject);
+
+  /**@name Construction */
+  //@{
+  protected:
+    /// Construct base for context
+    OpalIMContext();
+
+  public:
+    /// Destroy context
+    ~OpalIMContext();
+
+    /**Create a Instant Mesaging context based on URL scheme.
+       This uses a factory to create an approriate concrete type for the
+       protocol indicated by the scheme of the \p remoteURL.
+
+       The \p localURL may be empty and will be derived from the \p remoteURL
+       and the default user name from the manager.
+      */
+    static PSafePtr<OpalIMContext> Create(
+      OpalManager & manager,    ///< Manager for OPAL
+      const PURL & localURL,    ///< Local URL for conversation
+      const PURL & remoteURL,   ///< Remote URL for conversation
+      bool byRemote = false     ///< Created by remote entity
+    );
+
+    /**Create a Instant Mesaging context based on a connection.
+       This uses a factory to create an approriate concrete type for the
+       protocol used by the connection. Note that only SIPConnection is
+       supported at this time.
+      */
+    static PSafePtr<OpalIMContext> Create(
+      PSafePtr<OpalConnection> connection,  ///< Connection to begin conversation in.
+      bool byRemote = false                 ///< Created by remote entity
+    );
+
+    /**Create a Instant Mesaging context based on a presentity.
+       This uses a factory to create an approriate concrete type for the
+       protocol used by the presentity.
+      */
+    static PSafePtr<OpalIMContext> Create(
+      PSafePtr<OpalPresentity> presentity,    ///< Presentity for local end of conversation
+      const PURL & remoteURL,                 ///< Remote URL for conversation
+      bool byRemote = false                   ///< Created by remote entity
+    );
+
+    /**Close the context (conversation)
+      */
+    virtual void Close();
+  //@}
+
+
+  /**@name Message transmit */
+  //@{
+    /**Disposition of message transmission.
+       Get the status of the sent message throughout its life, including how it
+       is handled by teh network, and how it is handled by the remote entity,
+       such as described in RFC5438.
+      */
+    enum MessageDisposition {
+      DispositionPending,     ///< Indicates mesage is on it's way
+      DispositionAccepted,    ///< Indicates message was accepted by remote system
+      DeliveryOK,             ///< Indicates message delivered to remote entity (RFC5438)
+      DisplayConfirmed,       ///< Indicates message has been confirmed as displayed (RFC5438)
+      ProcessedNotification,  ///< Indicates message is being processed (RFC5438)
+      StorageNotification,    ///< Indicates message has been stored for forwarding (RFC5438)
+
+      ///< All dispositions greater than this are errors
+      DispositionErrors,
+      GenericError,           ///< Generic error
+      UnacceptableContent,    ///< The message content (MIME type) is unacceptable
+      InvalidContent,         ///< The message content was invalid (e.g. bad XML)
+      DestinationUnknown,     ///< Cannot find the remote party.
+      DestinationUnavailable, ///< Remote party exists but is currently unavailable.
+      TransmissionTimeout,    ///< Message to remote timed out waiting for confirmation.
+      TransportFailure,       ///< Underlying network transport failed
+      ConversationClosed,     ///< The conversation with remote was closed
+      UnsupportedFeature,     ///< Feature is not supported
+      DeliveryFailed,         ///< Indicates message could not be delivered to remote entity (RFC5438)
+    };
+
+    /** Send message in this conversation.
+        This is generally asynchronous and will return quickly with the
+        message procesing happening inthe background.
+
+        The eventual disposition of the message transmission is indicated via
+        the OnMessageDisposition() function and it's notifier.
+
+        The \p message parameter should be allocated by the caller and will be
+        destroyed by the context when it is finished with.
+      */
+    virtual MessageDisposition Send(
+      OpalIM * message    ///< Message to be sent
+    );
+
+    /**Information on the message disposition.
+      */
+    struct DispositionInfo {
+      PAtomicInteger::IntegerType m_messageId;    ///< Id of message disposition is of
+      MessageDisposition          m_disposition;  ///< Disposition status
+    };
+
+    /**Callback indicating the dispostion of a messagesent via Send().
+       The default behaviour checks for a notifier and calls that if set.
+      */
+    virtual void OnMessageDisposition(
+      const DispositionInfo & info    ///< Information on the message disposition
+    );
+
+    /// Type for disposition notifiers
+    typedef PNotifierTemplate<DispositionInfo> MessageDispositionNotifier;
+
+    /// Macro to declare correctly typed disposition notifier
+    #define PDECLARE_MessageDispositionNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::DispositionInfo)
+
+    /// Macro to declare correctly typed asynchronous disposition notifier
+    #define PDECLARE_ASYNC_MessageDispositionNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::DispositionInfo)
+
+    /// Macro to create correctly typed disposition notifier
+    #define PCREATE_MessageDispositionNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMContext::DispositionInfo)
+
+    /// Set the notifier for the OnMessageDisposition() function.
+    void SetMessageDispositionNotifier(
+      const MessageDispositionNotifier & notifier   ///< Notifier to be called by protocol
+    );
+  //@}
+
+
+  /**@name Message receipt */
+  //@{
+    /** Called when an incoming message arrives for this context.
+        Default implementation checks for valid MIME content and then calls
+        the notifier, if set. If no notifier is set, then the
+        OpalManager::OnMessageReceived() function is called.
+      */
+    virtual MessageDisposition OnMessageReceived(
+      const OpalIM & message    ///< Received message
+    );
+
+    /// Type for message received notifiers
+    typedef PNotifierTemplate<OpalIM> MessageReceivedNotifier;
+
+    /// Macro to declare correctly typed message received notifier
+    #define PDECLARE_MessageReceivedNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIM)
+
+    /// Macro to declare correctly typed asynchronous message received notifier
+    #define PDECLARE_ASYNC_MessageReceivedNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIM)
+
+    /// Macro to create correctly typed message received notifier
+    #define PCREATE_MessageReceivedNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIM)
+
+    /// Set the notifier for the OnMessageReceived() function.
+    void SetMessageReceivedNotifier(
+      const MessageReceivedNotifier & notifier   ///< Notifier to be called by protocol
+    );
+  //@}
+
+
+  /**@name Message composition */
+  //@{
+    static const PCaselessString & CompositionIndicationActive();  ///< CompositionIndication active status
+    static const PCaselessString & CompositionIndicationIdle();    ///< CompositionIndication idle status
+
+    /**Composition information.
+      */
+    struct CompositionInfo
+    {
+      PString m_state;
+      PString m_contentType;
+
+      CompositionInfo(
+        const PString & state = CompositionIndicationIdle(),
+        const PString & contentType = PString::Empty()
+      ) : m_state(state)
+        , m_contentType(contentType)
+      { }
+    };
+
+    /**Send a composition indication to remote.
+       The text is usually either CompositionIndicationActive() or
+       CompositionIndicationIdle(), howver other extension values may be possible.
+      */
+    virtual bool SendCompositionIndication(
+      const CompositionInfo & info  ///< Composition information
+    );
+
+    /** Called when the remote composition indication changes state.
+       The default behaviour checks for a notifier and calls that if set.
+      */
+    virtual void OnCompositionIndication(
+      const CompositionInfo & info     ///< New composition state information
+    );
+
+    /// Type for composition indication notifiers
+    typedef PNotifierTemplate<CompositionInfo> CompositionIndicationNotifier;
+
+    /// Macro to declare correctly typed composition indication notifier
+    #define PDECLARE_CompositionIndicationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::CompositionInfo)
+
+    /// Macro to declare correctly typed asynchronous composition indication notifier
+    #define PDECLARE_ASYNC_CompositionIndicationNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::CompositionInfo)
+
+    /// Macro to create correctly typed composition indication notifier
+    #define PCREATE_CompositionIndicationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMContext::CompositionInfo)
+
+    /// Set the notifier for the OnCompositionIndication() function.
+    void SetCompositionIndicationNotifier(
+      const CompositionIndicationNotifier & notifier   ///< Notifier to be called by protocol
+    );
+  //@}
+
+
+  /**@name Support functions */
+  //@{
+    /// Check that the context type is valid for protocol
+    virtual bool CheckContentType(
+      const PString & contentType   ///< MIME Content type to check
+    ) const;
+
+    /// Return array of all valid content types.
+    virtual PStringArray GetContentTypes() const;
+
+    /// Calculate a key based on the from an to addresses
+    static PString CreateKey(const PString & from, const PString & to);
+  //@}
+
+
+  /**@name Member variables */
+  //@{
+    /// Get conversation ID
+    const PString & GetID() const          { return m_conversationId; }
+
+    /// Get key for context based on to/from addresses.
+    const PString & GetKey() const         { return m_key; }
+
+    /// Get remote URL for conversation.
+    const PString & GetRemoteURL() const   { return m_remoteURL; }
+
+    /// Get remote display name for conversation.
+    const PString & GetRemoteName() const  { return m_remoteName; }
+
+    /// Get local URL for conversation.
+    const PString & GetLocalURL() const    { return m_localURL; }
+
+    /// Get local display for conversation.
+    const PString & GetLocalName() const    { return m_localName; }
+
+    /// Set local display for conversation.
+    void SetLocalName(const PString & name) { m_localName = name; }
+
+    /// Get the attributes for this presentity.
+    PStringOptions & GetAttributes() { return m_attributes; }
+    const PStringOptions & GetAttributes() const { return m_attributes; }
+  //@}
+
+  protected:
+    void ResetLastUsed();
+
+    virtual MessageDisposition InternalSend();
+    virtual MessageDisposition InternalSendOutsideCall(OpalIM & message);
+    virtual MessageDisposition InternalSendInsideCall(OpalIM & message);
+    virtual void InternalOnMessageSent(const DispositionInfo & info);
+
+    PMutex                        m_notificationMutex;
+    MessageDispositionNotifier    m_messageDispositionNotifier;
+    MessageReceivedNotifier       m_messageReceivedNotifier;
+    CompositionIndicationNotifier m_compositionIndicationNotifier;
+
+    OpalManager  * m_manager;
+    PStringOptions m_attributes;
+
+    PSafePtr<OpalConnection> m_connection;
+    PSafePtr<OpalPresentity> m_presentity;
+
+    PMutex         m_outgoingMessagesMutex;
+    OpalIM       * m_currentOutgoingMessage;
+    PQueue<OpalIM> m_outgoingMessages;
+
+    PMutex m_lastUsedMutex;
+    PTime  m_lastUsed;
+
+    PString m_conversationId;
+    PString m_localURL;
+    PString m_localName;
+    PString m_remoteURL;
+    PString m_remoteName;
+    PString m_key;
+
+  friend class OpalIMManager;
+};
+
+
+/////////////////////////////////////////////////////////////////////
+
+/**Manager for IM contexts.
+ */
+class OpalIMManager : public PObject
+{
+  public:
+  /**@name Construction */
+  //@{
+    OpalIMManager(OpalManager & manager);
+    ~OpalIMManager();
+  //@}
+
+
+  /**@name Context management */
+  //@{
+    /** Add a new context.
+        Generally only used internally.
+        This will call notifiers indicating converstaion start.
+      */
+    void AddContext(PSafePtr<OpalIMContext> context, bool byRemote);
+
+    /** Remove a new context.
+        Generally only used internally.
+        This will call notifiers indicating converstaion end.
+      */
+    void RemoveContext(OpalIMContext * context, bool byRemote);
+
+    /** Look for old conversations and remove them.
+        Generally only used internally.
+        This will call notifiers indicating converstaion end.
+      */
+    bool GarbageCollection();
+
+    /** Find a context given a key.
+        Generally only used internally.
+      */
+    PSafePtr<OpalIMContext> FindContextByIdWithLock(
+      const PString & key,
+      PSafetyMode mode = PSafeReadWrite
+    );
+
+    /** Find a context given a from/to addresses.
+        Generally only used internally.
+      */
+    PSafePtr<OpalIMContext> FindContextByNamesWithLock(
+      const PString & local, 
+      const PString & remote, 
+      PSafetyMode mode = PSafeReadWrite
+    );
+
+    /** Find a context given a message.
+        Generally only used internally.
+      */
+    PSafePtr<OpalIMContext> FindContextForMessageWithLock(
+      OpalIM & im,
+      OpalConnection * conn = NULL
+    );
+
+    /**Shut down all conversations.
+      */
+    void ShutDown();
+  //@}
+
+
+  /**@name Conversation notification */
+  //@{
+    /**Information in notification on converstaion state change.
+      */
+    struct ConversationInfo
+    {
+      PSafePtr<OpalIMContext> m_context;  ///< Context opening/closing
+      bool                    m_opening;  ///< Opening or closing conversation
+      bool                    m_byRemote; ///< Operation is initiated by remote user or local user
+    };
+
+    /** Called when a context state changes, e.g. openign or closing.
+        Default implementation calls the notifier, if set. If no notifier is
+        set, then the OpalManager::OnConversation() function is called.
+      */
+    virtual void OnConversation(
+      const ConversationInfo & info
+    );
+
+    /// Type for converstaion notifiers
+    typedef PNotifierTemplate<ConversationInfo> ConversationNotifier;
+
+    /// Macro to declare correctly typed converstaion notifier
+    #define PDECLARE_ConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMManager::ConversationInfo)
+
+    /// Macro to declare correctly typed asynchronous converstaion notifier
+    #define PDECLARE_ASYNC_ConversationNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIMManager::ConversationInfo)
+
+    /// Macro to create correctly typed converstaion notifier
+    #define PCREATE_ConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMManager::ConversationInfo)
+
+    /** Set the notifier for the OnConversation() function.
+        The notifier can be called only for when a specific scheme is being
+        used. If \p scheme is "*" then all scemes will call that notifier.
+
+        More than one notifier can be applied and all are called.
+      */
+    void AddNotifier(
+      const ConversationNotifier & notifier,  ///< New notifier to add
+      const PString & scheme                  ///< Scheme to be notified about
+    );
+
+    /** Remove notifier for the OnConversation() function.
+      */
+    bool RemoveNotifier(const ConversationNotifier & notifier, const PString & scheme);
+  //@}
+
+
+    OpalIMContext::MessageDisposition OnMessageReceived(
+      OpalIM & message,
+      OpalConnection * connnection,
+      PString & errorInfo
+    );
+
+  protected:
+    OpalManager & m_manager;
+    typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
+    ContextsByConversationId m_contextsByConversationId;
+
+    PMutex m_contextsByNamesMutex;
+    typedef std::multimap<PString, PString> ContextsByNames;
+    ContextsByNames m_contextsByNames;
+
+    PMutex m_notifierMutex;
+    typedef std::multimap<PString, ConversationNotifier> ConversationMap;
+    ConversationMap m_notifiers;
+
+    PTime m_lastGarbageCollection;
+    bool m_deleting;
+};
+
+/////////////////////////////////////////////////////////////////////
 
 class OpalIMMediaType : public OpalMediaTypeDefinition 
 {
@@ -80,302 +525,8 @@ class OpalIMMediaType : public OpalMediaTypeDefinition
     )
       : OpalMediaTypeDefinition(mediaType, sdpType, 0, OpalMediaType::DontOffer)
     { }
-
-    virtual bool UsesRTP() const { return false; }
 };
 
-/////////////////////////////////////////////////////////////////////
-
-class OpalIMManager;
-class OpalPresentity;
-
-class OpalIMContext : public PSafeObject
-{
-  PCLASSINFO(OpalIMContext, PSafeObject);
-
-  public:
-    friend class OpalIMManager;
-
-    OpalIMContext();
-    ~OpalIMContext();
-
-    static PSafePtr<OpalIMContext> Create(
-      OpalManager & manager, 
-      const PURL & localURL, 
-      const PURL & remoteURL
-    );
-
-    static PSafePtr<OpalIMContext> Create(
-      OpalManager & manager,
-      PSafePtr<OpalConnection> conn
-    );
-
-    static PSafePtr<OpalIMContext> Create(
-      OpalManager & manager,
-      PSafePtr<OpalPresentity> presentity,
-      const PURL & remoteURL
-    );
-
-    enum SentStatus {
-      SentOK,
-      SentPending,
-      SentAccepted,
-      SentUnacceptableContent,
-      SentInvalidContent,
-      SentConnectionClosed,
-      SentNoTransport,
-      SentNoAnswer,
-      SentDestinationUnknown,
-      SentFailedGeneric,
-    };
-
-    // send text message in this conversation
-    virtual SentStatus Send(OpalIM * message);
-    virtual SentStatus SendCompositionIndication(bool active = true);
-
-    /// Called when an outgoing message has been delivered for this context
-    /// Default implementation calls MessageSentNotifier, if set
-    struct MessageSentInfo {
-      PAtomicInteger::IntegerType messageId;
-      OpalIMContext::SentStatus status;
-    };
-    virtual void OnMessageSent(const MessageSentInfo & info);
-
-    typedef PNotifierTemplate<const MessageSentInfo &> MessageSentNotifier;
-    #define PDECLARE_MessageSentNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, const MessageSentInfo &)
-    #define PCREATE_MessageSentNotifier(fn) PCREATE_NOTIFIER2(fn, const MessageSentInfo &)
-
-    /// Set the notifier for the OnMessageSent() function.
-    void SetMessageSentNotifier(
-      const MessageSentNotifier & notifier   ///< Notifier to be called by OnIncomingIM()
-    );
-
-    /// Called when an incoming message arrives for this context
-    /// Default implementation calls IncomingIMNotifier, if set, else returns true
-    virtual SentStatus OnIncomingIM(OpalIM & message);
-
-    typedef PNotifierTemplate<const OpalIM &> IncomingIMNotifier;
-    #define PDECLARE_IncomingIMNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, const OpalIM &)
-    #define PCREATE_IncomingIMNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalIM &)
-
-    /// Set the notifier for the OnIncomingMessage() function.
-    void SetIncomingIMNotifier(
-      const IncomingIMNotifier & notifier   ///< Notifier to be called by OnIncomingIM()
-    );
-
-    /// Called when the remote composition indication changes state for this context
-    /// Default implementation calls IncomingIMNotifier, if set, else returns true
-    virtual void OnCompositionIndicationChanged(const PString & state);
-
-    typedef PNotifierTemplate<const PString &> CompositionIndicationChangedNotifier;
-    #define PDECLARE_CompositionIndicationChangedNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, const PString &)
-    #define PCREATE_CompositionIndicationChangedNotifier(fn) PCREATE_NOTIFIER2(fn, const PString &)
-
-    /// Set the notifier for the OnIncomingMessage() function.
-    void SetCompositionIndicationChangedNotifier(
-      const CompositionIndicationChangedNotifier & notifier   ///< Notifier to be called by OnIncomingIM()
-    );
-
-    virtual bool CheckContentType(const PString & contentType) const;
-    virtual PStringArray GetContentTypes() const;
-
-    // start of internal functions
-
-    PString GetID() const          { return m_id; }
-    void SetID(const PString & id) { m_id = id; }
-    PString GetKey() const         { return m_key; }
-    PString GetLocalURL() const    { return m_localURL; }
-    PString GetRemoteURL() const   { return m_remoteURL; }
-
-  /**@name Attributes */
-  //@{
-    ///< Get the attributes for this presentity.
-    PStringOptions & GetAttributes() { return m_attributes; }
-    const PStringOptions & GetAttributes() const { return m_attributes; }
-
-    virtual bool OnNewIncomingIM();
-
-    virtual bool AddIncomingIM(OpalIM * message);
-
-    virtual void OnCompositionIndicationTimeout();
-
-    OpalIM * GetIncomingMessage();
-
-    virtual void InternalOnMessageSent(const MessageSentInfo & info);
-
-    static PString CreateKey(const PString & from, const PString & to);
-
-    void ResetLastUsed();
-
-  protected:
-    virtual SentStatus InternalSend();
-    virtual SentStatus InternalSendOutsideCall(OpalIM * message);
-    virtual SentStatus InternalSendInsideCall(OpalIM * message);
-
-    PMutex m_notificationMutex;
-    IncomingIMNotifier                   m_incomingMessageNotifier;
-    MessageSentNotifier                  m_messageSentNotifier;
-    CompositionIndicationChangedNotifier m_compositionIndicationChangedNotifier;
-
-    OpalManager  * m_manager;
-    PStringOptions m_attributes;
-
-    PSafePtr<OpalConnection> m_connection;
-    PSafePtr<OpalPresentity> m_presentity;
-
-    PMutex m_incomingMessagesMutex;
-    PQueue<OpalIM> m_incomingMessages;
-
-    PMutex m_outgoingMessagesMutex;
-    OpalIM * m_currentOutgoingMessage;
-    PQueue<OpalIM> m_outgoingMessages;
-
-    PMutex m_lastUsedMutex;
-    PTime m_lastUsed;
-
-  private:    
-    PString m_id, m_localURL, m_remoteURL, m_key;
-
-};
-
-class OpalConnectionIMContext : public OpalIMContext
-{
-  public:
-    OpalConnectionIMContext();
-};
-
-class OpalPresentityIMContext : public OpalIMContext
-{
-  public:
-    OpalPresentityIMContext();
-};
-
-/////////////////////////////////////////////////////////////////////
-
-class OpalIMManager : public PObject
-{
-  public:
-    OpalIMManager(OpalManager & manager);
-    ~OpalIMManager();
-
-    class IM_Work;
-
-    OpalIMContext::SentStatus OnIncomingMessage(OpalIM * im, PString & conversationId, PSafePtr<OpalConnection> conn = NULL);
-    void OnCompositionIndicationTimeout(const PString & conversationId);
-
-    void AddContext(PSafePtr<OpalIMContext> context);
-    void RemoveContext(OpalIMContext * context);
-
-    void GarbageCollection();
-
-    PSafePtr<OpalIMContext> FindContextByIdWithLock(
-      const PString & key,
-      PSafetyMode mode = PSafeReadWrite
-    );
-
-    PSafePtr<OpalIMContext> FindContextByNamesWithLock(
-      const PString & local, 
-      const PString & remote, 
-      PSafetyMode mode = PSafeReadWrite
-    );
-
-    PSafePtr<OpalIMContext> FindContextForMessageWithLock(OpalIM & im, OpalConnection * conn = NULL);
-
-    typedef PNotifierTemplate<OpalIMContext &> NewConversationNotifier;
-    #define PDECLARE_NewConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMManager, cls, fn, OpalIMContext &)
-    #define PCREATE_NewConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMContext &)
-
-    class NewConversationCallBack : public PObject {
-      public:
-        NewConversationNotifier m_notifier;
-        PString m_scheme;
-    };
-
-    void AddNotifier(const NewConversationNotifier & notifier, const PString & scheme);
-    bool RemoveNotifier(const NewConversationNotifier & notifier, const PString & scheme);
-
-
-    // thread pool declarations
-    class IM_Work
-    {
-      public:
-        IM_Work(OpalIMManager & mgr, const PString & conversationId);
-        virtual ~IM_Work();
-
-        virtual void Work() = 0;
-
-        OpalIMManager & m_mgr;
-        PString m_conversationId;
-    };
-
-    class NewIncomingIM_Work : public IM_Work 
-    {
-      public:
-        NewIncomingIM_Work(OpalIMManager & mgr, const PString & conversationId)
-          : IM_Work(mgr, conversationId)
-        { }
-        virtual void Work()
-        { m_mgr.InternalOnNewIncomingIM(m_conversationId); }
-    };
-
-    class NewConversation_Work : public IM_Work 
-    {
-      public:
-        NewConversation_Work(OpalIMManager & mgr, const PString & conversationId)
-          : IM_Work(mgr, conversationId)
-        { }
-        virtual void Work()
-        { m_mgr.InternalOnNewConversation(m_conversationId); }
-    };
-
-    class MessageSent_Work : public IM_Work 
-    {
-      public:
-        MessageSent_Work(OpalIMManager & mgr, const PString & conversationId, const OpalIMContext::MessageSentInfo & info)
-          : IM_Work(mgr, conversationId)
-          , m_info(info)
-        { }
-        virtual void Work()
-        { m_mgr.InternalOnMessageSent(m_conversationId, m_info); }
-
-        OpalIMContext::MessageSentInfo m_info;
-    };
-
-    class CompositionIndicationTimeout_Work : public IM_Work 
-    {
-      public:
-        CompositionIndicationTimeout_Work(OpalIMManager & mgr, const PString & conversationId)
-          : IM_Work(mgr, conversationId)
-        { }
-        virtual void Work()
-        { m_mgr.InternalOnCompositionIndicationTimeout(m_conversationId); }
-    };
-
-
-    void AddWork(IM_Work * work);
-    virtual void InternalOnNewConversation(const PString & conversation);
-    virtual void InternalOnNewIncomingIM(const PString & conversation);
-    virtual void InternalOnMessageSent(const PString & conversation, const OpalIMContext::MessageSentInfo & info);
-    virtual void InternalOnCompositionIndicationTimeout(const PString & conversationId);
-
-  protected:
-    PQueuedThreadPool<IM_Work> m_imThreadPool;
-
-    PTime m_lastGarbageCollection;
-    OpalManager & m_manager;
-    bool m_deleting;
-    typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
-    ContextsByConversationId m_contextsByConversationId;
-
-    PMutex m_contextsByNamesMutex;
-    typedef std::multimap<std::string, PString> ContextsByNames;
-    ContextsByNames m_contextsByNames;
-
-    PMutex m_notifierMutex;
-    PList<NewConversationCallBack> m_callbacks;
-};
-
-/////////////////////////////////////////////////////////////////////
 
 class RTP_IMFrame : public RTP_DataFrame
 {
@@ -393,6 +544,7 @@ class RTP_IMFrame : public RTP_DataFrame
 
     PString AsString() const { return PString((const char *)GetPayloadPtr(), GetPayloadSize()); }
 };
+
 
 class OpalIMMediaStream : public OpalMediaStream
 {

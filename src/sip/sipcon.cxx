@@ -2825,6 +2825,14 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     case SIP_PDU::Method_INVITE :
       break;
 
+    case SIP_PDU::Method_MESSAGE :
+#if OPAL_HAS_IM
+      OpalSIPIMContext::OnMESSAGECompleted(endpoint,
+                                           dynamic_cast<SIPMessage &>(transaction).GetParameters(),
+                                           response.GetStatusCode());
+#endif
+     return;
+
     case SIP_PDU::Method_REFER :
       if (response.GetMIME()("Refer-Sub") == "false") {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
@@ -3250,29 +3258,11 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
-// TODO: debug when we need connection based MESSAGE
-#if 0
-  OpalIM * im = new OpalIM;
-  const SIPMIMEInfo & mime = pdu.GetMIME();
-
-  im->m_from  = mime.GetFrom();
-  im->m_to    = mime.GetTo();
-
-  im->m_conversationId = PString("sip_") + mime.GetCallID();
-
-  // populate the message type
-  im->m_mimeType = mime.GetContentType();
-  if (im->m_mimeType.IsEmpty())
-    im->m_mimeType = PMIMEInfo::TextPlain();
-
-  // dispatch the message
-  OpalIMContext::SentStatus stat = endpoint.GetManager().GetIMManager().OnIncomingMessage(im, conversationId, PSafePtr<OpalConnection>(this));
-
-  pdu.SendResponse(*transport, stat ? SIP_PDU::Successful_OK : SIP_PDU::Failure_BadRequest);
-
-#endif
-
+#if OPAL_HAS_IM
+  OpalSIPIMContext::OnReceivedMESSAGE(endpoint, this, *transport, pdu);
+#else
   pdu.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+#endif
 }
 
 

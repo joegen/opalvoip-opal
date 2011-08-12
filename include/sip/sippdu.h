@@ -1331,11 +1331,13 @@ class SIPMessage : public SIPTransaction
 
     virtual SIPTransaction * CreateDuplicate() const;
 
+    const Params & GetParameters() const { return m_parameters; }
     const SIPURL & GetLocalAddress() const { return m_localAddress; }
 
   private:
     void Construct(const Params & params);
 
+    Params m_parameters;
     SIPURL m_localAddress;
 };
 

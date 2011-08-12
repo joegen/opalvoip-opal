@@ -134,6 +134,38 @@ class OpalManager : public PObject
     void ShutDownEndpoints();
   //@}
 
+
+  /**@name Presence management */
+  //@{
+    /**Add a presentity.
+       If the presentity is already present, a new one is not added, and the
+       existing instance is returned.
+
+       Returns a Read/Write locked pointer to presentity.
+      */
+    virtual PSafePtr<OpalPresentity> AddPresentity(
+      const PString & presentity  ///< Presentity URI
+    );
+
+    /**Get a presentity.
+      */
+    virtual PSafePtr<OpalPresentity> GetPresentity(
+      const PString & presentity,         ///< Presentity URI
+      PSafetyMode mode = PSafeReference   ///< Safety mode for presentity
+    );
+
+    /**Get all presentities.
+      */
+    virtual PStringList GetPresentities() const;
+
+    /**Remove a presentity.
+      */
+    virtual bool RemovePresentity(
+      const PString & presentity  ///< Presentity URI
+    );
+  //@}
+
+
   /**@name Call management */
   //@{
     /**Set up a call between two parties.
@@ -304,62 +336,190 @@ class OpalManager : public PObject
     virtual PString GetNextToken(char prefix);
   //@}
 
-  /**@name Presence management */
+
+  /**@name Connection internal routing */
   //@{
-    /**Add a presentity.
-       If the presentity is already present, a new one is not added, and the
-       existing instance is returned.
-
-       Returns a Read/Write locked pointer to presentity.
+    /**Entry in the route table.
+       See AddRouteEntry() for more details.
       */
-    virtual PSafePtr<OpalPresentity> AddPresentity(
-      const PString & presentity  ///< Presentity URI
+    class RouteEntry : public PObject
+    {
+        PCLASSINFO(RouteEntry, PObject);
+      public:
+        RouteEntry(const PString & pat, const PString & dest);
+        void PrintOn(ostream & strm) const;
+
+        PString            pattern;     ///< Original pattern string
+        PString            destination; ///< Destination URL with macro substitutions
+        PRegularExpression regex;       ///< Compiled Regular expression from pattern
+    };
+    PARRAY(RouteTable, RouteEntry);
+
+    /**Add a route entry to the route table.
+
+       The specification string is of the form:
+
+                 pattern '=' destination 
+       where:
+
+            pattern      regular expression used to select route
+
+            destination  destination for the call
+
+       The "pattern" string regex is compared against routing strings that are built 
+       as follows:
+       
+                 a_party '\\t' b_party
+
+       where:
+
+            a_party      name associated with a local connection i.e. "pots:vpb:1/2" or
+                         "h323:myname@myhost.com". 
+
+            b_party      destination specified by the call, which may be a full URI
+                         or a simple digit string
+
+       Note that all "pattern" strings have an implied '^' at the beginning and
+       a '$' at the end. This forces the "pattern" to match the entire source string. 
+       For convenience, the sub-expression ".*\\t" is inserted immediately after
+       any ':' character if no '\\t' is present.
+
+       Route entries are stored and searched in the route table in the order they are added. 
+       
+       The "destination" string is determines the endpoint used for the outbound
+       leg of the route, when a match to the "pattern" is found. It can be a literal string, 
+       or can be constructed using various meta-strings that correspond to parts of the source.
+       See below for a list of the available meta-strings
+
+       A "destination" starting with the string 'label:' causes the router to restart 
+       searching from the beginning of the route table using the new string as the "a_party". 
+       Thus, a route table with the folllwing entries:
+       
+                  "label:speeddial=h323:10.0.1.1" 
+                  "pots:26=label:speeddial" 
+
+       will produce the same result as the single entry "pots:26=h323:10.0.1.1".
+
+       If the "destination" parameter is of the form \@filename, then the file
+       is read with each line consisting of a pattern=destination route
+       specification. 
+       
+       "destination" strings without an equal sign or beginning with '#' are ignored.
+
+       Pattern Regex Examples:
+       -----------------------
+
+       1) A local H.323 endpoint with with name of "myname@myhost.com" that receives a 
+          call with a destination h323Id of "boris" would generate:
+          
+                          "h323:myname@myhost.com\\tboris"
+
+       2) A local SIP endpoint with with name of "fred@nurk.com" that receives a 
+          call with a destination of "sip:fred@nurk.com" would generate:
+          
+                          "sip:fred@nurk.com\\tsip:fred@nurk.com"
+
+       3) Using line 0 of a PhoneJACK handset with a serial # of 01AB3F4 to dial
+          the digits 2, 6 and # would generate:
+
+                          "pots:Quicknet:01AB3F4:0\\t26"
+
+
+       Destination meta-strings:
+       -------------------------
+
+       The available meta-strings are:
+       
+         <da>    Replaced by the "b_party" string. For example
+                 "pc:.*\\t.* = sip:<da>" directs calls to the SIP protocol. In
+                 this case there is a special condition where if the original
+                 destination had a valid protocol, eg h323:fred.com, then
+                 the entire string is replaced not just the <da> part.
+
+         <db>    Same as <da>, but without the special condtion.
+
+         <du>    Copy the "user" part of the "b_party" string. This is
+                 essentially the component after the : and before the '@', or
+                 the whole "b_party" string if these are not present.
+
+         <!du>   The rest of the "b_party" string after the <du> section. The 
+                 protocol is still omitted. This is usually the '@' and onward.
+                 Note if there is already an '@' in the destination before the
+                 <!du> and what is abour to replace it also has an '@' then
+                 everything between the @ and the <!du> (inclusive) is deleted,
+                 then the substitution is made so a legal URL can result.
+
+         <dn>    Copy all valid consecutive E.164 digits from the "b_party" so
+                 pots:0061298765\@vpb:1/2 becomes sip:0061298765@carrier.com
+
+         <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
+                 pots:00612198765 becomes sip:61298765@carrier.com
+
+         <!dn>   The rest of the "b_party" after the <dn> or <dnX> sections.
+
+         <dn2ip> Translate digits separated by '*' characters to an IP
+                 address. e.g. 10*0*1*1 becomes 10.0.1.1, also
+                 1234*10*0*1*1 becomes 1234\@10.0.1.1 and
+                 1234*10*0*1*1*1722 becomes 1234\@10.0.1.1:1722.
+
+
+       Returns true if an entry was added.
+      */
+    virtual PBoolean AddRouteEntry(
+      const PString & spec  ///<  Specification string to add
     );
 
-    /**Get a presentity.
+    /**Parse a route table specification list for the manager.
+       This removes the current routeTable and calls AddRouteEntry for every
+       string in the array.
+
+       Returns true if at least one entry was added.
       */
-    virtual PSafePtr<OpalPresentity> GetPresentity(
-      const PString & presentity,         ///< Presentity URI
-      PSafetyMode mode = PSafeReference   ///< Safety mode for presentity
+    PBoolean SetRouteTable(
+      const PStringArray & specs  ///<  Array of specification strings.
     );
 
-    /**Get all presentities.
+    /**Set a route table for the manager.
+       Note that this will make a copy of the table and not maintain a
+       reference.
       */
-    virtual PStringList GetPresentities() const;
+    void SetRouteTable(
+      const RouteTable & table  ///<  New table to set for routing
+    );
 
-    /**Remove a presentity.
+    /**Get the active route table for the manager.
       */
-    virtual bool RemovePresentity(
-      const PString & presentity  ///< Presentity URI
+    const RouteTable & GetRouteTable() const { return m_routeTable; }
+
+    /**Route the source address to a destination using the route table.
+       The source parameter may be something like pots:vpb:1/2 or
+       sip:fred\@nurk.com.
+
+       The destination parameter is a partial URL, it does not include the
+       protocol, but may be of the form user\@host, or simply digits.
+      */
+    virtual PString ApplyRouteTable(
+      const PString & source,      ///< Source address, including endpoint protocol
+      const PString & destination, ///< Destination address read from source protocol
+      PINDEX & entry               ///< Index into table to start search
+    );
+
+    /**Route a connection to another connection from an endpoint.
+
+       The default behaviour gets the destination address from the connection
+       and translates it into an address by using the routeTable member
+       variable and uses MakeConnection() to start the B-party connection.
+      */
+    virtual bool OnRouteConnection(
+      PStringSet & routesTried,     ///< Set of routes already tried
+      const PString & a_party,      ///< Source local address
+      const PString & b_party,      ///< Destination indicated by source
+      OpalCall & call,              ///< Call for new connection
+      unsigned options,             ///< Options for new connection (can't use default as overrides will fail)
+      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
   //@}
 
-  /**@name Instant Messaging management */
-  //@{
-    /**Send an IM to a remote party.
-     */
-    virtual PBoolean Message(
-      const PString & to, 
-      const PString & body
-    );
-    virtual PBoolean Message(
-      const PURL & to, 
-      const PString & type,
-      const PString & body,
-      PURL & from, 
-      PString & conversationId
-    );
-    virtual PBoolean Message(
-      OpalIM & message
-    );
-
-    /**Called when text message received
-     */
-    virtual void OnMessageReceived(
-      const OpalIM & message
-    );
-
-  //@}
 
   /**@name Connection management */
   //@{
@@ -446,19 +606,14 @@ class OpalManager : public PObject
       OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
 
-    /**Route a connection to another connection from an endpoint.
-
-       The default behaviour gets the destination address from the connection
-       and translates it into an address by using the routeTable member
-       variable and uses MakeConnection() to start the B-party connection.
+    /**Call back to optionally modify string options.
+       This called when a conenction is about to apply string options for a new
+       connection. The application has an opportunity to "tweak" them before
+       they are used.
       */
-    virtual bool OnRouteConnection(
-      PStringSet & routesTried,     ///< Set of routes already tried
-      const PString & a_party,      ///< Source local address
-      const PString & b_party,      ///< Destination indicated by source
-      OpalCall & call,              ///< Call for new connection
-      unsigned options,             ///< Options for new connection (can't use default as overrides will fail)
-      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
+    virtual void OnApplyStringOptions(
+      OpalConnection & connection,                  ///< Connection applying options.
+      OpalConnection::StringOptions & stringOptions ///< Options being applied.
     );
 
     /**Call back for remote party is now responsible for completing the call.
@@ -816,6 +971,7 @@ class OpalManager : public PObject
     );
   //@}
 
+
   /**@name User indications */
   //@{
     /**Call back for remote endpoint has sent user input as a string.
@@ -850,188 +1006,6 @@ class OpalManager : public PObject
     );
   //@}
 
-  /**@name Other services */
-  //@{
-    enum MessageWaitingType { 
-      NoMessageWaiting,
-      VoiceMessageWaiting, 
-      FaxMessageWaiting,
-      PagerMessageWaiting,
-      MultimediaMessageWaiting,
-      TextMessageWaiting,
-      NumMessageWaitingTypes
-    };
-
-    /**Callback called when Message Waiting Indication (MWI) is received
-     */
-    virtual void OnMWIReceived(
-      const PString & party,    ///< Name of party MWI is for
-      MessageWaitingType type,  ///< Type of message that is waiting
-      const PString & extraInfo ///< Addition information on the MWI
-    );
-    
-    
-    class RouteEntry : public PObject
-    {
-        PCLASSINFO(RouteEntry, PObject);
-      public:
-        RouteEntry(const PString & pat, const PString & dest);
-        void PrintOn(ostream & strm) const;
-        PString            pattern;
-        PString            destination;
-        PRegularExpression regex;
-    };
-    PARRAY(RouteTable, RouteEntry);
-
-    /**Add a route entry to the route table.
-
-       The specification string is of the form:
-
-                 pattern '=' destination 
-       where:
-
-            pattern      regular expression used to select route
-
-            destination  destination for the call
-
-       The "pattern" string regex is compared against routing strings that are built 
-       as follows:
-       
-                 a_party '\\t' b_party
-
-       where:
-
-            a_party      name associated with a local connection i.e. "pots:vpb:1/2" or
-                         "h323:myname@myhost.com". 
-
-            b_party      destination specified by the call, which may be a full URI
-                         or a simple digit string
-
-       Note that all "pattern" strings have an implied '^' at the beginning and
-       a '$' at the end. This forces the "pattern" to match the entire source string. 
-       For convenience, the sub-expression ".*\\t" is inserted immediately after
-       any ':' character if no '\\t' is present.
-
-       Route entries are stored and searched in the route table in the order they are added. 
-       
-       The "destination" string is determines the endpoint used for the outbound
-       leg of the route, when a match to the "pattern" is found. It can be a literal string, 
-       or can be constructed using various meta-strings that correspond to parts of the source.
-       See below for a list of the available meta-strings
-
-       A "destination" starting with the string 'label:' causes the router to restart 
-       searching from the beginning of the route table using the new string as the "a_party". 
-       Thus, a route table with the folllwing entries:
-       
-                  "label:speeddial=h323:10.0.1.1" 
-                  "pots:26=label:speeddial" 
-
-       will produce the same result as the single entry "pots:26=h323:10.0.1.1".
-
-       If the "destination" parameter is of the form \@filename, then the file
-       is read with each line consisting of a pattern=destination route
-       specification. 
-       
-       "destination" strings without an equal sign or beginning with '#' are ignored.
-
-       Pattern Regex Examples:
-       -----------------------
-
-       1) A local H.323 endpoint with with name of "myname@myhost.com" that receives a 
-          call with a destination h323Id of "boris" would generate:
-          
-                          "h323:myname@myhost.com\\tboris"
-
-       2) A local SIP endpoint with with name of "fred@nurk.com" that receives a 
-          call with a destination of "sip:fred@nurk.com" would generate:
-          
-                          "sip:fred@nurk.com\\tsip:fred@nurk.com"
-
-       3) Using line 0 of a PhoneJACK handset with a serial # of 01AB3F4 to dial
-          the digits 2, 6 and # would generate:
-
-                          "pots:Quicknet:01AB3F4:0\\t26"
-
-
-       Destination meta-strings:
-       -------------------------
-
-       The available meta-strings are:
-       
-         <da>    Replaced by the "b_party" string. For example
-                 "pc:.*\\t.* = sip:<da>" directs calls to the SIP protocol. In
-                 this case there is a special condition where if the original
-                 destination had a valid protocol, eg h323:fred.com, then
-                 the entire string is replaced not just the <da> part.
-
-         <db>    Same as <da>, but without the special condtion.
-
-         <du>    Copy the "user" part of the "b_party" string. This is
-                 essentially the component after the : and before the '@', or
-                 the whole "b_party" string if these are not present.
-
-         <!du>   The rest of the "b_party" string after the <du> section. The 
-                 protocol is still omitted. This is usually the '@' and onward.
-                 Note if there is already an '@' in the destination before the
-                 <!du> and what is abour to replace it also has an '@' then
-                 everything between the @ and the <!du> (inclusive) is deleted,
-                 then the substitution is made so a legal URL can result.
-
-         <dn>    Copy all valid consecutive E.164 digits from the "b_party" so
-                 pots:0061298765\@vpb:1/2 becomes sip:0061298765@carrier.com
-
-         <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
-                 pots:00612198765 becomes sip:61298765@carrier.com
-
-         <!dn>   The rest of the "b_party" after the <dn> or <dnX> sections.
-
-         <dn2ip> Translate digits separated by '*' characters to an IP
-                 address. e.g. 10*0*1*1 becomes 10.0.1.1, also
-                 1234*10*0*1*1 becomes 1234\@10.0.1.1 and
-                 1234*10*0*1*1*1722 becomes 1234\@10.0.1.1:1722.
-
-
-       Returns true if an entry was added.
-      */
-    virtual PBoolean AddRouteEntry(
-      const PString & spec  ///<  Specification string to add
-    );
-
-    /**Parse a route table specification list for the manager.
-       This removes the current routeTable and calls AddRouteEntry for every
-       string in the array.
-
-       Returns true if at least one entry was added.
-      */
-    PBoolean SetRouteTable(
-      const PStringArray & specs  ///<  Array of specification strings.
-    );
-
-    /**Set a route table for the manager.
-       Note that this will make a copy of the table and not maintain a
-       reference.
-      */
-    void SetRouteTable(
-      const RouteTable & table  ///<  New table to set for routing
-    );
-
-    /**Get the active route table for the manager.
-      */
-    const RouteTable & GetRouteTable() const { return m_routeTable; }
-
-    /**Route the source address to a destination using the route table.
-       The source parameter may be something like pots:vpb:1/2 or
-       sip:fred\@nurk.com.
-
-       The destination parameter is a partial URL, it does not include the
-       protocol, but may be of the form user\@host, or simply digits.
-      */
-    virtual PString ApplyRouteTable(
-      const PString & source,      ///< Source address, including endpoint protocol
-      const PString & destination, ///< Destination address read from source protocol
-      PINDEX & entry               ///< Index into table to start search
-    );
-  //@}
 
 #if OPAL_HAS_MIXER
   /**@name Call recording */
@@ -1067,67 +1041,86 @@ class OpalManager : public PObject
   //@}
 #endif
 
-  /**@name Member variable access */
+
+#if OPAL_HAS_IM
+  /**@name Instant Messaging management */
   //@{
-    /**Get the product info for all endpoints.
-      */
-    const OpalProductInfo & GetProductInfo() const { return productInfo; }
-
-    /**Set the product info for all endpoints.
-      */
-    void SetProductInfo(
-      const OpalProductInfo & info, ///< New information
-      bool updateAll = true         ///< Update all registered endpoints
+    /**Call back on a changes Instant Messaging context, aka conversation.
+       An application can intercept this and set options on the IM context.
+     */
+    virtual void OnConversation(
+      OpalIMManager::ConversationInfo info  ///< Information on the change to conversation
     );
 
-    /**Get the default username for all endpoints.
-      */
-    const PString & GetDefaultUserName() const { return defaultUserName; }
-
-    /**Set the default username for all endpoints.
-      */
-    void SetDefaultUserName(
-      const PString & name,   ///< New name
-      bool updateAll = true   ///< Update all registered endpoints
+    /**Send an Instant Message to a remote party.
+       Details of the message must be filled out in the \p message structure.
+       Note that message is non-const as this function can be used to initiate
+       a conversation, and the created conversation ID is returned in the
+       message.m_conversationId member variable.
+     */
+    virtual PBoolean Message(
+      OpalIM & message
     );
 
-    /**Get the default display name for all endpoints.
-      */
-    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
-
-    /**Set the default display name for all endpoints.
-      */
-    void SetDefaultDisplayName(
-      const PString & name,   ///< New name
-      bool updateAll = true   ///< Update all registered endpoints
+    ///< Send an Instant Message to a remote party. Backward compatible to old API.
+    virtual PBoolean Message(
+      const PString & to, 
+      const PString & body
     );
 
-#if OPAL_VIDEO
+    ///< Send an Instant Message to a remote party. Backward compatible to old API.
+    virtual PBoolean Message(
+      const PURL & to, 
+      const PString & type,
+      const PString & body,
+      PURL & from, 
+      PString & conversationId
+    );
 
-    //
-    // these functions are deprecated and used only for backwards compatibility
-    // applications should use OpalConnection::GetAutoStart() to check whether
-    // a specific media type can be auto-started
-    //
+    /**Called when Instant Message event is received.
+       See OpalIM for details on events. This includes text or composition
+       indication events.
 
-    /**See if should auto-start receive video channels on connection.
+       The default action is to pass the message on to a suitable
+       OpalPresentity function of teh same name.
      */
-    bool CanAutoStartReceiveVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Receive) != 0; }
+    virtual void OnMessageReceived(
+      const OpalIM & message    ///< Message information
+    );
 
-    /**Set if should auto-start receive video channels on connection.
-     */
-    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Receive, can); }
-
-    /**See if should auto-start transmit video channels on connection.
-     */
-    bool CanAutoStartTransmitVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Transmit) != 0; }
-
-    /**Set if should auto-start transmit video channels on connection.
-     */
-    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Transmit, can); }
-
+    /**Get Instant Messaging manager object.
+       Note that this object is primarily for internal use, so is mostly
+       undocumented and is "use at own risk".
+      */
+    OpalIMManager & GetIMManager() { return *m_imManager; }
+  //@}
 #endif
 
+
+  /**@name Other services */
+  //@{
+    enum MessageWaitingType { 
+      NoMessageWaiting,
+      VoiceMessageWaiting, 
+      FaxMessageWaiting,
+      PagerMessageWaiting,
+      MultimediaMessageWaiting,
+      TextMessageWaiting,
+      NumMessageWaitingTypes
+    };
+
+    /**Callback called when Message Waiting Indication (MWI) is received
+     */
+    virtual void OnMWIReceived(
+      const PString & party,    ///< Name of party MWI is for
+      MessageWaitingType type,  ///< Type of message that is waiting
+      const PString & extraInfo ///< Addition information on the MWI
+    );
+  //@}
+
+
+  /**@name Networking and NAT Management */
+  //@{
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
 
@@ -1238,8 +1231,8 @@ class OpalManager : public PObject
     /**Return the STUN client instance in use.
       */
     PSTUNClient * GetSTUNClient() const { PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); return stun; }
-#endif
-#endif
+#endif // P_STUN
+#endif // P_NAT
 
     /**Get the TCP port number base for H.245 channels
      */
@@ -1341,6 +1334,69 @@ class OpalManager : public PObject
     void SetMaxRtpPacketSize(
       PINDEX size
     ) { rtpPacketSizeMax = size; }
+  //@}
+
+
+  /**@name Member variable access */
+  //@{
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info, ///< New information
+      bool updateAll = true         ///< Update all registered endpoints
+    );
+
+    /**Get the default username for all endpoints.
+      */
+    const PString & GetDefaultUserName() const { return defaultUserName; }
+
+    /**Set the default username for all endpoints.
+      */
+    void SetDefaultUserName(
+      const PString & name,   ///< New name
+      bool updateAll = true   ///< Update all registered endpoints
+    );
+
+    /**Get the default display name for all endpoints.
+      */
+    const PString & GetDefaultDisplayName() const { return defaultDisplayName; }
+
+    /**Set the default display name for all endpoints.
+      */
+    void SetDefaultDisplayName(
+      const PString & name,   ///< New name
+      bool updateAll = true   ///< Update all registered endpoints
+    );
+
+#if OPAL_VIDEO
+
+    //
+    // these functions are deprecated and used only for backwards compatibility
+    // applications should use OpalConnection::GetAutoStart() to check whether
+    // a specific media type can be auto-started
+    //
+
+    /**See if should auto-start receive video channels on connection.
+     */
+    bool CanAutoStartReceiveVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Receive) != 0; }
+
+    /**Set if should auto-start receive video channels on connection.
+     */
+    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Receive, can); }
+
+    /**See if should auto-start transmit video channels on connection.
+     */
+    bool CanAutoStartTransmitVideo() const { return (OpalMediaType::Video().GetAutoStart()&OpalMediaType::Transmit) != 0; }
+
+    /**Set if should auto-start transmit video channels on connection.
+     */
+    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Transmit, can); }
+
+#endif
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
@@ -1499,10 +1555,6 @@ class OpalManager : public PObject
     // needs to be public for gcc 3.4
     void GarbageCollection();
 
-    virtual void OnApplyStringOptions(
-      OpalConnection & conn,
-      OpalConnection::StringOptions & stringOptions
-    );
 
   protected:
     // Configuration variables
@@ -1595,6 +1647,10 @@ class OpalManager : public PObject
 
     PSafeDictionary<PString, OpalPresentity> m_presentities;
 
+#ifdef OPAL_HAS_IM
+    OpalIMManager * m_imManager;
+#endif
+
     PAtomicInteger m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;
     PSyncPoint     m_allCallsCleared;
@@ -1616,15 +1672,6 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(const OpalConnection &,const OpalConnection &,unsigned) const, false);
-
-
-#ifdef OPAL_HAS_IM
-  public:
-    OpalIMManager & GetIMManager() { return *m_imManager; }
-
-  protected:
-    OpalIMManager * m_imManager;
-#endif
 };
 
 

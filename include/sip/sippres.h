@@ -34,6 +34,8 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 #include <sip/sipep.h>
+#include <ptlib/notifier_ext.h>
+
 
 #if P_EXPAT && OPAL_SIP
 
@@ -211,7 +213,7 @@ class SIPWatcherInfoCommand : public OpalPresentityCommand {
 
 /** Class of the SIP presence systems.
   */
-class SIP_Presentity : public OpalPresentityWithCommandThread
+class SIP_Presentity : public OpalPresentityWithCommandThread, public PValidatedNotifierTarget
 {
     PCLASSINFO(SIP_Presentity, OpalPresentityWithCommandThread);
 
@@ -264,10 +266,10 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     unsigned GetExpiryTime() const;
 
   protected:
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    PDECLARE_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_VALIDATED_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_VALIDATED_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+    PDECLARE_VALIDATED_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
+    PDECLARE_VALIDATED_NOTIFIER2(SIPSubscribeHandler, SIP_Presentity, OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
     void OnReceivedWatcherStatus(PXMLElement * watcher);
     void SetPIDFEntity(PURL & entity);
     bool ChangeAuthNode(XCAPClient & xcap, const OpalAuthorisationRequestCommand & cmd);

@@ -956,61 +956,11 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
     return info.m_status;
   }
 
-  SIPMIMEInfo & mime  = pdu.GetMIME();
-
-  SIPURL from(mime.GetFrom());
-  from.Sanitise(SIPURL::FromURI);
-
-  SIPURL to(mime.GetTo());
-  to.Sanitise(SIPURL::ToURI);
-
-  OpalIMManager & imManager = manager.GetIMManager();
-  OpalIMContext::SentStatus status;
-  PString conversationId;
-  {
-    OpalIM * message    = new OpalIM();
-    message->m_to       = to.AsString();
-    message->m_from     = from.AsString();
-    message->m_mimeType = mime.GetContentType();
-    message->m_toAddr   = transport.GetLastReceivedAddress();
-    message->m_fromAddr = transport.GetRemoteAddress();
-    message->m_body     = pdu.GetEntityBody();
-    status = imManager.OnIncomingMessage(message, conversationId);
-  }
-
-  SIPResponse * response = new SIPResponse(*this, SIP_PDU::Failure_BadRequest);
-
-  switch (status ) {
-    case OpalIMContext::SentOK:
-    case OpalIMContext::SentPending:
-      response->SetStatusCode(SIP_PDU::Successful_Accepted);
-      break;
-
-    case OpalIMContext::SentUnacceptableContent:
-      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-
-      // urrgh - complicated process to get the content types...
-      {
-        PStringArray contentTypes;
-        {
-          PSafePtr<OpalIMContext> context = imManager.FindContextByIdWithLock(conversationId, PSafeReadOnly);
-          if (context != NULL)
-            contentTypes = context->GetContentTypes();
-        }
-        if (contentTypes.GetSize() != 0) {
-          PStringStream strm;
-          strm << setfill(',') << contentTypes;
-          response->GetMIME().SetAccept(strm);
-        }
-      }
-      break;
-
-    default:
-      response->SetStatusCode(SIP_PDU::Failure_BadRequest);
-      break;
-  }
-
-  response->Send(transport, pdu);
+#if OPAL_HAS_IM
+  OpalSIPIMContext::OnReceivedMESSAGE(*this, NULL, transport, pdu);
+#else
+  pdu.SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
+#endif
   return true;
 }
 
@@ -1356,38 +1306,6 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 }
 
 
-bool SIPEndPoint::Message(OpalIM & message)
-{
-  // This function is assumed to be used by applications that don't 
-  // know about OpalIMContext, and therefore, have no knowledge of
-  // how to link individual messages into a conversation using the id
-  // 
-  // As such, we use the "from" and "to" fields to identify which
-  // existing conversation this message belongs to (if any) so
-  // that the same Call-ID can be used for each transmission.
-  // Without this, each message could appear as a seperate conversation
-  //
-  // But if the conversation ID *is* set, ignore all of this and
-  // assume the application knows what it is doing.
-  //
-
-  SIPMessage::Params params;
-  OpalSIPIMContext::PopulateParams(params, message);
-
-  if (!SendMESSAGE(params))
-    return false;
-
-  // conversation ID may have been changed
-  message.m_conversationId = params.m_id;
-
-  // set the from address as well
-  //if (message.m_from.IsEmpty())
-  //  message.m_from = ((SIPMessageHandler *)&*handler)->GetLocalAddress();
-
-  return true;
-}
-
-
 bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
 {
   if (params.m_remoteAddress.IsEmpty()) {
@@ -1400,9 +1318,6 @@ bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
     PTRACE(2, "SIP\tCannot send empty MESSAGE.");
     return false;
   }
-
-  if (params.m_messageId == 0)
-    params.m_messageId = OpalIM::GetNextMessageId();
 
   /* if conversation ID has been set, assume the handler with the matching
      call ID is what was used last time. If no conversation ID has been set,
@@ -1428,50 +1343,16 @@ bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
 }
 
 
+#if OPAL_HAS_IM
 void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params & params, SIP_PDU::StatusCodes reason)
 {
-  // not possible, but let's be paranoid
-  if (params.m_id.IsEmpty()) {
-    PTRACE(2, "SIP\tHow did a MESSAGE get sent without an ID?");
-    return;
-  }
-
-  PTRACE(4, "SIP\tFinal status of message in conversation '" << params.m_id << "' received - " << reason);
-
-  OpalIMContext::SentStatus status;
-  int reasonClass = ((int)reason)/100;
-  switch (reason) {
-    case SIP_PDU::Successful_OK:
-      status = OpalIMContext::SentOK;
-      break;
-    case SIP_PDU::Successful_Accepted:
-      status = OpalIMContext::SentAccepted;
-      break;
-    case SIP_PDU::Failure_RequestTimeout:
-      status = OpalIMContext::SentNoAnswer;
-      break;
-    default:
-      switch (reasonClass) {
-        case 2:
-          status = OpalIMContext::SentOK;
-          break;
-        case 3:
-          status = OpalIMContext::SentFailedGeneric;
-          break;
-        default:
-          status = OpalIMContext::SentFailedGeneric;
-          break;
-      }
-  }
-
-  OpalIMManager & mgr = manager.GetIMManager();
-
-  OpalIMContext::MessageSentInfo info;
-
-  info.messageId = params.m_messageId;
-  info.status    = status;
-  mgr.AddWork(new OpalIMManager::MessageSent_Work(mgr, params.m_id, info));
+    OpalSIPIMContext::OnMESSAGECompleted(*this, params, reason);
 }
+#else
+void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params &, SIP_PDU::StatusCodes)
+{
+}
+#endif
 
 
 bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)

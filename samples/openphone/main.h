@@ -53,6 +53,7 @@
 #include <sip/sip.h>
 #include <t38/t38proto.h>
 #include <ptlib/wxstring.h>
+#include <ptlib/notifier_ext.h>
 
 
 #include <list>
@@ -237,6 +238,9 @@ class CallDialog : public wxDialog
     DECLARE_EVENT_TABLE()
 };
 
+
+#if OPAL_HAS_IM
+
 class CallIMDialog : public wxDialog
 {
   public:
@@ -246,57 +250,57 @@ class CallIMDialog : public wxDialog
     PwxString m_Address;
 
   private:
-    void OnOK(int code);
+    void OnOK(wxCommandEvent & event);
     void OnChanged(wxCommandEvent & event);
 
+    MyManager  & m_manager;
     wxButton   * m_ok;
     wxComboBox * m_AddressCtrl;
 
     DECLARE_EVENT_TABLE()
 };
 
-class IMDialog : public wxDialog
+
+class IMDialog : public wxDialog, PAsyncNotifierTarget
 {
   public:
-    IMDialog(MyManager * manager, 
-         const PString & conversationId,
- const OpalMediaFormat & format,
-         const PString & localName, 
-            const PURL & remoteAddress, 
-         const PString & remoteName);
+    IMDialog(MyManager * manager, OpalIMContext & context);
     ~IMDialog();
 
-    void AddTextToScreen(const wxString & text, bool fromUs);
-    void SetCompositionIndication(bool idle);
-
-    PString m_conversationId;
+    void AddTextToScreen(const PwxString & text, bool fromUs);
 
   private:
+    // PAsyncNotifierTarget override
+    virtual void AsyncNotifierSignal();
+    void OnEvtAsyncNotification(wxCommandEvent &);
+
+    PDECLARE_ASYNC_MessageDispositionNotifier(IMDialog, OnMessageDisposition);
+    PDECLARE_ASYNC_MessageReceivedNotifier(IMDialog, OnMessageReceived);
+    PDECLARE_ASYNC_CompositionIndicationNotifier(IMDialog, OnCompositionIndication);
+
     void OnSend(wxCommandEvent & event);
     void OnTextEnter(wxCommandEvent & event);
     void OnText(wxCommandEvent & event);
     void OnCloseWindow(wxCloseEvent &event);
 
     void SendCurrentText();
-    void SendCompositionIndicationChanged();
+    void SendCompositionIndication();
+    void ShowDisposition(OpalIMContext::MessageDisposition status);
 
-    OpalMediaFormat m_mediaFormat;
-    MyManager * m_manager;
-    PURL m_remoteAddress;
+    MyManager     & m_manager;
+    OpalIMContext & m_context;
 
-    wxString m_them;
-    PString m_us;
-    PString m_remoteAddrStr;
-
-    wxTextCtrl * m_enteredText;
-    wxTextCtrl * m_textArea;
-    wxTextAttr   m_defaultStyle;
-    wxTextAttr   m_ourStyle;
-    wxTextAttr   m_theirStyle;
+    wxTextCtrl   * m_enteredText;
+    wxTextCtrl   * m_textArea;
+    wxTextAttr     m_defaultStyle;
+    wxTextAttr     m_ourStyle;
+    wxTextAttr     m_theirStyle;
     wxStaticText * m_compositionIndication;
 
     DECLARE_EVENT_TABLE()
 };
+
+#endif // OPAL_HAS_IM
 
 
 class CallPanelBase : public wxPanel
@@ -340,7 +344,9 @@ class AnswerPanel : public CallPanelBase
   private:
     void OnAnswer(wxCommandEvent & event);
     void OnReject(wxCommandEvent & event);
+#if OPAL_FAX
     void OnChangeAnswerMode(wxCommandEvent & event);
+#endif
 
     DECLARE_EVENT_TABLE()
 };
@@ -837,7 +843,7 @@ public:
 
 typedef std::list<MyMedia> MyMediaList;
 
-class MyManager : public wxFrame, public OpalManager
+class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarget
 {
   public:
     MyManager();
@@ -859,6 +865,7 @@ class MyManager : public wxFrame, public OpalManager
 
     bool HasHandset() const;
 
+#if OPAL_FAX
     enum FaxAnswerModes {
       AnswerVoice,
       AnswerFax,
@@ -867,6 +874,7 @@ class MyManager : public wxFrame, public OpalManager
     FaxAnswerModes m_currentAnswerMode;
     FaxAnswerModes m_defaultAnswerMode;
     void SwitchToFax();
+#endif // OPAL_FAX
 
     MyPCSSEndPoint & GetPCSSEP() { return *pcssEP; }
 
@@ -878,6 +886,10 @@ class MyManager : public wxFrame, public OpalManager
     );
 
   private:
+    // PAsyncNotifierTarget override
+    virtual void AsyncNotifierSignal();
+    void OnEvtAsyncNotification(wxCommandEvent &);
+
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
       OpalConnection & connection,   ///<  Connection that is calling
@@ -910,11 +922,13 @@ class MyManager : public wxFrame, public OpalManager
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
     );
+#if OPAL_FAX
     virtual void OnUserInputTone(
       OpalConnection & connection,  ///<  Connection input has come from
       char tone,                    ///<  Tone received
       int duration                  ///<  Duration of tone
     );
+#endif // OPAL_FAX
     virtual PString ReadUserInput(
       OpalConnection & connection,        ///<  Connection to read input from
       const char * terminators = "#\r\n", ///<  Characters that can terminte input
@@ -935,15 +949,11 @@ class MyManager : public wxFrame, public OpalManager
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
-
     void OnClose(wxCloseEvent& event);
     void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
     void OnStateChange(wxCommandEvent & event);
     void OnStreamsChanged(wxCommandEvent &);
-    void OnRxMessage(wxCommandEvent &);
-    void OnRxCompositionIndicationChanged(wxCommandEvent &);
-    void OnPresence(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
@@ -954,8 +964,6 @@ class MyManager : public wxFrame, public OpalManager
     void OnCallSpeedDialHandset(wxCommandEvent& event);
     void OnSendFax(wxCommandEvent& event);
     void OnSendFaxSpeedDial(wxCommandEvent& event);
-    void OnSendIMSpeedDial(wxCommandEvent& event);
-    void OnStartIM(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
     void OnNewSpeedDial(wxCommandEvent& event);
@@ -990,7 +998,11 @@ class MyManager : public wxFrame, public OpalManager
     void OnRightClick(wxListEvent& event);
 
     void OnMyPresence(wxCommandEvent& event);
+#if OPAL_HAS_IM
+    void OnStartIM(wxCommandEvent& event);
     void OnStartInstantMessage(wxCommandEvent& event);
+    void OnSendIMSpeedDial(wxCommandEvent& event);
+#endif // OPAL_HAS_IM
 
     void OnEvtRinging(wxCommandEvent & theEvent);
     void OnEvtEstablished(wxCommandEvent & theEvent);
@@ -999,13 +1011,6 @@ class MyManager : public wxFrame, public OpalManager
 
     bool CanDoFax() const;
     bool CanDoIM() const;
-
-    IMDialog * GetOrCreateIMDialog(const PString & conversationId, const PString & local, const PString & remote);
-    void RemoveIMDialog(IMDialog * dialog);
-
-    PDECLARE_NewConversationNotifier(MyManager, OnNewConversation);
-    PDECLARE_IncomingIMNotifier(MyManager, OnIncomingIM);
-    PDECLARE_CompositionIndicationChangedNotifier(MyManager, OnCompositionIndicationChanged);
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -1083,14 +1088,6 @@ class MyManager : public wxFrame, public OpalManager
 
     void StartRegistrations();
     void ReplaceRegistrations(const RegistrationList & newRegistrations);
-
-    // cannot use PDictionary as IMDialog is not descended from PObject
-    typedef std::map<std::string, IMDialog *> IMDialogMap;
-    IMDialogMap m_imDialogMap;
-    PMutex m_imDialogMapMutex;
-
-    bool MonitorPresence(const PString & presentity, const PString & uri, bool start);
-    PDECLARE_PresenceChangeNotifier(MyManager, OnPresenceChange);
 #endif
 
 #if OPAL_CAPI
@@ -1191,6 +1188,19 @@ class MyManager : public wxFrame, public OpalManager
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;
     PwxString                  m_lastPlayFile;
+
+    // Presence
+    bool MonitorPresence(const PString & presentity, const PString & uri, bool start);
+    PDECLARE_ASYNC_PresenceChangeNotifier(MyManager, OnPresenceChange);
+
+#if OPAL_HAS_IM
+    // Instant messaging
+    PDECLARE_ASYNC_ConversationNotifier(MyManager, OnConversation);
+
+    // cannot use PDictionary as IMDialog is not descended from PObject
+    typedef std::map<wxString, IMDialog *> IMDialogMap;
+    IMDialogMap m_imDialogMap;
+#endif
 
     DECLARE_EVENT_TABLE()
 

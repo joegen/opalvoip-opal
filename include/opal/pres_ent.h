@@ -320,9 +320,10 @@ class OpalPresentity : public PSafeObject
       const AuthorisationRequest & request  ///< Authorisation request information
     );
 
-    typedef PNotifierTemplate<const AuthorisationRequest &> AuthorisationRequestNotifier;
-#define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalPresentity::AuthorisationRequest &)
-    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalPresentity::AuthorisationRequest &)
+    typedef PNotifierTemplate<AuthorisationRequest> AuthorisationRequestNotifier;
+    #define PDECLARE_AuthorisationRequestNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, OpalPresentity::AuthorisationRequest)
+    #define PDECLARE_ASYNC_AuthorisationRequestNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalPresentity, cls, fn, OpalPresentity::AuthorisationRequest)
+    #define PCREATE_AuthorisationRequestNotifier(fn) PCREATE_NOTIFIER2(fn, OpalPresentity::AuthorisationRequest)
 
     /// Set the notifier for the OnAuthorisationRequest() function.
     void SetAuthorisationRequestNotifier(
@@ -341,9 +342,10 @@ class OpalPresentity : public PSafeObject
       const OpalPresenceInfo & info ///< Info on other presentity that changed state
     );
 
-    typedef PNotifierTemplate<const OpalPresenceInfo &> PresenceChangeNotifier;
-    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalPresenceInfo &)
-    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalPresenceInfo &)
+    typedef PNotifierTemplate<OpalPresenceInfo> PresenceChangeNotifier;
+    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, OpalPresenceInfo)
+    #define PDECLARE_ASYNC_PresenceChangeNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalPresentity, cls, fn, OpalPresenceInfo)
+    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, OpalPresenceInfo)
 
     /// Set the notifier for the OnPresenceChange() function.
     void SetPresenceChangeNotifier(
@@ -490,13 +492,16 @@ class OpalPresentity : public PSafeObject
   //@}
   
   
+#if OPAL_HAS_IM
   /**@name Instant Messaging */
   //@{
     virtual bool SendMessageTo(
       const OpalIM & message
     );
 
-    /** Callback when presentity receives a message
+    /**Called when Instant Message event is received.
+       See OpalIM for details on events. This includes text or composition
+       indication events.
 
         Default implementation calls m_onReceivedMessageNotifier.
       */
@@ -504,15 +509,19 @@ class OpalPresentity : public PSafeObject
       const OpalIM & message ///< incoming message
     );
 
-    typedef PNotifierTemplate<const OpalIM &> ReceivedMessageNotifier;
-    #define PDECLARE_ReceivedMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, const OpalIM &)
-    #define PCREATE_ReceivedMessageNotifier(fn) PCREATE_NOTIFIER2(fn, const OpalIM &)
+    typedef PNotifierTemplate<OpalIM> ReceivedMessageNotifier;
+    #define PDECLARE_ReceivedMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, OpalIM)
+    #define PDECLARE_ASYNC_ReceivedMessageNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalPresentity, cls, fn, OpalIM)
+    #define PCREATE_ReceivedMessageNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIM)
 
     /// Set the notifier for the OnPresenceChange() function.
     void SetReceivedMessageNotifier(
       const ReceivedMessageNotifier & notifier   ///< Notifier to be called by OnReceivedMessage()
     );
+
+    void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
   //@}
+#endif // OPAL_HAS_IM
 
     /** Used to set the AOR after the presentity is created
         This override allows the descendant class to convert the internal URL into a real AOR,
@@ -522,9 +531,9 @@ class OpalPresentity : public PSafeObject
       const PURL & aor
     );
 
-    void Internal_SendMessageToCommand(const OpalSendMessageToCommand & cmd);
-
     virtual PString GetID() const;
+
+    OpalManager & GetManager() const { return *m_manager; }
 
   protected:
     OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
@@ -536,7 +545,9 @@ class OpalPresentity : public PSafeObject
 
     AuthorisationRequestNotifier m_onAuthorisationRequestNotifier;
     PresenceChangeNotifier       m_onPresenceChangeNotifier;
+#if OPAL_HAS_IM
     ReceivedMessageNotifier      m_onReceivedMessageNotifier;
+#endif // OPAL_HAS_IM
 
     PMutex m_notificationMutex;
     PAtomicInteger::IntegerType m_idNumber;
@@ -705,6 +716,7 @@ class OpalSetLocalPresenceCommand : public OpalPresentityCommand, public OpalPre
 };
 
 
+#if OPAL_HAS_IM
 /** Command for sending an IM 
   */
 class OpalSendMessageToCommand : public OpalPresentityCommand
@@ -714,6 +726,8 @@ class OpalSendMessageToCommand : public OpalPresentityCommand
 
     OpalIM m_message;
 };
+#endif // OPAL_HAS_IM
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
