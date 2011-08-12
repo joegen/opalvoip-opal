@@ -495,7 +495,7 @@ void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const OpalPresentity::AuthorisationRequest & request)
+void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity::AuthorisationRequest request)
 {
   cout << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
   if (!request.m_note.IsEmpty())
@@ -503,7 +503,7 @@ void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, const OpalPr
 }
 
 
-void TestPresEnt::PresenceChange(OpalPresentity & presentity, const OpalPresenceInfo & info)
+void TestPresEnt::PresenceChange(OpalPresentity & presentity, OpalPresenceInfo info)
 {
   cout << "Presentity " << presentity.GetAOR();
   if (info.m_entity != info.m_target)

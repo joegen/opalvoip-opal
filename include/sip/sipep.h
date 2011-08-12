@@ -662,12 +662,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
 
-    /**Send IM text
-     */
-    virtual PBoolean Message(
-      OpalIM & message
-    );
-
     /**Send SIP message
      */
     bool SendMESSAGE(

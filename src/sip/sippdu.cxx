@@ -3632,6 +3632,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                        OpalTransport & trans,
                        const Params & params)
   : SIPTransaction(Method_MESSAGE, ep, trans)
+  , m_parameters(params)
 {
   Construct(params);
 }
@@ -3639,6 +3640,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 
 SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
   : SIPTransaction(Method_MESSAGE, conn)
+  , m_parameters(params)
 {
   Construct(params);
 }
@@ -3657,7 +3659,7 @@ void SIPMessage::Construct(const Params & params)
       m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
   }
 
-  InitialiseHeaders(addr, addr, m_localAddress, params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
+  InitialiseHeaders(addr, addr, m_localAddress.AsQuotedString(), params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
 
   if (!params.m_contentType.IsEmpty()) {
     m_mime.SetContentType(params.m_contentType);

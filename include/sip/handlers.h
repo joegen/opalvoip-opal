@@ -336,6 +336,7 @@ public:
 
 protected:
   SIPMessage::Params m_parameters;
+  bool               m_messageSent;
 };
 
 
