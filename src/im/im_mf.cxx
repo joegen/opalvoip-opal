@@ -683,8 +683,9 @@ void OpalIMManager::RemoveContext(OpalIMContext * context, bool byRemote)
   }
 
   // remove conversation ID from dictionary
-  if (m_contextsByConversationId.RemoveAt(id))
+  if (m_contextsByConversationId.RemoveAt(id)) {
     PTRACE(5, "OpalIM\tContext '" << id << "' removed");
+  }
 }
 
 
