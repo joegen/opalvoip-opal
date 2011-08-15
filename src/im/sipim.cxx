@@ -350,7 +350,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
 {
-  SIPURL from = message.m_from;
+  SIPURL from(message.m_from);
   from.SetDisplayName(m_localName);
 
   params.m_localAddress    = from.AsQuotedString();
