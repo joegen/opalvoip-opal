@@ -902,14 +902,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     return true;
 
   // get the size of the output buffer
-  int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
-  int optimalDataSize = GetOptimalDataFrameSize(false);
-  if (outputDataSize < optimalDataSize)
-    outputDataSize = optimalDataSize;
-
-  PINDEX maxEncoderSize = GetMaxEncoderOutputSize();
-  if (outputDataSize > maxEncoderSize)
-    outputDataSize = maxEncoderSize;
+  int outputDataSize = std::max(GetOptimalDataFrameSize(false),
+                                getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
 
   unsigned flags;
 
