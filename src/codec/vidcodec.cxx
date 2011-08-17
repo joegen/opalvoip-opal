@@ -96,7 +96,6 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
   , inDataSize(10*1024)
   , outDataSize(10*1024)
-  , videoEncoderMaxOutputSize(10*1024)
   , forceIFrame(false)
   , lastFrameWasIFrame(false)
   , m_totalFrames(0)
@@ -112,7 +111,7 @@ static void SetFrameBytes(const OpalMediaFormat & fmt, const PString & widthOpti
   int height = fmt.GetOptionInteger(heightOption, PVideoFrameInfo::CIFHeight);
   int newSize = PVideoDevice::CalculateFrameBytes(width, height, fmt);
   if (newSize > 0)
-    size = newSize;
+    size = sizeof(PluginCodec_Video_FrameHeader) + newSize;
 }
 
 
@@ -126,7 +125,7 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), inDataSize);
   SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      outDataSize);
 
-  videoEncoderMaxOutputSize = outputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxTxPacketSizeOption(), outDataSize);
+  outputMediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), maxOutputSize);
 
   return PTrue;
 }

@@ -953,6 +953,10 @@ class OpalMediaFormat : public PContainer
     static const PString & ProtocolOption();
 
     /**Get the name of the OpalMediaOption indicating the maximum RTP payload size.
+       Note this is a read only parameter and not generally set by the user. It
+       is intended to get the OpalManager::GetMaxRtpPayloadSize() value to the
+       codec (especially plug ins) before encoding starts in case the codec
+       requires some form of initialisation based on this value.
       */
     static const PString & MaxTxPacketSizeOption();
 
