@@ -2157,7 +2157,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
       info.m_contact.MakeEmpty();
 
     if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
-      info.m_when.SetCurrentTime();
+      info.m_when.SetTimestamp(0);
 
     infoList.push_back(info);
   }
