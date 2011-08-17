@@ -360,6 +360,24 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
           }
         }
 
+        PStringArray options = args.GetOptionString('O').Lines();
+        for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
+          PString option = options[opt];
+          PINDEX equal = option.Find('=');
+          if (equal == P_MAX_INDEX)
+            cerr << "Illegal option \"" << option << "\" used." << endl;
+          else {
+            PString name = option.Left(equal);
+            PString value = option.Mid(equal+1);
+            if (mediaFormat.SetOptionValue(name, value))
+              cout << "Option \"" << name << "\" set to \"" << value << "\"." << endl;
+            else
+              cerr << "Could not set option \"" << name << "\" to \"" << value << "\"." << endl;
+          }
+        }
+
+        mediaFormat.ToCustomisedOptions();
+
         if ((m_encoder = OpalTranscoder::Create(adjustedRawFormat, mediaFormat)) == NULL) {
           cout << "Could not create encoder for media format \"" << mediaFormat << '"' << endl;
           return false;
@@ -378,27 +396,6 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
   return 1;
 }
 
-
-void SetOptions(PArgList & args, OpalMediaFormat & mediaFormat)
-{
-  PStringArray options = args.GetOptionString('O').Lines();
-  for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
-    PString option = options[opt];
-    PINDEX equal = option.Find('=');
-    if (equal == P_MAX_INDEX)
-      cerr << "Illegal option \"" << option << "\" used." << endl;
-    else {
-      PString name = option.Left(equal);
-      PString value = option.Mid(equal+1);
-      if (mediaFormat.SetOptionValue(name, value))
-        cout << "Option \"" << name << "\" set to \"" << value << "\"." << endl;
-      else
-        cerr << "Could not set option \"" << name << "\" to \"" << value << "\"." << endl;
-    }
-  }
-
-  mediaFormat.ToCustomisedOptions();
-}
 
 static int udiff(unsigned int const subtrahend, unsigned int const subtractor) 
 {
@@ -514,11 +511,6 @@ bool AudioThread::Initialise(PArgList & args)
 
   if (m_encoder == NULL) 
     m_frameTime = mediaFormat.GetFrameTime();
-  else {
-    OpalMediaFormat mediaFormat = m_encoder->GetOutputFormat();
-    SetOptions(args, mediaFormat);
-    m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
-  }
 
   cout << "opened and initialised." << endl;
   m_running = true;
@@ -716,8 +708,6 @@ bool VideoThread::Initialise(PArgList & args)
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
-  SetOptions(args, mediaFormat);
-
   unsigned bitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   PString rc = args.GetOptionString('C');
   if (rc.IsEmpty()) 
@@ -735,9 +725,9 @@ bool VideoThread::Initialise(PArgList & args)
 
   m_frameTime = mediaFormat.GetFrameTime();
   if (m_encoder != NULL) {
-    m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
     if (args.HasOption('p'))
       m_encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+    m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
   }
 
   m_singleStep = args.HasOption("single-step");
