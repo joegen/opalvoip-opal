@@ -59,6 +59,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
 #if OPAL_SIP
          "S-sip:"
          "r-register:"
+         "-register-auth-id:"
+         "-register-proxy:"
          "-register-ttl:"
          "-register-mode:"
          "-proxy:"
@@ -114,6 +116,8 @@ PString OpalManagerConsole::GetArgumentUsage() const
          "SIP options:\n"
          "  -S or --sip interface      : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
          "  -r or --register server    : SIP registration to server.\n"
+         "        --register-auth-id n : SIP registration authorisation id, default is username.\n"
+         "        --register-proxy n   : SIP registration proxy, default is none.\n"
          "        --register-ttl n     : SIP registration Time To Live, default 300 seconds.\n"
          "        --register-mode m    : SIP registration mode (normal, single, public).\n"
          "        --proxy url          : SIP outbound proxy.\n"
@@ -352,6 +356,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     if (args.HasOption('r')) {
       SIPRegister::Params params;
       params.m_addressOfRecord = args.GetOptionString('r');
+      params.m_authID = args.GetOptionString("register-auth-id");
+      params.m_registrarAddress = args.GetOptionString("register-proxy");
       params.m_password = args.GetOptionString('p');
       params.m_expire = args.GetOptionString("register-ttl", "300").AsUnsigned();
       if (params.m_expire < 30) {

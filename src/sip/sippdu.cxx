@@ -3070,7 +3070,7 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
     else {
       SIPURL remoteURL = m_remoteAddress;
       server = aor;
-      if (aor.GetHostName() != remoteURL.GetHostAddress()) {
+      if (aor.GetHostName() != remoteURL.GetHostName()) {
         /* Note this sets the proxy field because the user has given a full AOR
            with a domain for "user" and then specified a specific host name
            which as far as we are concered is the host to talk to. Setting the
