@@ -2097,6 +2097,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
     return false;
 
   SIPPresenceInfo info;
+  info.m_tupleId.MakeEmpty();
 
   // Common info to all tuples
   PXMLElement * rootElement = xml.GetRootElement();
@@ -2106,61 +2107,68 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
     return false;
   }
 
-  static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
+  for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
+    PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
+    if (element == NULL)
+      continue;
 
-  State baseState = Available;
+    if (element->GetName() == "urn:ietf:params:xml:ns:pidf|tuple") {
+      PXMLElement * tupleElement = element;
 
-  PXMLElement * person = rootElement->GetElement("urn:ietf:params:xml:ns:pidf:data-model|person");
-  if (person != NULL) {
-    PXMLElement * activities = person->GetElement(rpid + "activities");
-    if (activities != NULL) {
+      if (!info.m_tupleId.IsEmpty()) {
+        infoList.push_back(info);
+        info = SIPPresenceInfo();
+      }
+
+      info.m_tupleId = tupleElement->GetAttribute("id");
+
+      SetNoteFromElement(rootElement, info.m_note);
+      SetNoteFromElement(tupleElement, info.m_note);
+
+      if ((element = tupleElement->GetElement("status")) != NULL) {
+        SetNoteFromElement(element, info.m_note);
+        if ((element = element->GetElement("basic")) != NULL) {
+          PCaselessString value = element->GetData();
+          if (value == "open")
+            info.m_state = Available;
+          else if (value == "closed")
+            info.m_state = NoPresence;
+        }
+      }
+
+      if ((element = tupleElement->GetElement("contact")) != NULL)
+        info.m_contact = element->GetData();
+
+      if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
+        info.m_when.SetTimestamp(0);
+    }
+    else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person") {
+      static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
+      PXMLElement * activities = element->GetElement(rpid + "activities");
+      if (activities == NULL)
+        continue;
+
       for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-        if (!activities->GetElement(i)->IsElement())
+        PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
+        if (activity == NULL)
           continue;
-        PCaselessString name(((PXMLElement *)activities->GetElement(i))->GetName());
+
+        PCaselessString name(activity->GetName());
         if (name.NumCompare(rpid) != PObject::EqualTo)
           continue;
+
+        name.Delete(0, rpid.GetLength());
         info.m_activities.AppendString(name);
 
-        State newState = SIPPresenceInfo::FromSIPActivityString(name.Mid(rpid.GetLength()));
-        if (newState != SIPPresenceInfo::NoPresence && baseState == Available)
-          baseState = newState;
+        State newState = SIPPresenceInfo::FromSIPActivityString(name);
+        if (newState != SIPPresenceInfo::NoPresence && info.m_state == Available)
+          info.m_state = newState;
       }
     }
   }
 
-  // ENumerate the tuples, each one gets an info instance
-  PXMLElement * tupleElement;
-  PINDEX tupleIndex = 0;
-  while ((tupleElement = rootElement->GetElement("tuple", tupleIndex++)) != NULL) {
-    info.m_state = SIPPresenceInfo::Unchanged;
-    info.m_note.MakeEmpty();
-
-    SetNoteFromElement(rootElement, info.m_note);
-    SetNoteFromElement(tupleElement, info.m_note);
-
-    PXMLElement * element = tupleElement->GetElement("status");
-    if (element != NULL) {
-      SetNoteFromElement(element, info.m_note);
-      if ((element = element->GetElement("basic")) != NULL) {
-        PCaselessString value = element->GetData();
-        if (value == "open")
-          info.m_state = baseState;
-        else if (value == "closed")
-          info.m_state = SIPPresenceInfo::NoPresence;
-      }
-    }
-
-    if ((element = tupleElement->GetElement("contact")) != NULL)
-      info.m_contact = element->GetData();
-    else
-      info.m_contact.MakeEmpty();
-
-    if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
-      info.m_when.SetTimestamp(0);
-
+  if (!info.m_tupleId.IsEmpty())
     infoList.push_back(info);
-  }
 
   infoList.sort();
 
