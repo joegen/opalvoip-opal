@@ -2025,7 +2025,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
         if (name.NumCompare(rpid) != PObject::EqualTo)
           continue;
 
-        name.Delete(rpid.GetLength(), P_MAX_INDEX);
+        name.Delete(0, rpid.GetLength());
         info.m_activities.AppendString(name);
 
         State newState = SIPPresenceInfo::FromSIPActivityString(name);
