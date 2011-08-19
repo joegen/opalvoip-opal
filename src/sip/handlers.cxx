@@ -1964,16 +1964,17 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
   if (!xml.LoadAndValidate(body, PresenceValidation, error, PXML::WithNS))
     return false;
 
-  SIPPresenceInfo info;
-  info.m_tupleId.MakeEmpty();
-
   // Common info to all tuples
+  PURL entity;
   PXMLElement * rootElement = xml.GetRootElement();
-  if (!info.m_entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
+  if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
     error = "Invalid/unsupported entity";
     PTRACE(1, "SIPPres\t" << error << " \"" << rootElement->GetAttribute("entity") << '"');
     return false;
   }
+
+  SIPPresenceInfo info;
+  info.m_tupleId.MakeEmpty();
 
   for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
     PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
@@ -1988,6 +1989,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
         info = SIPPresenceInfo();
       }
 
+      info.m_entity = entity;
       info.m_tupleId = tupleElement->GetAttribute("id");
 
       SetNoteFromElement(rootElement, info.m_note);
