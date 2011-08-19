@@ -328,14 +328,13 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
       return;
   }
   else {
-    if (status < SIP_PDU::Successful_OK) {
-      PTRACE(1, "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
-    }
-    else {
-      PTRACE_IF(2, status == SIP_PDU::Failure_BadRequest,
-                "SIP\tMalformed request received on " << transport);
+    const SIPMIMEInfo & mime = pdu->GetMIME();
+    if (!mime.GetCSeq().IsEmpty() &&
+        !mime.GetVia().IsEmpty() &&
+        !mime.GetCallID().IsEmpty() &&
+        !mime.GetFrom().IsEmpty() &&
+        !mime.GetTo().IsEmpty())
       pdu->SendResponse(transport, status, this);
-    }
   }
 
   delete pdu;
