@@ -2068,8 +2068,10 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     stream = &datagram;
 
     if (!transport.ReadPDU(pdu)) {
-      if (pdu.IsEmpty())
+      if (pdu.IsEmpty()) {
+        PTRACE(1, "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
         return SIP_PDU::Local_TransportError;
+      }
       truncated = true;
     }
 
@@ -2081,11 +2083,8 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   *stream >> cmd >> m_mime;
 
   if (!stream->good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
-    if (stream == &datagram) {
-      transport.setstate(ios::failbit);
-      PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-                << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
-    }
+    PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+              << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
     return SIP_PDU::Failure_BadRequest;
   }
 
