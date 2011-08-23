@@ -494,7 +494,7 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     // Need to copy to local buffer to guarantee 16 byte alignment
     memcpy(m_inputFrame->data[0], OPAL_VIDEO_FRAME_DATA_PTR(header), header->width*header->height*3/2);
-    m_inputFrame->pict_type = (flags & PluginCodec_CoderForceIFrame) ? FF_I_TYPE : FF_P_TYPE;
+    m_inputFrame->pict_type = (flags & PluginCodec_CoderForceIFrame) ? FF_I_TYPE : AV_PICTURE_TYPE_NONE;
 
     /*
     m_inputFrame->pts = (int64_t)srcRTP.GetTimestamp()*m_context->time_base.den/m_context->time_base.num/VIDEO_CLOCKRATE;
