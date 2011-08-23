@@ -1006,11 +1006,8 @@ class MyDecoder : public PluginCodec<MY_CODEC>
         return false;
 
       RTPFrame srcRTP((const unsigned char *)fromPtr, fromLen);
-      if (!m_fullFrame.SetFromRTPFrame(srcRTP, flags)) {
-        m_fullFrame.BeginNewFrame();
-        flags |= PluginCodec_ReturnCoderRequestIFrame;
+      if (!m_fullFrame.SetFromRTPFrame(srcRTP, flags))
         return true;
-      }
 
       // Wait for marker to indicate end of frame
       if (!srcRTP.GetMarker())
@@ -1039,7 +1036,6 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (bytesDecoded <= 0) {
         // Should have output log error in logging callback dyna.cxx
         flags |= PluginCodec_ReturnCoderRequestIFrame;
-        m_fullFrame.BeginNewFrame();
         return true;
       }
 
