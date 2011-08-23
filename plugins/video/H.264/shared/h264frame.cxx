@@ -310,24 +310,30 @@ bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
     // regular NAL - put in buffer, adding the header.
     PTRACE(6, "x264", "Deencapsulating a regular NAL unit NAL of " << frame.GetPayloadSize() - 1 << " bytes (type " << (int) curNALType << ")");
     AddDataToEncodedFrame(frame.GetPayloadPtr() + 1, frame.GetPayloadSize() - 1, *(frame.GetPayloadPtr()), true);
+    return true;
   } 
   else if (curNALType == 24) 
   {
     // stap-A (single time aggregation packet )
-    return DeencapsulateSTAP (frame, flags);
+    if (DeencapsulateSTAP (frame, flags))
+      return true;
   } 
   else if (curNALType == 28) 
   {
     // Fragmentation Units
-    return DeencapsulateFU (frame, flags);
+    if (DeencapsulateFU (frame, flags))
+      return true;
   }
   else
   {
     PTRACE(2, "x264", "Skipping unsupported NAL unit type " << (unsigned)curNALType);
-    return false;
   }
-  return true;
+
+  BeginNewFrame();
+  flags |= PluginCodec_ReturnCoderRequestIFrame;
+  return false;
 }
+
 bool H264Frame::IsSync () {
   uint32_t i;
 
