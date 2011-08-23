@@ -806,7 +806,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         }
         else // No IFrame requested, let avcodec decide what to do
         {
-            m_avpicture->pict_type = 0;
+            m_avpicture->pict_type = AV_PICTURE_TYPE_NONE;
         }
 
         // Encode a frame
