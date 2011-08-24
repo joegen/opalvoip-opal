@@ -35,25 +35,54 @@
 
 #if OPAL_HAS_RFC4103
 
-#include <opal/mediafmt.h>
-#include <im/t140.h>
-#include <im/im.h>
+#include <ptclib/url.h>
+
+#include <opal/mediastrm.h>
 #include <rtp/rtp.h>
 
 
-class RFC4103Context : public PObject
+class T140String;
+
+
+/** Packet for carrying RFC 4103 (T.140) instant message over RTP
+  */
+class OpalT140RTPFrame : public RTP_DataFrame
 {
   public:
-    RFC4103Context();
-    RFC4103Context(const OpalMediaFormat & fmt);
-    void SetMediaFormat(const OpalMediaFormat & fmt);
-    RTP_DataFrameList ConvertToFrames(const PString & contentType, const T140String & body);
+    OpalT140RTPFrame();
+    OpalT140RTPFrame(const PString & contentType);
+    OpalT140RTPFrame(const PString & contentType, const T140String & content);
+    OpalT140RTPFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
+    OpalT140RTPFrame(const RTP_DataFrame & frame);
 
-    OpalMediaFormat m_mediaFormat;
-    PMutex m_mutex;
-    WORD   m_sequence;
-    DWORD  m_baseTimeStamp;
-    PTime  m_baseTime;
+    void SetContentType(const PString & contentType);
+    PString GetContentType() const;
+
+    void SetContent(const T140String & text);
+    bool GetContent(T140String & text) const;
+    bool GetContent(PString & str) const;
+
+    PString AsString() const { return PString((const char *)GetPayloadPtr(), GetPayloadSize()); }
+};
+
+
+/** Media stream for carrying RFC 4103 (T.140) instant message over RTP
+  */
+class OpalT140MediaStream : public OpalMediaStream
+{
+  public:
+    OpalT140MediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
+
+    virtual PBoolean IsSynchronous() const         { return false; }
+    virtual PBoolean RequiresPatchThread() const   { return false; }
+
+    bool ReadPacket(RTP_DataFrame & packet);
+    bool WritePacket(RTP_DataFrame & packet);
 };
 
 

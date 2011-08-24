@@ -52,6 +52,7 @@
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
+#include <im/rfc4103.h>
 #include <ptclib/url.h>
 
 
@@ -350,6 +351,40 @@ bool OpalConnection::GarbageCollection()
 }
 
 
+PBoolean OpalConnection::SetUpConnection()
+{
+  originating = true;
+
+  // Check if we are A-Party in this call, so need to do things differently
+  if (ownerCall.GetConnection(0) == this) {
+    SetPhase(SetUpPhase);
+    if (!OnIncomingConnection(0, NULL)) {
+      Release(EndedByCallerAbort);
+      return false;
+    }
+
+    PTRACE(3, "OpalCon\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    if (!ownerCall.OnSetUp(*this)) {
+      Release(EndedByNoAccept);
+      return false;
+    }
+  }
+  else if (ownerCall.IsEstablished()) {
+    PTRACE(3, "OpalCon\tTransfer of connection in call " << ownerCall);
+    OnApplyStringOptions();
+    AutoStartMediaStreams();
+    OnConnectedInternal();
+  }
+  else {
+    PTRACE(3, "OpalCon\tIncoming call from " << remotePartyName);
+
+    OnApplyStringOptions();
+  }
+
+  return true;
+}
+
+
 PBoolean OpalConnection::OnSetUpConnection()
 {
   PTRACE(3, "OpalCon\tOnSetUpConnection" << *this);
@@ -542,6 +577,13 @@ void OpalConnection::OnAlerting()
 {
   endpoint.OnAlerting(*this);
 }
+
+
+PBoolean OpalConnection::SetAlerting(const PString &, PBoolean)
+{
+  return true;
+}
+
 
 OpalConnection::AnswerCallResponse OpalConnection::OnAnswerCall(const PString & callerName)
 {
@@ -867,6 +909,11 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
     }
   }
+
+#if OPAL_HAS_RFC4103
+  if (mediaFormat.GetMediaType() == OpalT140.GetMediaType())
+    return new OpalT140MediaStream(*this, mediaFormat, sessionID, isSource);
+#endif
 
   return NULL;
 }
@@ -1757,73 +1804,6 @@ OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const Op
   const_iterator r = find(mediaType);
   return r == end() ? mediaType.GetAutoStart() : r->second.autoStart;
 }
-
-
-#if 0 //OPAL_HAS_IM
-
-bool OpalConnection::TransmitInternalIM(const OpalMediaFormat & format, RTP_IMFrame & frame)
-{
-  // if the call contains any compatible IM stream, use it
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->IsSource() && (mediaStream->GetMediaFormat() == format)) {
-      PTRACE(3, "OpalCon\tSending " << format << " IM message within call");
-      return mediaStream->GetPatch()->PushFrame(frame);
-    }
-  }
-
-  // otherwise push the frame directly to the other connection
-  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL) {
-    PTRACE(3, "OpalCon\tSending " << format << " IM message directly to other connection");
-    other->OnReceiveInternalIM(format, frame);
-  }
-  return true;
-}
-
-
-void OpalConnection::OnReceiveInternalIM(const OpalMediaFormat & format, RTP_IMFrame & rtp)
-{
-  TransmitExternalIM(format, rtp);
-}
-
-
-bool OpalConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_IMFrame & frame)
-{
-  PURL remotePartyURL, localPartyURL;
-  PString remotePartyName;
-
-  // get information about sender
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnectionAs<OpalConnection>();
-  if (otherParty != NULL) {
-    remotePartyURL  = otherParty->GetRemotePartyCallbackURL();
-    remotePartyName = otherParty->GetRemotePartyName();
-    localPartyURL   = otherParty->GetLocalPartyURL();
-  }
-
-  // pass information up the chain
-
-  OpalIM message;
-  message.m_conversationId = GetToken();
-  message.m_to             = localPartyURL;
-  message.m_from           = remotePartyURL;
-  message.m_fromName       = remotePartyName;
-  message.m_mimeType       = frame.GetContentType();
-
-  T140String t140;
-  frame.GetContent(t140);
-  t140.AsString(message.m_body);
-
-  endpoint.OnMessageReceived(message);
-
-  return true;
-}
-
-bool OpalConnection::OnReceiveExternalIM(const OpalMediaFormat & format, RTP_IMFrame & body)
-{
-  return TransmitInternalIM(format, body);
-}
-
-#endif
 
 
 void OpalConnection::StringOptions::ExtractFromURL(PURL & url)

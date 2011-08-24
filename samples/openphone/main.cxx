@@ -807,6 +807,10 @@ bool MyManager::Initialise()
   m_faxEP = new MyFaxEndPoint(*this);
 #endif
 
+#if OPAL_HAS_IM
+  m_imEP = new OpalIMEndPoint(*this);
+#endif
+
   potsEP = new OpalLineEndPoint(*this);
   pcssEP = new MyPCSSEndPoint(*this);
 
@@ -1267,7 +1271,7 @@ bool MyManager::Initialise()
   AdjustVideoFormats();
 
 #if OPAL_HAS_IM
-  GetIMManager().AddNotifier(PCREATE_ConversationNotifier(OnConversation), "*");
+  m_imEP->AddNotifier(PCREATE_ConversationNotifier(OnConversation), "*");
 #endif
 
   LogWindow << "Ready ..." << endl;
@@ -1702,7 +1706,10 @@ void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 {
   CallIMDialog dlg(this);
-  dlg.ShowModal();
+  if (dlg.ShowModal() == wxID_OK) {
+    if (m_imEP->CreateContext(dlg.m_Presentity.p_str(), dlg.m_Address.p_str()) == NULL)
+      wxMessageBox(wxString(wxT("Cannot send IMs to ")) + dlg.m_Address, wxT("Error"));
+  }
 }
 
 
@@ -1746,7 +1753,7 @@ void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
   if (info != NULL && !info->m_Presentity.IsEmpty() && !info->m_Address.IsEmpty()) {
-    if (OpalIMContext::Create(GetPresentity(info->m_Presentity), info->m_Address) == NULL)
+    if (m_imEP->CreateContext(info->m_Presentity, info->m_Address) == NULL)
       wxMessageBox(wxString(wxT("Cannot send IMs to")) + info->m_Address, wxT("Error"));
   }
 }
@@ -5801,7 +5808,7 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 #if OPAL_HAS_IM
 
-void MyManager::OnConversation(OpalIMContext & context, OpalIMManager::ConversationInfo info)
+void MyManager::OnConversation(OpalIMContext & context, OpalIMEndPoint::ConversationInfo info)
 {
   PwxString id(context.GetID());
 
@@ -5975,6 +5982,7 @@ void IMDialog::AddTextToScreen(const PwxString & text, bool fromUs)
   m_textArea->SetDefaultStyle(m_defaultStyle);
   m_textArea->AppendText(text);
   m_textArea->AppendText(wxT("\n"));
+  Show();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6034,9 +6042,6 @@ void CallIMDialog::OnOK(wxCommandEvent &)
       config->Write(key, entry);
     }
   }
-
-  if (OpalIMContext::Create(m_manager.GetPresentity(m_Presentity), m_Address.p_str()) == NULL)
-    wxMessageBox(wxString(wxT("Cannot send IMs to")) + m_Address, wxT("Error"));
 
   EndModal(wxID_OK);
 }
@@ -6904,36 +6909,6 @@ PSoundChannel * MyPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & co
   return NULL;
 }
 
-#if 0
-bool MyPCSSEndPoint::TransmitExternalIM(OpalConnection & conn, const OpalMediaFormat & format, RTP_IMFrame & frame)
-{
-  ReceivedMessageInfo * info  = new ReceivedMessageInfo((const char *)conn.GetToken(), format);
-
-  T140String t140;
-  if (!frame.GetContent(t140)) {
-    info->m_contentType = "text/plain";
-    info->m_body        = "(unable to decode)";
-  }
-  else {
-    info->m_contentType = frame.GetContentType();
-    t140.AsString(info->m_body);
-  }
-
-  PSafePtr<OpalConnection> otherParty = conn.GetOtherPartyConnectionAs<OpalConnection>();
-  if (otherParty != NULL) {
-    info->m_remoteURL  = otherParty->GetRemotePartyCallbackURL();
-    info->m_remoteName = otherParty->GetRemotePartyName();
-    info->m_localURL   = otherParty->GetLocalPartyURL();
-  }
-
-  if (!(info->m_contentType *= "text/plain")) 
-    info->m_body = info->m_contentType + "   " + info->m_body;
-
-  m_manager.PostEvent(wxEvtRxMessage, ID_RX_MESSAGE, PString::Empty(), info);
-  return true;
-}
-
-#endif
 
 #if OPAL_H323
 ///////////////////////////////////////////////////////////////////////////////

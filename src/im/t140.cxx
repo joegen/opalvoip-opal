@@ -28,64 +28,15 @@
  * $Date$
  */
 
-#include <ptlib.h>
-#include <opal/buildopts.h>
-
 #ifdef __GNUC__
 #pragma implementation "t140.h"
 #endif
 
+#include <ptlib.h>
+#include <opal/buildopts.h>
+
 #include <im/t140.h>
-#include <string.h>
 
-#if OPAL_SIP
-#include <sip/sdp.h>
-#endif
-
-
-const char T140[] = "t140";
-
-
-#if OPAL_SIP
-
-/////////////////////////////////////////////////////////
-//
-//  SDP media description for text media
-//
-
-class SDPT140MediaDescription : public SDPRTPAVPMediaDescription
-{
-  PCLASSINFO(SDPT140MediaDescription, SDPRTPAVPMediaDescription);
-  public:
-    SDPT140MediaDescription(const OpalTransportAddress & address)
-      : SDPRTPAVPMediaDescription(address, T140)
-    {
-    }
-
-    virtual PString GetSDPMediaType() const
-    {
-      return "text";
-    }
-};
-
-#endif
-
-/////////////////////////////////////////////////////////////////////////////
-
-OpalT140MediaType::OpalT140MediaType()
-  : OpalRTPAVPMediaType(T140, "text")
-{
-}
-
-#if OPAL_SIP
-
-SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
-                                                                   OpalMediaSession * /*session*/) const
-{
-  return new SDPT140MediaDescription(localAddress);
-}
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -95,6 +46,7 @@ T140String::T140String()
   AppendUnicode16(ZERO_WIDTH_NO_BREAK);
   SetAt(length, '\0');
 }
+
 
 T140String::T140String(const PBYTEArray & bytes)
   : length(0)
@@ -108,6 +60,7 @@ T140String::T140String(const PBYTEArray & bytes)
   SetAt(length, '\0');
 }
 
+
 T140String::T140String(const BYTE * data, PINDEX len)
   : length(0)
 { 
@@ -119,6 +72,7 @@ T140String::T140String(const BYTE * data, PINDEX len)
   AppendUTF((const BYTE *)data, len);
   SetAt(length, '\0');
 }
+
 
 T140String::T140String(const char * chars)
   : length(0)
@@ -132,6 +86,7 @@ T140String::T140String(const char * chars)
   SetAt(length, '\0');
 }
 
+
 T140String::T140String(const PString & str)
   : length(0)
 { 
@@ -144,6 +99,7 @@ T140String::T140String(const PString & str)
   SetAt(length, '\0');
 }
 
+
 PINDEX T140String::AppendUTF(const BYTE * utf, PINDEX utfLen)
 {
   if (utfLen > 0) {
@@ -152,6 +108,7 @@ PINDEX T140String::AppendUTF(const BYTE * utf, PINDEX utfLen)
   }
   return utfLen;
 }
+
 
 PINDEX T140String::GetUTFLen(WORD c)
 {
@@ -162,6 +119,7 @@ PINDEX T140String::GetUTFLen(WORD c)
 
   return 3;
 }
+
 
 PINDEX T140String::AppendUnicode16(WORD c)
 {
@@ -196,10 +154,12 @@ PINDEX T140String::SetUTF(BYTE * ptr, WORD c)
   return 3;
 }
 
+
 PINDEX T140String::GetUTF(PINDEX pos, WORD & ch)
 {
   return GetUTF(GetPointer()+pos, GetSize()-pos, ch);
 }
+
 
 PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
 {
@@ -230,6 +190,7 @@ PINDEX T140String::GetUTF(const BYTE * ptr, PINDEX len, WORD & ch)
   return 3;
 }
 
+
 bool T140String::AsString(PString & str)
 {
   PINDEX pos = 0;
@@ -251,3 +212,6 @@ bool T140String::AsString(PString & str)
 
   return true;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////

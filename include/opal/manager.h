@@ -119,8 +119,14 @@ class OpalManager : public PObject
     /**Find an endpoint instance that is using the specified prefix.
       */
     OpalEndPoint * FindEndPoint(
-      const PString & prefix
+      const PString & prefix  ///< Prefix string for endpoint URL
     );
+
+    /**Find an endpoint instance that is using the specified prefix.
+      */
+    template <class T> T * FindEndPointAs(
+      const PString & prefix  ///< Prefix string for endpoint URL
+    ) { return dynamic_cast<T *>(FindEndPoint(prefix)); }
 
     /**Get the endpoints attached to this manager.
       */
@@ -1049,7 +1055,7 @@ class OpalManager : public PObject
        An application can intercept this and set options on the IM context.
      */
     virtual void OnConversation(
-      OpalIMManager::ConversationInfo info  ///< Information on the change to conversation
+      const PString & conversationID  ///< Id for conversation that changed state
     );
 
     /**Send an Instant Message to a remote party.
@@ -1087,12 +1093,6 @@ class OpalManager : public PObject
     virtual void OnMessageReceived(
       const OpalIM & message    ///< Message information
     );
-
-    /**Get Instant Messaging manager object.
-       Note that this object is primarily for internal use, so is mostly
-       undocumented and is "use at own risk".
-      */
-    OpalIMManager & GetIMManager() { return *m_imManager; }
   //@}
 #endif
 
@@ -1646,10 +1646,6 @@ class OpalManager : public PObject
     } activeCalls;
 
     PSafeDictionary<PString, OpalPresentity> m_presentities;
-
-#ifdef OPAL_HAS_IM
-    OpalIMManager * m_imManager;
-#endif
 
     PAtomicInteger m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;

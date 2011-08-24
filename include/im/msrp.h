@@ -33,35 +33,13 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <opal/rtpconn.h>
-#include <opal/manager.h>
-#include <opal/mediastrm.h>
-#include <opal/mediatype.h>
-#include <im/im.h>
-#include <ptclib/inetprot.h>
-#include <ptclib/guid.h>
-#include <ptclib/mime.h>
-
-#if OPAL_SIP
-#include <sip/sdp.h>
-#endif
 
 #if OPAL_HAS_MSRP
 
-class OpalMSRPMediaType : public OpalIMMediaType 
-{
-  public:
-    OpalMSRPMediaType();
-
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
-
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress,
-      OpalMediaSession * session
-    ) const;
-#endif
-};
+#include <ptclib/url.h>
+#include <ptclib/inetprot.h>
+#include <opal/mediasession.h>
+#include <im/rfc4103.h>
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -345,7 +323,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OpalMSRPMediaStream : public OpalIMMediaStream
+class OpalMSRPMediaStream : public OpalMediaStream
 {
   public:
     OpalMSRPMediaStream(
@@ -359,6 +337,7 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
 
     ~OpalMSRPMediaStream();
 
+    virtual PBoolean IsSynchronous() const         { return false; }
     virtual PBoolean RequiresPatchThread() const   { return !isSource; }
 
     /**Read raw media data from the source media stream.
@@ -376,22 +355,18 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     );
 
     virtual bool Open();
-    virtual bool Close();
 
     PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
     void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }
 
     PDECLARE_NOTIFIER2(OpalMSRPManager, OpalMSRPMediaStream, OnReceiveMSRP, OpalMSRPManager::IncomingMSRP &);
-
-
   //@}
+
   protected:
     OpalMSRPMediaSession & m_msrpSession;
-    PString m_remoteParty;
-    RFC4103Context m_rfc4103Context;
+    PString                m_remoteParty;
 };
 
-//                       schemeName,user,   passwd, host,   defUser,defhost, query,  params, frags,  path,   rel,    port
 
 #endif // OPAL_HAS_MSRP
 

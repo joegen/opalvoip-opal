@@ -602,16 +602,6 @@ class SIPConnection : public OpalRTPConnection
 
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
 
-    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIPURL & /*from*/, const SIP_PDU & /*pdu*/));
-    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIP_PDU & /*pdu*/));
-
-#if 0 // OPAL_HAS_IM
-     virtual bool TransmitExternalIM(
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & body
-    );
-#endif
-
     PString GetLocalPartyURL() const;
 
   protected:
@@ -754,6 +744,8 @@ class SIPConnection : public OpalRTPConnection
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIPURL & /*from*/, const SIP_PDU & /*pdu*/));
+    P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const SIP_PDU & /*pdu*/));
 
   friend class SIPTransaction;
   friend class SIP_RTP_Session;

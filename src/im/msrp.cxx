@@ -28,37 +28,105 @@
  * $Date$
  */
 
-#include <ptlib.h>
-#include <opal/buildopts.h>
-
 #ifdef __GNUC__
 #pragma implementation "msrp.h"
 #endif
 
-#include <ptlib/socket.h>
-#include <ptclib/random.h>
-#include <ptclib/pdns.h>
-#include <ptclib/mime.h>
-#include <ptclib/http.h>
+#include <ptlib.h>
 
-#include <opal/transports.h>
-#include <opal/mediatype.h>
-#include <opal/mediafmt.h>
-#include <opal/endpoint.h>
-
-#include <im/im.h>
 #include <im/msrp.h>
 
 #if OPAL_HAS_MSRP
 
+#include <im/im.h>
+
+#include <ptclib/pdns.h>
+#include <ptclib/http.h>
+
+#include <opal/connection.h>
+#include <opal/endpoint.h>
+#include <im/t140.h>
+
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
+
+
 #define CRLF "\r\n"
 
-const char MSRP[] = "msrp";
+const char MSRPMediaType[] = "im-msrp";
 
-OpalMSRPMediaType::OpalMSRPMediaType()
-  : OpalIMMediaType(MSRP, "message|tcp/msrp")
+class OpalMSRPMediaType : public OpalMediaTypeDefinition 
 {
-}
+  public:
+    OpalMSRPMediaType()
+      : OpalMediaTypeDefinition(MSRPMediaType, "message|tcp/msrp")
+    {
+    }
+
+    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress,
+      OpalMediaSession * session
+    ) const;
+#endif
+};
+
+OPAL_INSTANTIATE_MEDIATYPE2(msrp, MSRPMediaType, OpalMSRPMediaType);
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#define DECLARE_MSRP_ENCODING(title, encoding) \
+class IM##title##OpalMSRPEncoding : public OpalMSRPEncoding \
+{ \
+}; \
+static PFactory<OpalMSRPEncoding>::Worker<IM##title##OpalMSRPEncoding> worker_##IM##title##OpalMSRPEncoding(encoding, true); \
+
+
+DECLARE_MSRP_ENCODING(Text, "text/plain");
+DECLARE_MSRP_ENCODING(CPIM, "message/cpim");
+DECLARE_MSRP_ENCODING(HTML, "message/html");
+
+const OpalMediaFormat & GetOpalMSRP() 
+{ 
+  static class IMMSRPMediaFormat : public OpalMediaFormat { 
+    public: 
+      IMMSRPMediaFormat() 
+        : OpalMediaFormat(OPAL_MSRP, 
+                          MSRPMediaType,
+                          RTP_DataFrame::MaxPayloadType, 
+                          "+", 
+                          false,  
+                          1440, 
+                          512, 
+                          0, 
+                          1000)            // as defined in RFC 4103 - good as anything else   
+      { 
+        PFactory<OpalMSRPEncoding>::KeyList_T types = PFactory<OpalMSRPEncoding>::GetKeyList();
+        PFactory<OpalMSRPEncoding>::KeyList_T::iterator r;
+
+        PString acceptTypes;
+        for (r = types.begin(); r != types.end(); ++r) {
+          if (!acceptTypes.IsEmpty())
+            acceptTypes += " ";
+          acceptTypes += *r;
+        }
+
+        OpalMediaOptionString * option = new OpalMediaOptionString("Accept Types", false, acceptTypes);
+        option->SetMerge(OpalMediaOption::AlwaysMerge);
+        AddOption(option);
+
+        option = new OpalMediaOptionString("Path", false, "");
+        option->SetMerge(OpalMediaOption::MaxMerge);
+        AddOption(option);
+      } 
+  } const f; 
+  return f; 
+} 
+
 
 #if OPAL_SIP
 
@@ -127,13 +195,13 @@ SDPMediaDescription * OpalMSRPMediaType::CreateSDPMediaDescription(const OpalTra
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, MSRP)
+  : SDPMediaDescription(address, MSRPMediaType)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & _path)
-  : SDPMediaDescription(address, MSRP)
+  : SDPMediaDescription(address, MSRPMediaType)
   , path(_path)
 {
   SetDirection(SDPMediaDescription::SendRecv);
@@ -168,7 +236,7 @@ void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString &
 
 void SDPMSRPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetMediaType() == MSRP) 
+  if (mediaFormat.GetMediaType() == MSRPMediaType) 
     types = mediaFormat.GetOptionString("Accept Types").Trim();
 }
 
@@ -187,7 +255,7 @@ OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
 
 void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != MSRP) {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != MSRPMediaType) {
     PTRACE(4, "MSRP\tSDP not including " << mediaFormat << " as it is not a valid MSRP format");
     return;
   }
@@ -199,6 +267,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 
 
 #endif // OPAL_SIP
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -235,7 +304,7 @@ static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFacto
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId)
-  : OpalMediaSession(connection, sessionId, MSRP)
+  : OpalMediaSession(connection, sessionId, MSRPMediaType)
   , m_manager(MSRPInitialiser::KickStart(connection.GetEndPoint().GetManager()))
   , m_isOriginating(connection.IsOriginating())
   , m_localMSRPSessionId(m_manager.CreateSessionID())
@@ -293,7 +362,7 @@ bool OpalMSRPMediaSession::WritePacket(RTP_DataFrame & frame)
     PTRACE(2, "MSRP\tCannot send MSRP message as no connection has been established");
   } 
   else {
-    RTP_IMFrame * imFrame = dynamic_cast<RTP_IMFrame *>(&frame);
+    OpalT140RTPFrame * imFrame = dynamic_cast<OpalT140RTPFrame *>(&frame);
     if (imFrame != NULL) {
       PString messageId;
       T140String content;
@@ -368,17 +437,14 @@ OpalMediaSession * OpalMSRPMediaType::CreateMediaSession(OpalConnection & conn, 
 
 ////////////////////////////////////////////////////////
 
-OpalMSRPMediaStream::OpalMSRPMediaStream(
-      OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      bool isSource,                       ///<  Is a source stream
-      OpalMSRPMediaSession & msrpSession
-)
-  : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
+OpalMSRPMediaStream::OpalMSRPMediaStream(OpalConnection & connection,
+                                         const OpalMediaFormat & mediaFormat,
+                                         unsigned sessionID,
+                                         bool isSource,
+                                         OpalMSRPMediaSession & msrpSession)
+  : OpalMediaStream(connection, mediaFormat, sessionID, isSource)
   , m_msrpSession(msrpSession)
   , m_remoteParty(mediaFormat.GetOptionString("Path"))
-  , m_rfc4103Context(mediaFormat)
 {
   PTRACE(3, "MSRP\tOpening MSRP connection from " << m_msrpSession.GetLocalURL() << " to " << m_remoteParty);
   if (isSource) 
@@ -386,21 +452,25 @@ OpalMSRPMediaStream::OpalMSRPMediaStream(
                                            PCREATE_NOTIFIER2(OnReceiveMSRP, OpalMSRPManager::IncomingMSRP &));
 }
 
+
 OpalMSRPMediaStream::~OpalMSRPMediaStream()
 {
   m_msrpSession.GetManager().RemoveNotifier(m_msrpSession.GetLocalURL(), m_remoteParty);
 }
+
 
 bool OpalMSRPMediaStream::Open()
 {
   return m_msrpSession.OpenMSRP(m_remoteParty) && OpalMediaStream::Open();
 }
 
+
 PBoolean OpalMSRPMediaStream::ReadPacket(RTP_DataFrame &)
 {
   PAssertAlways("Cannot ReadData from OpalMSRPMediaStream");
   return false;
 }
+
 
 PBoolean OpalMSRPMediaStream::WritePacket(RTP_DataFrame & frame)
 {
@@ -410,10 +480,6 @@ PBoolean OpalMSRPMediaStream::WritePacket(RTP_DataFrame & frame)
   return m_msrpSession.WritePacket(frame);
 }
 
-PBoolean OpalMSRPMediaStream::Close()
-{
-  return OpalIMMediaStream::Close();
-}
 
 void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::IncomingMSRP & incomingMSRP)
 {
@@ -424,12 +490,15 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
   } 
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
+    OpalIM im;
+    im.m_from = connection.GetRemotePartyCallbackURL();
+    im.m_to = connection.GetLocalPartyURL();
+
     T140String t140(incomingMSRP.m_body);
-    RTP_DataFrameList frames = m_rfc4103Context.ConvertToFrames(incomingMSRP.m_mime.GetString(PHTTP::ContentTypeTag, PMIMEInfo::TextPlain()), t140);
-    OpalMediaFormat fmt(m_rfc4103Context.m_mediaFormat);
-    for (PINDEX i = 0; i < frames.GetSize(); ++i) {
-      //connection.OnReceiveExternalIM(m_rfc4103Context.m_mediaFormat, (RTP_IMFrame &)frames[i]);
-    }
+    t140.AsString(im.m_bodies[PMIMEInfo::TextPlain()]);
+
+    PString error;
+//    connection.GetEndPoint().GetManager().GetIMManager().OnMessageReceived(im, &connection, error);
   }
   else {
     PTRACE(3, "MSRP\tMediaStream " << *this << " receiving unknown MSRP message");

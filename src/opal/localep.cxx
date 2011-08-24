@@ -214,41 +214,21 @@ OpalLocalConnection::~OpalLocalConnection()
 
 PBoolean OpalLocalConnection::SetUpConnection()
 {
-  originating = true;
+  bool notIncoming = ownerCall.GetConnection(0) == this || ownerCall.IsEstablished();
 
-  // Check if we are A-Party in thsi call, so need to do things differently
-  if (ownerCall.GetConnection(0) == this) {
-    SetPhase(SetUpPhase);
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return false;
-    }
+  if (!OpalConnection::SetUpConnection())
+    return false;
 
-    PTRACE(3, "LocalCon\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
-      Release(EndedByNoAccept);
-      return false;
-    }
+  if (notIncoming)
+    return true;
+
+  if (!endpoint.OnIncomingCall(*this)) {
+    Release(EndedByLocalBusy);
+    return false;
   }
-  else if (ownerCall.IsEstablished()) {
-    PTRACE(3, "LocalCon\tTransfer of connection in call " << ownerCall);
-    OnApplyStringOptions();
-    AutoStartMediaStreams();
-    OnConnectedInternal();
-  }
-  else {
-    PTRACE(3, "LocalCon\tIncoming call from " << remotePartyName);
 
-    OnApplyStringOptions();
-
-    if (!endpoint.OnIncomingCall(*this)) {
-      Release(EndedByLocalBusy);
-      return false;
-    }
-
-    if (!endpoint.IsDeferredAlerting())
-      AlertingIncoming();
-  }
+  if (!endpoint.IsDeferredAlerting())
+    AlertingIncoming();
 
   return true;
 }
