@@ -28,14 +28,13 @@
 
 #include "main.h"
 
-#include <opal/pcss.h>
-#include <im/rfc4103.h>
-#include <opal/patch.h>
+#include <im/im_ep.h>
+
 
 PCREATE_PROCESS(SipIM);
 
 SipIM::SipIM()
-  : PProcess("OPAL SIP IM", "SipIM", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
+  : PProcess("OPAL", "IM Test", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
   , m_manager(NULL)
 {
 }
@@ -49,145 +48,36 @@ SipIM::~SipIM()
 
 void SipIM::Main()
 {
-  PArgList & args = GetArguments();
-
-  args.Parse(
-             "f:"
-             "h-help."
-             "L-listener:"
-             "-msrp."
-             "p-password:"
-             "-portbase:"
-             "-portmax:"
-             "r-register-sip:"
-             "-rtp-base:"
-             "-rtp-max:"
-             "-sipim."
-             "-stun:"
-             "-t140."
-             "-translate:"
-             "-tcp-base:"
-             "-tcp-max:"
-             "-udp-base:"
-             "-udp-max:"
-             "u-user:"
-
-#if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
-#endif
-             , FALSE);
-
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
-
-  if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] [url]\n"
-            "\n"
-            "Available options are:\n"
-            "  -u or --user            : set local username.\n"
-            "  --help                  : print this help message.\n"
-            "  -L or --listener addr        : set listener address:port.\n"
-#if OPAL_HAS_MSRP
-            "  --msrp                  : use MSRP (default)\n"
-#endif
-#if OPAL_HAS_SIPIM
-            "  --sipim                 : use SIPIM\n"
-#endif
-            "  --t140                  : use T.140\n"
-#if PTRACING
-            "  -o or --output file     : file name for output of log messages\n"       
-            "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-            "\n"
-            "e.g. " << GetFile().GetTitle() << " sip:fred@bloggs.com\n"
-            ;
-    return;
-  }
-
   m_manager = new MyManager;
 
-  if (args.HasOption('u'))
-    m_manager->SetDefaultUserName(args.GetOptionString('u'));
+  PArgList & args = GetArguments();
+  args.Parse(m_manager->GetArgumentSpec() +
+             "l-listen."
+             "f-script-file:");
 
-  Mode mode;
-  if (args.HasOption("t140")) {
-    mode = Use_T140;
-    m_manager->m_imFormat = OpalT140;
-  }
-#if OPAL_HAS_SIPIM
-  else if (args.HasOption("sipim")) {
-    mode = Use_SIPIM;
-    m_manager->m_imFormat = OpalSIPIM;
-  }
-#endif
-#if OPAL_HAS_MSRP
-  else if (args.HasOption("msrp")) {
-    mode = Use_MSRP;
-    m_manager->m_imFormat = OpalMSRP;
-  }
-#endif
-  //else {
-  //  cout << "error: must select IM mode" << endl;
-  //  return;
-  //}
-
-  OpalMediaFormatList allMediaFormats;
-  PString listeners = args.GetOptionString('L');
-
-  m_sipEP  = new SIPEndPoint(*m_manager);
-
-  if (!m_sipEP->StartListeners(listeners)) {
-    cerr << "Could not start SIP listeners." << endl;
-    return;
-  }
-  allMediaFormats += m_sipEP->GetMediaFormats();
-
-  MyPCSSEndPoint * pcss = new MyPCSSEndPoint(*m_manager);
-  allMediaFormats += pcss->GetMediaFormats();
-  pcss->SetSoundChannelPlayDevice("NULL");
-  pcss->SetSoundChannelRecordDevice("NULL");
-
-  allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
-  allMediaFormats.RemoveNonTransportable();
-
-  m_manager->AddRouteEntry("sip:.*\t.*=pc:*");
-  m_manager->AddRouteEntry("pc:.*\t.*=sip:<da>");
-
-  cout << "Available codecs: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
-
-  PString imFormatMask = PString("!") + (const char *)m_manager->m_imFormat;
-  m_manager->SetMediaFormatMask(imFormatMask);
-  allMediaFormats.Remove(imFormatMask);
-  
-  cout << "Codecs to be used: " << setfill(',') << allMediaFormats << setfill(' ') << endl;
-
-  OpalConnection::StringOptions options;
-  options.SetAt(OPAL_OPT_AUTO_START, m_manager->m_imFormat.GetMediaType() + ":exclusive");
-
-  m_variables.SetAt("from", m_manager->GetDefaultUserName() + "@" + PIPSocket::GetHostName());
-
-  PTextFile scriptFile;
-  if (args.HasOption('f') && !scriptFile.Open(args.GetOptionString('f'))) {
-    cerr << "error: cannot open script file '" << args.GetOptionString('f') << "'" << endl;
+  if (args.HasOption('h') || (args.GetCount() == 0 && !args.HasOption('l'))) {
+    PString name = GetFile().GetTitle();
+    cerr << "usage: " << name << " [ options ] [ url ]\n"
+            "\n"
+            "Available options are:\n"
+            "  -l or --listen              : Listen for incoming connections\n"
+            "  -f or --script-file fn      : Execute script file\n"
+            "\n"
+         << m_manager->GetArgumentUsage()
+         << "\n"
+            "e.g. " << name << " sip-im sip:fred@bloggs.com\n"
+            "\n"
+            "     " << name << " t.140\n\n";
     return;
   }
 
-#if 0
-  if (args.GetCount() != 0) {
-    do {
-      //AddPresentity(args);
-    } while (args.Parse(URL_OPTIONS));
+  if (!m_manager->Initialise(args, true))
+    return;
 
-    if (m_presentities.GetSize() == 0) {
-      cerr << "error: no presentities available" << endl;
-      return;
-    }
-  }
-#endif
+  new OpalIMEndPoint(*m_manager);
+  m_manager->AddRouteEntry("sip:.*\t.*=im:*");
+  m_manager->AddRouteEntry("h323:.*\t.*=im:*");
+
 
   PCLIStandard cli;
   cli.SetPrompt("IM> ");
@@ -243,74 +133,19 @@ void SipIM::Main()
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
                   "Quit command line interpreter, note quitting from console also shuts down application.");
 
-  // create the foreground context
-  PCLI::Context * cliContext = cli.StartForeground();
-  if (cliContext == NULL)
-    return;
-
-  // if there is a script file, process commands
-  if (scriptFile.IsOpen()) {
-    cout << "Running script '" << scriptFile.GetFilePath() << "'" << endl;
-    for (;;) {
-      PString line;
-      if (!scriptFile.ReadLine(line))
-        break;
-      line = line.Trim();
-      if (line.GetLength() > 0) {
-        if ((line[0] != '#') && (line[0] != ';') && ((line.GetLength() < 2) || (line[0] != '/') || (line[1] != '/'))) {
-          cout << line << endl;
-          if (!cliContext->ProcessInput(line)) {
-            cerr << "error: error occurred while processing script" << endl;
-            return;
-          }
-        }
-      }
+  if (args.HasOption('f')) {
+    // if there is a script file, process commands
+    PTextFile scriptFile;
+    if (scriptFile.Open(args.GetOptionString('f'))) {
+      cout << "Running script '" << scriptFile.GetFilePath() << "'" << endl;
+      cli.RunScript(scriptFile);
+      cout << "Script complete" << endl;
     }
-    cout << "Script complete" << endl;
-  }
-  scriptFile.Close();
-
-  cli.RunContext(cliContext); // Do not spawn thread, wait till end of input
-
-#if 0
-  if (args.GetCount() == 0)
-    cout << "Awaiting incoming call ..." << flush;
-  else {
-    if (!m_manager->SetUpCall("pc:", args[0], m_manager->m_callToken, NULL, 0, &options)) {
-      cerr << "Could not start IM to \"" << args[0] << '"' << endl;
-      return;
-    }
+    else
+      cerr << "error: cannot open script file \"" << args.GetOptionString('f') << '"' << endl;
   }
 
-  m_manager->m_connected.Wait();
-
-  RFC4103Context rfc4103(m_manager->m_imFormat);
-
-  int count = 1;
-  for (;;) {
-    PThread::Sleep(5000);
-    const char * textData = "Hello, world";
-
-    if (count > 0) {
-      PSafePtr<OpalCall> call = m_manager->FindCallWithLock(m_manager->m_callToken);
-      if (call != NULL) {
-        PSafePtr<OpalPCSSConnection> conn = call->GetConnectionAs<OpalPCSSConnection>();
-        if (conn != NULL) {
-          RTP_DataFrameList frameList = rfc4103.ConvertToFrames("text/plain", textData);
-          OpalMediaFormat fmt(m_manager->m_imFormat);
-          for (PINDEX i = 0; i < frameList.GetSize(); ++i) {
-            conn->TransmitInternalIM(fmt, (RTP_IMFrame &)frameList[i]);
-          }
-        }
-      }
-      --count;
-    }
-  }
-
-  // Wait for call to come in and finish
-  m_manager->m_completed.Wait();
-  cout << " completed.";
-#endif
+  cli.Start(false); // Do not spawn thread, wait till end of input
 }
 
 
@@ -418,7 +253,7 @@ void SipIM::CmdRegister(PCLI::Arguments & args, INT)
     params.m_realm            = domain;
     PString aor;
     args.GetContext() << "Registering with " << params.m_registrarAddress << "...";
-    if (m_sipEP->Register(params, aor, false))
+    if (m_manager->FindEndPointAs<SIPEndPoint>("sip")->Register(params, aor, false))
       args.GetContext() << "succeeded" << endl;
     else
       args.GetContext() << "failed" << endl;
@@ -494,33 +329,6 @@ void MyManager::OnClearedCall(OpalCall & /*call*/)
 {
   m_connected.Signal();
   m_completed.Signal();
-}
-
-void MyManager::OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & options)
-{
-  options.SetAt(OPAL_OPT_AUTO_START, m_imFormat.GetMediaType() + ":exclusive");
-  OpalManager::OnApplyStringOptions(conn, options);
-}
-
-PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
-{
-  MyManager & mgr = (MyManager &)manager;
-  mgr.m_callToken = connection.GetCall().GetToken();
-  AcceptIncomingConnection(mgr.m_callToken);
-  mgr.m_connected.Signal();
-  cout << "Incoming call connected" << endl;
-
-  return PTrue;
-}
-
-
-PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
-{
-  MyManager & mgr = (MyManager &)manager;
-
-  cout << "Outgoing call connected" << endl;
-  mgr.m_connected.Signal();
-  return PTrue;
 }
 
 

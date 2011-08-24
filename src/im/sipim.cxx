@@ -35,34 +35,22 @@
 #pragma implementation "sipim.h"
 #endif
 
-#include <ptlib/socket.h>
-#include <ptclib/random.h>
 #include <ptclib/pxml.h>
 
-#include <opal/transports.h>
-#include <opal/mediatype.h>
-#include <opal/mediafmt.h>
-#include <opal/endpoint.h>
-
 #include <im/im.h>
+#include <im/im_ep.h>
 #include <im/sipim.h>
+#include <im/t140.h>
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
 
+
 #if OPAL_HAS_SIPIM
 
-const char SIP_IM[] = "sip-im"; // RFC 3428
+const char SIP_IM_MediaType[] = "im-sip"; // RFC 3428
 
 static PConstCaselessString const ComposingMimeType("application/im-iscomposing+xml");
 static PConstCaselessString const DispositionMimeType("message/imdn+xml");
-
-
-////////////////////////////////////////////////////////////////////////////
-
-OpalSIPIMMediaType::OpalSIPIMMediaType()
-  : OpalIMMediaType(SIP_IM, "message|sip")
-{
-}
 
 
 /////////////////////////////////////////////////////////
@@ -81,7 +69,11 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
   PCLASSINFO(SDPSIPIMMediaDescription, SDPMediaDescription);
   public:
     SDPSIPIMMediaDescription(const OpalTransportAddress & address);
-    SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & fromURL);
+    SDPSIPIMMediaDescription(
+      const OpalTransportAddress & address,
+      const OpalTransportAddress & transportAddr,
+      const PString & fromURL
+    );
 
     PCaselessString GetSDPTransportType() const
     {
@@ -115,29 +107,70 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * FindFormat(PString &) const { return NULL; }
 
   protected:
-    OpalTransportAddress transportAddress;
-    PString fromURL;
+    OpalTransportAddress m_transportAddress;
+    PString              m_fromURL;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress, OpalMediaSession *) const
+////////////////////////////////////////////////////////////////////////////
+
+class OpalSIPIMMediaType : public OpalMediaTypeDefinition 
 {
-  return new SDPSIPIMMediaDescription(localAddress);
-}
+  public:
+    OpalSIPIMMediaType()
+      : OpalMediaTypeDefinition(SIP_IM_MediaType, "message|sip")
+    {
+    }
+
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress, OpalMediaSession *) const
+    {
+      return new SDPSIPIMMediaDescription(localAddress);
+    }
+};
+
+OPAL_INSTANTIATE_MEDIATYPE2(sipim, SIP_IM_MediaType, OpalSIPIMMediaType);
+
+
+////////////////////////////////////////////////////////////////////////////
+
+const OpalMediaFormat & GetOpalSIPIM() 
+{ 
+  static class IMSIPMediaFormat : public OpalMediaFormat { 
+    public: 
+      IMSIPMediaFormat() 
+        : OpalMediaFormat(OPAL_SIPIM, 
+                          SIP_IM_MediaType,
+                          RTP_DataFrame::MaxPayloadType, 
+                          "+", 
+                          false,  
+                          1440, 
+                          512, 
+                          0, 
+                          1000)     // as defined in RFC 4103 - good as anything else
+      { 
+        OpalMediaOptionString * option = new OpalMediaOptionString("URL", false, "");
+        option->SetMerge(OpalMediaOption::NoMerge);
+        AddOption(option);
+      } 
+  } const f; 
+  return f; 
+} 
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, SIP_IM)
+  : SDPMediaDescription(address, SIP_IM_MediaType)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
-SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address, const OpalTransportAddress & _transportAddr, const PString & _fromURL)
-  : SDPMediaDescription(address, SIP_IM)
-  , transportAddress(_transportAddr)
-  , fromURL(_fromURL)
+SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address,
+                                                   const OpalTransportAddress & transportAddr,
+                                                   const PString & fromURL)
+  : SDPMediaDescription(address, SIP_IM_MediaType)
+  , m_transportAddress(transportAddr)
+  , m_fromURL(fromURL)
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
@@ -160,10 +193,10 @@ bool SDPSIPIMMediaDescription::PrintOn(ostream & str, const PString & /*connectS
 PString SDPSIPIMMediaDescription::GetSDPPortList() const
 { 
   PIPSocket::Address addr; WORD port;
-  transportAddress.GetIpAndPort(addr, port);
+  m_transportAddress.GetIpAndPort(addr, port);
 
   PStringStream str;
-  str << ' ' << fromURL << '@' << addr << ':' << port;
+  str << ' ' << m_fromURL << '@' << addr << ':' << port;
 
   return str;
 }
@@ -180,7 +213,7 @@ void SDPSIPIMMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*
 OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormat sipim(OpalSIPIM);
-  sipim.SetOptionString("URL", fromURL);
+  sipim.SetOptionString("URL", m_fromURL);
 
   PTRACE(4, "SIPIM\tNew format is " << setw(-1) << sipim);
 
@@ -191,7 +224,7 @@ OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 
 void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != SIP_IM) {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != SIP_IM_MediaType) {
     PTRACE(4, "SIPIM\tSDP not including " << mediaFormat << " as it is not a valid SIPIM format");
     return;
   }
@@ -199,54 +232,6 @@ void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaForma
   SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
   ProcessMediaOptions(*sdpFormat, mediaFormat);
   AddSDPMediaFormat(sdpFormat);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-OpalMediaSession * OpalSIPIMMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
-{
-  // as this is called in the constructor of an OpalConnection descendant, 
-  // we can't use a virtual function on OpalConnection
-
-  if (conn.GetPrefixName() *= "sip")
-    return new OpalSIPIMMediaSession(conn, sessionID);
-
-  return NULL;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-OpalSIPIMMediaSession::OpalSIPIMMediaSession(OpalConnection & conn, unsigned sessionId)
-  : OpalMediaSession(conn, sessionId, SIP_IM)
-  , m_transportAddress(m_connection.GetTransport().GetLocalAddress())
-  , m_localURL(m_connection.GetLocalPartyURL())
-  , m_remoteURL(m_connection.GetRemotePartyURL())
-  , m_callId(m_connection.GetToken())
-{
-}
-
-
-OpalTransportAddress OpalSIPIMMediaSession::GetLocalMediaAddress() const
-{
-  return m_transportAddress;
-}
-
-
-OpalTransportAddress OpalSIPIMMediaSession::GetRemoteMediaAddress() const
-{
-  return m_remoteURL.GetHostAddress();
-}
-
-
-OpalMediaStream * OpalSIPIMMediaSession::CreateMediaStream(const OpalMediaFormat & mediaFormat, 
-                                                            unsigned sessionID, 
-                                                            PBoolean isSource)
-{
-  PTRACE(2, "SIPIM\tCreated " << (isSource ? "source" : "sink") << " media stream in "
-         << (m_connection.IsOriginating() ? "originator" : "receiver")
-         << " with local " << m_localURL << " and remote " << m_remoteURL);
-  return new OpalIMMediaStream(m_connection, mediaFormat, sessionID, isSource);
 }
 
 
@@ -262,13 +247,50 @@ OpalSIPIMContext::OpalSIPIMContext()
 }
 
 
+bool OpalSIPIMContext::Open()
+{
+  OpalManager & manager = m_endpoint->GetManager();
+
+  OpalMediaFormatList list = m_endpoint->GetMediaFormats();
+  list.Remove(manager.GetMediaFormatMask());
+  list.Reorder(manager.GetMediaFormatOrder());
+  if (list.IsEmpty()) {
+    PTRACE(2, "OpalIM\tNo media formats available");
+    return false;
+  }
+
+  if (list.front() == OpalSIPIM) {
+    PTRACE(3, "OpalIM\tDefault RFC 3428 pager mode for SIP");
+    return true;
+  }
+
+  OpalConnection::StringOptions options;
+  options.ExtractFromURL(m_remoteURL);
+  options.Set(OPAL_OPT_CALLING_PARTY_URL, m_localURL);
+  options.Set(OPAL_OPT_AUTO_START, list.front().GetMediaType() + ":exclusive");
+
+  m_call = manager.SetUpCall(m_endpoint->GetPrefixName()+":*", m_remoteURL, this, 0, &options);
+  if (m_call == NULL)
+    return list.HasFormat(OpalSIPIM); // Fallback to MESSAGE commands
+
+  m_weStartedCall = true;
+  return true;
+}
+
+
 void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
                                           const SIPMessage::Params & params,
                                           SIP_PDU::StatusCodes reason)
 {
   // RFC3428
+  OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+  if (imEP == NULL) {
+    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM endpoint");
+    return;
+  }
+
   PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(
-                  endpoint.GetManager().GetIMManager().FindContextByIdWithLock(params.m_id));
+                                          imEP->FindContextByIdWithLock(params.m_id));
   if (context == NULL) {
     PTRACE2(2, &endpoint, "OpalIM\tCannot find IM context for \"" << params.m_id << '"');
     return;
@@ -305,6 +327,12 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
                                          SIP_PDU & pdu)
 {
   // RFC3428
+  OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+  if (imEP == NULL) {
+    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM endpoint");
+    return;
+  }
+
   const SIPMIMEInfo & mime  = pdu.GetMIME();
 
   OpalIMContext::MessageDisposition status;
@@ -321,7 +349,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     message.m_fromAddr       = transport.GetRemoteAddress();
     message.m_fromName       = from.GetDisplayName();
     message.m_bodies.SetAt(mime.GetContentType(), pdu.GetEntityBody());
-    status = endpoint.GetManager().GetIMManager().OnMessageReceived(message, connection, errorInfo);
+    status = imEP->OnRawMessageReceived(message, connection, errorInfo);
   }
 
   SIPResponse * response = new SIPResponse(endpoint, SIP_PDU::Failure_BadRequest);
@@ -377,7 +405,7 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM 
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendOutsideCall(OpalIM & message)
 {
-  SIPEndPoint * ep = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
+  SIPEndPoint * ep = m_endpoint->GetManager().FindEndPointAs<SIPEndPoint>("sip");
   if (ep == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM without SIP endpoint");
     return ConversationClosed;
@@ -392,17 +420,32 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendOutsideCall(Opal
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendInsideCall(OpalIM & message)
 {
-  PSafePtr<SIPConnection> conn = PSafePtrCast<OpalConnection, SIPConnection>(m_connection);
+  if (!m_call->IsEstablished())
+    return DispositionPending;
+
+  PSafePtr<SIPConnection> conn = m_call->GetConnectionAs<SIPConnection>();
   if (conn == NULL) {
     PTRACE(2, "OpalSIPIMContext\tAttempt to send SIP IM on non-SIP connection");
     return ConversationClosed;
   }
 
+#if OPAL_HAS_RFC4103
+  OpalMediaStreamPtr stream = conn->GetMediaStream(OpalT140.GetMediaType(), false);
+  if (stream != NULL) {
+    for (PStringToString::iterator it = message.m_bodies.begin(); it != message.m_bodies.end(); ++it) {
+      OpalT140RTPFrame packet(it->first, T140String(it->second));
+      if (!stream->PushPacket(packet))
+        return TransportFailure;
+    }
+    return DispositionPending;
+  }
+#endif
+
   SIPMessage::Params params;
   PopulateParams(params, message);
 
   PSafePtr<SIPTransaction> transaction = new SIPMessage(*conn, params);
-  return transaction->Start() ? DispositionPending : TransportFailure;  
+  return transaction->Start() ? DispositionPending : TransportFailure;
 }
 
 

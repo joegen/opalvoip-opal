@@ -1,7 +1,7 @@
 /*
- * im_mf.h
+ * im.h
  *
- * Media formats for Instant Messaging
+ * Instant Messaging classes
  *
  * Open Phone Abstraction Library (OPAL)
  *
@@ -37,14 +37,31 @@
 #if OPAL_HAS_IM
 
 #include <ptclib/url.h>
-#include <ptclib/threadpool.h>
-
-#include <opal/transports.h>
-#include <opal/mediastrm.h>
-#include <im/rfc4103.h>
+#include <opal//transports.h>
 
 
-class OpalPresentity;
+class OpalCall;
+class OpalMediaFormat;
+class OpalIMEndPoint;
+
+
+/////////////////////////////////////////////////////////////////////
+
+#if OPAL_HAS_SIPIM
+#define OPAL_SIPIM             "SIP-IM"
+#define OpalSIPIM              GetOpalSIPIM()
+extern const OpalMediaFormat & GetOpalSIPIM();
+#endif
+
+#define OPAL_T140              "T.140"
+#define OpalT140               GetOpalT140()
+extern const OpalMediaFormat & GetOpalT140();
+
+#if OPAL_HAS_MSRP
+#define OPAL_MSRP              "MSRP"
+#define OpalMSRP               GetOpalMSRP()
+extern const OpalMediaFormat & GetOpalMSRP();
+#endif
 
 
 /////////////////////////////////////////////////////////////////////
@@ -98,41 +115,13 @@ class OpalIMContext : public PSafeObject
     /// Destroy context
     ~OpalIMContext();
 
-    /**Create a Instant Mesaging context based on URL scheme.
-       This uses a factory to create an approriate concrete type for the
-       protocol indicated by the scheme of the \p remoteURL.
-
-       The \p localURL may be empty and will be derived from the \p remoteURL
-       and the default user name from the manager.
+    /**Open the context (conversation)
+       Default behaviour simply returns true.
       */
-    static PSafePtr<OpalIMContext> Create(
-      OpalManager & manager,    ///< Manager for OPAL
-      const PURL & localURL,    ///< Local URL for conversation
-      const PURL & remoteURL,   ///< Remote URL for conversation
-      bool byRemote = false     ///< Created by remote entity
-    );
-
-    /**Create a Instant Mesaging context based on a connection.
-       This uses a factory to create an approriate concrete type for the
-       protocol used by the connection. Note that only SIPConnection is
-       supported at this time.
-      */
-    static PSafePtr<OpalIMContext> Create(
-      PSafePtr<OpalConnection> connection,  ///< Connection to begin conversation in.
-      bool byRemote = false                 ///< Created by remote entity
-    );
-
-    /**Create a Instant Mesaging context based on a presentity.
-       This uses a factory to create an approriate concrete type for the
-       protocol used by the presentity.
-      */
-    static PSafePtr<OpalIMContext> Create(
-      PSafePtr<OpalPresentity> presentity,    ///< Presentity for local end of conversation
-      const PURL & remoteURL,                 ///< Remote URL for conversation
-      bool byRemote = false                   ///< Created by remote entity
-    );
+    virtual bool Open();
 
     /**Close the context (conversation)
+       Default behaviour removes the context from the OpalIMEndPoint
       */
     virtual void Close();
   //@}
@@ -322,13 +311,13 @@ class OpalIMContext : public PSafeObject
     const PString & GetKey() const         { return m_key; }
 
     /// Get remote URL for conversation.
-    const PString & GetRemoteURL() const   { return m_remoteURL; }
+    const PURL & GetRemoteURL() const      { return m_remoteURL; }
 
     /// Get remote display name for conversation.
     const PString & GetRemoteName() const  { return m_remoteName; }
 
     /// Get local URL for conversation.
-    const PString & GetLocalURL() const    { return m_localURL; }
+    const PURL & GetLocalURL() const       { return m_localURL; }
 
     /// Get local display for conversation.
     const PString & GetLocalName() const    { return m_localName; }
@@ -349,16 +338,16 @@ class OpalIMContext : public PSafeObject
     virtual MessageDisposition InternalSendInsideCall(OpalIM & message);
     virtual void InternalOnMessageSent(const DispositionInfo & info);
 
+    OpalIMEndPoint * m_endpoint;
+    PStringOptions   m_attributes;
+
+    PSafePtr<OpalCall> m_call;
+    bool               m_weStartedCall;
+
     PMutex                        m_notificationMutex;
     MessageDispositionNotifier    m_messageDispositionNotifier;
     MessageReceivedNotifier       m_messageReceivedNotifier;
     CompositionIndicationNotifier m_compositionIndicationNotifier;
-
-    OpalManager  * m_manager;
-    PStringOptions m_attributes;
-
-    PSafePtr<OpalConnection> m_connection;
-    PSafePtr<OpalPresentity> m_presentity;
 
     PMutex         m_outgoingMessagesMutex;
     OpalIM       * m_currentOutgoingMessage;
@@ -368,200 +357,15 @@ class OpalIMContext : public PSafeObject
     PTime  m_lastUsed;
 
     PString m_conversationId;
-    PString m_localURL;
+    PURL    m_localURL;
     PString m_localName;
-    PString m_remoteURL;
+    PURL    m_remoteURL;
     PString m_remoteName;
     PString m_key;
 
-  friend class OpalIMManager;
+  friend class OpalIMEndPoint;
 };
 
-
-/////////////////////////////////////////////////////////////////////
-
-/**Manager for IM contexts.
- */
-class OpalIMManager : public PObject
-{
-  public:
-  /**@name Construction */
-  //@{
-    OpalIMManager(OpalManager & manager);
-    ~OpalIMManager();
-  //@}
-
-
-  /**@name Context management */
-  //@{
-    /** Add a new context.
-        Generally only used internally.
-        This will call notifiers indicating converstaion start.
-      */
-    void AddContext(PSafePtr<OpalIMContext> context, bool byRemote);
-
-    /** Remove a new context.
-        Generally only used internally.
-        This will call notifiers indicating converstaion end.
-      */
-    void RemoveContext(OpalIMContext * context, bool byRemote);
-
-    /** Look for old conversations and remove them.
-        Generally only used internally.
-        This will call notifiers indicating converstaion end.
-      */
-    bool GarbageCollection();
-
-    /** Find a context given a key.
-        Generally only used internally.
-      */
-    PSafePtr<OpalIMContext> FindContextByIdWithLock(
-      const PString & key,
-      PSafetyMode mode = PSafeReadWrite
-    );
-
-    /** Find a context given a from/to addresses.
-        Generally only used internally.
-      */
-    PSafePtr<OpalIMContext> FindContextByNamesWithLock(
-      const PString & local, 
-      const PString & remote, 
-      PSafetyMode mode = PSafeReadWrite
-    );
-
-    /** Find a context given a message.
-        Generally only used internally.
-      */
-    PSafePtr<OpalIMContext> FindContextForMessageWithLock(
-      OpalIM & im,
-      OpalConnection * conn = NULL
-    );
-
-    /**Shut down all conversations.
-      */
-    void ShutDown();
-  //@}
-
-
-  /**@name Conversation notification */
-  //@{
-    /**Information in notification on converstaion state change.
-      */
-    struct ConversationInfo
-    {
-      PSafePtr<OpalIMContext> m_context;  ///< Context opening/closing
-      bool                    m_opening;  ///< Opening or closing conversation
-      bool                    m_byRemote; ///< Operation is initiated by remote user or local user
-    };
-
-    /** Called when a context state changes, e.g. openign or closing.
-        Default implementation calls the notifier, if set. If no notifier is
-        set, then the OpalManager::OnConversation() function is called.
-      */
-    virtual void OnConversation(
-      const ConversationInfo & info
-    );
-
-    /// Type for converstaion notifiers
-    typedef PNotifierTemplate<ConversationInfo> ConversationNotifier;
-
-    /// Macro to declare correctly typed converstaion notifier
-    #define PDECLARE_ConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMManager::ConversationInfo)
-
-    /// Macro to declare correctly typed asynchronous converstaion notifier
-    #define PDECLARE_ASYNC_ConversationNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIMManager::ConversationInfo)
-
-    /// Macro to create correctly typed converstaion notifier
-    #define PCREATE_ConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMManager::ConversationInfo)
-
-    /** Set the notifier for the OnConversation() function.
-        The notifier can be called only for when a specific scheme is being
-        used. If \p scheme is "*" then all scemes will call that notifier.
-
-        More than one notifier can be applied and all are called.
-      */
-    void AddNotifier(
-      const ConversationNotifier & notifier,  ///< New notifier to add
-      const PString & scheme                  ///< Scheme to be notified about
-    );
-
-    /** Remove notifier for the OnConversation() function.
-      */
-    bool RemoveNotifier(const ConversationNotifier & notifier, const PString & scheme);
-  //@}
-
-
-    OpalIMContext::MessageDisposition OnMessageReceived(
-      OpalIM & message,
-      OpalConnection * connnection,
-      PString & errorInfo
-    );
-
-  protected:
-    OpalManager & m_manager;
-    typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
-    ContextsByConversationId m_contextsByConversationId;
-
-    PMutex m_contextsByNamesMutex;
-    typedef std::multimap<PString, PString> ContextsByNames;
-    ContextsByNames m_contextsByNames;
-
-    PMutex m_notifierMutex;
-    typedef std::multimap<PString, ConversationNotifier> ConversationMap;
-    ConversationMap m_notifiers;
-
-    PTime m_lastGarbageCollection;
-    bool m_deleting;
-};
-
-/////////////////////////////////////////////////////////////////////
-
-class OpalIMMediaType : public OpalMediaTypeDefinition 
-{
-  public:
-    OpalIMMediaType(
-      const char * mediaType, ///< name of the media type (audio, video etc)
-      const char * sdpType    ///< name of the SDP type 
-    )
-      : OpalMediaTypeDefinition(mediaType, sdpType, 0, OpalMediaType::DontOffer)
-    { }
-};
-
-
-class RTP_IMFrame : public RTP_DataFrame
-{
-  public:
-    RTP_IMFrame();
-    RTP_IMFrame(const PString & contentType);
-    RTP_IMFrame(const PString & contentType, const T140String & content);
-    RTP_IMFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
-
-    void SetContentType(const PString & contentType);
-    PString GetContentType() const;
-
-    void SetContent(const T140String & text);
-    bool GetContent(T140String & text) const;
-
-    PString AsString() const { return PString((const char *)GetPayloadPtr(), GetPayloadSize()); }
-};
-
-
-class OpalIMMediaStream : public OpalMediaStream
-{
-  public:
-    OpalIMMediaStream(
-      OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      bool isSource                        ///<  Is a source stream
-    );
-
-    virtual PBoolean IsSynchronous() const         { return false; }
-    virtual PBoolean RequiresPatchThread() const   { return false; }
-
-    bool ReadPacket(RTP_DataFrame & packet);
-    bool WritePacket(RTP_DataFrame & packet);
-};
 
 #endif // OPAL_HAS_IM
 

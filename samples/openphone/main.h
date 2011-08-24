@@ -52,6 +52,7 @@
 #include <h323/gkclient.h>
 #include <sip/sip.h>
 #include <t38/t38proto.h>
+#include <im/im_ep.h>
 #include <ptlib/wxstring.h>
 #include <ptlib/notifier_ext.h>
 
@@ -90,14 +91,6 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     virtual PSoundChannel * CreateSoundChannel(const OpalPCSSConnection & connection, const OpalMediaFormat & mediaFormat, PBoolean isSource);
 
     MyManager & m_manager;
-
-/*
-    bool TransmitExternalIM(
-      OpalConnection & conn, 
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & frame
-    );
-*/
 
   private:
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
@@ -1104,6 +1097,10 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
 
 #if OPAL_FAX
     OpalFaxEndPoint  * m_faxEP;
+#endif
+
+#if OPAL_HAS_IM
+    OpalIMEndPoint * m_imEP;
 #endif
 
     bool      m_autoAnswer;

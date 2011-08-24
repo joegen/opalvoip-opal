@@ -49,12 +49,6 @@
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
 
-#if OPAL_HAS_IM
-#include <im/t140.h>
-#include <im/rfc4103.h>
-#include <im/im.h>
-#endif
-
 #if P_LUA
 #include <ptclib/lua.h>
 #endif
@@ -679,9 +673,10 @@ class OpalConnection : public PSafeObject
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
 
-       The default behaviour is pure.
+       The default behaviour calls OnIncomingConnection() and OpalCall::OnSetUp()
+       if it is first conenction in the call.
       */
-    virtual PBoolean SetUpConnection() = 0;
+    virtual PBoolean SetUpConnection();
 
     /**Callback for outgoing connection, it is invoked after SetUpConnection
        This function allows the application to set up some parameters or to log some messages
@@ -725,12 +720,12 @@ class OpalConnection : public PSafeObject
        has received an OnAlerting() indicating that its remoteendpoint is
        "ringing".
 
-       The default behaviour is pure.
+       The default behaviour simply returns true.
       */
     virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
       PBoolean withMedia                ///<  Open media with alerting
-    ) = 0;
+    );
 
     /**Call back for answering an incoming call.
        This function is called after the connection has been acknowledged
@@ -1668,50 +1663,6 @@ class OpalConnection : public PSafeObject
 
     virtual void EnableRecording();
     virtual void DisableRecording();
-
-#endif
-
-#if 0 //OPAL_HAS_IM
-    /**
-      * Called to transmit an IM to the other connection in the call
-      */
-    virtual bool TransmitInternalIM(
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & body
-    );
-
-    /**
-      * Called when this connection receives an IM from the other connection in the call
-      */
-    virtual void OnReceiveInternalIM(
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & body
-    );
-
-    /**
-      * Called to transmit an IM to the other end of the connection
-      */
-    virtual bool TransmitExternalIM(
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & body
-    );
-
-    /**
-      * Called when this connection receives an IM from the other end of the connection
-      */
-    virtual bool OnReceiveExternalIM(
-      const OpalMediaFormat & format, 
-      RTP_IMFrame & body
-    );
-
-    /**  Used for creating IM messages. 
-      *  0 = used for sending internal
-      *  1 = used for sending external
-      */
-    RFC4103Context & GetRFC4103Context(PINDEX i) { return m_rfc4103Context[i]; };
-
-  protected:
-    RFC4103Context m_rfc4103Context[2];
 
 #endif
 

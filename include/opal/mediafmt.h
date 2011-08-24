@@ -1479,22 +1479,6 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
-#define OPAL_T140             "T.140"
-#define OpalT140              GetOpalT140()
-extern const OpalMediaFormat & GetOpalT140();
-
-#if OPAL_HAS_MSRP
-#define OPAL_MSRP           "MSRP"
-#define OpalMSRP            GetOpalMSRP()
-extern const OpalMediaFormat & GetOpalMSRP();
-#endif
-
-#if OPAL_HAS_SIPIM
-#define OPAL_SIPIM             "SIP-IM"
-#define OpalSIPIM              GetOpalSIPIM()
-extern const OpalMediaFormat & GetOpalSIPIM();
-#endif
-
 #ifdef _MSC_VER
 #if _MSC_VER < 1300
 #pragma warning(default:4663)

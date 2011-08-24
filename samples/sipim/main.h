@@ -29,7 +29,7 @@
 #ifndef _SipIM_MAIN_H
 #define _SipIM_MAIN_H
 
-#include <opal/manager.h>
+#include <opal/console_mgr.h>
 #include <sip/sipep.h>
 #include <ptclib/cli.h>
 
@@ -37,34 +37,24 @@
 #error Cannot compile IM sample program without IM!
 #endif
 
-class MyManager : public OpalManager
+
+class OpalIMEndPoint;
+
+
+class MyManager : public OpalManagerConsole
 {
-    PCLASSINFO(MyManager, OpalManager)
+    PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
     virtual void OnClearedCall(OpalCall & call); // Callback override
-    void OnApplyStringOptions(OpalConnection & conn, OpalConnection::StringOptions & options);
 
     virtual void OnMessageReceived(const OpalIM & message);
 
     PSyncPoint m_connected;
     PSyncPoint m_completed;
-    PString m_callToken;
-    OpalMediaFormat m_imFormat;
+    PString    m_callToken;
 };
 
-class MyPCSSEndPoint : public OpalPCSSEndPoint
-{
-  PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
-
-  public:
-    MyPCSSEndPoint(MyManager & manager)
-      : OpalPCSSEndPoint(manager)
-    { }
-
-    virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
-    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
-};
 
 class SipIM : public PProcess
 {
@@ -73,12 +63,6 @@ class SipIM : public PProcess
   public:
     SipIM();
     ~SipIM();
-
-    enum Mode {
-      Use_MSRP,
-      Use_SIPIM,
-      Use_T140
-    };
 
     virtual void Main();
 
@@ -107,7 +91,6 @@ class SipIM : public PProcess
 
   private:
     MyManager * m_manager;
-    SIPEndPoint * m_sipEP;
 };
 
 

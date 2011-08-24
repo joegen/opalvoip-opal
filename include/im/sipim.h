@@ -33,73 +33,41 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
-#include <opal/rtpconn.h>
-#include <opal/manager.h>
-#include <opal/mediastrm.h>
-#include <opal/mediatype.h>
-#include <opal/mediatype.h>
-#include <im/im.h>
-#include <sip/sdp.h>
-#include <sip/sippdu.h>
 
 #if OPAL_HAS_SIPIM
 
-class OpalSIPIMMediaType : public OpalIMMediaType 
-{
-  public:
-    OpalSIPIMMediaType();
+#include <opal/mediasession.h>
+#include <sip/sippdu.h>
+#include <im/im.h>
+#include <im/rfc4103.h>
 
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
-
-    SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress,
-      OpalMediaSession * session
-    ) const;
-};
 
 ////////////////////////////////////////////////////////////////////////////
 
-/** Class for carrying MSRP session information
+/** Class representing a SIP Instant Messaging "conversation".
+    This keeps the context for Instant Messages between two SIP entities. As
+    there are, at least, three (and a half) different mechanisms for doing
+    IM between two SIP endpoints these are chose via capabilities selected
+    before calling OpalIMContext::Create()
+
+    SIP-IM  Indicates RFC 3428 compliant messaging, using the SIP MESSAGE
+            command. This may be done in call or out of call, the latter is
+            the default. The in call mode is used if OpalIMEndPoint::Create()
+            is given an existing SIPConnection in which to exchange messages.
+    T.140   Indicates RFC 4103 compliant messaging, which is T.140 compliant
+            text sent via RTP. This always requires an active connection, so
+            one will be created if needed.
+    MSRP    Indicates RFC 4975 compliant messaging.
+
+    The selection on the method that is used is dependent on the applications
+    active media formats.
   */
-class OpalSIPIMMediaSession : public OpalMediaSession
-{
-  PCLASSINFO(OpalSIPIMMediaSession, OpalMediaSession);
-  public:
-    OpalSIPIMMediaSession(OpalConnection & connection, unsigned sessionId);
-
-    virtual PObject * Clone() const { return new OpalSIPIMMediaSession(*this); }
-
-    virtual OpalTransportAddress GetLocalMediaAddress() const;
-    virtual OpalTransportAddress GetRemoteMediaAddress() const;
-
-    virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, 
-      unsigned sessionID, 
-      PBoolean isSource
-    );
-
-    virtual PString GetCallID() const { return m_callId; }
-
-  protected:
-    OpalTransportAddress m_transportAddress;
-    SIPURL               m_localURL;
-    SIPURL               m_remoteURL;
-    PString              m_callId;
-
-  private:
-    OpalSIPIMMediaSession(const OpalSIPIMMediaSession & obj) : OpalMediaSession(obj.m_connection, obj.m_sessionId, obj.m_mediaType) { }
-    void operator=(const OpalSIPIMMediaSession &) { }
-
-  friend class OpalSIPIMMediaType;
-};
-
-////////////////////////////////////////////////////////////////////////////
-
 class OpalSIPIMContext : public OpalIMContext
 {
   public:
     OpalSIPIMContext();
 
+    virtual bool Open();
     virtual bool SendCompositionIndication(const CompositionInfo & info);
 
     static void OnMESSAGECompleted(
@@ -128,14 +96,12 @@ class OpalSIPIMContext : public OpalIMContext
     PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnRxCompositionIdleTimer);
     PDECLARE_NOTIFIER(PTimer, OpalSIPIMContext, OnTxCompositionIdleTimer);
 
-    PString m_rxCompositionState;
-    PTimer m_rxCompositionIdleTimeout;
-    PString m_txCompositionState;
-    PTimer m_txCompositionIdleTimeout;
+    PString      m_rxCompositionState;
+    PTimer       m_rxCompositionIdleTimeout;
+    PString      m_txCompositionState;
+    PTimer       m_txCompositionIdleTimeout;
     PSimpleTimer m_txCompositionRefreshTimeout;
-    PTime m_lastActive;
-
-    RFC4103Context m_rfc4103Context;
+    PTime        m_lastActive;
 };
 
 

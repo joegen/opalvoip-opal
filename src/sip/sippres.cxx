@@ -148,7 +148,7 @@ bool SIP_Presentity::Open()
   Close();
 
   // find the endpoint
-  m_endpoint = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
+  m_endpoint = m_manager->FindEndPointAs<SIPEndPoint>("sip");
   if (m_endpoint == NULL) {
     PTRACE(1, "SIPPres\tCannot open SIP_Presentity without sip endpoint");
     return false;
