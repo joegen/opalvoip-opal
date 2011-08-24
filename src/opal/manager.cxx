@@ -47,6 +47,7 @@
 #include <codec/rfc4175.h>
 #include <codec/rfc2435.h>
 #include <codec/opalpluginmgr.h>
+#include <im/im_ep.h>
 
 #if OPAL_HAS_H224
 #include <h224/h224.h>
@@ -76,7 +77,16 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H264_MODE0,
   OPAL_MPEG4,
   OPAL_H263,
-  OPAL_H261
+  OPAL_H261,
+  OPAL_SIPIM,
+  OPAL_T140,
+  OPAL_MSRP
+};
+
+static const char * const DefaultMediaFormatMask[] = {
+  OPAL_RFC4175_YCbCr420,
+  OPAL_RFC4175_RGB,
+  OPAL_MSRP
 };
 
 // G.711 is *always* available
@@ -205,15 +215,13 @@ OpalManager::OpalManager()
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
+  , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
   , translationAddress(0)       // Invalid address to disable
   , m_natMethod(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
-#ifdef OPAL_HAS_IM
-  , m_imManager(NULL)
-#endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
@@ -244,10 +252,6 @@ OpalManager::OpalManager()
   SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
-#if OPAL_HAS_IM
-  m_imManager = new OpalIMManager(*this);
-#endif
-
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
   PTRACE(4, "OpalMan\tCreated manager.");
@@ -274,10 +278,6 @@ OpalManager::~OpalManager()
   delete m_natMethod;
   delete interfaceMonitor;
 
-#if OPAL_HAS_IM
-  delete m_imManager;
-#endif
-
   PTRACE(4, "OpalMan\tDeleted manager.");
 }
 
@@ -302,11 +302,6 @@ void OpalManager::ShutDownEndpoints()
 
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
-
-#if OPAL_HAS_IM
-  // Shut down all IM
-  m_imManager->ShutDown();
-#endif
 
   // Remove (and unsubscribe) all the presentities
   PTRACE(4, "OpalIM\tShutting down all presentities");
@@ -1788,10 +1783,6 @@ void OpalManager::GarbageCollection()
 {
   m_presentities.DeleteObjectsToBeRemoved();
 
-#if OPAL_HAS_IM
-  m_imManager->GarbageCollection();
-#endif
-
   bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
   endpointsMutex.StartRead();
@@ -1908,7 +1899,7 @@ bool OpalManager::RemovePresentity(const PString & presentity)
 
 #if OPAL_HAS_IM
 
-void OpalManager::OnConversation(OpalIMManager::ConversationInfo)
+void OpalManager::OnConversation(const PString &)
 {
 }
 
@@ -1941,9 +1932,14 @@ PBoolean OpalManager::Message(const PURL & to, const PString & type, const PStri
 
 bool OpalManager::Message(OpalIM & message)
 {
-  PSafePtr<OpalIMContext> context = m_imManager->FindContextForMessageWithLock(message);
+  OpalIMEndPoint * ep = FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+  if (ep == NULL) {
+    return false;
+  }
+
+  PSafePtr<OpalIMContext> context = ep->FindContextForMessageWithLock(message);
   if (context == NULL)
-    context = OpalIMContext::Create(*this, message.m_from, message.m_to);
+    context = ep->CreateContext(message.m_from, message.m_to);
   if (context == NULL)
     return false;
 

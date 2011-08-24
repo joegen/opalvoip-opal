@@ -3376,39 +3376,6 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 }
 
 
-#if 0 // OPAL_HAS_IM
-
-bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_IMFrame & body)
-{
-#if OPAL_HAS_MSRP
-  // if the call contains an MSRP connection, then use that
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->IsSink() && (mediaStream->GetMediaFormat() == OpalMSRP)) {
-      PTRACE(3, "SIP\tSending MSRP packet within call");
-      mediaStream.SetSafetyMode(PSafeReadWrite);
-      int written;
-      return mediaStream->WriteData(body.GetPayloadPtr(), body.GetPayloadSize(), written);
-    }
-  }
-#endif
-
-  if ((m_allowedMethods&(1<<SIP_PDU::Method_MESSAGE)) == 0) {
-    PTRACE(2, "SIP\tRemote does not allow MESSAGE message.");
-    return false;
-  }
-
-  PTRACE(3, "SIP\tSending MESSAGE within call");
-
-  // else send as MESSAGE
-  SIPMessage::Params params;
-  params.m_body = body.AsString();
-
-  PSafePtr<SIPTransaction> transaction = new SIPMessage(*this, params);
-  return transaction->Start();
-}
-
-#endif
-
 void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
 {
 #if OPAL_VIDEO

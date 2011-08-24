@@ -31,26 +31,9 @@
 #ifndef OPAL_IM_T140_H
 #define OPAL_IM_T140_H
 
-#include <ptlib.h>
-#include <opal/buildopts.h>
-#include <opal/mediatype.h>
 
-class OpalT140MediaType : public OpalRTPAVPMediaType 
-{
-  public:
-    OpalT140MediaType();
-  
-    static const OpalMediaType & MediaType();
-
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress,
-      OpalMediaSession * session
-    ) const;
-#endif
-};
-
-
+/** Implement a T.140 encoded string.
+  */
 class T140String : public PBYTEArray
 {
   public:
@@ -80,5 +63,6 @@ class T140String : public PBYTEArray
     PINDEX SetUTF(BYTE * ptr, WORD c);
     PINDEX length;
 };
+
 
 #endif // OPAL_IM_T140_H

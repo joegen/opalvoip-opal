@@ -239,12 +239,6 @@ void TestPresEnt::Main()
   if (args.HasOption("proxy"))
     sip->SetProxy(args.GetOptionString("proxy"));
 
-  PTextFile scriptFile;
-  if (args.HasOption('f') && !scriptFile.Open(args.GetOptionString('f'))) {
-    cerr << "error: cannot open script file '" << args.GetOptionString('f') << "'" << endl;
-    return;
-  }
-
   if (args.GetCount() != 0) {
     do {
       AddPresentity(args);
@@ -293,35 +287,18 @@ void TestPresEnt::Main()
   cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
                   "Quit command line interpreter, note quitting from console also shuts down application.");
 
-  // create the foreground context
-  PCLI::Context * cliContext = cli.StartForeground();
-  if (cliContext == NULL)
-    return;
-
-  // if there is a script file, process commands
-  if (scriptFile.IsOpen()) {
-    cout << "Running script '" << scriptFile.GetFilePath() << "'" << endl;
-    for (;;) {
-      PString line;
-      if (!scriptFile.ReadLine(line))
-        break;
-      line = line.Trim();
-      if (line.GetLength() > 0) {
-        if ((line[0] != '#') && (line[0] != ';') && ((line.GetLength() < 2) || (line[0] != '/') || (line[1] != '/'))) {
-          cout << line << endl;
-          if (!cliContext->ProcessInput(line)) {
-            cerr << "error: error occurred while processing script" << endl;
-            return;
-          }
-        }
-      }
+  if (args.HasOption('f')) {
+    PTextFile scriptFile;
+    if (scriptFile.Open(args.GetOptionString('f'))) {
+      cout << "Running script \"" << scriptFile.GetFilePath() << '"' << endl;
+      cli.RunScript(scriptFile);
+      cout << "Script complete" << endl;
     }
-    cout << "Script complete" << endl;
+    else
+      cerr << "error: cannot open script file '" << args.GetOptionString('f') << "'" << endl;
   }
 
-  scriptFile.Close();
-
-  cli.RunContext(cliContext); // Do not spawn thread, wait till end of input
+  cli.Start(false); // Do not spawn thread, wait till end of input
 
   cout << "\nExiting ..." << endl;
 }

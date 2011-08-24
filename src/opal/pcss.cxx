@@ -53,33 +53,6 @@
 #include <opal/call.h>
 #include <opal/manager.h>
 
-#if OPAL_HAS_IM
-
-#include <im/im.h>
-
-class PCSSIMStream : public OpalIMMediaStream
-{
-  public:
-    PCSSIMStream(OpalConnection & conn,
-               const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-                              unsigned sessionID,   ///<  Session number for stream
-                                  bool isSource)     ///<  Is a source stream
-      : OpalIMMediaStream(conn, mediaFormat, sessionID, isSource)
-    {
-    }
-
-    virtual PBoolean ReadData(
-      BYTE * /*data*/,      ///<  Data buffer to read to
-      PINDEX /*size*/,      ///<  Size of buffer
-      PINDEX & /*length*/   ///<  Length of data actually read
-    )
-    {
-      PAssertAlways("Cannot ReadData from OpalSIPIMMediaStream");
-      return false;
-    }
-};
-
-#endif  // OPAL_HAS_IM
 
 #define new PNEW
 
@@ -421,21 +394,14 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
-    if (soundChannel == NULL)
-      return NULL;
+  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
+    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
-    return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
-  }
+  PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
+  if (soundChannel == NULL)
+    return NULL;
 
-#if OPAL_HAS_IM
-  if (mediaFormat.GetMediaType() == "msrp" || mediaFormat.GetMediaType() == "sip-im" || mediaFormat.GetMediaType() == "t140") {
-    return new PCSSIMStream(*this, mediaFormat, sessionID, isSource);
-  }
-#endif
-
-  return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+  return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
 }
 
 
