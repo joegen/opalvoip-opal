@@ -5977,7 +5977,7 @@ void IMDialog::AddTextToScreen(const PwxString & text, bool fromUs)
 {
   m_textArea->SetDefaultStyle(fromUs ? m_ourStyle : m_theirStyle);
   m_textArea->AppendText(PwxString(PTime().AsString("[hh:mm] ")));
-  m_textArea->AppendText(PwxString(fromUs ? m_context.GetLocalURL() : m_context.GetRemoteName()));
+  m_textArea->AppendText(PwxString(fromUs ? m_context.GetLocalURL().AsString() : m_context.GetRemoteName()));
   m_textArea->AppendText(wxT(": "));
   m_textArea->SetDefaultStyle(m_defaultStyle);
   m_textArea->AppendText(text);
