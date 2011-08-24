@@ -330,7 +330,7 @@ bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
   }
 
   BeginNewFrame();
-  flags |= PluginCodec_ReturnCoderRequestIFrame;
+  flags |= requestIFrame;
   return false;
 }
 
