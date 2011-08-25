@@ -41,19 +41,14 @@
 
 #include <rtp/rtp.h>
 
-#include <rtp/jitter.h>
-
-#include <rtp/metrics.h>
-
-#include <ptclib/random.h>
-
-#ifdef P_NAT
-#include <ptclib/pnat.h>
-#endif
-
 #include <opal/endpoint.h>
 #include <opal/rtpep.h>
 #include <opal/rtpconn.h>
+#include <rtp/jitter.h>
+#include <rtp/metrics.h>
+
+#include <ptclib/random.h>
+#include <ptclib/pnat.h>
 
 #include <algorithm>
 

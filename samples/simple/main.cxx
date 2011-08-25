@@ -52,14 +52,11 @@
 #endif
 
 #include <opal/transcoders.h>
+#include <codec/opalpluginmgr.h>
 #include <lids/lidep.h>
 
-#ifdef P_STUN
-#include <ptclib/pstun.h>
-#endif
-
 #include <ptlib/config.h>
-#include <codec/opalpluginmgr.h>
+#include <ptclib/pstun.h>
 
 #include "main.h"
 #include "../../version.h"
