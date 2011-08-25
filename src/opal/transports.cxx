@@ -95,7 +95,7 @@ OpalTransportAddress::OpalTransportAddress(const PString & str,
 
 
 OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD port, const char * proto)
-  : PCaselessString(addr.IsAny() ? PString('*') : addr.AsString(true))
+  : PCaselessString(addr.IsValid() ? addr.AsString(true) : PString('*'))
 {
   SetInternalTransport(port, proto);
 }
@@ -154,11 +154,11 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   if (myPrefix != IpPrefix())
     return true;
 
-  PIPSocket::Address myIP, theirIP;
-  if (!GetIpAddress(myIP) || !address.GetIpAddress(theirIP))
-    return false;
+  if (GetHostName() == "*" || address.GetHostName() == "*")
+    return true;
 
-  return myIP.IsAny() || theirIP.IsAny() || myIP.GetVersion() == theirIP.GetVersion();
+  PIPSocket::Address myIP, theirIP;
+  return GetIpAddress(myIP) && address.GetIpAddress(theirIP) && myIP.GetVersion() == theirIP.GetVersion();
 }
 
 
@@ -759,6 +759,8 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                              P_NAT_PARAM(endpoint.GetManager().GetNatMethod())))
   , m_bufferSize(32768)
 {
+  if (binding.GetHostName() == "*")
+    localAddress.FromString(""); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
 }
 
 
@@ -860,7 +862,7 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  PIPSocket::Address localIP = PIPSocket::GetDefaultIpAny();
+  PIPSocket::Address localIP(""); // Make invalid
   WORD port = listenerPort;
 
 #ifdef P_NAT
@@ -874,8 +876,11 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
   }
 #endif
 
-  if (localIP.IsAny())
+  if (!localIP.IsValid()) {
     listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
+    if (!localIP.IsValid() || localIP.IsAny())
+      localIP = localAddress;
+  }
 
   return OpalTransportAddress(localIP, port, GetProtoPrefix());
 }
