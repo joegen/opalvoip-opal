@@ -47,9 +47,7 @@
 #include <opal/call.h>
 #include <opal/buildopts.h>
 
-#ifdef P_NAT
 #include <ptclib/pnat.h>
-#endif
 
 
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
@@ -745,11 +743,9 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  WORD port,
                                  PBoolean exclusive)
   : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive
-#if P_NAT
-                                                                           , endpoint.GetManager().GetNatMethod()
-#endif
-                                                                                                                   ))
+    listenerBundle(PMonitoredSockets::Create(binding.AsString(),
+                                             !exclusive
+                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod())))
 {
 }
 
@@ -758,11 +754,9 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
   : OpalListenerIP(endpoint, binding, option)
-  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener
-#if P_NAT
-                                                                           , endpoint.GetManager().GetNatMethod()
-#endif
-                                                                                                                   ))
+  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
+                                             !exclusiveListener
+                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod())))
   , m_bufferSize(32768)
 {
 }
@@ -1261,11 +1255,9 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   , m_bufferSize(8192)
   , m_preReadOK(false)
 {
-  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr
-#ifdef P_NAT
-                                                                                        , manager.GetNatMethod()
-#endif
-                                                                                                                );
+  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
+                                                          reuseAddr
+                                                          P_NAT_PARAM(manager.GetNatMethod()));
   if (preOpen)
     sockets->Open(localPort);
   Open(new PMonitoredSocketChannel(sockets, PFalse));
