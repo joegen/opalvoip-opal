@@ -45,10 +45,7 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 
-#ifdef P_STUN
 #include <ptclib/pstun.h>
-#endif
-
 #include <ptclib/url.h>
 
 #if OPAL_VIDEO
