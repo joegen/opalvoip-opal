@@ -1482,7 +1482,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
   if (IsLocalAddress(remoteAddress))
     return false; // Does not need to be translated
 
-  if (translationAddress.IsValid()) {
+  if (translationAddress.IsValid() && !translationAddress.IsAny()) {
     localAddress = translationAddress; // Translate it!
     return true;
   }
