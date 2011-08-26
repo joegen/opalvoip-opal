@@ -2245,10 +2245,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   m_dialog.Update(*transport, request);
   UpdateRemoteAddresses();
 
-  originalInvite->DecodeSDP(GetLocalMediaFormats());
-
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
+    originalInvite->DecodeSDP(GetLocalMediaFormats());
     OnReceivedReINVITE(request);
     return;
   }
@@ -2338,6 +2337,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
+    originalInvite->DecodeSDP(GetLocalMediaFormats());
     if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
       Release(EndedByCapabilityExchange);
       return;
@@ -2381,6 +2381,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
   }
 
+  originalInvite->DecodeSDP(GetLocalMediaFormats());
   if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
     Release(EndedByCapabilityExchange);
     return;
