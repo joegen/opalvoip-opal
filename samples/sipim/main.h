@@ -30,67 +30,29 @@
 #define _SipIM_MAIN_H
 
 #include <opal/console_mgr.h>
-#include <sip/sipep.h>
-#include <ptclib/cli.h>
+
 
 #if !OPAL_HAS_IM
 #error Cannot compile IM sample program without IM!
 #endif
 
 
-class OpalIMEndPoint;
-
-
-class MyManager : public OpalManagerConsole
+class MyManager : public OpalManagerCLI
 {
-    PCLASSINFO(MyManager, OpalManagerConsole)
+    PCLASSINFO(MyManager, OpalManagerCLI)
 
-  public:
-    virtual void OnClearedCall(OpalCall & call); // Callback override
-
-    virtual void OnMessageReceived(const OpalIM & message);
-
-    PSyncPoint m_connected;
-    PSyncPoint m_completed;
-    PString    m_callToken;
-};
-
-
-class SipIM : public PProcess
-{
-    PCLASSINFO(SipIM, PProcess)
-
-  public:
-    SipIM();
-    ~SipIM();
-
-    virtual void Main();
+    virtual PString GetArgumentSpec() const;
+    virtual void Usage(ostream & strm, const PArgList & args);
+    virtual bool Initialise(PArgList & args, bool verbose);
 
   protected:
+    virtual void OnMessageReceived(const OpalIM & message);
+
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSend);
+
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSet);
     bool CheckForVar(PString & var);
     PStringToString m_variables;
-
-  private:
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdSet);
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdSend);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdList);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdUnsubscribeToPresence);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyList);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyAdd);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyRemove);
-    //PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddySusbcribe);
-    
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdStun);
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdTranslate);
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdRegister);
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdDelay);
-    PDECLARE_NOTIFIER(PCLI::Arguments, SipIM, CmdQuit);
-
-  private:
-    MyManager * m_manager;
 };
 
 

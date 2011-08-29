@@ -41,6 +41,54 @@
 #include <lids/lidep.h>
 
 
+static void PrintVersion(ostream & strm)
+{
+  const PProcess & process = PProcess::Current();
+  strm << process.GetName()
+        << " version " << process.GetVersion(true) << "\n"
+          "  by   " << process.GetManufacturer() << "\n"
+          "  on   " << process.GetOSClass() << ' ' << process.GetOSName()
+        << " (" << process.GetOSVersion() << '-' << process.GetOSHardware() << ")\n"
+          "  with PTLib v" << PProcess::GetLibVersion() << "\n"
+          "  and  OPAL  v" << OpalGetVersion()
+        << endl;
+}
+
+
+#if OPAL_SIP
+static bool SetRegistrationParams(SIPRegister::Params & params,
+                                  PString & error,
+                                  const PArgList & args, 
+                                  const char * mode,
+                                  const char * ttl)
+{
+  if (args.HasOption(mode)) {
+    PCaselessString str = args.GetOptionString("register-mode");
+    if (str == "normal")
+      params.m_compatibility = SIPRegister::e_FullyCompliant;
+    else if (str == "single")
+      params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+    else if (str == "public")
+      params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+    else {
+      error = "Unknown SIP registration mode " + str;
+      return false;
+    }
+  }
+
+  params.m_expire = args.GetOptionString(ttl).AsUnsigned();
+  if (params.m_expire < 30) {
+    error = "SIP registrar Time To Live must be more than 30 seconds";
+    return false;
+  }
+
+  return true;
+}
+#endif // OPAL_SIP
+
+  
+/////////////////////////////////////////////////////////////////////////////
+
 OpalManagerConsole::OpalManagerConsole()
 {
 }
@@ -48,151 +96,108 @@ OpalManagerConsole::OpalManagerConsole()
 
 PString OpalManagerConsole::GetArgumentSpec() const
 {
-  return "u-user:"
-         "p-password:"
-         "D-disable:"
-         "P-prefer:"
-         "O-option:"
-         "-inband-detect."
-         "-inband-send."
-         "-tel:"
+  return "[Global options:]"
+         "u-user:            Set local username, defaults to OS username.\n"
+         "p-password:        Set password for authentication.\n"
+         "D-disable:         Disable use of specified media formats (codecs).\n"
+         "P-prefer:          Set preference order for media formats (codecs).\n"
+         "O-option:          Set options for media formatm argument is of form fmt:opt=val.\n"
+         "-inband-detect.    Disable detection of in-band tones.\n"
+         "-inband-send.      Disable transmission of in-band tones.\n"
+         "-tel:              Protocol to use for tel: URI, e.g. sip\n"
+
 #if OPAL_SIP
-         "S-sip:"
-         "r-register:"
-         "-register-auth-id:"
-         "-register-proxy:"
-         "-register-ttl:"
-         "-register-mode:"
-         "-proxy:"
-         "-sip-ui:"
+         "[SIP options:]"
+         "S-sip:             SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
+         "r-register:        SIP registration to server.\n"
+         "-register-auth-id: SIP registration authorisation id, default is username.\n"
+         "-register-proxy:   SIP registration proxy, default is none.\n"
+         "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
+         "-register-mode:    SIP registration mode (normal, single, public).\n"
+         "-proxy:            SIP outbound proxy.\n"
+         "-sip-ui:           SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
 #endif
+
 #if OPAL_H323
-         "g-gk-host:"
-         "G-gk-id:"
-         "H-h323:"
-         "-no-fast."
-         "-no-tunnel."
-         "-h323-ui:"
+         "[H.323 options:]"
+         "H-h323:            H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
+         "g-gk-host:         H.323 gatekeeper host.\n"
+         "G-gk-id:           H.323 gatekeeper identifier.\n"
+         "-no-fast.          H.323 fast connect disabled.\n"
+         "-no-tunnel.        H.323 tunnel for H.245 disabled.\n"
+         "-h323-ui:          H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
 #endif
+
 #if OPAL_LID
-         "L-lines:"
-         "-country:"
+         "[Line Interface options:]"
+         "L-lines:           Set Line Interface Devices, 'x' disables.\n"
+         "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
 #endif
-         "-stun:"
-         "-translate:"
-         "-portbase:"
-         "-portmax:"
-         "-tcp-base:"
-         "-tcp-max:"
-         "-udp-base:"
-         "-udp-max:"
-         "-rtp-base:"
-         "-rtp-max:" 
-         "-rtp-tos:"
-         "-rtp-size:"
+
+         "[IP options:]"
+#ifdef P_STUN
+         "-stun:             Set NAT traversal STUN server\n"
+#endif
+         "-translate:        Set external IP address if masqueraded\n"
+         "-portbase:         Set TCP/UDP/RTP port base\n"
+         "-portmax:          Set TCP/UDP/RTP port max\n"
+         "-tcp-base:         Set TCP port base (default 0)\n"
+         "-tcp-max:          Set TCP port max (default base+99)\n"
+         "-udp-base:         Set UDP port base (default 6000)\n"
+         "-udp-max:          Set UDP port max (default base+199)\n"
+         "-rtp-base:         Set RTP port base (default 5000)\n"
+         "-rtp-max:          Set RTP port max (default base+199)\n"
+         "-rtp-tos:          Set RTP packet IP TOS bits to n\n"
+         "-rtp-size:         Set RTP maximum payload size in bytes.\n"
+
+         "[Debug & General:]"
 #if PTRACING
-         "t-trace."
-         "o-output:"
+         "t-trace.           Verbosity in error log (more times for more detail)\n"     
+         "o-output:          File name for output of log messages\n"       
 #endif
-         "V-version."
-         "h-help.";
+         "V-version.         Display application version.\n"
+         "h-help.            This help message.\n"
+         ;
 }
 
 
 PString OpalManagerConsole::GetArgumentUsage() const
 {
-  return "Global options:\n"
-         "  -u or --user name          : Set local username, defaults to OS username.\n"
-         "  -p or --password pwd       : Set password for authentication.\n"
-         "  -D or --disable codec      : Disable use of specified media formats (codecs).\n"
-         "  -P or --prefer codec       : Set preference order for media formats (codecs).\n"
-         "  -O or --option fmt:opt=val : Set options for media format (codecs).\n"
-         "        --inband-detect      : Disable detection of in-band tones.\n"
-         "        --inband-send        : Disable transmission of in-band tones.\n"
-         "        --tel proto          : Protocol to use for tel: URI, e.g. sip\n"
-         "\n"
+  return "[ options ... ]";
+}
 
-#if OPAL_SIP
-         "SIP options:\n"
-         "  -S or --sip interface      : SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
-         "  -r or --register server    : SIP registration to server.\n"
-         "        --register-auth-id n : SIP registration authorisation id, default is username.\n"
-         "        --register-proxy n   : SIP registration proxy, default is none.\n"
-         "        --register-ttl n     : SIP registration Time To Live, default 300 seconds.\n"
-         "        --register-mode m    : SIP registration mode (normal, single, public).\n"
-         "        --proxy url          : SIP outbound proxy.\n"
-         "        --sip-ui mode        : SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
-#endif
-         "\n"
 
-#if OPAL_H323
-         "H.323 options:\n"
-         "  -H or --h323 interface     : H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
-         "  -g or --gk-host host       : H.323 gatekeeper host.\n"
-         "  -G or --gk-id id           : H.323 gatekeeper identifier.\n"
-         "        --no-fast            : H.323 fast connect disabled.\n"
-         "        --no-tunnel          : H.323 tunnel for H.245 disabled.\n"
-         "        --h323-ui mode       : H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
-#endif
-         "\n"
-
-#if OPAL_LID
-         "Line Interface options:\n"
-         "  -L or --lines devices      : Set Line Interface Devices, 'x' disables.\n"
-         "        --country code       : Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
-#endif
-         "\n"
-
-         "IP options:\n"
-#ifdef P_STUN
-         "     --stun server           : Set NAT traversal STUN server\n"
-#endif
-         "     --translate ip          : Set external IP address if masqueraded\n"
-         "     --portbase n            : Set TCP/UDP/RTP port base\n"
-         "     --portmax n             : Set TCP/UDP/RTP port max\n"
-         "     --tcp-base n            : Set TCP port base (default 0)\n"
-         "     --tcp-max n             : Set TCP port max (default base+99)\n"
-         "     --udp-base n            : Set UDP port base (default 6000)\n"
-         "     --udp-max n             : Set UDP port max (default base+199)\n"
-         "     --rtp-base n            : Set RTP port base (default 5000)\n"
-         "     --rtp-max n             : Set RTP port max (default base+199)\n"
-         "     --rtp-tos n             : Set RTP packet IP TOS bits to n\n"
-         "     --rtp-size size         : Set RTP maximum payload size in bytes.\n"
-         "\n"
-         "Debug:\n"
-#if PTRACING
-         "  -t or --trace              : verbosity in error log (more times for more detail)\n"     
-         "  -o or --output file        : file name for output of log messages\n"       
-#endif
-         "  -V or --version            : Display application version.\n"
-         "  -h or --help               : This help message.\n"
-            ;
+void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
+{
+  strm << "usage: " << PProcess::Current().GetFile().GetTitle() << ' ' << GetArgumentUsage() << "\n\n";
+  args.Usage(strm);
 }
 
 
 bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 {
-  if (args.HasOption('V')) {
-    const PProcess & process = PProcess::Current();
-    cerr << process.GetName()
-         << " version " << process.GetVersion(true) << "\n"
-            "  by   " << process.GetManufacturer() << "\n"
-            "  on   " << process.GetOSClass() << ' ' << process.GetOSName()
-         << " (" << process.GetOSVersion() << '-' << process.GetOSHardware() << ")\n"
-            "  with PTLib v" << PProcess::GetLibVersion() << "\n"
-            "  and  OPAL  v" << OpalGetVersion()
-         << endl;
+  if (!args.IsParsed()) {
+    PArgList::ParseResult result = args.Parse(GetArgumentSpec());
+    if (result < 0 || args.HasOption("help")) {
+      if (PAssert(result != PArgList::ParseInvalidOptions, "Invalid options specification"))
+        Usage(cerr, args);
+      return false;
+    }
+  }
+
+  if (args.HasOption("version")) {
+    PrintVersion(cerr);
     return false;
   }
 
 #if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
+  PTrace::Initialise(args.GetOptionCount("trace"),
+                     args.HasOption("output") ? (const char *)args.GetOptionString("output") : NULL,
                 PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
 
-  if (args.HasOption('O')) {
-    PStringArray options = args.GetOptionString('O').Lines();
+  if (args.HasOption("option")) {
+    PStringArray options = args.GetOptionString("option").Lines();
     for (PINDEX i = 0; i < options.GetSize(); ++i) {
       PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
       PStringArray subexpressions(4);
@@ -221,10 +226,10 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
     }
   }
 
-  if (args.HasOption('D'))
-    SetMediaFormatMask(args.GetOptionString('D').Lines());
-  if (args.HasOption('P'))
-    SetMediaFormatOrder(args.GetOptionString('P').Lines());
+  if (args.HasOption("disable"))
+    SetMediaFormatMask(args.GetOptionString("disable").Lines());
+  if (args.HasOption("prefer"))
+    SetMediaFormatOrder(args.GetOptionString("prefer").Lines());
   if (verbose) {
     OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
     formats.Remove(GetMediaFormatMask());
@@ -303,8 +308,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
   }
 #endif
 
-  if (args.HasOption('u'))
-    SetDefaultUserName(args.GetOptionString('u'));
+  if (args.HasOption("user"))
+    SetDefaultUserName(args.GetOptionString("user"));
 
   if (verbose) {
     PIPSocket::InterfaceTable interfaceTable;
@@ -317,7 +322,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 
 #if OPAL_SIP
   // Set up SIP
-  interfaces = args.GetOptionString('S');
+  interfaces = args.GetOptionString("sip");
   if (interfaces != "x") {
     SIPEndPoint * sip  = CreateSIPEndPoint();
     if (!sip->StartListeners(interfaces.Lines())) {
@@ -348,34 +353,22 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
            << sip->GetSendUserInputMode() << '\n';
 
     if (args.HasOption("proxy")) {
-      sip->SetProxy(args.GetOptionString("proxy"), args.GetOptionString('u'), args.GetOptionString('p'));
+      sip->SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
       if (verbose)
         cout << "SIP proxy: " << sip->GetProxy() << '\n';
     }
 
-    if (args.HasOption('r')) {
+    if (args.HasOption("register")) {
       SIPRegister::Params params;
-      params.m_addressOfRecord = args.GetOptionString('r');
+      params.m_addressOfRecord = args.GetOptionString("register");
       params.m_authID = args.GetOptionString("register-auth-id");
       params.m_registrarAddress = args.GetOptionString("register-proxy");
-      params.m_password = args.GetOptionString('p');
-      params.m_expire = args.GetOptionString("register-ttl", "300").AsUnsigned();
-      if (params.m_expire < 30) {
-        cerr << "SIP registrar Time To Live must be more than 30 seconds" << endl;
+      params.m_password = args.GetOptionString("password");
+
+      PString error;
+      if (!SetRegistrationParams(params, error, args, "register-mode", "register-ttl")) {
+        cerr << error << endl;
         return false;
-      }
-      if (args.HasOption("register-mode")) {
-        PCaselessString str = args.GetOptionString("register-mode");
-        if (str == "normal")
-          params.m_compatibility = SIPRegister::e_FullyCompliant;
-        else if (str == "single")
-          params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
-        else if (str == "public")
-          params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
-        else {
-          cerr << "Unknown SIP registration mode \"" << str << '"' << endl;
-          return false;
-        }
       }
 
       if (verbose)
@@ -394,7 +387,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 
 #if OPAL_H323
   // Set up H.323
-  interfaces = args.GetOptionString('H');
+  interfaces = args.GetOptionString("h323");
   if (interfaces != "x") {
     H323EndPoint * h323 = CreateH323EndPoint();
     if (!h323->StartListeners(interfaces.Lines())) {
@@ -429,10 +422,10 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
            << (h323->IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
            << h323->GetSendUserInputMode() << '\n';
 
-    if (args.HasOption('g') || args.HasOption('G')) {
+    if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
       if (verbose)
         cout << "H.323 Gatekeeper: " << flush;
-      if (!h323->UseGatekeeper(args.GetOptionString('g'), args.GetOptionString('G'))) {
+      if (!h323->UseGatekeeper(args.GetOptionString("gk-host"), args.GetOptionString("gk-id"))) {
         cerr << "\nCould not complete gatekeeper registration" << endl;
         return false;
       }
@@ -444,9 +437,9 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 
 #if OPAL_LID
   // If we have LIDs speficied in command line, load them
-  if (args.HasOption('L')) {
+  if (args.HasOption("lines")) {
     OpalLineEndPoint * lines = CreateLineEndPoint();
-    if (!lines->AddDeviceNames(args.GetOptionString('L').Lines())) {
+    if (!lines->AddDeviceNames(args.GetOptionString("lines").Lines())) {
       cerr << "Could not start Line Interface Device(s)" << endl;
       return false;
     }
@@ -480,6 +473,18 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 }
 
 
+void OpalManagerConsole::Run()
+{
+  m_endRun.Wait();
+}
+
+
+void OpalManagerConsole::EndRun()
+{
+  m_endRun.Signal();
+}
+
+
 #if OPAL_SIP
 SIPEndPoint * OpalManagerConsole::CreateSIPEndPoint()
 {
@@ -502,6 +507,281 @@ OpalLineEndPoint * OpalManagerConsole::CreateLineEndPoint()
   return new OpalLineEndPoint(*this);
 }
 #endif // OPAL_LID
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalManagerCLI::OpalManagerCLI()
+  : m_cli(NULL)
+{
+}
+
+
+OpalManagerCLI::~OpalManagerCLI()
+{
+  delete m_cli;
+}
+
+
+PString OpalManagerCLI::GetArgumentSpec() const
+{
+  PString spec = OpalManagerConsole::GetArgumentSpec();
+  // Insert just before the version option
+  spec.Splice("F-script-file: Execute script file in CLI\n"
+              "-cli: Enable telnet command line sessions on port.\n",
+              spec.Find("V-version"));
+  return spec;
+}
+
+
+bool OpalManagerCLI::Initialise(PArgList & args, bool verbose)
+{
+  if (!OpalManagerConsole::Initialise(args, verbose))
+    return false;
+
+  if (m_cli == NULL) {
+    unsigned port = 0;
+    if (args.HasOption("cli")) {
+      port = args.GetOptionString("cli").AsUnsigned();
+      if (port == 0 || port > 65535) {
+        cerr << "Illegal CLI port " << port << endl;
+        return false;
+      }
+    }
+
+    m_cli = CreatePCLI((WORD)port);
+    if (m_cli == NULL)
+      return false;
+  }
+
+  m_cli->SetPrompt(PProcess::Current().GetName());
+
+#if OPAL_SIP
+  m_cli->SetCommand("register", PCREATE_NOTIFIER(CmdRegister),
+                    "Register with SIP registrar",
+                    "[ options ] <address> [ <password> ]\n"
+                    "  -a or --auth-id <name>  : Override user for authorisation\n"
+                    "  -r or --realm <name>    : Set realm for authorisation\n"
+                    "  -p or --proxy <address> : Set proxy for registration\n"
+                    "  -m or --mode <mode>     : Set registration mode (normal, single, public)\n"
+                    "  -t or --ttl <seconds>   : Set Time To Live for registration");
+#endif
+
+#if P_NAT
+  m_cli->SetCommand("nat address", PCREATE_NOTIFIER(CmdNat),
+                    "Set NAT method and address",
+                    "<method> <address>");
+#endif
+
+#if PTRACING
+  m_cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
+                    "Set trace level (1..6) and filename",
+                    "<n> [ <filename> ]");
+#endif
+
+  m_cli->SetCommand("list codecs", PCREATE_NOTIFIER(CmdListCodecs),
+                    "List available codecs");
+  m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
+                    "Delay for the specified numebr of seconds",
+                    "seconds");
+  m_cli->SetCommand("version", PCREATE_NOTIFIER(CmdVersion),
+                    "Print application vesion number and library details.");
+  m_cli->SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
+                    "Quit command line interpreter, note quitting from console also shuts down application.");
+  m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
+                    "Shut down the application");
+  return true;
+}
+
+
+void OpalManagerCLI::Run()
+{
+  if (PAssertNULL(m_cli) == NULL)
+    return;
+
+  if (PProcess::Current().GetArguments().HasOption("script-file")) {
+    // if there is a script file, process commands
+    PString filename = PProcess::Current().GetArguments().GetOptionString("script-file");
+    PTextFile scriptFile;
+    if (scriptFile.Open(filename)) {
+      PCLIStandard * stdCLI = dynamic_cast<PCLIStandard *>(m_cli);
+      if (stdCLI != NULL)
+        stdCLI->RunScript(scriptFile);
+      else
+        m_cli->Run(&scriptFile, new PNullChannel, false, true);
+    }
+    else
+      cerr << "error: cannot open script file \"" << filename << '"' << endl;
+  }
+
+  if (m_cli != NULL)
+    m_cli->Start(false);
+}
+
+
+void OpalManagerCLI::EndRun()
+{
+  if (m_cli != NULL)
+    m_cli->Stop();
+  OpalManagerConsole::EndRun();
+}
+
+
+#if P_TELNET
+PCLI * OpalManagerCLI::CreatePCLI(WORD port)
+{
+  if (port == 0)
+    return new PCLIStandard;
+
+  PCLI * cli = new PCLITelnet(port);
+  cli->StartContext(new PConsoleChannel(PConsoleChannel::StandardInput),
+                    new PConsoleChannel(PConsoleChannel::StandardOutput));
+  return cli;
+}
+#else
+PCLI * OpalManagerCLI::CreatePCLI()
+{
+  return new PCLIStandard;
+}
+#endif
+
+
+#if OPAL_SIP
+void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, INT)
+{
+  if (!args.Parse("a-auth-id:"
+                  "r-realm:"
+                  "p-proxy:"
+                  "m-mode:"
+                  "t-ttl:")) {
+    args.WriteUsage();
+    return;
+  }
+
+  SIPRegister::Params params;
+
+  params.m_addressOfRecord  = args[0];
+  params.m_password         = args[1];
+  params.m_authID           = args.GetOptionString('a');
+  params.m_realm            = args.GetOptionString('r');
+  params.m_proxyAddress     = args.GetOptionString('p');
+
+  PString error;
+  if (!SetRegistrationParams(params, error, args, "mode", "ttl")) {
+    args.WriteError(error);
+    return;
+  }
+
+  args.GetContext() << "Registering with " << params.m_addressOfRecord << " ..." << flush;
+
+  PString aor;
+  if (FindEndPointAs<SIPEndPoint>("sip")->Register(params, aor, false))
+    args.GetContext() << "succeeded" << endl;
+  else
+    args.GetContext() << "failed" << endl;
+}
+#endif
+
+
+#if P_NAT
+void OpalManagerCLI::CmdNat(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 2) {
+    args.WriteUsage();
+    return;
+  }
+
+  if (!SetNATServer(args[0], args[1])) {
+    args.WriteError("STUN server offline or unsuitable NAT type");
+    return;
+  }
+
+  PCLI::Context & out = args.GetContext();
+  out << m_natMethod->GetName() << " server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
+  PIPSocket::Address externalAddress;
+  if (m_natMethod->GetExternalAddress(externalAddress))
+    out << " with address " << externalAddress;
+  out.flush();
+}
+#endif
+
+
+#if PTRACING
+void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() == 0)
+    args.WriteUsage();
+  else
+    PTrace::Initialise(args[0].AsUnsigned(),
+                       args.GetCount() > 1 ? (const char *)args[1] : NULL,
+                       PTrace::GetOptions());
+}
+#endif // PTRACING
+
+
+void OpalManagerCLI::CmdListCodecs(PCLI::Arguments & args, INT)
+{
+  OpalMediaFormatList formats;
+  OpalMediaFormat::GetAllRegisteredMediaFormats(formats);
+
+  PCLI::Context & out = args.GetContext();
+  OpalMediaFormatList::iterator format;
+  for (format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetMediaType() == OpalMediaType::Audio() && format->IsTransportable())
+      out << *format << '\n';
+  }
+
+#if OPAL_VIDEO
+  for (format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetMediaType() == OpalMediaType::Video() && format->IsTransportable())
+      out << *format << '\n';
+  }
+#endif
+
+  for (format = formats.begin(); format != formats.end(); ++format) {
+    if (format->GetMediaType() != OpalMediaType::Audio() &&
+#if OPAL_VIDEO
+        format->GetMediaType() != OpalMediaType::Video() &&
+#endif
+        format->IsTransportable())
+      out << *format << '\n';
+  }
+
+  out.flush();
+}
+
+
+void OpalManagerCLI::CmdDelay(PCLI::Arguments & args, INT)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    PTimeInterval delay(0, args[0].AsUnsigned());
+    m_endRun.Wait(delay);
+  }
+}
+
+
+void OpalManagerCLI::CmdVersion(PCLI::Arguments & args, INT)
+{
+  PrintVersion(args.GetContext());
+}
+
+
+void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, INT)
+{
+  if (PIsDescendant(args.GetContext().GetBaseReadChannel(), PConsoleChannel))
+    CmdShutDown(args, 0);
+  else
+    args.GetContext().Stop();
+}
+
+
+void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, INT)
+{
+  args.GetContext().GetCLI().Stop();
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
