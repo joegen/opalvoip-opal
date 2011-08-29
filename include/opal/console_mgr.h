@@ -36,6 +36,7 @@
 #endif
 
 #include <opal/manager.h>
+#include <ptclib/cli.h>
 
 
 class SIPEndPoint;
@@ -43,12 +44,11 @@ class H323EndPoint;
 class OpalLineEndPoint;
 
 
-/**Opal manager class for console applications.
+/**OPAL manager class for console applications.
    An OpalManager derived class for use in a console application, providing
    a standard set of command line arguments for configuring many system
    parameters. Used by the sample applications such as faxopal, ovropal etc.
   */
-
 class OpalManagerConsole : public OpalManager
 {
     PCLASSINFO(OpalManagerConsole, OpalManager);
@@ -56,10 +56,13 @@ class OpalManagerConsole : public OpalManager
   public:
     OpalManagerConsole();
 
-    PString GetArgumentSpec() const;
-    PString GetArgumentUsage() const;
+    virtual PString GetArgumentSpec() const;
+    virtual PString GetArgumentUsage() const;
+    virtual void Usage(ostream & strm, const PArgList & args);
 
-    bool Initialise(PArgList & args, bool verbose);
+    virtual bool Initialise(PArgList & args, bool verbose);
+    virtual void Run();
+    virtual void EndRun();
 
   protected:
 #if OPAL_SIP
@@ -71,6 +74,96 @@ class OpalManagerConsole : public OpalManager
 #if OPAL_LID
     OpalLineEndPoint * CreateLineEndPoint();
 #endif
+
+    PSyncPoint m_endRun;
+};
+
+
+/**OPAL manager class for applications with command line interpreter.
+   An OpalManager derived class for use in a console application, providing
+   a standard set of command line arguments for configuring many system
+   parameters,  and a standard command line interpreter for control of many
+   functions. Used by the sample applications such as faxopal, ovropal etc.
+  */
+class OpalManagerCLI : public OpalManagerConsole
+{
+    PCLASSINFO(OpalManagerCLI, OpalManagerConsole);
+
+  public:
+    OpalManagerCLI();
+    ~OpalManagerCLI();
+
+    virtual PString GetArgumentSpec() const;
+    virtual bool Initialise(PArgList & args, bool verbose);
+    virtual void Run();
+    virtual void EndRun();
+
+  protected:
+    PCLI * CreatePCLI(
+#if P_TELNET
+      WORD port /// Port to listen for telnet sessions, zero disables.
+#endif
+    );
+
+#if OPAL_SIP
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdRegister);
+#endif
+
+#if P_NAT
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNat);
+#endif
+
+#if PTRACING
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdTrace);
+#endif
+
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdListCodecs);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdDelay);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVersion);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdQuit);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdShutDown);
+
+    PCLI * m_cli;
+};
+
+
+/**Create a process for OpalConsoleManager based applications.
+  */
+template <class Manager,                   ///< Class of OpalManagerConsole derived class
+          const char Manuf[],              ///< Name of manufacturer
+          const char Name[],               ///< Name of product
+          WORD MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
+          WORD MinorVersion = OPAL_MINOR,  ///< Minor version number of the product
+          PProcess::CodeStatus Status = PProcess::ReleaseCode, ///< Development status of the product
+          WORD BuildNumber = OPAL_BUILD,   ///< Build number of the product
+          bool Verbose = true>
+class OpalConsoleProcess : public PProcess
+{
+    PCLASSINFO(OpalConsoleProcess, PProcess)
+  public:
+    OpalConsoleProcess()
+      : PProcess(Manuf, Name, MajorVersion, MinorVersion, Status, BuildNumber)
+      , m_manager(NULL)
+    {
+    }
+
+    ~OpalConsoleProcess()
+    {
+      delete this->m_manager;
+    }
+
+    virtual void Main()
+    {
+      this->SetTerminationValue(1);
+      this->m_manager = new MyManager;
+      if (this->m_manager->Initialise(this->GetArguments(), Verbose)) {
+        this->SetTerminationValue(0);
+        this->m_manager->Run();
+      }
+    }
+
+  private:
+    Manager * m_manager;
 };
 
 
