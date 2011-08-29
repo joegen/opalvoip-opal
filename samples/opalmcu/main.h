@@ -128,41 +128,22 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 
-class MyManager : public OpalManagerConsole
+class MyManager : public OpalManagerCLI
 {
-    PCLASSINFO(MyManager, OpalManagerConsole)
+    PCLASSINFO(MyManager, OpalManagerCLI)
 
   public:
     MyManager();
-    ~MyManager();
+
+    PString GetArgumentSpec() const;
+    bool Initialise(PArgList & args, bool verbose);
 
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnClearedCall(OpalCall & call);
 
+    void Broadcast(const PString & str) { m_cli->Broadcast(str); }
+
     MyMixerEndPoint * m_mixer;
-    PCLI            * m_cli;
-};
-
-
-class ConfOPAL : public PProcess
-{
-    PCLASSINFO(ConfOPAL, PProcess)
-
-  public:
-    ConfOPAL();
-    ~ConfOPAL();
-
-    virtual void Main();
-
-  private:
-    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdListCodecs);
-#if PTRACING
-    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdTrace);
-#endif
-    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdShutDown);
-    PDECLARE_NOTIFIER(PCLI::Arguments, ConfOPAL, CmdQuit);
-
-    MyManager * m_manager;
 };
 
 
