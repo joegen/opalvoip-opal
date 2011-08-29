@@ -562,13 +562,19 @@ OpalRTPSession::~OpalRTPSession()
 
 #if PTRACING
   PTime now;
-#endif
+  int sentDuration = (now-firstPacketSent).GetSeconds();
+  if (sentDuration == 0)
+    sentDuration = 1;
+  int receiveDuration = (now-firstPacketReceived).GetSeconds();
+  if (receiveDuration == 0)
+    receiveDuration = 1;
+ #endif
   PTRACE_IF(3, packetsSent != 0 || packetsReceived != 0,
       "RTP\tSession " << sessionID << ", final statistics:\n"
       "    firstPacketSent    = " << firstPacketSent << "\n"
       "    packetsSent        = " << packetsSent << "\n"
       "    octetsSent         = " << octetsSent << "\n"
-      "    bitRateSent        = " << (8*octetsSent/(now-firstPacketSent).GetSeconds()) << "\n"
+      "    bitRateSent        = " << (8*octetsSent/sentDuration) << "\n"
       "    averageSendTime    = " << averageSendTime << "\n"
       "    maximumSendTime    = " << maximumSendTime << "\n"
       "    minimumSendTime    = " << minimumSendTime << "\n"
@@ -577,7 +583,7 @@ OpalRTPSession::~OpalRTPSession()
       "    firstPacketReceived= " << firstPacketReceived << "\n"
       "    packetsReceived    = " << packetsReceived << "\n"
       "    octetsReceived     = " << octetsReceived << "\n"
-      "    bitRateReceived    = " << (8*octetsReceived/(now-firstPacketReceived).GetSeconds()) << "\n"
+      "    bitRateReceived    = " << (8*octetsReceived/receiveDuration) << "\n"
       "    packetsLost        = " << packetsLost << "\n"
       "    packetsTooLate     = " << GetPacketsTooLate() << "\n"
       "    packetOverruns     = " << GetPacketOverruns() << "\n"
