@@ -155,7 +155,7 @@ class OpalConsoleProcess : public PProcess
     virtual void Main()
     {
       this->SetTerminationValue(1);
-      this->m_manager = new MyManager;
+      this->m_manager = new Manager;
       if (this->m_manager->Initialise(this->GetArguments(), Verbose)) {
         this->SetTerminationValue(0);
         this->m_manager->Run();
