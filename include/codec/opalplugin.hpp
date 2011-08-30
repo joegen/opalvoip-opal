@@ -8,21 +8,28 @@
  *
  * Copyright (C) 2010 Vox Lucida
  *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and limitations
- * under the License.
+ * - Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+
+ * - Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
  *
- * The Original Code is Open Phone Abstraction Library.
- *
- * The Initial Developer of the Original Code is Vox Lucida
- *
- * Contributor(s): ______________________________________.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * $Revision$
  * $Author$
@@ -124,21 +131,27 @@ class PluginCodec_MediaFormat
     /// Utility function to adjust option strings, used by ToNormalised()/ToCustomised().
     bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed))
     {
-      if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+      if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***)) {
+        PTRACE(1, "Plugin", "Invalid parameters to AdjustOptions.");
         return false;
+      }
 
       OptionMap originalOptions;
       for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2)
         originalOptions[option[0]] = option[1];
 
       OptionMap changedOptions;
-      if (!(this->*adjuster)(originalOptions, changedOptions))
+      if (!(this->*adjuster)(originalOptions, changedOptions)) {
+        PTRACE(1, "Plugin", "Could not normalise/customise options.");
         return false;
+      }
 
       char ** options = (char **)calloc(changedOptions.size()*2+1, sizeof(char *));
       *(char ***)parm = options;
-      if (options == NULL)
+      if (options == NULL) {
+        PTRACE(1, "Plugin", "Could not allocate new option lists.");
         return false;
+      }
 
       for (OptionMap::iterator i = changedOptions.begin(); i != changedOptions.end(); ++i) {
         *options++ = strdup(i->first.c_str());
@@ -211,6 +224,27 @@ class PluginCodec_MediaFormat
       unsigned value = String2Unsigned(original[option]);
       if (value < minimum)
         Unsigned2String(minimum, changed[option]);
+    }
+
+    virtual void AdjustForVersion(unsigned version)
+    {
+      if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
+        for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
+          if (strcmp((*options)->m_name, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
+            *options = NULL;
+            break;
+          }
+        }
+      }
+    }
+
+    static void AdjustAllForVersion(unsigned version, const PluginCodec_Definition * definitions, size_t size)
+    {
+      for (size_t i = 0; i < size; ++i) {
+        PluginCodec_MediaFormat * info = (PluginCodec_MediaFormat *)definitions[i].userData;
+        if (info != NULL)
+          info->AdjustForVersion(version);
+      }
     }
 };
 
@@ -296,8 +330,10 @@ class PluginCodec
 
       // get the media format options after adjustment from protocol negotiation
       for (const char * const * option = options; *option != NULL; option += 2) {
-        if (!SetOption(option[0], option[1]))
+        if (!SetOption(option[0], option[1])) {
+          PTRACE(1, "Plugin", "Could not set option \"" << option[0] << "\" to \"" << option[1] << '"');
           return false;
+        }
       }
 
       if (m_optionsSame)
