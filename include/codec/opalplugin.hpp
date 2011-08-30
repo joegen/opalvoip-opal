@@ -19,10 +19,6 @@
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
  *
- * - Neither the name of the Xiph.org Foundation nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -228,6 +224,27 @@ class PluginCodec_MediaFormat
       unsigned value = String2Unsigned(original[option]);
       if (value < minimum)
         Unsigned2String(minimum, changed[option]);
+    }
+
+    virtual void AdjustForVersion(unsigned version)
+    {
+      if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
+        for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
+          if (strcmp((*options)->m_name, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
+            *options = NULL;
+            break;
+          }
+        }
+      }
+    }
+
+    static void AdjustAllForVersion(unsigned version, const PluginCodec_Definition * definitions, size_t size)
+    {
+      for (size_t i = 0; i < size; ++i) {
+        PluginCodec_MediaFormat * info = (PluginCodec_MediaFormat *)definitions[i].userData;
+        if (info != NULL)
+          info->AdjustForVersion(version);
+      }
     }
 };
 
