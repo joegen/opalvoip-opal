@@ -351,8 +351,17 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       else {
         OpalMediaFormat adjustedRawFormat = rawFormat;
         if (rawFormat == OpalPCM16) {
-          if (mediaFormat.GetClockRate() != rawFormat.GetClockRate() || mediaFormat.GetPayloadType() == RTP_DataFrame::G722)
+          if (mediaFormat.GetPayloadType() == RTP_DataFrame::G722)
             adjustedRawFormat = OpalPCM16_16KHZ;
+          else {
+            PString str = OPAL_PCM16;
+            if (mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) == 2)
+              str += 'S';
+            if (mediaFormat.GetClockRate() != 8000)
+              str += '-' + PString(PString::Unsigned, mediaFormat.GetTimeUnits()) + "KHZ";
+            adjustedRawFormat = str;
+          }
+
           if (args.HasOption('F')) {
             unsigned fpp = args.GetOptionString('F').AsUnsigned();
             if (fpp > 0)
