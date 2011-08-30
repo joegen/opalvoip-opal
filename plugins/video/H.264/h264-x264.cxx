@@ -528,19 +528,6 @@ public:
   }
 
 
-#ifdef PLUGIN_CODEC_VERSION_INTERSECT
-  void ClearMediaPacketizations()
-  {
-    for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
-      if (strcmp((*options)->m_name, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
-        *options = NULL;
-        break;
-      }
-    }
-  }
-#endif
-
-
   static void ClampSizes(const LevelInfoStruct & info,
                          unsigned maxWidth,
                          unsigned maxHeight,
@@ -1327,15 +1314,7 @@ extern "C"
     if (version < PLUGIN_CODEC_VERSION_OPTIONS)
       return NULL;
 
-#ifdef PLUGIN_CODEC_VERSION_INTERSECT
-    if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
-      for (size_t i = 0; i < MyCodecDefinitionSize; ++i) {
-        MyPluginMediaFormat * info = (MyPluginMediaFormat *)MyCodecDefinition[i].userData;
-        if (info != NULL)
-          info->ClearMediaPacketizations();
-      }
-    }
-#endif
+    PluginCodec_MediaFormat::AdjustAllForVersion(version, MyCodecDefinition, MyCodecDefinitionSize);
 
     *count = MyCodecDefinitionSize;
     return MyCodecDefinition;
