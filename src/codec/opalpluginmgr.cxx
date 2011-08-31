@@ -1598,6 +1598,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
   // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
   // consuming dozens of dynamic RTP types
   int channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
+  mediaFormat->SetOptionInteger(OpalAudioFormat::ChannelsOption(), channels);
   if ((codecDefn->flags & PluginCodec_RTPTypeShared) != 0 && (codecDefn->sdpFormat != NULL)) {
     OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
     for (OpalMediaFormatList::iterator iterFmt = list.begin(); iterFmt != list.end(); ++iterFmt) {
