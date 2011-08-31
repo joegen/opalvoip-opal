@@ -409,9 +409,17 @@ class PluginCodec
     bool SetOptionBoolean(bool & oldValue, const char * optionValue)
     {
       bool newValue;
-      if (strcmp(optionValue, "0") == 0)
+      if (     strcasecmp(optionValue, "0") == 0 ||
+               strcasecmp(optionValue, "n") == 0 ||
+               strcasecmp(optionValue, "f") == 0 ||
+               strcasecmp(optionValue, "no") == 0 ||
+               strcasecmp(optionValue, "false") == 0)
         newValue = false;
-      else if (strcmp(optionValue, "1") == 0)
+      else if (strcasecmp(optionValue, "1") == 0 ||
+               strcasecmp(optionValue, "y") == 0 ||
+               strcasecmp(optionValue, "t") == 0 ||
+               strcasecmp(optionValue, "yes") == 0 ||
+               strcasecmp(optionValue, "true") == 0)
         newValue = true;
       else
         return false;
