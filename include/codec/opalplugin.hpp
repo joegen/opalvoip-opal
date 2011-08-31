@@ -226,7 +226,7 @@ class PluginCodec_MediaFormat
         Unsigned2String(minimum, changed[option]);
     }
 
-    virtual void AdjustForVersion(unsigned version)
+    virtual void AdjustForVersion(unsigned version, const PluginCodec_Definition * /*definition*/)
     {
       if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
         for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
@@ -240,10 +240,11 @@ class PluginCodec_MediaFormat
 
     static void AdjustAllForVersion(unsigned version, const PluginCodec_Definition * definitions, size_t size)
     {
-      for (size_t i = 0; i < size; ++i) {
-        PluginCodec_MediaFormat * info = (PluginCodec_MediaFormat *)definitions[i].userData;
+      while (size-- > 0) {
+        PluginCodec_MediaFormat * info = (PluginCodec_MediaFormat *)definitions->userData;
         if (info != NULL)
-          info->AdjustForVersion(version);
+          info->AdjustForVersion(version, definitions);
+        ++definitions;
       }
     }
 };
