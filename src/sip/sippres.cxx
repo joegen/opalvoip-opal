@@ -847,6 +847,7 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
   if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:display-name")) != NULL)
     buddy.m_displayName = itemElement->GetData();
 
+#if P_VCARD
   if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:card")) != NULL) {
     PURL url;
     if (url.Parse(itemElement->GetData())) {
@@ -855,6 +856,7 @@ static bool XMLToBuddyInfo(const PXMLElement * element, OpalPresentity::BuddyInf
         buddy.m_vCard.Parse(str);
     }
   }
+#endif // P_VCARD
 
   if ((itemElement= element->GetElement("urn:ietf:params:xml:ns:pidf:cipid:icon")) != NULL)
     buddy.m_icon = itemElement->GetData();

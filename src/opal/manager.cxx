@@ -73,20 +73,35 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_G728,
   OPAL_G711_ULAW_64K,
   OPAL_G711_ALAW_64K,
+#if OPAL_VIDEO
   OPAL_H264_MODE1,
   OPAL_H264_MODE0,
   OPAL_MPEG4,
   OPAL_H263,
   OPAL_H261,
+#endif
+#if OPAL_HAS_SIPIM
   OPAL_SIPIM,
+#endif
+#if OPAL_RFC4175
   OPAL_T140,
+#endif
+#if OPAL_HAS_MSRP
   OPAL_MSRP
+#endif
 };
 
 static const char * const DefaultMediaFormatMask[] = {
+#if OPAL_RFC4175
   OPAL_RFC4175_YCbCr420,
   OPAL_RFC4175_RGB,
-  OPAL_MSRP
+#endif
+#if OPAL_HAS_RFC4103
+  OPAL_T140,
+#endif
+#if OPAL_HAS_MSRP
+  OPAL_MSRP,
+#endif
 };
 
 // G.711 is *always* available
@@ -275,7 +290,9 @@ OpalManager::~OpalManager()
 
   delete garbageCollector;
 
+#if P_NAT
   delete m_natMethod;
+#endif
   delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
@@ -1647,8 +1664,10 @@ void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 {
   udpPorts.Set(udpBase, udpMax, 99, 0);
 
+#if P_NAT
   if (m_natMethod != NULL)
     m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+#endif
 }
 
 
@@ -1662,8 +1681,10 @@ void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 {
   rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
 
+#if P_NAT
   if (m_natMethod != NULL)
     m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+#endif
 }
 
 
@@ -1970,30 +1991,37 @@ OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
 }
 
 
+#ifdef P_NAT
 void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
 {
-#ifdef P_NAT
   PNatMethod * nat = m_manager.GetNatMethod();
   if (nat != NULL) {
     PIPSocket::Address addr;
     if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
       nat->Open(entry.GetAddress());
   }
-#endif
 }
 
 
 void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
-#ifdef P_NAT
   PNatMethod * nat = m_manager.GetNatMethod();
   if (nat != NULL) {
     PIPSocket::Address addr;
     if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
       nat->Close();
   }
-#endif
 }
+#else // P_NAT
+void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry &)
+{
+}
+
+
+void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry &)
+{
+}
+#endif // P_NAT
 
 
 /////////////////////////////////////////////////////////////////////////////

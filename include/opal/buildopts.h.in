@@ -116,7 +116,9 @@
 
 #undef  OPAL_IAX2
 #undef	OPAL_SIP
+#if P_ASN
 #undef	OPAL_H323
+#endif
 #undef  OPAL_LID
 #undef  OPAL_CAPI
 #undef  OPAL_DAHDI

@@ -199,6 +199,10 @@ static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInit
 
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+
 OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token,
@@ -223,9 +227,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_PTLIB_DTMF
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
   , m_sendInBandDTMF(true)
   , m_emittedInBandDTMF(0)
@@ -238,9 +239,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_VIDEO
   , m_recordVideoNotifier(PCREATE_NOTIFIER(OnRecordVideo))
 #endif
-#endif
-#ifdef _MSC_VER
-#pragma warning(default:4355)
 #endif
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
@@ -314,6 +312,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   m_phaseTime[UninitialisedPhase].SetCurrentTime();
 }
+
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
 
 OpalConnection::~OpalConnection()
 {

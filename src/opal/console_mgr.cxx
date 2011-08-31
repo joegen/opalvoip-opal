@@ -549,7 +549,11 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose)
       }
     }
 
+#if P_TELNET
     m_cli = CreatePCLI((WORD)port);
+#else
+    m_cli = CreatePCLI();
+#endif
     if (m_cli == NULL)
       return false;
   }
