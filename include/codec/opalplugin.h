@@ -192,6 +192,9 @@ enum PluginCodec_Flags {
   PluginCodec_ChannelsMask           = 0x003f0000
 };
 
+#define PluginCodec_SetChannels(n) (((n-1)<<PluginCodec_ChannelsPos)&PluginCodec_ChannelsMask)
+
+
 enum PluginCodec_CoderFlags {
   PluginCodec_CoderSilenceFrame      = 1,    // request audio codec to create silence frame
   PluginCodec_CoderForceIFrame       = 2     // request video codec to force I frame
