@@ -75,6 +75,14 @@ public class OpalStatusMediaStream {
     return OpalMediaStates.swigToEnum(OPALJNI.OpalStatusMediaStream_m_state_get(swigCPtr, this));
   }
 
+  public void setM_volume(int value) {
+    OPALJNI.OpalStatusMediaStream_m_volume_set(swigCPtr, this, value);
+  }
+
+  public int getM_volume() {
+    return OPALJNI.OpalStatusMediaStream_m_volume_get(swigCPtr, this);
+  }
+
   public OpalStatusMediaStream() {
     this(OPALJNI.new_OpalStatusMediaStream(), true);
   }
