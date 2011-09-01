@@ -383,7 +383,211 @@ struct PluginCodec_Definition {
 typedef const struct PluginCodec_Definition * (* PluginCodec_GetCodecFunction)(unsigned int *, unsigned int);
 typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
 
+
 ///////////////////////////////////////////////////////////////////
+
+#define PLUGINCODEC_RAW_AUDIO "L16"
+#define PLUGINCODEC_RAW_VIDEO "YUV420P"
+
+/// Declare a pair of plug in definition entries for a codec
+#define PLUGINCODEC_CODEC_PAIR(MediaFormat,    /**< Media Format */ \
+                               PayloadName,    /**< IANA RTP payload code */ \
+                               Description,    /**< Description text */ \
+                               SampleRate,     /**< Sample rate */ \
+                               BitsPerSecond,  /**< Maximum bits per second */ \
+                               FrameTime,      /**< Microseconds per frame */ \
+                               p1,p2,p3,p4, \
+                               PayloadType,    /**< IANA RTP payload type code */ \
+                               H323type,       /**< h323CapabilityType enumeration */ \
+                               H323data,       /**< Data to go with h323CapabilityType */ \
+                               CreateEncoder,  /**< Create encoder function */ \
+                               DestroyEncoder, /**< Destroy encoder function */ \
+                               EncodeMedia,    /**< Encode media function */ \
+                               CreateDecoder,  /**< Create decoder function */ \
+                               DestroyDecoder, /**< Destroy decoder function */ \
+                               DecodeMedia,    /**< Decode media function */ \
+                               ControlsTable,  /**< Codec controls tables */ \
+                               Flags,          /**< Flags */ \
+                               RawFormat       /**< Raw format */ \
+                               ) \
+  { \
+    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, RawFormat, MediaFormat, NULL, \
+    SampleRate, BitsPerSecond, FrameTime, {{ p1,p2,p3,p4 }}, PayloadType, PayloadName, \
+    CreateEncoder, DestroyEncoder, EncodeMedia, ControlsTable, H323type, H323data \
+  }, \
+  { \
+    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, MediaFormat, RawFormat, NULL, \
+    SampleRate, BitsPerSecond, FrameTime, {{ p1,p2,p3,p4 }}, PayloadType, PayloadName, \
+    CreateDecoder, DestroyDecoder, DecodeMedia, ControlsTable, H323type, H323data \
+  }
+
+#define PLUGINCODEC_AUDIO_CODEC(MediaFormat,     /**< Media Format */ \
+                                PayloadName,     /**< IANA RTP payload code */ \
+                                Description,     /**< Description text */ \
+                                SampleRate,      /**< Sample rate */ \
+                                BitsPerSecond,   /**< Maximum bits per second */ \
+                                FrameTime,       /**< Microseconds per audio frame */ \
+                                SamplesPerFrame, /**< Samples per audio frame */ \
+                                BytesPerFrame,   /**< Samples per audio frame */ \
+                                RecFramesPerPacket, /**< Recommended frames per packet */ \
+                                MaxFramesPerPacket, /**< Maximum frames per packet */ \
+                                RtpFlags,         /**< Extra flags typically if RTP payload type is fixed */ \
+                                PayloadType,      /**< IANA RTP payload type code */ \
+                                H323type,         /**< h323CapabilityType enumeration */ \
+                                H323data,         /**< Data to go with h323CapabilityType */ \
+                                CreateEncoder,    /**< Create encoder function */ \
+                                DestroyEncoder,   /**< Destroy encoder function */ \
+                                EncodeAudio,      /**< Encode media function */ \
+                                CreateDecoder,    /**< Create decoder function */ \
+                                DestroyDecoder,   /**< Destroy decoder function */ \
+                                DecodeAudio,      /**< Decode media function */ \
+                                ControlsTable     /**< Codec controls tables */ \
+                                ) \
+         PLUGINCODEC_CODEC_PAIR(MediaFormat, \
+                                PayloadName, \
+                                Description, \
+                                SampleRate, \
+                                BitsPerSecond, \
+                                FrameTime, \
+                                SamplesPerFrame, \
+                                BytesPerFrame, \
+                                RecFramesPerPacket, \
+                                MaxFramesPerPacket, \
+                                PayloadType, \
+                                H323type, \
+                                H323data, \
+                                CreateEncoder, \
+                                DestroyEncoder, \
+                                EncodeAudio, \
+                                CreateDecoder, \
+                                DestroyDecoder, \
+                                DecodeAudio, \
+                                ControlsTable, \
+                                PluginCodec_MediaTypeAudio | /* audio codec */ \
+                                PluginCodec_InputTypeRaw |   /* raw input data */ \
+                                PluginCodec_OutputTypeRaw |  /* raw output data */ \
+                                (RtpFlags), \
+                                PLUGINCODEC_RAW_AUDIO)
+
+#define PLUGINCODEC_ONE_AUDIO_CODEC(MediaFormat,     /**< Media Format */ \
+                                    PayloadName,     /**< IANA RTP payload code */ \
+                                    Description,     /**< Description text */ \
+                                    SampleRate,      /**< Sample rate */ \
+                                    BitsPerSecond,   /**< Maximum bits per second */ \
+                                    FrameTime,       /**< Microseconds per audio frame */ \
+                                    SamplesPerFrame, /**< Samples per audio frame */ \
+                                    BytesPerFrame,   /**< Samples per audio frame */ \
+                                    RecFramesPerPacket, /**< Recommended frames per packet */ \
+                                    MaxFramesPerPacket, /**< Maximum frames per packet */ \
+                                    RtpFlags,         /**< Extra flags typically if RTP payload type is fixed */ \
+                                    PayloadType,      /**< IANA RTP payload type code */ \
+                                    H323type,         /**< h323CapabilityType enumeration */ \
+                                    H323data          /**< Data to go with h323CapabilityType */ \
+                                ) \
+    static struct PluginCodec_Definition CodecDefinitionTable[] = { \
+            PLUGINCODEC_AUDIO_CODEC(MediaFormat, \
+                                    PayloadName, \
+                                    Description, \
+                                    SampleRate, \
+                                    BitsPerSecond, \
+                                    FrameTime, \
+                                    SamplesPerFrame, \
+                                    BytesPerFrame, \
+                                    RecFramesPerPacket, \
+                                    MaxFramesPerPacket, \
+                                    RtpFlags, \
+                                    PayloadType, \
+                                    H323type, \
+                                    H323data, \
+                                    MyCreateEncoder, \
+                                    MyDestroyEncoder, \
+                                    MyEncodeAudio, \
+                                    MyCreateDecoder, \
+                                    MyDestroyDecoder, \
+                                    MyDecodeAudio, \
+                                    MyControlsTable \
+                                    ) \
+    }
+
+#define PLUGINCODEC_VIDEO_CODEC(MediaFormat,     /**< Media Format */ \
+                                PayloadName,     /**< IANA RTP payload code */ \
+                                Description,     /**< Description text */ \
+                                BitsPerSecond,   /**< Maximum bits per second */ \
+                                MaxWidth,        /**< Max resolution (width) */ \
+                                MaxHeight,       /**< Max resolution (height) */ \
+                                RtpFlags,        /**< Extra flags typically if RTP payload type is fixed */ \
+                                PayloadType,     /**< IANA RTP payload type code */ \
+                                H323type,        /**< h323CapabilityType enumeration */ \
+                                H323data,        /**< Data to go with h323CapabilityType */ \
+                                CreateEncoder,   /**< Create encoder function */ \
+                                DestroyEncoder,  /**< Destroy encoder function */ \
+                                EncodeVideo,     /**< Encode media function */ \
+                                CreateDecoder,   /**< Create decoder function */ \
+                                DestroyDecoder,  /**< Destroy decoder function */ \
+                                DecodeVideo,     /**< Decode media function */ \
+                                ControlsTable    /**< Codec controls tables */ \
+                                ) \
+         PLUGINCODEC_CODEC_PAIR(MediaFormat, \
+                                PayloadName, \
+                                Description, \
+                                SampleRate, \
+                                BitsPerSecond, \
+                                90000, \
+                                BitsPerSecond, \
+                                100000, \
+                                MaxWidth, \
+                                MaxHeight, \
+                                0,30, \
+                                PayloadType, \
+                                H323type, \
+                                H323data, \
+                                CreateEncoder, \
+                                DestroyEncoder, \
+                                EncodeVideo, \
+                                CreateDecoder, \
+                                DestroyDecoder, \
+                                DecodeVideo, \
+                                ControlsTable, \
+                                PluginCodec_MediaTypeVideo | /* video codec */ \
+                                PluginCodec_InputTypeRRP |   /* RTP input data */ \
+                                PluginCodec_OutputTypeRRP |  /* RTP output data */ \
+                                (RtpFlags), \
+                                PLUGINCODEC_RAW_VIDEO)
+
+#define PLUGINCODEC_ONE_VIDEO_CODEC(MediaFormat,     /**< Media Format */ \
+                                    PayloadName,     /**< IANA RTP payload code */ \
+                                    Description,     /**< Description text */ \
+                                    BitsPerSecond,   /**< Maximum bits per second */ \
+                                    MaxWidth,        /**< Max resolution (width) */ \
+                                    MaxHeight,       /**< Max resolution (height) */ \
+                                    RtpFlags,        /**< Extra flags typically if RTP payload type is fixed */ \
+                                    PayloadType,     /**< IANA RTP payload type code */ \
+                                    H323type,        /**< h323CapabilityType enumeration */ \
+                                    H323data         /**< Data to go with h323CapabilityType */ \
+                                ) \
+    static struct PluginCodec_Definition CodecDefinitionTable[] = { \
+            PLUGINCODEC_VIDEO_CODEC(MediaFormat, \
+                                    PayloadName, \
+                                    Description, \
+                                    BitsPerSecond, \
+                                    MaxWidth, \
+                                    MaxHeight, \
+                                    RtpFlags, \
+                                    PayloadType, \
+                                    H323type, \
+                                    H323data, \
+                                    CreateEncoder, \
+                                    DestroyEncoder, \
+                                    EncodeAudio, \
+                                    CreateDecoder, \
+                                    DestroyDecoder, \
+                                    DecodeAudio, \
+                                    ControlsTable \
+                                    ) \
+    }
+
+
+//////////////////////////////////////////////////////////////////
 //
 //  H.323 specific values
 //
