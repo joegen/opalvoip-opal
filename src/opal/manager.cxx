@@ -60,6 +60,9 @@
 
 
 static const char * const DefaultMediaFormatOrder[] = {
+  OPAL_G7222,
+  OPAL_G7221,
+  OPAL_G722,
   OPAL_GSMAMR,
   OPAL_G7231_6k3,
   OPAL_G729B,
@@ -69,10 +72,15 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_iLBC,
   OPAL_GSM0610,
   OPAL_G728,
+  OPAL_G726_40K,
+  OPAL_G726_32K,
+  OPAL_G726_24K,
+  OPAL_G726_16K,
   OPAL_G711_ULAW_64K,
   OPAL_G711_ALAW_64K,
-  OPAL_H264_MODE1,
-  OPAL_H264_MODE0,
+  OPAL_H264,        // H.323 version
+  OPAL_H264_MODE1,  // SIP version, packetisation mode 1
+  OPAL_H264_MODE0,  // SIP version, packetisation mode 0
   OPAL_MPEG4,
   OPAL_H263,
   OPAL_H261
