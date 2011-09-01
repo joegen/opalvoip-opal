@@ -907,7 +907,7 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 2 :
       m_tokens.AppendString("unknown");
     case 3 :
-      m_tokens.AppendString("unknown");
+      m_tokens.AppendString("127");
   }
 }
 
@@ -932,7 +932,7 @@ SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat(const PString & 
 
 PString SDPDummyMediaDescription::GetSDPPortList() const
 {
-  return m_tokens[3];
+  return ' ' + m_tokens[3];
 }
 
 
@@ -959,7 +959,7 @@ SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat(const PString &
 PString SDPRTPAVPMediaDescription::GetSDPPortList() const
 {
   if (formats.IsEmpty())
-    return "127"; // Have to have SOMETHING
+    return " 127"; // Have to have SOMETHING
 
   PStringStream str;
 
@@ -1286,7 +1286,7 @@ SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PStr
 PString SDPApplicationMediaDescription::GetSDPPortList() const
 {
   if (formats.IsEmpty())
-    return "na"; // Have to have SOMETHING
+    return " na"; // Have to have SOMETHING
 
   PStringStream str;
 
