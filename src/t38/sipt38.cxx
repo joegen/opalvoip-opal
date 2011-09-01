@@ -112,6 +112,9 @@ SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & po
 
 PString SDPFaxMediaDescription::GetSDPPortList() const
 {
+  if (formats.IsEmpty())
+    return " t38"; // Have to have SOMETHING
+
   PStringStream str;
 
   // output encoding names for non RTP
