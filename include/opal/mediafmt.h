@@ -1378,6 +1378,7 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_iLBC           "iLBC"
 #define OPAL_H261           "H.261"
 #define OPAL_H263           "H.263"
+#define OPAL_H264           "H.264"
 #define OPAL_H264_MODE0     "H.264-0"
 #define OPAL_H264_MODE1     "H.264-1"
 #define OPAL_MPEG4          "MPEG4"
