@@ -65,6 +65,8 @@ class OpalIMEndPoint;
   extern const OpalMediaFormat & GetOpalMSRP();
 #endif
 
+#define OPAL_IM_MEDIA_TYPE_PREFIX "im-"
+
 
 /////////////////////////////////////////////////////////////////////
 
@@ -117,10 +119,21 @@ class OpalIMContext : public PSafeObject
     /// Destroy context
     ~OpalIMContext();
 
+    /**Information in notification on conversation state change.
+      */
+    struct ConversationInfo
+    {
+      PSafePtr<OpalIMContext> m_context;  ///< Context opening/closing
+      bool                    m_opening;  ///< Opening or closing conversation
+      bool                    m_byRemote; ///< Operation is initiated by remote user or local user
+    };
+
     /**Open the context (conversation)
        Default behaviour simply returns true.
       */
-    virtual bool Open();
+    virtual bool Open(
+      bool byRemote   ///< Context was created by remote (incoming message)
+    );
 
     /**Close the context (conversation)
        Default behaviour removes the context from the OpalIMEndPoint
@@ -175,8 +188,9 @@ class OpalIMContext : public PSafeObject
     /**Information on the message disposition.
       */
     struct DispositionInfo {
-      PAtomicInteger::IntegerType m_messageId;    ///< Id of message disposition is of
-      MessageDisposition          m_disposition;  ///< Disposition status
+      PString                     m_conversationId; ///< Conversation ID to get OpalIMContext
+      PAtomicInteger::IntegerType m_messageId;      ///< Id of message disposition is of
+      MessageDisposition          m_disposition;    ///< Disposition status
     };
 
     /**Callback indicating the dispostion of a messagesent via Send().
@@ -244,13 +258,16 @@ class OpalIMContext : public PSafeObject
       */
     struct CompositionInfo
     {
-      PString m_state;
-      PString m_contentType;
+      PString m_conversationId; ///< Conversation ID to get OpalIMContext
+      PString m_state;          ///< New state, usually CompositionIndicationActive() or CompositionIndicationIdle()
+      PString m_contentType;    ///< MIME type of composed message
 
       CompositionInfo(
-        const PString & state = CompositionIndicationIdle(),
+        const PString & id,
+        const PString & state,
         const PString & contentType = PString::Empty()
-      ) : m_state(state)
+      ) : m_conversationId(id)
+        , m_state(state)
         , m_contentType(contentType)
       { }
     };
@@ -366,6 +383,7 @@ class OpalIMContext : public PSafeObject
     PString m_key;
 
   friend class OpalIMEndPoint;
+  friend class OpalIMConnection;
 };
 
 

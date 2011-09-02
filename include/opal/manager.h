@@ -1052,7 +1052,7 @@ class OpalManager : public PObject
        An application can intercept this and set options on the IM context.
      */
     virtual void OnConversation(
-      const PString & conversationID  ///< Id for conversation that changed state
+      const OpalIMContext::ConversationInfo & info ///< Info for conversation that changed state
     );
 
     /**Send an Instant Message to a remote party.
@@ -1080,15 +1080,29 @@ class OpalManager : public PObject
       PString & conversationId
     );
 
-    /**Called when Instant Message event is received.
-       See OpalIM for details on events. This includes text or composition
-       indication events.
+    /**Called when Instant Message is received.
 
        The default action is to pass the message on to a suitable
-       OpalPresentity function of teh same name.
+       OpalPresentity function of the same name.
      */
     virtual void OnMessageReceived(
       const OpalIM & message    ///< Message information
+    );
+
+    /**Called when Instant Message event is delivered, or not.
+
+       The default action does nothing.
+     */
+    virtual void OnMessageDisposition(
+      const OpalIMContext::DispositionInfo & info    ///< Message disposition information
+    );
+
+    /** Called when the remote composition indication changes state.
+
+       The default action does nothing.
+      */
+    virtual void OnCompositionIndication(
+      const OpalIMContext::CompositionInfo & info     ///< New composition state information
     );
   //@}
 #endif

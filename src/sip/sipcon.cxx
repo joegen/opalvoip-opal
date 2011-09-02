@@ -1204,18 +1204,31 @@ OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 OpalMediaFormatList SIPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
-  if (m_answerFormatList.IsEmpty()) {
-    PTRACE(4, "SIP\tUsing remote media format list");
-    return m_remoteFormatList;
-  }
-  else {
+  if (!m_answerFormatList.IsEmpty()) {
     PTRACE(4, "SIP\tUsing offered media format list");
     return m_answerFormatList;
   }
+
+  if (!m_remoteFormatList.IsEmpty()) {
+    PTRACE(4, "SIP\tUsing remote media format list");
+    return m_remoteFormatList;
+  }
+
+  /* This executed only before or during OnIncomingConnection on receipt of an
+     INVITE. In other cases the m_remoteFormatList member should be set. As
+     some things, e.g. Instant Messaging, may need to route the call based on
+     what was offerred by the remote, we need to return something. So,
+     calculate a media list based on ANYTHING we know about. A later call
+     after OnIncomingConnection() will fill m_remoteFormatList appropriately
+     adjusted by AdjustMediaFormats() */
+  SDPSessionDescription sdp(0, 0, OpalTransportAddress());
+  if (originalInvite != NULL && originalInvite->GetMIME().GetContentType() == "application/sdp")
+    sdp.Decode(originalInvite->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats());
+  return sdp.GetMediaFormats();
 }
 
 
-bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
+bool SIPConnection::SetRemoteMediaFormats()
 {
   /* As SIP does not really do capability exchange, if we don't have an initial
      INVITE from the remote (indicated by sdp == NULL) then all we can do is
@@ -1223,16 +1236,16 @@ bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (sdp == NULL)
+  if (originalInvite == NULL || !originalInvite->DecodeSDP(GetLocalMediaFormats()))
     m_remoteFormatList = GetLocalMediaFormats();
   else {
-    m_remoteFormatList = sdp->GetMediaFormats();
+    m_remoteFormatList = originalInvite->GetSDP()->GetMediaFormats();
     AdjustMediaFormats(false, NULL, m_remoteFormatList);
   }
 
   if (m_remoteFormatList.IsEmpty()) {
     PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
-   return false;
+    return false;
   }
 
   PTRACE(4, "SIP\tRemote media formats set to " << setfill(',') << m_remoteFormatList << setfill(' '));
@@ -1543,7 +1556,7 @@ PBoolean SIPConnection::SetUpConnection()
 
   ++m_sdpVersion;
 
-  if (!SetRemoteMediaFormats(NULL))
+  if (!SetRemoteMediaFormats())
     return false;
 
   bool ok;
@@ -2337,8 +2350,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
-    originalInvite->DecodeSDP(GetLocalMediaFormats());
-    if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
+    if (!SetRemoteMediaFormats()) {
       Release(EndedByCapabilityExchange);
       return;
     }
@@ -2381,8 +2393,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
   }
 
-  originalInvite->DecodeSDP(GetLocalMediaFormats());
-  if (!SetRemoteMediaFormats(originalInvite->GetSDP())) {
+  if (!SetRemoteMediaFormats()) {
     Release(EndedByCapabilityExchange);
     return;
   }

@@ -54,7 +54,7 @@
 
 #define CRLF "\r\n"
 
-const char MSRPMediaType[] = "im-msrp";
+const char MSRPMediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"msrp";
 
 class OpalMSRPMediaType : public OpalMediaTypeDefinition 
 {

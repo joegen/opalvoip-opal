@@ -5808,12 +5808,12 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 #if OPAL_HAS_IM
 
-void MyManager::OnConversation(OpalIMContext & context, OpalIMEndPoint::ConversationInfo info)
+void MyManager::OnConversation(OpalIMContext &, OpalIMContext::ConversationInfo info)
 {
-  PwxString id(context.GetID());
+  PwxString id = info.m_context->GetID();
 
   if (info.m_opening)
-    m_imDialogMap[id] = new IMDialog(this, context);
+    m_imDialogMap[id] = new IMDialog(this, *info.m_context);
   else {
     m_imDialogMap[id]->Destroy();
     m_imDialogMap.erase(id);
