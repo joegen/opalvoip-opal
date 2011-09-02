@@ -563,12 +563,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose)
 #if OPAL_SIP
   m_cli->SetCommand("register", PCREATE_NOTIFIER(CmdRegister),
                     "Register with SIP registrar",
-                    "[ options ] <address> [ <password> ]\n"
-                    "  -a or --auth-id <name>  : Override user for authorisation\n"
-                    "  -r or --realm <name>    : Set realm for authorisation\n"
-                    "  -p or --proxy <address> : Set proxy for registration\n"
-                    "  -m or --mode <mode>     : Set registration mode (normal, single, public)\n"
-                    "  -t or --ttl <seconds>   : Set Time To Live for registration");
+                    "[ options ] <address> [ <password> ]");
 #endif
 
 #if P_NAT
@@ -653,11 +648,11 @@ PCLI * OpalManagerCLI::CreatePCLI()
 #if OPAL_SIP
 void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, INT)
 {
-  if (!args.Parse("a-auth-id:"
-                  "r-realm:"
-                  "p-proxy:"
-                  "m-mode:"
-                  "t-ttl:")) {
+  if (args.Parse("a-auth-id: Override user for authorisation\n"
+                  "r-realm: Set realm for authorisation\n"
+                  "p-proxy: Set proxy for registration\n"
+                  "m-mode: Set registration mode (normal, single, public)\n"
+                  "t-ttl: Set Time To Live for registration\n") <= PArgList::ParseNoArguments) {
     args.WriteUsage();
     return;
   }
