@@ -39,19 +39,28 @@
 
 class MyManager : public OpalManagerCLI
 {
-    PCLASSINFO(MyManager, OpalManagerCLI)
+    PCLASSINFO(MyManager, OpalManagerCLI);
+  public:
+    MyManager() : m_imEP(NULL) { }
 
     virtual PString GetArgumentSpec() const;
     virtual void Usage(ostream & strm, const PArgList & args);
     virtual bool Initialise(PArgList & args, bool verbose);
 
   protected:
+    OpalIMEndPoint * m_imEP;
+
+    bool GetToFromURL(const PArgList & args, PURL & to, PURL & from);
+
+    virtual void OnConversation(const OpalIMContext::ConversationInfo & info);
     virtual void OnMessageReceived(const OpalIM & message);
+    virtual void OnMessageDisposition(const OpalIMContext::DispositionInfo & info);
+    virtual void OnCompositionIndication(const OpalIMContext::CompositionInfo & info);
 
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSend);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdComp);
 
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSet);
-    bool CheckForVar(PString & var);
     PStringToString m_variables;
 };
 

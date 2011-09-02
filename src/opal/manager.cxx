@@ -104,9 +104,6 @@ static const char * const DefaultMediaFormatMask[] = {
   OPAL_RFC4175_YCbCr420,
   OPAL_RFC4175_RGB,
 #endif
-#if OPAL_HAS_RFC4103
-  OPAL_T140,
-#endif
 #if OPAL_HAS_MSRP
   OPAL_MSRP,
 #endif
@@ -663,6 +660,31 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     for (PStringToString::iterator it = stringOptions->begin(); it != stringOptions->end(); ++it)
       mergedOptions.SetAt(it->first, it->second);
   }
+
+#if OPAL_HAS_IM
+  /* If A-Party is not "im" and it only has im media formats, then direct
+     connect to the "im" endpoint without going throught routing engine. */
+  if (connection.IsNetworkConnection()) {
+    OpalIMEndPoint * imEP = FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+    if (imEP != NULL) {
+      OpalMediaFormatList formats = connection.GetMediaFormats();
+      if (!formats.IsEmpty()) {
+        PStringStream autoStart;
+        OpalMediaFormatList::iterator it;
+        for (it = formats.begin(); it != formats.end(); ++it) {
+          static const char prefix[] = OPAL_IM_MEDIA_TYPE_PREFIX;
+          if (it->GetMediaType().compare(0, sizeof(prefix)-1, prefix) != 0)
+            break;
+          autoStart << it->GetMediaType() << ":sendrecv\n";
+        }
+        if (it == formats.end()) {
+          mergedOptions.SetAt(OPAL_OPT_AUTO_START, autoStart);
+          return imEP->MakeConnection(call, OpalIMEndPoint::Prefix()+":*", NULL, options, &mergedOptions);
+        }
+      }
+    }
+  }
+#endif // OPAL_HAS_IM
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
   PStringSet routesTried;
@@ -1928,7 +1950,7 @@ bool OpalManager::RemovePresentity(const PString & presentity)
 
 #if OPAL_HAS_IM
 
-void OpalManager::OnConversation(const PString &)
+void OpalManager::OnConversation(const OpalIMContext::ConversationInfo &)
 {
 }
 
@@ -1985,6 +2007,16 @@ void OpalManager::OnMessageReceived(const OpalIM & message)
       break;
     }
   }
+}
+
+
+void OpalManager::OnMessageDisposition(const OpalIMContext::DispositionInfo & )
+{
+}
+
+
+void OpalManager::OnCompositionIndication(const OpalIMContext::CompositionInfo &)
+{
 }
 
 #endif // OPAL_HAS_IM

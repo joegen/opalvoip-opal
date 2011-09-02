@@ -106,7 +106,7 @@ PString OpalIMContext::CreateKey(const PString & local, const PString & remote)
 }
 
 
-bool OpalIMContext::Open()
+bool OpalIMContext::Open(bool)
 {
   return true;
 }
@@ -164,15 +164,15 @@ OpalIMContext::MessageDisposition OpalIMContext::InternalSend()
     return InternalSendOutsideCall(*m_currentOutgoingMessage);
 
   // make connection read write
-  if (m_call.SetSafetyMode(PSafeReadWrite)) {
+  if (!m_call.SetSafetyMode(PSafeReadWrite)) {
     delete m_currentOutgoingMessage;
     m_currentOutgoingMessage = NULL;
-    PTRACE(3, "OpalIM\tConnection to '" << m_attributes.Get("remote") << "' has been removed");
+    PTRACE(3, "OpalIM\tConnection to '" << m_remoteURL << "' has been removed");
     m_call.SetNULL();
     return ConversationClosed;
   }
 
-  PTRACE(4, "OpalIM\tSending IM to '" << m_attributes.Get("remote") << "' via call '" << m_call << "'");
+  PTRACE(4, "OpalIM\tSending IM to '" << m_remoteURL << "' via call '" << *m_call << "'");
   MessageDisposition stat = InternalSendInsideCall(*m_currentOutgoingMessage);
 
   // make connection reference while not being used
@@ -225,20 +225,23 @@ void OpalIMContext::InternalOnMessageSent(const DispositionInfo & info)
 
 OpalIMContext::MessageDisposition OpalIMContext::InternalSendOutsideCall(OpalIM & /*message*/)
 {
-  PTRACE(3, "OpalIM\tSending IM outside call to '" << m_attributes.Get("remote") << "' not supported");
+  PTRACE(3, "OpalIM\tSending IM outside call to '" << m_remoteURL << "' not supported");
   return UnsupportedFeature;
 }
 
 
 OpalIMContext::MessageDisposition OpalIMContext::InternalSendInsideCall(OpalIM & /*message*/)
 {
-  PTRACE(3, "OpalIM\tSending IM inside call to '" << m_attributes.Get("remote") << "' not supported");
+  PTRACE(3, "OpalIM\tSending IM inside call to '" << m_remoteURL << "' not supported");
   return UnsupportedFeature;
 }
 
 
 OpalIMContext::MessageDisposition OpalIMContext::OnMessageReceived(const OpalIM & message)
 {
+  if (message.m_bodies.IsEmpty())
+    return DeliveryOK;
+
   if (!message.m_fromName.IsEmpty())
     m_remoteName = message.m_fromName;
 
@@ -295,14 +298,18 @@ void OpalIMContext::SetMessageDispositionNotifier(const MessageDispositionNotifi
 void OpalIMContext::OnMessageDisposition(const DispositionInfo & info)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  if (!m_messageDispositionNotifier.IsNULL())
+  if (m_messageDispositionNotifier.IsNULL())
+    m_endpoint->GetManager().OnMessageDisposition(info);
+  else
     m_messageDispositionNotifier(*this, info);
 }
 
 void OpalIMContext::OnCompositionIndication(const CompositionInfo & info)
 {
   PWaitAndSignal mutex(m_notificationMutex);
-  if (!m_compositionIndicationNotifier.IsNULL())
+  if (m_compositionIndicationNotifier.IsNULL())
+    m_endpoint->GetManager().OnCompositionIndication(info);
+  else
     m_compositionIndicationNotifier(*this, info);
 }
 
@@ -322,6 +329,15 @@ OpalIMEndPoint::OpalIMEndPoint(OpalManager & manager)
   , m_manager(manager)
   , m_deleting(false)
 {
+#if OPAL_HAS_SIPIM
+  GetOpalSIPIM();
+#endif
+#if OPAL_RFC4175
+  GetOpalT140();
+#endif
+#if OPAL_HAS_MSRP
+  GetOpalMSRP();
+#endif
 }
 
 
@@ -357,44 +373,43 @@ OpalMediaFormatList OpalIMEndPoint::GetMediaFormats() const
 }
 
 
-PSafePtr<OpalIMContext> OpalIMEndPoint::CreateContext(const PURL & localURL,
-                                                      const PURL & remoteURL,
-                                                      bool byRemote)
+PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & localURL,
+                                                              const PURL & remoteURL,
+                                                              const char * overrideScheme,
+                                                              bool byRemote,
+                                                              OpalCall * call)
 {
-  PCaselessString remoteScheme = remoteURL.GetScheme();
+  PCaselessString scheme = overrideScheme;
+  if (scheme.IsEmpty())
+    scheme = remoteURL.GetScheme();
+  if (scheme.IsEmpty())
+    scheme = localURL.GetScheme();
 
   // must have a remote scheme
-  if (remoteScheme.IsEmpty()) {
-    PTRACE(2, "OpalIM\tRemote URL '" << remoteURL << "' has no scheme");
-    return NULL;
-  }
-
-  // If have local URL, then make sure scheme is the same
-  if (!localURL.IsEmpty() && localURL.GetScheme() != remoteScheme) {
-    PTRACE(2, "OpalIM\tLocal scheme '" << localURL << "' different to remote '" << remoteURL << "'");
+  if (scheme.IsEmpty()) {
+    PTRACE(2, "OpalIM\tURLs have no scheme");
     return NULL;
   }
 
   // create the IM context
-  OpalIMContext * context = PFactory<OpalIMContext>::CreateInstance(remoteScheme);
+  OpalIMContext * context = PFactory<OpalIMContext>::CreateInstance(scheme);
   if (context == NULL) {
     PTRACE2(3, NULL, "OpalIM\tCannot find IM handler for '" << remoteURL << "'");
     return NULL;
   }
 
-  PString userName = localURL.GetUserName();
-
   // populate the context
   context->m_endpoint    = this;
-  context->m_localURL    = localURL.AsString();
+  context->m_localURL    = localURL;
   context->m_localName   = manager.GetDefaultDisplayName();
-  context->m_remoteURL   = remoteURL.AsString();
+  context->m_remoteURL   = remoteURL;
   context->m_remoteName  = remoteURL.GetUserName();
-  context->GetAttributes().Set("scheme", remoteScheme);
+  context->m_call        = call;
+  context->GetAttributes().Set("scheme", scheme);
   context->m_key = OpalIMContext::CreateKey(context->m_localURL, context->m_remoteURL);
   context->ResetLastUsed();
 
-  if (!context->Open()) {
+  if (!context->Open(byRemote)) {
     context->m_endpoint = NULL;
     delete context;
     return NULL;
@@ -405,9 +420,9 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::CreateContext(const PURL & localURL,
   PWaitAndSignal m(m_contextsByNamesMutex);
   m_contextsByNames.insert(ContextsByNames::value_type(context->m_key, context->GetID()));
 
-  PTRACE(3, "OpalIM\tCreated IM context '" << context->GetID() << "' for scheme '" << remoteScheme << "' from " << localURL << " to " << remoteURL);
+  PTRACE(3, "OpalIM\tCreated IM context '" << context->GetID() << "' for scheme '" << scheme << "' from " << localURL << " to " << remoteURL);
 
-  ConversationInfo info;
+  OpalIMContext::ConversationInfo info;
   info.m_context = context;
   info.m_opening = true;
   info.m_byRemote = byRemote;
@@ -419,20 +434,20 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::CreateContext(const PURL & localURL,
 
 void OpalIMEndPoint::RemoveContext(OpalIMContext * context, bool byRemote)
 {
-  if (m_deleting)
+  PString id = context->GetID();
+
+  if (m_deleting || !m_contextsByConversationId.Contains(id))
     return;
 
-  ConversationInfo info;
+  OpalIMContext::ConversationInfo info;
   info.m_context = context;
   info.m_opening = false;
   info.m_byRemote = byRemote;
   OnConversation(info);
 
-  PString key = context->GetKey();
-  PString id = context->GetID();
-
   // remove local/remote pair from multimap
   {
+    PString key = context->GetKey();
     PWaitAndSignal m(m_contextsByNamesMutex);
     ContextsByNames::iterator it = m_contextsByNames.find(key);
     while (it != m_contextsByNames.end() && it->first == key) {
@@ -450,20 +465,27 @@ void OpalIMEndPoint::RemoveContext(OpalIMContext * context, bool byRemote)
 }
 
 
-void OpalIMEndPoint::OnConversation(const ConversationInfo & info)
+void OpalIMEndPoint::OnConversation(const OpalIMContext::ConversationInfo & info)
 {
   // get the scheme used by the context
   PString scheme = info.m_context->GetAttributes().Get("scheme");
 
+  bool managerFallback = true;
+
   // call all of the notifiers 
-  PWaitAndSignal m(m_notifierMutex);
+  m_notifierMutex.Wait();
   ConversationMap::iterator it = m_notifiers.find(scheme);
   if (it == m_notifiers.end())
     it = m_notifiers.find(scheme = "*");
   while (it != m_notifiers.end() && it->first == scheme) {
     (it->second)(*info.m_context, info);
+    managerFallback = false;
     ++it;
   }
+  m_notifierMutex.Signal();
+
+  if (managerFallback)
+    manager.OnConversation(info);
 }
 
 
@@ -579,12 +601,10 @@ OpalIMContext::MessageDisposition
   // if context found, add message to it
   if (context == NULL) {
     // create a context based on the connection
-    if (connection == NULL)
-      context = CreateContext(message.m_to, message.m_from, true);
-    else {
-      context = CreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyCallbackURL(), true);
-      context->m_call = &connection->GetCall();
-    }
+    if (connection != NULL)
+      context = InternalCreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyCallbackURL(), NULL, true, &connection->GetCall());
+    else
+      context = InternalCreateContext(message.m_to, message.m_from, NULL, true, NULL);
 
     if (context == NULL) {
       PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << message.m_from);
@@ -621,6 +641,37 @@ OpalIMConnection::OpalIMConnection(OpalCall & call,
   : OpalConnection(call, ep, ep.GetManager().GetNextToken('M'), options, stringOptions)
   , m_context(reinterpret_cast<OpalIMContext *>(userData))
 {
+}
+
+
+PBoolean OpalIMConnection::OnSetUpConnection()
+{
+  if (!OpalConnection::OnSetUpConnection())
+    return false;
+
+  if (!LockReadWrite())
+    return false;
+
+  OnConnectedInternal();
+  UnlockReadWrite();
+  return true;
+}
+
+
+void OpalIMConnection::OnEstablished()
+{
+  if (m_context != NULL) {
+    m_context->InternalSend();
+  }
+  else {
+    PString error;
+    OpalIM message;
+    if (((OpalIMEndPoint&)endpoint).OnRawMessageReceived(message, this, error) > OpalIMContext::DispositionErrors) {
+      Release();
+    }
+  }
+
+  OpalConnection::OnEstablished();
 }
 
 

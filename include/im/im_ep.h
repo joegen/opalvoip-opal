@@ -96,10 +96,10 @@ class OpalIMEndPoint : public OpalEndPoint
        and the default user name from the manager.
       */
     PSafePtr<OpalIMContext> CreateContext(
-      const PURL & localURL,    ///< Local URL for conversation
-      const PURL & remoteURL,   ///< Remote URL for conversation
-      bool byRemote = false     ///< Created by remote entity
-    );
+      const PURL & localURL,      ///< Local URL for conversation
+      const PURL & remoteURL,     ///< Remote URL for conversation
+      const char * scheme = NULL  ///< Scheme to use, default to remoteURL.GetScheme()
+    ) { return InternalCreateContext(localURL, remoteURL, scheme, false, NULL); }
 
     /** Remove a new context.
         Generally only used internally.
@@ -136,34 +136,25 @@ class OpalIMEndPoint : public OpalEndPoint
 
   /**@name Conversation notification */
   //@{
-    /**Information in notification on converstaion state change.
-      */
-    struct ConversationInfo
-    {
-      PSafePtr<OpalIMContext> m_context;  ///< Context opening/closing
-      bool                    m_opening;  ///< Opening or closing conversation
-      bool                    m_byRemote; ///< Operation is initiated by remote user or local user
-    };
-
     /** Called when a context state changes, e.g. openign or closing.
         Default implementation calls the notifier, if set. If no notifier is
         set, then the OpalManager::OnConversation() function is called.
       */
     virtual void OnConversation(
-      const ConversationInfo & info
+      const OpalIMContext::ConversationInfo & info
     );
 
     /// Type for converstaion notifiers
-    typedef PNotifierTemplate<ConversationInfo> ConversationNotifier;
+    typedef PNotifierTemplate<OpalIMContext::ConversationInfo> ConversationNotifier;
 
     /// Macro to declare correctly typed converstaion notifier
-    #define PDECLARE_ConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMEndPoint::ConversationInfo)
+    #define PDECLARE_ConversationNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::ConversationInfo)
 
     /// Macro to declare correctly typed asynchronous converstaion notifier
-    #define PDECLARE_ASYNC_ConversationNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIMEndPoint::ConversationInfo)
+    #define PDECLARE_ASYNC_ConversationNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalIMContext, cls, fn, OpalIMContext::ConversationInfo)
 
     /// Macro to create correctly typed converstaion notifier
-    #define PCREATE_ConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMEndPoint::ConversationInfo)
+    #define PCREATE_ConversationNotifier(fn) PCREATE_NOTIFIER2(fn, OpalIMContext::ConversationInfo)
 
     /** Set the notifier for the OnConversation() function.
         The notifier can be called only for when a specific scheme is being
@@ -191,6 +182,14 @@ class OpalIMEndPoint : public OpalEndPoint
     OpalManager & GetManager() const { return m_manager; }
 
   protected:
+    PSafePtr<OpalIMContext> InternalCreateContext(
+      const PURL & localURL,
+      const PURL & remoteURL,
+      const char * scheme,
+      bool byRemote,
+      OpalCall * call
+    );
+
     OpalManager & m_manager;
     typedef PSafeDictionary<PString, OpalIMContext> ContextsByConversationId;
     ContextsByConversationId m_contextsByConversationId;
@@ -240,6 +239,24 @@ class OpalIMConnection : public OpalConnection
        to is intrinsically local.
       */
     virtual PBoolean IsNetworkConnection() const { return false; }
+
+    /**Callback for outgoing connection, it is invoked after SetUpConnection
+       This function allows the application to set up some parameters or to log some messages
+     */
+    virtual PBoolean OnSetUpConnection();
+
+    /**A call back function whenever a connection is established.
+       This indicates that a connection to an endpoint was established. This
+       usually occurs after OnConnected() and indicates that the connection
+       is both connected and has media flowing.
+
+       In the context of H.323 this means that the signalling and control
+       channels are open and the TerminalCapabilitySet and MasterSlave
+       negotiations are complete.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnEstablished();
 
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
