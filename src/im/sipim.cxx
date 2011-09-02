@@ -47,7 +47,7 @@
 
 #if OPAL_HAS_SIPIM
 
-const char SIP_IM_MediaType[] = "im-sip"; // RFC 3428
+const char SIP_IM_MediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"sip"; // RFC 3428
 
 static PConstCaselessString const ComposingMimeType("application/im-iscomposing+xml");
 static PConstCaselessString const DispositionMimeType("message/imdn+xml");
@@ -247,8 +247,11 @@ OpalSIPIMContext::OpalSIPIMContext()
 }
 
 
-bool OpalSIPIMContext::Open()
+bool OpalSIPIMContext::Open(bool byRemote)
 {
+  if (byRemote)
+    return true;
+
   OpalManager & manager = m_endpoint->GetManager();
 
   OpalMediaFormatList list = m_endpoint->GetMediaFormats();
@@ -297,6 +300,7 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
   }
 
   OpalIMContext::DispositionInfo result;
+  result.m_conversationId = context->GetID();
   result.m_messageId = params.m_messageId;
 
   switch (reason) {
@@ -433,6 +437,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendInsideCall(OpalI
   OpalMediaStreamPtr stream = conn->GetMediaStream(OpalT140.GetMediaType(), false);
   if (stream != NULL) {
     for (PStringToString::iterator it = message.m_bodies.begin(); it != message.m_bodies.end(); ++it) {
+      PTRACE(5, "OpalSIPIMContext\tSending T.140 packet");
       OpalT140RTPFrame packet(it->first, T140String(it->second));
       if (!stream->PushPacket(packet))
         return TransportFailure;
@@ -501,7 +506,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndicat
     m_rxCompositionIdleTimeout.SetInterval(0, timeout);
   }
 
-  OnCompositionIndication(newState);
+  OnCompositionIndication(CompositionInfo(GetID(), newState));
 
   return DeliveryOK;
 }
@@ -574,7 +579,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::OnMessageReceived(const Opal
   // receipt of text always indicated idle
   m_rxCompositionIdleTimeout.Stop(true);
   if (m_rxCompositionState != CompositionIndicationIdle())
-    OnCompositionIndication(m_rxCompositionState = CompositionIndicationIdle());
+    OnCompositionIndication(CompositionInfo(GetID(), m_rxCompositionState = CompositionIndicationIdle()));
 
   // forward the text
   return OpalIMContext::OnMessageReceived(message);
@@ -583,7 +588,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::OnMessageReceived(const Opal
 
 void OpalSIPIMContext::OnRxCompositionIdleTimer(PTimer &, INT)
 {
-  OnCompositionIndication(m_rxCompositionState = CompositionIndicationIdle());
+  OnCompositionIndication(CompositionInfo(GetID(), m_rxCompositionState = CompositionIndicationIdle()));
 }
 
 
@@ -630,7 +635,7 @@ bool OpalSIPIMContext::SendCompositionIndication(const CompositionInfo & info)
 
 void OpalSIPIMContext::OnTxCompositionIdleTimer(PTimer &, INT)
 {
-  SendCompositionIndication(CompositionIndicationIdle());
+  SendCompositionIndication(CompositionInfo(GetID(), CompositionIndicationIdle()));
 }
 
 

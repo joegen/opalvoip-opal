@@ -47,7 +47,7 @@
 #endif
 
 
-const char T140MediaType[] = "im-t140";
+const char T140MediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"t140";
 
 
 #if OPAL_SIP

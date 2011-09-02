@@ -67,7 +67,7 @@ class OpalSIPIMContext : public OpalIMContext
   public:
     OpalSIPIMContext();
 
-    virtual bool Open();
+    virtual bool Open(bool byRemote);
     virtual bool SendCompositionIndication(const CompositionInfo & info);
 
     static void OnMESSAGECompleted(
