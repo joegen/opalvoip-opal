@@ -171,8 +171,6 @@ protected:
   queue<State>                m_stateQueue;
   bool                        m_receivedResponse;
   PTimer                      expireTimer; 
-  PTimeInterval               retryTimeoutMin; 
-  PTimeInterval               retryTimeoutMax; 
   SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
 
