@@ -2505,7 +2505,7 @@ void SIPConnection::OnReceivedOPTIONS(SIP_PDU & request)
   else {
     SDPSessionDescription sdp(m_sdpSessionId, m_sdpVersion, transport->GetLocalAddress());
     SIP_PDU response(request, SIP_PDU::Successful_OK);
-    response.SetAllow(endpoint.GetAllowedMethods());
+    response.SetAllow(GetAllowedMethods());
     response.SetEntityBody(sdp.Encode());
     request.SendResponse(*transport, response, &endpoint);
   }
@@ -3062,7 +3062,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
 {
   SIPMIMEInfo & mime = response.GetMIME();
   mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
-  response.SetAllow(endpoint.GetAllowedMethods());
+  response.SetAllow(GetAllowedMethods());
 
   endpoint.AdjustToRegistration(*transport, response);
 
@@ -3456,6 +3456,18 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 }
 
 #endif // OPAL_VIDEO
+
+
+unsigned SIPConnection::GetAllowedMethods() const
+{
+  unsigned methods = endpoint.GetAllowedMethods();
+  if (GetPRACKMode() == e_prackDisabled)
+    methods &= ~(1<<SIP_PDU::Method_PRACK);
+  else
+    methods |= (1<<SIP_PDU::Method_PRACK);
+  return methods;
+}
+
 
 void SIPConnection::OnSessionTimeout(PTimer &, INT)
 {

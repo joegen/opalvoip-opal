@@ -3170,7 +3170,7 @@ SIPInvite::SIPInvite(SIPConnection & connection)
   : SIPTransaction(Method_INVITE, connection)
 {
   //m_mime.SetDate(); // now
-  SetAllow(m_endpoint.GetAllowedMethods());
+  SetAllow(connection.GetAllowedMethods());
 
   connection.OnCreatingINVITE(*this);
   
@@ -3705,7 +3705,7 @@ SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
 
 void SIPOptions::Construct(const Params & params)
 {
-  SetAllow(m_endpoint.GetAllowedMethods());
+  SetAllow(m_connection != NULL ? m_connection->GetAllowedMethods() : m_endpoint.GetAllowedMethods());
   m_mime.SetAccept(params.m_acceptContent);
 
   if (!params.m_contentType.IsEmpty()) {

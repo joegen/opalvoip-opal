@@ -236,6 +236,7 @@ DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
 DEF_FIELD(SIPUserInputMode);
+DEF_FIELD(SIPPRACKMode);
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -1206,6 +1207,9 @@ bool MyManager::Initialise()
 
   if (config->Read(SIPUserInputModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)value1);
+
+  if (config->Read(SIPPRACKModeKey, &value1))
+    sipEP->SetDefaultPRACKMode((SIPConnection::PRACKMode)value1);
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
@@ -4066,6 +4070,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SIPProxyPassword, m_manager.sipEP->GetProxy().GetPassword());
   INIT_FIELD(LineAppearanceCode, m_manager.sipEP->GetDefaultAppearanceCode());
   INIT_FIELD(SIPUserInputMode, m_manager.sipEP->GetSendUserInputMode());
+  INIT_FIELD(SIPPRACKMode, m_manager.sipEP->GetDefaultPRACKMode());
   if (m_SIPUserInputMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_SIPUserInputMode = OpalConnection::SendUserInputAsRFC2833;
   m_SIPUserInputMode--; // No SendUserInputAsQ931 mode, so decrement
@@ -4501,6 +4506,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(LineAppearanceCode, m_manager.sipEP->SetDefaultAppearanceCode);
   m_manager.sipEP->SetSendUserInputMode((OpalConnection::SendUserInputModes)(m_SIPUserInputMode+1));
   config->Write(SIPUserInputModeKey, m_SIPUserInputMode+1);
+  m_manager.sipEP->SetDefaultPRACKMode((SIPConnection::PRACKMode)m_SIPPRACKMode);
+  config->Write(SIPPRACKModeKey, m_SIPPRACKMode);
 
   RegistrationList newRegistrations;
 
