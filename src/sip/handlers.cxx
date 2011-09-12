@@ -1735,7 +1735,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
   if (GetState() == Unsubscribing)
     return NULL;
 
-  m_parameters.m_expire = expire;
+  m_parameters.m_expire = originalExpire;
   return new SIPPublish(endpoint,
                         transport,
                         GetCallID(),
