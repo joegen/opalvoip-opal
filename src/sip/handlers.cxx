@@ -90,8 +90,6 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
   , authenticationAttempts(0)
   , m_state(Unavailable)
   , m_receivedResponse(false)
-  , retryTimeoutMin(params.m_minRetryTime)
-  , retryTimeoutMax(params.m_maxRetryTime)
   , m_proxy(params.m_proxyAddress)
 {
   m_transactions.DisallowDeleteObjects();
