@@ -750,6 +750,7 @@ class OptionsDialog : public wxDialog
     PwxString m_SIPProxyPassword;
     int       m_LineAppearanceCode;
     int       m_SIPUserInputMode;
+    int       m_SIPPRACKMode;
 
     wxListCtrl * m_Registrations;
     int          m_SelectedRegistration;
