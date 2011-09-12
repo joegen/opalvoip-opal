@@ -741,7 +741,8 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /
 
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
-  return false;
+  // Sinks never block, and source with jitter buffer never blocks
+  return IsSource() && maxAudioJitterDelay == 0;
 }
 
 
