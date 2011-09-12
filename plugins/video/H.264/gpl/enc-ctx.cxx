@@ -80,11 +80,11 @@ X264EncoderContext::X264EncoderContext()
   // Auto detect number of CPUs
   m_context.i_threads = 0;  
 
+  SetProfileLevel     (H264_PROFILE_LEVEL);
   SetFrameWidth       (CIF_WIDTH);
   SetFrameHeight      (CIF_HEIGHT);
   SetFrameRate        (H264_FRAME_RATE);
   SetTargetBitrate    ((unsigned)(H264_BITRATE / 1000));
-  SetProfileLevel     (H264_PROFILE_LEVEL);
   SetTSTO             (H264_TSTO);
   SetMaxKeyFramePeriod(H264_KEY_FRAME_INTERVAL);
 
@@ -172,7 +172,19 @@ void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
       { 0 }
   };
 
-//  unsigned profile = (profileLevel & 0xff0000) >> 16;
+  int profile = 0;
+  switch ((profileLevel & 0xff0000) >> 16) {
+    case 66 : // Baseline
+      break;
+    case 77 : // Main
+      profile = 1;
+      break;
+    case 88 : // High
+      profile = 2;
+      break;
+  }
+  x264_param_apply_profile(&m_context, x264_profile_names[profile]);
+
 //  bool constraint0 = (profileLevel & 0x008000) ? true : false;
 //  bool constraint1 = (profileLevel & 0x004000) ? true : false;
 //  bool constraint2 = (profileLevel & 0x002000) ? true : false;
