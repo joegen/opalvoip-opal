@@ -3121,7 +3121,7 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
     strm << "default";
   strm << "\n"
           "     maxRetry=";
-  if (params.m_minRetryTime != PMaxTimeInterval)
+  if (params.m_maxRetryTime != PMaxTimeInterval)
     strm << params.m_maxRetryTime;
   else
     strm << "default";
