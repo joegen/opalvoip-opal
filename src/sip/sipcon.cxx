@@ -536,11 +536,22 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
         the call being referred to by the call token in remoteParty is not the A party in
         the consultation transfer, but the B party. */
       PTRACE(4, "SIP\tTransferring " << *this << " to remote of " << *sip);
-      PStringStream referTo;
-      referTo << sip->GetRemotePartyURL()
-              << "?Replaces="     << PURL::TranslateString(sip->GetDialog().GetCallID(),    PURL::QueryTranslation)
-              << "%3Bto-tag%3D"   << PURL::TranslateString(sip->GetDialog().GetRemoteTag(), PURL::QueryTranslation)
-              << "%3Bfrom-tag%3D" << PURL::TranslateString(sip->GetDialog().GetLocalTag(),  PURL::QueryTranslation);
+
+      /* The following is to compensate for Avaya who send a Contact without a
+         username in the URL and then get upset later in th REFER when we use
+         what they told us to use. They can't do the REFER without a username
+         part, but they never gave us a username to give them. Give me a break!
+       */
+      SIPURL referTo = sip->GetRemotePartyURL();
+      if (remoteProductInfo.name == "Avaya" && referTo.GetUserName().IsEmpty())
+        referTo.SetUserName("anonymous");
+
+      PStringStream id;
+      id <<                 sip->GetDialog().GetCallID()
+         << ";to-tag="   << sip->GetDialog().GetRemoteTag()
+         << ";from-tag=" << sip->GetDialog().GetLocalTag();
+      referTo.SetQueryVar("Replaces", id);
+
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
       referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or NOT
       referTransaction->GetMIME().AddSupported("replaces");
