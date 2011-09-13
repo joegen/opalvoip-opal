@@ -36,6 +36,9 @@
 
 #include <ptclib/random.h>
 
+#include <math.h>
+
+
 #define OUTPUT_BPS(strm, rate) \
   if (rate < 10000ULL) strm << rate << ' '; \
   else if (rate < 10000000ULL) strm << rate/1000.0 << " k"; \
