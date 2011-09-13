@@ -478,14 +478,12 @@ void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::No
   PString error;
   if (!xml.LoadAndValidate(status.m_notify.GetEntityBody(), WatcherInfoValidation, error, PXML::WithNS)) {
     status.m_response.SetEntityBody(error);
-    PTRACE(3, "SIPPres\tError parsing XML in presence watcher NOTIFY: " << error);
+    PTRACE(2, "SIPPres\tError parsing XML in presence watcher NOTIFY: " << error);
     return;
   }
 
   // send 200 OK now, and flag caller NOT to send the response
   status.SendResponse(SIP_PDU::Successful_OK);
-
-  PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo");
 
   PXMLElement * rootElement = xml.GetRootElement();
 
@@ -494,19 +492,31 @@ void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::No
   PWaitAndSignal mutex(m_notificationMutex);
 
   // check version number
-  bool sendRefresh = false;
-  if (m_watcherInfoVersion < 0)
-    m_watcherInfoVersion = version;
-  else {
-    sendRefresh = version != m_watcherInfoVersion+1;
-    version = m_watcherInfoVersion;
+  if (m_watcherInfoVersion >= 0 && version <= m_watcherInfoVersion) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received repeated NOTIFY for own presence.watcherinfo, already processed");
+    return;
   }
 
   // if this is a full list of watcher info, we can empty out our pending lists
   if (rootElement->GetAttribute("state") *= "full") {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list");
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received full watcher list for own presence.watcherinfo");
     m_watcherAorById.clear();
   }
+  else if (m_watcherInfoVersion < 0) {
+    PTRACE(2, "SIPPres\t'" << m_aor << "' received partial watcher list for own presence.watcherinfo, but awaiting full list");
+    return;
+  }
+  else if (version != m_watcherInfoVersion+1) {
+    PTRACE(2, "SIPPres\t'" << m_aor << "' received partial watcher list for own presence.watcherinfo, but have missing sequence number, resubscribing");
+    m_watcherInfoVersion = -1;
+    SendCommand(CreateCommand<SIPWatcherInfoCommand>());
+    return;
+  }
+  else {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' received partial watcher list for own presence.watcherinfo");
+  }
+
+  m_watcherInfoVersion = version;
 
   // go through list of watcher information
   PINDEX watcherListIndex = 0;
@@ -516,12 +526,6 @@ void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::No
     PXMLElement * watcher;
     while ((watcher = watcherList->GetElement("watcher", watcherIndex++)) != NULL)
       OnReceivedWatcherStatus(watcher);
-  }
-
-  // send refresh, if needed
-  if (sendRefresh) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' received NOTIFY for own presence.watcherinfo without out of sequence version");
-    // TODO
   }
 }
 
