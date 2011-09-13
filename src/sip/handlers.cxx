@@ -809,7 +809,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
     for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
       if (contact->GetHostAddress().GetProtoPrefix() == OpalTransportAddress::UdpPrefix()) {
-        contact->GetFieldParameters().Remove("expires");
+        contact->GetFieldParameters().SetInteger("expires", 0);
 
         SIPURL newContact(contact->GetUserName(), externalAddress);
         newContact.GetFieldParameters().SetInteger("expires", originalExpire);
@@ -825,7 +825,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
       long expires = contact->GetFieldParameters().GetInteger("expires",
                           mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds()));
-      if (minExpiry > expires)
+      if (expires > 0 && minExpiry > expires)
         minExpiry = expires;
     }
     SetExpire(minExpiry);
