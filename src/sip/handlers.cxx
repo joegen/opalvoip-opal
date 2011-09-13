@@ -1103,7 +1103,10 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     if (m_previousResponse == NULL)
       return request.SendResponse(*m_transport, SIP_PDU::Failure_InternalServerError, m_endpoint);
 
-    PTRACE(3, "SIP\tReceived duplicate NOTIFY");
+    /* Make sure our repeat response has the CSeq/Via etc of this request, due
+       to retries at various protocol layers we can have old and even older
+       NOTIFY packets still coming in requiring matching responses. */
+    m_previousResponse->InitialiseHeaders(request);
     return request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
   }
 
