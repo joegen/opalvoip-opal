@@ -981,6 +981,7 @@ OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
     m_messageMutex.Signal();
   }
 
+  PTRACE_IF(4, msg != NULL, "OpalC API\tGiving message " << msg->m_type << " to application");
   return msg;
 }
 
