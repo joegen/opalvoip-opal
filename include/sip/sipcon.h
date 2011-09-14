@@ -623,7 +623,8 @@ class SIPConnection : public OpalRTPConnection
 
     virtual bool OnSendOfferSDP(
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut
+      SDPSessionDescription & sdpOut,
+      bool offerCurrentOnly
     );
     virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,

@@ -779,11 +779,11 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
 }
 
 
-PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut)
+PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPSessionDescription & sdpOut, bool offerCurrentOnly)
 {
   bool sdpOK = false;
 
-  if (m_needReINVITE && !mediaStreams.IsEmpty()) {
+  if (offerCurrentOnly && !mediaStreams.IsEmpty()) {
     PTRACE(4, "SIP\tOffering only current media streams in Re-INVITE");
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
@@ -797,7 +797,7 @@ PBoolean SIPConnection::OnSendOfferSDP(OpalRTPSessionManager & rtpSessions, SDPS
     }
   }
   else {
-    PTRACE(4, "SIP\tOffering all configured media:\n" << setfill(',') << m_localMediaFormats << setfill(' '));
+    PTRACE(4, "SIP\tOffering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
 
     // always offer audio first
     sdpOK = OnSendOfferSDPSession(OpalMediaType::Audio(), 0, rtpSessions, sdpOut, false);
@@ -1033,7 +1033,7 @@ bool SIPConnection::OnSendAnswerSDP(OpalRTPSessionManager & rtpSessions, SDPSess
 
     // They did not offer anything, so it behooves us to do so: RFC 3261, para 14.2
     PTRACE(3, "SIP\tRemote did not offer media, so we will.");
-    return OnSendOfferSDP(rtpSessions, sdpOut);
+    return OnSendOfferSDP(rtpSessions, sdpOut, false);
   }
 
   // The Re-INVITE can be sent to change the RTP Session parameters,
@@ -1324,7 +1324,7 @@ bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
    return false;
   }
 
-  PTRACE(4, "SIP\tRemote media formats set to " << setfill(',') << m_remoteFormatList << setfill(' '));
+  PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
   return true;
 }
 
@@ -3055,7 +3055,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       ++m_sdpVersion;
 
     SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
-    if (OnSendOfferSDP(request.GetSessionManager(), *sdp))
+    if (OnSendOfferSDP(request.GetSessionManager(), *sdp, m_needReINVITE))
       request.SetSDP(sdp);
     else {
       delete sdp;
