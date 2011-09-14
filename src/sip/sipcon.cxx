@@ -747,11 +747,11 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
 }
 
 
-PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut)
+PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offerCurrentOnly)
 {
   bool sdpOK = false;
 
-  if (m_needReINVITE && !mediaStreams.IsEmpty()) {
+  if (offerCurrentOnly && !mediaStreams.IsEmpty()) {
     PTRACE(4, "SIP\tOffering only current media streams in Re-INVITE");
     std::vector<bool> sessions;
     for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
@@ -765,7 +765,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut)
     }
   }
   else {
-    PTRACE(4, "SIP\tOffering all configured media:\n" << setfill(',') << m_localMediaFormats << setfill(' '));
+    PTRACE(4, "SIP\tOffering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     OpalMediaTypeList mediaTypes = CreateAllMediaSessions();
@@ -929,7 +929,7 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
 
     // They did not offer anything, so it behooves us to do so: RFC 3261, para 14.2
     PTRACE(3, "SIP\tRemote did not offer media, so we will.");
-    return OnSendOfferSDP(sdpOut);
+    return OnSendOfferSDP(sdpOut, false);
   }
 
   // The Re-INVITE can be sent to change the RTP Session parameters,
@@ -1259,7 +1259,7 @@ bool SIPConnection::SetRemoteMediaFormats()
     return false;
   }
 
-  PTRACE(4, "SIP\tRemote media formats set to " << setfill(',') << m_remoteFormatList << setfill(' '));
+  PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
   return true;
 }
 
@@ -1522,7 +1522,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       ++m_sdpVersion;
 
     SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
-    if (OnSendOfferSDP(*sdp)) {
+    if (OnSendOfferSDP(*sdp, m_needReINVITE)) {
       request.m_sessions = m_sessions;
       request.SetSDP(sdp);
     }
