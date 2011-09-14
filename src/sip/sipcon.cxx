@@ -1247,8 +1247,10 @@ bool SIPConnection::SetRemoteMediaFormats()
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (originalInvite == NULL || !originalInvite->DecodeSDP(GetLocalMediaFormats()))
+  if (originalInvite == NULL || !originalInvite->DecodeSDP(GetLocalMediaFormats())) {
     m_remoteFormatList = GetLocalMediaFormats();
+    m_remoteFormatList.MakeUnique();
+  }
   else {
     m_remoteFormatList = originalInvite->GetSDP()->GetMediaFormats();
     AdjustMediaFormats(false, NULL, m_remoteFormatList);
