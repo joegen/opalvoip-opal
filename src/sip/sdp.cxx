@@ -1388,7 +1388,7 @@ PString SDPSessionDescription::Encode() const
 
 bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatList & mediaFormats)
 {
-  PTRACE(5, "SDP\tDecode using media formats: " << setfill(',') << mediaFormats);
+  PTRACE(5, "SDP\tDecode using media formats:\n    " << setfill(',') << mediaFormats << setfill(' '));
 
   bool atLeastOneValidMedia = false;
   bool ok = true;
