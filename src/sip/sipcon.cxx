@@ -717,19 +717,24 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
 }
 
 
-static void SetNxECapabilities(OpalRFC2833Proto * handler,
+static bool SetNxECapabilities(OpalRFC2833Proto * handler,
                       const OpalMediaFormatList & localMediaFormats,
                       const OpalMediaFormatList & remoteMediaFormats,
                           const OpalMediaFormat & baseMediaFormat,
                             SDPMediaDescription * localMedia = NULL)
 {
-  OpalMediaFormatList::const_iterator localFmt = localMediaFormats.FindFormat(baseMediaFormat);
   OpalMediaFormatList::const_iterator remFmt = remoteMediaFormats.FindFormat(baseMediaFormat);
-
-  if (localFmt == localMediaFormats.end() || remFmt == remoteMediaFormats.end()) {
-    // Not in our local list or remote list, disable transmitter
+  if (remFmt == remoteMediaFormats.end()) {
+    // Not in remote list, disable transmitter
     handler->SetTxMediaFormat(OpalMediaFormat());
-    return;
+    return false;
+  }
+
+  OpalMediaFormatList::const_iterator localFmt = localMediaFormats.FindFormat(baseMediaFormat);
+  if (localFmt == localMediaFormats.end()) {
+    // Not in our local list, disable transmitter
+    handler->SetTxMediaFormat(OpalMediaFormat());
+    return true;
   }
 
   // Merge remotes format into ours.
@@ -744,6 +749,8 @@ static void SetNxECapabilities(OpalRFC2833Proto * handler,
     handler->SetRxMediaFormat(adjustedFormat);
     localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
   }
+
+  return true;
 }
 
 
@@ -1318,7 +1325,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
   }
 
-  if (!m_symmetricOpenStream && !m_handlingINVITE && (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
+  if (!m_symmetricOpenStream && !m_handlingINVITE && GetPhase() == EstablishedPhase &&
+              (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
     SendReINVITE(PTRACE_PARAM("open channel"));
 
   return newStream;
@@ -1339,16 +1347,13 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
 {
   if (!m_symmetricOpenStream && !m_handlingINVITE)
-    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resuming channel"));
+    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel"));
   OpalConnection::OnPauseMediaStream(strm, paused);
 }
 
 
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
-  if (GetPhase() != EstablishedPhase)
-    return false;
-
   bool startImmediate = !m_handlingINVITE && pendingInvitations.IsEmpty();
 
   PTRACE(3, "SIP\t" << (startImmediate ? "Start" : "Queue") << "ing re-INVITE to " << msg);
@@ -2930,9 +2935,10 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
 
   unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
 
+  bool multipleFormats = false;
   bool ok = false;
   for (unsigned session = 1; session <= sessionCount; ++session) {
-    if (OnReceivedAnswerSDPSession(*sdp, session))
+    if (OnReceivedAnswerSDPSession(*sdp, session, multipleFormats))
       ok = true;
     else {
       OpalMediaStreamPtr stream;
@@ -2953,6 +2959,14 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
       stream->Close();
   }
 
+  /* See if remote has answered our offer with multiple possible codecs.
+     While this is perfectly legal, and we are supposed to wait for the first
+     RTP packet to arrive before setting up codecs etc, our architecture
+     cannot deal with that. So what we do is immediately, send a re-INVITE
+     nailing the codec down to the first reply. */
+  if (multipleFormats)
+    SendReINVITE(PTRACE_PARAM("resolve multiple codecs in answer"));
+
   if (GetPhase() == EstablishedPhase)
     ownerCall.StartMediaStreams(); // re-INVITE
   else {
@@ -2962,7 +2976,7 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
 }
 
 
-bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsigned sessionId)
+bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsigned sessionId, bool & multipleFormats)
 {
   SDPMediaDescription * mediaDescription = sdp.GetMediaDescriptionByIndex(sessionId);
   if (!PAssert(mediaDescription != NULL, "SDP Media description list changed"))
@@ -3012,12 +3026,18 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
   }
 
+  PINDEX maxFormats = 1;
   if (mediaType == OpalMediaType::Audio()) {
-    SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833);
+    if (SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833))
+      ++maxFormats;
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE);
+    if (SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE))
+      ++maxFormats;
 #endif
   }
+
+  if (mediaDescription->GetSDPMediaFormats().GetSize() > maxFormats)
+    multipleFormats = true;
 
   PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
   return true;
