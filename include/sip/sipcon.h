@@ -649,7 +649,8 @@ class SIPConnection : public OpalRTPConnection
     );
     virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
-      unsigned sessionId
+      unsigned sessionId,
+      bool & multipleFormats
     );
 
     virtual OpalMediaSession * SetUpMediaSession(
