@@ -615,7 +615,8 @@ class SIPConnection : public OpalRTPConnection
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
 
     virtual bool OnSendOfferSDP(
-      SDPSessionDescription & sdpOut
+      SDPSessionDescription & sdpOut,
+      bool offerCurrentOnly
     );
     virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,

@@ -420,8 +420,8 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 
   connection.AdjustMediaFormats(true, NULL, commonFormats);
 
-  PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
-         << setfill('\n') << commonFormats << setfill(' '));
+  PTRACE(4, "Call\tGetMediaFormats for " << connection << "\n    "
+         << setfill(',') << commonFormats << setfill(' '));
 
   return commonFormats;
 }
