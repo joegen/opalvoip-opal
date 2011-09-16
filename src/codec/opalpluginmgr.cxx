@@ -907,7 +907,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
   unsigned flags;
 
-  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-frame forced from video codec");
+  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec");
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, outputDataSize+1024);
