@@ -1337,7 +1337,7 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 {
   bool closed = OpalConnection::CloseMediaStream(stream);
 
-  if (!m_symmetricOpenStream && !m_handlingINVITE)
+  if (!m_symmetricOpenStream && !m_handlingINVITE && GetPhase() == EstablishedPhase)
     closed = SendReINVITE(PTRACE_PARAM("close channel")) && closed;
 
   return closed;
