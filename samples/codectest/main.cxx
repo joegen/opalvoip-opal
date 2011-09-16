@@ -985,12 +985,12 @@ void TranscoderThread::Main()
         if (isVideo) {
           if (m_forceIFrame) {
             coutMutex.Wait();
-            cout << "Decoder forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+            cout << "Decoder forced I-Frame at input frame " << totalInputFrameCount-1 << endl;
             coutMutex.Signal();
           }
           if (rateControlForceIFrame) {
             coutMutex.Wait();
-            cout << "Rate controller forced I-frame at input frame " << totalInputFrameCount-1 << endl;
+            cout << "Rate controller forced I-Frame at input frame " << totalInputFrameCount-1 << endl;
             coutMutex.Signal();
           }
           if (m_forceIFrame || rateControlForceIFrame)
