@@ -81,7 +81,8 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
-    virtual void OnClearedCall(OpalCall & call); // Callback override
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnClearedCall(OpalCall & call);
 
     PSyncPoint m_completed;
 };

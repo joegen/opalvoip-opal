@@ -90,6 +90,17 @@ void MyProcess::Main()
 }
 
 
+PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+{
+  OpalRTPMediaStream * rtpStream = dynamic_cast<OpalRTPMediaStream *>(&stream);
+  if (rtpStream != NULL)
+    cout << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteMediaAddress() << "\n"
+            "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteControlAddress() << endl;
+
+  return OpalManager::OnOpenMediaStream(connection, stream);
+}
+
+
 void MyManager::OnClearedCall(OpalCall & call)
 {
   if (call.GetPartyA().NumCompare(EXTERNAL_SCHEME) == EqualTo)
