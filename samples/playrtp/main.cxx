@@ -550,7 +550,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
           const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
           if (video->WasLastFrameIFrame()) {
-            m_eventLog << "Frame " << m_videoFrames << ": I-frame received";
+            m_eventLog << "Frame " << m_videoFrames << ": I-Frame received";
             if (m_videoError)
               m_eventLog << " - decode error cleared";
             m_eventLog << endl;
