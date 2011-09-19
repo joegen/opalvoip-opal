@@ -960,6 +960,17 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if ((m_context = FFMPEGLibraryInstance.AvcodecAllocContext()) == NULL)
         return false;
 
+      m_context->workaround_bugs = FF_BUG_AUTODETECT;
+      m_context->error_recognition = FF_ER_AGGRESSIVE;
+      m_context->idct_algo = FF_IDCT_H264;
+      m_context->error_concealment = FF_EC_GUESS_MVS | FF_EC_DEBLOCK;
+      m_context->flags = CODEC_FLAG_INPUT_PRESERVED | CODEC_FLAG_EMU_EDGE;
+      m_context->flags2 = CODEC_FLAG2_BRDO |
+                          CODEC_FLAG2_MEMC_ONLY |
+                          CODEC_FLAG2_DROP_FRAME_TIMECODE |
+                          CODEC_FLAG2_SKIP_RD |
+                          CODEC_FLAG2_CHUNKS;
+
       if ((m_picture = FFMPEGLibraryInstance.AvcodecAllocFrame()) == NULL)
         return false;
 
