@@ -68,12 +68,11 @@ AC_SUBST(FAX_PLUGIN_DIR)
 dnl ########################################################################
 dnl Platform specific section
 dnl ########################################################################
-WIN32=no
 LDSO=
 case "$target_os" in
-	solaris*)
+       solaris*)
           CFLAGS="$CFLAGS -KPIC"
-	  LDSO='-Bdynamic -G -h $@'
+          LDSO='-Bdynamic -G -h $@'
           PLUGINEXT=so
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
           AC_FUNC_FORK()
@@ -85,15 +84,14 @@ case "$target_os" in
 	  case "$target_cpu" in
 	   x86 | i686 | i586 | i486 | i386 ) CFLAGS="${CFLAGS} -m486" ;;
           esac
-	  PLUGINEXT=dylib 
+          PLUGINEXT=dylib 
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
           AC_FUNC_FORK()
         ;;
 
         cygwin*|mingw**)
-	  LDSO='-module -avoid-version -shared'
-	  PLUGINEXT=dll
-	  WIN32=yes
+          LDSO='-module -avoid-version -shared'
+          PLUGINEXT=dll
           AC_CHECK_HEADERS([malloc.h])
           AC_DEFINE([PLUGIN_CODEC_DLL_EXPORTS], [1], [For win32 build])
         ;;
@@ -109,7 +107,6 @@ esac
 AC_SUBST(LDSO)
 AC_SUBST(PLUGINEXT)
 AC_SUBST(CFLAGS)
-AC_SUBST(WIN32)
 
 OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
 AC_SUBST(HAVE_LIBDL)
@@ -495,37 +492,37 @@ fi
 dnl     ########################
 dnl     x264
 dnl     ########################
+HAVE_H264=no
+IS_H264_LICENSED=no
+AC_SUBST(IS_H264_LICENSED)
+
 if test "x${HAVE_LIBAVCODEC}" = "xno"; then
   AC_MSG_RESULT(H.264 not built since libavcodec support is disabled)
-  HAVE_H264=no
 else
-  if test -d video/H.264/gpl ; then
-    AC_ARG_ENABLE([x264],
-                  [AC_HELP_STRING([--disable-x264],[disable x264 support])],
-                  [HAVE_H264=$enableval],
-                  [HAVE_H264=yes])
-    PKG_CHECK_MODULES([X264],
-                      [x264 >= 0.102],
-                      [
-                       AC_SUBST(X264_CFLAGS)
-                       AC_SUBST(X264_LIBS)
-                       OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
-                       AC_SUBST(X264_LIB_NAME)
-                       OPAL_X264_LINKAGE
-                      ],
-                      [
-                       HAVE_H264=no
-                      ]
-                     )
-  else
-    HAVE_H264=no
-  fi
+  AC_ARG_ENABLE([x264],
+                [AC_HELP_STRING([--disable-x264],[disable x264 support])],
+                [HAVE_H264=$enableval],
+                [PKG_CHECK_MODULES([X264],
+                                   [x264 >= 0.102],
+                                   [
+				     HAVE_H264=yes
+                                     AC_SUBST(X264_CFLAGS)
+                                     AC_SUBST(X264_LIBS)
+                                     OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
+                                     AC_SUBST(X264_LIB_NAME)
+                                     OPAL_X264_LINKAGE
+                                   ])
+                ])
 fi
 
 if test "x$HAVE_H264" = "xyes" ; then
+  AC_ARG_ENABLE([x264-licensed],
+                [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264 support])],
+                [IS_H264_LICENSED=$enableval])
+
+  SUBDIRS+=" video/H.264"
   AC_CONFIG_FILES(video/H.264/Makefile)
   AC_CONFIG_FILES(video/H.264/gpl/Makefile)
-  SUBDIRS+=" video/H.264"
 fi
 
 
@@ -570,8 +567,8 @@ if test -d LID/IxJ ; then
     OPAL_MSG_CHECK([IXJ], [$HAVE_IXJ])
     if test "x$HAVE_IXJ" = "xyes" ; then
       AC_CHECK_HEADERS([linux/telephony.h], 
-		       [HAVE_IXJ=yes],
-		       [AC_CHECK_HEADERS([ sys/telephony.h], [HAVE_IXJ=yes], [HAVE_IXJ=no])])
+                     [HAVE_IXJ=yes],
+                     [AC_CHECK_HEADERS([ sys/telephony.h], [HAVE_IXJ=yes], [HAVE_IXJ=no])])
       if test "x$HAVE_IXJ" = "xyes" ; then
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <linux/ixjuser.h>]], [[ return 0; ]])],
                           [HAVE_IXJ=yes], [HAVE_IXJ=no])
@@ -714,7 +711,15 @@ echo ""
 
 echo "                           H.261  :  ${HAVE_H261} (vic)"
 echo "                     H.263/H.263+ :  ${HAVE_LIBAVCODEC} (ffmpeg)"
-echo "                           H.264  :  ${HAVE_H264} (x264)"
+
+if test "x${HAVE_H264}" = "xno" ; then
+echo "                           H.264  :  no"
+elif test "x${IS_H264_LICENSED}" = "xno" ; then
+echo "                           H.264  :  yes (GPL x264)"
+else
+echo "                           H.264  :  yes (Licensed x264)"
+fi
+
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
 if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then

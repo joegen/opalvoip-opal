@@ -30,20 +30,10 @@
 /*****************************************************************************/
 
 #include "h264frame.h"
-#include <stdlib.h>
-#include <string.h>
 
-#ifdef GPL_HELPER_APP
-  #include "../gpl/enc-ctx.h"
-  #ifndef _WIN32
-    #include "../gpl/x264loader_unix.h"
-    extern X264Library X264Lib;
-  #else
-    #define X264_NAL_ENCODE x264_nal_encode 
-  #endif
-#else
-  #include <codec/opalplugin.hpp>
-#endif
+#include <codec/opalplugin.hpp>
+#include <stdlib.h>
+#include <memory.h>
 
 
 #define MAX_FRAME_SIZE 128 * 1024
@@ -57,10 +47,11 @@ H264Frame::H264Frame ()
   m_NALs = NULL;
   m_numberOfNALsReserved = 0;
 
-  BeginNewFrame();
+  BeginNewFrame(0);
 }
 
-void H264Frame::BeginNewFrame ()
+
+void H264Frame::BeginNewFrame(uint32_t numberOfNALs)
 {
   m_encodedFrameLen = 0;
 
@@ -74,7 +65,13 @@ void H264Frame::BeginNewFrame ()
 
   m_currentFU = 0;
 
+  if (numberOfNALs > 0) {
+    if (m_NALs)
+      free(m_NALs);
+    m_NALs = (NALU *)malloc(numberOfNALs * sizeof(NALU));
+  }
 }
+
 
 H264Frame::~H264Frame ()
 {
@@ -84,58 +81,42 @@ H264Frame::~H264Frame ()
     free(m_NALs);
 }
 
-#ifdef GPL_HELPER_APP
-void H264Frame::SetFromFrame(x264_nal_t *NALs, int numberOfNALs)
+
+void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 {
-  int vopBufferLen;
-  int currentNAL = 0;
-
   uint8_t* currentPositionInFrame=(uint8_t*) m_encodedFrame;
-  if (m_NALs) free(m_NALs);
-  m_NALs = (h264_nal_t *)malloc(numberOfNALs * sizeof(h264_nal_t));
 
-  m_encodedFrameLen = 0;
-  m_numberOfNALsInFrame = 0;
-  m_currentNAL=0;
+  m_NALs[m_numberOfNALsInFrame].type = type;
+  m_NALs[m_numberOfNALsInFrame].length = length;
+  m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
+  memcpy(m_encodedFrame+m_encodedFrameLen, payload, length);
 
-  // read the nals out of the encoder and create meta data about their location and size in the frame
-  for (currentNAL = 0; currentNAL < numberOfNALs; currentNAL++) {
-    m_NALs[m_numberOfNALsInFrame].type = NALs[currentNAL].i_type;
-    m_NALs[m_numberOfNALsInFrame].length = NALs[currentNAL].i_payload-4;
-    m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
-    memcpy(currentPositionInFrame, NALs[currentNAL].p_payload+4, m_NALs[m_numberOfNALsInFrame].length);
-
-    uint32_t header = 0;
-    if (IsStartCode(currentPositionInFrame))
-    {
-      header = currentPositionInFrame[2] == 1 ? 3 : 4;
-    }
-    m_NALs[m_numberOfNALsInFrame].length -= header;
-    m_NALs[m_numberOfNALsInFrame].offset += header;
-    PTRACE(6, "x264", "Loaded NAL unit #" << currentNAL << " - type " << NALs[currentNAL].i_type);
-
-    uint8_t* NALptr = NALs[currentNAL].p_payload;
-    if (PTRACE_CHECK(4) && (NALs[currentNAL].i_type == H264_NAL_TYPE_SEQ_PARAM)) {
-      PTRACE(4, "x264", "Profile: " << (int)NALptr[0] << 
-                              " Level: "   << (int)NALptr[2] << 
-		   	      " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
-			                        << (NALptr[1] & 0x40 ? 1 : 0) 
-					        << (NALptr[1] & 0x20 ? 1 : 0) 
-					        << (NALptr[1] & 0x10 ? 1 : 0));
-    }
-
-    m_numberOfNALsInFrame++;
-    m_encodedFrameLen += NALs[currentNAL].i_payload;
-    currentPositionInFrame += NALs[currentNAL].i_payload;
+  uint32_t header = 0;
+  if (IsStartCode(currentPositionInFrame))
+  {
+    header = currentPositionInFrame[2] == 1 ? 3 : 4;
   }
-  PTRACE(6, "x264", "Loaded an encoded frame of " << m_encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
+  m_NALs[m_numberOfNALsInFrame].length -= header;
+  m_NALs[m_numberOfNALsInFrame].offset += header;
+
+  if (type == H264_NAL_TYPE_SEQ_PARAM) {
+    PTRACE(4, "x264", "Profile: "   << (unsigned)payload[0] << 
+                      " Level: "    << (unsigned)payload[2] << 
+		   " Constraints: " << (payload[1] & 0x80 ? 1 : 0) 
+			            << (payload[1] & 0x40 ? 1 : 0) 
+				    << (payload[1] & 0x20 ? 1 : 0) 
+				    << (payload[1] & 0x10 ? 1 : 0));
+  }
+
+  m_numberOfNALsInFrame++;
+  m_encodedFrameLen += length;
 }
-#endif
+
 
 bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
   flags = 0;
-  flags |= (IsSync()) ? isIFrame : 0;
+  flags |= (IsSync()) ? PluginCodec_ReturnCoderIFrame : 0;
   if (m_currentNAL < m_numberOfNALsInFrame) 
   { 
     uint32_t curNALLen = m_NALs[m_currentNAL].length;
@@ -168,7 +149,7 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
         memcpy(frame.GetPayloadPtr(), curNALPtr, curNALLen);
         frame.SetTimestamp(m_timestamp);
         frame.SetMarker((m_currentNAL + 1) >= m_numberOfNALsInFrame ? 1 : 0);
-        flags |= frame.GetMarker() ? isLastFrame : 0;  // marker bit on last frame of video
+        flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
 
         PTRACE(6, "x264", "Encapsulating NAL unit #" << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
         m_currentNAL++;
@@ -237,7 +218,7 @@ bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
   memset (frame.GetPayloadPtr(), 24 | maxNRI, 1);
   frame.SetTimestamp(m_timestamp);
   frame.SetMarker(m_currentNAL >= m_numberOfNALsInFrame ? 1 : 0);
-  flags |= frame.GetMarker() ? isLastFrame : 0;  // marker bit on last frame of video
+  flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
 
   return true;
 }
@@ -283,7 +264,7 @@ bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
     memcpy ((uint8_t*)frame.GetPayloadPtr()+2, m_currentNALFURemainingDataPtr, curFULen);
     frame.SetTimestamp(m_timestamp);
     frame.SetMarker((last && ((m_currentNAL+1) >= m_numberOfNALsInFrame)) ? 1 : 0);
-    flags |= frame.GetMarker() ? isLastFrame : 0;  // marker bit on last frame of video
+    flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
 
     m_currentNALFURemainingDataPtr += curFULen;
     m_currentNALFURemainingLen -= curFULen;
@@ -329,8 +310,8 @@ bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
     PTRACE(2, "x264", "Skipping unsupported NAL unit type " << (unsigned)curNALType);
   }
 
-  BeginNewFrame();
-  flags |= requestIFrame;
+  BeginNewFrame(0);
+  flags |= PluginCodec_ReturnCoderRequestIFrame;
   return false;
 }
 
@@ -472,7 +453,7 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
 
     if (m_numberOfNALsInFrame + 1 >(m_numberOfNALsReserved))
     {
-      m_NALs = (h264_nal_t *)realloc(m_NALs, (m_numberOfNALsReserved + 1) * sizeof(h264_nal_t));
+      m_NALs = (NALU *)realloc(m_NALs, (m_numberOfNALsReserved + 1) * sizeof(NALU));
       m_numberOfNALsReserved++;
     }
     if (m_NALs)

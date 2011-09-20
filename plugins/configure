@@ -599,6 +599,7 @@ THEORA_CFLAGS
 X264_LIB_NAME
 X264_LIBS
 X264_CFLAGS
+IS_H264_LICENSED
 HAVE_LIBAVCODEC_RTP_MODE
 LIBAVCODEC_SOURCE_DIR
 HAVE_LIBAVCODEC
@@ -628,7 +629,6 @@ GSM_CFLAGS
 SUBDIRS
 DL_LIBS
 HAVE_LIBDL
-WIN32
 PLUGINEXT
 LDSO
 FAX_PLUGIN_DIR
@@ -742,6 +742,7 @@ enable_libavcodec_stackalign_hack
 with_libavcodec_source_dir
 enable_x264
 enable_x264_link_static
+enable_x264_licensed
 enable_theora
 enable_ixj
 enable_vpb
@@ -1421,6 +1422,7 @@ Optional Features:
   --enable-x264-link-static
                           Statically link x264 to the plugin. Default for
                           win32.
+  --enable-x264-licensed  enable commercially licensed x264 support
   --disable-theora        disable Theora support
   --enable-ixj            enable xJack cards
   --enable-vpb            enable voicetronix vpb
@@ -5974,12 +5976,11 @@ PLUGINDIR=`pwd`
 
 
 
-WIN32=no
 LDSO=
 case "$target_os" in
-	solaris*)
+       solaris*)
           CFLAGS="$CFLAGS -KPIC"
-	  LDSO='-Bdynamic -G -h $@'
+          LDSO='-Bdynamic -G -h $@'
           PLUGINEXT=so
           for ac_header in sys/time.h sys/file.h netinet/in.h
 do :
@@ -6226,7 +6227,7 @@ fi
 	  case "$target_cpu" in
 	   x86 | i686 | i586 | i486 | i386 ) CFLAGS="${CFLAGS} -m486" ;;
           esac
-	  PLUGINEXT=dylib
+          PLUGINEXT=dylib
           for ac_header in sys/time.h sys/file.h netinet/in.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -6456,9 +6457,8 @@ fi
         ;;
 
         cygwin*|mingw**)
-	  LDSO='-module -avoid-version -shared'
-	  PLUGINEXT=dll
-	  WIN32=yes
+          LDSO='-module -avoid-version -shared'
+          PLUGINEXT=dll
           for ac_header in malloc.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "malloc.h" "ac_cv_header_malloc_h" "$ac_includes_default"
@@ -6708,7 +6708,6 @@ fi
 
         ;;
 esac
-
 
 
 
@@ -9659,19 +9658,18 @@ if test "x${HAVE_LIBAVCODEC}" = "xyes"; then
 fi
 
 
+HAVE_H264=no
+IS_H264_LICENSED=no
+
+
 if test "x${HAVE_LIBAVCODEC}" = "xno"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: H.264 not built since libavcodec support is disabled" >&5
 $as_echo "H.264 not built since libavcodec support is disabled" >&6; }
-  HAVE_H264=no
 else
-  if test -d video/H.264/gpl ; then
-    # Check whether --enable-x264 was given.
+  # Check whether --enable-x264 was given.
 if test "${enable_x264+set}" = set; then :
   enableval=$enable_x264; HAVE_H264=$enableval
 else
-  HAVE_H264=yes
-fi
-
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X264" >&5
@@ -9729,16 +9727,32 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$X264_PKG_ERRORS" >&5
 
+	as_fn_error $? "Package requirements (x264 >= 0.102) were not met:
 
-                       HAVE_H264=no
+$X264_PKG_ERRORS
 
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables X264_CFLAGS
+and X264_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
-                       HAVE_H264=no
+Alternatively, you may set the environment variables X264_CFLAGS
+and X264_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
 
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See \`config.log' for more details" "$LINENO" 5; }
 
 else
 	X264_CFLAGS=$pkg_cv_X264_CFLAGS
@@ -9746,6 +9760,7 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
+				     HAVE_H264=yes
 
 
 
@@ -9797,17 +9812,23 @@ $as_echo "$as_me: x264 static linking disabled" >&6;}
 
 
 fi
-  else
-    HAVE_H264=no
-  fi
+
+fi
+
 fi
 
 if test "x$HAVE_H264" = "xyes" ; then
+  # Check whether --enable-x264-licensed was given.
+if test "${enable_x264_licensed+set}" = set; then :
+  enableval=$enable_x264_licensed; IS_H264_LICENSED=$enableval
+fi
+
+
+  SUBDIRS+=" video/H.264"
   ac_config_files="$ac_config_files video/H.264/Makefile"
 
   ac_config_files="$ac_config_files video/H.264/gpl/Makefile"
 
-  SUBDIRS+=" video/H.264"
 fi
 
 
@@ -11617,7 +11638,15 @@ echo ""
 
 echo "                           H.261  :  ${HAVE_H261} (vic)"
 echo "                     H.263/H.263+ :  ${HAVE_LIBAVCODEC} (ffmpeg)"
-echo "                           H.264  :  ${HAVE_H264} (x264)"
+
+if test "x${HAVE_H264}" = "xno" ; then
+echo "                           H.264  :  no"
+elif test "x${IS_H264_LICENSED}" = "xno" ; then
+echo "                           H.264  :  yes (GPL x264)"
+else
+echo "                           H.264  :  yes (Licensed x264)"
+fi
+
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
 if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then

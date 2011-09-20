@@ -31,18 +31,18 @@ COMMONDIR := ../common
 SRCDIR    := .
 SRCS    += h264-x264.cxx \
            $(SHAREDDIR)/h264frame.cxx \
+           $(SHAREDDIR)/x264wrap.cxx \
            $(COMMONDIR)/dyna.cxx \
-
-SUBDIRS := gpl
 
 CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"@VC_PLUGIN_DIR@"'
 LIBS   += @DL_LIBS@
 
-WIN32=@WIN32@
-ifeq ($(WIN32),yes)
-SRCS += h264pipe_win32.cxx
+IS_H264_LICENSED:=@IS_H264_LICENSED@
+ifeq ($(IS_H264_LICENSED),yes)
+  CFLAGS += @X264_CFLAGS@ -DX264_LICENSED
+  LIBS   += @X264_LIBS@
 else
-SRCS += h264pipe_unix.cxx
+  SUBDIRS := gpl
 endif
 
 vpath	%.cxx $(SHAREDDIR)
