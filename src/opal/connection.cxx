@@ -1142,6 +1142,9 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
+  if (IsReleased())
+    return false;
+
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
