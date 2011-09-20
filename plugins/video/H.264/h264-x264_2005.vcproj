@@ -227,7 +227,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\h264pipe_win32.cxx"
+				RelativePath=".\shared\x264wrap.cxx"
 				>
 			</File>
 		</Filter>
@@ -243,7 +243,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\h264pipe_win32.h"
+				RelativePath="..\common\platform.h"
+				>
+			</File>
+			<File
+				RelativePath=".\shared\h264frame.h"
+				>
+			</File>
+			<File
+				RelativePath=".\shared\x264wrap.h"
 				>
 			</File>
 			<File
