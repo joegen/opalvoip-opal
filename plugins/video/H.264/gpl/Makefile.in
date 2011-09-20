@@ -28,37 +28,29 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 
-SHAREDDIR	= ../shared
-COMMONDIR       = ../../common
-PLUGINDIR       = ../../../
-OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/h264_x264_gpl
+PLUGINDIR := ../../../
+OPALDIR   := ../../../../
+TARGETDIR := $(OPALDIR)/lib_@OSTYPE@_@MACHTYPE@/plugins
+OBJDIR    := $(TARGETDIR)/h264_x264_gpl
 
-CC	 	=@CC@
-CXX	 	=@CXX@
-CFLAGS	 	=@X264_CFLAGS@ -I$(COMMONDIR) -I$(PLUGINDIR) -I.. -DGPL_HELPER_APP # -DPTRACING
-LDFLAGS		=@LDFLAGS@ @X264_LIBS@
-
-
-vpath	%.cxx $(SHAREDDIR)
-vpath	%.cxx $(COMMONDIR)
-vpath	%.o   $(OBJDIR)
+SRCS = h264_helper.cxx
 
 WIN32=@WIN32@
 ifeq ($(WIN32),yes)
-
-SRCS   += h264helper_win32.cxx
-TARGET	= h264_video_pwplugin_helper.exe
-
+  TARGET = x264plugin_helper.exe
 else
-
-SRCS   += h264helper_unix.cxx
-TARGET	= h264_video_pwplugin_helper
-
-endif # WIN32
-
-SRCS += enc-ctx.cxx ../shared/h264frame.cxx
+  TARGET = h264_video_pwplugin_helper
+endif
+TARGET_PATH = $(TARGETDIR)/$(TARGET)
 
 
+CC	 	=@CC@
+CXX	 	=@CXX@
+CFLAGS  =@X264_CFLAGS@ -I.. -I$(PLUGINDIR) -I$(OPALDIR)/include -DGPL_HELPER_APP # -DPTRACING
+LDFLAGS =@LDFLAGS@ @X264_LIBS@
+
+
+vpath	%.o   $(OBJDIR)
 
 ifeq ($(VERBOSE),)
 Q_CC = @echo [CC] `echo $< | sed s^$(OBJDIR)/^^` ;
@@ -76,12 +68,12 @@ $(OBJDIR)/%.o : %.c
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
-$(OBJDIR)/$(TARGET): $(OBJECTS)
+$(TARGET_PATH): $(OBJECTS)
 	$(Q_LD)$(CXX) -o $@ $^ $(LDFLAGS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(OBJDIR)/$(TARGET) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
+	install $(TARGET_PATH) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(TARGET)
