@@ -46,12 +46,7 @@
 #include <codec/opalplugin.hpp>
 
 #include "shared/h264frame.h"
-
-#ifdef WIN32
-#include "h264pipe_win32.h"
-#else
-#include "h264pipe_unix.h"
-#endif
+#include "shared/x264wrap.h"
 
 
 #define MY_CODEC      x264                                  // Name of codec (use C variable characters)
@@ -740,7 +735,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
     unsigned m_tsto;
     unsigned m_keyFramePeriod;
 
-    H264EncCtx m_encoder;
+    H264Encoder m_encoder;
 
   public:
     MyEncoder(const PluginCodec_Definition * defn)
@@ -768,10 +763,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
          be done in the normal C++ constructor. */
 
       // ABR with bit rate tolerance = 1 is CBR...
-      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this)) {
-        m_encoder.call(H264ENCODERCONTEXT_CREATE);
+      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this))
         return true;
-      }
 
       PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
       return false;
@@ -874,15 +867,16 @@ class MyEncoder : public PluginCodec<MY_CODEC>
          of them changed. This would do whatever is needed to set parmaeters
          for the actual codec. */
 
-      m_encoder.call(SET_PROFILE_LEVEL, (m_profile << 16) + (m_constraints << 8) + m_level);
-      m_encoder.call(SET_FRAME_WIDTH, m_width);
-      m_encoder.call(SET_FRAME_HEIGHT, m_height);
-      m_encoder.call(SET_FRAME_RATE, m_frameRate);
-      m_encoder.call(SET_TARGET_BITRATE, m_bitRate/1000);
-      m_encoder.call(SET_MAX_FRAME_SIZE, std::min(m_maxRTPSize, m_maxNALUSize));
-      m_encoder.call(SET_TSTO, m_tsto);
-      m_encoder.call(SET_MAX_KEY_FRAME_PERIOD, m_keyFramePeriod);
-      m_encoder.call(APPLY_OPTIONS);
+      m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
+      m_encoder.SetFrameWidth(m_width);
+      m_encoder.SetFrameHeight(m_height);
+      m_encoder.SetFrameRate(m_frameRate);
+      m_encoder.SetTargetBitrate(m_bitRate/1000);
+      m_encoder.SetMaxRTPFrameSize(std::min(m_maxRTPSize, m_maxNALUSize));
+      m_encoder.SetTSTO(m_tsto);
+      m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
+      m_encoder.ApplyOptions();
+
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
                               "prof=" << m_profile << " "
                               "lev=" << m_level << " "
@@ -901,14 +895,10 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
-      int ret = 0;
-      unsigned headerSize = PluginCodec_RTP_GetHeaderLength(toPtr);
-      m_encoder.call(ENCODE_FRAMES,
-                     (const u_char *)fromPtr, fromLen,
-                     (u_char *)toPtr, toLen,
-                     headerSize,
-                     flags, ret);
-      return ret != 0;
+      return m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
+                                    (unsigned char *)toPtr, toLen,
+                                     PluginCodec_RTP_GetHeaderLength(toPtr),
+                                     flags);
     }
 };
 
