@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *
- * Copyright (C) 2004-2006 Post Increment
+ * Copyright (C) 2004-2011 Post Increment
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
