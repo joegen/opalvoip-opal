@@ -126,14 +126,14 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
   <ItemGroup>
     <ClCompile Include="..\common\dyna.cxx" />
     <ClCompile Include="h264-x264.cxx" />
-    <ClCompile Include="h264pipe_win32.cxx" />
+    <ClCompile Include="shared\x264wrap.cxx" />
     <ClCompile Include="shared\h264frame.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\dyna.h" />
     <ClInclude Include="..\common\ffmpeg.h" />
     <ClInclude Include="h264-x264.h" />
-    <ClInclude Include="h264pipe_win32.h" />
+    <ClInclude Include="shared\x264wrap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

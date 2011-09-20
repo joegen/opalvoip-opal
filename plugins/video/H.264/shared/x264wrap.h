@@ -29,8 +29,27 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
-#ifndef __PIPES_H__
-#define __PIPES_H__ 1
+#ifndef OPAL_H264ENC_H
+#define OPAL_H264ENC_H 1
+
+#include "../common/platform.h"
+
+
+#if X264_LICENSED || GPL_HELPER_APP
+#define _INTTYPES_H_ // ../common/platform.h is equivalent to this
+extern "C" {
+#include <x264.h>
+};
+#include "h264frame.h"
+#endif
+
+
+#ifdef WIN32
+#define EXECUTABLE_NAME "x264plugin_helper.exe"
+#else
+#define EXECUTABLE_NAME "h264_video_pwplugin_helper"
+#endif
+
 
 #define INIT                      0
 #define H264ENCODERCONTEXT_CREATE 1
@@ -48,4 +67,66 @@
 #define SET_PROFILE_LEVEL         13
 
 
-#endif /* __PIPE_H__ */
+class H264Encoder
+{
+  public:
+    H264Encoder();
+    ~H264Encoder();
+
+    bool Load(void * instance);
+
+    bool SetProfileLevel(unsigned profile, unsigned level, unsigned constraints);
+    bool SetFrameWidth(unsigned width);
+    bool SetFrameHeight(unsigned height);
+    bool SetFrameRate(unsigned rate);
+    bool SetTargetBitrate(unsigned rate);
+    bool SetMaxRTPFrameSize(unsigned size);
+    bool SetTSTO(unsigned tsto);
+    bool SetMaxKeyFramePeriod(unsigned period);
+
+    bool ApplyOptions();
+
+    bool EncodeFrames(
+      const unsigned char * src,
+      unsigned & srcLen,
+      unsigned char * dst,
+      unsigned & dstLen,
+      unsigned headerLen,
+      unsigned int & flags
+    );
+
+    unsigned GetWidth() const;
+    unsigned GetHeight() const;
+
+  protected:
+#if X264_LICENSED || GPL_HELPER_APP
+
+    x264_param_t   m_context;
+    x264_t       * m_codec;
+    H264Frame      m_encapsulation;
+
+#else // X264_LICENSED || GPL_HELPER_APP
+
+    bool OpenPipeAndExecute(void * instance, const char * executablePath);
+    bool ReadPipe(void * ptr, size_t len);
+    bool WritePipe(const void * ptr, size_t len);
+    bool WriteValue(unsigned msg, unsigned value);
+
+    bool m_loaded;
+
+  #if WIN32
+    HANDLE m_hNamedPipe;
+  #else // WIN32
+    char  m_dlName[100];
+    char  m_ulName[100];
+    int   m_pipeToProcess;
+    int   m_pipeFromProcess;
+    pid_t m_pid;
+  #endif // WIN32
+
+    bool m_startNewFrame;
+
+#endif // X264_LICENSED || GPL_HELPER_APP
+};
+
+#endif /* OPAL_H264_ENC_H__ */
