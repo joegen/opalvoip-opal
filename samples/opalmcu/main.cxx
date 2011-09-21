@@ -60,8 +60,10 @@ void ConfOPAL::Main()
              "c-cli:"
              "m-moderator:"
              "n-name:"
+#if OPAL_VIDEO
+             "A-audio-only."
              "s-size:"
-             "V-no-video."
+#endif
              "-pass-thru.", false);
   if (args.HasOption('h')) {
     cerr << "usage: " << GetFile().GetTitle() << " [ options ] [ name ]\n"
@@ -75,7 +77,7 @@ void ConfOPAL::Main()
             "        --pass-thru       : Enable media pass through optimisation.\n"
             "  -n or --name alias      : Default name for ad-hoc conference.\n"
 #if OPAL_VIDEO
-            "  -V or --no-video        : Disable video for ad-hoc conference.\n"
+            "  -A or --audio-only      : Audio only for ad-hoc conference.\n"
             "  -s or --size            : Set default video size for ad-hoc conference.\n"
 #endif
             "\n"
