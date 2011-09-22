@@ -1192,6 +1192,10 @@ class OpalManager : public PObject
       */
     const PIPSocket::Address & GetTranslationAddress() const { return translationAddress; }
 
+    /**Test if the translation address to use for TranslateIPAddress() is usable.
+      */
+    bool HasTranslationAddress() const { return translationAddress.IsValid() && !translationAddress.IsAny(); }
+
     /**Set the translation address to use for TranslateIPAddress().
       */
     void SetTranslationAddress(

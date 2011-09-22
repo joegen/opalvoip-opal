@@ -238,7 +238,7 @@ OpalManager::OpalManager()
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
-  , translationAddress(0)       // Invalid address to disable
+  , translationAddress(0, NULL)       // Invalid address to disable
   , m_natMethod(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
@@ -1529,7 +1529,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
   if (IsLocalAddress(remoteAddress))
     return false; // Does not need to be translated
 
-  if (translationAddress.IsValid() && !translationAddress.IsAny()) {
+  if (HasTranslationAddress()) {
     localAddress = translationAddress; // Translate it!
     return true;
   }
