@@ -1061,7 +1061,6 @@ bool MyManager::Initialise()
       for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
         if (codecName == mm->mediaFormat) {
           mm->preferenceOrder = codecIndex;
-          bool changedSomething = false;
           for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
             const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
             if (!option.IsReadOnly()) {
@@ -1070,14 +1069,10 @@ bool MyManager::Initialise()
               PString oldOptionValue;
               mm->mediaFormat.GetOptionValue(codecOptionName, oldOptionValue);
               if (config->Read(codecOptionName, &codecOptionValue) &&
-                              !codecOptionValue.empty() && codecOptionValue != oldOptionValue) {
-                if (mm->mediaFormat.SetOptionValue(codecOptionName, codecOptionValue))
-                  changedSomething = true;
-              }
+                              !codecOptionValue.empty() && codecOptionValue != oldOptionValue)
+                mm->mediaFormat.SetOptionValue(codecOptionName, codecOptionValue);
             }
           }
-          if (changedSomething)
-            OpalMediaFormat::SetRegisteredMediaFormat(mm->mediaFormat);
         }
       }
     }
@@ -2415,6 +2410,25 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
 }
 
 
+void MyManager::AdjustMediaFormats(bool   local,
+                   const OpalConnection & connection,
+                    OpalMediaFormatList & mediaFormats) const
+{
+  OpalManager::AdjustMediaFormats(local, connection, mediaFormats);
+
+  if (local) {
+    for (MyMediaList::const_iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
+      if (mm->preferenceOrder >= 0) {
+        for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it) {
+          if (*it == mm->mediaFormat)
+            *it = mm->mediaFormat;
+        }
+      }
+    }
+  }
+}
+
+
 PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
@@ -3360,7 +3374,7 @@ bool MyManager::AdjustVideoFormats()
   }
 
   for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-    OpalMediaFormat mediaFormat = mm->mediaFormat;
+    OpalMediaFormat & mediaFormat = mm->mediaFormat;
     unsigned frameRate = GetVideoInputDevice().rate;
     if (frameRate == 0)
       frameRate = 15;
@@ -3393,8 +3407,6 @@ bool MyManager::AdjustVideoFormats()
         default :
           break;
       }
-
-      OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
 
@@ -3616,7 +3628,6 @@ bool RegistrationInfo::Stop(SIPEndPoint & sipEP)
 MyMedia::MyMedia()
   : validProtocols(NULL)
   , preferenceOrder(-1) // -1 indicates disabled
-  , dirty(false)
 {
 }
 
@@ -3624,7 +3635,6 @@ MyMedia::MyMedia()
 MyMedia::MyMedia(const OpalMediaFormat & format)
   : mediaFormat(format)
   , preferenceOrder(-1) // -1 indicates disabled
-  , dirty(false)
 {
   bool hasSIP = mediaFormat.IsValidForProtocol("sip");
   bool hasH323 = mediaFormat.IsValidForProtocol("h.323");
@@ -4500,10 +4510,6 @@ bool OptionsDialog::TransferDataFromWindow()
         if (!option.IsReadOnly())
           config->Write(PwxString(option.GetName()), PwxString(option.AsString()));
       }
-      if (mm->dirty) {
-        OpalMediaFormat::SetRegisteredMediaFormat(mm->mediaFormat);
-        mm->dirty = false;
-      }
     }
   }
 
@@ -5247,8 +5253,6 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
   m_codecOptions->GetItem(item);
   bool ok = media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue);
   if (ok) {
-    media->dirty = true;
-
     item.m_col = 1;
     item.m_text = newValue;
     m_codecOptions->SetItem(item);
