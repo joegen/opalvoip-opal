@@ -323,7 +323,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
     }
     else
 #endif
-    if (manager.GetTranslationAddress().IsValid()) {
+    if (manager.HasTranslationAddress()) {
       natInterfaceIP = PIPSocket::GetDefaultIpAny();
       natExternalIP = manager.GetTranslationAddress();
     }
