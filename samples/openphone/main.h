@@ -828,7 +828,6 @@ public:
   OpalMediaFormat mediaFormat;
   const wxChar  * validProtocols;
   int             preferenceOrder;
-  bool            dirty;
 };
 
 typedef std::list<MyMedia> MyMediaList;
@@ -895,6 +894,11 @@ class MyManager : public wxFrame, public OpalManager
       OpalConnection & connection,  ///< Connection being transferred.
       const PStringToString & info  ///< Information on the transfer
     );
+    virtual void AdjustMediaFormats(
+      bool local,                         ///<  Media formats a local ones to be presented to remote
+      const OpalConnection & connection,  ///<  Connection that is about to use formats
+      OpalMediaFormatList & mediaFormats  ///<  Media formats to use
+    ) const;
     virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
