@@ -1070,7 +1070,11 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     alertingPDU->BuildAlerting(*this);
 
     /** If we have a case of incoming call intrusion we should not Clear the Call*/
-    if (!OnIncomingCall(*setupPDU, *alertingPDU) && (!isCallIntrusion)) {
+    if (!OnIncomingCall(*setupPDU, *alertingPDU)
+#if OPAL_H450
+        && !isCallIntrusion
+#endif
+        ) {
       Release(EndedByNoAccept);
       PTRACE(2, "H225\tApplication not accepting calls");
       return PFalse;
