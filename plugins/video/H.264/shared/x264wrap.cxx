@@ -37,9 +37,6 @@
 
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
-#include "../common/rtpframe.h"
-
-
 #if PTRACING
   static void logCallbackX264(void * /*priv*/, int level, const char *fmt, va_list arg) {
     int severity = 4;
@@ -283,18 +280,18 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
     // do a validation of size
     size_t payloadSize = srcRTP.GetPayloadSize();
-    if (payloadSize < sizeof(frameHeader)) {
+    if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)) {
       PTRACE(1, "x264", "Video grab far too small, Close down video transmission thread");
       return 0;
     }
 
-    frameHeader * header = (frameHeader *)srcRTP.GetPayloadPtr();
+    PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
     if (header->x != 0 || header->y != 0) {
       PTRACE(1, "x264", "Video grab of partial frame unsupported, Close down video transmission thread");
       return 0;
     }
 
-    if (payloadSize < sizeof(frameHeader)+header->width*header->height*3/2) {
+    if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)+header->width*header->height*3/2) {
       PTRACE(1, "x264", "Video grab far too small, Close down video transmission thread");
       return 0;
     }
@@ -321,7 +318,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
     inputPicture.img.i_csp = X264_CSP_I420;
     inputPicture.img.i_stride[0] = header->width;
     inputPicture.img.i_stride[1] = inputPicture.img.i_stride[2] = header->width/2;
-    inputPicture.img.plane[0] = (uint8_t *)(((unsigned char *)header) + sizeof(frameHeader));
+    inputPicture.img.plane[0] = (uint8_t *)(((unsigned char *)header) + sizeof(PluginCodec_Video_FrameHeader));
     inputPicture.img.plane[1] = inputPicture.img.plane[0] + header->width*header->height;
     inputPicture.img.plane[2] = inputPicture.img.plane[1] + header->width*header->height/4;
     inputPicture.i_type = flags != 0 ? X264_TYPE_IDR : X264_TYPE_AUTO;
@@ -345,7 +342,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
   // create RTP frame from destination buffer
   PluginCodec_RTP dstRTP(dst, dstLen);
   m_encapsulation.GetRTPFrame(dstRTP, flags);
-  dstLen = dstRTP.GetFrameLen();
+  dstLen = dstRTP.GetPacketSize();
   return 1;
 }
 
