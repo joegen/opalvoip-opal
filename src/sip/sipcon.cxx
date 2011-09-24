@@ -404,7 +404,7 @@ void SIPConnection::OnReleased()
       else {
         SIP_PDU response(*originalInvite, sipCode);
         AdjustInviteResponse(response);
-        response.GetMIME().SetContact(forwardParty);
+        response.GetMIME().SetContact(m_forwardParty);
         originalInvite->SendResponse(*transport, response); 
       }
 
@@ -481,7 +481,7 @@ void SIPConnection::OnReleased()
   OpalRTPConnection::OnReleased();
 
   // If forwardParty is a connection token, then must be INVITE with replaces scenario
-  PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(forwardParty);
+  PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(m_forwardParty);
   if (replacerConnection != NULL) {
     /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
        dialog cases. OnReleased() is responsible for if the replaced connection is
@@ -1909,6 +1909,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
     // And end connect mode on the transport
     transport->SetInterface(transaction.GetInterface());
+    m_contactAddress = transaction.GetMIME().GetContact();
   }
 
   // Do PRACK after all the dialog completion parts above.
@@ -2297,6 +2298,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
             "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
 
+  m_contactAddress = request.GetURI();
+
   mime.SetTo(m_dialog.GetLocalURI().AsQuotedString());
 
   // get the called destination number and name
@@ -2420,7 +2423,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // Set forward party to call token so the SetConnected() that completes the
   // operation happens on the OnReleases() thread.
-  replacedConnection->forwardParty = GetToken();
+  replacedConnection->m_forwardParty = GetToken();
   replacedConnection->Release(OpalConnection::EndedByCallForwarded);
 
   // Check if we are the target of an attended transfer, indicated by a referred-by header
@@ -3047,13 +3050,13 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
   if (fwdParty.IsEmpty ())
-    return PFalse;
+    return false;
   
-  forwardParty = fwdParty;
-  PTRACE(2, "SIP\tIncoming SIP connection will be forwarded to " << forwardParty);
+  m_forwardParty = fwdParty;
+  PTRACE(2, "SIP\tIncoming SIP connection will be forwarded to " << m_forwardParty);
   Release(EndedByCallForwarded);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -3512,7 +3515,10 @@ void SIPConnection::OnSessionTimeout(PTimer &, INT)
 
 PString SIPConnection::GetLocalPartyURL() const
 {
-  SIPURL url = m_dialog.GetLocalURI();
+  if (m_contactAddress.IsEmpty())
+    return OpalRTPConnection::GetLocalPartyURL();
+
+  SIPURL url = m_contactAddress;
   url.Sanitise(SIPURL::ExternalURI);
   return url.AsString();
 }
