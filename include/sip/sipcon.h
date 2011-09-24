@@ -703,7 +703,8 @@ class SIPConnection : public OpalRTPConnection
     };
     HoldState             m_holdToRemote;
     bool                  m_holdFromRemote;
-    PString               forwardParty;
+    PString               m_forwardParty;
+    SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
 
     SIP_PDU             * originalInvite;
