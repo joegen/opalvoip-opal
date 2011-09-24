@@ -37,7 +37,7 @@
 //#define SEND_STAP_PACKETS 1
 
 #include "../common/platform.h"
-#include "../common/rtpframe.h"
+#include <codec/opalplugin.hpp>
 
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
@@ -74,13 +74,13 @@ public:
   {
     m_timestamp = timestamp;
   }
-  bool GetRTPFrame (RTPFrame & frame, unsigned int & flags);
+  bool GetRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
   bool HasRTPFrames ()
   {
     return m_currentNAL < m_numberOfNALsInFrame;
   }
 
-  bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
+  bool SetFromRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
   uint8_t* GetFramePtr ()
   {
     return m_encodedFrame;
@@ -91,11 +91,11 @@ public:
   bool IsSync ();
   
 private:
-  bool EncapsulateSTAP  (RTPFrame & frame, unsigned int & flags);
-  bool EncapsulateFU    (RTPFrame & frame, unsigned int & flags);
+  bool EncapsulateSTAP  (PluginCodec_RTP & frame, unsigned int & flags);
+  bool EncapsulateFU    (PluginCodec_RTP & frame, unsigned int & flags);
 
-  bool DeencapsulateFU   (RTPFrame & frame, unsigned int & flags);
-  bool DeencapsulateSTAP (RTPFrame & frame, unsigned int & flags);
+  bool DeencapsulateFU   (PluginCodec_RTP & frame, unsigned int & flags);
+  bool DeencapsulateSTAP (PluginCodec_RTP & frame, unsigned int & flags);
   void AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
   bool IsStartCode (const uint8_t *positionInFrame);
 
