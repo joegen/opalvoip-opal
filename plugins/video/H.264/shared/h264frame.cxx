@@ -113,7 +113,7 @@ void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 }
 
 
-bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
+bool H264Frame::GetRTPFrame(PluginCodec_RTP & frame, unsigned int & flags)
 {
   flags = 0;
   flags |= (IsSync()) ? PluginCodec_ReturnCoderIFrame : 0;
@@ -169,7 +169,7 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
   }
 }
 
-bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
+bool H264Frame::EncapsulateSTAP (PluginCodec_RTP & frame, unsigned int & flags) {
   uint32_t STAPLen = 1;
   uint32_t highestNALNumberInSTAP = m_currentNAL;
   
@@ -224,7 +224,7 @@ bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
 }
 
 
-bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
+bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags) {
   uint8_t header[2];
   uint32_t curFULen;
 
@@ -278,7 +278,7 @@ bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
   return true;
 }
 
-bool H264Frame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
+bool H264Frame::SetFromRTPFrame(PluginCodec_RTP & frame, unsigned int & flags)
 {
   if (frame.GetPayloadSize() == 0)
     return true;
@@ -330,7 +330,7 @@ bool H264Frame::IsSync () {
   return false;
 }
 
-bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & /*flags*/) {
+bool H264Frame::DeencapsulateSTAP (PluginCodec_RTP & frame, unsigned int & /*flags*/) {
   uint8_t* curSTAP = frame.GetPayloadPtr() + 1;
   uint32_t curSTAPLen = frame.GetPayloadSize() - 1; 
 
@@ -359,7 +359,7 @@ bool H264Frame::DeencapsulateSTAP (RTPFrame & frame, unsigned int & /*flags*/) {
   return true;
 }
 
-bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
+bool H264Frame::DeencapsulateFU (PluginCodec_RTP & frame, unsigned int & /*flags*/) {
   uint8_t* curFUPtr = frame.GetPayloadPtr();
   uint32_t curFULen = frame.GetPayloadSize(); 
   uint8_t header;
