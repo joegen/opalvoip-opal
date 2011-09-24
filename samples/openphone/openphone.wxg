@@ -3304,7 +3304,6 @@
                     </object>
                     <object class="wxPanel" name="TracingOptions" base="EditPanel">
                         <style>wxTAB_TRAVERSAL</style>
-                        <hidden>1</hidden>
                         <object class="wxBoxSizer" name="sizer_18" base="EditBoxSizer">
                             <orient>wxVERTICAL</orient>
                             <object class="sizeritem">
