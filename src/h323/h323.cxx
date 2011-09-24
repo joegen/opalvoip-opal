@@ -66,6 +66,9 @@
 #if OPAL_H460
 #include <h460/h460.h>
 #include <h460/h4601.h>
+#include <ptclib/random.h>
+#include "h460/h46018_h225.h"
+#include "h460/h46019.h"
 #endif
 
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
@@ -168,6 +171,17 @@ static void ReceiveFeatureSet(const H323Connection * connection, unsigned code, 
 #endif
 
 
+#if OPAL_H460
+const char * H46018OID = "0.0.8.460.18.0.1";
+const char * H46019OID = "0.0.8.460.19.0.1";
+const unsigned defH46019payload = 127;
+const unsigned defH46019TTL = 20;
+
+const char * H46024AOID = "0.0.8.460.24.1";
+const char * H46024BOID = "0.0.8.460.24.2";
+#endif
+
+
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
                                const PString & token,
@@ -206,6 +220,7 @@ H323Connection::H323Connection(OpalCall & call,
   , transmitterSidePaused(false)
   , remoteTransmitPaused(false)
   , earlyStart(false)
+  , endSessionSent(false)
   , endSessionNeeded(false)
   , holdMediaChannel(NULL)
   , isConsultationTransfer(false)
@@ -290,8 +305,18 @@ H323Connection::H323Connection(OpalCall & call,
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 #endif
 
+
+  NATsupport = true;
+
 #if OPAL_H460
+  disableH460 = ep.FeatureSetDisabled();
   features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
+
+  m_H46019CallReceiver = false;
+  m_H46019enabled = false;
+  m_h245Connect = false; 
+
+  // NOTE additional 46024a stuff not yet copied in
 #endif
 }
 
@@ -1439,6 +1464,9 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // have answer, so set timeout to interval for monitoring calls health
   signallingChannel->SetReadTimeout(MonitorCallStatusTime);
 
+  // NOTE h323plus checks for faststart here
+  // and bails if already started.
+
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
     HandleFastStartAcknowledge(connect.m_fastStart);
@@ -2062,6 +2090,32 @@ PBoolean H323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 }
 
 
+void H323Connection::NatDetection(const PIPSocket::Address & srcAddress, const PIPSocket::Address & sigAddress)
+{
+  // if the peer address is a public address, but the advertised source address is a private address
+  // then there is a good chance the remote endpoint is behind a NAT but does not know it.
+  // in this case, we active the NAT mode and wait for incoming RTP to provide the media address before 
+  // sending anything to the remote endpoint
+  if ((!sigAddress.IsRFC1918() && srcAddress.IsRFC1918()) ||    // Internet Address
+      ((sigAddress.IsRFC1918() && srcAddress.IsRFC1918()) && (sigAddress != srcAddress)))  // LAN on another LAN
+  {
+    PTRACE(3, "H225\tSource signal address " << srcAddress << " and TCP peer address " << sigAddress << " indicate remote endpoint is behind NAT");
+    if (OnNatDetected())
+      remoteIsNAT = true;
+  }
+}
+
+
+PBoolean H323Connection::OnNatDetected()
+{
+#if OPAL_H460
+  if (m_H46019enabled) 
+    return false;
+#endif
+  return true;
+}
+
+
 PBoolean H323Connection::OnSendReleaseComplete(H323SignalPDU & /*releaseCompletePDU*/)
 {
   return true;
@@ -2624,59 +2678,166 @@ PBoolean H323Connection::StartControlNegotiations()
   return true;
 }
 
-
-void H323Connection::HandleControlChannel()
+PBoolean H323Connection::OnStartHandleControlChannel()
 {
-  // If have started separate H.245 channel then don't tunnel any more
-  h245Tunneling = false;
+  if (fastStartState == FastStartAcknowledged)
+    return true;
 
-  if (LockReadWrite()) {
-    // Start the TCS and MSD operations on new H.245 channel.
-    if (!StartControlNegotiations()) {
-      UnlockReadWrite();
-      return;
-    }
-    UnlockReadWrite();
+  if (controlChannel == NULL)
+    return StartControlNegotiations();
+#ifndef OPAL_H460
+  else {
+    PTRACE(2, "H245\tHandle control channel");
+    return StartHandleControlChannel();
+  }
+#else
+  if (!m_H46019enabled) {
+    PTRACE(2, "H245\tHandle control channel");
+    return StartHandleControlChannel();
   }
 
-  
+  // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
+  // H.245 control channel. Details are specified in H.460.18 cl.16
+  // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
+
+  PTRACE(2, "H46018\tStarted control channel");
+
+  if (endpoint.H46018IsEnabled() && !m_h245Connect) {
+    H323ControlPDU pdu;
+    H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
+
+    H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
+    id.SetTag(H245_CapabilityIdentifier::e_standard);
+    PASN_ObjectId & gid = id;
+    gid.SetValue(H46018OID);
+
+    cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
+    PASN_Integer & sub = cap.m_subMessageIdentifier;
+    sub = 1;
+
+    cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
+    H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
+
+    // callIdentifer
+    H245_GenericParameter call;
+    H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
+    idx.SetTag(H245_ParameterIdentifier::e_standard);
+    PASN_Integer & m = idx;
+    m =1;
+    H245_ParameterValue & conx = call.m_parameterValue;
+    conx.SetTag(H245_ParameterValue::e_octetString);
+    PASN_OctetString & raw = conx;
+    raw.SetValue(callIdentifier);
+    msg.SetSize(1);
+    msg[0] = call;
+
+    // Is receiver
+    if (m_H46019CallReceiver) {
+      H245_GenericParameter answer;
+      H245_ParameterIdentifier & an = answer.m_parameterIdentifier;
+      an.SetTag(H245_ParameterIdentifier::e_standard);
+      PASN_Integer & n = an;
+      n = 2;
+      H245_ParameterValue & aw = answer.m_parameterValue;
+      aw.SetTag(H245_ParameterValue::e_logical);
+      msg.SetSize(2);
+      msg[1] = answer;
+    }
+
+    PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
+    if (!WriteControlPDU(pdu))
+      return false;
+
+    m_h245Connect = true;
+  }
+
+  return StartHandleControlChannel();
+#endif
+}
+
+
+PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stream & strm)
+{
+  PBoolean ok = FALSE;
+
+  if (readStatus) {
+    // Lock while checking for shutting down.
+    if (LockReadWrite()) {
+      // Process the received PDU
+      PTRACE(4, "H245\tReceived TPKT: " << strm);
+      ok = HandleControlData(strm);
+      UnlockReadWrite(); // Unlock connection
+    }
+    else
+      ok = InternalEndSessionCheck(strm);
+  }
+  else if (controlChannel->GetErrorCode() == PChannel::Timeout) {
+    ok = TRUE;
+  }
+  else {
+      PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError)
+          << " endSessionSent=" << endSessionSent);
+    // If the connection is already shutting down then don't overwrite the
+    // call end reason.  This could happen if the remote end point misbehaves
+    // and simply closes the H.245 TCP connection rather than sending an
+    // endSession.
+    if(endSessionSent == FALSE)
+      ClearCall(EndedByTransportFail);
+    else
+      PTRACE(1, "H245\tendSession already sent assuming H245 connection closed by remote side");
+    ok = FALSE;
+  }
+
+  return ok;
+}
+
+
+PBoolean H323Connection::StartHandleControlChannel()
+{
+  // If have started separate H.245 channel then don't tunnel any more
+  h245Tunneling = FALSE;
+
+  // Start the TCS and MSD operations on new H.245 channel.
+  if (!StartControlNegotiations())
+    return FALSE;
+
   // Disable the signalling channels timeout for monitoring call status and
   // start up one in this thread instead. Then the Q.931 channel can be closed
   // without affecting the call.
   signallingChannel->SetReadTimeout(PMaxTimeInterval);
   controlChannel->SetReadTimeout(MonitorCallStatusTime);
 
-  PBoolean ok = true;
+  return TRUE;
+}
+
+
+void H323Connection::EndHandleControlChannel()
+{
+  // If we are the only link to the far end or if we have already sent our
+  // endSession command then indicate that we have received endSession even
+  // if we hadn't, because we are now never going to get one so there is no
+  // point in having CleanUpOnCallEnd wait.
+  if (signallingChannel == NULL || endSessionSent == TRUE)
+    endSessionReceived.Signal();
+}
+
+
+void H323Connection::HandleControlChannel()
+{
+  if (!OnStartHandleControlChannel())
+    return;
+
+  PBoolean ok = TRUE;
   while (ok) {
     MonitorCallStatus();
-
     PPER_Stream strm;
-    if (controlChannel->ReadPDU(strm)) {
-      // Lock while checking for shutting down.
-      ok = LockReadWrite();
-      if (ok) {
-        // Process the received PDU
-        PTRACE(4, "H245\tReceived TPKT: " << strm);
-        if (IsReleased())
-          ok = InternalEndSessionCheck(strm);
-        else
-          ok = HandleControlData(strm);
-        UnlockReadWrite(); // Unlock connection
-      }
-    }
-    else if (controlChannel->GetErrorCode() != PChannel::Timeout) {
-      PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError));
-      Release(EndedByTransportFail);
-      ok = false;
-    }
+    PBoolean readStatus = controlChannel->ReadPDU(strm);
+    ok = HandleReceivedControlPDU(readStatus, strm);
   }
 
-  // Indicate that we have received endSession even if we hadn't,
-  // because we are now never going to get one so there is no point
-  // in having CleanUpOnCallEnd wait.
-  endSessionReceived.Signal();
+  EndHandleControlChannel();
 
-  PTRACE(3, "H245\tControl channel closed.");
+  PTRACE(2, "H245\tControl channel closed.");
 }
 
 
@@ -4245,20 +4406,187 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
 }
 
 
-PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & /*openPDU*/,
-                                          H245_OpenLogicalChannelAck & /*ackPDU*/,
-                                          unsigned & /*errorCode*/)
+PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & openPDU,
+                                          H245_OpenLogicalChannelAck & ackPDU,
+                                          unsigned & /*errorCode*/,
+                                          const unsigned &sessionID)
 {
   // If get a OLC via H.245 stop trying to do fast start
   fastStartState = FastStartDisabled;
   if (!fastStartChannels.IsEmpty()) {
     fastStartChannels.RemoveAll();
+    m_NATSockets.clear();
     PTRACE(3, "H245\tReceived early start OLC, aborting fast start");
   }
+
+#if OPAL_H460
+  PTRACE(4,"H323\tOnOpenLogicalChannel");
+  if (openPDU.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation)) {
+    OnReceiveOLCGenericInformation(sessionID,openPDU.m_genericInformation);
+
+    if (OnSendingOLCGenericInformation(sessionID,ackPDU.m_genericInformation,true))
+      ackPDU.IncludeOptionalField(H245_OpenLogicalChannelAck::e_genericInformation);
+  }
+#endif
 
   //errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   return true;
 }
+
+
+PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
+                          const H245_ArrayOf_GenericInformation & alternate) const
+{
+  PBoolean success = false;
+
+#if OPAL_H460
+  PTRACE(4,"Handling Generic OLC Session " << sessionID );
+  for (PINDEX i = 0; i < alternate.GetSize(); i++) {
+    const H245_GenericInformation & info = alternate[i];
+    const H245_CapabilityIdentifier & id = info.m_messageIdentifier;
+    if (id.GetTag() != H245_CapabilityIdentifier::e_standard)
+      break;
+
+    const PASN_ObjectId & oid = id;
+    const H245_ArrayOf_GenericParameter & msg = info.m_messageContent;
+    if (m_H46019enabled && (oid.AsString() == H46019OID)) {
+      H245_GenericParameter & val = msg[0];
+      if (val.m_parameterValue.GetTag() != H245_ParameterValue::e_octetString)
+        break;
+
+      PASN_OctetString & raw = val.m_parameterValue;
+      PPER_Stream pdu(raw);
+      H46019_TraversalParameters params;
+      if (!params.Decode(pdu)) {
+        PTRACE(2,"H46019\tError decoding Traversal Parameters!");
+        break;
+      }
+
+      PTRACE(4,"H46019\tTraversal Parameters:\n" << params);
+
+      H323TransportAddress RTPaddress;
+      H323TransportAddress RTCPaddress;
+      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAliveChannel)) {
+        H245_TransportAddress & k = params.m_keepAliveChannel;
+        RTPaddress = H323TransportAddress(k);
+        PIPSocket::Address add; WORD port;
+        RTPaddress.GetIpAndPort(add,port);
+        RTCPaddress = H323TransportAddress(add,port+1);  // Compute the RTCP Address
+      }
+
+      unsigned payload = 0;
+      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAlivePayloadType)) {
+        PASN_Integer & p = params.m_keepAlivePayloadType;
+        payload = p;
+      }
+
+      unsigned ttl = 0;
+      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAliveInterval)) {
+        H225_TimeToLive & a = params.m_keepAliveInterval;
+        ttl = a;
+      }
+
+      unsigned muxId = 0;
+      if (params.HasOptionalField(H46019_TraversalParameters::e_multiplexID)) {
+        muxId = params.m_multiplexID;
+      }
+
+      std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(sessionID);
+      if (sockets_iter != m_NATSockets.end()) {
+        NAT_Sockets sockets = sockets_iter->second;
+        //PTRACE ( 5, "H460\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
+        ((H46019UDPSocket *)sockets.rtp)->Activate(RTPaddress,payload,ttl, muxId);
+        ((H46019UDPSocket *)sockets.rtcp)->Activate(RTCPaddress,payload,ttl, muxId);
+      }
+      success = true;
+    }
+  }
+#endif  // OPAL_H460
+
+  return success;
+}
+
+
+PBoolean H323Connection::OnSendingOLCGenericInformation(const unsigned & sessionID,
+                              H245_ArrayOf_GenericInformation & generic, PBoolean isAck) const
+{
+#if OPAL_H460
+  PTRACE(4,"Set Generic " << (isAck ? "OLCack" : "OLC") << " Session " << sessionID );
+  if (m_H46019enabled) {
+    unsigned payload=0; unsigned ttl=0;
+    std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(sessionID);
+    if (sockets_iter != m_NATSockets.end()) {
+      NAT_Sockets sockets = sockets_iter->second;
+      //PTRACE ( 5, "H460\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
+      H46019UDPSocket * rtp = ((H46019UDPSocket *)sockets.rtp);
+      H46019UDPSocket * rtcp = ((H46019UDPSocket *)sockets.rtcp);
+      if (rtp->GetPingPayload() == 0)
+        rtp->SetPingPayLoad(defH46019payload);
+      payload = rtp->GetPingPayload();
+
+      if (rtp->GetTTL() == 0)
+        rtp->SetTTL(ttl);
+      ttl = rtp->GetTTL();
+
+      if (isAck) {
+        rtp->Activate();  // Start the RTP Channel if not already started
+        rtcp->Activate();  // Start the RTCP Channel if not already started
+      }
+
+    } else {
+      PTRACE(4,"H46019\tERROR NAT Socket not found for " << sessionID << " ABORTING!" );
+      return false;
+    }
+
+    H245_GenericInformation info;
+    H245_CapabilityIdentifier & id = info.m_messageIdentifier;
+    id.SetTag(H245_CapabilityIdentifier::e_standard);
+    PASN_ObjectId & oid = id;
+    oid.SetValue(H46019OID);
+
+    bool h46019msg = false;
+    H46019_TraversalParameters params;
+    if (/*!isAck ||*/ payload > 0) {
+      params.IncludeOptionalField(H46019_TraversalParameters::e_keepAlivePayloadType);
+      PASN_Integer & p = params.m_keepAlivePayloadType;
+      p = payload;
+      h46019msg = true;
+    }
+    if (/*isAck &&*/ ttl > 0) {
+      params.IncludeOptionalField(H46019_TraversalParameters::e_keepAliveInterval);
+      H225_TimeToLive & a = params.m_keepAliveInterval;
+      a = ttl;
+      h46019msg = true;
+    }
+
+    if (h46019msg) {
+      PTRACE(5,"H46019\tTraversal Parameters:\n" << params);
+      info.IncludeOptionalField(H245_GenericMessage::e_messageContent);
+      H245_ArrayOf_GenericParameter & msg = info.m_messageContent;
+      H245_GenericParameter genericParameter;
+      H245_ParameterIdentifier & idm = genericParameter.m_parameterIdentifier;
+      idm.SetTag(H245_ParameterIdentifier::e_standard);
+      PASN_Integer & idx = idm;
+      idx = 1;
+      genericParameter.m_parameterValue.SetTag(H245_ParameterValue::e_octetString);
+      H245_ParameterValue & octetValue = genericParameter.m_parameterValue;
+      PASN_OctetString & raw = octetValue;
+      raw.EncodeSubType(params);
+      msg.SetSize(1);
+      msg[0] = genericParameter;
+    }
+    PINDEX sz = generic.GetSize();
+    generic.SetSize(sz+1);
+    generic[sz] = info;
+
+    if (generic.GetSize() > 0)
+      return true;
+  }
+#endif
+
+  return false;
+}
+
 
 
 PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChannel)
@@ -4936,7 +5264,7 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   t38ModeChangeCapabilities.MakeEmpty();
 
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
-									 && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
+                                     && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
 
   bool switched = false;
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
@@ -5041,6 +5369,49 @@ void H323Connection::MonitorCallStatus()
     ClearCall(EndedByDurationLimit);
 }
 
+
+void H323Connection::H46019SetCallReceiver() 
+{ 
+    PTRACE(4,"H46019\tCall is receiver.");
+    m_H46019CallReceiver = true; 
+}
+
+
+void H323Connection::H46019Enabled() 
+{ 
+    m_H46019enabled = true; 
+}
+
+
+PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp) 
+{
+    std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(session);
+    if (sockets_iter != m_NATSockets.end()) {
+        NAT_Sockets sockets = sockets_iter->second;
+        //PTRACE ( 5, "H323\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
+        if (rtp)
+            return sockets.rtp;
+        else
+            return sockets.rtcp;
+    }
+    return NULL;
+}
+
+
+void H323Connection::SetRTPNAT(unsigned sessionid, PUDPSocket * _rtp, PUDPSocket * _rtcp)
+{
+    PWaitAndSignal m(NATSocketMutex);
+
+    //PTRACE(4,"H323\tRTP NAT Connection Callback! Session: " << sessionid << " sockets: " << (int)_rtp << " " << (int)_rtcp);
+
+    NAT_Sockets sockets;
+     sockets.rtp = _rtp;
+     sockets.rtcp = _rtcp;
+
+    m_NATSockets.insert(pair<unsigned, NAT_Sockets>(sessionid, sockets));
+}
+
+
 PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featureSet) const
 {
 #if OPAL_H460
@@ -5067,6 +5438,51 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
   return features;
 }
 #endif
+
+
+H323Connection::SessionInformation::SessionInformation(const OpalGloballyUniqueID & id, const PString & token, unsigned session)
+  : m_callID(id), m_callToken(token), m_sessionID(session)
+{
+#if OPAL_H460
+  // Some random number bases on the session id (for H.460.24A)
+  int rand = PRandom::Number((session *100),((session+1)*100)-1);
+  m_CUI = PString(rand); 
+  PTRACE(4,"H46024A\tGenerated CUI s: " << session << " value: " << m_CUI);
+#else
+  m_CUI = PString();
+#endif
+}
+
+
+const PString & H323Connection::SessionInformation::GetCallToken()
+{
+  return m_callToken;
+}
+
+
+unsigned H323Connection::SessionInformation::GetSessionID() const
+{
+  return m_sessionID;
+}
+
+
+H323Connection::SessionInformation * H323Connection::BuildSessionInformation(unsigned sessionID) const
+{
+  return new SessionInformation(GetCallIdentifier(),GetCallToken(),sessionID);
+}
+
+
+const OpalGloballyUniqueID & H323Connection::SessionInformation::GetCallIdentifer()
+{
+  return m_callID;
+}
+
+
+const PString & H323Connection::SessionInformation::GetCUI()
+{
+  return m_CUI;
+}
+
 
 #endif // OPAL_H323
 

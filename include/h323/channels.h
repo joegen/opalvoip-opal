@@ -53,6 +53,7 @@ class H245_OpenLogicalChannel_forwardLogicalChannelParameters;
 class H245_OpenLogicalChannel_reverseLogicalChannelParameters;
 class H245_H2250LogicalChannelParameters;
 class H245_H2250LogicalChannelAckParameters;
+class H245_ArrayOf_GenericInformation;
 class H245_MiscellaneousCommand_type;
 class H245_MiscellaneousIndication_type;
 
@@ -499,6 +500,11 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       H245_OpenLogicalChannelAck & ack        ///<  Acknowledgement PDU
     ) const;
 
+    virtual void OnSendOpenAck(
+      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
+    ) const;
+
+
     /**This is called after a request to create a channel occurs from the
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
@@ -531,12 +537,15 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnSendingAltPDU(
+      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
+    ) const = 0;
+
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
-    virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const;
 
     /**This is called after a request to create a channel occurs from the
        local machine via the H245LogicalChannelDict::Open() function, and
@@ -558,6 +567,12 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
     virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
+
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnReceivedAckAltPDU(
+      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
+    ) = 0;
 
     /**Set the dynamic payload type used by this channel.
       */
@@ -635,6 +650,12 @@ class H323_RTPChannel : public H323_RealTimeChannel
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnSendingAltPDU(
+      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
+    ) const;
+
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
@@ -661,6 +682,12 @@ class H323_RTPChannel : public H323_RealTimeChannel
      */
     virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
+    );
+
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnReceivedAckAltPDU(
+      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     );
   //@}
 

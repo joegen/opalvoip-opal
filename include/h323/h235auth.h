@@ -138,6 +138,15 @@ class H235Authenticator : public PObject
     const PString & GetPassword() const { return password; }
     void SetPassword(const PString & pw) { password = pw; }
 
+    enum Application {
+        GKAdmission,		    ///< To Be Used for GK Admission
+        EPAuthentication,	  ///< To Be Used for EP Authentication
+        LRQOnly,            ///< To Be Used for Location Request Authentication
+        AnyApplication,		  ///< To Be Used for Any Application
+    };
+
+    Application GetApplication() { return usage; }  ///< Get Authentication Application
+
 
   protected:
     PBoolean AddCapability(
@@ -157,6 +166,8 @@ class H235Authenticator : public PObject
     unsigned lastRandomSequenceNumber;
     unsigned lastTimestamp;
     int      timestampGracePeriod;
+
+    Application usage;	       ///< Authenticator's Application 
 
     PMutex mutex;
 

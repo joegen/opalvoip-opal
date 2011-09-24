@@ -57,6 +57,7 @@ H235Authenticator::H235Authenticator()
   lastRandomSequenceNumber = 0;
   lastTimestamp = 0;
   timestampGracePeriod = 2*60*60+10; // 2 hours 10 seconds to allow for DST adjustments
+  usage = GKAdmission;
 }
 
 
@@ -323,6 +324,7 @@ static const char OID_MD5[] = "1.2.840.113549.2.5";
 
 H235AuthSimpleMD5::H235AuthSimpleMD5()
 {
+  usage = AnyApplication;
 }
 
 
@@ -495,6 +497,7 @@ static const char OID_CAT[] = "1.2.840.113548.10.1.2.1";
 
 H235AuthCAT::H235AuthCAT()
 {
+  usage = GKAdmission;
 }
 
 

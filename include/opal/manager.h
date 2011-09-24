@@ -1203,6 +1203,9 @@ class OpalManager : public PObject
     );
 
 #ifdef P_NAT
+    /** Get all NAT Methods
+      */
+    PNatStrategy & GetNatMethods() const { return *m_natMethods; }
 
     /**Return the NAT method to use.
        Returns NULL if address is a local address as per IsLocalAddress().
@@ -1638,8 +1641,11 @@ class OpalManager : public PObject
 
     PString            translationHost;
     PIPSocket::Address translationAddress;
+#if P_NAT
     PString            m_natServer;
+    PNatStrategy     * m_natMethods;
     PNatMethod       * m_natMethod;
+#endif
     InterfaceMonitor * interfaceMonitor;
 
     RouteTable m_routeTable;
