@@ -4615,7 +4615,6 @@
                     <label>Tracing</label>
                     <object class="wxPanel" name="TracingOptions">
                         <style>wxTAB_TRAVERSAL</style>
-                        <hidden>1</hidden>
                         <object class="wxBoxSizer">
                             <orient>wxVERTICAL</orient>
                             <object class="sizeritem">
