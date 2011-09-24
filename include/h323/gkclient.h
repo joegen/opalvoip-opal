@@ -290,6 +290,9 @@ class H323Gatekeeper : public H225_RAS
     { return gkRouteAddress; }
   //@}
 
+#if OPAL_H460
+    H460_FeatureSet & GetFeatures();
+#endif
 
   protected:
     bool StartGatekeeper(const H323TransportAddress & address);

@@ -58,7 +58,7 @@
 #define new PNEW
 
 
-#define	MAX_PAYLOAD_TYPE_MISMATCHES 8
+#define MAX_PAYLOAD_TYPE_MISMATCHES 8
 #define RTP_TRACE_DISPLAY_RATE 16000 // 2 seconds
 
 
@@ -467,6 +467,8 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
                 H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                     ::e_h2250LogicalChannelParameters);
 
+    // NOTE Two callbacks?  This may be supposed to fit somewhere else
+    connection.OnSendH245_OpenLogicalChannel(open, PFalse);
     return OnSendingPDU(open.m_reverseLogicalChannelParameters.m_multiplexParameters);
   }
   else {
@@ -475,6 +477,10 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                     ::e_h2250LogicalChannelParameters);
 
+    if (OnSendingAltPDU(open.m_genericInformation))
+        open.IncludeOptionalField(H245_OpenLogicalChannel::e_genericInformation);
+
+    connection.OnSendH245_OpenLogicalChannel(open, PTrue);
     return OnSendingPDU(open.m_forwardLogicalChannelParameters.m_multiplexParameters);
   }
 }
@@ -491,6 +497,12 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_H2250LogicalChannelParameters &
 }
 
 
+void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
+{
+  PTRACE(1,"H323_RealTimeChannel\tUnused old functin?");
+}
+
+
 void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
                                          H245_OpenLogicalChannelAck & ack) const
 {
@@ -501,21 +513,21 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
 
   // select H225 choice
   ack.m_forwardMultiplexAckParameters.SetTag(
-	  H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters);
+      H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters);
 
-  OnSendOpenAck(ack.m_forwardMultiplexAckParameters);
-}
+  // get H225 parms
+  H245_H2250LogicalChannelAckParameters & param = ack.m_forwardMultiplexAckParameters;
 
+  // set session ID
+  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
+  const H245_H2250LogicalChannelParameters & openparam =
+                          open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+  unsigned sessionID = openparam.m_sessionID;
+  param.m_sessionID = sessionID;
 
-void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
-{
-  // We are master, we use OUR session ID
-  if (connection.IsH245Master()) {
-    param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-    param.m_sessionID = GetSessionID();
-  }
+  OnSendOpenAck(param);
 
-  PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << GetSessionID());
+  PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
 }
 
 
@@ -592,6 +604,9 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
     PTRACE(1, "H323RTP\tOnly H.225.0 multiplex supported");
     return PFalse;
   }
+
+  if (ack.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation))
+    OnReceivedAckAltPDU(ack.m_genericInformation);
 
   return OnReceivedAckPDU(ack.m_forwardMultiplexAckParameters);
 }
@@ -722,6 +737,13 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 }
 
 
+PBoolean H323_RTPChannel::OnSendingAltPDU(H245_ArrayOf_GenericInformation & alternate) const
+{
+  PTRACE ( 4, "H323RTP\tOnSendingAltPDU");
+  return connection.OnSendingOLCGenericInformation(GetSessionID(), alternate, false);
+}
+
+
 void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {
   m_session.OnSendingAckPDU(*this, param);
@@ -758,6 +780,12 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
 PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
   return m_session.OnReceivedAckPDU(*this, param) && H323_RealTimeChannel::OnReceivedAckPDU(param);
+}
+
+
+PBoolean H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
+{ 
+  return connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
 }
 
 
@@ -817,6 +845,8 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
   open.m_forwardLogicalChannelParameters.m_multiplexParameters.SetTag(
               H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
+  H245_H2250LogicalChannelParameters & fparam = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+  fparam.m_sessionID = GetSessionID();
 
   if (separateReverseChannel)
     return PTrue;
@@ -827,6 +857,8 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
   open.m_reverseLogicalChannelParameters.m_multiplexParameters.SetTag(
               H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
+  H245_H2250LogicalChannelParameters & rparam = open.m_reverseLogicalChannelParameters.m_multiplexParameters;
+  rparam.m_sessionID = GetSessionID();
 
   return capability->OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType);
 }

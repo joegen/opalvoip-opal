@@ -52,6 +52,8 @@
 
 #include <algorithm>
 
+#include <h323/h323con.h>
+
 
 #define new PNEW
 
@@ -890,7 +892,7 @@ void OpalRTPSession::InsertExtendedReportPacket(RTP_ControlFrame & report)
   xr.end_system_delay = m_metrics.GetEndSystemDelay();
   xr.signal_level = 0x7F;
   xr.noise_level = 0x7F;
-  xr.rerl = 0x7F;	
+  xr.rerl = 0x7F;    
   xr.gmin = 16;
   xr.r_factor = m_metrics.RFactor();
   xr.ext_r_factor = 0x7F;
@@ -2019,9 +2021,14 @@ bool OpalRTPSession::Open(const PString & localInterface)
   shutdownWrite = false;
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
+
 #ifdef P_NAT
-  PNatMethod * natMethod = manager.GetNatMethod(remoteAddress);
+  PNatMethod * natMethod = m_connection.GetNatMethod(remoteAddress);
+  if (natMethod != NULL) {
+    PTRACE(4, "RTP\tNAT Method " << natMethod->GetName() << " selected for call.");
+  }
 #endif
+
   WORD firstPort = manager.GetRtpIpPortPair();
 
   delete dataSocket;
@@ -2047,7 +2054,12 @@ bool OpalRTPSession::Open(const PString & localInterface)
         // Then do case for full cone support and create STUN sockets
 
       case PNatMethod::RTPSupported :
-        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress)) {
+        {
+        PTRACE ( 4, "RTP\tAttempting natMethod: " << natMethod->GetName() );            
+        // NOTE crash on not h323?
+        H323Connection* pCon = dynamic_cast<H323Connection*>(&m_connection);
+        H323Connection::SessionInformation *info = pCon ? pCon->BuildSessionInformation(GetSessionID()) : NULL;
+        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress, info)) {
           PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
           dataSocket->GetLocalAddress(bindingAddress, localDataPort);
           controlSocket->GetLocalAddress(bindingAddress, localControlPort);
@@ -2067,6 +2079,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
             PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
           }
+        }
         }
         break;
 

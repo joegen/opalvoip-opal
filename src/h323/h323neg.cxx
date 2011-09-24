@@ -607,34 +607,44 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
   PBoolean ok = PFalse;
 
   unsigned cause = H245_OpenLogicalChannelReject_cause::e_unspecified;
-  if (connection.OnOpenLogicalChannel(pdu, ack, cause))
-    channel = connection.CreateLogicalChannel(pdu, PFalse, cause);
+  channel = connection.CreateLogicalChannel(pdu, FALSE, cause);
 
   if (channel != NULL) {
-    channel->SetNumber(channelNumber);
-    channel->OnSendOpenAck(pdu, ack);
-    if (channel->GetDirection() == H323Channel::IsBidirectional) {
-      state = e_AwaitingConfirmation;
-      replyTimer = endpoint.GetLogicalChannelTimeout(); // T103
-      ok = PTrue;
-    }
-    else {
-      ok = channel->Start();
-      if (!ok) {
-        // The correct protocol thing to do is reject the channel if we are
-        // the master. However NetMeeting will not then reopen a channel, so
-        // we act like we are a slave and close our end instead.
-        if (connection.IsH245Master() &&
+    if (connection.OnOpenLogicalChannel(pdu, ack, cause, channel->GetSessionID())) {
+      channel->SetNumber(channelNumber);
+      channel->OnSendOpenAck(pdu, ack);
+      if (channel->GetDirection() == H323Channel::IsBidirectional) {
+        state = e_AwaitingConfirmation;
+        replyTimer = endpoint.GetLogicalChannelTimeout(); // T103
+        ok = PTrue;
+      }
+      else {
+        ok = channel->Start();
+        if (!ok) {
+          // The correct protocol thing to do is reject the channel if we are
+          // the master. However NetMeeting will not then reopen a channel, so
+          // we act like we are a slave and close our end instead.
+          if (connection.IsH245Master() &&
             connection.GetRemoteApplication().Find("NetMeeting") == P_MAX_INDEX)
-          cause = H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict;
-        else {
-          connection.OnConflictingLogicalChannel(*channel);
-          ok = channel->Start();
+            cause = H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict;
+          else {
+            connection.OnConflictingLogicalChannel(*channel);
+            ok = channel->Start();
+          }
+        }
+
+        if (ok) {
+          state = e_Established;
+        } else {
+          PTRACE ( 4, "H245\tNot OK!" );
         }
       }
-
-      if (ok)
-        state = e_Established;
+    }
+    else {
+      delete channel;
+      channel = NULL;
+      ok = false;
+      PTRACE(4,"H245\tOnOpenLogicalChannel ok=false");
     }
   }
 

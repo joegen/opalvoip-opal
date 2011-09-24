@@ -86,6 +86,7 @@ class H245_MiscellaneousCommand;
 class H245_MiscellaneousIndication;
 class H245_JitterIndication;
 class H245_ArrayOf_GenericParameter;
+class H245_ArrayOf_GenericInformation;
 
 class H323SignalPDU;
 class H323ControlPDU;
@@ -1058,6 +1059,14 @@ class H323Connection : public OpalRTPConnection
       const H323ControlPDU & pdu
     );
 
+    /**Handle a single received PDU from the control channel.
+       This is an internal function and is unlikely to be used by applications.
+    */
+    virtual PBoolean HandleReceivedControlPDU(
+      PBoolean readStatus,
+      PPER_Stream & strm
+    );
+
     /**This function is called from the HandleControlPDU() function
        for unhandled PDU types.
 
@@ -1290,6 +1299,14 @@ class H323Connection : public OpalRTPConnection
       */
     virtual void OnSetLocalCapabilities();
 
+    /**Callback to modify the outgoing H245_OpenLogicalChannel.
+       The default behaviour does nothing.
+      */
+    virtual void OnSendH245_OpenLogicalChannel(
+      H245_OpenLogicalChannel & /*open*/, 
+      PBoolean /*forward*/
+    ) { }
+
     /**Return if this H245 connection is a master or slave
      */
     PBoolean IsH245Master() const;
@@ -1405,7 +1422,8 @@ class H323Connection : public OpalRTPConnection
     virtual PBoolean OnOpenLogicalChannel(
       const H245_OpenLogicalChannel & openPDU,  ///<  Received PDU for the channel open
       H245_OpenLogicalChannelAck & ackPDU,      ///<  PDU to send for acknowledgement
-      unsigned & errorCode                      ///<  Error to return if refused
+      unsigned & errorCode,                     ///<  Error to return if refused
+      const unsigned & channelNumber = 0        ///<  Channel Number to open
     );
 
     /**Callback for when a logical channel conflict has occurred.
@@ -1726,7 +1744,46 @@ class H323Connection : public OpalRTPConnection
       unsigned sessionID
     ) const;
 
-  //@}
+    /** NAT Detection algorithm
+    */
+    virtual void NatDetection(
+      const PIPSocket::Address & srcAddress,  ///< TCP socket source address
+      const PIPSocket::Address & sigAddress   ///< H.225 Signalling Address
+    );
+
+    /** Fires when a NAT may of been detected. Return true to activate NAT media
+        mechanism
+    */
+    virtual PBoolean OnNatDetected();
+
+    /** Return TRUE if the remote appears to be behind a NAT firewall
+    */
+    PBoolean IsBehindNAT() const
+    { return remoteIsNAT; }
+
+    /** Set Remote is behind NAT
+    */
+    void SetRemoteNAT()
+    { remoteIsNAT = true; }
+
+    /** Is NAT Support Available
+      */
+    PBoolean HasNATSupport() const
+    { return NATsupport; }
+
+    /** Disable NAT Support for allocation of RTP sockets
+      */
+    void DisableNATSupport()
+    { NATsupport = false; remoteIsNAT = false; }
+    
+    /** Set the information that the call parties are 
+        behind the same NAT device
+      */
+    void SetSameNAT() { sameNAT = true; };
+
+    /** Determine if the two parties are behind the same NAT
+      */
+    PBoolean IsSameNAT() const { return sameNAT; };
 
   /**@name Request Mode Changes */
   //@{
@@ -1975,7 +2032,8 @@ class H323Connection : public OpalRTPConnection
       unsigned seconds  ///<  max duration of call in seconds
     );
   //@}
-    
+
+
 #if OPAL_H239
     /**Get the local H.239 control capability.
      */
@@ -2000,13 +2058,6 @@ class H323Connection : public OpalRTPConnection
     
     virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
-#if OPAL_H460
-    /** Get the connection FeatureSet
-     */
-    virtual H460_FeatureSet * GetFeatureSet();
-#endif
-
-    
 #if OPAL_H450
     /**
      * get the H4507 handler
@@ -2015,8 +2066,86 @@ class H323Connection : public OpalRTPConnection
     H4507Handler&  getH4507handler(){return *h4507handler;}
 #endif
 
-    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+#if OPAL_H460
+    /** Get the connection FeatureSet
+     */
+    virtual H460_FeatureSet * GetFeatureSet();
+
+    /** Call to set the direction of call establishment
+      */
+    void H46019SetCallReceiver();
+
+    /** Enable H46019 for this call
+      */
+    void H46019Enabled();
+
+    /**Received OLC Generic Information. This is used to supply alternate RTP
+          destination information in the generic information field in the OLC for the
+          purpose of probing for an alternate route to the remote party.
+    */
+    virtual PBoolean OnReceiveOLCGenericInformation(
+      unsigned sessionID,
+      const H245_ArrayOf_GenericInformation & alternate
+    ) const;
+
+    /**Send Generic Information in the OLC. This is used to include generic
+          information in the openlogicalchannel
+    */
+   virtual PBoolean OnSendingOLCGenericInformation(
+     const unsigned & sessionID,              ///< Session Information
+     H245_ArrayOf_GenericInformation & gen,   ///< Generic OLC/OLCack message
+     PBoolean isAck
+   ) const;
+#endif
     
+#ifdef P_NAT
+    virtual PUDPSocket * GetNatSocket(unsigned session, PBoolean rtp);
+
+    /** Set RTP NAT information callback
+      */
+    virtual void SetRTPNAT(unsigned sessionid, PUDPSocket * _rtp, PUDPSocket * _rtcp);
+
+
+    /**Session Information 
+       This contains session information which is passed to the socket handler
+       when creating RTP socket pairs.
+      */
+    class SessionInformation : public PObject
+    {
+      public:
+        SessionInformation(const OpalGloballyUniqueID & id, const PString & token, unsigned session);
+
+        const PString & GetCallToken();
+
+        unsigned GetSessionID() const;
+
+        const OpalGloballyUniqueID & GetCallIdentifer();
+
+        const PString & GetCUI();
+
+      protected:
+        OpalGloballyUniqueID m_callID;
+        PString              m_callToken;
+        unsigned             m_sessionID;
+        PString              m_CUI;
+    };
+
+    SessionInformation * BuildSessionInformation(unsigned sessionID) const;
+
+    struct NAT_Sockets 
+    {
+        PUDPSocket * rtp;
+        PUDPSocket * rtcp;
+    };
+#endif // P_NAT
+
+
+    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+
+    PBoolean StartHandleControlChannel();
+    virtual PBoolean OnStartHandleControlChannel();
+    void EndHandleControlChannel();
+ 
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the
@@ -2090,6 +2219,7 @@ class H323Connection : public OpalRTPConnection
     bool       earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
+    bool       endSessionSent;
     bool       endSessionNeeded;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
@@ -2135,6 +2265,11 @@ class H323Connection : public OpalRTPConnection
     bool m_h239Control;
 #endif
 
+    // used to detect remote NAT endpoints
+    bool remoteIsNAT;    ///< Remote Caller is NAT
+    bool NATsupport;     ///< Disable support for NATed callers
+    bool sameNAT;        ///< Call parties are behind the same NAT
+
 #if OPAL_H450
     H450xDispatcher * h450dispatcher;
     H4502Handler    * h4502handler;
@@ -2145,8 +2280,24 @@ class H323Connection : public OpalRTPConnection
 #endif
 
 #if OPAL_H460
+    bool disableH460;
     H460_FeatureSet * features;
+
+    bool m_H46019CallReceiver;
+    bool m_H46019enabled;
+    bool m_h245Connect;
+
+    bool m_H46024Aenabled;
+    bool m_H46024Ainitator;
+    PINDEX m_H46024Astate;
+
+    bool m_H46024Benabled;
+    PINDEX m_H46024Bstate;
 #endif
+
+    // NOTE correct ifdef
+    PMutex NATSocketMutex;
+    std::map<unsigned,NAT_Sockets> m_NATSockets;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
@@ -2154,6 +2305,7 @@ class H323Connection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
     P_REMOVE_VIRTUAL_VOID(OnCleared());
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
+    P_REMOVE_VIRTUAL(PBoolean, OnOpenLogicalChannel(const H245_OpenLogicalChannel&,H245_OpenLogicalChannelAck&,unsigned&), false);
 };
 
 

@@ -1098,7 +1098,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Called when an incoming PDU contains a feature set
      */
     virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &);
-	
+    
     /**Load the Base FeatureSet usually called when you initialise the endpoint prior to 
        registering with a gatekeeper.
       */
@@ -1126,6 +1126,32 @@ class H323EndPoint : public OpalRTPEndPoint
         This creates a new instance of the featureSet
       */
     H460_FeatureSet * GetFeatureSet() { return features.DeriveNewFeatureSet(); };
+
+    virtual void NATMethodCallBack(
+      const PString & /*NatID*/,    ///< Method Identifier
+      PINDEX /*msgID*/,             ///< Message Identifer
+      const PString & /*message*/   ///< Message
+    ) { }
+
+    /** Disable H.460.18 Feature. (By Default it is enabled)
+      */    
+    void H46018Enable(PBoolean enable);
+
+    /** Query whether we are using H.460.18
+      */
+    PBoolean H46018IsEnabled();
+
+    /** Signal that H.460.18 has been received. ie. We are behind a NAT/FW
+      */
+    void H46018Received() {};
+
+    /** Whether H.460.18 is in Operation for this call
+      */
+    PBoolean H46018InOperation();
+
+    /**Get the complete list of Gatekeeper features
+      */
+    H460_FeatureSet *GetGatekeeperFeatures();
 #endif
 
     /**Determine if the address is "local", ie does not need STUN
@@ -1425,11 +1451,18 @@ class H323EndPoint : public OpalRTPEndPoint
 #if OPAL_H460
     bool            disableH460;
     H460_FeatureSet features;
+    bool m_h46018enabled;
 #endif
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const H323Connection &, const OpalRTPSession &) const);
+
+#if OPAL_H460
+  // This is because there h323plus had
+  // a public way of adding a connection
+  friend class H46018Transport;
+#endif
 };
 
 #endif // OPAL_H323

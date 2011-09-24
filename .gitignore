@@ -10,6 +10,7 @@ samples/callgen/obj_linux_x86_64_d/
 src/codec/speex/libspeex/speex_config_types.h
 
 *.so
+*.o
 obj_linux_x86_64/
 obj_linux_x86/
 obj_linux_x86_64_d/
@@ -31,3 +32,5 @@ html/
 
 
 log
+
+.svn

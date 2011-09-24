@@ -120,6 +120,12 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
   manager.AttachEndPoint(this, "h323s");
 
+#if OPAL_H460
+  // We must set time to live to 30 to ensure pinhole open
+  registrationTimeToLive = PTimeInterval(0, 30);  
+  m_h46018enabled = true;
+#endif
+
   PTRACE(4, "H323\tCreated endpoint.");
 }
 
@@ -471,10 +477,12 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 
   PFactory<H235Authenticator>::KeyList_T keyList = PFactory<H235Authenticator>::GetKeyList();
   PFactory<H235Authenticator>::KeyList_T::const_iterator r;
-  for (r = keyList.begin(); r != keyList.end(); ++r)
-    authenticators.Append(PFactory<H235Authenticator>::CreateInstance(*r));
-
-  PTRACE(3, "H323\tAuthenticator list is size " << (int)authenticators.GetSize());
+  for (r = keyList.begin(); r != keyList.end(); ++r) {
+    H235Authenticator * Auth = PFactory<H235Authenticator>::CreateInstance(*r);
+    if ((Auth->GetApplication() == H235Authenticator::GKAdmission) ||
+                  (Auth->GetApplication() == H235Authenticator::AnyApplication)) 
+                               authenticators.Append(Auth);
+  }
 
   return authenticators;
 }
@@ -647,8 +655,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // that the gatekeeper is using.
   H323Transport * transport;
   if (gatekeeper != NULL)
-    transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(
-                                          *this, OpalTransportAddress::Streamed);
+    transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(*this, OpalTransportAddress::Streamed);
   else if (!stringOptions->Contains(OPAL_OPT_INTERFACE))
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
   else {
@@ -1330,6 +1337,36 @@ PBoolean H323EndPoint::OnSendFeatureSet(unsigned id, H225_FeatureSet & featureSe
   return false;
 #endif
 }
+
+#if OPAL_H460
+H460_FeatureSet * H323EndPoint::GetGatekeeperFeatures()
+{
+	if (gatekeeper != NULL) {
+		return &gatekeeper->GetFeatures();
+	}
+
+	return NULL;
+}
+
+void H323EndPoint::H46018Enable(PBoolean enable) 
+{ 
+   m_h46018enabled = enable;
+   if (enable) {
+       // Must set reregistrations at between 15 and 45 sec
+       // otherwise the Pinhole in NAT will close
+       registrationTimeToLive = PTimeInterval(0, 30);  
+   } else {
+       // Set timer to whatever gk allocates...
+       registrationTimeToLive = PTimeInterval();       
+   }
+}
+
+
+PBoolean H323EndPoint::H46018IsEnabled() 
+{ 
+	return m_h46018enabled; 
+}
+#endif
 
 
 void H323EndPoint::OnReceiveFeatureSet(unsigned id, const H225_FeatureSet & featureSet)
