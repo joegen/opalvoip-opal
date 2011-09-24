@@ -279,7 +279,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
   // if there are NALU's encoded, return them
   if (!m_encapsulation.HasRTPFrames()) {
     // create RTP frame from source buffer
-    RTPFrame srcRTP(src, srcLen);
+    PluginCodec_RTP srcRTP(src, srcLen);
 
     // do a validation of size
     size_t payloadSize = srcRTP.GetPayloadSize();
@@ -343,7 +343,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
   }
 
   // create RTP frame from destination buffer
-  RTPFrame dstRTP(dst, dstLen);
+  PluginCodec_RTP dstRTP(dst, dstLen);
   m_encapsulation.GetRTPFrame(dstRTP, flags);
   dstLen = dstRTP.GetFrameLen();
   return 1;

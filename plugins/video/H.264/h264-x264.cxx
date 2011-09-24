@@ -43,8 +43,6 @@
 #include "ffmpeg.h"
 #include "dyna.h"
 
-#include <codec/opalplugin.hpp>
-
 #include "shared/h264frame.h"
 #include "shared/x264wrap.h"
 
@@ -993,7 +991,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (!FFMPEGLibraryInstance.IsLoaded())
         return false;
 
-      RTPFrame srcRTP((const unsigned char *)fromPtr, fromLen);
+      PluginCodec_RTP srcRTP((const unsigned char *)fromPtr, fromLen);
       if (!m_fullFrame.SetFromRTPFrame(srcRTP, flags))
         return true;
 
