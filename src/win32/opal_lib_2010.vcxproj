@@ -253,6 +253,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\h460\h46018_h225.cxx" />
+    <ClCompile Include="..\h460\h46024b.cxx" />
+    <ClCompile Include="..\h460\h460_std18.cxx" />
+    <ClCompile Include="..\h460\h460_std23.cxx" />
     <ClCompile Include="..\opal\mediasession.cxx" />
     <ClCompile Include="..\asn\gcc.cxx" />
     <ClCompile Include="..\asn\h225_1.cxx" />
@@ -504,6 +508,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\h460\h46018_h225.h" />
+    <ClInclude Include="..\..\include\h460\h46024b.h" />
+    <ClInclude Include="..\..\include\h460\h460_std18.h" />
+    <ClInclude Include="..\..\include\h460\h460_std23.h" />
     <ClInclude Include="..\..\include\opal\mediasession.h" />
     <ClInclude Include="..\..\include\asn\gcc.h" />
     <ClInclude Include="..\..\include\asn\h225.h" />

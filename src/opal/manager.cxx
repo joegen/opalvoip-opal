@@ -239,6 +239,7 @@ OpalManager::OpalManager()
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
   , translationAddress(0, NULL)       // Invalid address to disable
+  , m_natMethods(new PNatStrategy)
   , m_natMethod(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
@@ -297,6 +298,7 @@ OpalManager::~OpalManager()
 
 #if P_NAT
   delete m_natMethod;
+  delete m_natMethods;
 #endif
   delete interfaceMonitor;
 
@@ -1581,12 +1583,22 @@ PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
 }
 #endif
 
-PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & ip) const
+PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & remoteAddress) const
 {
-  if (ip.IsValid() && IsLocalAddress(ip))
+  if (remoteAddress.IsValid() && IsLocalAddress(remoteAddress))
     return NULL;
 
-  return m_natMethod;
+  if (m_natMethod != NULL)
+    return m_natMethod;
+
+  PNatList & list = m_natMethods->GetNATList();
+  for (PNatList::iterator i = list.begin(); i != list.end(); ++i) {
+    PTRACE(5, "OPAL\tNAT Method " << i->GetName() << " Ready: " << (i->IsAvailable(remoteAddress) ? "Yes" : "No"));
+    if (i->IsAvailable(remoteAddress))
+      return &*i;
+  }
+
+  return NULL;
 }
 
 bool OpalManager::SetNATServer(const PString & natType, const PString & server)

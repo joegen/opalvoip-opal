@@ -591,6 +591,21 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
+#ifdef P_NAT
+    /** Get all NAT Methods
+      */
+    PNatStrategy & GetNatMethods() const;
+
+    /**Return the NAT method to use.
+       Returns NULL if address is a local address as per IsLocalAddress().
+       Always returns the NAT method if address is zero.
+       Note, the pointer is NOT to be deleted by the user.
+      */
+    virtual PNatMethod * GetNatMethod(
+      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
+    ) const;
+#endif
+
 #if OPAL_VIDEO
     /**Create an PVideoInputDevice for a source media stream.
       */

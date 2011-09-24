@@ -1137,7 +1137,7 @@ template <class className> class H460PluginServiceDescriptor : public PDevicePlu
 
 #define H460_FEATURE(name)    \
 static H460PluginServiceDescriptor<H460_Feature##name> H460_Feature##name##_descriptor; \
-PCREATE_PLUGIN(H460_Feature##name##, H460_Feature, &H460_Feature##name##_descriptor); \
+PCREATE_PLUGIN_STATIC(name, H460_Feature, &H460_Feature##name##_descriptor); \
 
 
 #ifdef _MSC_VER

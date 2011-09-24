@@ -120,7 +120,7 @@ H323Gatekeeper::~H323Gatekeeper()
 
   StopChannel();
 
-#ifdef H323_H460
+#if OPAL_H460
   delete features;
 #endif
 }
@@ -2086,6 +2086,12 @@ void H323Gatekeeper::InterfaceMonitor::OnAddInterface(const PIPSocket::Interface
 void H323Gatekeeper::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
   gk.OnRemoveInterface(entry, priority);
+}
+
+
+H460_FeatureSet & H323Gatekeeper::GetFeatures()
+{
+  return *features;
 }
 
 

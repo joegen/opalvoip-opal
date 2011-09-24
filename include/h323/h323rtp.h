@@ -50,9 +50,12 @@ class H225_RTPSession;
 class H245_TransportAddress;
 class H245_H2250LogicalChannelParameters;
 class H245_H2250LogicalChannelAckParameters;
+class H245_ArrayOf_GenericInformation;
 
 class H323Connection;
 class H323_RTPChannel;
+
+class H245_TransportCapability;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,6 +76,13 @@ class H323SessionPDUHandler
     virtual PBoolean OnSendingPDU(
       const H323_RTPChannel & channel,            ///<  Channel using this session.
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
+    ) const = 0;
+
+    /**Sending alternate RTP ports if behind same NAT
+      */
+    virtual PBoolean OnSendingAltPDU(
+    const H323_RTPChannel & channel,               ///< Channel using this session.
+      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     ) const = 0;
 
     /**This is called when request to create a channel is received from a
@@ -100,6 +110,13 @@ class H323SessionPDUHandler
     virtual PBoolean OnReceivedAckPDU(
       H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
+    ) = 0;
+
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnReceivedAckAltPDU(
+      H323_RTPChannel & channel,                         ///< Channel using this session.
+      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     ) = 0;
 
     /**This is called when a gatekeeper wants to get status information from
@@ -146,6 +163,13 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
+    /**Sending alternate RTP ports if behind same NAT
+      */
+    virtual PBoolean OnSendingAltPDU(
+      const H323_RTPChannel & channel,               ///< Channel using this session.
+      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
+    ) const;
+
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
@@ -177,6 +201,14 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
 
+    /**Alternate RTP port information for Same NAT
+      */
+    virtual PBoolean OnReceivedAckAltPDU(
+      H323_RTPChannel & channel,                         ///< Channel using this session.
+      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
+    );
+
+
     /**This is called when a gatekeeper wants to get status information from
        the endpoint.
 
@@ -188,6 +220,25 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
     );
   //@}
 
+#if 0 // NOTE QOS? 
+  /**@name GQoS Support */
+  //@{
+    /**Write the Transport Capability PDU to Include GQoS Support.
+     */
+    virtual PBoolean WriteTransportCapPDU(
+       H245_TransportCapability & cap,      ///* Transport Capability PDU
+       const H323_RTPChannel & channel    ///* Channel using this session.
+       ) const;
+
+    /**Read the Transport Capability PDU to detect GQoS Support.
+     */
+    virtual void ReadTransportCapPDU(
+    const H245_TransportCapability & cap,    ///* Transport Capability PDU
+    H323_RTPChannel & channel        ///* Channel using this session.
+        );
+  //@}
+#endif
+  
   protected:
     virtual PBoolean ExtractTransport(
       const H245_TransportAddress & pdu,

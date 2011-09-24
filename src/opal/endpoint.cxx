@@ -570,6 +570,20 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
+#ifdef P_NAT
+PNatStrategy & OpalEndPoint::GetNatMethods() const
+{
+  return manager.GetNatMethods();
+}
+
+
+PNatMethod * OpalEndPoint::GetNatMethod(const PIPSocket::Address & remoteAddress) const
+{
+  return manager.GetNatMethod(remoteAddress);
+}
+#endif
+
+
 #if OPAL_VIDEO
 PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,

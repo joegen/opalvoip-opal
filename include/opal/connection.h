@@ -1148,6 +1148,13 @@ class OpalConnection : public PSafeObject
       */
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
 
+#ifdef P_NAT
+    // Get Nat Method in use
+    virtual PNatMethod * GetNatMethod(
+      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
+    ) const;
+#endif
+
     /**Get transports for the media session on the connection.
        This is primarily used by the media bypass feature controlled by the
        OpalManager::AllowMediaBypass() function. It allows one side of the

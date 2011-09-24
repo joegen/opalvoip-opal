@@ -540,6 +540,18 @@
     <ClCompile Include="..\opal\mediasession.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
+    <ClCompile Include="..\h460\h46024b.cxx">
+      <Filter>Source Files\H.460</Filter>
+    </ClCompile>
+    <ClCompile Include="..\h460\h460_std18.cxx">
+      <Filter>Source Files\H.460</Filter>
+    </ClCompile>
+    <ClCompile Include="..\h460\h460_std23.cxx">
+      <Filter>Source Files\H.460</Filter>
+    </ClCompile>
+    <ClCompile Include="..\h460\h46018_h225.cxx">
+      <Filter>Source Files\H.460</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -964,6 +976,18 @@
     </ClInclude>
     <ClInclude Include="..\..\include\opal.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h460\h46024b.h">
+      <Filter>Header Files\H.460</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h460\h46018_h225.h">
+      <Filter>Header Files\H.460</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h460\h460_std23.h">
+      <Filter>Header Files\H.460</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h460\h460_std18.h">
+      <Filter>Header Files\H.460</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

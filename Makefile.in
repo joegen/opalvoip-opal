@@ -233,11 +233,15 @@ ifeq ($(OPAL_H460), yes)
 ifdef H460_AVAIL
 SOURCES += $(OPAL_SRCDIR)/h460/h4601.cxx \
 	   $(OPAL_SRCDIR)/h460/h46018.cxx \
+	   $(OPAL_SRCDIR)/h460/h46018_h225.cxx \
 	   $(OPAL_SRCDIR)/h460/h46019.cxx \
 	   $(OPAL_SRCDIR)/h460/h4609.cxx \
 	   $(OPAL_SRCDIR)/h460/h460p.cxx \
 	   $(OPAL_SRCDIR)/h460/h460pres.cxx \
-	   $(OPAL_SRCDIR)/h460/h460tm.cxx
+	   $(OPAL_SRCDIR)/h460/h460tm.cxx \
+	   $(OPAL_SRCDIR)/h460/h46024b.cxx \
+	   $(OPAL_SRCDIR)/h460/h460_std18.cxx \
+	   $(OPAL_SRCDIR)/h460/h460_std23.cxx
 endif
 endif
 

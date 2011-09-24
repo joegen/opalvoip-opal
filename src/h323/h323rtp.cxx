@@ -84,6 +84,13 @@ PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
 }
 
 
+PBoolean H323RTPSession::OnSendingAltPDU(const H323_RTPChannel &,
+                                         H245_ArrayOf_GenericInformation &) const
+{
+  return false; // NOTE what was this supposed to do again?;
+}
+
+
 void H323RTPSession::OnSendingAckPDU(const H323_RTPChannel & channel,
                                    H245_H2250LogicalChannelAckParameters & param) const
 {
@@ -217,6 +224,123 @@ void H323RTPSession::OnSendRasInfo(H225_RTPSession & info)
 }
 
 
+PBoolean H323RTPSession::OnReceivedAckAltPDU(H323_RTPChannel & channel,
+                                             const H245_ArrayOf_GenericInformation & alternate)
+{
+  return connection.OnReceiveOLCGenericInformation(channel.GetSessionID(),alternate);
+}
+
+
+// NOTE look at diff here.... lda/rda etc  incompatibilities?
+#if 0
+  const H323Transport & transport = connection.GetControlChannel();
+ 
+   transport.SetUpTransportPDU(info.m_rtpAddress.m_recvAddress, rtp.GetLocalDataPort());
+   H323TransportAddress ta1(rtp.GetRemoteAddress(), rtp.GetRemoteDataPort());
+   ta1.SetPDU(info.m_rtpAddress.m_sendAddress);
+ 
+   transport.SetUpTransportPDU(info.m_rtcpAddress.m_recvAddress, rtp.GetLocalControlPort());
+   H323TransportAddress ta2(rtp.GetRemoteAddress(), rtp.GetRemoteDataPort());
+   ta2.SetPDU(info.m_rtcpAddress.m_sendAddress);
+  }
+#endif
+
+
+#if 0 // NOTE P_QOS?
+PBoolean H323_RTP_UDP::WriteTransportCapPDU(H245_TransportCapability & cap, 
+                                            const H323_RTPChannel & channel) const
+{
+  PQoS & qos = rtp.GetQOS();
+  cap.IncludeOptionalField(H245_TransportCapability::e_qOSCapabilities);
+  H245_ArrayOf_QOSCapability & QoSs = cap.m_qOSCapabilities;
+
+  H245_QOSCapability Cap = H245_QOSCapability();
+  Cap.IncludeOptionalField(H245_QOSCapability::e_localQoS);
+  PASN_Boolean & localqos = Cap.m_localQoS;
+  localqos.SetValue(TRUE);
+
+  Cap.IncludeOptionalField(H245_QOSCapability::e_dscpValue);
+  PASN_Integer & dscp = Cap.m_dscpValue;
+  dscp = qos.GetDSCP();
+
+  if (PUDPSocket::SupportQoS(rtp.GetLocalAddress())) {        
+    Cap.IncludeOptionalField(H245_QOSCapability::e_rsvpParameters);
+    H245_RSVPParameters & rsvp = Cap.m_rsvpParameters; 
+
+    if (channel.GetDirection() == H323Channel::IsReceiver) {   /// If Reply don't have to send body
+      rtp.EnableGQoS(TRUE);
+      return TRUE;
+    }
+    rsvp.IncludeOptionalField(H245_RSVPParameters::e_qosMode); 
+    H245_QOSMode & mode = rsvp.m_qosMode;
+    if (qos.GetServiceType() == SERVICETYPE_GUARANTEED) 
+      mode.SetTag(H245_QOSMode::e_guaranteedQOS); 
+    else 
+      mode.SetTag(H245_QOSMode::e_controlledLoad); 
+
+    rsvp.IncludeOptionalField(H245_RSVPParameters::e_tokenRate); 
+    rsvp.m_tokenRate = qos.GetTokenRate();
+    rsvp.IncludeOptionalField(H245_RSVPParameters::e_bucketSize);
+    rsvp.m_bucketSize = qos.GetTokenBucketSize();
+    rsvp.HasOptionalField(H245_RSVPParameters::e_peakRate);
+    rsvp.m_peakRate = qos.GetPeakBandwidth();
+  }
+  QoSs.SetSize(1);
+  QoSs[0] = Cap;
+  return TRUE;
+}
+
+
+void H323_RTP_UDP::ReadTransportCapPDU(const H245_TransportCapability & cap,
+  H323_RTPChannel & channel)
+{
+  if (!cap.HasOptionalField(H245_TransportCapability::e_qOSCapabilities)) 
+    return;
+
+  const H245_ArrayOf_QOSCapability QoSs = cap.m_qOSCapabilities;
+  for (PINDEX i =0; i < QoSs.GetSize(); i++) {
+    PQoS & qos = rtp.GetQOS();
+    const H245_QOSCapability & QoS = QoSs[i];
+    //        if (QoS.HasOptionalField(H245_QOSCapability::e_localQoS)) {
+    //           PASN_Boolean & localqos = QoS.m_localQoS;
+    //        }
+    if (QoS.HasOptionalField(H245_QOSCapability::e_dscpValue)) {
+      const PASN_Integer & dscp = QoS.m_dscpValue;
+      qos.SetDSCP(dscp);
+    }
+
+    if (PUDPSocket::SupportQoS(rtp.GetLocalAddress())) {
+      if (!QoS.HasOptionalField(H245_QOSCapability::e_rsvpParameters)) {
+        PTRACE(4,"TRANS\tDisabling GQoS");
+        rtp.EnableGQoS(FALSE);  
+        return;
+      }
+
+      const H245_RSVPParameters & rsvp = QoS.m_rsvpParameters; 
+      if (channel.GetDirection() != H323Channel::IsReceiver) {
+        rtp.EnableGQoS(TRUE);
+        return;
+      }      
+      if (rsvp.HasOptionalField(H245_RSVPParameters::e_qosMode)) {
+        const H245_QOSMode & mode = rsvp.m_qosMode;
+        if (mode.GetTag() == H245_QOSMode::e_guaranteedQOS) {
+          qos.SetWinServiceType(SERVICETYPE_GUARANTEED);
+          qos.SetDSCP(PQoS::guaranteedDSCP);
+        } else {
+          qos.SetWinServiceType(SERVICETYPE_CONTROLLEDLOAD);
+          qos.SetDSCP(PQoS::controlledLoadDSCP);
+        }
+      }
+      if (rsvp.HasOptionalField(H245_RSVPParameters::e_tokenRate)) 
+        qos.SetAvgBytesPerSec(rsvp.m_tokenRate);
+      if (rsvp.HasOptionalField(H245_RSVPParameters::e_bucketSize))
+        qos.SetMaxFrameBytes(rsvp.m_bucketSize);
+      if (rsvp.HasOptionalField(H245_RSVPParameters::e_peakRate))
+        qos.SetPeakBytesPerSec(rsvp.m_peakRate);    
+    }
+  }
+}
+#endif
 #endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

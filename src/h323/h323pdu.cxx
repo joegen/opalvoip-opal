@@ -678,7 +678,9 @@ static void SendFeatureSet(const H323Connection * connection, unsigned code, H22
   if (!connection->OnSendFeatureSet(code,fs))
     return;
 
-  if (code == H460_MessageType::e_callProceeding) {
+  if (code == H460_MessageType::e_callProceeding ||
+      code == H460_MessageType::e_alerting ||
+      code == H460_MessageType::e_connect) {
     pdu.IncludeOptionalField(PDUType::e_featureSet);
     pdu.m_featureSet = fs;
     return;

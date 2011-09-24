@@ -3261,6 +3261,22 @@
 					RelativePath="..\h460\h460tm.cxx"
 					>
 				</File>
+				<File
+					RelativePath="..\h460\h46018_h225.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h46024b.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h460_std18.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\h460\h460_std23.cxx"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="IM Sources"
@@ -3969,6 +3985,22 @@
 				</File>
 				<File
 					RelativePath="..\..\include\h460\h460tm.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46018_h225.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h46024b.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460_std18.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\h460\h460_std23.h"
 					>
 				</File>
 			</Filter>

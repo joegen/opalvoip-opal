@@ -163,6 +163,11 @@ PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthProcedure1, "H235Procedure1
 
 H235AuthProcedure1::H235AuthProcedure1()
 {
+  /* NOTE in h323plus, this method somehow isn't used in GKAdmission even
+     though the usage was set to AnyApplication.
+     Not sure if EPAuthentication is correct but in this version,
+     GKAdmission fails when this auth proceedure is enabled. */
+    usage = EPAuthentication;
 }
 
 
