@@ -59,9 +59,7 @@
 // H.460.18
 //
 // Must Declare for Factory Loader.
-#ifdef _WIN32
 H460_FEATURE(Std18);
-#endif
 
 H460_FeatureStd18::H460_FeatureStd18()
   : H460_FeatureStd(18)
@@ -166,9 +164,7 @@ void H460_FeatureStd18::OnReceiveServiceControlIndication(const H225_FeatureDesc
 // H.460.19
 //
 // Must Declare for Factory Loader.
-#ifdef _WIN32
 H460_FEATURE(Std19);
-#endif
 
 H460_FeatureStd19::H460_FeatureStd19()
   : H460_FeatureStd(19)
