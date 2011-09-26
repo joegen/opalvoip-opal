@@ -935,7 +935,7 @@ void H46019UDPSocket::BuildProbe(RTP_ControlFrame & report, bool probing)
   PBYTEArray bytes(id,id.GetLength(), false);
   memcpy(&data.name[0], bytes, 4);
 
-#ifndef __APPLE__
+#if OPAL_PTLIB_SSL
   PMessageDigest::Result bin_digest;
   PMessageDigestSHA1::Encode(m_CallId.AsString() + m_CUIrem, bin_digest);
   memcpy(&data.cui[0], bin_digest.GetPointer(), bin_digest.GetSize());
