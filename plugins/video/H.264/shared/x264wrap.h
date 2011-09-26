@@ -45,6 +45,7 @@ extern "C" {
 
 
 #ifdef WIN32
+#include <windows.h>
 #define EXECUTABLE_NAME "x264plugin_helper.exe"
 #else
 #define EXECUTABLE_NAME "h264_video_pwplugin_helper"
