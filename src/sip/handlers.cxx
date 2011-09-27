@@ -666,12 +666,9 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
       if (m_contactAddresses.empty())
         params.m_contactAddress = "*";
       else {
-        for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact) {
+        for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
           contact->GetFieldParameters().Remove("expires");
-          if (!params.m_contactAddress.IsEmpty())
-            params.m_contactAddress += ", ";
-          params.m_contactAddress += contact->AsQuotedString();
-        }
+        params.m_contactAddress = m_contactAddresses.ToString();
       }
     }
   }
@@ -679,14 +676,13 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
     params.m_expire = expire;
 
     if (params.m_contactAddress.IsEmpty()) {
-      if (m_contactAddresses.empty()) {
+      if (GetState() != Refreshing || m_contactAddresses.empty()) {
         PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
         OpalTransportAddressArray interfaces = GetEndPoint().GetInterfaceAddresses(true, &trans);
         if (params.m_compatibility == SIPRegister::e_CannotRegisterMultipleContacts) {
           // If translated by STUN then only the external address of the interface is used.
           SIPURL contact(userName, interfaces[0]);
           contact.Sanitise(SIPURL::RegContactURI);
-          m_contactAddresses.push_back(contact);
           params.m_contactAddress += contact.AsQuotedString();
         }
         else {
@@ -701,7 +697,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
               SIPURL contact(userName, interfaces[i]);
               contact.Sanitise(SIPURL::RegContactURI);
               contact.GetFieldParameters().Set("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
-              m_contactAddresses.push_back(contact);
 
               if (!params.m_contactAddress.IsEmpty())
                 params.m_contactAddress += ", ";
@@ -712,18 +707,8 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
           }
         }
       }
-      else {
-        for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact) {
-          if (!params.m_contactAddress.IsEmpty())
-            params.m_contactAddress += ", ";
-          params.m_contactAddress += contact->AsQuotedString();
-        }
-      }
-    }
-    else {
-      if (!m_contactAddresses.FromString(params.m_contactAddress)) {
-        PTRACE(1, "SIP\tUser defined contact address has no SIP addresses in it!");
-      }
+      else
+        params.m_contactAddress = m_contactAddresses.ToString();
     }
   }
 
@@ -737,7 +722,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   SIPHandler::OnReceivedOK(transaction, response);
 
-  if (GetState() == Unsubscribed || m_contactAddresses.empty()) {
+  if (GetState() == Unsubscribed) {
     SendStatus(SIP_PDU::Successful_OK, oldState);
     return;
   }
@@ -751,6 +736,9 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   OpalTransportAddress externalAddress = mime.GetViaReceivedAddress();
   bool useExternalAddress = !externalAddress.IsEmpty();
 
+  SIPURLList offerredContacts;
+  transaction.GetMIME().GetContacts(offerredContacts);
+
   SIPURLList replyContacts;
   mime.GetContacts(replyContacts);
 
@@ -762,15 +750,15 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
      address as per the via rport. IMHO this is a bug as it does not follow
      what is implied by RFC3261/10.2.4 and 10.3 step 7. It should include the
      original as well as the extra Contact. But it doesn't, so we have to deal. */
-  SIPURLList contacts;
-  for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ++reply) {
-    SIPURLList::iterator request = std::find(m_contactAddresses.begin(), m_contactAddresses.end(), *reply);
-    if (request != m_contactAddresses.end() ||
+  for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ) {
+    if (std::find(offerredContacts.begin(), offerredContacts.end(), *reply) != offerredContacts.end() ||
         (useExternalAddress && reply->GetHostAddress() == externalAddress))
-      contacts.push_back(*reply);
+      ++reply;
+    else
+      replyContacts.erase(reply++);
   }
 
-  if (contacts.empty()) {
+  if (replyContacts.empty()) {
     if (transaction.GetMIME().GetExpires() != 0) {
       // Huh? Nothing we tried to register, registered! How is that possible?
       PTRACE(2, "SIP\tREGISTER returned no Contacts we requested, unregistering.");
@@ -780,12 +768,12 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
     // We did a partial unsubscribe but registrar doesn't understand and
     // unregisetered everthing, reregister
-    SIPURLList::iterator contact = m_contactAddresses.begin();
-    while (contact != m_contactAddresses.end()) {
+    SIPURLList::iterator contact = offerredContacts.begin();
+    while (contact != offerredContacts.end()) {
       if (contact->GetFieldParameters().GetInteger("expires") > 0)
         ++contact;
       else
-        m_contactAddresses.erase(contact++);
+        offerredContacts.erase(contact++);
     }
 
     PTRACE(2, "SIP\tREGISTER only had some contacts to unregister but registrar to dumb, re-registering.");
@@ -796,7 +784,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   // to our registered contact field. Some servers will refuse to work unless the
   // Contact agrees whith where the packet is physically coming from.
   if (useExternalAddress) {
-    for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
+    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
       if (contact->GetHostAddress() == externalAddress) {
         useExternalAddress = false;
         break;
@@ -807,7 +795,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   if (useExternalAddress) {
     SIPURLList newContacts;
 
-    for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
+    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
       if (contact->GetHostAddress().GetProtoPrefix() == OpalTransportAddress::UdpPrefix()) {
         contact->GetFieldParameters().SetInteger("expires", 0);
 
@@ -817,12 +805,12 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       }
     }
 
-    contacts.insert(contacts.end(), newContacts.begin(), newContacts.end());
+    replyContacts.insert(replyContacts.end(), newContacts.begin(), newContacts.end());
     SetExpire(0);
   }
   else {
     int minExpiry = INT_MAX;
-    for (SIPURLList::iterator contact = contacts.begin(); contact != contacts.end(); ++contact) {
+    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
       long expires = contact->GetFieldParameters().GetInteger("expires",
                           mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds()));
       if (expires > 0 && minExpiry > expires)
@@ -831,7 +819,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     SetExpire(minExpiry);
   }
 
-  m_contactAddresses = contacts;
+  m_contactAddresses = replyContacts;
 
   mime.GetProductInfo(m_productInfo);
 
