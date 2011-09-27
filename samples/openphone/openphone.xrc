@@ -3123,7 +3123,7 @@
                                                 <border>12</border>
                                                 <object class="wxComboBox" name="VideoGrabFrameSize">
                                                     <size>64, 12d</size>
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <content>
                                                     </content>
                                                 </object>
@@ -3253,7 +3253,7 @@
                                                 <border>12</border>
                                                 <object class="wxComboBox" name="VideoMinFrameSize">
                                                     <size>64, 11d</size>
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <content>
                                                     </content>
                                                 </object>
@@ -3270,7 +3270,7 @@
                                                 <border>12</border>
                                                 <object class="wxComboBox" name="VideoMaxFrameSize">
                                                     <size>64, 11d</size>
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <content>
                                                     </content>
                                                 </object>
@@ -3478,7 +3478,7 @@
                                         <border>12</border>
                                         <object class="wxComboBox" name="VideoRecordingSize">
                                             <size>64, 11d</size>
-                                            <selection>1</selection>
+                                            <selection>-1</selection>
                                             <content>
                                             </content>
                                         </object>

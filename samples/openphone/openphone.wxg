@@ -1528,7 +1528,7 @@
                                                 <border>12</border>
                                                 <option>0</option>
                                                 <object class="wxComboBox" name="VideoGrabFrameSize" base="EditComboBox">
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <choices>
                                                     </choices>
                                                     <size>64, 12d</size>
@@ -1691,7 +1691,7 @@
                                                 <border>12</border>
                                                 <option>0</option>
                                                 <object class="wxComboBox" name="VideoMinFrameSize" base="EditComboBox">
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <choices>
                                                     </choices>
                                                     <size>64, 11d</size>
@@ -1711,7 +1711,7 @@
                                                 <border>12</border>
                                                 <option>0</option>
                                                 <object class="wxComboBox" name="VideoMaxFrameSize" base="EditComboBox">
-                                                    <selection>1</selection>
+                                                    <selection>-1</selection>
                                                     <choices>
                                                     </choices>
                                                     <size>64, 11d</size>
@@ -1944,7 +1944,7 @@
                                         <border>12</border>
                                         <option>0</option>
                                         <object class="wxComboBox" name="VideoRecordingSize" base="EditComboBox">
-                                            <selection>1</selection>
+                                            <selection>-1</selection>
                                             <choices>
                                             </choices>
                                             <size>64, 11d</size>
