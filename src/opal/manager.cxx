@@ -722,6 +722,9 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
     if (MakeConnection(call, route, NULL, options, stringOptions) != NULL)
       return true;
 
+    if (call.GetConnection(0)->IsReleased())
+      return false;
+
     // Recursively call with translated route
     if (OnRouteConnection(routesTried, a_party, route, call, options, stringOptions))
       return true;

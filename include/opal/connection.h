@@ -55,6 +55,7 @@
 
 class OpalEndPoint;
 class OpalCall;
+class OpalConferenceState;
 class OpalSilenceDetector;
 class OpalEchoCanceler;
 class OpalRFC2833Proto;
@@ -1601,6 +1602,22 @@ class OpalConnection : public PSafeObject
        header field of the INVITE.
       */
     virtual PString GetCallInfo() const;
+
+    /**Get Conference state information.
+       This obtains the state information about a conference this connection
+       is directly a part of. If the connection type does not embody a
+       conference then false is returned.
+
+       The \p state parameter, if non-NULL, is illed with the state of the
+       conference. When NULL, this just indicates that the connection is
+       part of a conference with the return value.
+
+       Default behaviour is to return false which indicates this connection is
+       not part of a conference.
+      */
+    virtual bool GetConferenceState(
+      OpalConferenceState * state  ///< Optional conference state information
+    ) const;
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms

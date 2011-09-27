@@ -1335,8 +1335,6 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if P_EXPAT
-
 // This package is on for backward compatibility, presence should now use the
 // the OpalPresence classes to manage SIP presence.
 class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
@@ -1363,8 +1361,10 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     if (request.GetEntityBody().IsEmpty())
       infoList.resize(1);
     else {
+#if P_EXPAT
       PString error;
       if (!SIPPresenceInfo::ParseXML(request.GetEntityBody(), infoList, error))
+#endif // P_EXPAT
         return false;
     }
 
@@ -1381,6 +1381,8 @@ static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEv
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+#if P_EXPAT
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
@@ -1420,6 +1422,8 @@ static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotifica
   }
 }
 
+#endif // P_EXPAT
+
 
 class SIPDialogEventPackageHandler : public SIPEventPackageHandler
 {
@@ -1440,6 +1444,9 @@ public:
     if (request.GetEntityBody().IsEmpty())
       return true;
 
+    PINDEX index = 0;
+
+#if P_EXPAT
     PXML xml;
     if (!xml.Load(request.GetEntityBody()))
       return false;
@@ -1452,7 +1459,6 @@ public:
     if (info.m_entity.IsEmpty())
       return false;
 
-    PINDEX index = 0;
     PXMLElement * dialogElement;
     while ((dialogElement = rootElement->GetElement("dialog", index)) != NULL) {
       info.m_callId = dialogElement->GetAttribute("call-id");
@@ -1483,7 +1489,9 @@ public:
       handler.GetEndPoint().OnDialogInfoReceived(info);
       index++;
     }
-
+#else
+    SIPDialogNotification info(request.GetMIME().GetFrom());
+#endif // P_EXPAT
     if (index == 0)
       handler.GetEndPoint().OnDialogInfoReceived(info);
     return true;
@@ -1541,6 +1549,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
     if (request.GetEntityBody().IsEmpty())
       return true;
 
+#if P_EXPAT
     PXML xml;
     if (!xml.Load(request.GetEntityBody()))
       return false;
@@ -1576,14 +1585,16 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
       }
       handler.GetEndPoint().OnRegInfoReceived(info);
     }
+#else
+    SIPRegNotification info(request.GetMIME().GetFrom());
+    handler.GetEndPoint().OnRegInfoReceived(info);
+#endif // P_EXPAT
 
     return true;
   }
 };
 
 static SIPEventPackageFactory::Worker<SIPRegEventPackageHandler> regEventPackageHandler(SIPSubscribe::Reg);
-
-#endif // P_EXPAT
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1757,16 +1768,17 @@ void SIPRegNotification::PrintOn(ostream & strm) const
 /////////////////////////////////////////////////////////////////////////
 
 SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
-                                   const PString & targetAddress,
                                    const SIPEventPackage & eventPackage,
                                    const SIPDialogContext & dialog)
-  : SIPHandler(SIP_PDU::Method_NOTIFY, endpoint, SIPParameters(targetAddress, dialog.GetRemoteURI().AsString()))
+  : SIPHandler(SIP_PDU::Method_NOTIFY,
+               endpoint,
+               SIPParameters(dialog.GetLocalURI().AsString(), dialog.GetRemoteURI().AsString()),
+               dialog.GetCallID())
   , m_eventPackage(eventPackage)
   , m_dialog(dialog)
   , m_reason(Deactivated)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(eventPackage))
 {
-  m_dialog.SetCallID(m_callID);
 }
 
 
