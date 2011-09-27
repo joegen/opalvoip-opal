@@ -93,6 +93,7 @@ SIP_Presentity::SIP_Presentity()
 
 SIP_Presentity::SIP_Presentity(const SIP_Presentity & other)
   : OpalPresentityWithCommandThread(other)
+  , PValidatedNotifierTarget(other)
   , m_endpoint(other.m_endpoint)
   , m_watcherInfoVersion(-1)
 {
