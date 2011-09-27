@@ -1139,7 +1139,7 @@ PBoolean H46019UDPSocket::ReceivedProbePacket(const RTP_ControlFrame & frame, bo
     BYTE * data = frame.GetPayloadPtr();
     PBYTEArray bytes(20);
     memcpy(bytes.GetPointer(),data+12, 20);
-#ifndef __APPLE__
+#if OPAL_PTLIB_SSL
     PMessageDigest::Result bin_digest;
     PMessageDigestSHA1::Encode(m_CallId.AsString() + m_CUI, bin_digest);
     PBYTEArray val(bin_digest.GetPointer(),bin_digest.GetSize());
