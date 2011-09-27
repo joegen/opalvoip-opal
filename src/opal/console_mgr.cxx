@@ -76,7 +76,7 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
     }
   }
 
-  params.m_expire = args.GetOptionString(ttl).AsUnsigned();
+  params.m_expire = args.GetOptionString(ttl, "300").AsUnsigned();
   if (params.m_expire < 30) {
     error = "SIP registrar Time To Live must be more than 30 seconds";
     return false;
