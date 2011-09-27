@@ -641,6 +641,18 @@ void OpalEndPoint::OnMWIReceived(const PString & party,
   manager.OnMWIReceived(party, type, extraInfo);
 }
 
+
+bool OpalEndPoint::GetConferenceStates(OpalConferenceStates &, const PString &) const
+{
+  return false;
+}
+
+
+void OpalEndPoint::OnConferenceStatusChanged(OpalEndPoint &, const PString &)
+{
+}
+
+
 bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTransportAddress & addr)
 {
   OpalTransportAddress compatibleTo("*", 0, protoPrefix);

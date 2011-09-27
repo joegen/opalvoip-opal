@@ -1269,6 +1269,11 @@ bool SIPConnection::SetRemoteMediaFormats()
   }
 
   PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
+
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL && other->GetConferenceState(NULL))
+    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
+
   return true;
 }
 
@@ -1481,6 +1486,9 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PTRACE(3, "SIP\tCreating INVITE request");
 
   SIPMIMEInfo & mime = request.GetMIME();
+
+  request.SetAllow(GetAllowedMethods());
+  mime.SetAllowEvents(m_allowedEvents);
 
   switch (m_prackMode) {
     case e_prackDisabled :
@@ -1810,6 +1818,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       break;
     case SIP_PDU::Method_MESSAGE :
       OnReceivedMESSAGE(pdu);
+      break;
+    case SIP_PDU::Method_SUBSCRIBE :
+      OnReceivedSUBSCRIBE(pdu);
       break;
     default :
       // Shouldn't have got this!
@@ -2552,7 +2563,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   const SIPMIMEInfo & mime = request.GetMIME();
 
   SIPSubscribe::EventPackage package(mime.GetEvent());
-  if (m_allowedEvents.GetStringsIndex(package) != P_MAX_INDEX) {
+  if (m_allowedEvents.Contains(package)) {
     PTRACE(2, "SIP\tReceived Notify for allowed event " << package);
     request.SendResponse(*transport, SIP_PDU::Successful_OK);
     OnAllowedEventNotify(package);
@@ -2613,7 +2624,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 {
   const SIPMIMEInfo & requestMIME = request.GetMIME();
 
-  PString referTo = requestMIME.GetReferTo();
+  SIPURL referTo = requestMIME.GetReferTo();
   if (referTo.IsEmpty()) {
     SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
     response.SetInfo("Missing refer-to header");
@@ -2621,13 +2632,39 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
     return;
   }    
 
-  SIP_PDU response(request, SIP_PDU::Successful_Accepted);
+  SIP_PDU response(request, SIP_PDU::Successful_OK);
 
   // Comply to RFC4488
   bool referSub = true;
   if (requestMIME.Contains("Refer-Sub")) {
     referSub = !(requestMIME["Refer-Sub"] *= "false");
     response.GetMIME().SetAt("Refer-Sub", referSub ? "true" : "false");
+  }
+
+  if (referSub) {
+    response.SetStatusCode(SIP_PDU::Successful_Accepted);
+    referTo.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
+  }
+
+  // RFC4579
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL) {
+    OpalConferenceState state;
+    if (other->GetConferenceState(&state)) {
+      PCaselessString method = referTo.GetParamVars()("method", "INVITE");
+      if (method == "INVITE") {
+        // Don't actually transfer, get conf to do INVITE to add participant
+        if (endpoint.GetManager().SetUpCall(state.m_internalURI, referTo.AsString()) == NULL)
+          response.SetStatusCode(SIP_PDU::Failure_NotFound);
+      }
+      else if (method == "BYE") {
+      }
+      else
+        response.SetStatusCode(SIP_PDU::Failure_NotImplemented);
+
+      request.SendResponse(*transport, response);
+      return;
+    }
   }
 
   // send response before attempting the transfer
@@ -2647,15 +2684,11 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   info.SetAt("Referred-By", m_redirectingParty);
   OnTransferNotify(info);
 
-  SIPURL to = referTo;
-  PString replaces = to.GetQueryVars()("Replaces");
-  to.SetQuery(PString::Empty());
-
-  if (referSub)
-    to.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
+  PString replaces = referTo.GetQueryVars()("Replaces");
+  referTo.SetQuery(PString::Empty());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (!endpoint.SetupTransfer(GetToken(), replaces, to.AsString(), NULL) && referSub)
+  if (!endpoint.SetupTransfer(GetToken(), replaces, referTo.AsString(), NULL) && referSub)
     (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
 }
 
@@ -3051,7 +3084,8 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
   if (fwdParty.IsEmpty ())
     return false;
-  
+
+
   m_forwardParty = fwdParty;
   PTRACE(2, "SIP\tIncoming SIP connection will be forwarded to " << m_forwardParty);
   Release(EndedByCallForwarded);
@@ -3100,7 +3134,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(GetAllowedMethods());
 
-  endpoint.AdjustToRegistration(*transport, response);
+  endpoint.AdjustToRegistration(*transport, response, this);
 
   // this can be used to promote any incoming calls to TCP. Not quite there yet, but it *almost* works
   bool promoteToTCP = false;    // disable code for now
@@ -3113,13 +3147,11 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
     }
   }
 
-  if (response.GetStatusCode() == SIP_PDU::Information_Ringing) {
-    if (m_allowedEvents.GetSize() > 0) {
-      PStringStream strm; strm << setfill(',') << m_allowedEvents;
-      mime.SetAllowEvents(strm);
-    }
+  if (response.GetStatusCode() > 100 && response.GetStatusCode() < 300 && m_allowedEvents.GetSize() > 0)
+    mime.SetAllowEvents(m_allowedEvents);
+
+  if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
     mime.SetAlertInfo(m_alertInfo, m_appearanceCode);
-  }
 
   if (response.GetStatusCode() >= 200) {
     // If sending final response, any pending unsent responses no longer need to be sent.
@@ -3311,6 +3343,22 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 #else
   pdu.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
 #endif
+}
+
+
+void SIPConnection::OnReceivedSUBSCRIBE(SIP_PDU & request)
+{
+  SIPSubscribe::EventPackage eventPackage(request.GetMIME().GetEvent());
+
+  PTRACE(3, "SIP\tReceived SUBSCRIBE for " << eventPackage);
+
+  if (m_allowedEvents.Contains(eventPackage))
+    endpoint.OnReceivedSUBSCRIBE(*transport, request);
+  else {
+    SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
+    response.GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec
+    request.SendResponse(*transport, response);
+  }
 }
 
 

@@ -606,6 +606,8 @@ class SIPConnection : public OpalRTPConnection
 
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
 
+    virtual void OnReceivedSUBSCRIBE(SIP_PDU & pdu);
+
     PString GetLocalPartyURL() const;
 
   protected:
@@ -681,7 +683,7 @@ class SIPConnection : public OpalRTPConnection
     OpalTransport       * transport;
     bool                  deleteTransport;
     unsigned              m_allowedMethods;
-    PStringList           m_allowedEvents;
+    PStringSet            m_allowedEvents;
 
     enum HoldState {
       eHoldOff,

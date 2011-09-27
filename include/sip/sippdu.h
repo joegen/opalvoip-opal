@@ -402,6 +402,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetAllowEvents() const;
     void SetAllowEvents(const PString & v);
+    void SetAllowEvents(const PStringSet & list);
 
     /** return the value of a header field parameter, empty if none
      */
@@ -1097,6 +1098,7 @@ class SIPSubscribe : public SIPTransaction
       Presence,
       Dialog,
       Reg,
+      Conference,
 
       NumPredefinedPackages,
 

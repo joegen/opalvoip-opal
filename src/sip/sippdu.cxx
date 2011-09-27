@@ -59,6 +59,9 @@
 
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end);
 
+static PConstCaselessString const TagStr("tag");
+
+
 ////////////////////////////////////////////////////////////////////////////
 
 static const char * const MethodNames[SIP_PDU::NumMethods] = {
@@ -501,7 +504,7 @@ void SIPURL::Sanitise(UsageContext context)
     { "lr",                        (1<<ToURI)|(1<<FromURI)|(1<<RedirectURI)                |(1<<RegContactURI)              |(1<<RegisterURI)                  },
     { "expires",   (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                 |(1<<ContactURI)                   |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
     { "q",         (1<<RequestURI)|(1<<ToURI)|(1<<FromURI)                 |(1<<ContactURI)                   |(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) },
-    { "tag",       (1<<RequestURI)                        |(1<<RedirectURI)|(1<<ContactURI)|(1<<RegContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
+    { TagStr,      (1<<RequestURI)                        |(1<<RedirectURI)|(1<<ContactURI)|(1<<RegContactURI)|(1<<RouteURI)|(1<<RegisterURI)|(1<<ExternalURI) }
   };
 
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
@@ -626,8 +629,8 @@ PString SIPURL::GenerateTag()
 
 void SIPURL::SetTag(const PString & tag, bool force)
 {
-  if (force || !m_fieldParameters.Contains("tag"))
-    m_fieldParameters.SetAt("tag", tag.IsEmpty() ? GenerateTag() : tag);
+  if (force || !m_fieldParameters.Contains(TagStr))
+    m_fieldParameters.SetAt(TagStr, tag.IsEmpty() ? GenerateTag() : tag);
 }
 
 
@@ -1329,6 +1332,15 @@ void SIPMIMEInfo::SetAllowEvents(const PString & v)
   SetAt("Allow-Events", v);   // no compact form
 }
 
+
+void SIPMIMEInfo::SetAllowEvents(const PStringSet & set)
+{
+  PStringStream strm;
+  strm << setfill(',') << set;
+  SetAllowEvents(strm);
+}
+
+
 static const char UserAgentTokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
 
 void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info) const
@@ -1822,7 +1834,7 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via, 
 void SIP_PDU::InitialiseHeaders(SIPConnection & connection, const OpalTransport & transport, unsigned cseq)
 {
   InitialiseHeaders(connection.GetDialog(), CreateVia(transport), cseq);
-  connection.GetEndPoint().AdjustToRegistration(transport, *this);
+  connection.GetEndPoint().AdjustToRegistration(transport, *this, &connection);
 }
 
 
@@ -2326,14 +2338,52 @@ SIPDialogContext::SIPDialogContext()
 }
 
 
+static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool local)
+{
+  uri = url;
+
+  PString newTag = url.GetParamVars()(TagStr);
+  if (newTag.IsEmpty())
+    newTag = uri.GetFieldParameters().Get(TagStr);
+  else
+    uri.SetParamVar(TagStr, PString::Empty());
+
+  if (!newTag.IsEmpty() && tag != newTag) {
+    PTRACE(4, "SIP\tUpdating dialog tag from \"" << tag << "\" to \"" << newTag << '"');
+    tag = newTag;
+  }
+
+  if (tag.IsEmpty() && local)
+    tag = SIPURL::GenerateTag();
+
+  if (!tag.IsEmpty())
+    uri.GetFieldParameters().Set(TagStr, tag);
+
+  uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
+}
+
+
+static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool local)
+{
+  SIPURL url;
+  if (!url.Parse(str))
+    return false;
+
+  SetWithTag(url, uri, tag, local);
+  return true;
+}
+
+
 SIPDialogContext::SIPDialogContext(const SIPMIMEInfo & mime)
   : m_callId(mime.GetCallID())
   , m_requestURI(mime.GetContact())
-  , m_localURI(mime.GetTo())
-  , m_localTag(m_localURI.GetParamVars()("tag"))
-  , m_remoteURI(mime.GetFrom())
-  , m_remoteTag(m_remoteURI.GetParamVars()("tag"))
+  , m_lastSentCSeq(0)
+  , m_lastReceivedCSeq(mime.GetCSeqIndex())
+  , m_forking(false)
 {
+  SetWithTag(mime.GetTo(), m_localURI, m_localTag, false);
+  SetWithTag(mime.GetFrom(), m_remoteURI, m_remoteTag, false);
+
   mime.GetRecordRoute(m_routeSet, true);
 }
 
@@ -2393,41 +2443,6 @@ bool SIPDialogContext::SetRequestURI(const PString & uri)
   if (!m_requestURI.Parse(uri))
     return false;
   m_requestURI.Sanitise(SIPURL::RequestURI);
-  return true;
-}
-
-static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool local)
-{
-  uri = url;
-
-  PString newTag = url.GetParamVars()("tag");
-  if (newTag.IsEmpty())
-    newTag = uri.GetFieldParameters().Get("tag");
-  else
-    uri.SetParamVar("tag", PString::Empty());
-
-  if (!newTag.IsEmpty() && tag != newTag) {
-    PTRACE(4, "SIP\tUpdating dialog tag from \"" << tag << "\" to \"" << newTag << '"');
-    tag = newTag;
-  }
-
-  if (tag.IsEmpty() && local)
-    tag = SIPURL::GenerateTag();
-
-  if (!tag.IsEmpty())
-    uri.GetFieldParameters().Set("tag", tag);
-
-  uri.Sanitise(local ? SIPURL::FromURI : SIPURL::ToURI);
-}
-
-
-static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool local)
-{
-  SIPURL url;
-  if (!url.Parse(str))
-    return false;
-
-  SetWithTag(url, uri, tag, local);
   return true;
 }
 
@@ -3169,9 +3184,6 @@ bool SIPResponse::Send(OpalTransport & transport, const SIP_PDU & command)
 SIPInvite::SIPInvite(SIPConnection & connection)
   : SIPTransaction(Method_INVITE, connection)
 {
-  //m_mime.SetDate(); // now
-  SetAllow(connection.GetAllowedMethods());
-
   connection.OnCreatingINVITE(*this);
   
   if (m_SDP != NULL)
@@ -3348,7 +3360,8 @@ static const char * const KnownEventPackage[SIPSubscribe::NumPredefinedPackages]
   "message-summary",
   "presence",
   "dialog;sla;ma", // sla is the old version ma is the new for Line Appearance extension
-  "reg"
+  "reg",
+  "conference"
 };
 
 SIPSubscribe::EventPackage::EventPackage(PredefinedPackages pkg)

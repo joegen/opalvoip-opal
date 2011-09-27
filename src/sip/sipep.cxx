@@ -92,6 +92,9 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   mimeForm = PFalse;
   maxRetries = 10;
 
+  m_allowedEvents += SIPEventPackage(SIPSubscribe::Dialog);
+  m_allowedEvents += SIPEventPackage(SIPSubscribe::Conference);
+
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous(natBindingTimeout);
 
@@ -381,6 +384,17 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 {
   m_receivedConnectionTokens.RemoveAt(connection.GetIdentifier());
   OpalEndPoint::OnReleased(connection);
+}
+
+
+void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri)
+{
+  ConferenceMap::iterator it = m_conferenceAOR.find(uri);
+  if (it != m_conferenceAOR.end()) {
+    OpalConferenceStates states;
+    if (endpoint.GetConferenceStates(states, uri) && !states.empty())
+      Notify(it->second, SIPEventPackage(SIPSubscribe::Conference), states.front());
+  }
 }
 
 
@@ -706,8 +720,6 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   SIPMIMEInfo & mime = pdu.GetMIME();
 
   SIPSubscribe::EventPackage eventPackage(mime.GetEvent());
-  if (!CanNotify(eventPackage))
-    return false;
 
   // See if already subscribed. Now this is not perfect as we only check the call-id and strictly
   // speaking we should check the from-tag and to-tags as well due to it being a dialog.
@@ -715,7 +727,14 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   if (handler == NULL) {
     SIPDialogContext dialog(mime);
 
-    handler = new SIPNotifyHandler(*this, dialog.GetRemoteURI().AsString(), eventPackage, dialog);
+    if (!CanNotify(eventPackage, dialog.GetLocalURI())) {
+      SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
+      response.GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec
+      pdu.SendResponse(transport, response, this);
+      return true;
+    }
+
+    handler = new SIPNotifyHandler(*this, eventPackage, dialog);
     handler.SetSafetyMode(PSafeReadWrite);
     activeSIPHandlers.Append(handler);
 
@@ -729,7 +748,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
   if (expires > 0)
     handler->SetExpire(expires);
 
-  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  SIP_PDU response(pdu, SIP_PDU::Successful_Accepted);
   response.GetMIME().SetEvent(eventPackage); // Required by spec
   response.GetMIME().SetExpires(handler->GetExpire()); // Required by spec
   pdu.SendResponse(transport, response, this);
@@ -1213,6 +1232,16 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & toke
     return false;
   }
 
+  if (SIPEventPackage(SIPSubscribe::Conference) == eventPackage) {
+    ConferenceMap::iterator it = m_conferenceAOR.begin();
+    while (it != m_conferenceAOR.end()) {
+      if (it->second != handler->GetAddressOfRecord())
+        ++it;
+      else
+        m_conferenceAOR.erase(it++);
+    }
+  }
+
   if (invalidateNotifiers) {
     PSafePtr<SIPSubscribeHandler> subscription = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(handler);
     if (subscription != NULL) {
@@ -1285,7 +1314,31 @@ void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
 
 bool SIPEndPoint::CanNotify(const PString & eventPackage)
 {
-  return SIPEventPackage(SIPSubscribe::Dialog) == eventPackage;
+  return m_allowedEvents.Contains(eventPackage);
+}
+
+
+bool SIPEndPoint::CanNotify(const PString & eventPackage, const SIPURL & aor)
+{
+  if (SIPEventPackage(SIPSubscribe::Conference) != eventPackage)
+    return CanNotify(eventPackage);
+
+  PList<OpalEndPoint> endpoints = manager.GetEndPoints();
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    OpalConferenceStates states;
+    if (ep->GetConferenceStates(states, aor.GetUserName()) && !states.empty()) {
+      PString uri = states.front().m_internalURI;
+      ConferenceMap::iterator it = m_conferenceAOR.find(uri);
+      while (it != m_conferenceAOR.end() && it->first == uri) {
+        if (it->second == aor)
+          return true;
+      }
+      m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
@@ -1635,7 +1688,7 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU & pdu)
+void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU & pdu, const SIPConnection * connection)
 {
   if (!PAssert(transport.IsOpen(), PLogicError))
     return;
@@ -1688,6 +1741,12 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
 
     if (contact.IsEmpty())
       contact = SIPURL(user, transport.GetLocalAddress());
+
+    if (connection != NULL) {
+      PSafePtr<OpalConnection> other = connection->GetOtherPartyConnection();
+      if (other != NULL && other->GetConferenceState(NULL))
+        contact.GetFieldParameters().Set("isfocus", "");
+    }
 
     contact.Sanitise(SIPURL::ContactURI);
     mime.SetContact(contact.AsQuotedString());

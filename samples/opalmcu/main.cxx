@@ -51,11 +51,11 @@ PString MyManager::GetArgumentSpec() const
 
   return "[Application options:]"
          "a-attendant: VXML script to run for incoming calls not directed\r"
-                      "to a specific conference. If absent, then ad-hoc\r"
-                      "conferences are created.\n"
+                      "to a specific conference.\n"
          "m-moderator: PIN to allow to become a moderator and have talk\r"
                       "rights if absent, all participants are moderators.\n"
          "n-name:      Default name for ad-hoc conference.\n"
+         "f-factory:   Name for factory URI name.\n"
 #if OPAL_VIDEO
          "s-size:      Set default video size for ad-hoc conference.\n"
          "V-no-video.  Disable video for ad-hoc conference.\n"
@@ -77,33 +77,41 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   OpalIVREndPoint * ivr = new OpalIVREndPoint(*this);
 
   // Set up conference mixer
-  MyMixerNodeInfo * info = NULL;
+  m_mixer = new MyMixerEndPoint(*this);
+
+  AddRouteEntry("sip.*:.* = mcu:<du>");
+  AddRouteEntry("h323.*:.* = mcu:<du>");
+
   if (args.HasOption('a')) {
     PFilePath path = args.GetOptionString('a');
     ivr->SetDefaultVXML(path);
     AddRouteEntry(".*:.* = ivr:<da>");
     cout << "Using attendant IVR " << path << endl;
   }
-  else {
-    info = new MyMixerNodeInfo;
-    info->m_name = args.GetOptionString('n', "room101");
-    info->m_moderatorPIN = args.GetOptionString('m');
-    info->m_listenOnly = !info->m_moderatorPIN.IsEmpty();
-    info->m_mediaPassThru = args.HasOption("pass-thru");
+
+  MyMixerNodeInfo info;
+  info.m_moderatorPIN = args.GetOptionString('m');
+  info.m_listenOnly = !info.m_moderatorPIN.IsEmpty();
+  info.m_mediaPassThru = args.HasOption("pass-thru");
 
 #if OPAL_VIDEO
-    info->m_audioOnly = args.HasOption('V');
-    if (args.HasOption('s'))
-      PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
+  info.m_audioOnly = args.HasOption('V');
+  if (args.HasOption('s'))
+    PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info.m_width, info.m_height);
+  cout << "Video mixer resolution: " << info.m_width << 'x' << info.m_height << endl;
 #endif
-    cout << "Using ad-hoc conference, default name: " << info->m_name << endl;
+
+  if (args.HasOption('n')) {
+    info.m_name = args.GetOptionString('n');
+    m_mixer->SetAdHocNodeInfo(info);
+    cout << "Ad-hoc conferences enabled with default name: " << info.m_name << endl;
   }
 
-  m_mixer = new MyMixerEndPoint(*this, info);
-
-
-  AddRouteEntry("sip.*:.* = mcu:<du>");
-  AddRouteEntry("h323.*:.* = mcu:<du>");
+  if (args.HasOption('f')) {
+    info.m_name = args.GetOptionString('f');
+    m_mixer->SetFactoryNodeInfo(info);
+    cout << "Factory conferences enabled with name: " << info.m_name << endl;
+  }
 
 
   m_cli->SetPrompt("MCU> ");
@@ -170,11 +178,10 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 ///////////////////////////////////////////////////////////////
 
-MyMixerEndPoint::MyMixerEndPoint(MyManager & manager, MyMixerNodeInfo * info)
+MyMixerEndPoint::MyMixerEndPoint(MyManager & manager)
   : OpalMixerEndPoint(manager, "mcu")
   , m_manager(manager)
 {
-  m_adHocNodeInfo = info;
 }
 
 
@@ -207,7 +214,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
   }
 
   for (PINDEX i = 0; i < args.GetCount(); ++i) {
-    if (m_nodeManager.FindNode(args[i]) != NULL) {
+    if (FindNode(args[i]) != NULL) {
       args.WriteError() << "Conference name \"" << args[i] << "\" already exists." << endl;
       return;
     }
@@ -236,7 +243,7 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
 void MyMixerEndPoint::CmdConfList(PCLI::Arguments & args, INT)
 {
   ostream & out = args.GetContext();
-  for (PSafePtr<OpalMixerNode> node = m_nodeManager.GetFirstNode(PSafeReadOnly); node != NULL; ++node)
+  for (PSafePtr<OpalMixerNode> node = GetFirstNode(PSafeReadOnly); node != NULL; ++node)
     out << *node << '\n';
   out.flush();
 }
