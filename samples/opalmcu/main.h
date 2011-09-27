@@ -77,7 +77,7 @@ class MyMixerEndPoint : public OpalMixerEndPoint
 {
     PCLASSINFO(MyMixerEndPoint, OpalMixerEndPoint);
   public:
-    MyMixerEndPoint(MyManager & manager, MyMixerNodeInfo * info);
+    MyMixerEndPoint(MyManager & manager);
 
     virtual OpalMixerConnection * CreateConnection(
       PSafePtr<OpalMixerNode> node,

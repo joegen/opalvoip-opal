@@ -262,7 +262,6 @@ class SIPNotifyHandler : public SIPHandler
 public:
   SIPNotifyHandler(
     SIPEndPoint & ep,
-    const PString & targetAddress,
     const SIPEventPackage & eventPackage,
     const SIPDialogContext & dialog
   );

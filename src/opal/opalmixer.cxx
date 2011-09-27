@@ -45,6 +45,7 @@
 #include <rtp/jitter.h>
 #include <ptlib/vconvert.h>
 #include <ptclib/pwavfile.h>
+#include <sip/handlers.h>
 
 
 #define DETAIL_LOG_LEVEL 6
@@ -730,7 +731,9 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
 
 OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
   : OpalLocalEndPoint(manager, prefix)
+  , OpalMixerNodeManager(manager)
   , m_adHocNodeInfo(NULL)
+  , m_factoryNodeInfo(NULL)
 {
   PTRACE(4, "MixerEP\tConstructed");
 }
@@ -747,7 +750,7 @@ void OpalMixerEndPoint::ShutDown()
 {
   PTRACE(4, "MixerEP\tShutting down");
 
-  m_nodeManager.ShutDown();
+  OpalMixerNodeManager::ShutDown();
 
   OpalLocalEndPoint::ShutDown();
 }
@@ -772,11 +775,34 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 {
   PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
 
+  PSafePtr<OpalMixerNode> node;
+
   PWaitAndSignal mutex(inUseFlag);
 
-  // Specify mixer node to use after endpoint name (':') and delimit it with ';'
+  // Specify mixer node to use after endpoint name (':') and delimit it with ';' and '@'
   PINDEX semicolon = party.Find(';');
-  PString name = party(party.Find(':')+1, semicolon-1);
+  PString name = party(party.Find(':')+1, std::min(semicolon, party.Find('@'))-1);
+
+  if (m_factoryNodeInfo != NULL && name == m_factoryNodeInfo->m_name) {
+    PSafePtr<OpalConnection> connection = call.GetConnection(0);
+    if (connection == NULL)
+      return NULL; // Huh? A-Party!
+
+    OpalMixerNodeInfo * info = m_factoryNodeInfo->Clone();
+    info->m_name = GetNewFactoryName();
+    if (info->m_name.IsEmpty() || (node = AddNode(info)) == NULL) {
+      PTRACE(2, "MixerEP\tCannot make factory node.");
+      return NULL;
+    }
+
+    node->SetOwnerConnection(connection->GetRemotePartyURL());
+
+    PURL uri = connection->GetLocalPartyURL();
+    uri.SetUserName(info->m_name);
+    connection->ForwardCall(uri.AsString());
+    return NULL;
+  }
+
   if (name.IsEmpty() || name == "*") {
     if (m_adHocNodeInfo == NULL || m_adHocNodeInfo->m_name.IsEmpty()) {
       PTRACE(2, "MixerEP\tCannot make ad-hoc node for default alias");
@@ -785,7 +811,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
     name = m_adHocNodeInfo->m_name;
   }
 
-  PSafePtr<OpalMixerNode> node = FindNode(name);
+  node = FindNode(name);
   if (node == NULL && m_adHocNodeInfo != NULL) {
     OpalMixerNodeInfo * info = m_adHocNodeInfo->Clone();
     info->m_name = name;
@@ -812,10 +838,37 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 }
 
 
+bool OpalMixerEndPoint::GetConferenceStates(OpalConferenceStates & states, const PString & name) const
+{
+  states.clear();
+
+  if (name.IsEmpty()) {
+    for (PSafePtr<OpalMixerNode> node(m_nodesByUID, PSafeReadOnly); node != NULL; ++node) {
+      states.push_back(OpalConferenceState());
+      node->GetConferenceState(states.back());
+    }
+  }
+  else {
+    PSafePtr<OpalMixerNode> node;
+    if (name.NumCompare(GetPrefixName()+':') == EqualTo)
+      node = m_nodesByUID.FindWithLock(name.Mid(GetPrefixName().GetLength()+1));
+    else
+      node = m_nodesByName.GetAt(name);
+
+    if (node != NULL) {
+      states.push_back(OpalConferenceState());
+      node->GetConferenceState(states.back());
+    }
+  }
+
+  return true;
+}
+
+
 PBoolean OpalMixerEndPoint::GarbageCollection()
 {
   // Use bitwise | not boolean || so both get executed
-  return m_nodeManager.GarbageCollection() | OpalEndPoint::GarbageCollection();
+  return OpalMixerNodeManager::GarbageCollection() | OpalEndPoint::GarbageCollection();
 }
 
 
@@ -826,24 +879,6 @@ OpalMixerConnection * OpalMixerEndPoint::CreateConnection(PSafePtr<OpalMixerNode
                                                   OpalConnection::StringOptions * stringOptions)
 {
   return new OpalMixerConnection(node, call, *this, userData, options, stringOptions);
-}
-
-
-PSafePtr<OpalMixerNode> OpalMixerEndPoint::AddNode(OpalMixerNodeInfo * info)
-{
-  PSafePtr<OpalMixerNode> node(CreateNode(info), PSafeReference);
-  if (node != NULL)
-  {
-	m_nodeManager.AddNode(node);
-    PTRACE(3, "MixerEP\tAdded new node, id=" << node->GetGUID());
-  }
-  return node;
-}
-
-
-OpalMixerNode * OpalMixerEndPoint::CreateNode(OpalMixerNodeInfo * info)
-{
-  return m_nodeManager.CreateNode(info);
 }
 
 
@@ -859,6 +894,47 @@ void OpalMixerEndPoint::SetAdHocNodeInfo(OpalMixerNodeInfo * info)
   delete m_adHocNodeInfo;
   m_adHocNodeInfo = info;
   inUseFlag.Signal();
+}
+
+
+void OpalMixerEndPoint::SetFactoryNodeInfo(const OpalMixerNodeInfo & info)
+{
+  SetFactoryNodeInfo(info.Clone());
+}
+
+
+void OpalMixerEndPoint::SetFactoryNodeInfo(OpalMixerNodeInfo * info)
+{
+  inUseFlag.Wait();
+  delete m_factoryNodeInfo;
+  m_factoryNodeInfo = info;
+  inUseFlag.Signal();
+}
+
+
+PString OpalMixerEndPoint::GetNewFactoryName()
+{
+  if (m_factoryNodeInfo == NULL)
+    return PString::Empty();
+
+  return m_factoryNodeInfo->m_name + psprintf("%04u", ++m_factoryIndex);
+}
+
+
+PString OpalMixerEndPoint::CreateInternalURI(const PGloballyUniqueID & guid)
+{
+  return GetPrefixName() + ':' + guid.AsString();
+}
+
+
+void OpalMixerEndPoint::OnNodeStatusChanged(const OpalMixerNode & node)
+{
+  PString uri = CreateInternalURI(node.GetGUID());
+  PList<OpalEndPoint> endpoints = manager.GetEndPoints();
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    if (this != &*ep)
+      ep->OnConferenceStatusChanged(*this, uri);
+  }
 }
 
 
@@ -948,6 +1024,18 @@ bool OpalMixerConnection::SendUserInputString(const PString & value)
 PBoolean OpalMixerConnection::SendUserInputTone(char tone, unsigned /*duration*/)
 {
   m_node->BroadcastUserInput(this, tone);
+  return true;
+}
+
+
+bool OpalMixerConnection::GetConferenceState(OpalConferenceState * state) const
+{
+  if (m_node == NULL)
+    return false;
+
+  if (state != NULL)
+    m_node->GetConferenceState(*state);
+
   return true;
 }
 
@@ -1098,24 +1186,6 @@ OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
   , m_videoMixer(*m_info)
 #endif
 {
-  Construct();
-}
-
-
-OpalMixerNode::OpalMixerNode(OpalMixerEndPoint & endpoint, OpalMixerNodeInfo * info)
-  : m_manager(endpoint.GetNodeManager())
-  , m_info(info != NULL ? info : new OpalMixerNodeInfo)
-  , m_audioMixer(*m_info)
-#if OPAL_VIDEO
-  , m_videoMixer(*m_info)
-#endif
-{
-  Construct();
-}
-
-
-void OpalMixerNode::Construct()
-{
   m_connections.DisallowDeleteObjects();
 
   AddName(m_info->m_name);
@@ -1197,6 +1267,8 @@ void OpalMixerNode::AttachConnection(OpalConnection * connection)
   m_connections.Append(connection);
 
   UseMediaPassThrough(0);
+
+  m_manager.OnNodeStatusChanged(*this);
 }
 
 
@@ -1207,6 +1279,11 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
 
   if (m_connections.Remove(connection))
     UseMediaPassThrough(0, connection);
+
+  m_manager.OnNodeStatusChanged(*this);
+
+  if (connection->GetRemotePartyURL() == m_ownerConnection)
+    ShutDown();
 }
 
 
@@ -1297,6 +1374,182 @@ void OpalMixerNode::BroadcastUserInput(const OpalConnection * connection, const 
       conn->OnUserInputString(value);
   }
 }
+
+
+void OpalMixerNode::GetConferenceState(OpalConferenceState & state) const
+{
+  state.m_internalURI = m_manager.CreateInternalURI(m_guid);
+  state.m_displayText = m_info->m_displayText.IsEmpty() ? m_names[0] : m_info->m_displayText;
+  state.m_subject     = m_info->m_subject;
+  state.m_notes       = m_info->m_notes;
+  state.m_keywords    = m_info->m_keywords;
+
+  PList<OpalEndPoint> endpoints = m_manager.GetManager().GetEndPoints();
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    OpalTransportAddressArray addresses = ep->GetInterfaceAddresses();
+    for (PINDEX i = 0; i < addresses.GetSize(); ++i) {
+      PIPSocket::Address ip;
+      WORD port = ep->GetDefaultSignalPort();
+      if (addresses[i].GetIpAndPort(ip, port)) {
+        for (PStringSet::const_iterator alias = m_names.begin(); alias != m_names.end(); ++alias) {
+          PURL uri;
+          if (uri.SetScheme(ep->GetPrefixName())) {
+            uri.SetUserName(*alias);
+            uri.SetHostName(ip.AsString());
+            if (uri.GetPort() != port)
+              uri.SetPort(port);
+
+            OpalConferenceState::URI newURI;
+            newURI.m_uri = uri.AsString();
+            newURI.m_purpose = "participation";
+            state.m_accessURI.push_back(newURI);
+          }
+        }
+      }
+    }
+  }
+
+  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {
+    PSafePtr<OpalConnection> other = conn->GetOtherPartyConnection();
+    if (other != NULL && other->IsNetworkConnection()) {
+      OpalConferenceState::User user;
+      user.m_uri = other->GetRemotePartyURL();
+      user.m_displayText = other->GetRemotePartyName();
+      user.m_roles += "participant";
+      state.m_users.push_back(user);
+    }
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SIP
+
+static void OutputIfNotEmpty(ostream & xml, const PString & str, const char * tag, int indent)
+{
+  if (!str.IsEmpty())
+    xml << setw(indent+1) << '<' << tag << '>' << str << "</" << tag << ">\n";
+}
+
+static void OutputURIs(ostream & xml, const OpalConferenceState::URIs & uris, const char * tag)
+{
+  if (uris.empty())
+    return;
+
+  xml << "    <" << tag << ">\n";
+  for (OpalConferenceState::URIs::const_iterator uri = uris.begin(); uri != uris.end(); ++uri) {
+    if (!uri->m_uri.IsEmpty()) {
+      xml << "      <entry>\n"
+             "        <uri>" << uri->m_uri << "</uri>\n";
+      OutputIfNotEmpty(xml, uri->m_displayText, "display-text", 8);
+      OutputIfNotEmpty(xml, uri->m_purpose, "purpose", 8);
+      xml << "      </entry>\n";
+    }
+  }
+  xml << "    </" << tag << ">\n";
+}
+
+
+// This package is on for backward compatibility, presence should now use the
+// the OpalPresence classes to manage SIP presence.
+class SIPConferenceEventPackageHandler : public SIPEventPackageHandler
+{
+  unsigned m_expectedSequenceNumber;
+  unsigned m_txSequenceNumber;
+
+public:
+  SIPConferenceEventPackageHandler()
+    : m_expectedSequenceNumber(0)
+    , m_txSequenceNumber(0)
+  {
+  }
+
+  virtual PCaselessString GetContentType() const
+  {
+    return "application/conference-info+xml";
+  }
+
+  virtual bool OnReceivedNOTIFY(SIPHandler & /*handler*/, SIP_PDU & request)
+  {
+    PTRACE(4, "SIP\tProcessing conference NOTIFY");
+
+    OpalConferenceState state;
+
+#if P_EXPAT
+    if (!state.m_xml.Load(request.GetEntityBody()))
+      return false;
+
+    unsigned newSequenceNumber = state.m_xml.GetRootElement()->GetAttribute("version").AsUnsigned();
+    if (m_expectedSequenceNumber > 0 && m_expectedSequenceNumber != newSequenceNumber)
+      return false;
+    m_expectedSequenceNumber = newSequenceNumber+1;
+#endif
+
+    return true;
+  }
+
+  virtual PString OnSendNOTIFY(SIPHandler & handler, const PObject * body)
+  {
+    const OpalConferenceState * state = dynamic_cast<const OpalConferenceState *>(body);
+    if (state == NULL)
+      return PString::Empty();
+
+#if P_EXPAT
+    if (state->m_xml.IsLoaded())
+      return state->m_xml.AsString();
+#endif
+
+    PStringStream xml;
+
+    xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\"\n"
+            "                 entity=\"" << handler.GetAddressOfRecord() << "\"\n"
+            "                 state=\"full\"\n"
+            "                 version=\"" << ++m_txSequenceNumber << "\">\n";
+
+    xml << "  <conference-description>\n";
+    OutputIfNotEmpty(xml, state->m_displayText, "display-text", 4);
+    OutputIfNotEmpty(xml, state->m_subject, "subject", 4);
+    OutputIfNotEmpty(xml, state->m_notes, "free-text", 4);
+    OutputIfNotEmpty(xml, state->m_keywords, "keywords", 4);
+    OutputURIs(xml, state->m_accessURI, "conf-uris");
+    OutputURIs(xml, state->m_serviceURI, "service-uris");
+    if (state->m_maxUsers > 0)
+      xml << "    <maximum-user-count>" << state->m_maxUsers << "</maximum-user-count>\n";
+    xml << "  </conference-description>\n";
+
+    xml << "  <conference-state>\n"
+            "    <user-count>" << state->m_users.size() << "</user-count>\n"
+            "    <active>" << (state->m_active ? "true" : "false") << "</active>\n"
+            "    <locked>" << (state->m_locked ? "true" : "false") << "</locked>\n"
+            "  </conference-state>\n";
+
+    if (!state->m_users.empty()) {
+      xml << "  <users>\n";
+      for (OpalConferenceState::Users::const_iterator user = state->m_users.begin(); user != state->m_users.end(); ++user) {
+        xml << "    <user entity=\"" << user->m_uri << "\" state=\"full\">\n";
+        OutputIfNotEmpty(xml, user->m_displayText, "display-text", 6);
+        if (!user->m_roles.IsEmpty()) {
+          xml << "      <roles>\n";
+          for (PStringSet::const_iterator role = user->m_roles.begin(); role != user->m_roles.end(); ++role)
+            OutputIfNotEmpty(xml, *role, "entry", 8);
+          xml << "      </roles>\n";
+        }
+        xml << "    </user>\n";
+      }
+      xml << "  </users>\n";
+    }
+
+    xml << "</conference-info>";
+
+    return xml;
+  }
+};
+
+static SIPEventPackageFactory::Worker<SIPConferenceEventPackageHandler> conferenceEventPackageHandler(SIPSubscribe::Conference);
+
+#endif // OPAL_SIP
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1554,7 +1807,8 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
 //////////////////////////////////////////////////////////////////////////////
 
 
-OpalMixerNodeManager::OpalMixerNodeManager()
+OpalMixerNodeManager::OpalMixerNodeManager(OpalManager & manager)
+  : m_manager(manager)
 {
   m_nodesByName.DisallowDeleteObjects();
 }
@@ -1595,8 +1849,10 @@ PSafePtr<OpalMixerNode> OpalMixerNodeManager::AddNode(OpalMixerNodeInfo * info)
   PSafePtr<OpalMixerNode> node(CreateNode(info), PSafeReference);
   if (node == NULL)
     delete info;
-  else
+  else {
     m_nodesByUID.SetAt(node->GetGUID(), node);
+    PTRACE(3, "MixerEP\tAdded new node, id=" << node->GetGUID());
+  }
 
   return node;
 }
@@ -1643,6 +1899,17 @@ void OpalMixerNodeManager::RemoveNodeNames(const PStringSet & names)
 {
   for (PStringSet::const_iterator it = names.begin(); it != names.end(); ++it)
     m_nodesByName.RemoveAt(*it);
+}
+
+
+PString OpalMixerNodeManager::CreateInternalURI(const PGloballyUniqueID & guid)
+{
+  return "mixer:" + guid.AsString();
+}
+
+
+void OpalMixerNodeManager::OnNodeStatusChanged(const OpalMixerNode &)
+{
 }
 
 

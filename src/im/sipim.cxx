@@ -555,12 +555,12 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const 
 
 #else // P_EXPAT
 
-OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM & message)
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM &)
 {
   return UnsupportedFeature;
 }
 
-OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const OpalIM & message)
+OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const OpalIM &)
 {
   return UnsupportedFeature;
 }

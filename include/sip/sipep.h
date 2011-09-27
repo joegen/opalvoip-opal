@@ -183,6 +183,18 @@ class SIPEndPoint : public OpalRTPEndPoint
       OpalConnection & connection   ///<  Connection that was established
     );
 
+    /**Call back when conferencing state information changes.
+       If a conferencing endpoint type detects a change in a conference nodes
+       state, as would be returned by GetConferenceStatus() then this function
+       will be called on all endpoints in the OpalManager.
+
+       The \p uri parameter is as is the internal URI for the conference.
+      */
+    virtual void OnConferenceStatusChanged(
+      OpalEndPoint & endpoint,  /// < Endpoint sending state change
+      const PString & uri       ///< Internal URI of conference node that changed
+    );
+
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
@@ -634,6 +646,10 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual bool CanNotify(
       const PString & eventPackage ///< Event package we support
     );
+    virtual bool CanNotify(
+      const PString & eventPackage, ///< Event package we support
+      const SIPURL & aor
+    );
 
     /** Send notification to all remotes that are subcribed to the event package.
       */
@@ -739,6 +755,10 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PURL & to
     );
 
+    /** Get the allowed events for SUBSCRIBE commands.
+      */
+    const PStringSet & GetAllowedEvents() const { return m_allowedEvents; }
+
     /**Get default mode for PRACK support.
       */
     SIPConnection::PRACKMode GetDefaultPRACKMode() const { return m_defaultPrackMode; }
@@ -841,7 +861,8 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     void AdjustToRegistration(
       const OpalTransport & transport,
-      SIP_PDU & pdu
+      SIP_PDU & pdu,
+      const SIPConnection * connection = NULL
     );
 
 
@@ -914,6 +935,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     SIPURL        proxy;
     PString       userAgentString;
+    PStringSet    m_allowedEvents;
 
     SIPConnection::PRACKMode m_defaultPrackMode;
 
@@ -943,6 +965,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     std::map<PString, PSyncPoint> m_registrationComplete;
 
+    typedef std::multimap<PString, SIPURL> ConferenceMap;
+    ConferenceMap m_conferenceAOR;
 
     // Thread pooling
     class SIP_Work : public PObject

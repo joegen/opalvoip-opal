@@ -410,6 +410,11 @@ struct OpalMixerNodeInfo
 #endif
   bool     m_mediaPassThru;       /**< Enable media pass through to optimise mixer node
                                        with precisely two attached connections. */
+
+  PString m_displayText;          ///< Human readable text for conference name
+  PString m_subject;              ///< Subject for conference
+  PString m_notes;                ///< Free text about conference
+  PString m_keywords;             ///< Space separated list of keywords for conference
 };
 
 
@@ -420,22 +425,21 @@ class OpalMixerNode;
 
 /** Mixer node manager.
     This class is a collection of OpalMixerNodes.
-	It provides access to nodes by GUID or name.
+    It provides access to nodes by GUID or name.
   */
-class OpalMixerNodeManager : public PObject
+class OpalMixerNodeManager
 {
-    PCLASSINFO(OpalMixerNodeManager, PObject);
   public:
   /**@name Construction */
   //@{
     /**Create a new mixer node manager.
      */
-    OpalMixerNodeManager();
+    OpalMixerNodeManager(OpalManager & manager);
 
     /**Destroy all mixer nodes.
        Calls ShutDown.
      */
-	virtual ~OpalMixerNodeManager();
+    virtual ~OpalMixerNodeManager();
 
     /**Shuts down, removes and destroys all mixer nodes.
       */
@@ -444,7 +448,7 @@ class OpalMixerNodeManager : public PObject
     /** Execute garbage collection of nodes.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects that have been
-		removed from the m_nodesByUID list.
+        removed from the m_nodesByUID list.
       */
     virtual PBoolean GarbageCollection();
   //@}
@@ -461,10 +465,10 @@ class OpalMixerNodeManager : public PObject
       OpalMixerNodeInfo * info ///< Initial info for node
     );
 
-	/**Add a new node.
+    /**Add a new node.
        The info variable should be created on the heap and it is subsequently
        owned by the node. NULL can be passed if defaults are to be used.
-	   Calls CreateNode.
+       Calls CreateNode.
       */
     virtual PSafePtr<OpalMixerNode> AddNode(
       OpalMixerNodeInfo * info ///< Initial info for node
@@ -491,7 +495,7 @@ class OpalMixerNodeManager : public PObject
 
     /**Remove a node.
        Shut down all active connections with node, remove its name 
-	   associations and delete it.
+       associations and delete it.
       */
     virtual void RemoveNode(
       OpalMixerNode & node
@@ -516,9 +520,28 @@ class OpalMixerNodeManager : public PObject
     void RemoveNodeNames(
       const PStringSet & names   ///< list of alias names for nodes
     );
+
+    /**Internal function to get internal URI string.
+      */
+    virtual PString CreateInternalURI(
+      const PGloballyUniqueID & guid
+    );
+
+    /**Call back when mixed node state information changes.
+
+       Default behaviour does nothing.
+      */
+    virtual void OnNodeStatusChanged(
+      const OpalMixerNode & node   ///< Node that has changed state
+    );
+
+    /// Get manager
+    OpalManager & GetManager() const { return m_manager; }
   //@}
 
   protected:
+    OpalManager & m_manager;
+
     PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
     PDictionary<PString, OpalMixerNode>               m_nodesByName;
 };
@@ -532,7 +555,7 @@ class OpalMixerConnection;
     This class represents an endpoint that mixes media. It can be used as the
     basis for a Multipoint Conferencing Unit.
  */
-class OpalMixerEndPoint : public OpalLocalEndPoint
+class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
 {
     PCLASSINFO(OpalMixerEndPoint, OpalLocalEndPoint);
   public:
@@ -596,8 +619,6 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
        made.
-
-       The default behaviour is pure.
      */
     virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,           ///<  Owner of connection
@@ -606,6 +627,26 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
       unsigned options = 0,      ///< Option bit mask to pass to connection
       OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
+
+    /**Get conference state information for all nodes.
+       This obtains the state of one or more conferences managed by this
+       endpoint. If this endpoint does not do conferencing, then false is
+       returned.
+
+       The \p name parameter may be one of the aliases for the conference, or
+       the internal URI for the conference. An empty string indicates all 
+       active conferences are to be returned.
+
+       Note that if the \p name does not match an active conference, true is
+       still returned, but the states list will be empty.
+
+       The default behaviour returns false indicating this is not a
+       conferencing endpoint.
+      */
+    virtual bool GetConferenceStates(
+      OpalConferenceStates & states,          ///< List of conference states
+      const PString & name = PString::Empty() ///< Name for specific node, empty string is all
+    ) const;
 
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
@@ -639,51 +680,6 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
     );
   //@}
 
-  /**@name Mixer Operations */
-  //@{
-    /**Add a new node.
-       The info variable should be created on the heap and it is subsequently
-       owned by the node. NULL can be passed if defaults are to be used.
-	   Calls CreateNode.
-      */
-    PSafePtr<OpalMixerNode> AddNode(
-      OpalMixerNodeInfo * info ///< Initial info for node
-    );
-
-    /**Create a new node.
-       This should create the new instance of the OpalMixerNode as required
-       by the derived class, if any.
-       The info variable should be created on the heap and it is subsequently
-       owned by the node. NULL can be passed if defaults are to be used.
-      */
-    virtual OpalMixerNode * CreateNode(
-      OpalMixerNodeInfo * info ///< Initial info for node
-    );
-
-    /**Get the first node.
-       The active nodes may be enumerated by the ++ operator on the PSafePtr.
-      */
-    PSafePtr<OpalMixerNode> GetFirstNode(
-      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
-    ) const { return m_nodeManager.GetFirstNode(mode); }
-
-    /**Find an existing node.
-       This will search for the mixer node using GUID and then name.
-      */
-    PSafePtr<OpalMixerNode> FindNode(
-      const PString & name,             ///< GUID or alias name for node
-      PSafetyMode mode = PSafeReference ///< Lock mode for returned pointer
-    ) { return m_nodeManager.FindNode(name, mode); }
-
-    /**Remove a node.
-       Shut down all active connections with node, remove its name 
-	   associations and delete it.
-      */
-    void RemoveNode(
-      OpalMixerNode & node ///< Initial info for node
-    ) { m_nodeManager.RemoveNode(node); }
-  //@}
-
   /**@name Member variable access */
   //@{
     /**Set default ad hoc node information.
@@ -692,10 +688,10 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
        could use.
 
        Note if NULL, then ad hoc nodes are not created and incoming
-       connections are refused. A user must ex[icitly call AddNode() to create
-       a name that can be conected to.
+       connections are refused. A user must expicitly call AddNode() to create
+       a name that can be connected to.
 
-       The version that takes a reference will utilise the CLone() function
+       The version that takes a reference will utilise the Clone() function
        to create a copy of the mixer info.
       */
     void SetAdHocNodeInfo(
@@ -711,22 +707,51 @@ class OpalMixerEndPoint : public OpalLocalEndPoint
        of OpalMixerNode could use.
 
        Note if NULL, then ad hoc nodes are not created and incoming
-       connections are refused. A user must ex[icitly call AddNode() to create
-       a name that can be conected to.
+       connections are refused. A user must expicitly call AddNode() to create
+       a name that can be connected to.
 
        Default bahaviour returns member variable m_adHocNodeInfo.
       */
     OpalMixerNodeInfo * GetAdHocNodeInfo() { return m_adHocNodeInfo; }
 
-    /**Get the Node Manager for this endpoint.
+    /**Set factory node information.
+       If an incoming connections destination address is the info->m_name,
+       then a new node is created and the incoming call is forwarded to it.
+       This is an alternative to enabling ad-hoc nodes and follows the
+       RFC4353 model.
+
+       The pointer is passed to the CreateNode() function, so may be a
+       reference to derived class, which a derived class of OpalMixerNode
+       could use.
+
+       Note if NULL, then factory nodes are not created and incoming
+       connections are refused. A user must expicitly call AddNode() to create
+       a name that can be connected to.
+
+       The version that takes a reference will utilise the Clone() function
+       to create a copy of the mixer info.
       */
-    const OpalMixerNodeManager & GetNodeManager() const { return m_nodeManager; }
-          OpalMixerNodeManager & GetNodeManager()       { return m_nodeManager; }
+    void SetFactoryNodeInfo(
+      const OpalMixerNodeInfo & info
+    );
+    void SetFactoryNodeInfo(
+      OpalMixerNodeInfo * info
+    );
+
+    /**Generate a new name when a factory generated node is created.
+       The default is to append a monitonic increasing integer to the factory
+       name.
+      */
+    virtual PString GetNewFactoryName();
   //@}
 
   protected:
+    virtual PString CreateInternalURI(const PGloballyUniqueID & guid);
+    virtual void OnNodeStatusChanged(const OpalMixerNode & node);
+
     OpalMixerNodeInfo  * m_adHocNodeInfo;
-    OpalMixerNodeManager m_nodeManager;
+    OpalMixerNodeInfo  * m_factoryNodeInfo;
+    PAtomicInteger       m_factoryIndex;
 };
 
 
@@ -844,6 +869,22 @@ class OpalMixerConnection : public OpalLocalConnection
       char tone,        ///<  DTMF tone code
       unsigned duration = 0  ///<  Duration of tone in milliseconds
     );
+
+    /**Get Conference state information.
+       This obtains the state information about a conference this connection
+       is directly a part of. If the connection type does not embody a
+       conference then false is returned.
+
+       The \p state parameter, if non-NULL, is illed with the state of the
+       conference. When NULL, this just indicates that the connection is
+       part of a conference with the return value.
+
+       Default behaviour is to return false which indicates this connection is
+       not part of a conference.
+      */
+    virtual bool GetConferenceState(
+      OpalConferenceState * state  ///< Optional conference state information
+    ) const;
   //@}
 
   /**@name Operations */
@@ -972,10 +1013,6 @@ class OpalMixerNode : public PSafeObject
       OpalMixerNodeManager & manager, ///< Manager for this node
       OpalMixerNodeInfo * info        ///< Configuration information
     );
-    OpalMixerNode(
-      OpalMixerEndPoint & endpoint,   ///< Endpoint for this node
-      OpalMixerNodeInfo * info        ///< Configuration information
-    );
 
     /**Destroy node.
      */
@@ -1066,6 +1103,22 @@ class OpalMixerNode : public PSafeObject
       const OpalConnection * connection,      ///<  Connection NOT to send to
       const PString & value                   ///<  String value of indication
     );
+
+    /**Get Conference state information.
+       This obtains the state information about a conference this connection
+       is directly a part of. If the connection type does not embody a
+       conference then false is returned.
+
+       The \p state parameter, if non-NULL, is illed with the state of the
+       conference. When NULL, this just indicates that the connection is
+       part of a conference with the return value.
+
+       Default behaviour is to return false which indicates this connection is
+       not part of a conference.
+      */
+    virtual void GetConferenceState(
+      OpalConferenceState & state  ///< Conference state information
+    ) const;
   //@}
 
   /**@name Member variable access */
@@ -1117,11 +1170,18 @@ class OpalMixerNode : public PSafeObject
     /**Get the creation time of the node.
      */
     const PTime & GetCreationTime() const { return m_creationTime; }
+
+    /**Set the owner connection.
+       If a conenction with GetRemotePartyURL() equivalent to this string
+       disconnects from the node, the node is shut down and all other
+       participants disconnected.
+      */
+    void SetOwnerConnection(
+      const PString & uri
+    ) { m_ownerConnection = uri; }
   //@}
 
   protected:
-    void Construct();
-
     OpalMixerNodeManager & m_manager;
     PGloballyUniqueID      m_guid;
     PStringSet             m_names;
@@ -1129,6 +1189,7 @@ class OpalMixerNode : public PSafeObject
     PTime                  m_creationTime;
 
     PSafeList<OpalConnection> m_connections;
+    PString                   m_ownerConnection;
 
     struct MediaMixer
     {

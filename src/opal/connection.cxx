@@ -1551,6 +1551,12 @@ PString OpalConnection::GetCallInfo() const
 }
 
 
+bool OpalConnection::GetConferenceState(OpalConferenceState *) const
+{
+  return false;
+}
+
+
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   maxDelay = PMAX(10, PMIN(maxDelay, 999));
