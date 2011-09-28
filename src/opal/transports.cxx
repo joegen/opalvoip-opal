@@ -840,6 +840,10 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & localAddress,
                                                  const OpalTransportAddress & remoteAddress) const
 {
+  if (remoteAddress.GetProtoPrefix() != GetProtoPrefix())
+    return NULL;
+
+  // The following then checks for IPv4/IPv6
   if (!GetLocalAddress().IsCompatible(remoteAddress))
     return NULL;
 
