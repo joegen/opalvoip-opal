@@ -1435,7 +1435,7 @@
                                                 <flag>wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>12</border>
                                                 <option>1</option>
-                                                <object class="wxComboBox" name="VideoGrabber" base="EditComboBox">
+                                                <object class="wxComboBox" name="VideoGrabDevice" base="EditComboBox">
                                                     <style>wxCB_DROPDOWN</style>
                                                     <selection>-1</selection>
                                                     <choices>
@@ -6107,7 +6107,7 @@
                         <flag>wxLEFT|wxRIGHT|wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
                         <border>16</border>
                         <option>0</option>
-                        <object class="wxComboBox" name="VideoGrabber" base="EditComboBox">
+                        <object class="wxComboBox" name="VideoGrabDevice" base="EditComboBox">
                             <selection>-1</selection>
                             <choices>
                             </choices>
