@@ -387,13 +387,38 @@ void SIPEndPoint::OnReleased(OpalConnection & connection)
 }
 
 
-void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri)
+void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri, OpalConferenceState::ChangeType change)
 {
+  OpalConferenceStates states;
+  if (!endpoint.GetConferenceStates(states, uri) || states.empty()) {
+    PTRACE(2, "SIP\tUnexpectedly unable to get conference state for " << uri);
+    return;
+  }
+
+  const OpalConferenceState & state = states.front();
+
   ConferenceMap::iterator it = m_conferenceAOR.find(uri);
-  if (it != m_conferenceAOR.end()) {
-    OpalConferenceStates states;
-    if (endpoint.GetConferenceStates(states, uri) && !states.empty())
-      Notify(it->second, SIPEventPackage(SIPSubscribe::Conference), states.front());
+  if (it != m_conferenceAOR.end())
+    Notify(it->second, SIPEventPackage(SIPSubscribe::Conference), state);
+
+  if (change == OpalConferenceState::Created || change == OpalConferenceState::Destroyed) {
+    // Add to registrars
+    for (OpalConferenceState::URIs::const_iterator it = state.m_accessURI.begin(); it != state.m_accessURI.begin(); ++it) {
+      if (change == OpalConferenceState::Destroyed && Unregister(it->m_uri))
+        break;
+
+      if (change == OpalConferenceState::Created) {
+        PURL aor = it->m_uri;
+        if (aor.GetScheme() == "sip" &&
+            activeSIPHandlers.FindSIPHandlerByDomain(aor.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReference) != NULL) {
+          SIPRegister::Params params;
+          params.m_addressOfRecord = it->m_uri;
+          PString dummy;
+          Register(params, dummy);
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -1323,22 +1348,19 @@ bool SIPEndPoint::CanNotify(const PString & eventPackage, const SIPURL & aor)
   if (SIPEventPackage(SIPSubscribe::Conference) != eventPackage)
     return CanNotify(eventPackage);
 
-  PList<OpalEndPoint> endpoints = manager.GetEndPoints();
-  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
-    OpalConferenceStates states;
-    if (ep->GetConferenceStates(states, aor.GetUserName()) && !states.empty()) {
-      PString uri = states.front().m_internalURI;
-      ConferenceMap::iterator it = m_conferenceAOR.find(uri);
-      while (it != m_conferenceAOR.end() && it->first == uri) {
-        if (it->second == aor)
-          return true;
-      }
-      m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
+  OpalConferenceStates states;
+  if (!manager.GetConferenceStates(states, aor.GetUserName()) || states.empty())
+    return false;
+
+  PString uri = states.front().m_internalURI;
+  ConferenceMap::iterator it = m_conferenceAOR.find(uri);
+  while (it != m_conferenceAOR.end() && it->first == uri) {
+    if (it->second == aor)
       return true;
-    }
   }
 
-  return false;
+  m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
+  return true;
 }
 
 

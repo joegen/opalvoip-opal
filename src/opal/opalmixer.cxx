@@ -927,14 +927,9 @@ PString OpalMixerEndPoint::CreateInternalURI(const PGloballyUniqueID & guid)
 }
 
 
-void OpalMixerEndPoint::OnNodeStatusChanged(const OpalMixerNode & node)
+void OpalMixerEndPoint::OnNodeStatusChanged(const OpalMixerNode & node, OpalConferenceState::ChangeType change)
 {
-  PString uri = CreateInternalURI(node.GetGUID());
-  PList<OpalEndPoint> endpoints = manager.GetEndPoints();
-  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
-    if (this != &*ep)
-      ep->OnConferenceStatusChanged(*this, uri);
-  }
+  manager.OnConferenceStatusChanged(*this, CreateInternalURI(node.GetGUID()), change);
 }
 
 
@@ -1207,6 +1202,8 @@ void OpalMixerNode::ShutDown()
 {
   PTRACE(4, "MixerNode\tShutting down " << *this);
 
+  m_manager.OnNodeStatusChanged(*this, OpalConferenceState::Destroyed);
+
   PSafePtr<OpalConnection> connection;
   while ((connection = GetFirstConnection()) != NULL)
     connection->Release();
@@ -1268,7 +1265,7 @@ void OpalMixerNode::AttachConnection(OpalConnection * connection)
 
   UseMediaPassThrough(0);
 
-  m_manager.OnNodeStatusChanged(*this);
+  m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserAdded);
 }
 
 
@@ -1280,7 +1277,7 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
   if (m_connections.Remove(connection))
     UseMediaPassThrough(0, connection);
 
-  m_manager.OnNodeStatusChanged(*this);
+  m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
 
   if (connection->GetRemotePartyURL() == m_ownerConnection)
     ShutDown();
@@ -1852,6 +1849,7 @@ PSafePtr<OpalMixerNode> OpalMixerNodeManager::AddNode(OpalMixerNodeInfo * info)
   else {
     m_nodesByUID.SetAt(node->GetGUID(), node);
     PTRACE(3, "MixerEP\tAdded new node, id=" << node->GetGUID());
+    OnNodeStatusChanged(*node, OpalConferenceState::Created);
   }
 
   return node;
@@ -1908,7 +1906,7 @@ PString OpalMixerNodeManager::CreateInternalURI(const PGloballyUniqueID & guid)
 }
 
 
-void OpalMixerNodeManager::OnNodeStatusChanged(const OpalMixerNode &)
+void OpalMixerNodeManager::OnNodeStatusChanged(const OpalMixerNode &, OpalConferenceState::ChangeType)
 {
 }
 

@@ -47,6 +47,7 @@
 
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
+#include <ptclib/pxml.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -54,6 +55,73 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
+
+
+class OpalConferenceState : public PObject
+{
+  PCLASSINFO(OpalConferenceState, PObject);
+public:
+  OpalConferenceState()
+    : m_active(true)
+    , m_locked(false)
+    , m_maxUsers(0)
+  { }
+
+  enum ChangeType {
+    Created,
+    Destroyed,
+    UserAdded,
+    UserRemoved,
+    NumChangeTypes
+  };
+
+  PString  m_internalURI;         ///< Internal URI, e.g. mcu:5e6f7347-dcd6-e011-9853-0026b9b946a5
+
+  PString  m_displayText;         ///< Human readable text for conference name
+  PString  m_subject;             ///< Subject for conference
+  PString  m_notes;               ///< Free text about conference
+  PString  m_keywords;            ///< Space separated list of keywords for conference
+  bool     m_active;              ///< Conference is active and can accept incoming connections
+  bool     m_locked;              ///< Conference cannot accept new participants.
+
+  struct URI
+  {
+    PString m_uri;                ///< URI for access/service in conference
+    PString m_displayText;        ///< Human readable form of resource
+    PString m_purpose;            /**< Purpose of URI, e.g. "participation" indicates
+                                       a URI to join conference, "streaming" indicates
+                                       a "listening only" connection */
+  };
+  typedef std::vector<URI> URIs;
+
+  URIs m_accessURI;               ///< All URIs that can access the conference
+  URIs m_serviceURI;              /**< All URIs that describe auxilliary services for
+                                       conference, e.g. purpose could be "web-page" or
+                                       "recording". */
+
+  unsigned m_maxUsers;            ///< Maximum users that can join the conference
+
+  struct User
+  {
+    PString    m_uri;             ///< URI that the user used to access this conference
+    PString    m_displayText;     ///< Human readable form of users connection
+    PStringSet m_roles;           ///< Role for user, e.g. "participant".
+  };
+  typedef std::vector<User> Users;
+  Users m_users;
+
+#if P_EXPAT
+  /** Optional XML as per RFC 4575 "application/conference-info+xml".
+      If this member is set, then this is conferted to astring and sent in SIP
+      NOTIFY commands. If it is not set, then the XML is generated from the
+      other information, in this way if extended XML fields are required it
+      can be added by an application.
+    */
+  PXML m_xml;
+#endif
+};
+
+typedef std::list<OpalConferenceState> OpalConferenceStates;
 
 
 /**This class is the central manager for OPAL.
@@ -1126,6 +1194,40 @@ class OpalManager : public PObject
       const PString & party,    ///< Name of party MWI is for
       MessageWaitingType type,  ///< Type of message that is waiting
       const PString & extraInfo ///< Addition information on the MWI
+    );
+
+    /**Get conference state information for all nodes.
+       This obtains the state of one or more conferences managed by any
+       endpoints. If no endpoints do conferencing, then false is returned.
+
+       The \p name parameter may be one of the aliases for the conference, or
+       the internal URI for the conference. An empty string indicates all 
+       active conferences are to be returned.
+
+       Note that if the \p name does not match an active conference, true is
+       still returned, but the states list will be empty.
+
+       The default behaviour returns false indicating this is not a
+       conferencing endpoint.
+      */
+    virtual bool GetConferenceStates(
+      OpalConferenceStates & states,           ///< List of conference states
+      const PString & name = PString::Empty() ///< Name for specific node, empty string is all
+    ) const;
+
+    /**Call back when conferencing state information changes.
+       If a conferencing endpoint type detects a change in a conference nodes
+       state, as would be returned by GetConferenceStatus() then this function
+       will be called on all endpoints in the OpalManager.
+
+       The \p uri parameter is as is the internal URI for the conference.
+
+       Default behaviour does nothing.
+      */
+    virtual void OnConferenceStatusChanged(
+      OpalEndPoint & endpoint,  /// < Endpoint sending state change
+      const PString & uri,      ///< Internal URI of conference node that changed
+      OpalConferenceState::ChangeType change ///< Change that occurred
     );
   //@}
 
