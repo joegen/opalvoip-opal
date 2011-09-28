@@ -192,7 +192,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     virtual void OnConferenceStatusChanged(
       OpalEndPoint & endpoint,  /// < Endpoint sending state change
-      const PString & uri       ///< Internal URI of conference node that changed
+      const PString & uri,      ///< Internal URI of conference node that changed
+      OpalConferenceState::ChangeType change ///< Change that occurred
     );
 
     /** Execute garbage collection for endpoint.

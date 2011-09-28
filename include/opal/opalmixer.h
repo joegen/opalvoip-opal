@@ -532,7 +532,8 @@ class OpalMixerNodeManager
        Default behaviour does nothing.
       */
     virtual void OnNodeStatusChanged(
-      const OpalMixerNode & node   ///< Node that has changed state
+      const OpalMixerNode & node,            ///< Node that has changed state
+      OpalConferenceState::ChangeType change ///< Change that occurred
     );
 
     /// Get manager
@@ -747,7 +748,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
 
   protected:
     virtual PString CreateInternalURI(const PGloballyUniqueID & guid);
-    virtual void OnNodeStatusChanged(const OpalMixerNode & node);
+    virtual void OnNodeStatusChanged(const OpalMixerNode & node, OpalConferenceState::ChangeType change);
 
     OpalMixerNodeInfo  * m_adHocNodeInfo;
     OpalMixerNodeInfo  * m_factoryNodeInfo;
