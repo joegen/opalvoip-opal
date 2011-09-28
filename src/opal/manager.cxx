@@ -1133,6 +1133,30 @@ void OpalManager::OnMWIReceived(const PString & PTRACE_PARAM(party),
 }
 
 
+bool OpalManager::GetConferenceStates(OpalConferenceStates & states, const PString & name) const
+{
+  PReadWaitAndSignal mutex(endpointsMutex);
+
+  for (PList<OpalEndPoint>::const_iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+    if (ep->GetConferenceStates(states, name))
+      return true;
+  }
+
+  return false;
+}
+
+
+void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri, OpalConferenceState::ChangeType change)
+{
+  PReadWaitAndSignal mutex(endpointsMutex);
+
+  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+    if (&endpoint != &*ep)
+      ep->OnConferenceStatusChanged(endpoint, uri, change);
+  }
+}
+
+
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest)

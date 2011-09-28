@@ -648,7 +648,7 @@ bool OpalEndPoint::GetConferenceStates(OpalConferenceStates &, const PString &) 
 }
 
 
-void OpalEndPoint::OnConferenceStatusChanged(OpalEndPoint &, const PString &)
+void OpalEndPoint::OnConferenceStatusChanged(OpalEndPoint &, const PString &, OpalConferenceState::ChangeType)
 {
 }
 
