@@ -298,6 +298,14 @@ void OpalLocalConnection::AlertingIncoming()
 
 void OpalLocalConnection::AcceptIncoming()
 {
+  // Defer this a teency amount so get don't block processing for too long
+  new ::PThreadObj<OpalLocalConnection>(*this, &OpalLocalConnection::InternalAcceptIncoming, true, "LocalAccept");
+}
+
+
+void OpalLocalConnection::InternalAcceptIncoming()
+{
+  Sleep(100);
   if (LockReadWrite()) {
     AlertingIncoming();
     AutoStartMediaStreams();
