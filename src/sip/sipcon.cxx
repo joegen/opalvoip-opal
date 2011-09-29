@@ -3353,7 +3353,7 @@ void SIPConnection::OnReceivedSUBSCRIBE(SIP_PDU & request)
   PTRACE(3, "SIP\tReceived SUBSCRIBE for " << eventPackage);
 
   if (m_allowedEvents.Contains(eventPackage))
-    endpoint.OnReceivedSUBSCRIBE(*transport, request);
+    endpoint.OnReceivedSUBSCRIBE(*transport, request, &m_dialog);
   else {
     SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
     response.GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec

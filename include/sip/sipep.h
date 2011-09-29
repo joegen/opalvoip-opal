@@ -316,7 +316,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     virtual PBoolean OnReceivedSUBSCRIBE(
       OpalTransport & transport, 
-      SIP_PDU & pdu
+      SIP_PDU & pdu,
+      SIPDialogContext * dialog
     );
 
     /**Handle an incoming MESSAGE PDU.
@@ -647,7 +648,13 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual bool CanNotify(
       const PString & eventPackage ///< Event package we support
     );
-    virtual bool CanNotify(
+
+    enum CanNotifyResult {
+      CannotNotify,
+      CanNotifyImmediate,
+      CanNotifyDeferrred
+    };
+    virtual CanNotifyResult CanNotify(
       const PString & eventPackage, ///< Event package we support
       const SIPURL & aor
     );

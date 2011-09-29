@@ -1791,8 +1791,12 @@ SIPNotifyHandler::~SIPNotifyHandler()
 SIPTransaction * SIPNotifyHandler::CreateTransaction(OpalTransport & trans)
 {
   PString state;
-  if (expire > 0 && GetState() != Unsubscribing)
+  PString body;
+
+  if (expire > 0 && GetState() != Unsubscribing) {
     state.sprintf("active;expires=%u", expire);
+    body = m_body;
+  }
   else {
     state = "terminated;reason=";
     static const char * const ReasonNames[] = {
@@ -1806,7 +1810,7 @@ SIPTransaction * SIPNotifyHandler::CreateTransaction(OpalTransport & trans)
     state += ReasonNames[m_reason];
   }
 
-  return new SIPNotify(GetEndPoint(), trans, m_dialog, m_eventPackage, state, m_body);
+  return new SIPNotify(GetEndPoint(), trans, m_dialog, m_eventPackage, state, body);
 }
 
 

@@ -693,7 +693,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 
     case SIP_PDU::Method_SUBSCRIBE :
       pdu->AdjustVia(transport);   // // Adjust the Via list
-      if (OnReceivedSUBSCRIBE(transport, *pdu))
+      if (OnReceivedSUBSCRIBE(transport, *pdu, NULL))
         return false;
       break;
 
@@ -740,52 +740,58 @@ PBoolean SIPEndPoint::OnReceivedREGISTER(OpalTransport & /*transport*/, SIP_PDU 
 }
 
 
-PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & pdu)
+PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & pdu, SIPDialogContext * dialog)
 {
   SIPMIMEInfo & mime = pdu.GetMIME();
 
   SIPSubscribe::EventPackage eventPackage(mime.GetEvent());
 
+  CanNotifyResult canNotify = CanNotifyImmediate;
+
   // See if already subscribed. Now this is not perfect as we only check the call-id and strictly
   // speaking we should check the from-tag and to-tags as well due to it being a dialog.
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(mime.GetCallID(), PSafeReadWrite);
   if (handler == NULL) {
-    SIPDialogContext dialog(mime);
+    SIPDialogContext newDialog(mime);
+    if (dialog == NULL)
+      dialog = &newDialog;
 
-    if (!CanNotify(eventPackage, dialog.GetLocalURI())) {
+    if ((canNotify = CanNotify(eventPackage, dialog->GetLocalURI())) == CannotNotify) {
       SIP_PDU response(pdu, SIP_PDU::Failure_BadEvent);
       response.GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec
       pdu.SendResponse(transport, response, this);
       return true;
     }
 
-    handler = new SIPNotifyHandler(*this, eventPackage, dialog);
+    handler = new SIPNotifyHandler(*this, eventPackage, *dialog);
     handler.SetSafetyMode(PSafeReadWrite);
     activeSIPHandlers.Append(handler);
 
     handler->GetTransport()->SetInterface(transport.GetInterface());
 
-    mime.SetTo(dialog.GetLocalURI().AsQuotedString());
+    mime.SetTo(dialog->GetLocalURI().AsQuotedString());
   }
 
   // Update expiry time
   unsigned expires = mime.GetExpires();
-  if (expires > 0)
-    handler->SetExpire(expires);
 
-  SIP_PDU response(pdu, SIP_PDU::Successful_Accepted);
+  SIP_PDU response(pdu, canNotify == CanNotifyImmediate ? SIP_PDU::Successful_OK : SIP_PDU::Successful_Accepted);
   response.GetMIME().SetEvent(eventPackage); // Required by spec
-  response.GetMIME().SetExpires(handler->GetExpire()); // Required by spec
+  response.GetMIME().SetExpires(expires);    // Required by spec
   pdu.SendResponse(transport, response, this);
 
   if (handler->IsDuplicateCSeq(mime.GetCSeqIndex()))
     return true;
 
-  // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
-  if (expires > 0)
-    handler->SendNotify(NULL);
-  else
+  if (expires == 0) {
     handler->ActivateState(SIPHandler::Unsubscribing);
+    return true;
+  }
+
+  handler->SetExpire(expires);
+
+  if (canNotify == CanNotifyImmediate)
+    handler->SendNotify(NULL); // Send initial NOTIFY as per spec 3.1.6.2/RFC3265
 
   return true;
 }
@@ -1343,24 +1349,24 @@ bool SIPEndPoint::CanNotify(const PString & eventPackage)
 }
 
 
-bool SIPEndPoint::CanNotify(const PString & eventPackage, const SIPURL & aor)
+SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage, const SIPURL & aor)
 {
   if (SIPEventPackage(SIPSubscribe::Conference) != eventPackage)
-    return CanNotify(eventPackage);
+    return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 
   OpalConferenceStates states;
   if (!manager.GetConferenceStates(states, aor.GetUserName()) || states.empty())
-    return false;
+    return CannotNotify;
 
   PString uri = states.front().m_internalURI;
   ConferenceMap::iterator it = m_conferenceAOR.find(uri);
   while (it != m_conferenceAOR.end() && it->first == uri) {
     if (it->second == aor)
-      return true;
+      return CanNotifyImmediate;
   }
 
   m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
-  return true;
+  return CanNotifyImmediate;
 }
 
 
