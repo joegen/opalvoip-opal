@@ -2394,11 +2394,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
 
       AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
-
-      PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-      if (other != NULL && other->GetConferenceState(NULL))
-        m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
-
       return;
     }
 
@@ -3187,6 +3182,10 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
       m_responseFailTimer = endpoint.GetAckTimeout();
       break;
   }
+
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL && other->GetConferenceState(NULL))
+    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 }
 
 
