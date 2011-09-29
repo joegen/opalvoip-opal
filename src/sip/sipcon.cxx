@@ -1270,10 +1270,6 @@ bool SIPConnection::SetRemoteMediaFormats()
 
   PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
 
-  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL && other->GetConferenceState(NULL))
-    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
-
   return true;
 }
 
@@ -1584,6 +1580,10 @@ PBoolean SIPConnection::SetUpConnection()
 
   if (!SetRemoteMediaFormats())
     return false;
+
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL && other->GetConferenceState(NULL))
+    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 
   bool ok;
   if (!transport->GetInterface().IsEmpty())
@@ -2392,7 +2392,13 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
         SetPhase(ProceedingPhase);
         OnProceeding();
       }
+
       AnsweringCall(OnAnswerCall(GetRemotePartyURL()));
+
+      PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+      if (other != NULL && other->GetConferenceState(NULL))
+        m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
+
       return;
     }
 
