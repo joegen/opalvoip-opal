@@ -305,7 +305,7 @@ void OpalLocalConnection::AcceptIncoming()
 
 void OpalLocalConnection::InternalAcceptIncoming()
 {
-  Sleep(100);
+  PThread::Sleep(100);
   if (LockReadWrite()) {
     AlertingIncoming();
     AutoStartMediaStreams();
