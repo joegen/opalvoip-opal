@@ -430,6 +430,8 @@ class OpalLocalConnection : public OpalConnection
   //@}
 
   protected:
+    void InternalAcceptIncoming();
+
     OpalLocalEndPoint & endpoint;
     void * userData;
 };
