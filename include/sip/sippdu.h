@@ -43,6 +43,7 @@
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
 #include <ptclib/http.h>
+#include <ptclib/pxml.h>
 #include <sip/sdp.h>
 #include <opal/rtpconn.h>
 
@@ -1145,22 +1146,32 @@ class SIPSubscribe : public SIPTransaction
 
     struct NotifyCallbackInfo {
       NotifyCallbackInfo(
+        SIPSubscribeHandler & handler,
         SIPEndPoint & ep,
         OpalTransport & trans,
-        SIP_PDU & notify,
+        SIP_PDU & request,
         SIP_PDU & response
       );
 
+#if P_EXPAT
+      bool LoadAndValidate(
+        PXML & xml,
+        const PXML::ValidationInfo * validator,
+        int options = PXML::WithNS
+      );
+#endif
+
       bool SendResponse(
-        SIP_PDU::StatusCodes status,
+        SIP_PDU::StatusCodes status = SIP_PDU::Successful_OK,
         const char * extra = NULL
       );
 
-      SIPEndPoint   & m_endpoint;
-      OpalTransport & m_transport;
-      SIP_PDU       & m_notify;
-      SIP_PDU       & m_response;
-      bool            m_sendResponse;
+      SIPSubscribeHandler & m_handler;
+      SIPEndPoint         & m_endpoint;
+      OpalTransport       & m_transport;
+      SIP_PDU             & m_request;
+      SIP_PDU             & m_response;
+      bool                  m_sendResponse;
     };
 
     struct Params : public SIPParameters
@@ -1215,12 +1226,19 @@ class SIPHandler;
 
 class SIPEventPackageHandler
 {
+  unsigned m_expectedSequenceNumber;
+
 public:
+  SIPEventPackageHandler() : m_expectedSequenceNumber(UINT_MAX) { }
+
   virtual ~SIPEventPackageHandler() { }
   virtual PCaselessString GetContentType() const = 0;
   virtual bool ValidateContentType(const PString & type, const SIPMIMEInfo & mime);
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request) = 0;
+  virtual bool ValidateNotificationSequence(SIPSubscribeHandler & handler, unsigned newSequenceNumber, bool fullUpdate);
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo) = 0;
   virtual PString OnSendNOTIFY(SIPHandler & /*handler*/, const PObject * /*body*/) { return PString::Empty(); }
+
+  P_REMOVE_VIRTUAL(bool, OnReceivedNOTIFY(SIPHandler &, SIP_PDU &), false);
 };
 
 

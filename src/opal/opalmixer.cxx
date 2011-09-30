@@ -1467,23 +1467,29 @@ public:
     return "application/conference-info+xml";
   }
 
-  virtual bool OnReceivedNOTIFY(SIPHandler & /*handler*/, SIP_PDU & request)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
     PTRACE(4, "SIP\tProcessing conference NOTIFY");
 
     OpalConferenceState state;
 
 #if P_EXPAT
-    if (!state.m_xml.Load(request.GetEntityBody()))
-      return false;
+    static PXML::ValidationInfo const ConferenceInfoValidation[] = {
+      { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:conference-info" },
+      { PXML::ElementName,                "conference-info", },
+      { PXML::RequiredNonEmptyAttribute,  "version"},
+      { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
+
+      { PXML::EndOfValidationList }
+    };
+    if (!notifyInfo.LoadAndValidate(state.m_xml, ConferenceInfoValidation))
+      return;
 
     unsigned newSequenceNumber = state.m_xml.GetRootElement()->GetAttribute("version").AsUnsigned();
     if (m_expectedSequenceNumber > 0 && m_expectedSequenceNumber != newSequenceNumber)
-      return false;
+      return;
     m_expectedSequenceNumber = newSequenceNumber+1;
 #endif
-
-    return true;
   }
 
   virtual PString OnSendNOTIFY(SIPHandler & handler, const PObject * body)
