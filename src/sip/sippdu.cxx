@@ -3435,14 +3435,35 @@ bool SIPSubscribe::EventPackage::IsWatcher() const
 }
 
 
-SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPEndPoint & ep, OpalTransport & trans, SIP_PDU & notify, SIP_PDU & response)
-  : m_endpoint(ep)
+SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPSubscribeHandler & handler,
+                                                     SIPEndPoint & ep,
+                                                     OpalTransport & trans,
+                                                     SIP_PDU & request,
+                                                     SIP_PDU & response)
+  : m_handler(handler)
+  , m_endpoint(ep)
   , m_transport(trans)
-  , m_notify(notify)
+  , m_request(request)
   , m_response(response)
   , m_sendResponse(true)
 {
 }
+
+
+#if P_EXPAT
+bool SIPSubscribe::NotifyCallbackInfo::LoadAndValidate(PXML & xml,
+                                                       const PXML::ValidationInfo * validator,
+                                                       int options)
+{
+  PString error;
+  if (xml.LoadAndValidate(m_request.GetEntityBody(), validator, error, options))
+    return true;
+
+  m_response.SetEntityBody(error);
+  PTRACE2(2, &xml, "SIP\tError parsing XML in NOTIFY: " << error);
+  return false;
+}
+#endif
 
 
 bool SIPSubscribe::NotifyCallbackInfo::SendResponse(SIP_PDU::StatusCodes status, const char * extra)
@@ -3456,7 +3477,7 @@ bool SIPSubscribe::NotifyCallbackInfo::SendResponse(SIP_PDU::StatusCodes status,
   if (extra != NULL)
     m_response.SetInfo(extra);
 
-  if (!m_notify.SendResponse(m_transport, m_response, &m_endpoint))
+  if (!m_request.SendResponse(m_transport, m_response, &m_endpoint))
     return false;
 
   m_sendResponse = false;

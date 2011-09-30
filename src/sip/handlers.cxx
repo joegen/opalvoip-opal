@@ -1178,75 +1178,80 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   bool sendResponse = true;
 
-  PMultiPartList parts;
-  if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
-    sendResponse = DispatchNOTIFY(request, *m_previousResponse);
+  // Check for empty body, if so then is OK, just a ping ...
+  if (request.GetEntityBody().IsEmpty())
+    m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
   else {
-    // If GetMultiParts() returns true there as at least one part and that
-    // part must be the meta list, guranteed by DecodeMultiPartList()
-    PMultiPartList::iterator iter = parts.begin();
+    PMultiPartList parts;
+    if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
+      sendResponse = DispatchNOTIFY(request);
+    else {
+      // If GetMultiParts() returns true there as at least one part and that
+      // part must be the meta list, guranteed by DecodeMultiPartList()
+      PMultiPartList::iterator iter = parts.begin();
 
-    // First part is always Meta Information
-    if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
-      PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
-      m_previousResponse->SetInfo("No Resource List Meta-Information");
-      return request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
-    }
+      // First part is always Meta Information
+      if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
+        PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
+        m_previousResponse->SetInfo("No Resource List Meta-Information");
+        return request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
+      }
 
 #if P_EXPAT
-    PXML xml;
-    if (!xml.Load(iter->m_textBody)) {
-      PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
-                "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
-      m_previousResponse->SetInfo("Bad Resource List Meta-Information");
-      return request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
-    }
+      PXML xml;
+      if (!xml.Load(iter->m_textBody)) {
+        PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
+                  "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
+        m_previousResponse->SetInfo("Bad Resource List Meta-Information");
+        return request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
+      }
 
-    if (parts.GetSize() == 1)
-      m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
-    else {
-      while (++iter != parts.end()) {
-        SIP_PDU pdu(request.GetMethod());
-        SIPMIMEInfo & pduMIME = pdu.GetMIME();
+      if (parts.GetSize() == 1)
+        m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
+      else {
+        while (++iter != parts.end()) {
+          SIP_PDU pdu(request.GetMethod());
+          SIPMIMEInfo & pduMIME = pdu.GetMIME();
 
-        pduMIME.AddMIME(iter->m_mime);
-        pdu.SetEntityBody(iter->m_textBody);
+          pduMIME.AddMIME(iter->m_mime);
+          pdu.SetEntityBody(iter->m_textBody);
 
-        PStringToString cid;
-        if (iter->m_mime.GetComplex(PMIMEInfo::ContentIdTag, cid)) {
-          PINDEX index = 0;
-          PXMLElement * resource;
-          while ((resource = xml.GetElement("resource", index++)) != NULL) {
-            SIPURL uri = resource->GetAttribute("uri");
-            if (!uri.IsEmpty()) {
-              PXMLElement * instance = resource->GetElement("instance");
-              if (instance != NULL && instance->GetAttribute("cid") == cid[PString::Empty()]) {
-                pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
-                PXMLElement * name = resource->GetElement("name");
-                if (name != NULL)
-                  uri.SetDisplayName(name->GetData());
-                pduMIME.SetFrom(uri.AsQuotedString());
-                pduMIME.SetTo(uri.AsQuotedString());
-                break;
+          PStringToString cid;
+          if (iter->m_mime.GetComplex(PMIMEInfo::ContentIdTag, cid)) {
+            PINDEX index = 0;
+            PXMLElement * resource;
+            while ((resource = xml.GetElement("resource", index++)) != NULL) {
+              SIPURL uri = resource->GetAttribute("uri");
+              if (!uri.IsEmpty()) {
+                PXMLElement * instance = resource->GetElement("instance");
+                if (instance != NULL && instance->GetAttribute("cid") == cid[PString::Empty()]) {
+                  pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
+                  PXMLElement * name = resource->GetElement("name");
+                  if (name != NULL)
+                    uri.SetDisplayName(name->GetData());
+                  pduMIME.SetFrom(uri.AsQuotedString());
+                  pduMIME.SetTo(uri.AsQuotedString());
+                  break;
+                }
               }
             }
           }
-        }
 
-        if (DispatchNOTIFY(pdu, *m_previousResponse))
+          if (DispatchNOTIFY(pdu))
+            sendResponse = false;
+        }
+      }
+#else
+      for ( ; iter != parts.end(); ++iter) {
+        SIP_PDU pdu(request.GetMethod());
+        pdu.GetMIME().AddMIME(iter->m_mime);
+        pdu.SetEntityBody(iter->m_textBody);
+
+        if (DispatchNOTIFY(pdu))
           sendResponse = false;
       }
-    }
-#else
-    for ( ; iter != parts.end(); ++iter) {
-      SIP_PDU pdu(request.GetMethod());
-      pdu.GetMIME().AddMIME(iter->m_mime);
-      pdu.SetEntityBody(iter->m_textBody);
-
-      if (DispatchNOTIFY(pdu, *m_previousResponse))
-        sendResponse = false;
-    }
 #endif
+    }
   }
 
   if (sendResponse)
@@ -1255,30 +1260,69 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 }
 
 
-bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
+bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request)
 {
+  SIPSubscribe::NotifyCallbackInfo notifyInfo(*this, GetEndPoint(), *m_transport, request, *m_previousResponse);
+
   if (!m_parameters.m_onNotify.IsNULL()) {
     PTRACE(4, "SIP\tCalling NOTIFY callback for AOR \"" << m_addressOfRecord << "\"");
-    SIPSubscribe::NotifyCallbackInfo status(GetEndPoint(), *m_transport, request, response);
-    m_parameters.m_onNotify(*this, status);
-    return status.m_sendResponse;
+    m_parameters.m_onNotify(*this, notifyInfo);
+    return notifyInfo.m_sendResponse;
   }
 
   if (m_packageHandler != NULL) {
     PTRACE(4, "SIP\tCalling package NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
-    if (m_packageHandler->OnReceivedNOTIFY(*this, request))
-      response.SetStatusCode(SIP_PDU::Successful_OK);
-    return true;
+    m_packageHandler->OnReceivedNOTIFY(notifyInfo);
+    return notifyInfo.m_sendResponse;
   }
 
   PTRACE(2, "SIP\tNo NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
+  m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadEvent);
   return true;
 }
+
+
+///////////////////////////////////////
 
 bool SIPEventPackageHandler::ValidateContentType(const PString & type, const SIPMIMEInfo & mime) 
 { 
   return type.IsEmpty() && (mime.GetContentLength() == 0);
 }
+
+
+bool SIPEventPackageHandler::ValidateNotificationSequence(SIPSubscribeHandler & handler, unsigned newSequenceNumber, bool fullUpdate)
+{
+  if (m_expectedSequenceNumber != UINT_MAX && newSequenceNumber < m_expectedSequenceNumber) {
+    PTRACE(3, "SIP\tReceived repeated NOTIFY of " << handler.GetAddressOfRecord() << ", already processed.");
+    return false;
+  }
+
+  // if this is a full list of watcher info, we can empty out our pending lists
+  if (fullUpdate) {
+    PTRACE(3, "SIP\tReceived full update NOTIFY of " << handler.GetAddressOfRecord());
+    m_expectedSequenceNumber = newSequenceNumber+1;
+    return true;
+  }
+
+  if (m_expectedSequenceNumber != UINT_MAX) {
+    PTRACE(2, "SIPPres\tReceived partial update NOTIFY of " << handler.GetAddressOfRecord() << ", but still awaiting full update.");
+    return false;
+  }
+
+  if (newSequenceNumber == m_expectedSequenceNumber) {
+    PTRACE(3, "SIP\tReceived partial update NOTIFY of " << handler.GetAddressOfRecord());
+    ++m_expectedSequenceNumber;
+    return true;
+  }
+
+  PTRACE(2, "SIP\tReceived out of sequence partial update, resubscribing " << handler.GetAddressOfRecord());
+  m_expectedSequenceNumber = UINT_MAX;
+  handler.ActivateState(SIPHandler::Refreshing);
+  return false;
+}
+
+
+///////////////////////////////////////
 
 class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 {
@@ -1287,11 +1331,9 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
     return "application/simple-message-summary";
   }
 
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-    PString body = request.GetEntityBody();
-    if (body.IsEmpty ())
-      return true;
+    notifyInfo.SendResponse(); // Send OK even of we don;t understand the below
 
     // Extract the string describing the number of new messages
     static struct {
@@ -1306,27 +1348,23 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
       { "none",               OpalManager::NoMessageWaiting         }
     };
     PString msgs;
-    PStringArray bodylines = body.Lines ();
+    PStringArray bodylines = notifyInfo.m_request.GetEntityBody().Lines();
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
-
       for (int i = 0 ; i < bodylines.GetSize () ; i++) {
-
         PCaselessString line (bodylines [i]);
         PINDEX j = line.FindLast(validMessageClasses[z].name);
         if (j != P_MAX_INDEX) {
           line.Replace(validMessageClasses[z].name, "");
           line.Replace (":", "");
           msgs = line.Trim ();
-          handler.GetEndPoint().OnMWIReceived(handler.GetAddressOfRecord().AsString(), validMessageClasses[z].type, msgs);
-          return true;
+          notifyInfo.m_endpoint.OnMWIReceived(notifyInfo.m_handler.GetAddressOfRecord().AsString(), validMessageClasses[z].type, msgs);
+          return;
         }
       }
     }
 
     // Received MWI, unknown messages number
-    handler.GetEndPoint().OnMWIReceived(handler.GetAddressOfRecord().AsString(), OpalManager::NumMessageWaitingTypes, "1/0");
-
-    return true;
+    notifyInfo.m_endpoint.OnMWIReceived(notifyInfo.m_handler.GetAddressOfRecord().AsString(), OpalManager::NumMessageWaitingTypes, "1/0");
   }
 };
 
@@ -1344,36 +1382,28 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     return "application/pidf+xml";
   }
 
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
     PTRACE(4, "SIP\tProcessing presence NOTIFY using old API");
 
+    list<SIPPresenceInfo> infoList;
+    if (!SIPPresenceInfo::ParseNotify(notifyInfo, infoList))
+      return;
+
+    notifyInfo.SendResponse();
+
     // support old API 
-    SIPURL from = request.GetMIME().GetFrom();
+    SIPURL from = notifyInfo.m_request.GetMIME().GetFrom();
     from.Sanitise(SIPURL::ExternalURI);
 
-    SIPURL to = request.GetMIME().GetTo();
+    SIPURL to = notifyInfo.m_request.GetMIME().GetTo();
     to.Sanitise(SIPURL::ExternalURI);
-
-    list<SIPPresenceInfo> infoList;
-
-    // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty())
-      infoList.resize(1);
-    else {
-#if P_EXPAT
-      PString error;
-      if (!SIPPresenceInfo::ParseXML(request.GetEntityBody(), infoList, error))
-#endif // P_EXPAT
-        return false;
-    }
 
     for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
       it->m_entity = from; // Really should not do this, but put in for backward compatibility
       it->m_target = to;
-      handler.GetEndPoint().OnPresenceInfoReceived(*it);
+      notifyInfo.m_endpoint.OnPresenceInfoReceived(*it);
     }
-    return true;
   }
 };
 
@@ -1438,26 +1468,35 @@ public:
     return "application/dialog-info+xml";
   }
 
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-    // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty())
-      return true;
-
     PINDEX index = 0;
 
 #if P_EXPAT
+    static PXML::ValidationInfo const DialogInfoValidation[] = {
+      { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:dialog-info" },
+      { PXML::ElementName,                "dialog-info", },
+      { PXML::RequiredNonEmptyAttribute,  "entity"},
+      { PXML::RequiredNonEmptyAttribute,  "version"},
+      { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
+
+      { PXML::EndOfValidationList }
+    };
+
     PXML xml;
-    if (!xml.Load(request.GetEntityBody()))
-      return false;
+    if (!notifyInfo.LoadAndValidate(xml, DialogInfoValidation))
+      return;
+
+    // Enough is OK to send OK now
+    notifyInfo.SendResponse();
 
     PXMLElement * rootElement = xml.GetRootElement();
-    if (rootElement == NULL || rootElement->GetName() != "dialog-info")
-      return false;
+    if (!ValidateNotificationSequence(notifyInfo.m_handler,
+                                      rootElement->GetAttribute("version").AsUnsigned(),
+                                      rootElement->GetAttribute("state") *= "full"))
+      return;
 
     SIPDialogNotification info(rootElement->GetAttribute("entity"));
-    if (info.m_entity.IsEmpty())
-      return false;
 
     PXMLElement * dialogElement;
     while ((dialogElement = rootElement->GetElement("dialog", index)) != NULL) {
@@ -1486,15 +1525,16 @@ public:
 
       ParseParticipant(dialogElement->GetElement("local"), info.m_local);
       ParseParticipant(dialogElement->GetElement("remote"), info.m_remote);
-      handler.GetEndPoint().OnDialogInfoReceived(info);
+      notifyInfo.m_endpoint.OnDialogInfoReceived(info);
       index++;
     }
 #else
-    SIPDialogNotification info(request.GetMIME().GetFrom());
+    SIPDialogNotification info(notifyInfo.m_request.GetMIME().GetFrom());
+    notifyInfo.SendResponse();
 #endif // P_EXPAT
+
     if (index == 0)
-      handler.GetEndPoint().OnDialogInfoReceived(info);
-    return true;
+      notifyInfo.m_endpoint.OnDialogInfoReceived(info);
   }
 
   virtual PString OnSendNOTIFY(SIPHandler & handler, const PObject * data)
@@ -1543,20 +1583,30 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
     return "application/reginfo+xml";
   }
 
-  virtual bool OnReceivedNOTIFY(SIPHandler & handler, SIP_PDU & request)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-    // Check for empty body, if so then is OK, just a ping ...
-    if (request.GetEntityBody().IsEmpty())
-      return true;
-
 #if P_EXPAT
+    static PXML::ValidationInfo const RegInfoValidation[] = {
+      { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:reginfo" },
+      { PXML::ElementName,                "reginfo", },
+      { PXML::RequiredNonEmptyAttribute,  "version"},
+      { PXML::RequiredAttributeWithValue, "state",   { "full\npartial" } },
+
+      { PXML::EndOfValidationList }
+    };
+
     PXML xml;
-    if (!xml.Load(request.GetEntityBody()))
-      return false;
+    if (!notifyInfo.LoadAndValidate(xml, RegInfoValidation))
+      return;
+
+    // Enough is OK to send OK now
+    notifyInfo.SendResponse();
 
     PXMLElement * rootElement = xml.GetRootElement();
-    if (rootElement == NULL || rootElement->GetName() != "reginfo")
-      return false;
+    if (!ValidateNotificationSequence(notifyInfo.m_handler,
+                                      rootElement->GetAttribute("version").AsUnsigned(),
+                                      rootElement->GetAttribute("state") *= "full"))
+      return;
 
     PINDEX regIndex = 0;
     PXMLElement * regElement;
@@ -1583,14 +1633,14 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
 
         info.m_contacts.push_back(contact);
       }
-      handler.GetEndPoint().OnRegInfoReceived(info);
+      notifyInfo.m_endpoint.OnRegInfoReceived(info);
     }
 #else
-    SIPRegNotification info(request.GetMIME().GetFrom());
-    handler.GetEndPoint().OnRegInfoReceived(info);
-#endif // P_EXPAT
+    notifyInfo.SendResponse();
 
-    return true;
+    SIPRegNotification info(notifyInfo.m_request.GetMIME().GetFrom());
+    notifyInfo.m_endpoint.OnRegInfoReceived(info);
+#endif // P_EXPAT
   }
 };
 
@@ -2053,17 +2103,10 @@ static void SetNoteFromElement(PXMLElement * element, PString & note)
     note = noteElement->GetData();
 }
 
-bool SIPPresenceInfo::ParseXML(const PString & body,
-                               list<SIPPresenceInfo> & infoList,
-                               PString & error)
+bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
+                                  list<SIPPresenceInfo> & infoList)
 {
   infoList.clear();
-
-  // Check for empty body, if so then is OK, just a ping ...
-  if (body.IsEmpty()) {
-    PTRACE2(4, NULL, "SIPPres\tEmpty body on presence NOTIFY, ignoring");
-    return true;
-  }
 
   static PXML::ValidationInfo const StatusValidation[] = {
     { PXML::RequiredElement,            "basic" },
@@ -2098,15 +2141,15 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
   };
 
   PXML xml;
-  if (!xml.LoadAndValidate(body, PresenceValidation, error, PXML::WithNS))
+  if (!notifyInfo.LoadAndValidate(xml, PresenceValidation))
     return false;
 
   // Common info to all tuples
   PURL entity;
   PXMLElement * rootElement = xml.GetRootElement();
   if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
-    error = "Invalid/unsupported entity";
-    PTRACE2(1, NULL, "SIPPres\t" << error << " \"" << rootElement->GetAttribute("entity") << '"');
+    notifyInfo.m_response.SetEntityBody("Invalid/unsupported entity");
+    PTRACE2(1, NULL, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << '"');
     return false;
   }
 
@@ -2181,7 +2224,13 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
 
   return true;
 }
-#endif
+#else // P_EXPAT
+bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo &,
+                                  list<SIPPresenceInfo> &)
+{
+  return false;
+}
+#endif // P_EXPAT
 
 /////////////////////////////////////////////////////////////////////////
 
