@@ -326,17 +326,14 @@ void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const S
 }
 
 
-void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & notifyInfo)
 {
   list<SIPPresenceInfo> infoList;
-  PString error;
-  if (!SIPPresenceInfo::ParseXML(status.m_notify.GetEntityBody(), infoList, error)) {
-    status.m_response.SetEntityBody(error);
+  if (!SIPPresenceInfo::ParseNotify(notifyInfo, infoList))
     return;
-  }
 
   // send 200 OK now, and flag caller NOT to send the response
-  status.SendResponse(SIP_PDU::Successful_OK);
+  notifyInfo.SendResponse();
 
   m_notificationMutex.Wait();
   for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
@@ -441,15 +438,8 @@ void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, cons
 }
 
 
-void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & notifyInfo)
 {
-  // Check for empty body, if so then is OK, just a ping ...
-  if (status.m_notify.GetEntityBody().IsEmpty()) {
-    PTRACE(4, "SIPPres\tEmpty body on presence watcher NOTIFY, ignoring");
-    status.m_response.SetStatusCode(SIP_PDU::Successful_OK);
-    return;
-  }
-
   static PXML::ValidationInfo const WatcherValidation[] = {
     { PXML::RequiredNonEmptyAttribute,  "id"  },
     { PXML::RequiredAttributeWithValue, "status",  { "pending\nactive\nwaiting\nterminated" } },
@@ -476,15 +466,11 @@ void SIP_Presentity::OnWatcherInfoNotify(SIPSubscribeHandler &, SIPSubscribe::No
   };
 
   PXML xml;
-  PString error;
-  if (!xml.LoadAndValidate(status.m_notify.GetEntityBody(), WatcherInfoValidation, error, PXML::WithNS)) {
-    status.m_response.SetEntityBody(error);
-    PTRACE(2, "SIPPres\tError parsing XML in presence watcher NOTIFY: " << error);
+  if (!notifyInfo.LoadAndValidate(xml, WatcherInfoValidation))
     return;
-  }
 
   // send 200 OK now, and flag caller NOT to send the response
-  status.SendResponse(SIP_PDU::Successful_OK);
+  notifyInfo.SendResponse();
 
   PXMLElement * rootElement = xml.GetRootElement();
 

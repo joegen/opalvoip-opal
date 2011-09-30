@@ -245,7 +245,7 @@ protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
-  bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
+  bool DispatchNOTIFY(SIP_PDU & request);
 
   SIPSubscribe::Params     m_parameters;
   SIPDialogContext         m_dialog;
@@ -465,13 +465,10 @@ public:
 
   PString AsXML() const;
 
-#if P_EXPAT
-  static bool ParseXML(
-    const PString & body,
-    list<SIPPresenceInfo> & info,
-    PString & error
+  static bool ParseNotify(
+    SIPSubscribe::NotifyCallbackInfo & notifyInfo,
+    list<SIPPresenceInfo> & info
   );
-#endif
 
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
