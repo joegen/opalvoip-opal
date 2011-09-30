@@ -3148,6 +3148,10 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
     }
   }
 
+  // AdjustToRegistration already did a check for GetConferenceState, this is quicker ...
+  if (mime.GetContact().Find("isfocus") != P_MAX_INDEX)
+    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
+
   if (response.GetStatusCode() > 100 && response.GetStatusCode() < 300 && m_allowedEvents.GetSize() > 0)
     mime.SetAllowEvents(m_allowedEvents);
 
@@ -3182,10 +3186,6 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
       m_responseFailTimer = endpoint.GetAckTimeout();
       break;
   }
-
-  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL && other->GetConferenceState(NULL))
-    m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 }
 
 
