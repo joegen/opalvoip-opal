@@ -1738,7 +1738,7 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
     rpn = SIPURL(defPartyName, addr, myPort);
   else {
     rpn = SIPURL(defPartyName.Left(pos), addr, myPort);   // set transport from address
-    rpn.SetHostName(defPartyName.Right(pos+1));
+    rpn.SetHostName(defPartyName.Mid(pos+1));
   }
 
   rpn.SetDisplayName(GetDefaultDisplayName());
