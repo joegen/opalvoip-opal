@@ -511,6 +511,9 @@ else
                                      OPAL_GET_LIBNAME([X264], [libx264], [$X264_LIBS])
                                      AC_SUBST(X264_LIB_NAME)
                                      OPAL_X264_LINKAGE
+                                   ],
+                                   [
+                                     HAVE_H264=no
                                    ])
                 ])
 fi
