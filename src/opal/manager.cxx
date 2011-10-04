@@ -1612,7 +1612,7 @@ PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
 
 PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & remoteAddress) const
 {
-  if (remoteAddress.IsValid() && IsLocalAddress(remoteAddress))
+  if (!remoteAddress.IsAny() && IsLocalAddress(remoteAddress))
     return NULL;
 
   if (m_natMethod != NULL)
