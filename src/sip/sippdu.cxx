@@ -724,17 +724,17 @@ void SIPMIMEInfo::PrintOn(ostream & strm) const
 }
 
 
-void SIPMIMEInfo::ReadFrom(istream & strm)
+bool SIPMIMEInfo::InternalAddMIME(const PString & fieldName, const PString & fieldValue)
 {
-  PMIMEInfo::ReadFrom(strm);
-
-  for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
-    PCaselessString compact(CompactForms[i].compact);
-    if (Contains(compact)) {
-      SetAt(CompactForms[i].full, *GetAt(compact));
-      RemoveAt(compact);
+  if (fieldName.GetLength() == 1) {
+    char compact = tolower(fieldName[0]);
+    for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
+      if (compact == CompactForms[i].compact)
+        return PMIMEInfo::InternalAddMIME(CompactForms[i].full, fieldValue);
     }
   }
+
+  return PMIMEInfo::InternalAddMIME(fieldName, fieldValue);
 }
 
 
