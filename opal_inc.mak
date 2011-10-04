@@ -63,6 +63,7 @@ endif
 
 LDFLAGS	         += -L$(OPAL_LIBDIR)
 LDLIBS	         := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
+LIBDIRS          += $(OPALDIR)
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
 
