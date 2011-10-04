@@ -572,17 +572,20 @@ $(OPAL_DEPDIR)/%.dep : %.c
 # when called without an explicit target.
 
 
-.PHONY: default
+.PHONY: default_target
 
 ifeq ($(OPAL_SHARED_LIB),)
-default: opt
+default_target :: opt
 else
-default: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
+default_target :: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 ifeq ($(OPAL_SHARED_LIB),1)
-default: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
+default_target :: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 endif
-default: subdirs
+default_target :: subdirs
 endif
+
+.PHONY: default_depend
+default_depend :: depend
 
 .PHONY: subdirs $(SUBDIRS)
 
