@@ -1345,7 +1345,12 @@ void SIPEndPoint::OnSubscriptionStatus(SIPSubscribeHandler & handler,
 
 bool SIPEndPoint::CanNotify(const PString & eventPackage)
 {
-  return m_allowedEvents.Contains(eventPackage);
+  if (m_allowedEvents.Contains(eventPackage))
+    return true;
+
+  PTRACE(3, "SIP\tCannot notify event \"" << eventPackage << "\" not one of "
+         << setfill(',') << m_allowedEvents << setfill(' '));
+  return false;
 }
 
 
@@ -1355,8 +1360,10 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 
   OpalConferenceStates states;
-  if (!manager.GetConferenceStates(states, aor.GetUserName()) || states.empty())
+  if (!manager.GetConferenceStates(states, aor.GetUserName()) || states.empty()) {
+    PTRACE(3, "SIP\tCannot notify event \"" << eventPackage << "\" event, no conferences enabled.");
     return CannotNotify;
+  }
 
   PString uri = states.front().m_internalURI;
   ConferenceMap::iterator it = m_conferenceAOR.find(uri);
