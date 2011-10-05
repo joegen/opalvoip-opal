@@ -142,7 +142,7 @@ class OpalMediaTypeDefinition
 
     // Needed to avoid gcc warning about classes with virtual functions and 
     //  without a virtual destructor
-    virtual ~OpalMediaTypeDefinition() { }
+    virtual ~OpalMediaTypeDefinition();
 
     /** Get flags for media type can auto-start on call initiation.
       */
