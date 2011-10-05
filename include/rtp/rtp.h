@@ -438,8 +438,10 @@ class OpalRTPSession : public OpalMediaSession
      */
     unsigned GetJitterTimeUnits() const { return m_timeUnits; }
 
+#if P_QOS
     /**Modifies the QOS specifications for this RTP session*/
     virtual bool ModifyQOS(RTP_QOS *);
+#endif
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
