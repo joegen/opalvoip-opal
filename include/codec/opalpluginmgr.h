@@ -119,6 +119,8 @@ class OpalPluginCodecManager : public PPluginModuleManager
     OpalPluginCodecManager(PPluginManager * pluginMgr = NULL);
     ~OpalPluginCodecManager();
 
+    PFACTORY_GET_SINGLETON(PFactory<PPluginModuleManager>, OpalPluginCodecManager);
+
     void RegisterStaticCodec(const H323StaticPluginCodecFactory::Key_T & name,
                              PluginCodec_GetAPIVersionFunction getApiVerFn,
                              PluginCodec_GetCodecFunction getCodecFn);

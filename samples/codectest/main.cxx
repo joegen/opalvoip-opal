@@ -109,12 +109,8 @@ void CodecTest::Main()
 #endif
 
   if (args.HasOption("list")) {
-    OpalPluginCodecManager * codecMgr = PFactory<PPluginModuleManager>::CreateInstanceAs<OpalPluginCodecManager>("OpalPluginCodecManager");
-    if (codecMgr == NULL) {
-      cerr << "error: Cannot get codec manager" << endl;
-      return;
-    }
-    PPluginModuleManager::PluginListType pluginList = codecMgr->GetPluginList();
+    OpalPluginCodecManager & codecMgr = OpalPluginCodecManager::GetInstance();
+    PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
     cout << "Plugin codecs:" << endl;
     for (PPluginModuleManager::PluginListType::iterator it = pluginList.begin(); it != pluginList.end(); ++it) {
