@@ -331,6 +331,7 @@ OPAL_CHECK_PTLIB([ldap],    [ptclib/pldap.h],[PLDAPSession session;],     [OPAL_
 OPAL_CHECK_PTLIB([dns],     [ptclib/pdns.h], [PDNS::SRVRecord record;],   [OPAL_PTLIB_DNS])
 OPAL_CHECK_PTLIB([audio],   [ptlib/sound.h], [PSoundChannel chan;],       [OPAL_PTLIB_AUDIO])
 OPAL_CHECK_PTLIB([config],  [ptlib/config.h],[PConfig conf;],             [OPAL_PTLIB_CONFIG_FILE])
+OPAL_CHECK_PTLIB([cli],     [ptclib/cli.h],  [PCLI cli;],                 [OPAL_PTLIB_CLI])
 
 OPAL_CHECK_PTLIB_DEFINE([ssl/aes],   [P_SSL_AES],       [OPAL_PTLIB_SSL_AES])
 
