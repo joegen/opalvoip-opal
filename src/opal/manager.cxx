@@ -239,8 +239,10 @@ OpalManager::OpalManager()
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
   , translationAddress(0, NULL)       // Invalid address to disable
+#if P_NAT
   , m_natMethods(new PNatStrategy)
   , m_natMethod(NULL)
+#endif
   , interfaceMonitor(NULL)
   , activeCalls(*this)
 {
