@@ -156,8 +156,14 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
 }
 
 
-OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
+OpalMediaTypeDefinition::~OpalMediaTypeDefinition()
 {
+  GetSessionIDToMediaTypeMap().erase(m_defaultSessionId);
+}
+
+
+OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
+{ 
   return connection.CreateMediaSession(sessionID, m_mediaType);
 }
 

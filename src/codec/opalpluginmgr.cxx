@@ -54,7 +54,7 @@
 #endif
 
 
-PFACTORY_CREATE(PFactory<PPluginModuleManager>, OpalPluginCodecManager, "OpalPluginCodecManager", true);
+PFACTORY_CREATE_SINGLETON(PFactory<PPluginModuleManager>, OpalPluginCodecManager);
 
 
 #if OPAL_VIDEO
@@ -112,7 +112,7 @@ class OpalPluginLoader : public PProcessStartup
     }
 };
 
-static PFactory<PProcessStartup>::Worker<OpalPluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
+PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, OpalPluginLoader);
 
 #endif // OPAL_PLUGIN_DIR
 
@@ -1390,6 +1390,8 @@ OpalPluginCodecManager::~OpalPluginCodecManager()
 
 void OpalPluginCodecManager::OnShutdown()
 {
+  for (PList<OpalMediaFormat>::iterator it = mediaFormatsOnHeap.begin(); it != mediaFormatsOnHeap.end(); ++it)
+    OpalMediaFormat::RemoveRegisteredMediaFormat(*it);
   mediaFormatsOnHeap.RemoveAll();
 
 #if OPAL_H323

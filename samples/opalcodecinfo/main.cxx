@@ -611,7 +611,7 @@ void OpalCodecInfo::Main()
     needHelp = false;
   }
 
-  OpalPluginCodecManager & codecMgr = *PFactory<PPluginModuleManager>::CreateInstanceAs<OpalPluginCodecManager>("OpalPluginCodecManager");
+  OpalPluginCodecManager & codecMgr = OpalPluginCodecManager::GetInstance();
   PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
   if (args.HasOption('p')) {

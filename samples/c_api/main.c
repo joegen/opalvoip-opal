@@ -155,6 +155,18 @@ int InitialiseOPAL()
   OpalMessage * response;
   unsigned      version;
 
+  static const char OPALOptions[] = OPAL_PREFIX_H323  " "
+                                    OPAL_PREFIX_SIP   " "
+                                    OPAL_PREFIX_IAX2  " "
+#if LOCAL_MEDIA
+                                    OPAL_PREFIX_LOCAL
+#else
+                                    OPAL_PREFIX_PCSS
+#endif
+                                                      " "
+                                    OPAL_PREFIX_IVR
+                                    " TraceLevel=4";
+
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
     fprintf(stderr, "Could not file %s\n", OPAL_DLL);
@@ -180,21 +192,16 @@ int InitialiseOPAL()
   ///////////////////////////////////////////////
   // Initialisation
 
-#if LOCAL_MEDIA
-  #define LOCAL_PREFIX OPAL_PREFIX_LOCAL
-#else
-  #define LOCAL_PREFIX OPAL_PREFIX_PCSS
-#endif
-
   version = OPAL_C_API_VERSION;
-  if ((hOPAL = InitialiseFunction(&version,
-                                  OPAL_PREFIX_H323  " "
-                                  OPAL_PREFIX_SIP   " "
-                                  OPAL_PREFIX_IAX2  " "
-                                  LOCAL_PREFIX      " "
-                                  OPAL_PREFIX_IVR
-                                  " TraceLevel=4")) == NULL) {
+  if ((hOPAL = InitialiseFunction(&version, OPALOptions)) == NULL) {
     fputs("Could not initialise OPAL\n", stderr);
+    return 0;
+  }
+
+  // Test shut down and re-initialisation
+  ShutDownFunction(hOPAL);
+  if ((hOPAL = InitialiseFunction(&version, OPALOptions)) == NULL) {
+    fputs("Could not re-initialise OPAL\n", stderr);
     return 0;
   }
 
