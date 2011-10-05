@@ -1963,6 +1963,7 @@ void OpalRTPSession::ApplyQOS(const PIPSocket::Address & addr)
   appliedQOS = true;
 }
 
+#if P_QOS
 
 bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
 {
@@ -1980,6 +1981,8 @@ bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
   appliedQOS = false;
   return retval;
 }
+
+#endif
 
 
 void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & transports)
