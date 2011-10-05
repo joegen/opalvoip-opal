@@ -1003,6 +1003,22 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 }
 
 
+bool OpalMediaFormat::RemoveRegisteredMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
+    if (*format == mediaFormat) {
+      registeredFormats.erase(format);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,

@@ -41,7 +41,7 @@
 #include <ptclib/dtmf.h>
 
 
-PFACTORY_CREATE(PFactory<PPluginModuleManager>, OpalPluginLIDManager, "OpalPluginLIDManager", true);
+PFACTORY_CREATE_SINGLETON(PFactory<PPluginModuleManager>, OpalPluginLIDManager);
 
 ///////////////////////////////////////////////////////////////////////////////
 

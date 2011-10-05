@@ -385,7 +385,6 @@ class PWAVFilePluginFactory : public PObject, public Factory::WorkerBase
       , m_mediaFormat(info.m_name)
       , m_extendedHeader(info.m_extendedHeaderData, info.m_extendedHeaderSize)
     {
-      Factory::WorkerBase::isDynamic = true;
       Factory::Register(key, this);
     }
 
