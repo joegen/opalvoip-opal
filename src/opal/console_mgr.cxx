@@ -35,6 +35,9 @@
 #endif
 
 #include <opal/console_mgr.h>
+
+#if P_CLI
+
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
@@ -781,6 +784,8 @@ void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, INT)
   args.GetContext().GetCLI().Stop();
 }
 
+
+#endif // P_CLI
 
 
 /////////////////////////////////////////////////////////////////////////////

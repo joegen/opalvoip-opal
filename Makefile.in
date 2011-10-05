@@ -45,12 +45,16 @@ SUBDIRS += samples/simple \
            samples/codectest \
            samples/callgen \
            samples/opalecho \
-           samples/faxopal \
            samples/c_api
+ifeq ($(OPAL_PTLIB_CLI), yes)
+SUBDIRS += samples/testpresent
+ifeq ($(OPAL_FAX), yes)
+SUBDIRS += samples/faxopal
+endif
 ifeq ($(OPAL_IVR),yes)
 SUBDIRS += samples/opalmcu \
-           samples/ivropal \
-           samples/testpresent
+           samples/ivropal
+endif
 endif
 endif
 
@@ -125,10 +129,6 @@ endif
 
 VPATH_C := $(OPAL_SRCDIR)/codec
 
-ifdef HAS_TELNET
-SOURCES	+= $(OPAL_SRCDIR)/opal/console_mgr.cxx 
-endif
-
 ########################################
 # Source files for library
 
@@ -154,6 +154,10 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/pcapfile.cxx \
            $(OPAL_SRCDIR)/opal/opal_c.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
+
+ifeq ($(OPAL_PTLIB_CLI), yes)
+SOURCES	+= $(OPAL_SRCDIR)/opal/console_mgr.cxx 
+endif
 
 ifeq ($(OPAL_IVR), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
