@@ -38,6 +38,7 @@
 #include <opal/manager.h>
 #include <ptclib/cli.h>
 
+#if P_CLI
 
 class SIPEndPoint;
 class H323EndPoint;
@@ -166,6 +167,8 @@ class OpalConsoleProcess : public PProcess
     Manager * m_manager;
 };
 
+
+#endif // P_CLI
 
 #endif // OPAL_OPAL_CONSOLE_MGR_H
 
