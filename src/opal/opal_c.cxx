@@ -293,7 +293,7 @@ class OpalManager_C : public OpalManager
 };
 
 
-class PProcess_C : public PProcess
+class PProcess_C : public PLibraryProcess
 {
 public:
   PProcess_C(const PCaselessString & options)
@@ -334,11 +334,6 @@ public:
   ~PProcess_C()
   {
     PTRACE(1, "OpalC\tShut Down.");
-  }
-
-private:
-  virtual void Main()
-  {
   }
 };
 

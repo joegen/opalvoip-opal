@@ -233,7 +233,8 @@ protected:
 PMutex MSRPInitialiser::mutex;
 OpalMSRPManager * MSRPInitialiser::manager = NULL;
 
-static PFactory<PProcessStartup>::Worker<MSRPInitialiser> opalpluginStartupFactory("MSRP", true);
+PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, MSRPInitialiser);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
