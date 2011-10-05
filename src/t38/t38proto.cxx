@@ -49,7 +49,9 @@
     #pragma message("T.38 Fax (spandsp) support enabled")
   #endif
 
+#if OPAL_PTLIB_ASN
 #include <asn/t38.h>
+#endif
 
 OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC);
 
