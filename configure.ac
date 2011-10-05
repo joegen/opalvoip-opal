@@ -318,7 +318,7 @@ fi
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
 OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
-OPAL_CHECK_PTLIB_MANDATORY([STUN],    [ptclib/pstun.h],[PSTUNClient client;])
+OPAL_CHECK_PTLIB([STUN],    [ptclib/pstun.h],[PSTUNClient client;],       [OPAL_PTLIB_STUN])
 OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
 OPAL_CHECK_PTLIB([ASN.1],   [ptclib/pasn.h], [PASNInteger asnint(5);],    [OPAL_PTLIB_ASN])
 OPAL_CHECK_PTLIB([expat],   [ptclib/pxml.h], [PXMLParser parser;],        [OPAL_PTLIB_EXPAT])
