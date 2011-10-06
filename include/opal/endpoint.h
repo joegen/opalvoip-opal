@@ -480,13 +480,21 @@ class OpalEndPoint : public PObject
     );
 
     /**Find a connection that uses the specified token.
-       This searches the endpoint for the connection that contains the token
-       as provided by functions such as MakeConnection().
+       This searches the endpoint for the connection that is identified by the
+       connection token as provided by functions such as MakeConnection().
+
+       The \p token string may also be the call token that identifies the
+       OpalCall instance. The first connection in that call that has this
+       endpoint as it's endpoint is returned.
+
+       Finally, the \p token string may also be of the form prefix:name,
+       e.g. ivr:fred, and the GetLocalPartyName() is used to locate the
+       connection.
       */
     PSafePtr<OpalConnection> GetConnectionWithLock(
       const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Locking mode
-    ) { return connectionsActive.FindWithLock(token, mode); }
+    ) const;
 
     /**Find a connection that uses the specified token.
        This searches the endpoint for the connection that contains the token
@@ -498,7 +506,7 @@ class OpalEndPoint : public PObject
     PSafePtr<ConnClass> GetConnectionWithLockAs(
       const PString & token,     ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Locking mode
-    )
+    ) const
     {
       PSafePtr<ConnClass> connection = PSafePtrCast<OpalConnection, ConnClass>(GetConnectionWithLock(token, mode));
       if (connection == NULL) {
