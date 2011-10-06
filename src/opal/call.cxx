@@ -590,6 +590,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       sourceStream = connection.OpenMediaStream(sourceFormat, sessionID, true);
       if (sourceStream == NULL)
         return false;
+      // If re-opening, need to disconnect from old patch. If new then this sets NULL to NULL.
+      sourceStream->SetPatch(NULL);
     }
 
     sinkStream = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
