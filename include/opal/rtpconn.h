@@ -270,9 +270,12 @@ class OpalRTPConnection : public OpalConnection
       public:
         SessionMap();
         ~SessionMap();
-        void operator=(SessionMap & other);
+        void Assign(SessionMap & other, bool move = true);
+      protected:
+        bool m_deleteSessions;
       private:
         SessionMap(const SessionMap & obj) : map<unsigned, OpalMediaSession *>(obj) { }
+        void operator=(const SessionMap &) { }
     };
 
   protected:
