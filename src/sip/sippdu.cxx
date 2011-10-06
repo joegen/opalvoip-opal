@@ -1329,12 +1329,16 @@ PString SIPMIMEInfo::GetAllowEvents() const
 
 void SIPMIMEInfo::SetAllowEvents(const PString & v)
 {
-  SetAt("Allow-Events", v);   // no compact form
+  if (!v.IsEmpty())
+    SetAt("Allow-Events", v);   // no compact form
 }
 
 
 void SIPMIMEInfo::SetAllowEvents(const PStringSet & set)
 {
+  if (set.IsEmpty())
+    return;
+
   PStringStream strm;
   strm << setfill(',') << set;
   SetAllowEvents(strm);
