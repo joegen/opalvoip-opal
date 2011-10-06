@@ -1967,6 +1967,9 @@ void SIPConnection::UpdateRemoteAddresses()
 
 void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDialogNotification::Events eventType, unsigned eventCode)
 {
+  if (GetPhase() == EstablishedPhase)
+    return; // Don't notify for re-INVITEs
+
   SIPURL url = m_dialog.GetLocalURI();
   url.Sanitise(SIPURL::ExternalURI);
 
