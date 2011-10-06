@@ -677,6 +677,7 @@ class SIPConnection : public OpalRTPConnection
       unsigned eventCode = 0
     );
 
+    virtual bool InviteConferenceParticipant(const PString & conf, const PString & dest);
 
     // Member variables
     SIPEndPoint         & endpoint;

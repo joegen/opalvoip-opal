@@ -2091,8 +2091,13 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           OnTransferNotify(info);
         }
         else if (response.GetStatusCode() >= 200) {
-          PTRACE(3, "SIP\tCompleted transfer of " << *referred);
-          referred->Release(OpalConnection::EndedByCallForwarded);
+          if (m_allowedEvents.Contains(SIPSubscribe::EventPackage(SIPSubscribe::Conference))) {
+            PTRACE(3, "SIP\tCompleted conference invite from " << *referred);
+          }
+          else {
+            PTRACE(3, "SIP\tCompleted transfer of " << *referred);
+            referred->Release(OpalConnection::EndedByCallForwarded);
+          }
 
           PStringToString info;
           info.SetAt("result", "completed");
@@ -2658,7 +2663,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
       PCaselessString method = referTo.GetParamVars()("method", "INVITE");
       if (method == "INVITE") {
         // Don't actually transfer, get conf to do INVITE to add participant
-        if (endpoint.GetManager().SetUpCall(state.m_internalURI, referTo.AsString()) == NULL)
+        if (!InviteConferenceParticipant(state.m_internalURI, referTo.AsString()))
           response.SetStatusCode(SIP_PDU::Failure_NotFound);
       }
       else if (method == "BYE") {
@@ -2694,6 +2699,12 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
   if (!endpoint.SetupTransfer(GetToken(), replaces, referTo.AsString(), NULL) && referSub)
     (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
+}
+
+
+bool SIPConnection::InviteConferenceParticipant(const PString & conf, const PString & dest)
+{
+  return endpoint.GetManager().SetUpCall(conf, dest) != NULL;
 }
 
 
@@ -3155,7 +3166,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   if (mime.GetContact().Find("isfocus") != P_MAX_INDEX)
     m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 
-  if (response.GetStatusCode() > 100 && response.GetStatusCode() < 300 && m_allowedEvents.GetSize() > 0)
+  if (response.GetStatusCode() > 100 && response.GetStatusCode() < 300)
     mime.SetAllowEvents(m_allowedEvents);
 
   if (response.GetStatusCode() == SIP_PDU::Information_Ringing)
