@@ -463,20 +463,25 @@ void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & info, INT ty
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRTPConnection::SessionMap::SessionMap()
+  : m_deleteSessions(true)
 {
 }
 
 OpalRTPConnection::SessionMap::~SessionMap()
 {
-  for (iterator it = begin(); it != end(); ++it)
-    delete it->second;
+  if (m_deleteSessions) {
+    for (iterator it = begin(); it != end(); ++it)
+      delete it->second;
+  }
 }
 
 
-void OpalRTPConnection::SessionMap::operator=(SessionMap & other)
+void OpalRTPConnection::SessionMap::Assign(SessionMap & other, bool move)
 {
   map<unsigned, OpalMediaSession *>::operator=(other);
-  other.clear();
+  m_deleteSessions = move;
+  if (move)
+    other.clear();
 }
 
 
