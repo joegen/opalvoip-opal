@@ -393,6 +393,36 @@ PBoolean OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 }
 
 
+PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & token, PSafetyMode mode) const
+{
+  if (token.IsEmpty())
+    return NULL;
+
+  PSafePtr<OpalConnection> connection = connectionsActive.FindWithLock(token, mode);
+  if (connection != NULL)
+    return connection;
+
+  PSafePtr<OpalCall> call = manager.FindCallWithLock(token, PSafeReadOnly);
+  if (call != NULL) {
+    for (PINDEX i = 0; (connection = call->GetConnection(i)) != NULL; ++i) {
+      if (&connection->GetEndPoint() == this)
+        return connection.SetSafetyMode(mode) ? connection : NULL;
+    }
+  }
+
+  if (token.NumCompare(GetPrefixName()+':') != EqualTo)
+    return NULL;
+
+  PString name = token.Mid(GetPrefixName().GetLength()+1);
+  for (connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReference); connection != NULL; ++connection) {
+    if (connection->GetLocalPartyName() == name)
+      return connection.SetSafetyMode(mode) ? connection : NULL;
+  }
+
+  return NULL;
+}
+
+
 PStringList OpalEndPoint::GetAllConnections()
 {
   PStringList tokens;
