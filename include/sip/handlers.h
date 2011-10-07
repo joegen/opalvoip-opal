@@ -166,7 +166,6 @@ protected:
   int                         expire;
   int                         originalExpire;
   int                         offlineExpire;
-  unsigned                    authenticationAttempts;
   State                       m_state;
   queue<State>                m_stateQueue;
   bool                        m_receivedResponse;
