@@ -396,28 +396,34 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
   }
 
   const OpalConferenceState & state = states.front();
+  PTRACE(4, "SIP\tConference state for " << state.m_internalURI << " has " << change);
 
   ConferenceMap::iterator it = m_conferenceAOR.find(uri);
   if (it != m_conferenceAOR.end())
     Notify(it->second, SIPEventPackage(SIPSubscribe::Conference), state);
 
-  if (change == OpalConferenceState::Created || change == OpalConferenceState::Destroyed) {
-    // Add to registrars
-    for (OpalConferenceState::URIs::const_iterator it = state.m_accessURI.begin(); it != state.m_accessURI.begin(); ++it) {
-      if (change == OpalConferenceState::Destroyed && Unregister(it->m_uri))
+  for (OpalConferenceState::URIs::const_iterator it = state.m_accessURI.begin(); it != state.m_accessURI.begin(); ++it) {
+    PTRACE(4, "SIP\tConference access URI: \"" << it->m_uri << '"');
+
+    PURL aor = it->m_uri;
+    if (aor.GetScheme().NumCompare("sip") != EqualTo)
+      continue;
+
+    switch (change) {
+      case OpalConferenceState::Destroyed :
+        Unregister(it->m_uri);
         break;
 
-      if (change == OpalConferenceState::Created) {
-        PURL aor = it->m_uri;
-        if (aor.GetScheme() == "sip" &&
-            activeSIPHandlers.FindSIPHandlerByDomain(aor.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReference) != NULL) {
+      case OpalConferenceState::Created :
+        if (activeSIPHandlers.FindSIPHandlerByDomain(aor.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReference) == NULL) {
+          PTRACE(4, "SIP\tConference domain " << aor.GetHostName() << " unregistered, not registering name " << aor.GetUserName());
+        }
+        else {
           SIPRegister::Params params;
           params.m_addressOfRecord = it->m_uri;
           PString dummy;
           Register(params, dummy);
-          break;
         }
-      }
     }
   }
 }
