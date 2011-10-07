@@ -335,6 +335,21 @@ PList<OpalEndPoint> OpalManager::GetEndPoints() const
 }
 
 
+PStringList OpalManager::GetPrefixNames(const OpalEndPoint * endpoint) const
+{
+  PStringList list;
+
+  PReadWaitAndSignal mutex(endpointsMutex);
+
+  for (std::map<PString, OpalEndPoint *>::const_iterator it = endpointMap.begin(); it != endpointMap.end(); ++it) {
+    if (endpoint == NULL || it->second == endpoint)
+      list += it->first;
+  }
+
+  return list;
+}
+
+
 void OpalManager::ShutDownEndpoints()
 {
   PTRACE(3, "OpalMan\tShutting down manager.");
@@ -1171,6 +1186,19 @@ void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
     if (&endpoint != &*ep)
       ep->OnConferenceStatusChanged(endpoint, uri, change);
   }
+}
+
+
+PStringList OpalManager::GetNetworkURIs(const PString & name) const
+{
+  PStringList list;
+
+  PReadWaitAndSignal mutex(endpointsMutex);
+
+  for (PList<OpalEndPoint>::const_iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
+    list += ep->GetNetworkURIs(name);
+
+  return list;
 }
 
 

@@ -187,7 +187,7 @@ class OpalEndPoint : public PObject
       PBoolean excludeLocalHost = true,       ///<  Flag to exclude 127.0.0.1
       const OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
-    );
+    ) const;
 
     /**Handle new incoming connection.
        This will either create a new connection object or utilise a previously
@@ -746,6 +746,14 @@ class OpalEndPoint : public PObject
       const PString & uri,      ///< Internal URI of conference node that changed
       OpalConferenceState::ChangeType change ///< Change that occurred
     );
+
+    /**Build a list of network accessible URIs given a user name.
+       This typically gets URI's like sip:user@interface, h323:user@interface
+       etc, for each listener of each endpoint.
+      */
+    virtual PStringList GetNetworkURIs(
+      const PString & name
+    ) const;
 
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.

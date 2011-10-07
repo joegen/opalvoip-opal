@@ -168,6 +168,20 @@ PString SIPEndPoint::GetDefaultTransport() const
     ; 
 }
 
+
+PStringList SIPEndPoint::GetNetworkURIs(const PString & name) const
+{
+  PStringList list = OpalRTPEndPoint::GetNetworkURIs(name);
+
+  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
+    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetAddressOfRecord().GetUserName() == name)
+      list += handler->GetAddressOfRecord();
+  }
+
+  return list;
+}
+
+
 PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
   if (transport->IsReliable()) {
