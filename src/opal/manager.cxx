@@ -130,6 +130,19 @@ OPAL_REGISTER_RFC2435_JPEG();
 
 /////////////////////////////////////////////////////////////////////////////
 
+ostream & operator<<(ostream & strm, OpalConferenceState::ChangeType type)
+{
+  static const char * const Names[] = { "Created", "Destroyed", "UserAdded", "UserRemoved" };
+  if (type >= 0 && type < PARRAYSIZE(Names))
+    strm << Names[type];
+  else
+    strm << '<' << (unsigned)type << '>';
+  return strm;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 PString OpalGetVersion()
 {
 #define AlphaCode   "alpha"
@@ -1150,6 +1163,8 @@ bool OpalManager::GetConferenceStates(OpalConferenceStates & states, const PStri
 
 void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri, OpalConferenceState::ChangeType change)
 {
+  PTRACE(4, "OpalMan\tOnConferenceStatusChanged(" << endpoint << ',\"' << uri << '\",' << change << ')');
+
   PReadWaitAndSignal mutex(endpointsMutex);
 
   for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
