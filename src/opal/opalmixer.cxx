@@ -1381,29 +1381,15 @@ void OpalMixerNode::GetConferenceState(OpalConferenceState & state) const
   state.m_notes       = m_info->m_notes;
   state.m_keywords    = m_info->m_keywords;
 
-  PList<OpalEndPoint> endpoints = m_manager.GetManager().GetEndPoints();
-  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
-    OpalTransportAddressArray addresses = ep->GetInterfaceAddresses();
-    for (PINDEX i = 0; i < addresses.GetSize(); ++i) {
-      PIPSocket::Address ip;
-      WORD port = ep->GetDefaultSignalPort();
-      if (addresses[i].GetIpAndPort(ip, port)) {
-        for (PStringSet::const_iterator alias = m_names.begin(); alias != m_names.end(); ++alias) {
-          PURL uri;
-          if (uri.SetScheme(ep->GetPrefixName())) {
-            uri.SetUserName(*alias);
-            uri.SetHostName(ip.AsString());
-            if (uri.GetPort() != port)
-              uri.SetPort(port);
+  PStringList uriList;
+  for (PStringSet::const_iterator alias = m_names.begin(); alias != m_names.end(); ++alias)
+    uriList += m_manager.GetManager().GetNetworkURIs(*alias);
 
-            OpalConferenceState::URI newURI;
-            newURI.m_uri = uri.AsString();
-            newURI.m_purpose = "participation";
-            state.m_accessURI.push_back(newURI);
-          }
-        }
-      }
-    }
+  for (PStringList::iterator it = uriList.begin(); it != uriList.end(); ++it) {
+    OpalConferenceState::URI newURI;
+    newURI.m_uri = *it;
+    newURI.m_purpose = "participation";
+    state.m_accessURI.push_back(newURI);
   }
 
   for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {

@@ -301,7 +301,7 @@ static void AddTransportAddresses(OpalTransportAddressArray & interfaceAddresses
 
 
 OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLocalHost,
-                                                              const OpalTransport * associatedTransport)
+                                                              const OpalTransport * associatedTransport) const
 {
   OpalTransportAddressArray interfaceAddresses;
 
@@ -329,7 +329,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
     }
   }
 
-  OpalListenerList::iterator listener;
+  OpalListenerList::const_iterator listener;
 
   if (!associatedLocalAddress.IsEmpty()) {
     for (listener = listeners.begin(); listener != listeners.end(); ++listener) {
@@ -680,6 +680,34 @@ bool OpalEndPoint::GetConferenceStates(OpalConferenceStates &, const PString &) 
 
 void OpalEndPoint::OnConferenceStatusChanged(OpalEndPoint &, const PString &, OpalConferenceState::ChangeType)
 {
+}
+
+
+PStringList OpalEndPoint::GetNetworkURIs(const PString & name) const
+{
+  PStringList list;
+
+  const PStringList prefixes = manager.GetPrefixNames(this);
+
+  OpalTransportAddressArray addresses = GetInterfaceAddresses();
+  for (PINDEX i = 0; i < addresses.GetSize(); ++i) {
+    PIPSocket::Address ip;
+    WORD port = GetDefaultSignalPort();
+    if (addresses[i].GetIpAndPort(ip, port)) {
+      for (PStringList::const_iterator it = prefixes.begin(); it != prefixes.end(); ++it) {
+        PURL uri;
+        if (uri.SetScheme(*it)) {
+          uri.SetUserName(name);
+          uri.SetHostName(ip.AsString());
+          if (uri.GetPort() != port)
+            uri.SetPort(port);
+          list += uri.AsString();
+        }
+      }
+    }
+  }
+
+  return list;
 }
 
 

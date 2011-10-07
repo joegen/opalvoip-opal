@@ -116,6 +116,14 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     virtual PString GetDefaultTransport() const;
 
+    /**Build a list of network accessible URIs given a user name.
+       This typically gets URI's like sip:user@interface, h323:user@interface
+       etc, for each listener of each endpoint.
+      */
+    virtual PStringList GetNetworkURIs(
+      const PString & name
+    ) const;
+
     /**Handle new incoming connection from listener.
 
        The default behaviour does nothing.
