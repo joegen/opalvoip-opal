@@ -393,7 +393,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool Register(
       const SIPRegister::Params & params, ///< Registration parameters
       PString & aor,                      ///< Resultant address-of-record for unregister
-      bool asynchronous = true            ///< Wait for completion, may take some time
+      SIP_PDU::StatusCodes * reason = NULL ///< If not null, wait for completion, may take some time
+    );
+
+    // For backward compatibility
+    bool Register(
+      const SIPRegister::Params & params, ///< Registration parameters
+      PString & aor,                      ///< Resultant address-of-record for unregister
+      bool asynchronous                   ///< Wait for completion, may take some time
     );
 
     /// Registration function for backward compatibility.
@@ -969,7 +976,12 @@ class SIPEndPoint : public OpalRTPEndPoint
     PAtomicInteger          lastSentCSeq;
     int                     m_defaultAppearanceCode;
 
-    std::map<PString, PSyncPoint> m_registrationComplete;
+    struct RegistrationCompletion {
+      PSyncPoint           m_sync;
+      SIP_PDU::StatusCodes m_reason;
+      RegistrationCompletion() : m_reason(SIP_PDU::Information_Trying) { }
+    };
+    std::map<PString, RegistrationCompletion> m_registrationComplete;
 
 
     // Thread pooling
