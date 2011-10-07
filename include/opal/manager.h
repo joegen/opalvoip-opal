@@ -74,6 +74,7 @@ public:
     UserRemoved,
     NumChangeTypes
   };
+  friend ostream & operator<<(ostream & strm, ChangeType type);
 
   PString  m_internalURI;         ///< Internal URI, e.g. mcu:5e6f7347-dcd6-e011-9853-0026b9b946a5
 
