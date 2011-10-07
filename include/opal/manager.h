@@ -198,6 +198,20 @@ class OpalManager : public PObject
       */
     PList<OpalEndPoint> GetEndPoints() const;
 
+    /**Get all the prefixes for endpoints attached to this manager.
+      */
+    PStringList GetPrefixNames(
+      const OpalEndPoint * endpoint = NULL  ///< Optional ep to get prefixes for
+    ) const;
+
+    /**Build a list of network accessible URIs given a user name.
+       This typically gets URI's like sip:user@interface, h323:user@interface
+       etc, for each listener of each endpoint.
+      */
+    virtual PStringList GetNetworkURIs(
+      const PString & name
+    ) const;
+
     /**Shut down all of the endpoints, clearing all calls.
        This is synchonous and will wait till everything is shut down.
        This will also assure no new calls come in whilein the process of
