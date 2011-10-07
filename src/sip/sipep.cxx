@@ -424,6 +424,10 @@ void SIPEndPoint::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
           PString dummy;
           Register(params, dummy);
         }
+        break;
+
+      default :
+        break;
     }
   }
 }
