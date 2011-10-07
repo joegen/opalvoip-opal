@@ -1163,7 +1163,7 @@ bool OpalManager::GetConferenceStates(OpalConferenceStates & states, const PStri
 
 void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri, OpalConferenceState::ChangeType change)
 {
-  PTRACE(4, "OpalMan\tOnConferenceStatusChanged(" << endpoint << ',\"' << uri << '\",' << change << ')');
+  PTRACE(4, "OpalMan\tOnConferenceStatusChanged(" << endpoint << ",\"" << uri << "\"," << change << ')');
 
   PReadWaitAndSignal mutex(endpointsMutex);
 
