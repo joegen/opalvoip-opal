@@ -377,8 +377,10 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       if (verbose)
         cout << "SIP registrar: " << flush;
       PString aor;
-      if (!sip->Register(params, aor, false)) {
-        cerr << "Could not do SIP registration to " << params.m_addressOfRecord << endl;
+      SIP_PDU::StatusCodes status;
+      if (!sip->Register(params, aor, &status)) {
+        cerr << "\nSIP registration to " << params.m_addressOfRecord
+             << " failed (" << status << ')' << endl;
         return false;
       }
       if (verbose)
