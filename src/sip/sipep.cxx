@@ -1048,6 +1048,13 @@ bool SIPEndPoint::Register(const PString & host,
 
 bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor, bool asynchronous)
 {
+  SIP_PDU::StatusCodes reason;
+  return Register(newParams, aor, asynchronous ? NULL : &reason);
+}
+
+
+bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor, SIP_PDU::StatusCodes * reason)
+{
   PTRACE(4, "SIP\tStart REGISTER\n" << newParams);
 
   SIPRegister::Params params(newParams);
@@ -1070,10 +1077,11 @@ bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor,
   if (!handler->ActivateState(SIPHandler::Subscribing))
     return false;
 
-  if (asynchronous)
+  if (reason == NULL)
     return true;
 
-  m_registrationComplete[aor].Wait();
+  m_registrationComplete[aor].m_sync.Wait();
+  *reason = m_registrationComplete[aor].m_reason;
   m_registrationComplete.erase(aor);
   return handler->GetState() == SIPHandler::Subscribed;
 }
@@ -1134,13 +1142,14 @@ void SIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 
   if (!status.m_wasRegistering ||
        status.m_reRegistering ||
-       status.m_reason == SIP_PDU::Information_Trying ||
-       status.m_reason == SIP_PDU::Failure_UnAuthorised)
+       status.m_reason == SIP_PDU::Information_Trying)
     return;
 
-  std::map<PString, PSyncPoint>::iterator it = m_registrationComplete.find(status.m_addressofRecord);
-  if (it != m_registrationComplete.end())
-    it->second.Signal();
+  std::map<PString, RegistrationCompletion>::iterator it = m_registrationComplete.find(status.m_addressofRecord);
+  if (it != m_registrationComplete.end()) {
+    it->second.m_reason = status.m_reason;
+    it->second.m_sync.Signal();
+  }
 }
 
 
