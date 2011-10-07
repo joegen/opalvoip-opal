@@ -87,7 +87,6 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
   , expire(params.m_expire)
   , originalExpire(params.m_expire)
   , offlineExpire(params.m_restoreTime)
-  , authenticationAttempts(0)
   , m_state(Unavailable)
   , m_receivedResponse(false)
   , m_proxy(params.m_proxyAddress)
@@ -446,16 +445,6 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 #endif
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
   
-  // Abort after some unsuccesful authentication attempts. This is required since
-  // some implementations return "401 Unauthorized" with a different nonce at every
-  // time.
-  if (authenticationAttempts >= 10) {
-    PTRACE(1, "SIP\tAborting after " << authenticationAttempts << " attempts to REGISTER/SUBSCRIBE");
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
-    return;
-  }
-  ++authenticationAttempts;
-
   // authenticate 
   PString errorMsg;
   SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
@@ -543,9 +532,6 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
     default :
       PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << GetState());
   }
-
-  // reset the number of unsuccesful authentication attempts
-  authenticationAttempts = 0;
 }
 
 
