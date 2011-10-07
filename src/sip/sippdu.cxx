@@ -727,7 +727,7 @@ void SIPMIMEInfo::PrintOn(ostream & strm) const
 bool SIPMIMEInfo::InternalAddMIME(const PString & fieldName, const PString & fieldValue)
 {
   if (fieldName.GetLength() == 1) {
-    char compact = tolower(fieldName[0]);
+    char compact = (char)tolower(fieldName[0] & 0x7f);
     for (PINDEX i = 0; i < PARRAYSIZE(CompactForms); ++i) {
       if (compact == CompactForms[i].compact)
         return PMIMEInfo::InternalAddMIME(CompactForms[i].full, fieldValue);
