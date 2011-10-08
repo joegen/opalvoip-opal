@@ -452,27 +452,66 @@ fi
 if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   OPAL_LIBAVCODEC_SOURCE()
 
-  PKG_CHECK_MODULES([LIBAVUTIL],
-                    [libavutil],
-                    [
-                     AC_SUBST(LIBAVUTIL_CFLAGS)
-                     AC_SUBST(LIBAVUTIL_LIBS)
-                     OPAL_GET_LIBNAME([LIBAVUTIL], [libavutil], [$LIBAVUTIL_LIBS])
-                     AC_SUBST(LIBAVUTIL_LIB_NAME)
-                    ]
-                   )
+  PKG_CHECK_MODULES(
+    [LIBAVUTIL],
+    [libavutil],
+    [
+      AC_SUBST(LIBAVUTIL_CFLAGS)
+      AC_SUBST(LIBAVUTIL_LIBS)
+      OPAL_GET_LIBNAME([LIBAVUTIL], [libavutil], [$LIBAVUTIL_LIBS])
+      AC_SUBST(LIBAVUTIL_LIB_NAME)
+    ]
+  )
 
   AC_MSG_CHECKING(if libavcodec has rtp_mode);
-  LIBAVINCDIR=`pkg-config --variable=includedir libavcodec`/libavcodec
-  AC_COMPILE_IFELSE([
-                  AC_LANG_PROGRAM([[#include <linux/ixjuser.h>]],
-                                  [[AVCodecContext c; c.rtp_mode = 1; ]])],
-                  [HAVE_LIBAVCODEC_RTP_MODE=1])
-  if test "x$HAVE_LIBAVCODEC_RTP_MODE" = "x1" ; then
-    AC_MSG_RESULT(yes);
-  else
-    AC_MSG_RESULT(no)
-  fi
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM(
+        [[#include LIBAVCODEC_HEADER]],
+        [[AVCodecContext c; c.rtp_mode = 1; ]]
+      )
+    ],
+    [
+      HAVE_LIBAVCODEC_RTP_MODE=1
+      AC_MSG_RESULT(yes);
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+
+  AC_MSG_CHECKING(if libavutil has AV_PICTURE_TYPE_NONE);
+  AC_COMPILE_IFELSE(
+    [
+      AC_LANG_PROGRAM(
+        [[#include LIBAVCODEC_HEADER]],
+        [[enum AVPictureType t = AV_PICTURE_TYPE_NONE; ]]
+      )
+    ],
+    [
+      AC_MSG_RESULT(yes);
+    ],
+    [
+      AC_MSG_RESULT(no)
+      AC_MSG_CHECKING(if libavutil has AVPictureType);
+      AC_COMPILE_IFELSE(
+        [
+          AC_LANG_PROGRAM(
+            [[#include LIBAVCODEC_HEADER]],
+            [[enum AVPictureType t; ]]
+          )
+        ],
+        [
+          AC_MSG_RESULT(yes);
+          AC_DEFINE([AV_PICTURE_TYPE_NONE], [(AVPictureType)0])
+        ],
+        [
+          AC_MSG_RESULT(no)
+          AC_DEFINE([AV_PICTURE_TYPE_NONE], [0])
+        ]
+      )
+    ]
+  )
 fi
 
 AC_SUBST(HAVE_LIBAVCODEC)

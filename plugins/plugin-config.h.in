@@ -132,6 +132,9 @@
 /* Filename of the libavcodec library */
 #undef LIBAVUTIL_LIB_NAME
 
+/* Compatibilty with various versions of the libavcodec library */
+#undef AV_PICTURE_TYPE_NONE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
