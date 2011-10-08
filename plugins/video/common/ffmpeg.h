@@ -59,11 +59,6 @@ extern "C" {
 #error Libavcodec LIBAVCODEC_VERSION_INT too old.
 #endif
 
-#if LIBAVUTIL_VERSION_INT <= AV_VERSION_INT(51,0,0)
-#define AV_PICTURE_TYPE_NONE 0
-#elif LIBAVUTIL_VERSION_INT <= AV_VERSION_INT(51,10,0)
-#define AV_PICTURE_TYPE_NONE (AVPictureType)0
-#endif
 
 #ifdef LIBAVCODEC_STACKALIGN_HACK
 /*
