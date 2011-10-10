@@ -548,6 +548,10 @@ class SIPConnection : OpalRTPConnection
     /**Get active PRACK mode. See PRACKMode enum for details.
       */
     SIPConnection::PRACKMode GetPRACKMode() const;
+	
+	/** Return a bit mask of the allowed SIP methods.
+      */
+    virtual unsigned GetAllowedMethods() const;
 
     /**Call when SIP INFO of type application/media_control+xml is received.
 
@@ -569,7 +573,8 @@ class SIPConnection : OpalRTPConnection
 
     virtual bool OnSendOfferSDP(
       OpalRTPSessionManager & rtpSessions,
-      SDPSessionDescription & sdpOut
+      SDPSessionDescription & sdpOut,
+      bool offerCurrentOnly
     );
     virtual bool OnSendOfferSDPSession(
       const OpalMediaType & mediaType,
@@ -594,7 +599,8 @@ class SIPConnection : OpalRTPConnection
     );
     virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
-      unsigned sessionId
+      unsigned sessionId,
+      bool & multipleFormats
     );
 
     virtual OpalMediaSession * SetUpMediaSession(
