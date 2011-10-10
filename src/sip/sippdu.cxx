@@ -2311,6 +2311,9 @@ bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & masterList)
   if (m_SDP != NULL)
     return true;
 
+  if (m_entityBody.IsEmpty())
+    return false;
+
   if (m_mime.GetContentType() != "application/sdp")
     return false;
 
