@@ -307,6 +307,7 @@ class SIPMIMEInfo : PMIMEInfo
 {
   public:
     SIPMIMEInfo(bool compactForm = false);
+	virtual bool InternalAddMIME(const PString & fieldName, const PString & fieldValue);
 
     void SetCompactForm(bool form);
 

@@ -36,7 +36,7 @@
 
 /**Presencu state information
   */
-class OpalPresenceInfo
+class OpalPresenceInfo : PObject
 {
   public:
     /// Presence states.
@@ -85,11 +85,14 @@ class OpalPresenceInfo
     State   m_state;    ///< New state for presentity
     PString m_note;     ///< Additional information about state change
     PURL    m_entity;   ///< The presentity whose state had changed
-    PURL    m_target;   ///< The presentity that is being informed about the state change
+    PURL    m_target;   ///< The presentity that is being informed about the state change.
+	PTime   m_when;     ///< Time/date of state change
 
     OpalPresenceInfo(State state = Unchanged);
 
     static PString AsString(State state);
     static State FromString(const PString & str);
     PString AsString() const;
+	
+	PObject::Comparison Compare(const PObject & other) const;
 };
