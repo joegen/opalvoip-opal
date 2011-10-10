@@ -480,6 +480,13 @@ class OpalMediaFormat : PContainer
     static bool SetRegisteredMediaFormat(
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
+	
+	/**Remove the media format from master format list entry.
+       The media format must already be registered. Returns false if not.
+    */
+    static bool RemoveRegisteredMediaFormat(
+      const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
+    );
 
     /**
       * Add a new option to this media format

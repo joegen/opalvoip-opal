@@ -224,7 +224,7 @@ public:
 class SIPMessageHandler : SIPHandler
 {
 public:
-  SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);
+  SIPMessageHandler(SIPEndPoint & ep, const SIPMessage::Params & params);                 
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnFailed (SIP_PDU::StatusCodes);
@@ -255,7 +255,7 @@ public:
 /** This dictionary is used both to contain the active and successful
  * registrations, and subscriptions. 
  */
-class SIPHandlersList
+class SIPHandlersList /Abstract/
 {
   public:
     /** Append a new handler to the list
@@ -329,7 +329,6 @@ class SIPPresenceInfo : OpalPresenceInfo
 {
 public:
   SIPPresenceInfo(
-    const PString & personId = PString::Empty(),
     State state = Unchanged
   );
 
