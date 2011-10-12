@@ -833,7 +833,9 @@ class OpalConnection : public PSafeObject
        releasing the connection if the info["result"] == "success".
      */
     virtual bool OnTransferNotify(
-      const PStringToString & info ///< State of the transfer
+      const PStringToString & info, ///< State of the transfer
+      const OpalConnection * transferringConnection
+                                    ///< Connection performing transfer, maybe "this"
     );
 
     /**Release the current connection.
@@ -1846,6 +1848,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool, IsConnectionOnHold(bool), false);
     P_REMOVE_VIRTUAL_VOID(ApplyStringOptions(OpalConnection::StringOptions &));
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(unsigned) const, false);
+    P_REMOVE_VIRTUAL(bool, OnTransferNotify(const PStringToString &), false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
