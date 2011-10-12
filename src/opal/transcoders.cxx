@@ -284,7 +284,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     srcFormat = *masterFormat;
     PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat
                             << "Merging with capability\n" << setw(-1) << srcCapability);
-    if (!srcFormat.Merge(srcCapability))
+    if (!srcFormat.Update(srcCapability)) // This includes the PayloadType, a normal Merge does not.
       return false;
   }
 
