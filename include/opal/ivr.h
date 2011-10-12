@@ -236,6 +236,22 @@ class OpalIVRConnection : public OpalLocalConnection
        is both connected and has media flowing.
      */
     void OnEstablished();
+    
+    /**A call back function to monitor the progress of a transfer.
+       When a transfer operation is initiated, the Transfer() function will
+       generally return immediately and the transfer may take some time. This
+       call back can give indication to the application of the progress of
+       the transfer.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+       The default action of that function is to return false, thereby
+       releasing the connection if the info["result"] == "success".
+     */
+    virtual bool OnTransferNotify(
+      const PStringToString & info, ///< State of the transfer
+      const OpalConnection * transferringConnection
+                                    ///< Connection performing transfer, maybe "this"
+    );
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -246,7 +262,7 @@ class OpalIVRConnection : public OpalLocalConnection
     virtual bool TransferConnection(
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
-    
+
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
        OpalMediaStream may be created in within this connection.
@@ -354,8 +370,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
   //@}
 
   protected:
-    OpalConnection & conn;
-    PVXMLSession & vxmlSession;
+    PVXMLSession & m_vxmlSession;
 };
 
 
