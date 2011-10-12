@@ -69,18 +69,23 @@ void OpalVXMLSession::OnEndSession()
 }
 
 
-void OpalVXMLSession::OnTransfer(const PString & destination, bool bridged)
+bool OpalVXMLSession::OnTransfer(const PString & destination, TransferType type)
 {
-  if (!bridged)
-    m_connection.GetCall().Transfer(destination, &m_connection);
-  else {
-    PSafePtr<OpalConnection> otherConnection = m_connection.GetOtherPartyConnection();
-    if (otherConnection != NULL)
-      m_connection.GetCall().Transfer(destination, &*otherConnection);
-    else {
-      PTRACE(1, "IVR\tAttempt to make transfer when no second connecion in call");
-    }
+  switch (type) {
+    case BridgedTransfer :
+      // We do not make a distinction between bridged and blind transfers
+
+    case BlindTransfer :
+      if (m_connection.GetCall().Transfer(destination))
+        return true;
+      return m_connection.GetCall().Transfer(destination, &m_connection);
+
+    case ConsultationTransfer :
+      break;
   }
+
+  // Unsupported
+  return false;
 }
 
 
