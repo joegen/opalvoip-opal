@@ -214,6 +214,17 @@ void OpalIVRConnection::OnEstablished()
 }
 
 
+bool OpalIVRConnection::OnTransferNotify(const PStringToString & info,
+                                         const OpalConnection * transferringConnection)
+{
+  PString result = info["result"];
+  if (result != "progress")
+    m_vxmlSession.SetTransferComplete(result == "success");
+
+  return OpalConnection::OnTransferNotify(info, transferringConnection);
+}
+
+
 bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
 {
   // First strip off the prefix if present
@@ -408,13 +419,13 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & _conn,
+OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
                                        const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        PBoolean isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(_conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
-    conn(_conn), vxmlSession(vxml)
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE)
+  , m_vxmlSession(vxml)
 {
   PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
 }
@@ -426,8 +437,8 @@ PBoolean OpalIVRMediaStream::Open()
   if (isOpen)
     return true;
 
-  if (vxmlSession.IsOpen()) {
-    PVXMLChannel * vxmlChannel = vxmlSession.GetAndLockVXMLChannel();
+  if (m_vxmlSession.IsOpen()) {
+    PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();
     PString vxmlChannelMediaFormat;
     
     if (vxmlChannel == NULL) {
@@ -436,7 +447,7 @@ PBoolean OpalIVRMediaStream::Open()
     }
 
     vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
-    vxmlSession.UnLockVXMLChannel();
+    m_vxmlSession.UnLockVXMLChannel();
     
     if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
       PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << mediaFormat << " <-> " << vxmlChannelMediaFormat);
@@ -446,7 +457,7 @@ PBoolean OpalIVRMediaStream::Open()
     return OpalMediaStream::Open();
   }
 
-  if (vxmlSession.Open(mediaFormat))
+  if (m_vxmlSession.Open(mediaFormat))
     return OpalMediaStream::Open();
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
