@@ -1876,7 +1876,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
         info.SetAt("code", psprintf("%u", statusCode));
         info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
         info.SetAt("Remote-Party", newRemotePartyID.AsString());
-        OnTransferNotify(info);
+        OnTransferNotify(info, this);
       }
     }
   }
@@ -2088,7 +2088,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           PStringToString info;
           info.SetAt("result", "failed");
           info.SetAt("party", "A");
-          OnTransferNotify(info);
+          OnTransferNotify(info, this);
         }
         else if (response.GetStatusCode() >= 200) {
           if (m_allowedEvents.Contains(SIPSubscribe::EventPackage(SIPSubscribe::Conference))) {
@@ -2102,7 +2102,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           PStringToString info;
           info.SetAt("result", "completed");
           info.SetAt("party", "A");
-          OnTransferNotify(info);
+          OnTransferNotify(info, this);
         }
       }
     }
@@ -2456,7 +2456,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     info.SetAt("party", "C");
     info.SetAt("Referred-By", m_redirectingParty);
     info.SetAt("Remote-Party", GetRemotePartyURL());
-    OnTransferNotify(info);
+    OnTransferNotify(info, this);
   }
 }
 
@@ -2495,7 +2495,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     info.SetAt("party", "C");
     info.SetAt("Referred-By", m_dialog.GetRemoteURI().AsString());
     info.SetAt("Remote-Party", newRemotePartyID.AsString());
-    OnTransferNotify(info);
+    OnTransferNotify(info, this);
   }
 }
 
@@ -2617,7 +2617,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   info.SetAt("code", psprintf("%u", code));
   info.SetAt("result", m_referInProgress ? "progress" : (code < 300 ? "success" : "failed"));
 
-  if (OnTransferNotify(info))
+  if (OnTransferNotify(info, this))
     return;
 
   // Release the connection
@@ -2691,7 +2691,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   info.SetAt("result", "started");
   info.SetAt("party", "A");
   info.SetAt("Referred-By", m_redirectingParty);
-  OnTransferNotify(info);
+  OnTransferNotify(info, this);
 
   PString replaces = referTo.GetQueryVars()("Replaces");
   referTo.SetQuery(PString::Empty());
