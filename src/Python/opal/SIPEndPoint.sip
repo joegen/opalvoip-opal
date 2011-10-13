@@ -352,8 +352,15 @@ class SIPEndPoint : OpalRTPEndPoint
      */
     bool Register(
       const SIPRegister::Params & params, ///< Registration parameters
-      PString & aor,                       ///< Resultant address-of-record for unregister
-	  bool asynchronous = true            ///< Wait for completion, may take some time
+      PString & aor,                      ///< Resultant address-of-record for unregister
+      SIP_PDU::StatusCodes * reason = NULL ///< If not null, wait for completion, may take some time
+    );
+
+    // For backward compatibility
+    bool Register(
+      const SIPRegister::Params & params, ///< Registration parameters
+      PString & aor,                      ///< Resultant address-of-record for unregister
+      bool asynchronous                   ///< Wait for completion, may take some time
     );
 
 
