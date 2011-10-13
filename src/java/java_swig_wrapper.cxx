@@ -335,7 +335,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_OPALJNI_OPAL_1C_1API_1VERSION_1get(JNI
   
   (void)jenv;
   (void)jcls;
-  result = (int) 24;
+  result = (int) 25;
   jresult = (jint)result; 
   return jresult;
 }
@@ -3665,6 +3665,34 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1stat
   (void)jarg1_;
   arg1 = *(OpalStatusMediaStream **)&jarg1; 
   result = (OpalMediaStates) ((arg1)->m_state);
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1volume_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
+  int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalStatusMediaStream **)&jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->m_volume = arg2;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_opalvoip_OPALJNI_OpalStatusMediaStream_1m_1volume_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  OpalStatusMediaStream *arg1 = (OpalStatusMediaStream *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalStatusMediaStream **)&jarg1; 
+  result = (int) ((arg1)->m_volume);
   jresult = (jint)result; 
   return jresult;
 }
