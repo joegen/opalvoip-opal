@@ -215,6 +215,8 @@ class OPALJNI {
   public final static native String OpalStatusMediaStream_m_format_get(long jarg1, OpalStatusMediaStream jarg1_);
   public final static native void OpalStatusMediaStream_m_state_set(long jarg1, OpalStatusMediaStream jarg1_, int jarg2);
   public final static native int OpalStatusMediaStream_m_state_get(long jarg1, OpalStatusMediaStream jarg1_);
+  public final static native void OpalStatusMediaStream_m_volume_set(long jarg1, OpalStatusMediaStream jarg1_, int jarg2);
+  public final static native int OpalStatusMediaStream_m_volume_get(long jarg1, OpalStatusMediaStream jarg1_);
   public final static native long new_OpalStatusMediaStream();
   public final static native void delete_OpalStatusMediaStream(long jarg1);
   public final static native void OpalParamSetUserData_m_callToken_set(long jarg1, OpalParamSetUserData jarg1_, String jarg2);
