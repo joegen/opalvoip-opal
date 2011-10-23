@@ -629,6 +629,7 @@ GSM_CFLAGS
 SUBDIRS
 DL_LIBS
 HAVE_LIBDL
+WIN32
 PLUGINEXT
 LDSO
 FAX_PLUGIN_DIR
@@ -5976,6 +5977,7 @@ PLUGINDIR=`pwd`
 
 
 
+WIN32=no
 LDSO=
 case "$target_os" in
        solaris*)
@@ -6460,6 +6462,7 @@ fi
         cygwin*|mingw**)
           LDSO='-module -avoid-version -shared'
           PLUGINEXT=dll
+          WIN32=yes
           for ac_header in malloc.h
 do :
   ac_fn_cxx_check_header_mongrel "$LINENO" "malloc.h" "ac_cv_header_malloc_h" "$ac_includes_default"
