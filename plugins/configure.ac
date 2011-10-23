@@ -68,6 +68,7 @@ AC_SUBST(FAX_PLUGIN_DIR)
 dnl ########################################################################
 dnl Platform specific section
 dnl ########################################################################
+WIN32=no
 LDSO=
 case "$target_os" in
        solaris*)
@@ -92,6 +93,7 @@ case "$target_os" in
         cygwin*|mingw**)
           LDSO='-module -avoid-version -shared'
           PLUGINEXT=dll
+          WIN32=yes
           AC_CHECK_HEADERS([malloc.h])
           AC_DEFINE([PLUGIN_CODEC_DLL_EXPORTS], [1], [For win32 build])
         ;;
@@ -107,6 +109,7 @@ esac
 AC_SUBST(LDSO)
 AC_SUBST(PLUGINEXT)
 AC_SUBST(CFLAGS)
+AC_SUBST(WIN32)
 
 OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
 AC_SUBST(HAVE_LIBDL)
