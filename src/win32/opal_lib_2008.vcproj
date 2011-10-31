@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OPAL Static"
 	ProjectGUID="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
 	RootNamespace="OPAL_lib"
@@ -80,6 +80,151 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile="$(OutDir)\opalsd.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory=".\..\..\lib"
+			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;PTRACING"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				PrecompiledHeaderFile="$(IntDir)/$(ProjectName).pch"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\opals.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="No Trace|Win32"
+			OutputDirectory=".\..\..\lib"
+			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="1"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				PrecompiledHeaderFile="$(IntDir)/$(ProjectName).pch"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\opalsn.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -351,79 +496,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\..\..\lib"
-			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;PTRACING"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile="$(IntDir)/$(ProjectName).pch"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\opals.lib"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 			OutputDirectory="..\..\lib\wm5ppc"
 			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
@@ -679,78 +751,6 @@
 				AdditionalFiles=""
 			/>
 			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
-			Name="No Trace|Win32"
-			OutputDirectory=".\..\..\lib"
-			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="1"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile="$(IntDir)/$(ProjectName).pch"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\opalsn.lib"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -1277,6 +1277,26 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="1"
+						PreprocessorDefinitions=""
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -1313,16 +1333,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions=""
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -1348,16 +1358,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						PreprocessorDefinitions=""
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="1"
 						PreprocessorDefinitions=""
 						UsePrecompiledHeader="1"
 					/>
@@ -1624,6 +1624,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions="NDEBUG;$(NoInherit)"
+							UsePrecompiledHeader="0"
+							WarningLevel="1"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+							UsePrecompiledHeader="0"
+							WarningLevel="1"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -1660,17 +1682,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions="NDEBUG;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -1699,17 +1710,6 @@
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							PreprocessorDefinitions="NDEBUG;$(NoInherit)"
-							UsePrecompiledHeader="0"
-							WarningLevel="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
 							UsePrecompiledHeader="0"
 							WarningLevel="1"
 						/>
@@ -1794,6 +1794,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -1818,14 +1834,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -1843,14 +1851,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -1998,6 +1998,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2025,16 +2045,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2056,16 +2066,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2147,6 +2147,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2174,16 +2194,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2205,16 +2215,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2296,6 +2296,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2323,16 +2343,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2354,16 +2364,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2445,6 +2445,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2472,16 +2492,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2503,16 +2513,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2594,6 +2594,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2621,16 +2641,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2652,16 +2662,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2743,6 +2743,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2770,16 +2790,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2801,16 +2811,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -2892,6 +2892,26 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
 							Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2919,16 +2939,6 @@
 							/>
 						</FileConfiguration>
 						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 							>
 							<Tool
@@ -2950,16 +2960,6 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								UsePrecompiledHeader="0"
-								PrecompiledHeaderFile=""
-								WarningLevel="1"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="No Trace|Win32"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -3306,6 +3306,28 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configuring Build Options"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --no-search --exclude-env=VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
+						Outputs="$(InputDir)buildopts.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configuring Build Options"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --no-search --exclude-env=VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
+						Outputs="$(InputDir)buildopts.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -3339,17 +3361,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --no-search --exclude-env=VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
-						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
-						Outputs="$(InputDir)buildopts.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -3378,17 +3389,6 @@
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
 						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
-						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
-						Outputs="$(InputDir)buildopts.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --no-search --exclude-env=VSNET2005_PWLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -3696,6 +3696,18 @@
 				Name="LID Headers"
 				>
 				<File
+					RelativePath="..\..\include\lids\capi_ep.h"
+					>
+				</File>
+				<File
+					RelativePath="..\lids\capi_linux.h"
+					>
+				</File>
+				<File
+					RelativePath="..\lids\capi_win32.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\lids\lid.h"
 					>
 				</File>
@@ -3709,18 +3721,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\lids\lidpluginmgr.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\lids\capi_ep.h"
-					>
-				</File>
-				<File
-					RelativePath="..\lids\capi_linux.h"
-					>
-				</File>
-				<File
-					RelativePath="..\lids\capi_win32.h"
 					>
 				</File>
 			</Filter>
@@ -4180,6 +4180,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4216,17 +4238,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4254,17 +4265,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -4362,6 +4362,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4398,17 +4420,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4436,17 +4447,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -4536,6 +4536,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4572,17 +4594,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4610,17 +4621,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -4710,6 +4710,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4746,17 +4768,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4784,17 +4795,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -4886,6 +4886,24 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4916,15 +4934,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -4948,15 +4957,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
@@ -5032,6 +5032,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5068,17 +5090,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5106,17 +5117,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -5206,6 +5206,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5242,17 +5264,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5280,17 +5291,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -5380,6 +5380,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5416,17 +5438,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5454,17 +5465,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -5554,6 +5554,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5590,17 +5612,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5628,17 +5639,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -5728,6 +5728,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5764,17 +5786,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5802,17 +5813,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -5902,6 +5902,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5938,17 +5960,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -5976,17 +5987,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6076,6 +6076,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6112,17 +6134,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6150,17 +6161,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6250,6 +6250,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6286,17 +6308,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6324,17 +6335,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6424,6 +6424,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6460,17 +6482,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6498,17 +6509,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6598,6 +6598,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6634,17 +6656,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6672,17 +6683,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6772,6 +6772,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6808,17 +6830,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6846,17 +6857,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -6944,6 +6944,24 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -6974,15 +6992,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7006,15 +7015,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
@@ -7090,6 +7090,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7126,17 +7148,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7164,17 +7175,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -7264,6 +7264,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7300,17 +7322,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7338,17 +7349,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -7438,6 +7438,28 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="No Trace|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="1"
+							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
+							PreprocessorDefinitions=""
+							CompileAs="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7474,17 +7496,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -7512,17 +7523,6 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
-							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
-							PreprocessorDefinitions=""
-							CompileAs="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
 							AdditionalIncludeDirectories="$(IntDir),..\..\include\asn"
 							PreprocessorDefinitions=""
 							CompileAs="0"
@@ -7617,6 +7617,28 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Ruby files"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Ruby files"
+						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -7650,17 +7672,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating Ruby files"
-						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
-						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -7684,17 +7695,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating Ruby files"
-						CommandLine="swig -c++ -ruby -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\ruby_swig_wrapper.cxx&quot; &quot;$(InputDir)\ruby_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
-						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/ruby_swig_wrapper.inc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -7783,6 +7783,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -7808,14 +7824,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -7833,14 +7841,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -7908,6 +7908,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -7932,14 +7948,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -7957,14 +7965,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -8039,6 +8039,26 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -8066,16 +8086,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -8100,16 +8110,6 @@
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
 						PrecompiledHeaderThrough=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -8179,6 +8179,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -8203,14 +8219,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -8228,14 +8236,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -8306,6 +8306,28 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating Java JNI files"
+						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)/include/opal.h"
+						Outputs="$(InputDir)/java_swig_wrapper.inc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -8339,17 +8361,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating Java JNI files"
-						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
-						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.inc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -8373,17 +8384,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating Java JNI files"
-						CommandLine="swig -c++ -java -package org.opalvoip -w451 &quot;-I$(InputDir)\..\..\include&quot; -o &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;if errorlevel 2 goto missing&#x0D;&#x0A;if errorlevel 1 exit 1&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.inc&quot; &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;:missing&#x0D;&#x0A;echo Ignoring missing SWIG and using pre-compiled versions.&#x0D;&#x0A;copy &quot;$(InputDir)\java_swig_wrapper.cxx&quot; &quot;$(InputDir)\java_swig_wrapper.inc&quot; &gt; nul&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
-						AdditionalDependencies="$(SolutionDir)/include/opal.h"
-						Outputs="$(InputDir)/java_swig_wrapper.inc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -8578,177 +8578,177 @@
 			>
 		</File>
 		<File
-				RelativePath="..\..\revision.h.in"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Setting SVN revision include file."
-						CommandLine="SubWCRev $(ProjectDir)..\..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-						AdditionalDependencies="$(InputDir).svn\entries"
-						Outputs="$(InputDir)revision.h"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 			RelativePath="..\..\revision.h"
 			>
+		</File>
+		<File
+			RelativePath="..\..\revision.h.in"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="No Trace|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Setting SVN revision include file."
+					CommandLine="SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+					AdditionalDependencies="$(InputDir).svn\entries"
+					Outputs="$(InputDir)revision.h"
+				/>
+			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
