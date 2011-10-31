@@ -21,12 +21,16 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _OPAL_REVISION_H
 #define _OPAL_REVISION_H
 
-#define SVN_REVISION 26018
+#define SVN_REVISION $WCREV$
 
 #endif  // _OPAL_REVISION_H
 
