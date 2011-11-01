@@ -510,9 +510,9 @@ configure --no-search --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLI
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Checking SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Checking SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Checking SVN revision include file.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
     </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />
