@@ -901,7 +901,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt)) {
-      PTRACE(4, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
+      PTRACE2(4, &*stream, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->SetPaused(paused);
       return !paused;
     }
