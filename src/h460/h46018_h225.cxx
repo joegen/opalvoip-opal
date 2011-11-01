@@ -1083,10 +1083,19 @@ PBoolean H46019UDPSocket::ReadFrom(void * buf, PINDEX len, Address & addr, WORD 
 
 PBoolean H46019UDPSocket::Internal_WriteTo(const void * bytes, PINDEX len, const Address & addr, WORD port)
 {
+	if (GetProbeState() == e_direct)
+		return PUDPSocket::WriteTo(bytes,len, m_detAddr, m_detPort);
+	else
+		return PUDPSocket::WriteTo(bytes,len, addr, port);
+}
+
+
+PBoolean H46019UDPSocket::Internal_WriteTo(const Slice* slices, size_t nSlices, const Address & addr, WORD port)
+{
   if (GetProbeState() == e_direct)
-    return PUDPSocket::WriteTo(bytes,len, m_detAddr, m_detPort);
+    return PUDPSocket::WriteTo(slices, nSlices, m_detAddr, m_detPort);
   else
-    return PUDPSocket::WriteTo(bytes,len, addr, port);
+    return PUDPSocket::WriteTo(slices, nSlices, addr, port);
 }
 
 
@@ -1094,24 +1103,16 @@ PBoolean H46019UDPSocket::WriteTo(const void * buf, PINDEX len, const Address & 
 
   // If a muxId was given in traversal parameters, then we need to tac it on
   // as the 1st four bytes of rtp data.
-  // WriteTo is called by WriteDataOrControl packets in rtp structures.  
-  // If those structures need to call WriteTo with any other data, this could
-  // be a problem.
 
-  if (muxId <= 0)
-    return Internal_WriteTo ( buf, len, addr, port );
-
-  static unsigned char *ibuf = NULL;
-  static PINDEX ibuflen = 0;
-  if (!ibuf || len + 4 > ibuflen ) {
-    if (ibuf) delete ibuf;
-    ibuf = new unsigned char[len+4];
-    ibuflen=len+4;
+  Slice slices[2];
+  size_t nSlices=0;
+  unsigned char muxBuf[4];
+  if (muxId > 0) {
+    memcpy(muxBuf,&muxId,4);
+    slices[nSlices++] = Slice(muxBuf,4);
   }
-  PUInt32b mId = muxId; 
-  memcpy(ibuf, &mId, 4);
-  memcpy(ibuf+4, buf, len);
-  return Internal_WriteTo ( ibuf, len+4, addr, port );
+  slices[nSlices++] = Slice(const_cast<void*>(buf),len);
+  return Internal_WriteTo (slices,nSlices,addr, port );
 }
 
 

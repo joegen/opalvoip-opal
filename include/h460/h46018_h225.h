@@ -319,6 +319,7 @@ class PNatMethod_H46019  : public PNatMethod_Null
        PPLUGIN_STATIC_LOAD(H46019,PNatMethod);
 #endif
 
+
 class H46019UDPSocket : public PUDPSocket
 {
     PCLASSINFO(H46019UDPSocket, PUDPSocket);
@@ -361,10 +362,10 @@ class H46019UDPSocket : public PUDPSocket
     /** Activate keep-alive mechanism.
     */
     void Activate(const H323TransportAddress & keepalive,    ///< KeepAlive Address
-            unsigned _payload,            ///< RTP Payload type    
-            unsigned _ttl,                ///< Time interval for keepalive.
-            unsigned _muxId
-            );
+      unsigned _payload,            ///< RTP Payload type    
+      unsigned _ttl,                ///< Time interval for keepalive.
+      unsigned _muxId
+    );
 
     /** Get the Ping Payload
       */
@@ -396,28 +397,28 @@ class H46019UDPSocket : public PUDPSocket
        @return PTrue if all the bytes were sucessfully written.
      */
     virtual PBoolean WriteTo(
-      const void * buf,   ///< Data to be written as URGENT TCP data.
-      PINDEX len,         ///< Number of bytes pointed to by #buf#.
+      const void * buf,     ///< Data to be written as URGENT TCP data.
+      PINDEX len,           ///< Number of bytes pointed to by #buf#.
       const Address & addr, ///< Address to which the datagram is sent.
-      WORD port           ///< Port to which the datagram is sent.
+      WORD port             ///< Port to which the datagram is sent.
     );
 
     enum  probe_state {
         e_notRequired,        ///< Polling has not started
-        e_initialising,        ///< We are initialising (local set but remote not)
-        e_idle,                ///< Idle (waiting for first packet from remote)
+        e_initialising,       ///< We are initialising (local set but remote not)
+        e_idle,               ///< Idle (waiting for first packet from remote)
         e_probing,            ///< Probing for direct route
         e_verify_receiver,    ///< verified receive connectivity    
-        e_verify_sender,    ///< verified send connectivity
-        e_wait,                ///< we are waiting for direct media (to set address)
-        e_direct            ///< we are going direct to detected address
+        e_verify_sender,      ///< verified send connectivity
+        e_wait,               ///< we are waiting for direct media (to set address)
+        e_direct              ///< we are going direct to detected address
     };
 
     struct probe_packet {
-        PUInt16b    Length;        // Length
-        PUInt32b    SSRC;        // Time Stamp
-        BYTE        name[4];    // Name is limited to 32 (4 Bytes)
-        BYTE        cui[20];    // SHA-1 is always 160 (20 Bytes)
+        PUInt16b    Length;   // Length
+        PUInt32b    SSRC;     // Time Stamp
+        BYTE        name[4];  // Name is limited to 32 (4 Bytes)
+        BYTE        cui[20];  // SHA-1 is always 160 (20 Bytes)
     };
 
     /** Set Alternate Direct Address
@@ -445,7 +446,7 @@ class H46019UDPSocket : public PUDPSocket
 
   protected:
 
- // H.460.19 Keepalives
+    // H.460.19 Keepalives
     void InitialiseKeepAlive();    ///< Start the keepalive
     void SendRTPPing(const PIPSocket::Address & ip, const WORD & port);
     void SendRTCPPing();
@@ -466,42 +467,52 @@ class H46019UDPSocket : public PUDPSocket
        @return PTrue if all the bytes were sucessfully written.
      */
     virtual PBoolean Internal_WriteTo(
-      const void * buf,   ///< Data to be written as URGENT TCP data.
-      PINDEX len,         ///< Number of bytes pointed to by #buf#.
+      const Slice * slices, ///< Data to be written as array of slices.
+      size_t nSlices,       ///< Number of #slices#.
       const Address & addr, ///< Address to which the datagram is sent.
-      WORD port           ///< Port to which the datagram is sent.
+      WORD port             ///< Port to which the datagram is sent.
+    );
+  
+    /**Write a datagram to a remote computer.
+   @return PTrue if all the bytes were sucessfully written.
+     */
+    virtual PBoolean Internal_WriteTo(
+      const void * buf,     ///< Data to be written.
+      PINDEX len,           ///< Number of bytes pointed to by #buf#.
+      const Address & addr, ///< Address to which the datagram is sent.
+      WORD port             ///< Port to which the datagram is sent.
     );
 
   private:
     H46018Handler & m_Handler;
-    unsigned m_Session;                        ///< Current Session ie 1-Audio 2-video
-    PString m_Token;                        ///< Current Connection Token
-    OpalGloballyUniqueID m_CallId;            ///< CallIdentifier
-    PString m_CUI;                            ///< Local CUI (for H.460.24 Annex A)
+    unsigned m_Session;             ///< Current Session ie 1-Audio 2-video
+    PString m_Token;                ///< Current Connection Token
+    OpalGloballyUniqueID m_CallId;  ///< CallIdentifier
+    PString m_CUI;                  ///< Local CUI (for H.460.24 Annex A)
 
- // H.460.19 Keepalives
-    PIPSocket::Address keepip;                ///< KeepAlive Address
-    WORD keepport;                            ///< KeepAlive Port
-    unsigned keeppayload;                    ///< KeepAlive RTP payload
-    unsigned keepTTL;                        ///< KeepAlive TTL
-    unsigned muxId;
-    WORD keepseqno;                            ///< KeepAlive sequence number
-    PTime * keepStartTime;                    ///< KeepAlive start time for TimeStamp.
+    // H.460.19 Keepalives
+    PIPSocket::Address keepip;      ///< KeepAlive Address
+    WORD keepport;                  ///< KeepAlive Port
+    unsigned keeppayload;           ///< KeepAlive RTP payload
+    unsigned keepTTL;               ///< KeepAlive TTL
+    PUInt32b muxId;                 ///< MuxId 
+    WORD keepseqno;                 ///< KeepAlive sequence number
+    PTime * keepStartTime;          ///< KeepAlive start time for TimeStamp.
 
-    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Ping);    ///< Timer to notify to poll for External IP
-    PTimer    Keep;                                        ///< Polling Timer
+    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Ping);   ///< Timer to notify to poll for External IP
+    PTimer    Keep;                                     ///< Polling Timer
 
     // H46024 Annex A support
-    PString m_CUIrem;                                        ///< Remote CUI
-    PIPSocket::Address m_locAddr;  WORD m_locPort;            ///< local Address (address used when starting socket)
-    PIPSocket::Address m_remAddr;  WORD m_remPort;            ///< Remote Address (address used when starting socket)
-    PIPSocket::Address m_detAddr;  WORD m_detPort;            ///< detected remote Address (as detected from actual packets)
-    PIPSocket::Address m_pendAddr;  WORD m_pendPort;        ///< detected pending RTCP Probe Address (as detected from actual packets)
-    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Probe);        ///< Thread to probe for direct connection
-    PTimer m_Probe;                                            ///< Probe Timer
-    PINDEX m_probes;                                        ///< Probe count
-    DWORD SSRC;                                                ///< Random number
-    PIPSocket::Address m_altAddr;  WORD m_altPort;            ///< supplied remote Address (as supplied in Generic Information)
+    PString m_CUIrem;                                   ///< Remote CUI
+    PIPSocket::Address m_locAddr;  WORD m_locPort;      ///< local Address (address used when starting socket)
+    PIPSocket::Address m_remAddr;  WORD m_remPort;      ///< Remote Address (address used when starting socket)
+    PIPSocket::Address m_detAddr;  WORD m_detPort;      ///< detected remote Address (as detected from actual packets)
+    PIPSocket::Address m_pendAddr;  WORD m_pendPort;    ///< detected pending RTCP Probe Address (as detected from actual packets)
+    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Probe);  ///< Thread to probe for direct connection
+    PTimer m_Probe;                                     ///< Probe Timer
+    PINDEX m_probes;                                    ///< Probe count
+    DWORD SSRC;                                         ///< Random number
+    PIPSocket::Address m_altAddr;  WORD m_altPort;      ///< supplied remote Address (as supplied in Generic Information)
     // H46024 Annex B support
     PBoolean    m_h46024b;
 
