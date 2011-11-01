@@ -342,7 +342,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
        time has gone backwards or it has been 10 minutes since last packet,
        or an out of order packet was hanging in a router for 2 seconds.
        Neither likely! */
-    if (newFrameTime < -16000 || newFrameTime > 4800000) {
+    if (newFrameTime < -16000 || newFrameTime > (m_averageFrameTime == 0 ? 4000 : 4800000)) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
       Reset();
@@ -497,7 +497,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       // Get rid of all the frames that are too late
       while (requiredTimestamp >= oldestFrame->first + m_averageFrameTime) {
         if (++m_consecutiveLatePackets > 10) {
-          PTRACE(4, "Jitter\tToo many late   " COMMON_TRACE_INFO);
+          PTRACE(3, "Jitter\tToo many late   " COMMON_TRACE_INFO);
           Reset();
           return true;
         }
@@ -557,8 +557,14 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
      If the packet subsequently DOES arrive, it will get picked up by the
      too late section above. */
   if (requiredTimestamp < oldestFrame->first) {
-    PTRACE(4, "Jitter\tPacket not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
-    ANALYSE(Out, requiredTimestamp, "Wait");
+    if (oldestFrame->first - requiredTimestamp > 8000) {
+      PTRACE(3, "Jitter\tToo far in ahead" COMMON_TRACE_INFO);
+      Reset();
+    }
+    else {
+      PTRACE(4, "Jitter\tPacket not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+      ANALYSE(Out, requiredTimestamp, "Wait");
+    }
     return true;
   }
 
