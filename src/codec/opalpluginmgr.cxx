@@ -101,19 +101,8 @@ inline static bool IsValidMPI(int mpi)
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef OPAL_PLUGIN_DIR
-
-class OpalPluginLoader : public PProcessStartup
-{
-  PCLASSINFO(OpalPluginLoader, PProcessStartup);
-  public:
-    void OnStartup()
-    { 
-      PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
-    }
-};
-
-PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, OpalPluginLoader);
-
+// Add default OPAL plug in directory so PPluginManager loads these too
+static bool DummyPluginDirs = PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
 #endif // OPAL_PLUGIN_DIR
 
 
