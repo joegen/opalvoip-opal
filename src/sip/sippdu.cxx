@@ -369,7 +369,7 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
     if (!PURL::InternalParse(str(startBracket+1, endBracket-1), defaultScheme))
       return false;
 
-    PURL::SplitVars(str.Mid(endBracket+1).Trim(), m_fieldParameters, ';', '=');
+    PURL::SplitVars(str.Mid(endBracket+1).Trim(), m_fieldParameters, ';', '=', QuotedParameterTranslation);
 
     if (endQuote == 0) {
       // There were no double quotes around the display name, take
