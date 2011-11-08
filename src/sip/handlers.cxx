@@ -702,6 +702,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   SIPMIMEInfo & mime = response.GetMIME();
 
+  mime.GetProductInfo(m_productInfo);
+
   m_serviceRoute.FromString(mime("Service-Route"));
 
   /* See if we are behind NAT and the Via header rport was present. This is
@@ -749,8 +751,11 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
         offerredContacts.erase(contact++);
     }
 
-    PTRACE(2, "SIP\tREGISTER only had some contacts to unregister but registrar to dumb, re-registering.");
-    SendRequest(Subscribing);
+    PTRACE(2, "SIP\tREGISTER only had some contacts to unregister but registrar too dumb, re-registering.");
+    m_contactAddresses = offerredContacts;
+    SetExpire(originalExpire);
+    SendRequest(Refreshing);
+    return;
   }
 
   // See if we are behind NAT and the Via header rport was present, and different
@@ -766,6 +771,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   }
 
   if (useExternalAddress) {
+    // If we have had a NAT port change from what we thought, need to initiate another REGISTER
     SIPURLList newContacts;
 
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
@@ -779,7 +785,11 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     }
 
     replyContacts.insert(replyContacts.end(), newContacts.begin(), newContacts.end());
+
+    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
+    m_contactAddresses = replyContacts;
     SetExpire(0);
+    SendRequest(Refreshing);
   }
   else {
     int minExpiry = INT_MAX;
@@ -790,18 +800,9 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
         minExpiry = expires;
     }
     SetExpire(minExpiry);
-  }
 
-  m_contactAddresses = replyContacts;
-
-  mime.GetProductInfo(m_productInfo);
-
-  SendStatus(SIP_PDU::Successful_OK, oldState);
-
-  // If we have had a NAT port change to what we thought, need to initiate another REGISTER
-  if (useExternalAddress) {
-    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
-    SendRequest(GetState());
+    m_contactAddresses = replyContacts;
+    SendStatus(SIP_PDU::Successful_OK, oldState);
   }
 }
 
