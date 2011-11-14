@@ -2252,8 +2252,10 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   // connection, assume a duplicate so it is ignored. If it does turn out
   // to be new INVITE, then it should be retried and next time the race
   // will be passed.
-  if (originalInvite == NULL)
+  if (originalInvite == NULL) {
+    PTRACE(3, "SIP\tIgnoring INVITE from " << request.GetURI() << " as we are originator.");
     return IsDuplicateINVITE;
+  }
 
   /* If we have same transaction ID, it means it is a retransmission
      of the original INVITE, probably should re-transmit last sent response
@@ -2265,7 +2267,16 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   }
 
   // Check if is RFC3261/8.2.2.2 case relating to merged requests.
-  if (requestToTag.IsEmpty() && requestMIME.GetCSeqIndex() > originalInvite->GetMIME().GetCSeqIndex())
+  if (!requestToTag.IsEmpty()) {
+    PTRACE(3, "SIP\tIgnoring INVITE from " << request.GetURI() << " as has invalid to-tag.");
+    return IsDuplicateINVITE;
+  }
+
+  // More checks for RFC3261/8.2.2.2 case relating to merged requests.
+  if (m_dialog.GetRemoteTag() != requestFromTag ||
+      m_dialog.GetCallID() != requestMIME.GetCallID() ||
+      originalInvite->GetMIME().GetCSeq() != requestMIME.GetCSeq() ||
+      request.GetTransactionID().NumCompare("z9hG4bK") != EqualTo) // Or RFC2543
     return IsNewINVITE; // No it isn't
 
   /* This is either a merged request or a brand new "dialog" to the same call.
