@@ -347,11 +347,16 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 
   if (connection == NULL) {
     for (PSafePtr<OpalConnection> conn = GetConnection(0); conn != NULL; ++conn) {
-      if (prefix == conn->GetPrefixName())
+      if (prefix == conn->GetPrefixName() && !conn->IsReleased())
         return conn->TransferConnection(newAddress);
     }
 
     PTRACE(2, "Call\tUnable to resolve transfer to \"" << newAddress << '"');
+    return false;
+  }
+
+  if (connection->IsReleased()) {
+    PTRACE(2, "Call\tCannot transfer to released connection " << *connection);
     return false;
   }
 
