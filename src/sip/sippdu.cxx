@@ -2296,9 +2296,19 @@ PString SIP_PDU::GetTransactionID() const
        transaction structure.
      */
     m_transactionID = SIPMIMEInfo::ExtractFieldParameter(m_mime.GetFirstVia(), "branch");
-    if (m_transactionID.IsEmpty()) {
-      PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has no branch parameter!");
-      m_transactionID = m_mime.GetCallID() + m_mime.GetCSeq(); // Fail safe ...
+    if (m_transactionID.NumCompare("z9hG4bK") != EqualTo) {
+      PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has "
+             << (m_transactionID.IsEmpty() ? "no" : "RFC2543") << " branch parameter!");
+
+      SIPURL to(m_mime.GetTo());
+      to.Sanitise(SIPURL::ToURI);
+
+      SIPURL from(m_mime.GetFrom());
+      from.Sanitise(SIPURL::FromURI);
+
+      PStringStream strm;
+      strm << to << from << m_mime.GetCallID() << m_mime.GetCSeq();
+      m_transactionID += strm;
     }
   }
 
