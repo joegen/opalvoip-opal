@@ -651,11 +651,9 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   inUseFlag.Wait();
 
   PString newToken;
-  if (existingToken.IsEmpty()) {
-    do {
-      newToken = psprintf("localhost/%u", Q931::GenerateCallReference());
-    } while (connectionsActive.Contains(newToken));
-  }
+  do {
+    newToken = psprintf("localhost/%u", Q931::GenerateCallReference());
+  } while (connectionsActive.Contains(newToken));
 
   H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options, stringOptions);
   if (!AddConnection(connection)) {
