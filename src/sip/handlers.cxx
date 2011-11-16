@@ -83,16 +83,16 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
   , m_method(method)
   , m_addressOfRecord(params.m_addressOfRecord)
   , m_remoteAddress(params.m_remoteAddress)
-  , callID(SIPTransaction::GenerateCallID())
-  , expire(params.m_expire)
-  , originalExpire(params.m_expire)
-  , offlineExpire(params.m_restoreTime)
+  , m_callID(SIPTransaction::GenerateCallID())
+  , m_currentExpireTime(params.m_expire)
+  , m_originalExpireTime(params.m_expire)
+  , m_offlineExpireTime(params.m_restoreTime)
   , m_state(Unavailable)
   , m_receivedResponse(false)
   , m_proxy(params.m_proxyAddress)
 {
   m_transactions.DisallowDeleteObjects();
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
+  m_expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
   if (m_proxy.IsEmpty())
     m_proxy = ep.GetProxy();
@@ -103,7 +103,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
 
 SIPHandler::~SIPHandler() 
 {
-  expireTimer.Stop();
+  m_expireTimer.Stop();
 
   if (m_transport) {
     m_transport->CloseWait();
@@ -120,7 +120,7 @@ PObject::Comparison SIPHandler::Compare(const PObject & obj) const
 {
   PAssert(PIsDescendant(&obj, SIPHandler), PInvalidCast);
   const SIPHandler * other = dynamic_cast<const SIPHandler *>(&obj);
-  return other != NULL ? callID.Compare(other->callID) : GreaterThan;
+  return other != NULL ? GetCallID().Compare(other->GetCallID()) : GreaterThan;
 }
 
 
@@ -190,7 +190,7 @@ void SIPHandler::SetState(SIPHandler::State newState)
 bool SIPHandler::ActivateState(SIPHandler::State newState)
 {
   // If subscribing with zero expiry time, is same as unsubscribe
-  if (newState == Subscribing && expire == 0)
+  if (newState == Subscribing && GetExpire() == 0)
     newState = Unsubscribing;
 
   // If unsubscribing and never got a response from server, rather than trying
@@ -253,7 +253,7 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
-  expireTimer.Stop(false); // Stop automatic retry
+  m_expireTimer.Stop(false); // Stop automatic retry
 
   SetState(newState);
 
@@ -281,7 +281,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
     return true;
   }
 
-  RetryLater(offlineExpire);
+  RetryLater(m_offlineExpireTime);
   return true;
 }
 
@@ -322,21 +322,21 @@ OpalTransport * SIPHandler::GetTransport()
 
 void SIPHandler::SetExpire(int e)
 {
-  expire = e;
-  PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
+  m_currentExpireTime = e;
+  PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << e << " seconds.");
 
-  // Only modify the originalExpire for future requests if IntervalTooBrief gives
+  // Only modify the m_originalExpireTime for future requests if IntervalTooBrief gives
   // a bigger expire time. expire itself will always reflect the proxy decision
-  // (bigger or lower), but originalExpire determines what is used in future 
+  // (bigger or lower), but m_originalExpireTime determines what is used in future 
   // requests and is only modified if interval too brief
-  if (originalExpire < e)
-    originalExpire = e;
+  if (m_originalExpireTime < e)
+    m_originalExpireTime = e;
 
   // retry before the expire time.
   // if the expire time is more than 20 mins, retry 10mins before expiry
   // if the expire time is less than 20 mins, retry after half of the expiry time
-  if (expire > 0 && GetState() < Unsubscribing)
-    expireTimer.SetInterval(0, (unsigned)(expire < 20*60 ? expire/2 : expire-10*60));
+  if (GetExpire() > 0 && GetState() < Unsubscribing)
+    m_expireTimer.SetInterval(0, (unsigned)(GetExpire() < 20*60 ? GetExpire()/2 : GetExpire()-10*60));
 }
 
 
@@ -432,7 +432,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
-  RetryLater(response.GetMIME().GetInteger("Retry-After", offlineExpire));
+  RetryLater(response.GetMIME().GetInteger("Retry-After", m_offlineExpireTime));
 }
 
 
@@ -470,7 +470,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
         PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
         OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
         if (!transaction.IsCanceled())
-          RetryLater(offlineExpire);
+          RetryLater(m_offlineExpireTime);
         return;
       }
 
@@ -523,7 +523,7 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
     case Subscribing :
     case Refreshing :
     case Restoring :
-      if (expire == 0)
+      if (GetExpire() == 0)
         SetState(Unsubscribed);
       else
         SetState(Subscribed);
@@ -540,18 +540,18 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
   if (m_transactions.Remove(&transaction)) {
     OnFailed(transaction.GetStatusCode());
     if (!transaction.IsCanceled())
-      RetryLater(offlineExpire);
+      RetryLater(m_offlineExpireTime);
   }
 }
 
 
 void SIPHandler::RetryLater(unsigned after)
 {
-  if (after == 0 || expire == 0)
+  if (after == 0 || GetExpire() == 0)
     return;
 
   PTRACE(3, "SIP\tRetrying " << GetMethod() << " after " << after << " seconds.");
-  expireTimer.SetInterval(0, after); // Keep trying to get it back
+  m_expireTimer.SetInterval(0, after); // Keep trying to get it back
 }
 
 
@@ -577,8 +577,8 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 
     default :
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
-      expire = 0; // OK, stop trying
-      expireTimer.Stop(false);
+      m_currentExpireTime = 0; // OK, stop trying
+      m_expireTimer.Stop(false);
       SetState(Unsubscribed);
       ShutDown();
   }
@@ -646,7 +646,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
     }
   }
   else {
-    params.m_expire = expire;
+    params.m_expire = GetExpire();
 
     if (params.m_contactAddress.IsEmpty()) {
       if (GetState() != Refreshing || m_contactAddresses.empty()) {
@@ -659,14 +659,14 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
           params.m_contactAddress += contact.AsQuotedString();
         }
         else {
-          OpalTransportAddress localAddress = trans.GetLocalAddress();
+          OpalTransportAddress localAddress = trans.GetLocalAddress(params.m_compatibility != SIPRegister::e_HasApplicationLayerGateway);
           unsigned qvalue = 1000;
           for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
             /* If fully compliant, put into the contact field all the bound
                interfaces. If special then we only put into the contact
                listeners that are on the same interface. If translated by STUN
                then only the external address of the interface is used. */
-            if (params.m_compatibility != SIPRegister::e_CannotRegisterPrivateContacts || localAddress.IsEquivalent(interfaces[i], true)) {
+            if (params.m_compatibility == SIPRegister::e_FullyCompliant || localAddress.IsEquivalent(interfaces[i], true)) {
               SIPURL contact(userName, interfaces[i]);
               contact.Sanitise(SIPURL::RegContactURI);
               contact.GetFieldParameters().Set("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
@@ -691,13 +691,20 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
 void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  State oldState = GetState();
+  switch (GetState()) {
+    case Unsubscribing :
+      SetState(Unsubscribed);
+      SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
+      return;
 
-  SIPHandler::OnReceivedOK(transaction, response);
+    case Subscribing :
+    case Refreshing :
+    case Restoring :
+      break;
 
-  if (GetState() == Unsubscribed) {
-    SendStatus(SIP_PDU::Successful_OK, oldState);
-    return;
+    default :
+      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << GetState());
+      return;
   }
 
   SIPMIMEInfo & mime = response.GetMIME();
@@ -706,92 +713,50 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   m_serviceRoute.FromString(mime("Service-Route"));
 
-  /* See if we are behind NAT and the Via header rport was present. This is
-     a STUN free mechanism for working behind firewalls. */
-  OpalTransportAddress externalAddress = mime.GetViaReceivedAddress();
-  bool useExternalAddress = !externalAddress.IsEmpty();
-
-  SIPURLList offerredContacts;
-  transaction.GetMIME().GetContacts(offerredContacts);
+  SIPURLList requestedContacts;
+  transaction.GetMIME().GetContacts(requestedContacts);
 
   SIPURLList replyContacts;
   mime.GetContacts(replyContacts);
+
+  /* See if we are behind NAT and the Via header rport was present. This is
+     a STUN free mechanism for working behind firewalls. Also, some servers
+     will refuse to work unless the Contact header agrees whith where the
+     packet is physically coming from. */
+  OpalTransportAddress externalAddress;
+  if (m_parameters.m_compatibility != SIPRegister::e_HasApplicationLayerGateway)
+    externalAddress = mime.GetViaReceivedAddress();
 
   /* RFC3261 does say the registrar must send back ALL registrations, however
      we only deal with replies from the registrar that we actually requested.
 
      Except! We look for special condition where registrar (e.g. OpenSIPS)
      tries to be smart and adjusts the Contact field to be the external
-     address as per the via rport. IMHO this is a bug as it does not follow
+     address as per the Via header rport. IMHO this is a bug as it does not follow
      what is implied by RFC3261/10.2.4 and 10.3 step 7. It should include the
-     original as well as the extra Contact. But it doesn't, so we have to deal. */
+     original as well as the extra Contact. But it doesn't, so we have to deal.
+     */
   for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ) {
-    if (std::find(offerredContacts.begin(), offerredContacts.end(), *reply) != offerredContacts.end() ||
-        (useExternalAddress && reply->GetHostAddress() == externalAddress))
+    if (reply->GetHostAddress() == externalAddress) {
+      externalAddress.MakeEmpty(); // Clear this so no further action taken
+      ++reply;
+    }
+    else if (std::find(requestedContacts.begin(), requestedContacts.end(), *reply) != requestedContacts.end())
       ++reply;
     else
       replyContacts.erase(reply++);
   }
 
-  if (replyContacts.empty()) {
-    if (transaction.GetMIME().GetExpires() != 0) {
-      // Huh? Nothing we tried to register, registered! How is that possible?
-      PTRACE(2, "SIP\tREGISTER returned no Contacts we requested, unregistering.");
-      SendRequest(Unsubscribing);
-      return;
-    }
-
-    // We did a partial unsubscribe but registrar doesn't understand and
-    // unregisetered everthing, reregister
-    SIPURLList::iterator contact = offerredContacts.begin();
-    while (contact != offerredContacts.end()) {
-      if (contact->GetFieldParameters().GetInteger("expires") > 0)
-        ++contact;
-      else
-        offerredContacts.erase(contact++);
-    }
-
-    PTRACE(2, "SIP\tREGISTER only had some contacts to unregister but registrar too dumb, re-registering.");
-    m_contactAddresses = offerredContacts;
-    SetExpire(originalExpire);
-    SendRequest(Refreshing);
+  if (replyContacts.empty() && GetExpire() != 0) {
+    // Huh? Nothing we tried to register, registered! How is that possible?
+    PTRACE(2, "SIP\tREGISTER returned no Contact addresses we requested, not really registered.");
+    SendRequest(Unsubscribed);
+    SendStatus(SIP_PDU::GlobalFailure_NotAcceptable, Subscribing);
     return;
   }
 
-  // See if we are behind NAT and the Via header rport was present, and different
-  // to our registered contact field. Some servers will refuse to work unless the
-  // Contact agrees whith where the packet is physically coming from.
-  if (useExternalAddress) {
-    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
-      if (contact->GetHostAddress() == externalAddress) {
-        useExternalAddress = false;
-        break;
-      }
-    }
-  }
-
-  if (useExternalAddress) {
-    // If we have had a NAT port change from what we thought, need to initiate another REGISTER
-    SIPURLList newContacts;
-
-    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
-      if (contact->GetHostAddress().GetProto() == "udp") {
-        contact->GetFieldParameters().SetInteger("expires", 0);
-
-        SIPURL newContact(contact->GetUserName(), externalAddress);
-        newContact.GetFieldParameters().SetInteger("expires", originalExpire);
-        newContacts.push_back(newContact);
-      }
-    }
-
-    replyContacts.insert(replyContacts.end(), newContacts.begin(), newContacts.end());
-
-    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
-    m_contactAddresses = replyContacts;
-    SetExpire(0);
-    SendRequest(Refreshing);
-  }
-  else {
+  // If this is the final (possibly one and only) REGISTER, process it
+  if (m_externalAddress == externalAddress) {
     int minExpiry = INT_MAX;
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
       long expires = contact->GetFieldParameters().GetInteger("expires",
@@ -802,8 +767,34 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     SetExpire(minExpiry);
 
     m_contactAddresses = replyContacts;
-    SendStatus(SIP_PDU::Successful_OK, oldState);
+    SetState(Subscribed);
+    SendStatus(SIP_PDU::Successful_OK, Subscribing);
+    return;
   }
+
+  // Remember (possibly new) NAT address
+  m_externalAddress == externalAddress;
+
+  // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
+  if (GetExpire() == 0) {
+    PTRACE(2, "SIP\tRe-registering with NAT address " << externalAddress);
+    for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
+      contact->SetHostAddress(externalAddress);
+
+    SetExpire(m_originalExpireTime);
+    SendRequest(Refreshing);
+    return;
+  }
+
+  /* If we got here then we have done a successful register, but registrar indicated
+     that we are behind firewall. Unregister what we just registered */
+
+  PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
+  for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
+    contact->GetFieldParameters().Remove("expires");
+  m_contactAddresses = replyContacts;
+  SetExpire(0);
+  SendRequest(Refreshing);
 }
 
 
@@ -889,7 +880,7 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
   , m_previousResponse(NULL)
 {
-  callID = m_dialog.GetCallID();
+  m_callID = m_dialog.GetCallID();
 
   m_parameters.m_proxyAddress = m_proxy.AsString();
 
@@ -924,7 +915,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & trans)
     m_dialog.SetProxy(m_proxy, true);
   }
 
-  m_parameters.m_expire = GetState() != Unsubscribing ? expire : 0;
+  m_parameters.m_expire = GetState() != Unsubscribing ? GetExpire() : 0;
   return new SIPSubscribe(endpoint, trans, m_dialog, m_parameters);
 }
 
@@ -1038,7 +1029,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
-  SetExpire(response.GetMIME().GetExpires(originalExpire));
+  SetExpire(response.GetMIME().GetExpires(m_originalExpireTime));
   m_dialog.Update(*m_transport, response);
 
   if (GetState() != Unsubscribing)
@@ -1621,7 +1612,7 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
   , m_reason(Deactivated)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(eventPackage))
 {
-  callID = m_dialog.GetCallID();
+  m_callID = m_dialog.GetCallID();
 }
 
 
@@ -1634,8 +1625,8 @@ SIPNotifyHandler::~SIPNotifyHandler()
 SIPTransaction * SIPNotifyHandler::CreateTransaction(OpalTransport & trans)
 {
   PString state;
-  if (expire > 0 && GetState() != Unsubscribing)
-    state.sprintf("active;expires=%u", expire);
+  if (GetExpire() > 0 && GetState() != Unsubscribing)
+    state.sprintf("active;expires=%u", GetExpire());
   else {
     state = "terminated;reason=";
     static const char * const ReasonNames[] = {
@@ -1711,7 +1702,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
   if (GetState() == Unsubscribing)
     return NULL;
 
-  m_parameters.m_expire = originalExpire;
+  m_parameters.m_expire = m_originalExpireTime;
   return new SIPPublish(endpoint,
                         transport,
                         GetCallID(),
@@ -1728,7 +1719,7 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
   if (!newETag.IsEmpty())
     m_sipETag = newETag;
 
-  SetExpire(response.GetMIME().GetExpires(originalExpire));
+  SetExpire(response.GetMIME().GetExpires(m_originalExpireTime));
 
   SIPHandler::OnReceivedOK(transaction, response);
 }
@@ -2033,9 +2024,9 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   if (params.m_id.IsEmpty())
     m_parameters.m_id = GetCallID();
   else
-    callID = params.m_id;   // make sure the transation uses the conversation ID, so we can track it
+    m_callID = params.m_id;   // make sure the transation uses the conversation ID, so we can track it
 
-  offlineExpire = 0; // No retries for offline, just give up
+  m_offlineExpireTime = 0; // No retries for offline, just give up
 
   SetState(Subscribed);
 }
@@ -2052,7 +2043,7 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
     return NULL;
   }
 
-  SetExpire(originalExpire);
+  SetExpire(m_originalExpireTime);
 
   SIPMessage * msg = new SIPMessage(endpoint, transport, m_parameters);
   m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
@@ -2099,7 +2090,7 @@ SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::P
 {
   m_parameters.m_proxyAddress = m_proxy.AsString();
 
-  offlineExpire = 0; // No retries for offline, just give up
+  m_offlineExpireTime = 0; // No retries for offline, just give up
 
   SetState(Subscribed);
 }
@@ -2110,7 +2101,7 @@ SIPTransaction * SIPOptionsHandler::CreateTransaction(OpalTransport & transport)
   if (GetState() == Unsubscribing)
     return NULL;
 
-  return new SIPOptions(endpoint, transport, callID, m_parameters);
+  return new SIPOptions(endpoint, transport, GetCallID(), m_parameters);
 }
 
 
