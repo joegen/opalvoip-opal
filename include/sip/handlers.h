@@ -98,10 +98,10 @@ public:
   virtual void SetExpire(int e);
 
   virtual int GetExpire()
-    { return expire; }
+    { return m_currentExpireTime; }
 
-  virtual PString GetCallID()
-    { return callID; }
+  virtual const PString & GetCallID() const
+    { return m_callID; }
 
   virtual void SetBody(const PString & /*body*/) { }
 
@@ -157,14 +157,14 @@ protected:
   SIP_PDU::Methods            m_method;
   SIPURL                      m_addressOfRecord;
   SIPURL                      m_remoteAddress;
-  PString                     callID;
-  int                         expire;
-  int                         originalExpire;
-  int                         offlineExpire;
+  PString                     m_callID;
+  int                         m_currentExpireTime;
+  int                         m_originalExpireTime;
+  int                         m_offlineExpireTime;
   State                       m_state;
   queue<State>                m_stateQueue;
   bool                        m_receivedResponse;
-  PTimer                      expireTimer; 
+  PTimer                      m_expireTimer; 
   SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
 
@@ -209,10 +209,11 @@ protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
 
-  SIPRegister::Params m_parameters;
-  unsigned            m_sequenceNumber;
-  SIPURLList          m_contactAddresses;
-  SIPURLList          m_serviceRoute;
+  SIPRegister::Params  m_parameters;
+  unsigned             m_sequenceNumber;
+  SIPURLList           m_contactAddresses;
+  SIPURLList           m_serviceRoute;
+  OpalTransportAddress m_externalAddress;
 };
 
 
