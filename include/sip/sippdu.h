@@ -144,6 +144,10 @@ class SIPURL : public PURL
       */
     OpalTransportAddress GetHostAddress() const;
 
+    /**Set the host and port as a transport address.
+      */
+    void SetHostAddress(const OpalTransportAddress & addr);
+
     enum UsageContext {
       ExternalURI,   ///< URI used anywhere outside of protocol
       RequestURI,    ///< Request-URI (after the INVITE)
@@ -1045,10 +1049,14 @@ class SIPRegister : public SIPTransaction
                                              contact field. Correct behaviour is to return
                                              a contact with the fields it can accept in
                                              the 200 OK */
-      e_CannotRegisterPrivateContacts   /**< Registrar refuses to register any RFC 1918
+      e_CannotRegisterPrivateContacts,  /**< Registrar refuses to register any RFC 1918
                                              contact field. Correct behaviour is to return
                                              a contact with the fields it can accept in
                                              the 200 OK */
+      e_HasApplicationLayerGateway      /**< Router has Application Layer Gateway code that
+                                             is doing address transations, so we do not try
+                                             to do it ourselves as well or it goes horribly
+                                             wrong. */
     };
 
     /// Registrar parameters
