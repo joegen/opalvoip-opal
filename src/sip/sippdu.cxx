@@ -474,6 +474,17 @@ OpalTransportAddress SIPURL::GetHostAddress() const
 }
 
 
+void SIPURL::SetHostAddress(const OpalTransportAddress & addr)
+{
+  PIPSocket::Address ip;
+  WORD port = GetPort();
+  if (!addr.GetIpAndPort(ip, port))
+    return;
+  SetHostName(ip.AsString(true));
+  SetPort(port);
+}
+
+
 void SIPURL::Sanitise(UsageContext context)
 {
   PINDEX i;
