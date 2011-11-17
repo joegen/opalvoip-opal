@@ -457,7 +457,7 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PReadWaitAndSignal mutex(inUse);
 
-  bool atLeastOne = source.UpdateMediaFormat(mediaFormat, true);
+  bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
     atLeastOne = s->UpdateMediaFormat(mediaFormat) || atLeastOne;
@@ -728,16 +728,16 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
   bool ok;
 
   if (primaryCodec == NULL)
-    ok = stream->UpdateMediaFormat(mediaFormat, true);
+    ok = stream->InternalUpdateMediaFormat(mediaFormat);
   else if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat)
     ok = secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
-         stream->UpdateMediaFormat(secondaryCodec->GetOutputFormat(), true);
+         stream->InternalUpdateMediaFormat(secondaryCodec->GetOutputFormat());
   else if (primaryCodec->GetOutputFormat() == mediaFormat)
     ok = primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
-         stream->UpdateMediaFormat(primaryCodec->GetOutputFormat(), true);
+         stream->InternalUpdateMediaFormat(primaryCodec->GetOutputFormat());
   else
     ok = primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat()) &&
-         stream->UpdateMediaFormat(primaryCodec->GetInputFormat(), true);
+         stream->InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
 
 #if OPAL_VIDEO
     SetRateControlParameters(stream->GetMediaFormat());
