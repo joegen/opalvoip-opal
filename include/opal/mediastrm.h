@@ -162,9 +162,11 @@ class OpalMediaStream : public PSafeObject
        The default behaviour updates the mediaFormat member variable and
        pases the value on to the OpalMediaPatch.
       */
-    virtual bool UpdateMediaFormat(
-      const OpalMediaFormat & mediaFormat,  ///<  New media format
-      bool fromPatch = false                ///<  Is being called from OpalMediaPatch
+    bool UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat   ///<  New media format
+    );
+    virtual bool InternalUpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat   ///<  New media format
     );
 
     /**Execute the command specified to the transcoder. The commands are
@@ -897,6 +899,16 @@ class OpalVideoMediaStream : public OpalMediaStream
 
   /**@name Overrides of PChannel class */
   //@{
+    /**Update the media format. This can be used to adjust the
+       parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1. If the formats are
+       different then a OpalMediaFormat::Merge() is performed.
+      */
+    virtual bool InternalUpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat   ///<  New media format
+    );
+
     /**Open the media stream.
 
        The default behaviour sets the OpalLineInterfaceDevice format and
