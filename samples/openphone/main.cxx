@@ -5636,6 +5636,7 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("VideoControlDialog"));
 
   m_TargetBitRate = FindWindowByNameAs<wxSlider>(this, wxT("VideoBitRate"));
+  m_FrameRate = FindWindowByNameAs<wxSlider>(this, wxT("FrameRate"));
 
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
@@ -5644,7 +5645,10 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
       m_TargetBitRate->SetValue(mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())/1000);
-      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10,1);
+      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10, 1);
+
+      m_FrameRate->SetMax(30);
+      m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
     }
   }
 }
@@ -5661,6 +5665,7 @@ bool VideoControlDialog::TransferDataFromWindow()
     if (stream != NULL) {
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_TargetBitRate->GetValue()*1000);
+      mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), mediaFormat.GetClockRate()/m_FrameRate->GetValue());
       stream->UpdateMediaFormat(mediaFormat);
     }
   }
