@@ -107,16 +107,19 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 }
 
 
-PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool fromPatch)
+bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
 
   // If we are source, then update the sink side, and vice versa
-  if (!fromPatch && mediaPatch != NULL)
-    return mediaPatch->UpdateMediaFormat(newMediaFormat);
+  return mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
+}
 
+
+bool OpalMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+{
   if (!mediaFormat.Update(newMediaFormat))
     return false;
 
@@ -1182,6 +1185,36 @@ PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   }
 
   return OpalMediaStream::SetDataSize(sizeof(PluginCodec_Video_FrameHeader) + dataSize, frameTime);
+}
+
+
+bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (!OpalMediaStream::InternalUpdateMediaFormat(mediaFormat))
+    return false;
+
+  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+
+  if (m_inputDevice != NULL) {
+    if (!m_inputDevice->SetFrameSizeConverter(width, height)) {
+      PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
+      return false;
+    }
+    if (!m_inputDevice->SetFrameRate(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime())) {
+      PTRACE(1, "Media\tCould not set frame rate in grabber to " << (mediaFormat.GetClockRate()/mediaFormat.GetFrameTime()));
+      return false;
+    }
+  }
+
+  if (m_outputDevice != NULL) {
+    if (!m_outputDevice->SetFrameSizeConverter(width, height)) {
+      PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
