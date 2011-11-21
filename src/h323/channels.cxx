@@ -224,9 +224,19 @@ void H323Channel::OnSendOpenAck(const H245_OpenLogicalChannel & /*pdu*/,
 }
 
 
-void H323Channel::OnFlowControl(long PTRACE_PARAM(bitRateRestriction))
+void H323Channel::OnFlowControl(long bitRateRestriction)
 {
   PTRACE(3, "LogChan\tOnFlowControl: " << bitRateRestriction);
+
+  OpalMediaStreamPtr stream = GetMediaStream();
+  if (stream != NULL) {
+    long bitsPerSecond = bitRateRestriction*100;
+    OpalMediaFormat format = stream->GetMediaFormat();
+    format.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bitsPerSecond);
+    if (format.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) > bitsPerSecond)
+      format.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bitsPerSecond);
+    stream->UpdateMediaFormat(format);
+  }
 }
 
 
