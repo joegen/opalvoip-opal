@@ -675,7 +675,7 @@ void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
   PTRACE(4, "OpalC API\tOnEndDialog for " << connection);
 
   // Do not call ancestor and start a long pause, as do not want it to hang up
-  connection.TransferConnection("silence=3600000"); 
+  connection.TransferConnection("<vxml><form><break time=\"3600s\"/></form></vxml>"); 
 
   // Send message to app, which may (or may not) start a new IVR script
   OpalMessageBuffer message(OpalIndCompletedIVR);
