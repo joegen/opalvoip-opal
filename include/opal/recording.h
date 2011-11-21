@@ -196,7 +196,7 @@ class OpalRecordManager
 PFACTORY_LOAD(OpalWAVRecordManager);
 #endif
 
-#ifdef P_VFW_CAPTURE
+#if OPAL_VIDEO && P_VFW_CAPTURE
 PFACTORY_LOAD(OpalAVIRecordManager);
 #endif
 
