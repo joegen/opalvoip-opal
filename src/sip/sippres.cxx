@@ -325,11 +325,15 @@ void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const S
 }
 
 
-void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::NotifyCallbackInfo & status)
+void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler & handler, SIPSubscribe::NotifyCallbackInfo & status)
 {
   list<SIPPresenceInfo> infoList;
   PString error;
-  if (!SIPPresenceInfo::ParseXML(status.m_notify.GetEntityBody(), infoList, error)) {
+  PString body = status.m_notify.GetEntityBody();
+  if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
+    body.Replace(SIPURL(status.m_notify.GetMIME().GetTo()).AsString(),
+                 SIPURL(status.m_notify.GetMIME().GetFrom()).AsString());
+  if (!SIPPresenceInfo::ParseXML(body, infoList, error)) {
     status.m_response.SetEntityBody(error);
     return;
   }

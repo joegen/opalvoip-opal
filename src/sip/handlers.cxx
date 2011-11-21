@@ -1329,7 +1329,10 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
       infoList.resize(1);
     else {
       PString error;
-      if (!SIPPresenceInfo::ParseXML(request.GetEntityBody(), infoList, error))
+      PString body = request.GetEntityBody();
+      if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
+        body.Replace(to.AsString(), from.AsString());
+      if (!SIPPresenceInfo::ParseXML(body, infoList, error))
         return false;
     }
 
@@ -1943,6 +1946,8 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
   SIPPresenceInfo info;
   info.m_tupleId.MakeEmpty();
 
+  PTime defaultTimestamp; // Start with "now"
+
   for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
     PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
     if (element == NULL)
@@ -1953,6 +1958,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
 
       if (!info.m_tupleId.IsEmpty()) {
         infoList.push_back(info);
+        defaultTimestamp = info.m_when + PTimeInterval(0, 1); // One second later
         info = SIPPresenceInfo();
       }
 
@@ -1977,7 +1983,7 @@ bool SIPPresenceInfo::ParseXML(const PString & body,
         info.m_contact = element->GetData();
 
       if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
-        info.m_when.SetTimestamp(0);
+        info.m_when = defaultTimestamp;
     }
     else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person") {
       static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
