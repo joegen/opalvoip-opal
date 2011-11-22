@@ -2148,7 +2148,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
       if (!info.m_tupleId.IsEmpty()) {
         infoList.push_back(info);
-        defaultTimestamp = info.m_when + PTimeInterval(0, 1); // One second later
+        defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
         info = SIPPresenceInfo();
       }
 
