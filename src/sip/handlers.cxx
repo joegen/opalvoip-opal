@@ -2125,7 +2125,9 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
   // Common info to all tuples
   PURL entity;
   PXMLElement * rootElement = xml.GetRootElement();
-  if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
+  if (notifyInfo.m_handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
+    entity = SIPURL(notifyInfo.m_response.GetMIME().GetFrom()); // Can't trust entity, Asterisk gets it wrong
+  else if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
     notifyInfo.m_response.SetEntityBody("Invalid/unsupported entity");
     PTRACE2(1, NULL, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << '"');
     return false;
@@ -2133,6 +2135,8 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
   SIPPresenceInfo info;
   info.m_tupleId.MakeEmpty();
+
+  PTime defaultTimestamp; // Start with "now"
 
   for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
     PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
@@ -2144,6 +2148,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
       if (!info.m_tupleId.IsEmpty()) {
         infoList.push_back(info);
+        defaultTimestamp = info.m_when + PTimeInterval(0, 1); // One second later
         info = SIPPresenceInfo();
       }
 
@@ -2168,7 +2173,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
         info.m_contact = element->GetData();
 
       if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
-        info.m_when.SetTimestamp(0);
+        info.m_when = defaultTimestamp;
     }
     else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person") {
       static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
