@@ -832,7 +832,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     else
       localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
 
-    bool sending = sendStream != NULL && sendStream->IsOpen();
+    bool sending = sendStream != NULL && sendStream->IsOpen() && !sendStream->IsPaused();
     if (sending && m_holdFromRemote) {
       // OK we have (possibly) asymmetric hold, check if remote supports it.
       PString regex = m_stringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
@@ -1347,7 +1347,10 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
 
 void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
 {
-  if (!m_symmetricOpenStream && !m_handlingINVITE)
+  /* If we have pasued the transmit RTP, we really need to tell the other side
+     via a re-INVITE or some systems disconnect the call becuase they have not
+     received any RTP for too long. */
+  if (!m_symmetricOpenStream && !m_handlingINVITE && strm.IsSink())
     SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel"));
   OpalConnection::OnPauseMediaStream(strm, paused);
 }
