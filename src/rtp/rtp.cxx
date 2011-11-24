@@ -1870,7 +1870,7 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
 {
   int sz = 0;
   if (!sock.GetOption(buftype, sz)) {
-    PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
+    PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << buftype << ") failed: " << sock.GetErrorText());
     return;
   }
 
@@ -1881,20 +1881,22 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
   for (; bufsz >= 1024; bufsz /= 2) {
     // Set to new size
     if (!sock.SetOption(buftype, bufsz)) {
-      PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed: " << sock.GetErrorText());
+      PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") failed: " << sock.GetErrorText());
       continue;
     }
 
     // As some stacks lie about setting the buffer size, we double check.
     if (!sock.GetOption(buftype, sz)) {
-      PTRACE(1, "RTP_UDP\tGetOption(" << buftype << ") failed: " << sock.GetErrorText());
+      PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << buftype << ") failed: " << sock.GetErrorText());
       return;
     }
 
-    if (sz >= bufsz)
+    if (sz >= bufsz) {
+      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") succeeded.");
       return;
+    }
 
-    PTRACE(1, "RTP_UDP\tSetOption(" << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
+    PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
   }
 }
 
