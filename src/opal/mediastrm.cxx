@@ -1305,8 +1305,10 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
   unsigned flags = 0;
-  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags))
+  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags)) {
+    PTRACE(2, "Media\tFailed to grab frame from " << m_inputDevice->GetDeviceName());
     return false;
+  }
 
   PTimeInterval currentGrabTime = PTimer::Tick();
   timestamp += (int)((currentGrabTime - m_lastGrabTime).GetMilliSeconds()*OpalMediaFormat::VideoClockRate/1000);
