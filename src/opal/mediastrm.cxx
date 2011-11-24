@@ -1318,8 +1318,10 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
   bool keyFrame = m_needKeyFrame;
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
-  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, keyFrame))
+  if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, keyFrame)) {
+    PTRACE(2, "Media\tFailed to grab frame from " << m_inputDevice->GetDeviceName());
     return false;
+  }
 
   // If it gave us a key frame, stop asking.
   if (keyFrame)
