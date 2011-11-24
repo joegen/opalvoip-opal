@@ -1630,7 +1630,7 @@ bool OpalManager::SetTranslationHost(const PString & host)
   }
 
   translationHost = PString::Empty();
-  translationAddress = PIPSocket::GetDefaultIpAny();
+  translationAddress = PIPSocket::GetInvalidAddress();
   return false;
 }
 

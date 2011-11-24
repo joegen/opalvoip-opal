@@ -65,8 +65,8 @@ void Reverse(char * ptr, size_t sz)
 
 OpalPCAPFile::OpalPCAPFile()
   : m_otherEndian(false)
-  , m_filterSrcIP(PIPSocket::GetDefaultIpAny())
-  , m_filterDstIP(PIPSocket::GetDefaultIpAny())
+  , m_filterSrcIP(PIPSocket::GetInvalidAddress())
+  , m_filterDstIP(PIPSocket::GetInvalidAddress())
   , m_fragmentated(false)
   , m_fragmentProto(0)
   , m_filterSrcPort(0)
@@ -204,11 +204,11 @@ int OpalPCAPFile::GetIP(PBYTEArray & payload)
   payload.Attach(&ip[headerLength], ip.GetSize()-headerLength);
 
   m_packetSrcIP = PIPSocket::Address(4, ip+12);
-  if (!m_filterSrcIP.IsAny() && m_filterSrcIP != m_packetSrcIP)
+  if (m_filterSrcIP.IsValid() && m_filterSrcIP != m_packetSrcIP)
     return -1;
 
   m_packetDstIP = PIPSocket::Address(4, ip+16);
-  if (!m_filterDstIP.IsAny() && m_filterDstIP != m_packetDstIP)
+  if (m_filterDstIP.IsValid() && m_filterDstIP != m_packetDstIP)
     return -1;
 
   // Check for fragmentation
