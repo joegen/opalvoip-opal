@@ -856,18 +856,24 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
       PVideoInputDevice * videoDevice;
       PBoolean autoDeleteGrabber;
       if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber)) {
+        PTRACE(4, "OpalCon\tCreated capture device \"" << videoDevice->GetDeviceName() << '"');
+
         PVideoOutputDevice * previewDevice;
         PBoolean autoDeletePreview;
-        if (!CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview))
+        if (!CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview)) {
+          PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
           previewDevice = NULL;
+        }
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
       }
     }
     else {
       PVideoOutputDevice * videoDevice;
       PBoolean autoDelete;
-      if (CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete))
+      if (CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete)) {
+        PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
+      }
     }
   }
 
