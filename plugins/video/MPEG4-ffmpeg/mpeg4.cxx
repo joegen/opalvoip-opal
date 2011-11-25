@@ -128,6 +128,8 @@ extern "C" {
 
 #define MAX_MPEG4_PACKET_SIZE     2048
 
+static const char ProfileAndLevel[] = "Profile & Level";
+
 const static struct mpeg4_profile_level {
     unsigned profileLevel;
     const char* profileName;
@@ -1008,7 +1010,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   unsigned targetBitrate = 64000;
 
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-      if (STRCMPI(option[0], "CAP RFC3016 Profile Level") == 0)
+      if (STRCMPI(option[0], ProfileAndLevel) == 0)
         profileLevel = atoi(option[1]);
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(option[1]);
@@ -1085,7 +1087,7 @@ static int encoder_set_options(
     unsigned targetBitrate = 64000;
     unsigned profileLevel = 1;
     for (int i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "CAP RFC3016 Profile Level") == 0)
+      if (STRCMPI(options[i], ProfileAndLevel) == 0)
          profileLevel = atoi(options[i+1]);
       else if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         context->SetFrameWidth(atoi(options[i+1]));
@@ -1784,7 +1786,7 @@ static void FreeString(char * str)
 static struct PluginCodec_Option const H245ProfileLevelMPEG4 =
 {
   PluginCodec_IntegerOption,          // Option type
-  "H.245 Profile & Level",            // User visible name
+  ProfileAndLevel,                    // User visible name
   false,                              // User Read/Only flag
   PluginCodec_CustomMerge,            // Merge mode
   "5",                                // Initial value (Simple Profile/Level 5)
