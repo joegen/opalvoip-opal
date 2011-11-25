@@ -860,10 +860,11 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 
         PVideoOutputDevice * previewDevice;
         PBoolean autoDeletePreview;
-        if (!CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview)) {
+        if (CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview))
           PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
+        else
           previewDevice = NULL;
-        }
+
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
       }
     }
