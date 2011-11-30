@@ -841,15 +841,6 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
-    /**Write raw media data to the sink media stream.
-       The default behaviour writes to the PChannel object.
-      */
-    virtual PBoolean WriteData(
-      const BYTE * data,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
-    );
-
     /**Indicate if the media stream is synchronous.
        Returns true for LID streams.
       */
@@ -859,9 +850,6 @@ class OpalAudioMediaStream : public OpalRawMediaStream
   protected:
     PINDEX   m_soundChannelBuffers;
     unsigned m_soundChannelBufferTime;
-
-    unsigned       m_failSafeRate;
-    PAdaptiveDelay m_failSafeDelay;
 };
 
 #endif // OPAL_PTLIB_AUDIO
