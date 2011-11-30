@@ -628,14 +628,19 @@ class OptionsDialog : public wxDialog
     int       m_SilenceDeadband;
     bool      m_DisableDetectInBandDTMF;
 
+    wxComboBox * m_soundPlayerCombo;
+    wxComboBox * m_soundRecorderCombo;
     wxComboBox * m_selectedLID;
     wxChoice   * m_selectedAEC;
     wxComboBox * m_selectedCountry;
+
+    void ChangedSoundPlayer(wxCommandEvent & event);
+    void ChangedSoundRecorder(wxCommandEvent & event);
     void SelectedLID(wxCommandEvent & event);
 
     ////////////////////////////////////////
     // Video fields
-    PwxString m_VideoGrabber;
+    PwxString m_VideoGrabDevice;
     int       m_VideoGrabFormat;
     int       m_VideoGrabSource;
     int       m_VideoGrabFrameRate;
@@ -650,11 +655,11 @@ class OptionsDialog : public wxDialog
     int       m_VideoGrabBitRate;
     int       m_VideoMaxBitRate;
 
-    wxComboBox * m_videoGrabDevice;
+    wxComboBox * m_videoGrabDeviceCombo;
     wxChoice   * m_videoSourceChoice;
 
     void AdjustVideoControls(const PwxString & device);
-    void ChangeVideoGrabber(wxCommandEvent & event);
+    void ChangeVideoGrabDevice(wxCommandEvent & event);
     void TestVideoCapture(wxCommandEvent & event);
 
     ////////////////////////////////////////
