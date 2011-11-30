@@ -605,8 +605,8 @@ public:
       }
     }
 
-    Change(ProfileInfo[profileIndex].m_Name, original, changed, "Profile"); 
-    Change(LevelInfo[levelIndex].m_Name, original, changed, "Level");
+    Change(ProfileInfo[profileIndex].m_Name, original, changed, Profile.m_name); 
+    Change(LevelInfo[levelIndex].m_Name, original, changed, Level.m_name);
 
     unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[MaxFS.m_name]));
     ClampSizes(LevelInfo[levelIndex],
@@ -632,7 +632,7 @@ public:
   virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
   {
     // Determine the profile
-    std::string str = original["Profile"];
+    std::string str = original[Profile.m_name];
     if (str.empty())
       str = H264_PROFILE_STR_BASELINE;
 
@@ -645,7 +645,7 @@ public:
     Change(ProfileInfo[profileIndex].m_H241, original, changed, H241Profiles.m_name);
 
     // get the current level 
-    str = original["Level"];
+    str = original[Level.m_name];
     if (str.empty())
       str = H264_LEVEL_STR_1_3;
 
@@ -800,23 +800,24 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
         return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
 
-      if (strcasecmp(optionName, H241Level.m_name) == 0) {
-        size_t i;
-        for (i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; i++) {
-          if ((unsigned)m_level <= LevelInfo[i].m_H264)
-            break;
+      if (strcasecmp(optionName, Level.m_name) == 0) {
+        for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
+          if (strcasecmp(optionValue, LevelInfo[i].m_Name) == 0) {
+            m_level = LevelInfo[i].m_H264;
+            return true;
+          }
         }
-        unsigned h241level = LevelInfo[i].m_H241;
+        return false;
+      }
 
-        if (!SetOptionUnsigned(h241level, optionValue, 15, 133))
-          return false;
-
-        for (i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; i++) {
-          if (h241level <= LevelInfo[i].m_H241)
-            break;
+      if (strcasecmp(optionName, Profile.m_name) == 0) {
+        for (size_t i = 0; i < sizeof(ProfileInfo)/sizeof(ProfileInfo[0]); ++i) {
+          if (strcasecmp(optionValue, ProfileInfo[i].m_Name) == 0) {
+            m_profile = ProfileInfo[i].m_H264;
+            return true;
+          }
         }
-        m_level = LevelInfo[i].m_H264;
-        return true;
+        return false;
       }
 
       if (
