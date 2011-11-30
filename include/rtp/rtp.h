@@ -894,6 +894,7 @@ class OpalRTPSession : public OpalMediaSession
     WORD          lastRRSequenceNumber;
     bool          resequenceOutOfOrderPackets;
     unsigned      consecutiveOutOfOrderPackets;
+    PTimeInterval outOfOrderWaitTime;
     PTimeInterval outOfOrderPacketTime;
 
     std::list<RTP_DataFrame> m_outOfOrderPackets;
