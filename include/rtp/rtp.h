@@ -1034,6 +1034,7 @@ class RTP_Session : public PObject
     WORD          lastRRSequenceNumber;
     bool          resequenceOutOfOrderPackets;
     unsigned      consecutiveOutOfOrderPackets;
+    PTimeInterval outOfOrderWaitTime;
     PTimeInterval outOfOrderPacketTime;
 
     std::list<RTP_DataFrame> m_outOfOrderPackets;

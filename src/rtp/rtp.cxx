@@ -570,6 +570,12 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if P_CONFIG_FILE
+static PTimeInterval DefaultOutOfOrderWaitTime(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+#else
+static PTimeInterval DefaultOutOfOrderWaitTime(100);
+#endif
+
 RTP_Session::RTP_Session(const Params & params)
   : m_timeUnits(params.isAudio ? 8 : 90)
   , canonicalName(PProcess::Current().GetUserName())
@@ -577,6 +583,7 @@ RTP_Session::RTP_Session(const Params & params)
   , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
+  , outOfOrderWaitTime(DefaultOutOfOrderWaitTime)
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , reportTimer(reportTimeInterval)
@@ -1328,7 +1335,7 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
       }
     }
     else if (resequenceOutOfOrderPackets &&
-                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < 200)) {
+                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
       if (m_outOfOrderPackets.empty())
         outOfOrderPacketTime = tick;
       // Maybe packet lost, maybe out of order, save for now
