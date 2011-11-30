@@ -3616,6 +3616,8 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Audio fields
+  EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundPlayerKey), OptionsDialog::ChangedSoundPlayer)
+  EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundRecorderKey), OptionsDialog::ChangedSoundRecorder)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
 
   ////////////////////////////////////////
@@ -3811,15 +3813,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableDetectInBandDTMF, m_manager.DetectInBandDTMFDisabled());
 
   // Fill sound player combo box with available devices and set selection
-  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
-  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  FillAudioDeviceComboBox(combo, PSoundChannel::Player);
+  m_soundPlayerCombo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
+  m_soundPlayerCombo->SetValidator(wxGenericValidator(&m_SoundPlayer));
+  FillAudioDeviceComboBox(m_soundPlayerCombo, PSoundChannel::Player);
   m_SoundPlayer = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelPlayDevice());
 
   // Fill sound recorder combo box with available devices and set selection
-  combo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
-  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
-  FillAudioDeviceComboBox(combo, PSoundChannel::Recorder);
+  m_soundRecorderCombo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
+  m_soundRecorderCombo->SetValidator(wxGenericValidator(&m_SoundRecorder));
+  FillAudioDeviceComboBox(m_soundRecorderCombo, PSoundChannel::Recorder);
   m_SoundRecorder = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelRecordDevice());
 
   // Fill line interface combo box with available devices and set selection
@@ -3889,7 +3891,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
-  combo = FindWindowByNameAs<wxComboBox>(this, VideoGrabFrameSizeKey);
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, VideoGrabFrameSizeKey);
   combo->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
     combo->Append(PwxString(knownSizes[i]));
@@ -4294,10 +4296,14 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
-  m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer));
-  config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
-  m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder));
-  config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
+  if (m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer)))
+    config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound player device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+  if (m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder)))
+    config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
@@ -4763,6 +4769,53 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Audio fields
 
+static void SetComboValue(wxComboBox * combo, const wxString & value)
+{
+  // For some bizarre reason combo->SetValue() just does not work for Windows
+  int idx = combo->FindString(value);
+  if (idx < 0)
+    idx = combo->Append(value);
+  combo->SetSelection(idx);
+}
+
+void OptionsDialog::ChangedSoundPlayer(wxCommandEvent & /*event*/)
+{
+  PwxString device = m_soundPlayerCombo->GetValue();
+  if (device[0] != '*')
+    return;
+
+ device = wxFileSelector(wxT("Select Sound File"),
+                          wxT(""),
+                          wxT(""),
+                          device.Mid(1),
+                          device,
+                          wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+  if (!device.empty())
+    m_SoundPlayer = device;
+
+  SetComboValue(m_soundPlayerCombo, m_SoundPlayer);
+}
+
+
+void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
+{
+  PwxString device = m_soundRecorderCombo->GetValue();
+  if (device[0] != '*')
+    return;
+
+ device = wxFileSelector(wxT("Select Sound File"),
+                          wxT(""),
+                          wxT(""),
+                          device.Mid(1),
+                          device,
+                          wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (!device.empty())
+    m_SoundRecorder = device;
+
+  SetComboValue(m_soundRecorderCombo, m_SoundRecorder);
+}
+
+
 void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 {
   bool enabled = m_selectedLID->GetSelection() > 0;
@@ -4803,10 +4856,10 @@ void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
                             device,
                             wxFD_OPEN|wxFD_FILE_MUST_EXIST);
     if (device.empty())
-      device = m_VideoGrabDevice; // Restore original text
-
-    // For some bizarre reason SetValue() just does not work for Windows
-    m_videoGrabDeviceCombo->SetSelection(m_videoGrabDeviceCombo->Append(device));
+      device = m_VideoGrabDevice;
+    else
+      m_VideoGrabDevice = device;
+    SetComboValue(m_videoGrabDeviceCombo, device);
   }
 
   unsigned numChannels = 1;

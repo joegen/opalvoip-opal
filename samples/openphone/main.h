@@ -631,9 +631,14 @@ class OptionsDialog : public wxDialog
     int       m_SilenceDeadband;
     bool      m_DisableDetectInBandDTMF;
 
+    wxComboBox * m_soundPlayerCombo;
+    wxComboBox * m_soundRecorderCombo;
     wxComboBox * m_selectedLID;
     wxChoice   * m_selectedAEC;
     wxComboBox * m_selectedCountry;
+
+    void ChangedSoundPlayer(wxCommandEvent & event);
+    void ChangedSoundRecorder(wxCommandEvent & event);
     void SelectedLID(wxCommandEvent & event);
 
     ////////////////////////////////////////
