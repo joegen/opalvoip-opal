@@ -173,7 +173,7 @@ DEF_FIELD(SilenceDeadband);
 DEF_FIELD(DisableDetectInBandDTMF);
 
 static const wxChar VideoGroup[] = wxT("/Video");
-DEF_FIELD(VideoGrabber);
+DEF_FIELD(VideoGrabDevice);
 DEF_FIELD(VideoGrabFormat);
 DEF_FIELD(VideoGrabSource);
 DEF_FIELD(VideoGrabFrameRate);
@@ -937,7 +937,7 @@ bool MyManager::Initialise()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
-  if (config->Read(VideoGrabberKey, &str))
+  if (config->Read(VideoGrabDeviceKey, &str))
     videoArgs.deviceName = str.p_str();
   if (config->Read(VideoGrabFormatKey, &value1) && value1 >= 0 && value1 < PVideoDevice::NumVideoFormats)
     videoArgs.videoFormat = (PVideoDevice::VideoFormat)value1;
@@ -3709,11 +3709,13 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Audio fields
+  EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundPlayerKey), OptionsDialog::ChangedSoundPlayer)
+  EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundRecorderKey), OptionsDialog::ChangedSoundRecorder)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
 
   ////////////////////////////////////////
   // Video fields
-  EVT_COMBOBOX(XRCID("VideoGrabber"), OptionsDialog::ChangeVideoGrabber)
+  EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
 
   ////////////////////////////////////////
@@ -3904,15 +3906,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableDetectInBandDTMF, m_manager.DetectInBandDTMFDisabled());
 
   // Fill sound player combo box with available devices and set selection
-  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
-  combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  FillAudioDeviceComboBox(combo, PSoundChannel::Player);
+  m_soundPlayerCombo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
+  m_soundPlayerCombo->SetValidator(wxGenericValidator(&m_SoundPlayer));
+  FillAudioDeviceComboBox(m_soundPlayerCombo, PSoundChannel::Player);
   m_SoundPlayer = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelPlayDevice());
 
   // Fill sound recorder combo box with available devices and set selection
-  combo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
-  combo->SetValidator(wxGenericValidator(&m_SoundRecorder));
-  FillAudioDeviceComboBox(combo, PSoundChannel::Recorder);
+  m_soundRecorderCombo = FindWindowByNameAs<wxComboBox>(this, SoundRecorderKey);
+  m_soundRecorderCombo->SetValidator(wxGenericValidator(&m_SoundRecorder));
+  FillAudioDeviceComboBox(m_soundRecorderCombo, PSoundChannel::Recorder);
   m_SoundRecorder = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelRecordDevice());
 
   // Fill line interface combo box with available devices and set selection
@@ -3966,7 +3968,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Video fields
-  INIT_FIELD(VideoGrabber, m_manager.GetVideoInputDevice().deviceName);
+  INIT_FIELD(VideoGrabDevice, m_manager.GetVideoInputDevice().deviceName);
   INIT_FIELD(VideoGrabFormat, m_manager.GetVideoInputDevice().videoFormat);
   m_videoSourceChoice = FindWindowByNameAs<wxChoice>(this, wxT("VideoGrabSource"));
   m_VideoGrabSource = m_manager.GetVideoInputDevice().channelNumber+1;
@@ -3982,7 +3984,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
-  combo = FindWindowByNameAs<wxComboBox>(this, VideoGrabFrameSizeKey);
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, VideoGrabFrameSizeKey);
   combo->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
   for (i = 0; i < knownSizes.GetSize(); ++i)
     combo->Append(PwxString(knownSizes[i]));
@@ -3999,12 +4001,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 0; i < knownSizes.GetSize(); ++i)
     combo->Append(PwxString(knownSizes[i]));
 
-  m_videoGrabDevice = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
+  m_videoGrabDeviceCombo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabDevice"));
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
-    m_videoGrabDevice->Append(PwxString(devices[i]));
+    m_videoGrabDeviceCombo->Append(PwxString(devices[i]));
 
-  AdjustVideoControls(m_VideoGrabber);
+  AdjustVideoControls(m_VideoGrabDevice);
 
   ////////////////////////////////////////
   // Fax fields
@@ -4386,10 +4388,14 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
-  m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer));
-  config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
-  m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder));
-  config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
+  if (m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer)))
+    config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound player device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+  if (m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder)))
+    config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
@@ -4413,7 +4419,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD_STR(VideoGrabber, grabber.deviceName = );
+  SAVE_FIELD_STR(VideoGrabDevice, grabber.deviceName = );
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   --m_VideoGrabSource;
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
@@ -4848,6 +4854,53 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Audio fields
 
+static void SetComboValue(wxComboBox * combo, const wxString & value)
+{
+  // For some bizarre reason combo->SetValue() just does not work for Windows
+  int idx = combo->FindString(value);
+  if (idx < 0)
+    idx = combo->Append(value);
+  combo->SetSelection(idx);
+}
+
+void OptionsDialog::ChangedSoundPlayer(wxCommandEvent & /*event*/)
+{
+  PwxString device = m_soundPlayerCombo->GetValue();
+  if (device[0] != '*')
+    return;
+
+ device = wxFileSelector(wxT("Select Sound File"),
+                          wxT(""),
+                          wxT(""),
+                          device.Mid(1),
+                          device,
+                          wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+  if (!device.empty())
+    m_SoundPlayer = device;
+
+  SetComboValue(m_soundPlayerCombo, m_SoundPlayer);
+}
+
+
+void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
+{
+  PwxString device = m_soundRecorderCombo->GetValue();
+  if (device[0] != '*')
+    return;
+
+ device = wxFileSelector(wxT("Select Sound File"),
+                          wxT(""),
+                          wxT(""),
+                          device.Mid(1),
+                          device,
+                          wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (!device.empty())
+    m_SoundRecorder = device;
+
+  SetComboValue(m_soundRecorderCombo, m_SoundRecorder);
+}
+
+
 void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 {
   bool enabled = m_selectedLID->GetSelection() > 0;
@@ -4877,8 +4930,23 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Video fields
 
-void OptionsDialog::AdjustVideoControls(const PwxString & device)
+void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
 {
+  PwxString device = newDevice;
+  if (newDevice[0] == '*') {
+    device = wxFileSelector(wxT("Select Video File"),
+                            wxT(""),
+                            wxT(""),
+                            device.Mid(1),
+                            device,
+                            wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+    if (device.empty())
+      device = m_VideoGrabDevice;
+    else
+      m_VideoGrabDevice = device;
+    SetComboValue(m_videoGrabDeviceCombo, device);
+  }
+
   unsigned numChannels = 1;
   PVideoInputDevice * grabber = PVideoInputDevice::CreateDeviceByName(device);
   if (grabber != NULL) {
@@ -4893,9 +4961,9 @@ void OptionsDialog::AdjustVideoControls(const PwxString & device)
 }
 
 
-void OptionsDialog::ChangeVideoGrabber(wxCommandEvent & /*event*/)
+void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 {
-  AdjustVideoControls(m_videoGrabDevice->GetValue());
+  AdjustVideoControls(m_videoGrabDeviceCombo->GetValue());
 }
 
 
@@ -4905,7 +4973,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     return;
 
   PVideoDevice::OpenArgs grabberArgs;
-  grabberArgs.deviceName = m_VideoGrabber.mb_str(wxConvUTF8);
+  grabberArgs.deviceName = m_VideoGrabDevice.mb_str(wxConvUTF8);
   grabberArgs.videoFormat = (PVideoDevice::VideoFormat)m_VideoGrabFormat;
   grabberArgs.channelNumber = m_VideoGrabSource-1;
   grabberArgs.rate = m_VideoGrabFrameRate;
@@ -5763,7 +5831,7 @@ StartVideoDialog::StartVideoDialog(MyManager * manager, bool secondary)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("StartVideoDialog"));
 
-  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabber"));
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, wxT("VideoGrabDevice"));
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (PINDEX i = 0; i < devices.GetSize(); i++)
     combo->Append(PwxString(devices[i]));
