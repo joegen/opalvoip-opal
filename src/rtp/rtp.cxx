@@ -486,6 +486,12 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if P_CONFIG_FILE
+static PTimeInterval DefaultOutOfOrderWaitTime(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+#else
+static PTimeInterval DefaultOutOfOrderWaitTime(100);
+#endif
+
 OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const OpalMediaType & mediaType)
   : OpalMediaSession(conn, sessionId, mediaType)
   , isAudio(mediaType == OpalMediaType::Audio())
@@ -495,6 +501,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
+  , outOfOrderWaitTime(DefaultOutOfOrderWaitTime)
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , remoteAddress(0)
@@ -1254,7 +1261,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       }
     }
     else if (resequenceOutOfOrderPackets &&
-                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < 200)) {
+                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
       if (m_outOfOrderPackets.empty())
         outOfOrderPacketTime = tick;
       // Maybe packet lost, maybe out of order, save for now
