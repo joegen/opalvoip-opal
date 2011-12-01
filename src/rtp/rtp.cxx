@@ -571,9 +571,13 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 /////////////////////////////////////////////////////////////////////////////
 
 #if P_CONFIG_FILE
-static PTimeInterval DefaultOutOfOrderWaitTime(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+static PTimeInterval GetDefaultOutOfOrderWaitTime()
+{
+  static PTimeInterval ooowt(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+  return ooowt;
+}
 #else
-static PTimeInterval DefaultOutOfOrderWaitTime(100);
+#define GetDefaultOutOfOrderWaitTime() (100)
 #endif
 
 RTP_Session::RTP_Session(const Params & params)
@@ -583,7 +587,7 @@ RTP_Session::RTP_Session(const Params & params)
   , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
-  , outOfOrderWaitTime(DefaultOutOfOrderWaitTime)
+  , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , reportTimer(reportTimeInterval)
