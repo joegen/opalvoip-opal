@@ -103,7 +103,7 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 
 PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 {
-  return PFalse;
+  return true;
 }
 
 
