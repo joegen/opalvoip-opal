@@ -23,20 +23,19 @@
 
 #if PTRACING
   #include <iostream>
-  #define PTRACE(level,module,args) std::cerr << module << '\t' << args << std::endl
+  unsigned TraceLevel = 1;
+  #define PTRACE(level,module,args) if (level > TraceLevel) ; else std::cerr << module << '\t' << args << std::endl
 #else
   #define PTRACE(level,module,args)
 #endif
-
-#include "../shared/x264wrap.h"
 
 #include <sys/stat.h>
 #include <fstream>
 #include <stdlib.h> 
 
 
-#include "shared/x264wrap.cxx"
-#include "shared/h264frame.cxx"
+#include "../shared/x264wrap.cxx"
+#include "../shared/h264frame.cxx"
 
 
 #ifdef WIN32
@@ -46,7 +45,7 @@ HANDLE hNamedPipe;
 void OpenPipe(const char * name, const char *)
 {
   if (!WaitNamedPipe(name, NMPWAIT_USE_DEFAULT_WAIT)) { 
-    PTRACE(1, "x264", "Error when waiting for Pipe (" << GetLastError() << ')');
+    PTRACE(1, HelperTraceName, "Error when waiting for Pipe (" << GetLastError() << ')');
     exit(1);
   } 
 
@@ -58,7 +57,7 @@ void OpenPipe(const char * name, const char *)
                           0,                            // default attributes 
                           NULL);                        // no template file 
   if (hNamedPipe == INVALID_HANDLE_VALUE)  {
-    PTRACE(1, "x264", "Could not open Pipe (" << GetLastError() << ')');
+    PTRACE(1, HelperTraceName, "Could not open Pipe (" << GetLastError() << ')');
     exit(1);
   }
 
@@ -69,7 +68,7 @@ void OpenPipe(const char * name, const char *)
                                NULL,     // don't set maximum bytes 
                                NULL))    // don't set maximum time 
   {
-    PTRACE(1, "x264", "Failure on activating message mode (" << GetLastError() << ')');
+    PTRACE(1, HelperTraceName, "Failure on activating message mode (" << GetLastError() << ')');
     exit(1);
   }
 }
@@ -81,7 +80,7 @@ void ReadPipe(LPVOID data, unsigned bytes)
   if (ReadFile(hNamedPipe, data, bytes, &bytesRead, NULL) && bytes == bytesRead)
     return;
 
-  PTRACE(1, "x264", "IPC\tCP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
+  PTRACE(1, HelperTraceName, "IPC\tCP: Failure on reading - terminating (Read " << bytesRead << " bytes, expected " << bytes);
   exit(1);
 }
 
@@ -92,7 +91,7 @@ void WritePipe(LPCVOID data, unsigned bytes)
   if (WriteFile(hNamedPipe, data, bytes, &bytesWritten, NULL) && bytes == bytesWritten)
     return;
 
-  PTRACE(1, "x264", "IPC\tCP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
+  PTRACE(1, HelperTraceName, "IPC\tCP: Failure on writing - terminating (Written " << bytesWritten << " bytes, intended " << bytes);
   exit(1);
 }
 
@@ -108,12 +107,12 @@ int upLink;
 void OpenPipe(const char * dl, const char * ul)
 {
   if ((downLink = open(dl, O_RDONLY)) < 0) {
-    PTRACE(1, "x264", "Error when opening DL named pipe \"" << dl << "\" - " << strerror(errno));
+    PTRACE(1, HelperTraceName, "Error when opening DL named pipe \"" << dl << "\" - " << strerror(errno));
     exit(1);
   }
 
   if ((upLink = open(ul, O_WRONLY)) < 0) {
-    PTRACE(1, "x264", "Error when opening UL named pipe \"" << ul << "\" - " << strerror(errno));
+    PTRACE(1, HelperTraceName, "Error when opening UL named pipe \"" << ul << "\" - " << strerror(errno));
     exit(1);
   }
 }
@@ -124,7 +123,7 @@ void ReadPipe(void * data, unsigned bytes)
   if (read(downLink, data, bytes) == bytes)
     return;
 
-  PTRACE(1, "x264", "Error reading down link: " << strerror(errno));
+  PTRACE(1, HelperTraceName, "Error reading down link: " << strerror(errno));
   exit(1);
 }
 
@@ -134,7 +133,7 @@ void WritePipe(const void * data, unsigned bytes)
   if (write(upLink, data, bytes) == bytes)
     return;
 
-  PTRACE(1, "x264", "Error writing up link: " << strerror(errno));
+  PTRACE(1, HelperTraceName, "Error writing up link: " << strerror(errno));
   exit(1);
 }
 
@@ -161,10 +160,10 @@ void ResizeBuffer()
   if (newBufSize > bufSize) {
     buffer = (unsigned char *)realloc(buffer, newBufSize);
     if (buffer == NULL) {
-      PTRACE(3, "x264", "Could not resize frame buffer from " << bufSize << " to " << newBufSize);
+      PTRACE(3, HelperTraceName, "Could not resize frame buffer from " << bufSize << " to " << newBufSize);
       exit(1);
     }
-    PTRACE(3, "x264", "Resizing frame buffer from " << bufSize << " to " << newBufSize);
+    PTRACE(3, HelperTraceName, "Resizing frame buffer from " << bufSize << " to " << newBufSize);
     bufSize = newBufSize;
   }
 }
@@ -173,13 +172,17 @@ void ResizeBuffer()
 int main(int argc, char *argv[])
 {
   if (argc < 2) {
-    fprintf(stderr, "Not to be executed directly - exiting\n");
-    exit (1);
+    std::cerr << "Not to be executed directly - exiting\n";
+    exit(1);
   }
+
+  const char * traceLevelStr = getenv("PTLIB_TRACE_LEVEL");
+  if (traceLevelStr != NULL)
+    TraceLevel = atoi(traceLevelStr);
 
   OpenPipe(argv[1], argv[2]);
 
-  PTRACE(5, "x264", "GPL executable ready");
+  PTRACE(5, HelperTraceName, "GPL executable ready");
 
   dstLen = 1400;
   rtpSize = 8192;
