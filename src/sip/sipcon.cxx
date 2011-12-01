@@ -3537,7 +3537,7 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
 
 #endif
 
-void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
+void SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
@@ -3555,7 +3555,7 @@ void SIPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
   }
 #endif
 
-  OpalRTPConnection::OnMediaCommand(command, sessionID);
+  OpalRTPConnection::OnMediaCommand(stream, command);
 }
 
 

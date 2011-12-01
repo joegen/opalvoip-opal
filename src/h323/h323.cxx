@@ -4018,11 +4018,11 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 }
 
 
-void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
+void H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    H323Channel * video = FindChannel(sessionID, true);
+    H323Channel * video = FindChannel(stream.GetSessionID(), true);
     if (video != NULL)
       video->OnMediaCommand(command);
 #if OPAL_STATISTICS
@@ -4031,7 +4031,7 @@ void H323Connection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
   }
   else
 #endif
-    OpalRTPConnection::OnMediaCommand(command, sessionID);
+    OpalRTPConnection::OnMediaCommand(stream, command);
 }
 
 

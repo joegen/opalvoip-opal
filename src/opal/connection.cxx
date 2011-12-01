@@ -985,8 +985,6 @@ void OpalConnection::OnStopRecording(OpalMediaPatch * patch)
 
 void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
-  patch.SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand), !isSource);
-
   OpalMediaFormat mediaFormat = isSource ? patch.GetSource().GetMediaFormat() : patch.GetSink()->GetMediaFormat();
 
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
@@ -1664,7 +1662,7 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-void OpalConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*/)
+void OpalConnection::OnMediaCommand(OpalMediaStream & /*stream*/, const OpalMediaCommand & /*command*/)
 {
 }
 

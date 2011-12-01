@@ -259,6 +259,12 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
            << " and " << *sink->secondaryCodec << ", data size=" << sinkStream->GetDataSize());
   }
 
+  if (sink->secondaryCodec != NULL)
+    sink->secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+
+  if (sink->primaryCodec != NULL)
+    sink->primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+
   source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
   EnableJitterBuffer();
   return true;
@@ -471,14 +477,14 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 {
   PReadWaitAndSignal mutex(inUse);
 
-  if (fromSink)
-    return source.ExecuteCommand(command);
+  if (fromSink) {
+    OpalMediaPatch * patch = m_bypassActive && m_bypassToPatch != NULL ? m_bypassToPatch : this;
+    return patch->source.ExecuteCommand(command);
+  }
 
   bool atLeastOne = false;
 
-  PList<Sink> & sinksToUse = m_bypassActive && m_bypassToPatch != NULL ? m_bypassToPatch->sinks : sinks;
-
-  for (PList<Sink>::iterator s = sinksToUse.begin(); s != sinksToUse.end(); ++s) {
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->ExecuteCommand(command))
       atLeastOne = true;
   }
@@ -487,16 +493,9 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 }
 
 
-void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fromSink)
+void OpalMediaPatch::OnMediaCommand(OpalMediaCommand & command, INT)
 {
-  PReadWaitAndSignal mutex(inUse);
-
-  if (fromSink)
-    source.SetCommandNotifier(notifier);
-  else {
-    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-      s->SetCommandNotifier(notifier);
-  }
+  source.ExecuteCommand(command);
 }
 
 
@@ -759,16 +758,6 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
     atLeastOne = primaryCodec->ExecuteCommand(command) || atLeastOne;
 
   return atLeastOne;
-}
-
-
-void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
-{
-  if (secondaryCodec != NULL)
-    secondaryCodec->SetCommandNotifier(notifier);
-
-  if (primaryCodec != NULL)
-    primaryCodec->SetCommandNotifier(notifier);
 }
 
 
