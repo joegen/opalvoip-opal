@@ -487,9 +487,13 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 /////////////////////////////////////////////////////////////////////////////
 
 #if P_CONFIG_FILE
-static PTimeInterval DefaultOutOfOrderWaitTime(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+static PTimeInterval GetDefaultOutOfOrderWaitTime()
+{
+  static PTimeInterval ooowt(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+  return ooowt;
+}
 #else
-static PTimeInterval DefaultOutOfOrderWaitTime(100);
+#define GetDefaultOutOfOrderWaitTime() (100)
 #endif
 
 OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const OpalMediaType & mediaType)
@@ -501,7 +505,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
-  , outOfOrderWaitTime(DefaultOutOfOrderWaitTime)
+  , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , remoteAddress(0)
