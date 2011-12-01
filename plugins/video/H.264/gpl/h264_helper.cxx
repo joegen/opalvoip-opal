@@ -21,17 +21,18 @@
 
 #include "plugin-config.h"
 
+#include <iostream>
+#include <fstream>
+#include <stdlib.h> 
+#include <sys/stat.h>
+
+
 #if PTRACING
-  #include <iostream>
   unsigned TraceLevel = 1;
   #define PTRACE(level,module,args) if (level > TraceLevel) ; else std::cerr << module << '\t' << args << std::endl
 #else
   #define PTRACE(level,module,args)
 #endif
-
-#include <sys/stat.h>
-#include <fstream>
-#include <stdlib.h> 
 
 
 #include "../shared/x264wrap.cxx"
@@ -176,9 +177,11 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+#if PTRACING
   const char * traceLevelStr = getenv("PTLIB_TRACE_LEVEL");
   if (traceLevelStr != NULL)
     TraceLevel = atoi(traceLevelStr);
+#endif
 
   OpenPipe(argv[1], argv[2]);
 
