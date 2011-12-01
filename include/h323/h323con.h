@@ -2039,7 +2039,13 @@ class H323Connection : public OpalRTPConnection
     H4507Handler&  getH4507handler(){return *h4507handler;}
 #endif
 
-    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+    /** Callback for media commands.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    virtual void OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
     
   protected:
     /**Internal function to check if call established.

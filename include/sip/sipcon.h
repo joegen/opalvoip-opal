@@ -597,7 +597,10 @@ class SIPConnection : public OpalRTPConnection
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
-    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+    virtual void OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
 
     virtual void OnStartTransaction(SIPTransaction & transaction);
 

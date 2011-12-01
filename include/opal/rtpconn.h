@@ -486,10 +486,13 @@ class OpalRTPConnection : public OpalConnection
       OpalMediaPatch & patch    ///<  New patch
     );
 
-    /** Notifier function for OpalVideoUpdatePicture.
+    /** Callback for media commands.
         Calls the SendIntraFrameRequest on the rtp session
       */
-    void OnMediaCommand(OpalMediaCommand & command, INT extra);
+    virtual void OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
   //@}
 
     virtual void SessionFailing(RTP_Session & session);

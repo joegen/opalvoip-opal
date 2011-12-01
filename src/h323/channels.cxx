@@ -274,7 +274,7 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
 }
 
 
-void H323Channel::OnMediaCommand(OpalMediaCommand & command)
+void H323Channel::OnMediaCommand(const OpalMediaCommand & command)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
