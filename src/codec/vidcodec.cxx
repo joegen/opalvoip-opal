@@ -148,7 +148,7 @@ PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 
 PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+  if (outputMediaFormat != OpalYUV420P && PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE_IF(3, !forceIFrame, "Media\tI-Frame forced in video stream");
     forceIFrame = true; // Reset when I-Frame is sent
     return PTrue;

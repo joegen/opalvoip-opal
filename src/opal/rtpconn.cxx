@@ -275,8 +275,9 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
 
 
 #if OPAL_VIDEO
-void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID)
+void OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  unsigned sessionID = stream.GetSessionID();
   RTP_Session * session = m_rtpSessions.GetSession(sessionID);
   if (session == NULL)
     return;
@@ -305,10 +306,10 @@ void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & command, INT sessionID
   }
   else if (PIsDescendant(&command, OpalTemporalSpatialTradeOff) &&
            rtcp_fb.Find("tstr") != P_MAX_INDEX)
-    session->SendTemporalSpatialTradeOff(dynamic_cast<OpalTemporalSpatialTradeOff &>(command).GetTradeOff());
+    session->SendTemporalSpatialTradeOff(dynamic_cast<const OpalTemporalSpatialTradeOff &>(command).GetTradeOff());
 }
 #else
-void OpalRTPConnection::OnMediaCommand(OpalMediaCommand & /*command*/, INT /*extra*/)
+void OpalRTPConnection::OnMediaCommand(OpalMediaStream &, const OpalMediaCommand &)
 {
 }
 #endif
