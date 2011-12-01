@@ -2140,7 +2140,13 @@ class H323Connection : public OpalRTPConnection
 #endif // P_NAT
 
 
-    virtual void OnMediaCommand(OpalMediaCommand & note, INT extra);
+    /** Callback for media commands.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    virtual void OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
 
     PBoolean StartHandleControlChannel();
     virtual PBoolean OnStartHandleControlChannel();

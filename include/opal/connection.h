@@ -1146,10 +1146,13 @@ class OpalConnection : public PSafeObject
       OpalMediaPatch & patch    ///< Patch being stopped
     );
 
-    /** Notifier function for OpalVideoUpdatePicture.
+    /** Callback for media commands.
         Calls the SendIntraFrameRequest on the rtp session
       */
-    PDECLARE_NOTIFIER(OpalMediaCommand, OpalConnection, OnMediaCommand);
+    virtual void OnMediaCommand(
+      OpalMediaStream & stream,         ///< Stream command executed on
+      const OpalMediaCommand & command  ///< Media command being executed
+    );
 
 #ifdef P_NAT
     // Get Nat Method in use
