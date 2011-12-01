@@ -38,19 +38,27 @@
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
 #if PTRACING
+  static char const HelperTraceName[] = "x264-help";
+
   static void logCallbackX264(void * /*priv*/, int level, const char *fmt, va_list arg) {
     int severity = 4;
     switch (level) {
       case X264_LOG_NONE:    severity = 1; break;
-      case X264_LOG_ERROR:   severity = 1; break;
+      case X264_LOG_ERROR:   severity = 2; break;
       case X264_LOG_WARNING: severity = 3; break;
       case X264_LOG_INFO:    severity = 4; break;
-      case X264_LOG_DEBUG:   severity = 4; break;
+      case X264_LOG_DEBUG:   severity = 5; break;
     }
 
     char buffer[512];
-    vsnprintf(buffer, sizeof(buffer), fmt, arg);
-    PTRACE(severity, "x264", buffer);
+    int len = vsnprintf(buffer, sizeof(buffer), fmt, arg);
+    if (len <= 0)
+      return;
+
+    while (buffer[--len] == '\n')
+      buffer[len] = '\0';
+
+    PTRACE(severity, "x264-lib", buffer);
   }
 #endif
 
@@ -83,7 +91,7 @@ H264Encoder::H264Encoder()
   SetProfileLevel(66, 30, 0xc0);
   m_context.i_width = 352;
   m_context.i_height = 288;
-  m_context.i_fps_num = 15;
+  m_context.i_fps_num = 15000;
   m_context.i_fps_den = 1000;
   m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = 768000;
   m_context.rc.i_qp_min = 10;
@@ -97,7 +105,7 @@ H264Encoder::~H264Encoder()
 {
   if (m_codec != NULL) {
     x264_encoder_close(m_codec);
-    PTRACE(5, "x264", "Closed H.264 encoder");
+    PTRACE(5, HelperTraceName, "Closed H.264 encoder");
   }
 }
 
@@ -106,11 +114,11 @@ bool H264Encoder::Load(void *)
 {
   m_codec = x264_encoder_open(&m_context);
   if (m_codec == NULL) {
-    PTRACE(1, "x264", "Couldn't open encoder");
+    PTRACE(1, HelperTraceName, "Couldn't open encoder");
     return false;
   } 
 
-  PTRACE(4, "x264", "Encoder successfully opened");
+  PTRACE(4, HelperTraceName, "Encoder successfully opened");
   return true;
 }
 
@@ -214,7 +222,7 @@ unsigned H264Encoder::GetHeight() const
 
 bool H264Encoder::SetFrameRate(unsigned rate)
 {
-  m_context.i_fps_num = rate;
+  m_context.i_fps_num = rate*1000;
   return true;
 }
 
@@ -255,11 +263,18 @@ bool H264Encoder::ApplyOptions()
 
   m_codec = x264_encoder_open(&m_context);
   if (m_codec == NULL) {
-    PTRACE(1, "x264", "Couldn't re-open encoder");
+    PTRACE(1, HelperTraceName, "Couldn't re-open encoder");
     return false;
   }
 
-  PTRACE(5, "x264", "Encoder successfully re-opened");
+  PTRACE(4, HelperTraceName, "Encoder successfully re-opened:"
+         << " level " << m_context.i_level_idc
+         << ' ' << m_context.i_width << 'x' << m_context.i_height << ","
+            " " << (m_context.i_fps_num/m_context.i_fps_den) << "fps,"
+            " " << m_context.rc.i_vbv_max_bitrate << "kbps,"
+            " max-rtp=" << m_context.i_slice_max_size << ","
+            " key-rate=" << m_context.i_keyint_max << ","
+            " qp-max=" << m_context.rc.i_qp_max);
   return true;
 }
 
@@ -269,7 +284,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
                                unsigned /*headerLen*/, unsigned int & flags)
 {
   if (m_codec == NULL) {
-    PTRACE(1, "x264", "Encoder not open");
+    PTRACE(1, HelperTraceName, "Encoder not open");
     return 0;
   }
 
@@ -281,34 +296,34 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
     // do a validation of size
     size_t payloadSize = srcRTP.GetPayloadSize();
     if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)) {
-      PTRACE(1, "x264", "Video grab far too small, Close down video transmission thread");
+      PTRACE(1, HelperTraceName, "Video grab far too small, Close down video transmission thread");
       return 0;
     }
 
     PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
     if (header->x != 0 || header->y != 0) {
-      PTRACE(1, "x264", "Video grab of partial frame unsupported, Close down video transmission thread");
+      PTRACE(1, HelperTraceName, "Video grab of partial frame unsupported, Close down video transmission thread");
       return 0;
     }
 
     if (payloadSize < sizeof(PluginCodec_Video_FrameHeader)+header->width*header->height*3/2) {
-      PTRACE(1, "x264", "Video grab far too small, Close down video transmission thread");
+      PTRACE(1, HelperTraceName, "Video grab far too small, Close down video transmission thread");
       return 0;
     }
 
     // if the incoming data has changed size, tell the encoder
     if ((unsigned)m_context.i_width != header->width || (unsigned)m_context.i_height != header->height) {
-      PTRACE(4, "x264", "Detected resolution change " << m_context.i_width << 'x' << m_context.i_height
+      PTRACE(4, HelperTraceName, "Detected resolution change " << m_context.i_width << 'x' << m_context.i_height
                                                     << " to " << header->width << 'x' << header->height);
       x264_encoder_close(m_codec);
       m_context.i_width = header->width;
       m_context.i_height = header->height;
       m_codec = x264_encoder_open(&m_context);
       if (m_codec == NULL) {
-        PTRACE(1, "x264", "Couldn't re-open encoder");
+        PTRACE(1, HelperTraceName, "Couldn't re-open encoder");
         return 0;
       }
-      PTRACE(4, "x264", "Encoder successfully re-opened");
+      PTRACE(4, HelperTraceName, "Encoder successfully re-opened");
     } 
 
     // Prepare the frame to be encoded
@@ -328,7 +343,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
     while (numberOfNALUs == 0) { // workaround for first 2 packets being 0
       x264_picture_t outputPicture;
       if (x264_encoder_encode(m_codec, &NALUs, &numberOfNALUs, &inputPicture, &outputPicture) < 0) {
-        PTRACE(1, "x264", "x264_encoder_encode failed");
+        PTRACE(1, HelperTraceName, "x264_encoder_encode failed");
         return 0;
       }
     }
@@ -348,6 +363,10 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
 
 #else // X264_LICENSED || GPL_HELPER_APP
+
+#if PTRACING
+  static char const PipeTraceName[] = "x264-pipe";
+#endif
 
 #if WIN32
 
@@ -372,9 +391,9 @@ H264Encoder::H264Encoder()
 H264Encoder::~H264Encoder()
 {
   if (!DisconnectNamedPipe(m_hNamedPipe))
-    PTRACE(1, "x264", "Failure on disconnecting Pipe (" << GetLastError() << ')');
+    PTRACE(1, PipeTraceName, "Failure on disconnecting Pipe (" << GetLastError() << ')');
   if (!CloseHandle(m_hNamedPipe))
-    PTRACE(1, "x264", "Failure on closing Handle (" << GetLastError() << ')');
+    PTRACE(1, PipeTraceName, "Failure on closing Handle (" << GetLastError() << ')');
 }
 
 
@@ -390,7 +409,7 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
                                       4096, // Input buffer
                                       5000, // Timeout
                                       NULL)) == INVALID_HANDLE_VALUE) {
-    PTRACE(1, "x264", "Failure on creating Pipe (" << GetLastError() << ')');
+    PTRACE(1, PipeTraceName, "Failure on creating Pipe (" << GetLastError() << ')');
     return false;
   }
 
@@ -416,14 +435,14 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
                      &si,         // Pointer to STARTUPINFO structure
                      &pi))        // Pointer to PROCESS_INFORMATION structure
   {
-      PTRACE(1, "x264", "Couldn't create child process (" << GetLastError() << ')');
+      PTRACE(1, PipeTraceName, "Couldn't create child process (" << GetLastError() << ')');
       return false;
   }
 
-  PTRACE(4, "x264", "Successfully created child process " << pi.dwProcessId << " using " << command);
+  PTRACE(4, PipeTraceName, "Successfully created child process " << pi.dwProcessId << " using " << command);
 
   if (!ConnectNamedPipe(m_hNamedPipe, NULL) && GetLastError() != ERROR_PIPE_CONNECTED) {
-    PTRACE(1, "x264", "Could not establish communication with child process (" << GetLastError() << ')');
+    PTRACE(1, PipeTraceName, "Could not establish communication with child process (" << GetLastError() << ')');
     return false;
   }
 
@@ -437,7 +456,7 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
   if (ReadFile(m_hNamedPipe, ptr, len, &bytesRead, NULL) && bytesRead == len)
     return true;
 
-  PTRACE(1, "x264", "Failure on read (" << GetLastError() << ')');
+  PTRACE(1, PipeTraceName, "Failure on read (" << GetLastError() << ')');
   return false;
 }
 
@@ -448,7 +467,7 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
   if (WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, NULL) && bytesWritten == len)
     return true;
 
-  PTRACE(1, "x264", "Failure on write (" << GetLastError() << ')');
+  PTRACE(1, PipeTraceName, "Failure on write (" << GetLastError() << ')');
   return false;
 }
 
@@ -497,9 +516,9 @@ H264Encoder::~H264Encoder()
   }
 
   if (remove(m_ulName) == -1)
-    PTRACE(1, "x264", "Error when trying to remove UL named pipe - " << strerror(errno));
+    PTRACE(1, PipeTraceName, "Error when trying to remove UL named pipe - " << strerror(errno));
   if (remove(m_dlName) == -1)
-    PTRACE(1, "x264", "Error when trying to remove DL named pipe - " << strerror(errno));
+    PTRACE(1, PipeTraceName, "Error when trying to remove DL named pipe - " << strerror(errno));
 }
 
 
@@ -512,50 +531,50 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
 
 #ifdef HAVE_MKFIFO
   if (mkfifo(m_dlName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
-    PTRACE(1, "x264", "Error when trying to create DL named pipe");
+    PTRACE(1, PipeTraceName, "Error when trying to create DL named pipe");
     return false;
   }
   if (mkfifo(m_ulName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
-    PTRACE(1, "x264", "Error when trying to create UL named pipe");
+    PTRACE(1, PipeTraceName, "Error when trying to create UL named pipe");
     return false;
   }
 #else
   if (mknod(m_dlName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
-    PTRACE(1, "x264", "Error when trying to create named pipe");
+    PTRACE(1, PipeTraceName, "Error when trying to create named pipe");
     return false;
   }
   if (mknod(m_ulName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
-    PTRACE(1, "x264", "Error when trying to create named pipe");
+    PTRACE(1, PipeTraceName, "Error when trying to create named pipe");
     return false;
   }
 #endif /* HAVE_MKFIFO */
 
   m_pid = fork();
   if (m_pid < 0) {
-    PTRACE(1, "x264", "Error when trying to fork");
+    PTRACE(1, PipeTraceName, "Error when trying to fork");
     return false;
   }
 
   if (m_pid == 0) {
     // If succeeds, does not return
     execl(executablePath, executablePath, m_dlName, m_ulName, NULL);
-    PTRACE(1, "x264", "Error when trying to execute GPL process  " << executablePath << " - " << strerror(errno));
+    PTRACE(1, PipeTraceName, "Error when trying to execute GPL process  " << executablePath << " - " << strerror(errno));
     return false;
   }
 
   m_pipeToProcess = open(m_dlName, O_WRONLY);
   if (m_pipeToProcess < 0) { 
-    PTRACE(1, "x264", "Error when opening DL named pipe - " << strerror(errno));
+    PTRACE(1, PipeTraceName, "Error when opening DL named pipe - " << strerror(errno));
     return false;
   }
 
   m_pipeFromProcess = open(m_ulName, O_RDONLY);
   if (m_pipeFromProcess < 0) { 
-    PTRACE(1, "x264", "Error when opening UL named pipe - " << strerror(errno));
+    PTRACE(1, PipeTraceName, "Error when opening UL named pipe - " << strerror(errno));
     return false;
   }
 
-  PTRACE(4, "x264", "Started GPL process id " << m_pid << " using " << executablePath);
+  PTRACE(4, PipeTraceName, "Started GPL process id " << m_pid << " using " << executablePath);
   return true;
 }
 
@@ -566,9 +585,9 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
   if (result == len)
     return true;
 
-  PTRACE(1, "x264", "Error reading pipe (" << result << ") - " << strerror(errno));
+  PTRACE(1, PipeTraceName, "Error reading pipe (" << result << ") - " << strerror(errno));
   if (kill(m_pid, 0) < 0)
-    PTRACE(1, "x264", "Sub-process no longer running!");
+    PTRACE(1, PipeTraceName, "Sub-process no longer running!");
   return false;
 }
 
@@ -579,9 +598,9 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
   if (result == len)
     return true;
 
-  PTRACE(1, "x264", "Error writing pipe (" << result << ") - " << strerror(errno));
+  PTRACE(1, PipeTraceName, "Error writing pipe (" << result << ") - " << strerror(errno));
   if (kill(m_pid, 0) < 0)
-    PTRACE(1, "x264", "Sub-process no longer running!");
+    PTRACE(1, PipeTraceName, "Sub-process no longer running!");
   return false;
 }
 
@@ -622,7 +641,7 @@ bool H264Encoder::Load(void * instance)
   free(tempDirs);
 
   if (token == NULL) {
-    PTRACE(1, "x264", "Could not find GPL process executable " << ExecutableName << " in " << pluginDirs);
+    PTRACE(1, PipeTraceName, "Could not find GPL process executable " << ExecutableName << " in " << pluginDirs);
     return false;
   }
 
@@ -631,11 +650,11 @@ bool H264Encoder::Load(void * instance)
 
   unsigned msg = H264ENCODERCONTEXT_CREATE;
   if (!WritePipe(&msg, sizeof(msg)) || !ReadPipe(&msg, sizeof(msg))) {
-    PTRACE(1, "x264", "GPL process did not initialise.");
+    PTRACE(1, PipeTraceName, "GPL process did not initialise.");
     return false;
   }
 
-  PTRACE(4, "x264", "Successfully established communication with GPL process");
+  PTRACE(4, PipeTraceName, "Successfully established communication with GPL process");
   m_loaded = true;
   return true;
 }
