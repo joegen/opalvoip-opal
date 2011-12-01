@@ -140,18 +140,12 @@ PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
   if (mediaPatch == NULL)
     return false;
 
-  return mediaPatch->ExecuteCommand(command, IsSink());
-}
+  if (!mediaPatch->ExecuteCommand(command, IsSink()))
+    return false;
 
-
-void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
-{
-  if (!LockReadWrite())
-    return;
-
-  commandNotifier = notifier;
-
-  UnlockReadWrite();
+  if (IsSource())
+    connection.OnMediaCommand(*this, command);
+  return true;
 }
 
 
