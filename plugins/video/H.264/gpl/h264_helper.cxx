@@ -27,7 +27,11 @@
 #include <sys/stat.h>
 
 
-#if PTRACING
+#ifndef PLUGINCODEC_TRACING
+#define PLUGINCODEC_TRACING 0
+#endif
+
+#if PLUGINCODEC_TRACING
   unsigned TraceLevel = 1;
   #define PTRACE(level,module,args) if (level > TraceLevel) ; else std::cerr << module << '\t' << args << std::endl
 #else
@@ -177,7 +181,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-#if PTRACING
+#if PLUGINCODEC_TRACING
   const char * traceLevelStr = getenv("PTLIB_TRACE_LEVEL");
   if (traceLevelStr != NULL)
     TraceLevel = atoi(traceLevelStr);
