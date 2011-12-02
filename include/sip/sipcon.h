@@ -597,7 +597,12 @@ class SIPConnection : public OpalRTPConnection
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
-    virtual void OnMediaCommand(
+    /** Callback for media commands.
+        Calls the SendIntraFrameRequest on the rtp session
+
+       @returns true if command is handled.
+      */
+    virtual bool OnMediaCommand(
       OpalMediaStream & stream,         ///< Stream command executed on
       const OpalMediaCommand & command  ///< Media command being executed
     );
