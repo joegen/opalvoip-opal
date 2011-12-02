@@ -53,10 +53,6 @@
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   : source(src)
-#if OPAL_VIDEO
-  , m_videoDecoder(src.GetMediaFormat().IsTransportable() && src.GetMediaFormat().GetMediaType() == OpalMediaType::Video())
-#endif
-  , m_bypassActive(false)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
@@ -478,12 +474,9 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
   PReadWaitAndSignal mutex(inUse);
 
   if (fromSink) {
-    OpalMediaPatch * patch = m_bypassActive && m_bypassToPatch != NULL ? m_bypassToPatch : this;
-    PTRACE(5, "Patch\tExecute command:"
-              " bypassActive=" << m_bypassActive
-           << " bypassToPatch=" << m_bypassToPatch
-           << " patch=" << patch
-           << " this=" << this);
+    OpalMediaPatch * patch = m_bypassToPatch != NULL ? m_bypassToPatch : this;
+    PTRACE(5, "Patch\tExecute command \"" << command << "\" "
+           << (m_bypassToPatch != NULL ? "bypassed" : "normally") << ' ' << *this);
     return patch->source.ExecuteCommand(command);
   }
 
@@ -670,16 +663,12 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
   m_bypassToPatch = patch;
 
 #if OPAL_VIDEO
-  if (m_videoDecoder)
+  OpalMediaFormat format = source.GetMediaFormat();
+  if (format.IsTransportable() && format.GetMediaType() == OpalMediaType::Video())
     source.ExecuteCommand(OpalVideoUpdatePicture());
   else
-    EnableJitterBuffer();
-
-  m_bypassActive = m_bypassToPatch != NULL && !m_videoDecoder;
-#else
-  EnableJitterBuffer();
-  m_bypassActive = m_bypassToPatch != NULL;
 #endif
+    EnableJitterBuffer();
 
   return true;
 }
@@ -695,7 +684,7 @@ PBoolean OpalMediaPatch::PushFrame(RTP_DataFrame & frame)
 bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
   if (m_bypassFromPatch != NULL) {
-    PTRACE(3, "Patch\tMedia patch bypass started by " << m_bypassFromPatch << " on " << *this);
+    PTRACE(3, "Patch\tMedia patch bypass started by " << *m_bypassFromPatch << " on " << *this);
     inUse.EndRead();
     m_bypassEnded.Wait();
     PTRACE(4, "Patch\tMedia patch bypass ended on " << *this);
@@ -707,16 +696,13 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
   bool written = false;
 
-  // This is not an if/else as WriteFrame can change the state of m_bypassActive
-  if (!m_bypassActive) {
+  if (m_bypassToPatch == NULL) {
     for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
       if (s->WriteFrame(frame))
         written = true;
     }
   }
-
-  if (m_bypassActive) {
-    written = false;
+  else {
     for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
       if (s->stream->WritePacket(frame))
         written = true;
@@ -889,12 +875,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   }
 
 #if OPAL_VIDEO
-  if (!patch.m_bypassActive && patch.m_videoDecoder && patch.m_bypassToPatch != NULL &&
-                dynamic_cast<OpalVideoTranscoder *>(primaryCodec)->WasLastFrameIFrame()) {
-    PTRACE(3, "Patch\tActivating video patch bypass to " << patch.m_bypassToPatch << " on " << patch);
-    patch.m_bypassActive = true;
-  }
-
   if (secondaryCodec == NULL && rateController != NULL) {
     PTRACE(4, "Patch\tPushing " << intermediateFrames.GetSize() << " packet into RC");
     rateController->Push(intermediateFrames, ((OpalVideoTranscoder *)primaryCodec)->WasLastFrameIFrame());
