@@ -1227,11 +1227,11 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
     return false;
   }
 
+  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested in video stream " << *stream << " on " << *this);
   if (force)
     stream->ExecuteCommand(OpalVideoUpdatePicture());
   else
     stream->ExecuteCommand(OpalVideoPictureLoss());
-  PTRACE(3, "OpalCon\tUpdate video picture (I-Frame) requested in video stream " << *stream);
 
   return true;
 }
@@ -1736,8 +1736,14 @@ void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, boo
 #endif
 
 
-void OpalConnection::OnMediaCommand(OpalMediaStream & /*stream*/, const OpalMediaCommand & /*command*/)
+bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  PTRACE(3, "OpalCon\tOnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
+  if (&stream.GetConnection() != this)
+    return false;
+
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  return other != NULL && other->OnMediaCommand(stream, command);
 }
 
 

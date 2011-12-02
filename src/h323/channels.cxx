@@ -274,16 +274,17 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
 }
 
 
-void H323Channel::OnMediaCommand(const OpalMediaCommand & command)
+bool H323Channel::OnMediaCommand(const OpalMediaCommand & command)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     H323ControlPDU pdu;
     pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
     connection.WriteControlPDU(pdu);
-    return;
+    return true;
   }
 #endif
+  return false;
 }
 
 
