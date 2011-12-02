@@ -140,12 +140,15 @@ PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
   if (mediaPatch == NULL)
     return false;
 
-  if (!mediaPatch->ExecuteCommand(command, IsSink()))
+  PTRACE(4, "Media\tExecute command \"" << command << "\" on " << *this << " for " << connection);
+
+  if (mediaPatch->ExecuteCommand(command, IsSink()))
+    return true;
+
+  if (IsSink())
     return false;
 
-  if (IsSource())
-    connection.OnMediaCommand(*this, command);
-  return true;
+  return connection.OnMediaCommand(*this, command);
 }
 
 

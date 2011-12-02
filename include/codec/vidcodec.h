@@ -121,6 +121,8 @@ class OpalVideoTranscoder : public OpalTranscoder
 
        The default behaviour checks for a OpalVideoUpdatePicture and sets the
        updatePicture member variable if that is the command.
+
+       @returns true if command is handled.
       */
     virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
