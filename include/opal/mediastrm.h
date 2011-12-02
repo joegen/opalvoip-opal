@@ -174,6 +174,8 @@ class OpalMediaStream : public PSafeObject
        apply to a video transcoder.
 
        The default behaviour passes the command on to the OpalMediaPatch.
+
+       @returns true if command is handled.
       */
     virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.

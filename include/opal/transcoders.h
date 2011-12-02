@@ -173,6 +173,8 @@ class OpalTranscoder : public OpalMediaFormatPair
        apply to a video transcoder.
 
        The default behaviour simply returns false.
+
+       @returns true if command is handled.
       */
     virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.

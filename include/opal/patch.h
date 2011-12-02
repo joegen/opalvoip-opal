@@ -180,6 +180,8 @@ class OpalMediaPatch : public PObject
 
        The default behaviour passes the command on to the source or sinks
        and the sinks transcoders.
+
+       @returns true if command is handled.
       */
     virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command,   ///<  Command to execute.

@@ -3537,8 +3537,10 @@ bool SIPConnection::TransmitExternalIM(const OpalMediaFormat & /*format*/, RTP_I
 
 #endif
 
-void SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
+bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  bool done = OpalRTPConnection::OnMediaCommand(stream, command);
+
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     SIPInfo::Params params(ApplicationMediaControlXMLKey,
@@ -3552,10 +3554,11 @@ void SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
                             "</vc_primitive>"
                            "</media_control>");
     SendINFO(params);
+    done = true;
   }
 #endif
 
-  OpalRTPConnection::OnMediaCommand(stream, command);
+  return done;
 }
 
 
