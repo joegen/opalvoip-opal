@@ -2590,7 +2590,8 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
 
       default:
         PTRACE(1, "RTP_UDP\tSession " << sessionID
-               << ", write error on " << (toDataChannel ? "data" : "control") << " port ("
+               << ", write (" << frameSize << " bytes) error on "
+               << (toDataChannel ? "data" : "control") << " port ("
                << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
                << socket.GetErrorText(PChannel::LastWriteError));
         return false;
