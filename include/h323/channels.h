@@ -331,7 +331,7 @@ class H323Channel : public PObject
     ) { paused = pause; }
   //@}
 
-    virtual void OnMediaCommand(const OpalMediaCommand &);
+    virtual bool OnMediaCommand(const OpalMediaCommand &);
 
   protected:
     virtual void InternalClose();

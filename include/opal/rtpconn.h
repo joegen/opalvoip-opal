@@ -157,8 +157,10 @@ class OpalRTPConnection : public OpalConnection
 
     /** Callback for media commands.
         Calls the SendIntraFrameRequest on the rtp session
+
+       @returns true if command is handled.
       */
-    virtual void OnMediaCommand(
+    virtual bool OnMediaCommand(
       OpalMediaStream & stream,         ///< Stream command executed on
       const OpalMediaCommand & command  ///< Media command being executed
     );
