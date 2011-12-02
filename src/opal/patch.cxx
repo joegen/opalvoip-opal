@@ -479,6 +479,11 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 
   if (fromSink) {
     OpalMediaPatch * patch = m_bypassActive && m_bypassToPatch != NULL ? m_bypassToPatch : this;
+    PTRACE(5, "Patch\tExecute command:"
+              " bypassActive=" << m_bypassActive
+           << " bypassToPatch=" << m_bypassToPatch
+           << " patch=" << patch
+           << " this=" << this);
     return patch->source.ExecuteCommand(command);
   }
 
