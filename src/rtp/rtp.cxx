@@ -2609,7 +2609,8 @@ bool RTP_UDP::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, boo
 
       default:
         PTRACE(1, "RTP_UDP\tSession " << sessionID
-               << ", write error on " << (toDataChannel ? "data" : "control") << " port ("
+               << ", write (" << frameSize << " bytes) error on "
+               << (toDataChannel ? "data" : "control") << " port ("
                << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
                << socket.GetErrorText(PChannel::LastWriteError));
         return false;
