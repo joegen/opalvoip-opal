@@ -37,7 +37,7 @@
 
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
-#if PTRACING
+#if PLUGINCODEC_TRACING
   static char const HelperTraceName[] = "x264-help";
 
   static void logCallbackX264(void * /*priv*/, int level, const char *fmt, va_list arg) {
@@ -78,7 +78,7 @@ H264Encoder::H264Encoder()
   m_context.vui.i_sar_width = 0;
   m_context.vui.i_sar_height = 0;
 
-#if PTRACING
+#if PLUGINCODEC_TRACING
   // Enable logging
   m_context.pf_log = logCallbackX264;
   m_context.i_log_level = X264_LOG_DEBUG;
@@ -364,7 +364,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
 #else // X264_LICENSED || GPL_HELPER_APP
 
-#if PTRACING
+#if PLUGINCODEC_TRACING
   static char const PipeTraceName[] = "x264-pipe";
 #endif
 
