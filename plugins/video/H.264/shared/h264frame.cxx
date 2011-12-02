@@ -39,7 +39,7 @@
 #define MAX_FRAME_SIZE 128 * 1024
 
 
-#if PTRACING
+#if PLUGINCODEC_TRACING
   static char const FrameTraceName[] = "x264-frame";
 #endif
 
