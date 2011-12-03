@@ -96,14 +96,6 @@ void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
   m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
   memcpy(m_encodedFrame+m_encodedFrameLen, payload, length);
 
-  uint32_t header = 0;
-  if (IsStartCode(currentPositionInFrame))
-  {
-    header = currentPositionInFrame[2] == 1 ? 3 : 4;
-  }
-  m_NALs[m_numberOfNALsInFrame].length -= header;
-  m_NALs[m_numberOfNALsInFrame].offset += header;
-
   if (type == H264_NAL_TYPE_SEQ_PARAM) {
     PTRACE(4, FrameTraceName, "Profile: "   << (unsigned)payload[0] << 
                       " Level: "    << (unsigned)payload[2] << 

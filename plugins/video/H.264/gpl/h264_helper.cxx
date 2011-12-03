@@ -149,7 +149,6 @@ void WritePipe(const void * data, unsigned bytes)
 unsigned val;
 
 unsigned srcLen;
-unsigned dstLen;
 unsigned headerLen;
 size_t bufSize;
 size_t rtpSize;
@@ -161,7 +160,7 @@ H264Encoder x264;
 
 void ResizeBuffer()
 {
-  size_t newBufSize = x264.GetWidth()*x264.GetHeight()*3/2 + dstLen + 1024;
+  size_t newBufSize = x264.GetWidth()*x264.GetHeight()*3/2 + rtpSize + 1024;
   if (newBufSize > bufSize) {
     buffer = (unsigned char *)realloc(buffer, newBufSize);
     if (buffer == NULL) {
@@ -191,8 +190,7 @@ int main(int argc, char *argv[])
 
   PTRACE(5, HelperTraceName, "GPL executable ready");
 
-  dstLen = 1400;
-  rtpSize = 8192;
+  rtpSize = 1400;
 
   for (;;) {
     unsigned msg;
@@ -254,6 +252,7 @@ int main(int argc, char *argv[])
       case ENCODE_FRAMES_BUFFERED:
         {
           ResizeBuffer();
+          unsigned dstLen = rtpSize;
           unsigned ret = x264.EncodeFrames(buffer+rtpSize, srcLen, buffer, dstLen, headerLen, flags);
           WritePipe(&msg, sizeof(msg));
           WritePipe(&dstLen, sizeof(dstLen));
