@@ -664,6 +664,8 @@ RTP_JitterBuffer::RTP_JitterBuffer(OpalRTPSession & session,
   : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
     m_session(session)
 {
+  PTRACE_CONTEXT_ID_FROM(session);
+
   StartThread();
 }
 

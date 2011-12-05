@@ -491,6 +491,8 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
   if (call == NULL)
     return NULL;
 
+  PTRACE_CONTEXT_ID_PUSH_THREAD(call);
+
   call->SetPartyB(partyB);
 
   // If we are the A-party then need to initiate a call now in this thread and
@@ -675,6 +677,8 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     return true;
 
   OpalCall & call = connection.GetCall();
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
   // See if have pre-allocated B party address, otherwise
   // get destination from incoming connection

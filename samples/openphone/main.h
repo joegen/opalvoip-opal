@@ -818,6 +818,7 @@ class OptionsDialog : public wxDialog
     bool      m_TraceThreadName;
     bool      m_TraceThreadAddress;
     bool      m_TraceObjectInstance;
+    bool      m_TraceContextId;
     PwxString m_TraceFileName;
 
     void BrowseTraceFile(wxCommandEvent & event);

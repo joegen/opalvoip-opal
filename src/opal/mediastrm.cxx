@@ -77,6 +77,8 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+
   connection.SafeReference();
   PTRACE(5, "Media\tCreated " << (isSource ? "Source" : "Sink") << ' ' << this);
 }
@@ -458,7 +460,7 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
-    ostream & trace = PTrace::Begin(4, __FILE__, __LINE__);
+    ostream & trace = PTrace::Begin(4, __FILE__, __LINE__, this);
     if (patch == NULL)
       trace << "Removing patch " << *mediaPatch;
     else if (mediaPatch == NULL)

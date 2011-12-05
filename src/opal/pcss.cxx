@@ -227,8 +227,8 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
-						                                            const OpalMediaFormat & mediaFormat,
-                                                                      PBoolean isSource)
+                                                        const OpalMediaFormat & mediaFormat,
+                                                                     PBoolean   isSource)
 {
   PString deviceName;
   PSoundChannel::Directions dir;
@@ -247,6 +247,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
            << "\" for " << (isSource ? "record" : "play") << "ing.");
     return NULL;
   }
+  PTRACE_CONTEXT_ID_SET(*soundChannel, connection);
 
   unsigned channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
   unsigned clockRate = mediaFormat.GetClockRate();
@@ -347,8 +348,11 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
+  PTRACE_CONTEXT_ID_TO(silenceDetector);
+
 #if OPAL_AEC
   echoCanceler = new OpalEchoCanceler;
+  PTRACE_CONTEXT_ID_TO(echoCanceler);
 #endif
 
   PTRACE(4, "PCSS\tCreated PC sound system connection: token=\"" << callToken << "\" "
@@ -401,6 +405,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   if (soundChannel == NULL)
     return NULL;
 
+  PTRACE_CONTEXT_ID_TO(soundChannel);
   return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
 }
 

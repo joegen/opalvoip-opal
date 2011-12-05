@@ -359,6 +359,7 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
     newTransport = endpoint.CreateTransport(destination, m_stringOptions(OPAL_OPT_INTERFACE));
     if (newTransport == NULL)
       return false;
+    PTRACE_CONTEXT_ID_TO(newTransport);
   }
 
   if (deleteTransport && transport != NULL) {

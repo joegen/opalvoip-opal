@@ -250,6 +250,8 @@ OpalConnection::OpalConnection(OpalCall & call,
   , m_luaScriptLoaded(false)
 #endif
 {
+  PTRACE_CONTEXT_ID_FROM(call);
+
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
   PAssert(ownerCall.SafeReference(), PLogicError);
@@ -528,7 +530,7 @@ void OpalConnection::OnReleased()
 #if PTRACING
   static const int Level = 3;
   if (PTrace::CanTrace(Level)) {
-    ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
+    ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__, this);
     trace << "OpalCon\tConnection " << *this << " released\n"
              "        Initial Time: " << m_phaseTime[UninitialisedPhase] << '\n';
     for (Phases ph = SetUpPhase; ph < NumPhases; ph = (Phases)(ph+1)) {

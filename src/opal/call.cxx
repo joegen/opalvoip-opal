@@ -65,6 +65,8 @@ OpalCall::OpalCall(OpalManager & mgr)
   , m_recordManager(NULL)
 #endif
 {
+  PTRACE_CONTEXT_ID_NEW();
+
   manager.activeCalls.SetAt(myToken, this);
 
   connectionsActive.DisallowDeleteObjects();
@@ -110,6 +112,8 @@ void OpalCall::SetCallEndReason(OpalConnection::CallEndReason reason)
 
 void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PTRACE(3, "Call\tClearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
 
   if (!LockReadWrite())
@@ -296,6 +300,8 @@ PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection 
 
 bool OpalCall::Hold()
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PTRACE(3, "Call\tSetting to On Hold");
 
   bool ok = false;
@@ -312,6 +318,8 @@ bool OpalCall::Hold()
 
 bool OpalCall::Retrieve()
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PTRACE(3, "Call\tRetrieve from On Hold");
 
   bool ok = false;
@@ -340,6 +348,8 @@ bool OpalCall::IsOnHold() const
 
 bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PCaselessString prefix;
   PINDEX colon = newAddress.Find(':');
   if (colon != P_MAX_INDEX)
@@ -449,6 +459,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 #endif
                                    )
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
     return false;
