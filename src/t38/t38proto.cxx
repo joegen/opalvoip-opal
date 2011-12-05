@@ -162,7 +162,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 
 #if PTRACING
       if (PTrace::CanTrace(3)) {
-        ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+        ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
         trace << "T38_UDPTL\tUse redundancy \"";
         for (std::map<int, int>::iterator it = m_redundancy.begin() ; it != m_redundancy.end() ; it++) {
           if (it != m_redundancy.begin())

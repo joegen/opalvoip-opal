@@ -57,6 +57,8 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
 {
+  PTRACE_CONTEXT_ID_FROM(src);
+
   PTRACE(5, "Patch\tCreated media patch " << this << ", session " << src.GetSessionID());
   src.SetPatch(this);
 }
@@ -193,6 +195,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
   PString id = sinkStream->GetID();
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
+    PTRACE_CONTEXT_ID_TO(sink->primaryCodec);
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
     if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
@@ -237,6 +240,8 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
     if (sink->primaryCodec == NULL || sink->secondaryCodec == NULL)
       return false;
 
+    PTRACE_CONTEXT_ID_TO(sink->primaryCodec);
+    PTRACE_CONTEXT_ID_TO(sink->secondaryCodec);
     PTRACE(3, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->primaryCodec->SetMaxOutputSize(sink->secondaryCodec->GetOptimalDataFrameSize(true));
@@ -389,6 +394,8 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , rateController(NULL)
 #endif
 {
+  PTRACE_CONTEXT_ID_FROM(p);
+
 #if OPAL_VIDEO
   SetRateControlParameters(stream->GetMediaFormat());
 #endif
@@ -938,6 +945,7 @@ OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
             "Media Patch"),
     patch(p)
 {
+  PTRACE_CONTEXT_ID_FROM(p);
 }
 
 

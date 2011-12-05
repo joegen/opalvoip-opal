@@ -50,6 +50,8 @@ OpalVXMLSession::OpalVXMLSession(OpalIVRConnection & conn, PTextToSpeech * tts, 
   : PVXMLSession(tts, autoDelete),
     m_connection(conn)
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+
   if (tts == NULL)
     SetTextToSpeech(PString::Empty());
 }

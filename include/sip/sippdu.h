@@ -1232,7 +1232,7 @@ typedef SIPSubscribe::EventPackage SIPEventPackage;
 
 class SIPHandler;
 
-class SIPEventPackageHandler
+class SIPEventPackageHandler : public PObject
 {
   unsigned m_expectedSequenceNumber;
 

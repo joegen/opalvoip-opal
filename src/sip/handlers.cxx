@@ -103,6 +103,8 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
   , m_receivedResponse(false)
   , m_proxy(params.m_proxyAddress)
 {
+  PTRACE_CONTEXT_ID_NEW();
+
   m_transactions.DisallowDeleteObjects();
   m_expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
@@ -202,6 +204,8 @@ void SIPHandler::SetState(SIPHandler::State newState)
 
 bool SIPHandler::ActivateState(SIPHandler::State newState)
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   // If subscribing with zero expiry time, is same as unsubscribe
   if (newState == Subscribing && GetExpire() == 0)
     newState = Unsubscribing;
@@ -329,6 +333,7 @@ OpalTransport * SIPHandler::GetTransport()
 
   // Must specify a network interface or get infinite recursion
   m_transport = GetEndPoint().CreateTransport(url, "*");
+  PTRACE_CONTEXT_ID_TO(m_transport);
   return m_transport;
 }
 
@@ -362,6 +367,7 @@ PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool /*forked*/)
 {
   SIPTransaction * transaction = CreateTransaction(transport);
+  PTRACE_CONTEXT_ID_TO(transaction);
 
   if (transaction != NULL) {
     for (PStringToString::iterator it = m_mime.begin(); it != m_mime.end(); ++it)
@@ -893,6 +899,8 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
   , m_previousResponse(NULL)
 {
+  PTRACE_CONTEXT_ID_TO(m_packageHandler);
+
   m_dialog.SetCallID(GetCallID());
 
   m_parameters.m_proxyAddress = m_proxy.AsString();
@@ -1079,6 +1087,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   // remove last response
   delete m_previousResponse;
   m_previousResponse = new SIP_PDU(request, SIP_PDU::Failure_BadRequest);
+  PTRACE_CONTEXT_ID_TO(m_previousResponse);
 
   PStringToString subscriptionStateInfo;
   PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
@@ -1807,6 +1816,7 @@ SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
   , m_reason(Deactivated)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(eventPackage))
 {
+  PTRACE_CONTEXT_ID_TO(m_packageHandler);
 }
 
 

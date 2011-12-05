@@ -616,6 +616,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
         if (!token.IsEmpty()) {
           PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
           if (connection != NULL) {
+            PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
             switch (connection->CheckINVITE(*pdu)) {
               case SIPConnection::IsNewINVITE : // Process new INVITE
                 break;
@@ -952,6 +953,8 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
       return false;
     }
   }
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
   // ask the endpoint for a connection
   SIPConnection *connection = CreateConnection(*call,
@@ -1856,26 +1859,30 @@ void SIPEndPoint::SIP_Work::Work()
 
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
     PString transactionID = m_pdu->GetTransactionID();
-    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
     PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
-    if (transaction != NULL)
+    if (transaction != NULL) {
+      PTRACE_CONTEXT_ID_PUSH_THREAD(*transaction);
+      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
       transaction->OnReceivedResponse(*m_pdu);
+      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+    }
     else {
       PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
   }
 
   else if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
-    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
     PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
-    if (connection != NULL) 
+    if (connection != NULL) {
+      PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
+      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
       connection->OnReceivedPDU(*m_pdu);
+      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+    }
     else {
       PTRACE(2, "SIP\tCannot find connection for PDU \"" << *m_pdu << "\" using token=" << m_token);
     }
   }
-
-  PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
 }
 
 

@@ -59,9 +59,12 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   : OpalConnection(call, ep, token, options, stringOptions)
   , remoteIsNAT(false)
 {
-  rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
+  rfc2833Handler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
+  PTRACE_CONTEXT_ID_TO(rfc2833Handler);
+
 #if OPAL_T38_CAPABILITY
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
+  PTRACE_CONTEXT_ID_TO(ciscoNSEHandler);
 #endif
 }
 
