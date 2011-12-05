@@ -172,6 +172,7 @@ SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, RTP_DataFrame::Payl
   , clockRate(0)
   , encodingName(_name)
 {
+  PTRACE_CONTEXT_ID_FROM(parent);
 }
 
 
@@ -1464,15 +1465,20 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
             else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress, NULL)) == NULL) {
               PTRACE(1, "SDP\tCould not create SDP media description for SDP media type " << tokens[0]);
             }
-            else if (currentMedia->Decode(tokens))
-              atLeastOneValidMedia = true;
             else {
-              delete currentMedia;
-              currentMedia = NULL;
+              PTRACE_CONTEXT_ID_TO(currentMedia);
+              if (currentMedia->Decode(tokens))
+                atLeastOneValidMedia = true;
+              else {
+                delete currentMedia;
+                currentMedia = NULL;
+              }
             }
 
-            if (currentMedia == NULL)
+            if (currentMedia == NULL) {
               currentMedia = new SDPDummyMediaDescription(defaultConnectAddress, tokens);
+              PTRACE_CONTEXT_ID_TO(currentMedia);
+            }
 
             mediaDescriptions.Append(currentMedia);
           }

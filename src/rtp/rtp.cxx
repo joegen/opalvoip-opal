@@ -980,7 +980,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << sessionID << ", OnExtendedReport: ssrc=" << src << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  XR: " << reports[i] << '\n';
@@ -1685,7 +1685,7 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender),
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << sessionID << ", OnRxSenderReport: " << sender << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
@@ -1700,7 +1700,7 @@ void OpalRTPSession::OnRxReceiverReport(DWORD PTRACE_PARAM(src), const ReceiverR
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << sessionID << ", OnReceiverReport: ssrc=" << src << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
@@ -1727,7 +1727,7 @@ void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << sessionID << ", OnSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];

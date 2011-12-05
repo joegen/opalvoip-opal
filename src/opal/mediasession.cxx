@@ -37,6 +37,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediasession.h>
+#include <opal/connection.h>
 
 
 #define new PNEW
@@ -110,6 +111,7 @@ OpalMediaSession::OpalMediaSession(OpalConnection & connection, unsigned session
   , m_isExternalTransport(false)
   , m_referenceCount(1)
 {
+  PTRACE_CONTEXT_ID_FROM(connection);
 }
 
 bool OpalMediaSession::Open(const PString &)

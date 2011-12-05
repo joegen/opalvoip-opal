@@ -268,6 +268,7 @@ DEF_FIELD(TraceTimestamp);
 DEF_FIELD(TraceThreadName);
 DEF_FIELD(TraceThreadAddress);
 DEF_FIELD(TraceObjectInstance);
+DEF_FIELD(TraceContextId);
 DEF_FIELD(TraceFileName);
 DEF_FIELD(TraceOptions);
 #endif
@@ -1102,7 +1103,7 @@ bool MyManager::Initialise()
 #if PTRACING
   if (PTrace::CanTrace(4)) {
     OpalMediaFormatList mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
+    ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__, this);
     traceStream << "OpenPhone\tRegistered media formats:\n";
     for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
       mediaFormats[i].PrintOptions(traceStream);
@@ -4185,6 +4186,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
   INIT_FIELD(TraceObjectInstance, (PTrace::GetOptions()&PTrace::ObjectInstance) != 0);
+  INIT_FIELD(TraceContextId, (PTrace::GetOptions()&PTrace::ContextIdentifier) != 0);
   INIT_FIELD(TraceFileName, m_manager.m_traceFileName);
 #else
   RemoveNotebookPage(this, wxT("Tracing"));
@@ -4611,6 +4613,8 @@ bool OptionsDialog::TransferDataFromWindow()
     traceOptions |= PTrace::Thread;
   if (m_TraceObjectInstance)
     traceOptions |= PTrace::ObjectInstance;
+  if (m_TraceContextId)
+    traceOptions |= PTrace::ContextIdentifier;
   if (m_TraceThreadAddress)
     traceOptions |= PTrace::ThreadAddress;
 

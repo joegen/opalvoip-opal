@@ -1733,6 +1733,7 @@ SIP_PDU::SIP_PDU(Methods meth)
   , m_versionMinor(SIP_VER_MINOR)
   , m_SDP(NULL)
 {
+  PTRACE_CONTEXT_ID_TO(m_mime);
 }
 
 
@@ -1743,6 +1744,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   , m_statusCode(code)
   , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
 {
+  PTRACE_CONTEXT_ID_TO(m_mime);
   InitialiseHeaders(request);
 }
 
@@ -1759,6 +1761,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_entityBody(pdu.m_entityBody)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
 {
+  PTRACE_CONTEXT_ID_TO(m_mime);
 }
 
 
@@ -2144,7 +2147,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
 
     trace << "SIP\t";
     if (truncated)
@@ -2224,7 +2227,7 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
 
     trace << "SIP\tSending PDU ";
 
@@ -2339,6 +2342,7 @@ bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & masterList)
     return false;
 
   m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
+  PTRACE_CONTEXT_ID_TO(m_SDP);
   if (m_SDP->Decode(m_entityBody, masterList))
     return true;
 
@@ -2519,7 +2523,7 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
 
   SetCallID(mime.GetCallID());
 
-  if (m_routeSet.empty()) {
+  if (m_routeSet.empty() && mime.Has("Record-Route")) {
     // get the route set from the Record-Route response field according to 12.1.2
     // requests in a dialog do not modify the initial route set according to 12.2
     m_routeSet.FromString(mime.GetRecordRoute(), pdu.GetMethod() == SIP_PDU::NumMethods);
@@ -2638,6 +2642,8 @@ SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport &
   , m_state(NotStarted)
   , m_retry(1)
 {
+  PTRACE_CONTEXT_ID_FROM(trans);
+
   m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
@@ -2658,6 +2664,8 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   , m_retry(1)
   , m_remoteAddress(conn.GetDialog().GetRemoteTransportAddress())
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+
   PAssert(m_connection != NULL, "Transaction created on connection pending deletion.");
 
   m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
@@ -2822,6 +2830,7 @@ bool SIPTransaction::SendPDU(SIP_PDU & pdu)
 bool SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL);
+  PTRACE_CONTEXT_ID_TO(cancel);
   cancel.InitialiseHeaders(m_uri,
                            m_mime.GetTo(),
                            m_mime.GetFrom(),
