@@ -71,8 +71,8 @@ static PFactory<OpalInternalTransport>::Worker<OpalInternalTLSTransport> opalInt
 /////////////////////////////////////////////////////////////////
 
 OpalTransportAddress::OpalTransportAddress()
+  : m_transport(NULL)
 {
-  transport = NULL;
 }
 
 
@@ -103,10 +103,10 @@ OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD
 
 PString OpalTransportAddress::GetHostName() const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return *this;
 
-  return transport->GetHostName(*this);
+  return m_transport->GetHostName(*this);
 }
 
 
@@ -164,31 +164,31 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
 
 PBoolean OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return PFalse;
 
   WORD dummy = 65535;
-  return transport->GetIpAndPort(*this, ip, dummy);
+  return m_transport->GetIpAndPort(*this, ip, dummy);
 }
 
 
 PBoolean OpalTransportAddress::GetIpAndPort(PIPSocket::Address & ip, WORD & port) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return PFalse;
 
-  return transport->GetIpAndPort(*this, ip, port);
+  return m_transport->GetIpAndPort(*this, ip, port);
 }
 
 
 PBoolean OpalTransportAddress::GetIpAndPort(PIPSocketAddressAndPort & ipPort) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return PFalse;
 
   PIPSocket::Address ip;
   WORD port = 0;
-  if (!transport->GetIpAndPort(*this, ip, port))
+  if (!m_transport->GetIpAndPort(*this, ip, port))
     return false;
 
   ipPort.SetAddress(ip, port);
@@ -199,26 +199,26 @@ PBoolean OpalTransportAddress::GetIpAndPort(PIPSocketAddressAndPort & ipPort) co
 OpalListener * OpalTransportAddress::CreateListener(OpalEndPoint & endpoint,
                                                     BindOptions option) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return NULL;
 
-  return transport->CreateListener(*this, endpoint, option);
+  return m_transport->CreateListener(*this, endpoint, option);
 }
 
 
 OpalTransport * OpalTransportAddress::CreateTransport(OpalEndPoint & endpoint,
                                                       BindOptions option) const
 {
-  if (transport == NULL)
+  if (m_transport == NULL)
     return NULL;
 
-  return transport->CreateTransport(*this, endpoint, option);
+  return m_transport->CreateTransport(*this, endpoint, option);
 }
 
 
 void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 {
-  transport = NULL;
+  m_transport = NULL;
   
   if (IsEmpty())
     return;
@@ -241,21 +241,12 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 #endif
 
   // use factory to create transport types
-  transport = PFactory<OpalInternalTransport>::CreateInstance(Left(dollar+1).ToLower());
-  if (transport == NULL)
+  m_transport = PFactory<OpalInternalTransport>::CreateInstance(GetProtoPrefix().ToLower());
+  if (m_transport != NULL && m_transport->Parse(*this, port))
     return;
 
-  // Get port, even if string is bracketed, i.e. udp$[2001...]:1720
-  PINDEX rbracket = Find(']');
-  if( rbracket != P_MAX_INDEX )
-	  dollar = rbracket + 1;
-
-  if (port != 0 && Find(':', dollar) == P_MAX_INDEX) {
-    PINDEX end = GetLength();
-    if (GetAt(end-1) == '+')
-      end--;
-    Splice(psprintf(":%u", port), end);
-  }
+  PTRACE(1, "Opal\tCould not parse transport address \"" << *this << '"');
+  MakeEmpty();
 }
 
 
@@ -383,6 +374,25 @@ static PBoolean SplitAddress(const PString & addr, PString & host, PString & dev
 
   //PTRACE(1, "Split " << addr << " into host='" << host << "',dev='" << device << "',service='" << service << "'");
 
+  return true;
+}
+
+
+bool OpalInternalIPTransport::Parse(OpalTransportAddress & address, WORD port) const
+{
+  // Get port, even if string is bracketed, i.e. udp$[2001...]:1720
+  PINDEX dollar = address.Find('$');
+  PINDEX rbracket = address.Find(']');
+  if (rbracket != P_MAX_INDEX)
+    dollar = rbracket + 1;
+
+  if (port == 0)
+    return address.Find(':', dollar) != P_MAX_INDEX;
+
+  PINDEX end = address.GetLength();
+  if (address[end-1] == '+')
+    end--;
+  address.Splice(psprintf(":%u", port), end);
   return true;
 }
 
