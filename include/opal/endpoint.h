@@ -144,13 +144,16 @@ class OpalEndPoint : public PObject
     );
 
     /**Get the default listeners for the endpoint type.
-       Default behaviour returns empty list if defaultSignalPort is zero, else
-       one entry using tcp and INADDR_ANY, eg tcp$*:1720
+       Default behaviour uses GetDefaultTransport() to produce a list of
+       listener addresses based on IPv4 and IPv6 versions of INADDR_ANY.
       */
     virtual PStringArray GetDefaultListeners() const;
 
     /**Get comma separated list of transport protocols to create if
        no explicit listeners started.
+       Transport protocols are as per OpalTransportAddress, e.g. "udp$". It
+       may also have a ":port" after it if that transport type does not use
+       the value from GetDefaultSignalPort().
       */
     virtual PString GetDefaultTransport() const;
 
