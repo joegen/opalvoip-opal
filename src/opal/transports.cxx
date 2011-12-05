@@ -383,11 +383,17 @@ bool OpalInternalIPTransport::Parse(OpalTransportAddress & address, WORD port) c
   // Get port, even if string is bracketed, i.e. udp$[2001...]:1720
   PINDEX dollar = address.Find('$');
   PINDEX rbracket = address.Find(']');
-  if (rbracket != P_MAX_INDEX)
+  if (rbracket != P_MAX_INDEX) {
+    if (address.Find('[') > rbracket)
+      return false;
     dollar = rbracket + 1;
+  }
+
+  if (address.Find(':', dollar) != P_MAX_INDEX)
+    return true;
 
   if (port == 0)
-    return address.Find(':', dollar) != P_MAX_INDEX;
+    return true;
 
   PINDEX end = address.GetLength();
   if (address[end-1] == '+')
