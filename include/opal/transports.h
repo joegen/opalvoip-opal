@@ -107,8 +107,11 @@ class OpalInternalTransport;
 
    The semantics of certain elements are as follows:
       addr         Must have at least one of host or "%" interface-name
-      host = "*"   indicates INADDR_ANY, so is a wildcard match for all IP
-                   addresses.
+      host = "*"   indicates a wildcard match for all IP addresses. Note that
+                   for UDP there is a distinction between "*" and "0.0.0.0" and
+                   "[::]". A "*" will listen on both IPv4 and IPv6, while the
+                   INADDR_ANY and INADDR6_ANY values will only listen on that
+                   version of IP. For tcp "*" is a synonym for "0.0.0.0".
       port = "*"   indicates port 0. This is only allowed when the
                    OpalTransportAddress is being used to "listen" on a socket.
                    It indicates any port number will do and should be allocated
@@ -304,7 +307,7 @@ class OpalTransportAddress : public PCaselessString
       const char * proto     ///<  Default is "tcp"
     );
 
-    OpalInternalTransport * transport;
+    OpalInternalTransport * m_transport;
 };
 
 
@@ -1255,6 +1258,11 @@ class OpalInternalTransport : public PObject
 {
     PCLASSINFO(OpalInternalTransport, PObject);
   public:
+    virtual bool Parse(
+      OpalTransportAddress & address,
+      WORD port
+    ) const = 0;
+
     virtual PString GetHostName(
       const OpalTransportAddress & address
     ) const;
@@ -1285,6 +1293,10 @@ class OpalInternalIPTransport : public OpalInternalTransport
 {
     PCLASSINFO(OpalInternalIPTransport, OpalInternalTransport);
   public:
+    virtual bool Parse(
+      OpalTransportAddress & address,
+      WORD port
+    ) const;
     virtual PString GetHostName(
       const OpalTransportAddress & address
     ) const;

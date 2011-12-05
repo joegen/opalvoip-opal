@@ -153,7 +153,7 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
     PStringArray interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
       return PFalse;
-    iface = OpalTransportAddress(interfaces[0], defaultSignalPort);
+    iface = OpalTransportAddress(interfaces[0], GetDefaultSignalPort());
   }
 
   listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
@@ -201,17 +201,23 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
   PStringArray listenerAddresses;
   PStringArray transports = GetDefaultTransport().Tokenise(',');
   for (PINDEX i = 0; i < transports.GetSize(); i++) {
-    PString t = transports[i];
-    WORD port = defaultSignalPort;
-    PINDEX pos = t.Find(':');
+    PCaselessString transProto = transports[i];
+    WORD port = GetDefaultSignalPort();
+    PINDEX pos = transProto.Find(':');
     if (pos != P_MAX_INDEX) {
-      port = (WORD)t.Mid(pos+1).AsUnsigned();
-      t = t.Left(pos);
+      port = (WORD)transProto.Mid(pos+1).AsUnsigned();
+      transProto.Delete(pos, P_MAX_INDEX);
     }
-    PString listenerAddress = t + '*';
-    if (defaultSignalPort != 0)
-      listenerAddress.sprintf(":%u", port);
-    listenerAddresses += listenerAddress;
+    if (port != 0) {
+      if (transProto == OpalTransportAddress::UdpPrefix())
+        listenerAddresses += transProto + psprintf("*:%u", port);
+      else {
+        listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(4), port, transProto);
+#if OPAL_PTLIB_IPV6
+        listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(6), port, transProto);
+#endif
+      }
+    }
   }
   return listenerAddresses;
 }
