@@ -2642,7 +2642,7 @@ SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport &
   , m_state(NotStarted)
   , m_retry(1)
 {
-  PTRACE_CONTEXT_ID_FROM(trans);
+  PTRACE_CONTEXT_ID_FROM(&trans);
 
   m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
