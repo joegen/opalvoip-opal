@@ -693,6 +693,30 @@ class SIPEndPoint : public OpalRTPEndPoint
       SIP_PDU::StatusCodes reason
     );
 
+    struct ConnectionlessMessageInfo {
+      ConnectionlessMessageInfo(OpalTransport & transport, SIP_PDU & pdu)
+        : m_pdu(pdu), m_transport(transport), m_status(SendOK)
+      { }
+
+      SIP_PDU & m_pdu;
+      OpalTransport & m_transport;
+      enum {
+        NotHandled,
+        SendOK,
+        MethodNotAllowed,
+        ResponseSent
+      } m_status;
+    };
+
+    typedef PNotifierTemplate<ConnectionlessMessageInfo &> ConnectionlessMessageNotifier;
+    #define PDECLARE_ConnectionlessMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(SIPEndPoint, cls, fn, SIPEndPoint::ConnectionlessMessageInfo &)
+    #define PCREATE_ConnectionlessMessageNotifier(fn) PCREATE_NOTIFIER2(fn, SIPEndPoint::ConnectionlessMessageInfo &)
+
+    void SetConnectionlessMessageNotifier(
+      const ConnectionlessMessageNotifier & notifier
+    )
+    { m_onConnectionlessMessage = notifier; }
+
 
     /**Send SIP OPTIONS
      */
@@ -983,6 +1007,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     };
     std::map<PString, RegistrationCompletion> m_registrationComplete;
 
+    ConnectionlessMessageNotifier m_onConnectionlessMessage;
 
     // Thread pooling
     class SIP_Work
@@ -1037,29 +1062,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnMessageFailed(const SIPURL &, SIP_PDU::StatusCodes));
-
-  public:
-    struct ConnectionlessMessageInfo {
-      ConnectionlessMessageInfo(OpalTransport & transport, SIP_PDU & pdu)
-        : m_pdu(pdu), m_transport(transport), m_status(true)
-      { }
-
-      SIP_PDU & m_pdu;
-      OpalTransport & m_transport;
-      bool m_status;
-    };
-
-    typedef PNotifierTemplate<ConnectionlessMessageInfo &> ConnectionlessMessageNotifier;
-    #define PDECLARE_ConnectionlessMessageNotifier(cls, fn) PDECLARE_NOTIFIER2(SIPEndPoint, cls, fn, SIPEndPoint::ConnectionlessMessageInfo &)
-    #define PCREATE_ConnectionlessMessageNotifier(fn) PCREATE_NOTIFIER2(fn, SIPEndPoint::ConnectionlessMessageInfo &)
-
-    void SetConnectionlessMessageNotifier(
-      const ConnectionlessMessageNotifier & notifier
-    )
-    { m_onConnectionlessMessage = notifier; }
-
-  protected:
-    ConnectionlessMessageNotifier m_onConnectionlessMessage;
 };
 
 
