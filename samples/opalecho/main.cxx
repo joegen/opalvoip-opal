@@ -258,9 +258,9 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
 
   // set up the HTTP port for listening & start the first HTTP thread
   if (ListenForHTTP(httpPort))
-    PSYSTEMLOG(Info, "Opened master socket for HTTP: " << httpListeningSocket->GetPort());
+    PSYSTEMLOG(Info, "Opened master socket(s) for HTTP: " << httpPort);
   else {
-    PSYSTEMLOG(Fatal, "Cannot run without HTTP port: " << httpListeningSocket->GetErrorText());
+    PSYSTEMLOG(Fatal, "Cannot run without HTTP");
     return PFalse;
   }
 
