@@ -1029,7 +1029,20 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
   if (!m_onConnectionlessMessage.IsNULL()) {
     ConnectionlessMessageInfo info(transport, pdu);
     m_onConnectionlessMessage(*this, info);
-    return info.m_status;
+    switch (info.m_status) {
+      case ConnectionlessMessageInfo::MethodNotAllowed :
+        return false;
+
+      case ConnectionlessMessageInfo::SendOK :
+        pdu.SendResponse(transport, SIP_PDU::Successful_OK, this);
+        // Do next case
+
+      case ConnectionlessMessageInfo::ResponseSent :
+        return true;
+
+      default :
+        break;
+    }
   }
 
 #if OPAL_HAS_IM
