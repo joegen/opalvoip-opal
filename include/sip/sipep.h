@@ -695,7 +695,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     struct ConnectionlessMessageInfo {
       ConnectionlessMessageInfo(OpalTransport & transport, SIP_PDU & pdu)
-        : m_pdu(pdu), m_transport(transport), m_status(SendOK)
+        : m_pdu(pdu), m_transport(transport), m_status(ResponseSent)
       { }
 
       SIP_PDU & m_pdu;
