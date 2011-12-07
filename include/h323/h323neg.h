@@ -62,7 +62,8 @@ class H245Negotiator : public PObject
     H245Negotiator(H323EndPoint & endpoint, H323Connection & connection);
 
   protected:
-    PDECLARE_NOTIFIER(PTimer, H245Negotiator, HandleTimeout);
+    PDECLARE_NOTIFIER(PTimer, H245Negotiator, HandleTimeoutUnlocked);
+    virtual void HandleTimeout();
 
     H323EndPoint   & endpoint;
     H323Connection & connection;
@@ -85,7 +86,7 @@ class H245NegMasterSlaveDetermination : public H245Negotiator
     PBoolean HandleAck(const H245_MasterSlaveDeterminationAck & pdu);
     PBoolean HandleReject(const H245_MasterSlaveDeterminationReject & pdu);
     PBoolean HandleRelease(const H245_MasterSlaveDeterminationRelease & pdu);
-    void HandleTimeout(PTimer &, INT);
+    void HandleTimeout();
 
     PBoolean IsMaster() const     { return status == e_DeterminedMaster; }
     PBoolean IsDetermined() const { return state == e_Idle && status != e_Indeterminate; }
@@ -131,7 +132,7 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     PBoolean HandleAck(const H245_TerminalCapabilitySetAck & pdu);
     PBoolean HandleReject(const H245_TerminalCapabilitySetReject & pdu);
     PBoolean HandleRelease(const H245_TerminalCapabilitySetRelease & pdu);
-    void HandleTimeout(PTimer &, INT);
+    void HandleTimeout();
 
     bool HasSentCapabilities() const { return state >= e_InProgress; }
     bool IsSendingCapabilities() const { return state == e_InProgress; }
@@ -186,7 +187,7 @@ class H245NegLogicalChannel : public H245Negotiator
     virtual PBoolean HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
     virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
     virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
-    virtual void HandleTimeout(PTimer &, INT);
+    virtual void HandleTimeout();
 
     H323Channel * GetChannel();
 
@@ -280,7 +281,7 @@ class H245NegRequestMode : public H245Negotiator
     virtual PBoolean HandleAck(const H245_RequestModeAck & pdu);
     virtual PBoolean HandleReject(const H245_RequestModeReject & pdu);
     virtual PBoolean HandleRelease(const H245_RequestModeRelease & pdu);
-    virtual void HandleTimeout(PTimer &, INT);
+    virtual void HandleTimeout();
 
   protected:
     PBoolean awaitingResponse;
@@ -301,7 +302,7 @@ class H245NegRoundTripDelay : public H245Negotiator
     PBoolean StartRequest();
     PBoolean HandleRequest(const H245_RoundTripDelayRequest & pdu);
     PBoolean HandleResponse(const H245_RoundTripDelayResponse & pdu);
-    void HandleTimeout(PTimer &, INT);
+    void HandleTimeout();
 
     PTimeInterval GetRoundTripDelay() const { return roundTripTime; }
     PBoolean IsRemoteOffline() const { return retryCount == 0; }
