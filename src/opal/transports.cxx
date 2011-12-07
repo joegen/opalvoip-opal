@@ -1137,7 +1137,7 @@ PBoolean OpalTransportTCP::Connect()
     PTRACE(4, "OpalTCP\tConnecting to "
            << remoteAddress.AsString(true) << ':' << remotePort
            << " (local port=" << localPort << ')');
-    if (socket->Connect(localPort, remoteAddress))
+    if (socket->Connect(localAddress, localPort, remoteAddress))
       break;
 
     int errnum = socket->GetErrorNumber();
@@ -1629,7 +1629,7 @@ PBoolean OpalTransportTLS::Connect()
     PTRACE(4, "OpalTCPS\tConnecting to "
            << remoteAddress.AsString(true) << ':' << remotePort
            << " (local port=" << localPort << ')');
-    if (socket->Connect(localPort, remoteAddress))
+    if (socket->Connect(localAddress, localPort, remoteAddress))
       break;
 
     int errnum = socket->GetErrorNumber();
