@@ -2680,6 +2680,8 @@ PBoolean H323Connection::StartControlNegotiations()
 
 PBoolean H323Connection::OnStartHandleControlChannel()
 {
+  PSafeLockReadWrite mutex(*this);
+
   if (fastStartState == FastStartAcknowledged)
     return true;
 
@@ -2813,6 +2815,8 @@ PBoolean H323Connection::StartHandleControlChannel()
 
 void H323Connection::EndHandleControlChannel()
 {
+  PSafeLockReadOnly mutex(*this);
+
   // If we are the only link to the far end or if we have already sent our
   // endSession command then indicate that we have received endSession even
   // if we hadn't, because we are now never going to get one so there is no
