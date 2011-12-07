@@ -55,11 +55,20 @@ H245Negotiator::H245Negotiator(H323EndPoint & end, H323Connection & conn)
   : endpoint(end),
     connection(conn)
 {
-  replyTimer.SetNotifier(PCREATE_NOTIFIER(HandleTimeout));
+  replyTimer.SetNotifier(PCREATE_NOTIFIER(HandleTimeoutUnlocked));
 }
 
 
-void H245Negotiator::HandleTimeout(PTimer &, INT)
+void H245Negotiator::HandleTimeoutUnlocked(PTimer &, INT)
+{
+  if (connection.LockReadWrite()) {
+    HandleTimeout();
+    connection.UnlockReadWrite();
+  }
+}
+
+
+void H245Negotiator::HandleTimeout()
 {
 }
 
@@ -252,7 +261,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDe
 }
 
 
-void H245NegMasterSlaveDetermination::HandleTimeout(PTimer &, INT)
+void H245NegMasterSlaveDetermination::HandleTimeout()
 {
   if (state == e_Idle)
     return;
@@ -436,7 +445,7 @@ PBoolean H245NegTerminalCapabilitySet::HandleRelease(const H245_TerminalCapabili
 }
 
 
-void H245NegTerminalCapabilitySet::HandleTimeout(PTimer &, INT)
+void H245NegTerminalCapabilitySet::HandleTimeout()
 {
   if (state == e_Idle)
     return;
@@ -855,7 +864,7 @@ PBoolean H245NegLogicalChannel::HandleRequestCloseRelease(const H245_RequestChan
 }
 
 
-void H245NegLogicalChannel::HandleTimeout(PTimer &, INT)
+void H245NegLogicalChannel::HandleTimeout()
 {
   PTRACE(3, "H245\tTimeout on open channel: " << channelNumber << ", state=" << state);
 
@@ -1276,7 +1285,7 @@ PBoolean H245NegRequestMode::HandleRelease(const H245_RequestModeRelease & /*pdu
 }
 
 
-void H245NegRequestMode::HandleTimeout(PTimer &, INT)
+void H245NegRequestMode::HandleTimeout()
 {
   PTRACE(3, "H245\tTimeout on request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
@@ -1354,7 +1363,7 @@ PBoolean H245NegRoundTripDelay::HandleResponse(const H245_RoundTripDelayResponse
 }
 
 
-void H245NegRoundTripDelay::HandleTimeout(PTimer &, INT)
+void H245NegRoundTripDelay::HandleTimeout()
 {
   PTRACE(3, "H245\tTimeout on round trip delay: seq=" << sequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
