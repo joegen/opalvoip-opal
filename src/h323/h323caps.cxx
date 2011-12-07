@@ -2325,8 +2325,8 @@ void H323Capabilities::Remove(H323Capability * capability)
 
   unsigned capabilityNumber = capability->GetCapabilityNumber();
 
-  for (PINDEX outer = 0; outer < set.GetSize(); outer++) {
-    for (PINDEX middle = 0; middle < set[outer].GetSize(); middle++) {
+  for (PINDEX outer = 0; outer < set.GetSize(); ) {
+    for (PINDEX middle = 0; middle < set[outer].GetSize(); ) {
       for (PINDEX inner = 0; inner < set[outer][middle].GetSize(); inner++) {
         if (set[outer][middle][inner].GetCapabilityNumber() == capabilityNumber) {
           set[outer][middle].RemoveAt(inner);
@@ -2335,9 +2335,13 @@ void H323Capabilities::Remove(H323Capability * capability)
       }
       if (set[outer][middle].GetSize() == 0)
         set[outer].RemoveAt(middle);
+      else
+        middle++;
     }
     if (set[outer].GetSize() == 0)
       set.RemoveAt(outer);
+    else
+      outer++;
   }
 
   table.Remove(capability);
