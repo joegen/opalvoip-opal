@@ -1501,8 +1501,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // If we have a H.245 channel available, bring it up. We either have media
   // and this is just so user indications work, or we don't have media and
   // desperately need it!
-  if (h245Tunneling || controlChannel != NULL)
+  if (h245Tunneling)
     return StartControlNegotiations();
+  
+  // Already started
+  if (controlChannel != NULL)
+    return true;
 
   // We have no tunnelling and not separate channel, but we really want one
   // so we will start one using a facility message
@@ -2151,10 +2155,10 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
       // Do early H.245 start
       if (!endpoint.IsH245Disabled()) {
         earlyStart = true;
-        if (h245Tunneling || (controlChannel != NULL)) {
+        if (h245Tunneling) {
           if (!StartControlNegotiations())
             return false;
-        } else {
+        } else if (controlChannel == NULL) {
           if (!CreateIncomingControlChannel(alerting.m_h245Address))
             return false;
           alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
@@ -2682,79 +2686,66 @@ PBoolean H323Connection::OnStartHandleControlChannel()
 {
   PSafeLockReadWrite mutex(*this);
 
-  if (fastStartState == FastStartAcknowledged)
-    return true;
-
-  if (controlChannel == NULL)
-    return StartControlNegotiations();
-#ifndef OPAL_H460
-  else {
-    PTRACE(2, "H245\tHandle control channel");
-    return StartHandleControlChannel();
-  }
-#else
-  if (!m_H46019enabled) {
-    PTRACE(2, "H245\tHandle control channel");
-    return StartHandleControlChannel();
-  }
-
-  // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
-  // H.245 control channel. Details are specified in H.460.18 cl.16
-  // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
-
   PTRACE(2, "H46018\tStarted control channel");
 
-  if (endpoint.H46018IsEnabled() && !m_h245Connect) {
-    H323ControlPDU pdu;
-    H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
-
-    H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
-    id.SetTag(H245_CapabilityIdentifier::e_standard);
-    PASN_ObjectId & gid = id;
-    gid.SetValue(H46018OID);
-
-    cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
-    PASN_Integer & sub = cap.m_subMessageIdentifier;
-    sub = 1;
-
-    cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
-    H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
-
-    // callIdentifer
-    H245_GenericParameter call;
-    H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
-    idx.SetTag(H245_ParameterIdentifier::e_standard);
-    PASN_Integer & m = idx;
-    m =1;
-    H245_ParameterValue & conx = call.m_parameterValue;
-    conx.SetTag(H245_ParameterValue::e_octetString);
-    PASN_OctetString & raw = conx;
-    raw.SetValue(callIdentifier);
-    msg.SetSize(1);
-    msg[0] = call;
-
-    // Is receiver
-    if (m_H46019CallReceiver) {
-      H245_GenericParameter answer;
-      H245_ParameterIdentifier & an = answer.m_parameterIdentifier;
-      an.SetTag(H245_ParameterIdentifier::e_standard);
-      PASN_Integer & n = an;
-      n = 2;
-      H245_ParameterValue & aw = answer.m_parameterValue;
-      aw.SetTag(H245_ParameterValue::e_logical);
-      msg.SetSize(2);
-      msg[1] = answer;
-    }
-
-    PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
-    if (!WriteControlPDU(pdu))
-      return false;
-
-    m_h245Connect = true;
-  }
+#ifdef OPAL_H460
+  if (m_H46019enabled) {
+    // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
+    // H.245 control channel. Details are specified in H.460.18 cl.16
+    // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
+    
+    if (endpoint.H46018IsEnabled() && !m_h245Connect) {
+      H323ControlPDU pdu;
+      H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
+      
+      H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
+      id.SetTag(H245_CapabilityIdentifier::e_standard);
+      PASN_ObjectId & gid = id;
+      gid.SetValue(H46018OID);
+      
+      cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
+      PASN_Integer & sub = cap.m_subMessageIdentifier;
+      sub = 1;
+      
+      cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
+      H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
+      
+      // callIdentifer
+      H245_GenericParameter call;
+      H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
+      idx.SetTag(H245_ParameterIdentifier::e_standard);
+      PASN_Integer & m = idx;
+      m =1;
+      H245_ParameterValue & conx = call.m_parameterValue;
+      conx.SetTag(H245_ParameterValue::e_octetString);
+      PASN_OctetString & raw = conx;
+      raw.SetValue(callIdentifier);
+      msg.SetSize(1);
+      msg[0] = call;
+      
+      // Is receiver
+      if (m_H46019CallReceiver) {
+        H245_GenericParameter answer;
+        H245_ParameterIdentifier & an = answer.m_parameterIdentifier;
+        an.SetTag(H245_ParameterIdentifier::e_standard);
+        PASN_Integer & n = an;
+        n = 2;
+        H245_ParameterValue & aw = answer.m_parameterValue;
+        aw.SetTag(H245_ParameterValue::e_logical);
+        msg.SetSize(2);
+        msg[1] = answer;
+      }
+      
+      PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
+      if (!WriteControlPDU(pdu))
+        return false;
+      
+      m_h245Connect = true;
+    }    
+  }  
+#endif
 
   return StartHandleControlChannel();
-#endif
 }
 
 
@@ -2796,8 +2787,6 @@ PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stre
 
 PBoolean H323Connection::StartHandleControlChannel()
 {
-  // If have started separate H.245 channel then don't tunnel any more
-  h245Tunneling = FALSE;
 
   // Start the TCS and MSD operations on new H.245 channel.
   if (!StartControlNegotiations())
@@ -2828,6 +2817,10 @@ void H323Connection::EndHandleControlChannel()
 
 void H323Connection::HandleControlChannel()
 {
+  
+  // If have started separate H.245 channel then don't tunnel any more
+  h245Tunneling = FALSE;
+  
   if (!OnStartHandleControlChannel())
     return;
 
