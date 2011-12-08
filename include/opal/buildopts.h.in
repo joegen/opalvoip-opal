@@ -277,8 +277,8 @@
 /* Temporarily disabled as is currently broken, doesn't work,
     probably doesn't even compile, need to sort out API to enable/disable,
     add SDP and H.245 handling, and link into libsrtp
-#undef HAS_LIBSRTP
 */
+//#undef HAS_LIBSRTP
 
 #if HAS_LIBSRTP && !OPAL_ZRTP && !defined(_WIN32_WCE)
 
@@ -310,8 +310,8 @@
 /* Temporarily disabled as is currently broken, doesn't work,
     probably doesn't even compile, need to sort out API to enable/disable as
     well as getting the pass code back to user, and link into libzrtp
-#undef HAS_LIBZRTP
 */
+//#undef HAS_LIBZRTP
 
 #if defined(OPAL_SRTP) && defined(HAS_LIBZRTP) && !defined(_WIN32_WCE)
 
