@@ -186,12 +186,19 @@ class PluginCodec_MediaFormat
     }
 
 
-    static void Unsigned2String(unsigned value, std::string & str)
+    static void AppendUnsigned2String(unsigned value, std::string & str)
     {
       // Not very efficient, but really, really simple
       if (value > 9)
-        Unsigned2String(value/10, str);
+        AppendUnsigned2String(value/10, str);
       str += (char)(value%10 + '0');
+    }
+
+
+    static void Unsigned2String(unsigned value, std::string & str)
+    {
+      str.clear();
+      AppendUnsigned2String(value,str);
     }
 
 
