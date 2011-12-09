@@ -3680,6 +3680,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\codec\opalplugin.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\codec\opalpluginmgr.h"
 					>
 				</File>
