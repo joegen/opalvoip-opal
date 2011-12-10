@@ -249,6 +249,7 @@ class OpalMediaPatch : public PObject
       public:
         Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s);
         ~Sink();
+        bool CreateTranscoders();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         bool ExecuteCommand(const OpalMediaCommand & command);
         bool WriteFrame(RTP_DataFrame & sourceFrame);

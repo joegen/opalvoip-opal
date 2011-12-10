@@ -217,6 +217,7 @@ struct PluginCodec_Definition;
 #define PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS    "free_codec_options"
 #define PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE  "get_output_data_size"
 #define PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS     "set_codec_options"
+#define PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS    "get_active_options"
 #define PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS "to_normalised_options"
 #define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
 #define PLUGINCODEC_CONTROL_SET_INSTANCE_ID       "set_instance_id"

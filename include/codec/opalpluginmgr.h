@@ -222,7 +222,7 @@ class OpalPluginTranscoder
     OpalPluginTranscoder(const PluginCodec_Definition * defn, bool isEnc);
     ~OpalPluginTranscoder();
 
-    bool UpdateOptions(const OpalMediaFormat & fmt);
+    bool UpdateOptions(OpalMediaFormat & fmt);
     bool ExecuteCommand(const OpalMediaCommand & command);
     bool Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
@@ -235,7 +235,9 @@ class OpalPluginTranscoder
     bool   isEncoder;
     void * context;
 
-    OpalPluginControl setCodecOptions;
+    OpalPluginControl setCodecOptionsControl;
+    OpalPluginControl getActiveOptionsControl;
+    OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
 };
 

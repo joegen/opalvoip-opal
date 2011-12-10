@@ -98,11 +98,79 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-class PluginCodec_MediaFormat
+class PluginCodec_Utilities
+{
+  public:
+   static unsigned String2Unsigned(const std::string & str)
+    {
+      return strtoul(str.c_str(), NULL, 10);
+    }
+
+
+    static void AppendUnsigned2String(unsigned value, std::string & str)
+    {
+      // Not very efficient, but really, really simple
+      if (value > 9)
+        AppendUnsigned2String(value/10, str);
+      str += (char)(value%10 + '0');
+    }
+
+
+    static void Unsigned2String(unsigned value, std::string & str)
+    {
+      str.clear();
+      AppendUnsigned2String(value,str);
+    }
+};
+
+
+class PluginCodec_OptionMap : public std::map<std::string, std::string>, public PluginCodec_Utilities
+{
+  public:
+    PluginCodec_OptionMap(const char * const * * options = NULL)
+    {
+      if (options != NULL) {
+        for (const char * const * option = *options; *option != NULL; option += 2)
+          insert(value_type(option[0], option[1]));
+      }
+    }
+
+
+    unsigned GetUnsigned(const char * key, unsigned dflt = 0) const
+    {
+      return find(key) == end() ? dflt : String2Unsigned(at(key));
+    }
+
+    void SetUnsigned(unsigned value, const char * key)
+    {
+      Unsigned2String(value, operator[](key));
+    }
+
+
+    char ** GetOptions() const
+    {
+      char ** options = (char **)calloc(size()*2+1, sizeof(char *));
+      if (options == NULL) {
+        PTRACE(1, "Plugin", "Could not allocate new option lists.");
+        return NULL;
+      }
+
+      char ** opt = options;
+      for (const_iterator it = begin(); it != end(); ++it) {
+        *opt++ = strdup(it->first.c_str());
+        *opt++ = strdup(it->second.c_str());
+      }
+
+      return options;
+    }
+};
+
+
+class PluginCodec_MediaFormat : public PluginCodec_Utilities
 {
   public:
     typedef struct PluginCodec_Option const * const * OptionsTable;
-    typedef std::map<std::string, std::string> OptionMap;
+    typedef PluginCodec_OptionMap OptionMap;
 
   protected:
     OptionsTable m_options;
@@ -136,29 +204,14 @@ class PluginCodec_MediaFormat
         return false;
       }
 
-      OptionMap originalOptions;
-      for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2)
-        originalOptions[option[0]] = option[1];
-
+      OptionMap originalOptions((const char * const * *)parm);
       OptionMap changedOptions;
       if (!(this->*adjuster)(originalOptions, changedOptions)) {
         PTRACE(1, "Plugin", "Could not normalise/customise options.");
         return false;
       }
 
-      char ** options = (char **)calloc(changedOptions.size()*2+1, sizeof(char *));
-      *(char ***)parm = options;
-      if (options == NULL) {
-        PTRACE(1, "Plugin", "Could not allocate new option lists.");
-        return false;
-      }
-
-      for (OptionMap::iterator i = changedOptions.begin(); i != changedOptions.end(); ++i) {
-        *options++ = strdup(i->first.c_str());
-        *options++ = strdup(i->second.c_str());
-      }
-
-      return true;
+      return (*(char ***)parm = changedOptions.GetOptions()) != NULL;
     }
 
 
@@ -171,34 +224,12 @@ class PluginCodec_MediaFormat
 
 
     static void Change(const char * value,
-                       OptionMap  & original,
-                       OptionMap  & changed,
+                       PluginCodec_OptionMap & original,
+                       PluginCodec_OptionMap & changed,
                        const char * option)
     {
       if (original[option] != value)
         changed[option] = value;
-    }
-
-
-    static unsigned String2Unsigned(const std::string & str)
-    {
-      return strtoul(str.c_str(), NULL, 10);
-    }
-
-
-    static void AppendUnsigned2String(unsigned value, std::string & str)
-    {
-      // Not very efficient, but really, really simple
-      if (value > 9)
-        AppendUnsigned2String(value/10, str);
-      str += (char)(value%10 + '0');
-    }
-
-
-    static void Unsigned2String(unsigned value, std::string & str)
-    {
-      str.clear();
-      AppendUnsigned2String(value,str);
     }
 
 
@@ -233,6 +264,7 @@ class PluginCodec_MediaFormat
         Unsigned2String(minimum, changed[option]);
     }
 
+
     virtual void AdjustForVersion(unsigned version, const PluginCodec_Definition * /*definition*/)
     {
       if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
@@ -244,6 +276,7 @@ class PluginCodec_MediaFormat
         }
       }
     }
+
 
     static void AdjustAllForVersion(unsigned version, const PluginCodec_Definition * definitions, size_t size)
     {
@@ -260,7 +293,7 @@ class PluginCodec_MediaFormat
 /////////////////////////////////////////////////////////////////////////////
 
 template<typename NAME>
-class PluginCodec
+class PluginCodec : public PluginCodec_Utilities
 {
   protected:
     PluginCodec(const PluginCodec_Definition * defn)
@@ -328,6 +361,13 @@ class PluginCodec
     virtual bool SetInstanceID(const char * /*idPtr*/, unsigned /*idLen*/)
     {
       return true;
+    }
+
+
+    /// Get options that are "active" and may be different from the last SetOptions() call.
+    virtual bool GetActiveOptions(PluginCodec_OptionMap & /*options*/)
+    {
+      return false;
     }
 
 
@@ -521,6 +561,21 @@ class PluginCodec
     }
 
 
+    static int GetActiveOptions(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * parmLen)
+    {
+      if (context == NULL || parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***)) {
+        PTRACE(1, "Plugin", "Invalid parameters to GetActiveOptions.");
+        return false;
+      }
+
+      PluginCodec_OptionMap activeOptions;
+      if (!((PluginCodec *)context)->GetActiveOptions(activeOptions))
+        return false;
+
+      return (*(char ***)parm = activeOptions.GetOptions()) != NULL;
+    }
+
+
     static int FreeOptions(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len)
     {
       if (parm == NULL || len == NULL || *len != sizeof(char ***))
@@ -585,6 +640,7 @@ class PluginCodec
         { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised },
         { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, PluginCodec::ToCustomised },
         { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions },
+        { PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS,    PluginCodec::GetActiveOptions },
         { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions },
         { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions },
         { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol },
