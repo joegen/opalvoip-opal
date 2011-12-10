@@ -453,9 +453,6 @@
     <ClCompile Include="..\opal\recording.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\transcoders.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
     <ClCompile Include="..\opal\transports.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
@@ -551,6 +548,9 @@
     </ClCompile>
     <ClCompile Include="..\h460\h46018_h225.cxx">
       <Filter>Source Files\H.460</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\transcoders.cxx">
+      <Filter>Source Files\Codec</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

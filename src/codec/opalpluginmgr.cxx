@@ -620,7 +620,9 @@ bool OpalPluginVideoFormatInternal::ToCustomisedOptions()
 OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, bool isEnc)
   : codecDef(defn)
   , isEncoder(isEnc)
-  , setCodecOptions(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
+  , setCodecOptionsControl(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
+  , getActiveOptionsControl(defn, PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS)
+  , freeOptionsControl(defn, PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS)
   , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
 {
   if (codecDef->createCodec == NULL)
@@ -639,7 +641,7 @@ OpalPluginTranscoder::~OpalPluginTranscoder()
 }
 
 
-bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
+bool OpalPluginTranscoder::UpdateOptions(OpalMediaFormat & fmt)
 {
   if (context == NULL)
     return false;
@@ -647,8 +649,24 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
   PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
 
   char ** options = fmt.GetOptions().ToCharArray(false);
-  bool ok = setCodecOptions.Call(options, sizeof(options), context) != 0;
+  bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
   free(options);
+
+  if (ok) {
+    options = NULL;
+    if (getActiveOptionsControl.Call(&options, sizeof(options), context) > 0 && options != NULL) {
+      for (char ** option = options; *option != NULL; option += 2) {
+        PString oldValue;
+        if (fmt.GetOptionValue(option[0], oldValue) && oldValue != option[1]) {
+          PTRACE(3, "OpalPlugin\tTranscoder changed active option "
+                 "\"" << option[0] << "\" from \"" << oldValue << "\" to \"" << option[1] << '"');
+          fmt.SetOptionValue(option[0], option[1]);
+        }
+      }
+      freeOptionsControl.Call(options, sizeof(options));
+    }
+  }
+
   return ok;
 }
 
@@ -861,8 +879,24 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
-  return OpalVideoTranscoder::UpdateMediaFormats(input, output) &&
-         UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
+
+  if (!OpalVideoTranscoder::UpdateMediaFormats(input, output))
+    return false;
+
+  if (isEncoder) {
+    if (!UpdateOptions(outputMediaFormat))
+      return false;
+
+    inputMediaFormat.Merge(outputMediaFormat);
+  }
+  else {
+    if (!UpdateOptions(inputMediaFormat))
+      return false;
+
+    outputMediaFormat.Merge(inputMediaFormat);
+  }
+
+  return true;
 }
 
 
