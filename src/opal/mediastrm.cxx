@@ -1330,18 +1330,9 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
   }
 
-  bool keyFrameNeeded = false;
-  if (!m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, keyFrameNeeded))
-    return false;
-
-  if (keyFrameNeeded) {
-    // Find the complementary stream
-    OpalMediaStreamPtr stream = connection.GetMediaStream(GetID(), !IsSource());
-    if (stream != NULL)
-      stream->ExecuteCommand(OpalVideoUpdatePicture());
-  }
-
-  return true;
+  return m_outputDevice->SetFrameData(frame->x, frame->y,
+                                      frame->width, frame->height,
+                                      OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
 }
 
 
@@ -1379,9 +1370,14 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
   }
 
-  return m_outputDevice->SetFrameData(frame->x, frame->y,
-                                      frame->width, frame->height,
-                                      OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
+  bool keyFrameNeeded = false;
+  if (!m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, keyFrameNeeded))
+    return false;
+
+  if (keyFrameNeeded)
+    ExecuteCommand(OpalVideoUpdatePicture());
+
+  return true;
 }
 
 
