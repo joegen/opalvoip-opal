@@ -560,13 +560,13 @@ public:
     size_t profileIndex = sizeof(ProfileInfo)/sizeof(ProfileInfo[0]);
 
     if (original["Protocol"] == "H.323") {
-      unsigned h241profiles = String2Unsigned(original[H241Profiles.m_name]);
+      unsigned h241profiles = original.GetUnsigned(H241Profiles.m_name);
       while (--profileIndex > 0) {
         if ((h241profiles&ProfileInfo[profileIndex].m_H241) != 0)
           break;
       }
 
-      unsigned h241level = String2Unsigned(original[H241Level.m_name]);
+      unsigned h241level = original.GetUnsigned(H241Level.m_name);
       for (; levelIndex < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; ++levelIndex) {
         if (h241level <= LevelInfo[levelIndex].m_H241)
           break;
@@ -608,21 +608,21 @@ public:
     Change(ProfileInfo[profileIndex].m_Name, original, changed, Profile.m_name); 
     Change(LevelInfo[levelIndex].m_Name, original, changed, Level.m_name);
 
-    unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[MaxFS.m_name]));
+    unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, original.GetUnsigned(MaxFS.m_name));
     ClampSizes(LevelInfo[levelIndex],
-               String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH]),
-               String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT]),
+               original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+               original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
                maxFrameSizeInMB,
                original, changed);
 
     // Frame rate
-    unsigned maxMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, String2Unsigned(original[MaxMBPS.m_name]));
-    ClampMin(GetMacroBlocks(String2Unsigned(original[PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH]),
-                            String2Unsigned(original[PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT]))*MyClockRate/maxMBPS,
+    unsigned maxMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, original.GetUnsigned(MaxMBPS.m_name));
+    ClampMin(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH),
+                            original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT))*MyClockRate/maxMBPS,
              original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
     // Bit rate
-    unsigned maxBitRate = std::max(LevelInfo[levelIndex].m_MaxBitRate, String2Unsigned(original[MaxBR.m_name])*1000);
+    unsigned maxBitRate = std::max(LevelInfo[levelIndex].m_MaxBitRate, original.GetUnsigned(MaxBR.m_name)*1000);
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_MAX_BIT_RATE);
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
     return true;
@@ -661,8 +661,8 @@ public:
        we have no other mechnism to prevent the remote from sending, say
        CIF when we only support QCIF.
      */
-    unsigned maxWidth = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH]);
-    unsigned maxHeight = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT]);
+    unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+    unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
     unsigned maxFrameSizeInMB = GetMacroBlocks(maxWidth, maxHeight);
     if (maxFrameSizeInMB > 0) {
       while (levelIndex > 0 && maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
@@ -689,12 +689,12 @@ public:
       Change(maxFrameSizeInMB, original, changed, MaxFS.m_name);
 
     // Set exception to bit rate if necessary
-    unsigned bitRate = String2Unsigned(original[PLUGINCODEC_OPTION_MAX_BIT_RATE]);
+    unsigned bitRate = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
     if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
       Change(bitRate/1000, original, changed, MaxBR.m_name);
 
     // Set exception to frame rate if necessary
-    unsigned mbps = maxFrameSizeInMB*MyClockRate/String2Unsigned(original[PLUGINCODEC_OPTION_FRAME_TIME]);
+    unsigned mbps = maxFrameSizeInMB*MyClockRate/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME);
     if (mbps > LevelInfo[levelIndex].m_MaxMBPS)
       Change(mbps, original, changed, MaxMBPS.m_name);
 
@@ -722,11 +722,12 @@ class MyEncoder : public PluginCodec<MY_CODEC>
   protected:
     unsigned m_width;
     unsigned m_height;
-    unsigned m_frameRate;
+    unsigned m_frameTime;
     unsigned m_bitRate;
     unsigned m_profile;
     unsigned m_level;
     unsigned m_constraints;
+    unsigned m_maxMBPS;
     unsigned m_packetisationMode;
     unsigned m_maxRTPSize;
     unsigned m_maxNALUSize;
@@ -740,11 +741,12 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       : PluginCodec<MY_CODEC>(defn)
       , m_width(352)
       , m_height(288)
-      , m_frameRate(15)
+      , m_frameTime(MyClockRate/15)
       , m_bitRate(512000)
       , m_profile(DefaultProfileInt)
       , m_level(DefaultLevelInt)
       , m_constraints(0)
+      , m_maxMBPS(0)
       , m_packetisationMode(1)
       , m_maxRTPSize(1400)
       , m_maxNALUSize(1400)
@@ -761,8 +763,10 @@ class MyEncoder : public PluginCodec<MY_CODEC>
          be done in the normal C++ constructor. */
 
       // ABR with bit rate tolerance = 1 is CBR...
-      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this))
+      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this)) {
+        PTRACE(4, MY_CODEC_LOG, "Encoder opened.");
         return true;
+      }
 
       PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
       return false;
@@ -777,13 +781,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         return SetOptionUnsigned(m_height, optionValue, 16, MyMaxHeight);
 
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0) {
-        unsigned frameTime = MyClockRate/m_frameRate;
-        if (!SetOptionUnsigned(frameTime, optionValue, MyClockRate/MyMaxFrameRate, MyClockRate))
-          return false;
-        m_frameRate = MyClockRate/frameTime;
-        return true;
-      }
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+        return SetOptionUnsigned(m_frameTime, optionValue, MyClockRate/MyMaxFrameRate, MyClockRate);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
         return SetOptionUnsigned(m_bitRate, optionValue, 1000);
@@ -799,6 +798,9 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
         return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
+
+      if (strcasecmp(optionName, MaxMBPS.m_name) == 0)
+        return SetOptionUnsigned(m_maxMBPS, optionValue, 0);
 
       if (strcasecmp(optionName, Level.m_name) == 0) {
         for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
@@ -866,10 +868,28 @@ class MyEncoder : public PluginCodec<MY_CODEC>
          of them changed. This would do whatever is needed to set parmaeters
          for the actual codec. */
 
+      // do some checks on limits
+      size_t levelIndex = sizeof(LevelInfo)/sizeof(LevelInfo[0]);
+      while (--levelIndex > 0) {
+        if (m_level == LevelInfo[levelIndex].m_H264)
+          break;
+      }
+
+      unsigned minFrameTime = MyClockRate*GetMacroBlocks(m_width, m_height)/std::max(LevelInfo[levelIndex].m_MaxMBPS, m_maxMBPS);
+      if (m_frameTime < minFrameTime) {
+        PTRACE(3, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
+               << " lowering frame rate from " << (MyClockRate/m_frameTime) << " to " << (MyClockRate/minFrameTime));
+        m_frameTime = minFrameTime;
+      }
+      else
+        PTRACE(4, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
+               << " unchanged frame rate " << (MyClockRate/m_frameTime) << " <= " << (MyClockRate/minFrameTime));
+
+
       m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
       m_encoder.SetFrameWidth(m_width);
       m_encoder.SetFrameHeight(m_height);
-      m_encoder.SetFrameRate(m_frameRate);
+      m_encoder.SetFrameRate(MyClockRate/m_frameTime);
       m_encoder.SetTargetBitrate(m_bitRate/1000);
       m_encoder.SetMaxRTPFrameSize(std::min(m_maxRTPSize, m_maxNALUSize));
       m_encoder.SetTSTO(m_tsto);
@@ -880,10 +900,18 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                               "prof=" << m_profile << " "
                               "lev=" << m_level << " "
                               "res=" << m_width << 'x' << m_height << " "
-                              "fps=" << m_frameRate << " "
+                              "fps=" << (MyClockRate/m_frameTime) << " "
                               "bps=" << m_bitRate << " "
                               "RTP=" << m_maxRTPSize << " "
                               "TSTO=" << m_tsto);
+      return true;
+    }
+
+
+    /// Get options that are "active" and may be different from the last SetOptions() call.
+    virtual bool GetActiveOptions(PluginCodec_OptionMap & options)
+    {
+      options.SetUnsigned(m_frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
       return true;
     }
 
@@ -966,6 +994,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (FFMPEGLibraryInstance.AvcodecOpen(m_context, m_codec) < 0)
         return false;
 
+      PTRACE(4, MY_CODEC_LOG, "Decoder opened.");
       return true;
     }
 

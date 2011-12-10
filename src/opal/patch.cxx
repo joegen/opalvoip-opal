@@ -171,10 +171,19 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
   Sink * sink = new Sink(*this, sinkStream);
   sinks.Append(sink);
+  if (!sink->CreateTranscoders())
+    return false;
 
+  EnableJitterBuffer();
+  return true;
+}
+
+
+bool OpalMediaPatch::Sink::CreateTranscoders()
+{
   // Find the media formats than can be used to get from source to sink
-  OpalMediaFormat sourceFormat = source.GetMediaFormat();
-  OpalMediaFormat destinationFormat = sinkStream->GetMediaFormat();
+  OpalMediaFormat sourceFormat = patch.source.GetMediaFormat();
+  OpalMediaFormat destinationFormat = stream->GetMediaFormat();
 
   PTRACE(5, "Patch\tAddSink\n"
             "Source format:\n" << setw(-1) << sourceFormat << "\n"
@@ -185,89 +194,89 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
                                   sourceFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
     PINDEX packetSize = sourceFormat.GetFrameSize()*framesPerPacket;
     PINDEX packetTime = sourceFormat.GetFrameTime()*framesPerPacket;
-    source.SetDataSize(packetSize, packetTime);
-    sinkStream->SetDataSize(packetSize, packetTime);
-    PTRACE(3, "Patch\tAdded direct media stream sink " << *sinkStream);
-    EnableJitterBuffer();
+    patch.source.SetDataSize(packetSize, packetTime);
+    stream->SetDataSize(packetSize, packetTime);
+    PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return true;
   }
 
-  PString id = sinkStream->GetID();
-  sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
-  if (sink->primaryCodec != NULL) {
-    PTRACE_CONTEXT_ID_TO(sink->primaryCodec);
+  PString id = stream->GetID();
+  primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+  if (primaryCodec != NULL) {
+    PTRACE_CONTEXT_ID_TO(primaryCodec);
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
-    if (!sinkStream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
-      PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
-              << sink->primaryCodec->GetOptimalDataFrameSize(PFalse));
+    if (!stream->SetDataSize(primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
+      PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
+              << primaryCodec->GetOptimalDataFrameSize(PFalse));
       return false;
     }
-    sink->primaryCodec->SetMaxOutputSize(sinkStream->GetDataSize());
-    sink->primaryCodec->SetSessionID(source.GetSessionID());
+    primaryCodec->SetMaxOutputSize(stream->GetDataSize());
+    primaryCodec->SetSessionID(patch.source.GetSessionID());
+    primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
 
-    PTRACE(3, "Patch\tAdded media stream sink " << *sinkStream
-           << " using transcoder " << *sink->primaryCodec << ", data size=" << sinkStream->GetDataSize());
-  }
-  else {
-    PTRACE(4, "Patch\tCreating two stage transcoders for " << sourceFormat << "->" << destinationFormat << " with ID " << id);
-    OpalMediaFormat intermediateFormat;
-    if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat,
-                                                intermediateFormat)) {
-      PTRACE(1, "Patch\tCould find compatible media format for " << *sinkStream);
-      return false;
-    }
+    patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
+    patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
 
-    if (intermediateFormat.GetMediaType() == OpalMediaType::Audio()) {
-      // try prepare intermediateFormat for correct frames to frames transcoding
-      // so we need make sure that tx frames time of destinationFormat be equal 
-      // to tx frames time of intermediateFormat (all this does not produce during
-      // Merge phase in FindIntermediateFormat)
-      int destinationPacketTime = destinationFormat.GetFrameTime()*destinationFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
-      if ((destinationPacketTime % intermediateFormat.GetFrameTime()) != 0) {
-        PTRACE(1, "Patch\tCould produce without buffered media format converting (which not implemented yet) for " << *sinkStream);
-        return false;
-      }
-      intermediateFormat.AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(),
-                                                               true,
-                                                               OpalMediaOption::NoMerge,
-                                                               destinationPacketTime/intermediateFormat.GetFrameTime()),
-                                   true);
-    }
-
-    sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
-    sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
-    if (sink->primaryCodec == NULL || sink->secondaryCodec == NULL)
-      return false;
-
-    PTRACE_CONTEXT_ID_TO(sink->primaryCodec);
-    PTRACE_CONTEXT_ID_TO(sink->secondaryCodec);
-    PTRACE(3, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
-
-    sink->primaryCodec->SetMaxOutputSize(sink->secondaryCodec->GetOptimalDataFrameSize(true));
-    sink->primaryCodec->SetSessionID(source.GetSessionID());
-
-    if (!sinkStream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
-      PTRACE(1, "Patch\tSink stream " << *sinkStream << " cannot support data size "
-              << sink->secondaryCodec->GetOptimalDataFrameSize(PFalse));
-      return false;
-    }
-    sink->secondaryCodec->SetMaxOutputSize(sinkStream->GetDataSize());
-    sink->secondaryCodec->SetSessionID(source.GetSessionID());
-
-    PTRACE(3, "Patch\tAdded media stream sink " << *sinkStream
-           << " using transcoders " << *sink->primaryCodec
-           << " and " << *sink->secondaryCodec << ", data size=" << sinkStream->GetDataSize());
+    PTRACE(3, "Patch\tAdded media stream sink " << *stream
+           << " using transcoder " << *primaryCodec << ", data size=" << stream->GetDataSize());
+    return true;
   }
 
-  if (sink->secondaryCodec != NULL)
-    sink->secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+  PTRACE(4, "Patch\tCreating two stage transcoders for " << sourceFormat << "->" << destinationFormat << " with ID " << id);
+  OpalMediaFormat intermediateFormat;
+  if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat, intermediateFormat)) {
+    PTRACE(1, "Patch\tCould find compatible media format for " << *stream);
+    return false;
+  }
 
-  if (sink->primaryCodec != NULL)
-    sink->primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+  if (intermediateFormat.GetMediaType() == OpalMediaType::Audio()) {
+    // try prepare intermediateFormat for correct frames to frames transcoding
+    // so we need make sure that tx frames time of destinationFormat be equal 
+    // to tx frames time of intermediateFormat (all this does not produce during
+    // Merge phase in FindIntermediateFormat)
+    int destinationPacketTime = destinationFormat.GetFrameTime()*destinationFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+    if ((destinationPacketTime % intermediateFormat.GetFrameTime()) != 0) {
+      PTRACE(1, "Patch\tCould produce without buffered media format converting (which not implemented yet) for " << *stream);
+      return false;
+    }
+    intermediateFormat.AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(),
+                                                              true,
+                                                              OpalMediaOption::NoMerge,
+                                                              destinationPacketTime/intermediateFormat.GetFrameTime()),
+                                  true);
+  }
 
-  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
-  EnableJitterBuffer();
+  primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
+  secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+  if (primaryCodec == NULL || secondaryCodec == NULL)
+    return false;
+
+  PTRACE_CONTEXT_ID_TO(primaryCodec);
+  PTRACE_CONTEXT_ID_TO(secondaryCodec);
+  PTRACE(3, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
+
+  primaryCodec->SetMaxOutputSize(secondaryCodec->GetOptimalDataFrameSize(true));
+  primaryCodec->SetSessionID(patch.source.GetSessionID());
+  primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
+  primaryCodec->UpdateMediaFormats(OpalMediaFormat(), secondaryCodec->GetInputFormat());
+
+  if (!stream->SetDataSize(secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
+    PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
+            << secondaryCodec->GetOptimalDataFrameSize(PFalse));
+    return false;
+  }
+  secondaryCodec->SetMaxOutputSize(stream->GetDataSize());
+  secondaryCodec->SetSessionID(patch.source.GetSessionID());
+  secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
+  secondaryCodec->UpdateMediaFormats(primaryCodec->GetInputFormat(), OpalMediaFormat());
+
+  patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
+  patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
+
+  PTRACE(3, "Patch\tAdded media stream sink " << *stream
+          << " using transcoders " << *primaryCodec
+          << " and " << *secondaryCodec << ", data size=" << stream->GetDataSize());
   return true;
 }
 
@@ -468,8 +477,12 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-    atLeastOne = s->UpdateMediaFormat(mediaFormat) || atLeastOne;
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->UpdateMediaFormat(mediaFormat)) {
+      source.InternalUpdateMediaFormat(s->stream->GetMediaFormat());
+      atLeastOne = true;
+    }
+  }
 
   PTRACE_IF(2, !atLeastOne, "Patch\tCould not update media format for any stream/transcoder in " << *this);
   return atLeastOne;
