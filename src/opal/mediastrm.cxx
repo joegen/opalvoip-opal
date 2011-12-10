@@ -1330,9 +1330,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
   }
 
-  return m_outputDevice->SetFrameData(frame->x, frame->y,
-                                      frame->width, frame->height,
-                                      OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
+  return m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true);
 }
 
 
@@ -1371,7 +1369,10 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   }
 
   bool keyFrameNeeded = false;
-  if (!m_outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, keyFrameNeeded))
+  if (!m_outputDevice->SetFrameData(frame->x, frame->y,
+                                    frame->width, frame->height,
+                                    OPAL_VIDEO_FRAME_DATA_PTR(frame),
+                                    marker, keyFrameNeeded))
     return false;
 
   if (keyFrameNeeded)
