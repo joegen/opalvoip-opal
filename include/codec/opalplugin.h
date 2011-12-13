@@ -830,7 +830,7 @@ enum {
                                                  (((unsigned char*)(ptr))[off+3] = (unsigned char) (val)      ))
 
 #define PluginCodec_RTP_GetCSRCHdrLength(ptr)      ((((unsigned char*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
-#define PluginCodec_RTP_GetExtHdrLength(ptr)       ((((unsigned char*)(ptr))[0] & 0x10) ? (PluginCodec_RTP_GetWORD(ptr, PluginCodec_RTP_GetCSRCHdrLength(ptr)+2)+4) : 0)
+#define PluginCodec_RTP_GetExtHdrLength(ptr)       ((((unsigned char*)(ptr))[0] & 0x10) ? (PluginCodec_RTP_GetWORD(ptr, PluginCodec_RTP_GetCSRCHdrLength(ptr)+2)*4+4) : 0)
 
 #define PluginCodec_RTP_GetHeaderLength(ptr)       (PluginCodec_RTP_GetCSRCHdrLength(ptr) + PluginCodec_RTP_GetExtHdrLength(ptr))
 #define PluginCodec_RTP_GetPayloadPtr(ptr)           ((unsigned char*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
