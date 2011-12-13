@@ -491,7 +491,10 @@ PBoolean OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddres
 
   switch (option) {
     case OpalTransportAddress::NoBinding :
-      ip = PIPSocket::GetDefaultIpAny();
+      if (address.GetIpAddress(ip))
+        ip = PIPSocket::Address::GetAny(ip.GetVersion());
+      else
+        ip = PIPSocket::GetDefaultIpAny();
       port = 0;
       return PTrue;
 
