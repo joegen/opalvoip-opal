@@ -1081,7 +1081,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
          Make sure GetOutputDataSize() then returns correct larger size. */
       size_t ySize = m_context->width * m_context->height;
       size_t uvSize = ySize/4;
-      size_t newToLen = ySize+uvSize+uvSize+sizeof(PluginCodec_Video_FrameHeader)+PluginCodec_RTP_MinHeaderSize;
+      size_t newToLen = ySize+uvSize+uvSize+sizeof(PluginCodec_Video_FrameHeader)+PluginCodec_RTP_GetHeaderLength(toPtr);
       if (newToLen > toLen)
         flags |= PluginCodec_ReturnCoderBufferTooSmall;
       else {
