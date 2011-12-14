@@ -938,7 +938,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     dst->SetPayloadType(GetPayloadType(false));
 
     // call the codec function
-    unsigned int fromLen = outputDataSize;
+    unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = outputDataSize;
     flags = forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
