@@ -933,12 +933,12 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec");
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
-    RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, outputDataSize+1024);
+    RTP_DataFrame * dst = new RTP_DataFrame(0, outputDataSize+1024);
+    dst->CopyHeader(src);
     dst->SetPayloadType(GetPayloadType(false));
-    dst->SetTimestamp(src.GetTimestamp());
 
     // call the codec function
-    unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
+    unsigned int fromLen = outputDataSize;
     unsigned int toLen = outputDataSize;
     flags = forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
@@ -997,7 +997,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   if (m_bufferRTP == NULL) {
     if (dstList.IsEmpty())
-      m_bufferRTP = new RTP_DataFrame(outputDataSize);
+      m_bufferRTP = new RTP_DataFrame(0, outputDataSize);
     else {
       // Re-use the previously allocated output frame. As video frames can be large
       // when the heap gets a bit fragmented it slows the system down substantially
@@ -1012,8 +1012,6 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   }
 
   dstList.RemoveAll();
-
-  m_bufferRTP->SetPayloadSize(outputDataSize);
 
   // Check for brain dead hosts that do not send marker bits, or continuously send them!
   DWORD newTimestamp = src.GetTimestamp();
@@ -1048,7 +1046,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       if (!DecodeFrame(marker, dstList))
         return false;
       if (m_bufferRTP == NULL) {
-        m_bufferRTP = new RTP_DataFrame(outputDataSize);
+        m_bufferRTP = new RTP_DataFrame(0, outputDataSize);
         lastFrameWasIFrame = false;
       }
     }
@@ -1068,6 +1066,9 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   unsigned fromLen = src.GetHeaderSize() + src.GetPayloadSize();
   unsigned toLen = m_bufferRTP->GetSize();
   unsigned flags = 0;
+
+  m_bufferRTP->SetPayloadSize(0);
+  m_bufferRTP->CopyHeader(src);
 
   if (!Transcode((const BYTE *)src, &fromLen, m_bufferRTP->GetPointer(), &toLen, &flags))
     return false;
@@ -1129,7 +1130,6 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     return false;
   }
 
-  m_bufferRTP->SetTimestamp(src.GetTimestamp());
   m_bufferRTP->SetPayloadType(GetPayloadType(false));
   dstList.Append(m_bufferRTP);
   m_bufferRTP = NULL;

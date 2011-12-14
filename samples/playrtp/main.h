@@ -51,6 +51,7 @@ class PlayRTP : public PProcess
     bool m_singleStep;
     int  m_info;
     bool m_extendedInfo;
+    unsigned m_rotateExtensionId;
     bool m_noDelay;
     bool m_writeEventLog;
 

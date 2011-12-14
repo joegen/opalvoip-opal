@@ -114,11 +114,11 @@ class SDPMediaFormat : public PObject
 
 typedef PList<SDPMediaFormat> SDPMediaFormatList;
 
+
 /////////////////////////////////////////////////////////
 
-class SDPMediaDescription : public PObject
+class SDPCommonAttributes
 {
-  PCLASSINFO(SDPMediaDescription, PObject);
   public:
     // The following enum is arranged so it can be used as a bit mask,
     // e.g. GetDirection()&SendOnly indicates send is available
@@ -130,6 +130,43 @@ class SDPMediaDescription : public PObject
       SendRecv
     };
 
+    SDPCommonAttributes()
+      : m_direction(Undefined)
+    { }
+
+    virtual void SetDirection(const Direction & d) { m_direction = d; }
+    virtual Direction GetDirection() const { return m_direction; }
+
+    virtual unsigned GetBandwidth(const PString & type) const { return m_bandwidth[type]; }
+    virtual void SetBandwidth(const PString & type, unsigned value) { m_bandwidth[type] = value; }
+
+    virtual const SDPBandwidth & GetBandwidth() const { return m_bandwidth; }
+
+    virtual const RTPExtensionHeaders & GetExtensionHeaders() const { return m_extensionHeaders; }
+    virtual void SetExtensionHeader(const RTPExtensionHeaderInfo & ext) { m_extensionHeaders.insert(ext); }
+
+    virtual void ParseAttribute(const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
+
+    virtual void OutputAttributes(ostream & strm) const;
+
+    static const PCaselessString & ConferenceTotalBandwidthType();
+    static const PCaselessString & ApplicationSpecificBandwidthType();
+    static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
+
+  protected:
+    Direction           m_direction;
+    SDPBandwidth        m_bandwidth;
+    RTPExtensionHeaders m_extensionHeaders;
+};
+
+
+/////////////////////////////////////////////////////////
+
+class SDPMediaDescription : public PObject, public SDPCommonAttributes
+{
+  PCLASSINFO(SDPMediaDescription, PObject);
+  public:
     SDPMediaDescription(
       const OpalTransportAddress & address,
       const OpalMediaType & mediaType
@@ -161,8 +198,7 @@ class SDPMediaDescription : public PObject
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 
-    virtual void SetDirection(const Direction & d) { direction = d; }
-    virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : direction; }
+    virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : m_direction; }
 
     virtual const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
     virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
@@ -170,11 +206,6 @@ class SDPMediaDescription : public PObject
     virtual WORD GetPort() const { return port; }
 
     virtual OpalMediaType GetMediaType() const { return mediaType; }
-
-    virtual unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
-    virtual void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
-
-    virtual const SDPBandwidth & GetBandwidth() const { return bandwidth; }
 
     virtual void CreateSDPMediaFormats(const PStringArray & tokens);
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString) = 0;
@@ -190,15 +221,13 @@ class SDPMediaDescription : public PObject
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
     OpalTransportAddress transportAddress;
-    Direction direction;
     WORD port;
     WORD portCount;
     OpalMediaType mediaType;
 
-    SDPMediaFormatList formats;
-    SDPBandwidth       bandwidth;
-    unsigned           ptime;
-    unsigned           maxptime;
+    SDPMediaFormatList  formats;
+    unsigned            ptime;
+    unsigned            maxptime;
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
@@ -291,7 +320,7 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
 
 /////////////////////////////////////////////////////////
 
-class SDPSessionDescription : public PObject
+class SDPSessionDescription : public PObject, public SDPCommonAttributes
 {
   PCLASSINFO(SDPSessionDescription, PObject);
   public:
@@ -317,8 +346,7 @@ class SDPSessionDescription : public PObject
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
     
-    void SetDirection(const SDPMediaDescription::Direction & d) { direction = d; }
-    SDPMediaDescription::Direction GetDirection(unsigned) const;
+    virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
@@ -335,20 +363,12 @@ class SDPSessionDescription : public PObject
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
-    unsigned GetBandwidth(const PString & type) const { return bandwidth[type]; }
-    void SetBandwidth(const PString & type, unsigned value) { bandwidth[type] = value; }
-
     OpalMediaFormatList GetMediaFormats() const;
-
-    static const PCaselessString & ConferenceTotalBandwidthType();
-    static const PCaselessString & ApplicationSpecificBandwidthType();
-    static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
 
   protected:
     void ParseOwner(const PString & str);
 
     SDPMediaDescriptionArray mediaDescriptions;
-    SDPMediaDescription::Direction direction;
 
     PINDEX protocolVersion;
     PString sessionName;
@@ -358,8 +378,6 @@ class SDPSessionDescription : public PObject
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
-
-    SDPBandwidth bandwidth;  
 };
 
 /////////////////////////////////////////////////////////

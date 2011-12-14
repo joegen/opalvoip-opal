@@ -84,6 +84,7 @@ void PlayRTP::Main()
              "X."
              "O:"
              "-session:"
+             "-rotate:"
              "-nodelay."
 #if PTRACING
              "o-output:"             "-no-output."
@@ -124,6 +125,7 @@ void PlayRTP::Main()
               "                           :  opt is name of option, eg \"Target Bit Rate\"\n"
               "                           :  val is value of option, eg \"48000\"\n"
               "  --session num            : automatically select session num\n"
+              "  --rotate n               : Rotate on RTP header extension N\n"
               "  --nodelay                : do not delay as per timestamps\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
@@ -135,6 +137,7 @@ void PlayRTP::Main()
   }
 
   m_extendedInfo = args.HasOption('X') || args.HasOption('T');
+  m_rotateExtensionId = args.GetOptionString("rotate").AsUnsigned();
   m_noDelay      = args.HasOption("nodelay");
 
   PStringArray options = args.GetOptionString('O').Lines();
@@ -548,7 +551,6 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           ++m_videoFrames;
 
           OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
-          const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
           if (video->WasLastFrameIFrame()) {
             m_eventLog << "Frame " << m_videoFrames << ": I-Frame received";
             if (m_videoError)
@@ -557,9 +559,32 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
             m_videoError = false;
           }
 
+          OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
           m_yuvFile.SetFrameSize(frame->width, frame->height + (m_extendedInfo ? m_extraHeight : 0));
 
+          unsigned extensionId;
+          PINDEX extensionLen;
+          BYTE * extensionData = data.GetHeaderExtension(extensionId, extensionLen, 0);
+          if (extensionData != NULL && extensionId == m_rotateExtensionId) {
+            switch (*extensionData >> 4) {
+              case 0 : // Portrait left
+                PColourConverter::RotateYUV420P(90, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                std::swap(frame->width, frame->height);
+                break;
+              case 1 : // Landscape up
+                break;
+              case 2 : // Portrait right
+                PColourConverter::RotateYUV420P(-90, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                std::swap(frame->width, frame->height);
+                break;
+              case 3 : // Lnadscape down
+                PColourConverter::RotateYUV420P(180, frame->width, frame->height, OPAL_VIDEO_FRAME_DATA_PTR(frame));
+                break;
+            }
+          }
+
           if (!m_extendedInfo) {
+
             m_display->SetFrameSize(frame->width, frame->height);
             m_display->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
