@@ -135,16 +135,12 @@ OpalT140RTPFrame::OpalT140RTPFrame(const BYTE * data, PINDEX len, bool dynamic)
 
 OpalT140RTPFrame::OpalT140RTPFrame()
 {
-  SetExtension(true);
-  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
 }
 
 
 OpalT140RTPFrame::OpalT140RTPFrame(const PString & contentType)
 {
-  SetExtension(true);
-  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
   SetContentType(contentType);
 }
@@ -152,8 +148,6 @@ OpalT140RTPFrame::OpalT140RTPFrame(const PString & contentType)
 
 OpalT140RTPFrame::OpalT140RTPFrame(const PString & contentType, const T140String & content)
 {
-  SetExtension(true);
-  SetExtensionSizeDWORDs(0);
   SetPayloadSize(0);
   SetContentType(contentType);
   SetContent(content);
@@ -162,52 +156,16 @@ OpalT140RTPFrame::OpalT140RTPFrame(const PString & contentType, const T140String
 
 void OpalT140RTPFrame::SetContentType(const PString & contentType)
 {
-  PINDEX newExtensionBytes  = contentType.GetLength();
-  PINDEX newExtensionDWORDs = (newExtensionBytes + 3) / 4;
-  PINDEX oldPayloadSize = GetPayloadSize();
-
-  // adding an extension adds 4 bytes to the header,
-  //  plus the number of 32 bit words needed to hold the extension
-  if (!GetExtension()) {
-    SetPayloadSize(4 + newExtensionDWORDs + oldPayloadSize);
-    if (oldPayloadSize > 0)
-      memcpy(GetPayloadPtr() + newExtensionBytes + 4, GetPayloadPtr(), oldPayloadSize);
-  }
-
-  // if content type has not changed, nothing to do
-  else if (GetContentType() == contentType) 
-    return;
-
-  // otherwise copy the new extension in
-  else {
-    PINDEX oldExtensionDWORDs = GetExtensionSizeDWORDs();
-    if (oldPayloadSize != 0) {
-      if (newExtensionDWORDs <= oldExtensionDWORDs) {
-        memcpy(GetExtensionPtr() + newExtensionBytes, GetPayloadPtr(), oldPayloadSize);
-      }
-      else {
-        SetPayloadSize((newExtensionDWORDs - oldExtensionDWORDs)*4 + oldPayloadSize);
-        memcpy(GetExtensionPtr() + newExtensionDWORDs*4, GetPayloadPtr(), oldPayloadSize);
-      }
-    }
-  }
-  
-  // reset lengths
-  SetExtensionSizeDWORDs(newExtensionDWORDs);
-  memcpy(GetExtensionPtr(), (const char *)contentType, newExtensionBytes);
-  SetPayloadSize(oldPayloadSize);
-  if (newExtensionDWORDs*4 > newExtensionBytes)
-    memset(GetExtensionPtr() + newExtensionBytes, 0, newExtensionDWORDs*4 - newExtensionBytes);
+  SetHeaderExtension(0, contentType.GetLength(), (const BYTE *)(const char *)contentType, RTP_DataFrame::RFC3550);
 }
 
 
 PString OpalT140RTPFrame::GetContentType() const
 {
-  if (!GetExtension() || (GetExtensionSizeDWORDs() == 0))
-    return PString::Empty();
-
-  const char * p = (const char *)GetExtensionPtr();
-  return PString(p, strlen(p));
+  unsigned id;
+  PINDEX length;
+  BYTE * ptr = GetHeaderExtension(id, length);
+  return ptr != NULL ? PString((const char *)ptr, length) : PString::Empty();
 }
 
 

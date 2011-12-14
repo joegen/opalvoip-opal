@@ -45,6 +45,7 @@
 #include <ptlib/safecoll.h>
 #include <ptclib/pnat.h>
 #include <rtp/metrics.h>
+#include <ptclib/url.h>
 
 #include <list>
 
@@ -145,11 +146,41 @@ class RTP_DataFrame : public PBYTEArray
 
     PINDEX GetHeaderSize() const { return m_headerSize; }
 
-    int GetExtensionType() const; // -1 is no extension
-    void   SetExtensionType(int type);
+    void CopyHeader(const RTP_DataFrame & other);
+
+    /**Get header extension.
+       If idx < 0 then gets RFC 3550 format extension type.
+       If idx >= 0 then get RFC 5285 format extension type for the idx'th extension.
+
+       @returns NULL if no extension
+      */
+    BYTE * GetHeaderExtension(
+      unsigned & id,      ///< Identifier for extension
+      PINDEX & length,    ///< Length of extension in bytes
+      int idx = -1        ///< Index of extension
+    ) const;
+
+    enum HeaderExtensionType {
+      RFC3550,
+      RFC5285_OneByte,
+      RFC5285_TwoByte
+    };
+
+    /**Set header extension.
+       Note when RFC 5285 formats are used, the extension is appened to ones
+       already present.
+
+       @returns true if extension legal.
+      */
+    bool SetHeaderExtension(
+      unsigned id,        ///< Identifier for extension
+      PINDEX length,      ///< Length of extension in bytes
+      const BYTE * data,  ///< Data to put into extension
+      HeaderExtensionType type ///< RFC standard used
+    );
+
     PINDEX GetExtensionSizeDWORDs() const;      // get the number of 32 bit words in the extension (excluding the header).
     bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
-    BYTE * GetExtensionPtr() const;
 
     PINDEX GetPayloadSize() const { return m_payloadSize; }
     bool   SetPayloadSize(PINDEX sz);
@@ -347,6 +378,40 @@ class RTP_ControlFrame : public PBYTEArray
     PINDEX compoundOffset;
     PINDEX payloadSize;
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Information for RFC 5285 header extensions.
+  */
+class RTPExtensionHeaderInfo : public PObject
+{
+    PCLASSINFO(RTPExtensionHeaderInfo, PObject);
+  public:
+    unsigned m_id;
+
+    enum Direction {
+      Undefined = -1,
+      Inactive,
+      RecvOnly,
+      SendOnly,
+      SendRecv
+    } m_direction;
+
+    PURL m_uri;
+
+    PString m_attributes;
+
+    RTPExtensionHeaderInfo();
+    virtual Comparison Compare(const PObject & other) const;
+
+#if OPAL_SIP
+    bool ParseSDP(const PString & param);
+    void OutputSDP(ostream & strm) const;
+#endif
+};
+
+typedef std::set<RTPExtensionHeaderInfo> RTPExtensionHeaders;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -615,6 +680,14 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetToolName(const PString & name);
 
+    /**Get the RTP header extension codes for the session.
+      */
+    RTPExtensionHeaders GetExtensionHeaders() const;
+
+    /**Set the RTP header extension codes for the session.
+      */
+    void SetExtensionHeader(const RTPExtensionHeaders & ext);
+
     /**Get the source output identifier.
       */
     DWORD GetSyncSourceOut() const { return syncSourceOut; }
@@ -865,11 +938,12 @@ class OpalRTPSession : public OpalMediaSession
     );
 
 
-    unsigned           sessionID;
-    bool               isAudio;
-    unsigned           m_timeUnits;
-    PString            canonicalName;
-    PString            toolName;
+    unsigned            sessionID;
+    bool                isAudio;
+    unsigned            m_timeUnits;
+    PString             canonicalName;
+    PString             toolName;
+    RTPExtensionHeaders m_extensionHeaders;
 
     typedef PSafePtr<RTP_JitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;

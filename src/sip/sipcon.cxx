@@ -687,7 +687,11 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   if (session == NULL)
     return NULL;
 
-    // see if remote socket information has changed
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+  if (rtpSession != NULL)
+    rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
+
+  // see if remote socket information has changed
   if (!remoteMediaAddress.IsEmpty()) {
     OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteMediaAddress();
     bool firstTime = oldRemoteMediaAddress.IsEmpty();
@@ -695,7 +699,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
 
     if (remoteChanged) {
       PTRACE(3, "SIP\tRemote changed IP address: "<< oldRemoteMediaAddress << "!=" << remoteMediaAddress);
-      ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, dynamic_cast<OpalRTPSession *>(session));
+      ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
     }
 
     if (firstTime || remoteChanged) {
