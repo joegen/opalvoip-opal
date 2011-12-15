@@ -1158,10 +1158,6 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
   if (IsReleased())
     return false;
 
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
-
   OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
                                              : GetMediaStream(OpalMediaType::Video(), false);
   if (stream == NULL) {
