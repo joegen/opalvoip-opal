@@ -448,6 +448,10 @@ bool RFC2190Depacketizer::AddPacket(const RTPFrame & packet)
 
   unsigned payloadLen = packet.GetPayloadSize();
 
+  // Check for empty packet, this just carries the marker bit and is OK
+  if (payloadLen == 0 && packet.GetMarker())
+    return true;
+
   // payload must be at least as long as mode A header + 1 byte
   if (payloadLen < 5) {
     m_skipUntilEndOfFrame = true;
