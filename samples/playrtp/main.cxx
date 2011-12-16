@@ -678,13 +678,14 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    m_eventLog << "Packet " << m_packetCount << ", frame " << m_videoFrames << ": decoding error (VFU sent)";
+    PStringStream msg;
+    msg << "Packet " << m_packetCount << ", frame " << m_videoFrames << ": decoding error";
       
     OpalVideoPictureLoss * loss = dynamic_cast<OpalVideoPictureLoss *>(&command);
     if (loss != NULL)
-      m_eventLog << " for sn=" << loss->GetSequenceNumber() << ", ts=" << loss->GetSequenceNumber();
-    m_eventLog << endl;
-    cout << "Decoder error in received stream: frame " << m_videoFrames << endl;
+      msg << " for sn=" << loss->GetSequenceNumber() << ", ts=" << loss->GetTimestamp();
+    m_eventLog << msg << endl;
+    cout << msg << endl;
     m_videoError = m_vfu = true;
   }
 }
