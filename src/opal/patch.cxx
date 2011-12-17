@@ -179,8 +179,26 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 }
 
 
+bool OpalMediaPatch::ResetTranscoders()
+{
+  PWriteWaitAndSignal mutex(inUse);
+
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (!s->CreateTranscoders())
+      return false;
+  }
+
+  return true;
+}
+
+
 bool OpalMediaPatch::Sink::CreateTranscoders()
 {
+  delete primaryCodec;
+  primaryCodec =  NULL;
+  delete secondaryCodec;
+  secondaryCodec = NULL;
+
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = patch.source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();

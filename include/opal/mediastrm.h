@@ -153,6 +153,16 @@ class OpalMediaStream : public PSafeObject
       */
     virtual OpalMediaFormat GetMediaFormat() const;
 
+    /**Set a new media format for the stream.
+       Unlike UpdateMediaFormat() this will shut down the patch and attempt to
+       create new transcoders to meet the requirement.
+
+       @returns false if the no transcoding can be found.
+      */
+    virtual bool SetMediaFormat(
+      const OpalMediaFormat & mediaFormat   ///<  New media format
+    );
+
     /**Update the media format. This can be used to adjust the
        parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
