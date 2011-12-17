@@ -228,6 +228,8 @@ class OpalMediaPatch : public PObject
     virtual OpalTranscoder * GetAndLockSinkTranscoder(PINDEX i = 0) const;
     virtual void UnLockSinkTranscoder() const;
 
+    virtual bool ResetTranscoders();
+
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromSink) const;
 #endif
