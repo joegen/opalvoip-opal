@@ -109,6 +109,40 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 }
 
 
+bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
+{
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
+  if (!PAssert(newMediaFormat.IsValid(), PInvalidParameter))
+    return false;
+
+  if (mediaFormat == newMediaFormat)
+    return true;
+
+  PTRACE(4, "Media\tSwitch media format from " << mediaFormat << " to " << newMediaFormat << " on " << *this);
+
+  OpalMediaFormat oldMediaFormat = mediaFormat;
+
+  mediaFormat = newMediaFormat;
+
+  // Easy if we haven't done the patch yet
+  if (mediaPatch == NULL)
+    return true;
+
+  // Find transcoders for new media format pair (source/sink)
+  if (mediaPatch->ResetTranscoders())
+    return true;
+
+  // Couldn't switch, put it back
+  mediaFormat = oldMediaFormat;
+  mediaPatch->ResetTranscoders();
+
+  return false;
+}
+
+
 bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   PSafeLockReadWrite safeLock(*this);
