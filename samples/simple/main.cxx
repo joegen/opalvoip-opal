@@ -159,6 +159,8 @@ void SimpleOpalProcess::Main()
              "-grabchannel:"
              "-display:"
              "-displaydriver:"
+             "-preview:"
+             "-previewdriver:"
              "-video-size:"
              "-video-rate:"
              "-video-bitrate:"
@@ -210,8 +212,10 @@ void SimpleOpalProcess::Main()
             "     --grabber dev        : Set the video grabber device.\n"
             "     --grabdriver dev     : Set the video grabber driver (if device name is ambiguous).\n"
             "     --grabchannel num    : Set the video grabber device channel.\n"
-            "     --display dev        : Set the video display device.\n"
-            "     --displaydriver dev  : Set the video display driver (if device name is ambiguous).\n"
+            "     --display dev        : Set the remote video display device.\n"
+            "     --displaydriver dev  : Set the remote video display driver (if device name is ambiguous).\n"
+            "     --preview dev        : Set the local video preview device.\n"
+            "     --previewdriver dev  : Set the local video preview driver (if device name is ambiguous).\n"
             "     --video-size size    : Set the size of the video for all video formats, use\n"
             "                          : \"qcif\", \"cif\", WxH etc\n"
             "     --video-rate rate    : Set the frame rate of video for all video formats\n"
@@ -436,6 +440,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (args.HasOption("no-tx-video"))
     SetAutoStartTransmitVideo(false);
 
+  // video input options
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
     video.deviceName = args.GetOptionString("grabber");
@@ -450,12 +455,25 @@ PBoolean MyManager::Initialise(PArgList & args)
     }
   }
 
+  // remote video display options
   if (args.HasOption("display")) {
     PVideoDevice::OpenArgs video = GetVideoOutputDevice();
     video.deviceName = args.GetOptionString("display");
     video.driverName = args.GetOptionString("displaydriver");
     if (!SetVideoOutputDevice(video)) {
       cerr << "Unknown display device " << video.deviceName << "\n"
+              "Available devices are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
+      return PFalse;
+    }
+  }
+
+  // local video preview options
+  if (args.HasOption("preview")) {
+    PVideoDevice::OpenArgs video = GetVideoPreviewDevice();
+    video.deviceName = args.GetOptionString("preview");
+    video.driverName = args.GetOptionString("previewdriver");
+	if (!SetVideoPreviewDevice(video)) {
+      cerr << "Unknown preview device " << video.deviceName << "\n"
               "Available devices are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
       return PFalse;
     }
@@ -599,6 +617,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
 #if OPAL_VIDEO
+			"Video preview device: \"" << GetVideoPreviewDevice().deviceName << "\"\n"
             "Video output device: \"" << GetVideoOutputDevice().deviceName << "\"\n"
             "Video  input device: \"" << GetVideoInputDevice().deviceName << '"'
 #endif
