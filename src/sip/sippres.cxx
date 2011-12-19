@@ -239,23 +239,26 @@ bool SIP_Presentity::Close()
 
   m_notificationMutex.Wait();
 
-  if (!m_watcherSubscriptionAOR.IsEmpty()) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe for own presence watcher");
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, m_watcherSubscriptionAOR, true);
+  PString watcherSubscriptionAOR = m_watcherSubscriptionAOR;
     m_watcherSubscriptionAOR.MakeEmpty();
-  }
 
-  for (StringMap::iterator subs = m_presenceIdByAor.begin(); subs != m_presenceIdByAor.end(); ++subs) {
-    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe to " << subs->first);
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second, true);
-  }
-
+  StringMap presenceIdByAor = m_presenceIdByAor;
   m_watcherAorById.clear();
   m_presenceIdByAor.clear();
   m_presenceAorById.clear();
   m_authorisationIdByAor.clear();
 
   m_notificationMutex.Signal();
+
+  if (!watcherSubscriptionAOR.IsEmpty()) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe for own presence watcher");
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR, true);
+  }
+
+  for (StringMap::iterator subs = presenceIdByAor.begin(); subs != presenceIdByAor.end(); ++subs) {
+    PTRACE(3, "SIPPres\t'" << m_aor << "' sending final unsubscribe to " << subs->first);
+    m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second, true);
+  }
 
   if (!m_publishedTupleId.IsEmpty() && m_subProtocol != e_PeerToPeer)
     m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
