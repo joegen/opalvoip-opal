@@ -252,10 +252,8 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
   if ((id&0xfff0) == 0x1000) {
     // RFC 5285 two byte format
     while (idx-- > 0) {
-      if (*ptr == 0)
-        ++ptr;
-      else
-        ptr += *(++ptr)+1;
+      if (*ptr++ != 0)
+        ptr += *ptr + 1;
     }
 
     id = *ptr++;
@@ -688,6 +686,8 @@ void RTPExtensionHeaderInfo::OutputSDP(ostream & strm) const
       break;
     case RTPExtensionHeaderInfo::SendRecv :
       strm << "/sendrecv";
+      break;
+    default :
       break;
   }
 
