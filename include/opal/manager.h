@@ -1459,12 +1459,12 @@ class OpalManager : public PObject
     ) { rtpPayloadSizeMax = size - (mtu ? (20+16+12) : 0); }
 
     /**Get the maximum received RTP packet size.
-       Defaults to 2048.
+       Defaults to 10k.
       */
     PINDEX GetMaxRtpPacketSize() const { return rtpPacketSizeMax; }
 
-    /**Get the maximum transmitted RTP payload size.
-       Defaults to 2048.
+    /**Get the maximum received RTP packet size.
+       Defaults to 10k.
       */
     void SetMaxRtpPacketSize(
       PINDEX size
