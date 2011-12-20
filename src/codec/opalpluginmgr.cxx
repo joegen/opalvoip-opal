@@ -1091,13 +1091,8 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
     // Don't send lots of consecutive OpalVideoPictureLoss commands
-    if (m_videoPictureLossTimer.IsRunning())
-      PTRACE(4, "OpalPlugin\tCould not decode frame, but a recent OpalVideoPictureLoss was sent: sn=" << src.GetSequenceNumber());
-    else {
-      PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << src.GetSequenceNumber());
-      NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
-      m_videoPictureLossTimer.SetInterval(0, 2);
-    }
+    PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << src.GetSequenceNumber());
+    NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
   }
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)

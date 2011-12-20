@@ -193,10 +193,19 @@ class RTP_DataFrame : public PBYTEArray
     // sub-section sizes: header payload and padding.
     bool SetPacketSize(PINDEX sz);
 
+    /** Get sequence number discontinuity.
+        If non-zero this indicates the number of packets detected as missing
+        before this packet.
+      */
+    unsigned GetDiscontinuity() const { return m_discontinuity; }
+
+    void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
+
   protected:
-    PINDEX m_headerSize;
-    PINDEX m_payloadSize;
-    PINDEX m_paddingSize;
+    PINDEX   m_headerSize;
+    PINDEX   m_payloadSize;
+    PINDEX   m_paddingSize;
+    unsigned m_discontinuity;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);

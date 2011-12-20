@@ -3516,18 +3516,24 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
 
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    SIPInfo::Params params(ApplicationMediaControlXMLKey,
-                           "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-                           "<media_control>"
-                            "<vc_primitive>"
-                             "<to_encoder>"
-                              "<picture_fast_update>"
-                              "</picture_fast_update>"
-                             "</to_encoder>"
-                            "</vc_primitive>"
-                           "</media_control>");
-    SendINFO(params);
-    done = true;
+    if (m_infoPictureFastUpdateTimer.IsRunning()) {
+      PTRACE(4, "SIP\tRecent INFO picture_fast_update was sent, not sending another");
+    }
+    else {
+      SIPInfo::Params params(ApplicationMediaControlXMLKey,
+                             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+                             "<media_control>"
+                              "<vc_primitive>"
+                               "<to_encoder>"
+                                "<picture_fast_update>"
+                                "</picture_fast_update>"
+                               "</to_encoder>"
+                              "</vc_primitive>"
+                             "</media_control>");
+      SendINFO(params);
+      m_infoPictureFastUpdateTimer.SetInterval(0, 3);
+      done = true;
+    }
   }
 #endif
 

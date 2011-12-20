@@ -306,6 +306,11 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 
 #if OPAL_VIDEO
 
+  if (m_rtcpIntraFrameRequestTimer.IsRunning() && PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
+    return done;
+  }
+
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
   if (session != NULL) {
@@ -326,6 +331,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
         session->SendIntraFrameRequest(false, true);  // More common, use RFC4585 PLI
       else
         session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
+
+      m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
 
 #if OPAL_STATISTICS
       m_VideoUpdateRequestsSent++;

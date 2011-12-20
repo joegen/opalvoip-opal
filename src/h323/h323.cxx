@@ -4174,13 +4174,20 @@ bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    H323Channel * video = FindChannel(stream.GetSessionID(), true);
-    if (video != NULL)
-      video->OnMediaCommand(command);
+    if (m_h245FastUpdatePictureTimer.IsRunning()) {
+      PTRACE(4, "H.323\tRecent H.245 VideoFastUpdatePicture was sent, not sending another");
+    }
+    else {
+      H323Channel * video = FindChannel(stream.GetSessionID(), true);
+      if (video != NULL) {
+        video->OnMediaCommand(command);
+        m_h245FastUpdatePictureTimer.SetInterval(0, 3);
 #if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
+        m_VideoUpdateRequestsSent++;
 #endif
-    done = true;
+        done = true;
+      }
+    }
   }
 #endif
 
