@@ -75,6 +75,7 @@ RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(payloadSz)
   , m_paddingSize(0)
+  , m_discontinuity(0)
 {
   theArray[0] = '\x80'; // Default to version 2
   theArray[1] = '\x7f'; // Default to MaxPayloadType
@@ -86,6 +87,7 @@ RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic)
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(0)
   , m_paddingSize(0)
+  , m_discontinuity(0)
 {
   SetPacketSize(len);
 }
@@ -93,6 +95,8 @@ RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic)
 
 bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 {
+  m_discontinuity = 0;
+
   if (sz < RTP_DataFrame::MinHeaderSize) {
     PTRACE(2, "RTP\tInvalid RTP packet, "
               "smaller than minimum header size, " << sz << " < " << RTP_DataFrame::MinHeaderSize);
@@ -1515,6 +1519,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       }
 
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
+      frame.SetDiscontinuity(dropped);
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
       PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn

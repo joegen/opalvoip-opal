@@ -759,6 +759,10 @@ class SIPConnection : public OpalRTPConnection
     PSafePtr<OpalSIPIMContext> m_imContext;
 #endif
 
+#if OPAL_VIDEO
+    PSimpleTimer m_infoPictureFastUpdateTimer;
+#endif
+
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));

@@ -2303,6 +2303,10 @@ class H323Connection : public OpalRTPConnection
     PINDEX m_H46024Bstate;
 #endif
 
+#if OPAL_VIDEO
+    PSimpleTimer m_h245FastUpdatePictureTimer;
+#endif
+
     // NOTE correct ifdef
     PMutex NATSocketMutex;
     std::map<unsigned,NAT_Sockets> m_NATSockets;
