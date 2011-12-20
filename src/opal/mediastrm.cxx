@@ -1168,9 +1168,9 @@ PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 }
 
 
-bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
-  if (!OpalMediaStream::InternalUpdateMediaFormat(mediaFormat))
+  if (!OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat))
     return false;
 
   unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
