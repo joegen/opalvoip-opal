@@ -1518,7 +1518,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
       PTRACE(2, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn
-             << ", " << dropped << " packet(s) missing at " << sequenceNumber);
+             << ", " << dropped << " packet(s) missing at " << expectedSequenceNumber);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
 #if OPAL_RTCP_XR
