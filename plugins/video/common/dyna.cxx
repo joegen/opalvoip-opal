@@ -242,7 +242,7 @@ FFMPEGLibrary::~FFMPEGLibrary()
 
 bool FFMPEGLibrary::Load()
 {
-  WaitAndSignal m(processLock);      
+  WaitAndSignal m(processLock);
   if (IsLoaded())
     return true;
 
@@ -280,33 +280,12 @@ bool FFMPEGLibrary::Load()
   if (!m_libAvcodec.GetFunction("avcodec_init", (DynaLink::Function &)Favcodec_init))
     return false;
 
-  if (m_codec==CODEC_ID_H264) {
-    if (!m_libAvcodec.GetFunction("h264_decoder", (DynaLink::Function &)Favcodec_h264_decoder))
-      return false;
-  }
-  
-  if (m_codec==CODEC_ID_H263P) {
-    if (!m_libAvcodec.GetFunction("h263_encoder", (DynaLink::Function &)Favcodec_h263_encoder))
-      return false;
-  
-    if (!m_libAvcodec.GetFunction("h263p_encoder", (DynaLink::Function &)Favcodec_h263p_encoder))
-      return false;
-
-    if (!m_libAvcodec.GetFunction("h263_decoder", (DynaLink::Function &)Favcodec_h263_decoder))
-      return false;
-  }
-
-  if (m_codec==CODEC_ID_MPEG4) {
-    if (!m_libAvcodec.GetFunction("mpeg4_encoder", (DynaLink::Function &)mpeg4_encoder))
-      return false;
-
-    if (!m_libAvcodec.GetFunction("mpeg4_decoder", (DynaLink::Function &)mpeg4_decoder))
-      return false;
-  }
-
-  if (!m_libAvcodec.GetFunction("register_avcodec", (DynaLink::Function &)Favcodec_register))
+  if (!m_libAvcodec.GetFunction("av_init_packet", (DynaLink::Function &)Fav_init_packet))
     return false;
-  
+
+  if (!m_libAvcodec.GetFunction("avcodec_register_all", (DynaLink::Function &)Favcodec_register_all))
+    return false;
+
   if (!m_libAvcodec.GetFunction("avcodec_find_encoder", (DynaLink::Function &)Favcodec_find_encoder))
     return false;
 
@@ -328,26 +307,18 @@ bool FFMPEGLibrary::Load()
   if (!m_libAvcodec.GetFunction("avcodec_encode_video", (DynaLink::Function &)Favcodec_encode_video))
     return false;
 
-  if (!m_libAvcodec.GetFunction("avcodec_decode_video", (DynaLink::Function &)Favcodec_decode_video))
+  if (!m_libAvcodec.GetFunction("avcodec_decode_video2", (DynaLink::Function &)Favcodec_decode_video))
     return false;
 
   if (!m_libAvcodec.GetFunction("avcodec_set_dimensions", (DynaLink::Function &)Favcodec_set_dimensions))
     return false;
 
-  if (!CHECK_AVUTIL("av_malloc", Favcodec_malloc))
-    return false;
-
   if (!CHECK_AVUTIL("av_free", Favcodec_free))
     return false;
 
-  if (!m_libAvcodec.GetFunction("ff_check_alignment", (DynaLink::Function &) Fff_check_alignment)) {
-    PTRACE(1, m_codecString, "Failed to load ff_check_alignment - alignment checks will be skipped");
-    Fff_check_alignment = NULL;
-  }
-
   if(!m_libAvcodec.GetFunction("avcodec_version", (DynaLink::Function &)Favcodec_version))
     return false;
-  
+
   if (!CHECK_AVUTIL("av_log_set_level", FAv_log_set_level))
     return false;
 
@@ -360,30 +331,12 @@ bool FFMPEGLibrary::Load()
     if (libVer != LIBAVCODEC_VERSION_INT ) {
       PTRACE(2, m_codecString, "Warning: compiled against libavcodec headers from version "
              << (LIBAVCODEC_VERSION_INT >> 16) << ((LIBAVCODEC_VERSION_INT>>8) & 0xff) << (LIBAVCODEC_VERSION_INT & 0xff)
-             << ", loaded " 
+             << ", loaded "
              << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
     }
 
     Favcodec_init();
-
-    // register only the codecs needed (to have smaller code)
-    if (m_codec==CODEC_ID_H264) 
-      Favcodec_register(Favcodec_h264_decoder);
-
-    if (m_codec==CODEC_ID_H263P) {
-      Favcodec_register(Favcodec_h263_encoder);
-      Favcodec_register(Favcodec_h263p_encoder);
-      Favcodec_register(Favcodec_h263_decoder);
-    }
-
-    if (m_codec==CODEC_ID_MPEG4) {
-      Favcodec_register(mpeg4_encoder);
-      Favcodec_register(mpeg4_decoder);
-    }
-
-    if (FFCheckAlignment() != 0) {
-      PTRACE(1, m_codecString, "ff_check_alignment() reports failure - stack alignment is not correct");
-    }	    
+    Favcodec_register_all ();
   });
 
 #if PLUGINCODEC_TRACING
@@ -482,8 +435,13 @@ int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *g
 {
   char dummy[16];
 
+  AVPacket avpkt;
+  Fav_init_packet(&avpkt);
+  avpkt.data = buf;
+  avpkt.size = buf_size;
+
   WITH_ALIGNED_STACK({
-    return Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
+    return Favcodec_decode_video(ctx, pict, got_picture_ptr, &avpkt);
   });
 }
 
@@ -508,7 +466,6 @@ void FFMPEGLibrary::AvSetDimensions(AVCodecContext *s, int width, int height)
     Favcodec_set_dimensions(s, width, height);
   });
 }
-  
 
 void FFMPEGLibrary::AvLogSetLevel(int level)
 {
@@ -528,21 +485,7 @@ void FFMPEGLibrary::AvLogSetCallback(void (*callback)(void*, int, const char*, v
   });
 }
 
-int FFMPEGLibrary::FFCheckAlignment(void)
-{
-  char dummy[16];
-
-  if (Fff_check_alignment == NULL) {
-    PTRACE(1, m_codecString, "ff_check_alignment is not supported by libavcodec.so - skipping check");
-    return 0;
-  }
-  else {
-    return Fff_check_alignment();
-  }
-}
-
 bool FFMPEGLibrary::IsLoaded()
 {
   return m_isLoadedOK;
 }
-
