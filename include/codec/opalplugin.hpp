@@ -138,7 +138,8 @@ class PluginCodec_OptionMap : public std::map<std::string, std::string>, public 
 
     unsigned GetUnsigned(const char * key, unsigned dflt = 0) const
     {
-      return find(key) == end() ? dflt : String2Unsigned(at(key));
+      const_iterator it = find(key);
+      return it == end() ? dflt : String2Unsigned(it->second);
     }
 
     void SetUnsigned(unsigned value, const char * key)
