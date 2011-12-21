@@ -395,6 +395,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
   unsigned fragmentationCount = 0;
   unsigned nextSequenceNumber = 0;
+  unsigned missingPackets = 0;
   m_packetCount = 0;
 
   RTP_DataFrame extendedData;
@@ -412,8 +413,11 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
       continue;
 
     unsigned thisSequenceNumber = rtp.GetSequenceNumber();
-    if (nextSequenceNumber != 0 && thisSequenceNumber != nextSequenceNumber)
+    if (nextSequenceNumber != 0 && thisSequenceNumber != nextSequenceNumber) {
       cout << "Received SN=" << thisSequenceNumber << ", expected SN=" << nextSequenceNumber << endl;
+      if (thisSequenceNumber > nextSequenceNumber)
+        missingPackets += (thisSequenceNumber - nextSequenceNumber);
+    }
     nextSequenceNumber = thisSequenceNumber+1;
 
     if (rtpStreamPayloadType != rtp.GetPayloadType()) {
@@ -668,6 +672,12 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   // Output final stats.
   cout << (m_yuvFile.IsOpen() ? "Written " : "Played ") << m_packetCount << " packets";
 
+  if (missingPackets > 0)
+    cout << ", " << missingPackets << " missing";
+
+  if (fragmentationCount > 0)
+    cout << ", " << fragmentationCount << " fragments";
+
   if (m_videoFrames > 0) {
     cout << ", " << m_videoFrames << " frames at "
          << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight();
@@ -678,9 +688,6 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
            << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps";
     }
   }
-
-  if (fragmentationCount > 0)
-    cout << ", " << fragmentationCount << " fragments";
 
   cout << endl;
 
