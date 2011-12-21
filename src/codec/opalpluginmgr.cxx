@@ -953,6 +953,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
       delete dst;
     else {
       dst->SetPayloadSize(toLen - dst->GetHeaderSize());
+      dst->SetMarker((flags & PluginCodec_ReturnCoderLastFrame) != 0);
       dstList.Append(dst);
     }
 
