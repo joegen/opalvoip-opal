@@ -221,6 +221,7 @@ OpalManager::OpalManager()
 #ifdef OPAL_ZRTP
   , zrtpEnabled(false)
 #endif
+  , garbageCollectSkip(false)
 #ifdef OPAL_HAS_IM
   , m_imManager(NULL)
 #endif
@@ -344,6 +345,12 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   if (endpointList.GetObjectsIndex(endpoint) == P_MAX_INDEX)
     endpointList.Append(endpoint);
   endpointMap[thePrefix] = endpoint;
+
+  /* Avoid strange race condition caused when garbage collection occurs
+     on the endpoint instqance which has not completed cosntruction. This
+     is an ulgly hack andrelies on the ctors taking less than one second. */
+  garbageCollectSkip = true;
+
   PTRACE(3, "OpalMan\tAttached endpoint with prefix " << thePrefix);
 }
 
@@ -1800,8 +1807,12 @@ void OpalManager::CallDict::DeleteObject(PObject * object) const
 
 void OpalManager::GarbageMain(PThread &, INT)
 {
-  while (!garbageCollectExit.Wait(1000))
-    GarbageCollection();
+  while (!garbageCollectExit.Wait(1000)) {
+    if (garbageCollectSkip)
+      garbageCollectSkip = false;
+    else
+      GarbageCollection();
+  }
 }
 
 void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
