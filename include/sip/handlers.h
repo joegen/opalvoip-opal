@@ -158,6 +158,7 @@ protected:
   SIPURL                      m_addressOfRecord;
   SIPURL                      m_remoteAddress;
   PString                     m_callID;
+  unsigned                    m_lastCseq;
   int                         m_currentExpireTime;
   int                         m_originalExpireTime;
   int                         m_offlineExpireTime;

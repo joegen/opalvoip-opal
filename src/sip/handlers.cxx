@@ -81,6 +81,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParam
   , m_realm(params.m_realm)
   , m_transport(NULL)
   , m_method(method)
+  , m_lastCseq(0)
   , m_addressOfRecord(params.m_addressOfRecord)
   , m_remoteAddress(params.m_remoteAddress)
   , m_callID(SIPTransaction::GenerateCallID())
@@ -260,6 +261,8 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
   if (GetTransport() == NULL)
     OnFailed(SIP_PDU::Local_BadTransportAddress);
   else {
+    m_lastCseq = 0;
+
     // Restoring or first time, try every interface
     if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
       PWaitAndSignal mutex(m_transport->GetWriteMutex());
@@ -346,23 +349,37 @@ PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 }
 
 
-bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool /*forked*/)
+bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
 {
   SIPTransaction * transaction = CreateTransaction(transport);
+  if (transaction == NULL) {
+    PTRACE(2, "SIP\tCould not create transaction on " << transport);
+    return false;
+  }
 
-  if (transaction != NULL) {
-    for (PINDEX i = 0; i < m_mime.GetSize(); ++i) 
-      transaction->GetMIME().SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
-    if (GetState() == Unsubscribing)
-      transaction->GetMIME().SetExpires(0);
-    if (authentication != NULL) {
-      SIPAuthenticator auth(*transaction);
-      authentication->Authorise(auth); // If already have info from last time, use it!
-    }
-    if (transaction->Start()) {
-      m_transactions.Append(transaction);
-      return true;
-    }
+  SIPMIMEInfo & mime = transaction->GetMIME();
+
+  if (forked) {
+    if (m_lastCseq == 0)
+      m_lastCseq = mime.GetCSeqIndex();
+    else
+      transaction->SetCSeq(m_lastCseq);
+  }
+
+  for (PINDEX i = 0; i < m_mime.GetSize(); ++i) 
+    mime.SetAt(m_mime.GetKeyAt(i), PString(m_mime.GetDataAt(i)));
+
+  if (GetState() == Unsubscribing)
+    mime.SetExpires(0);
+
+  if (authentication != NULL) {
+    SIPAuthenticator auth(*transaction);
+    authentication->Authorise(auth); // If already have info from last time, use it!
+  }
+
+  if (transaction->Start()) {
+    m_transactions.Append(transaction);
+    return true;
   }
 
   PTRACE(2, "SIP\tDid not start transaction on " << transport);
@@ -948,7 +965,7 @@ PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 bool SIPSubscribeHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
 {
   m_dialog.SetForking(forked);
-  bool ok = SIPHandler::WriteSIPHandler(transport, forked);
+  bool ok = SIPHandler::WriteSIPHandler(transport, false);
   m_dialog.SetForking(false);
   return ok;
 }
@@ -1660,7 +1677,7 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 bool SIPNotifyHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
 {
   m_dialog.SetForking(forked);
-  bool ok = SIPHandler::WriteSIPHandler(transport, forked);
+  bool ok = SIPHandler::WriteSIPHandler(transport, false);
   m_dialog.SetForking(false);
   return ok;
 }
