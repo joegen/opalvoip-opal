@@ -677,8 +677,10 @@ class SIP_PDU : public PSafeObject
     StatusCodes GetStatusCode () const       { return m_statusCode; }
     void SetStatusCode (StatusCodes c)       { m_statusCode = c; }
     const SIPURL & GetURI() const            { return m_uri; }
+    void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
     unsigned GetVersionMajor() const         { return m_versionMajor; }
     unsigned GetVersionMinor() const         { return m_versionMinor; }
+    void SetCSeq(unsigned cseq);
     const PString & GetEntityBody() const    { return m_entityBody; }
     void SetEntityBody(const PString & body) { m_entityBody = body; }
     void SetEntityBody();
@@ -686,7 +688,6 @@ class SIP_PDU : public PSafeObject
     void SetInfo(const PString & info)       { m_info = info; }
     const SIPMIMEInfo & GetMIME() const      { return m_mime; }
           SIPMIMEInfo & GetMIME()            { return m_mime; }
-    void SetURI(const SIPURL & newuri)       { m_uri = newuri; }
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
     bool DecodeSDP(const OpalMediaFormatList & masterList);
