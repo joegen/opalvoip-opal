@@ -1773,9 +1773,10 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
   m_mime.SetFrom(tmp.AsQuotedString());
 
   m_mime.SetCallID(callID);
-  m_mime.SetCSeq(PString(cseq) & MethodNames[m_method]);
   m_mime.SetMaxForwards(70);
   m_mime.SetVia(via);
+
+  SetCSeq(cseq);
 }
 
 
@@ -1846,6 +1847,12 @@ void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
   m_mime.SetCSeq(requestMIME.GetCSeq());
   m_mime.SetVia(requestMIME.GetVia());
   m_mime.SetRecordRoute(requestMIME.GetRecordRoute());
+}
+
+
+void SIP_PDU::SetCSeq(unsigned cseq)
+{
+  m_mime.SetCSeq(PString(cseq) & MethodNames[m_method]);
 }
 
 
