@@ -1587,6 +1587,7 @@ class OpalManager : public PObject
 
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
+    bool         garbageCollectSkip;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
 
 #ifdef OPAL_ZRTP
