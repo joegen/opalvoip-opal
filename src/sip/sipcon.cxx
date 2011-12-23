@@ -2024,6 +2024,15 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           case 2 : // Successful response - there really is only 200 OK
             OnReceivedOK(transaction, response);
             break;
+
+          default :
+            if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
+              PStringToString info;
+              info.SetAt("result", "error");
+              info.SetAt("party", "A");
+              info.SetAt("code", psprintf("%u", response.GetStatusCode()));
+              OnTransferNotify(info, this);
+            }
         }
     }
 
@@ -2072,6 +2081,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           PStringToString info;
           info.SetAt("result", "failed");
           info.SetAt("party", "A");
+          info.SetAt("code", psprintf("%u", response.GetStatusCode()));
           OnTransferNotify(info, this);
         }
         else if (response.GetStatusCode() >= 200) {
