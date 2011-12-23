@@ -412,6 +412,11 @@ class SIPHandlersList
     /**
      * Find the SIPHandler object with the specified authRealm
      */
+    PSafePtr<SIPHandler> FindSIPHandlerByAuthRealm(const PString & authRealm, PSafetyMode m);
+
+    /**
+     * Find the SIPHandler object with the specified authRealm & user
+     */
     PSafePtr<SIPHandler> FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode m);
 
     /**
