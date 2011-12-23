@@ -2351,33 +2351,34 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByUrl(const PURL & aor, SIP_
 }
 
 
-/**
- * Find the SIPHandler object with the specified authRealm
- */
-PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, PSafetyMode mode)
 {
-  PSafePtr<SIPHandler> ptr;
-
-  if (!userName.IsEmpty()) {
-    // look for a match to exact user name and realm
-    if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
-      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
-      return ptr;
-    }
-
-    // look for a match to exact user name and realm
-    if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
-      PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
-      return ptr;
-    }
-  }
-
   // look for a match to realm without users
   for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
     if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode)) {
       PTRACE(4, "SIP\tLocated existing credentials for realm \"" << authRealm << '"');
       return handler;
     }
+  }
+
+  return NULL;
+}
+
+
+PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
+{
+  PSafePtr<SIPHandler> ptr;
+
+  // look for a match to exact user name and realm
+  if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
+    PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+    return ptr;
+  }
+
+  // look for a match to exact user name and realm
+  if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
+    PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+    return ptr;
   }
 
   return NULL;

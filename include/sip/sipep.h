@@ -853,6 +853,14 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
+    /**Set registration search mode.
+       If true then only the user indicated as "local" address
+       (e.g. from OPAL_OPT_CALLING_PARTY_NUMBER etc) by the will be used
+       in searches of the registrations. No default to first user of the
+       same domain will be performed. */
+    void SetRegisteredUserMode(bool v) { m_registeredUserMode = v; }
+    bool GetRegisteredYserMode() const { return m_registeredUserMode; }
+
     /**Return the SIPAuthentication for a specific realm.
      */
     bool GetAuthentication(const PString & authRealm, PString & user, PString & password); 
@@ -988,6 +996,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
     PTimeInterval natBindingTimeout;
+    bool          m_registeredUserMode;
 
     bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;

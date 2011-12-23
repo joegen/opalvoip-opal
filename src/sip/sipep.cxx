@@ -67,6 +67,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
   , natBindingTimeout(0, 0, 1)       // 1 minute
+  , m_registeredUserMode(false)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
   , m_connectionThreadPool(maxConnectionThreads)
@@ -1660,7 +1661,16 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 bool SIPEndPoint::GetAuthentication(const PString & realm, PString & user, PString & password) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, user, PSafeReadOnly);
-  if (handler == NULL || handler->GetPassword().IsEmpty())
+  if (handler == NULL) {
+    if (m_registeredUserMode)
+      return false;
+
+    handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly);
+    if (handler == NULL)
+      return false;
+  }
+
+  if (handler->GetPassword().IsEmpty())
     return false;
 
   // really just after password, but username MAY change too.
@@ -1677,12 +1687,21 @@ SIPURL SIPEndPoint::GetRegisteredProxy(const SIPURL & url)
 
   if (url.GetScheme() != "tel") {
     // Look up by the full URL first in case of multiple registrations to the same domain.
-    if ((handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL)
+    if ((handler = activeSIPHandlers.FindSIPHandlerByUrl(url.AsString(), SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL) {
+      if (m_registeredUserMode)
+        return SIPURL();
+
       // Precise AOR not found, locate the name used for the domain.
-      handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-    return handler != NULL ? handler->GetProxy() : SIPURL();
+      if ((handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly)) == NULL)
+        return SIPURL();
+    }
+
+    return handler->GetProxy();
   }
 
+  // Can't do tel URI if in this mode
+  if (m_registeredUserMode)
+    return SIPURL();
 
   PString domain = url.GetHostName();
   if (domain.IsEmpty() || OpalIsE164(domain)) {
@@ -1709,6 +1728,9 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url, const OpalTranspo
   // Look up by the full URL first in case of multiple registrations to the same domain.
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler == NULL) {
+    if (m_registeredUserMode)
+      return GetDefaultRegisteredPartyName(transport);
+
     // Precise AOR not found, locate the name used for the domain.
     handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
     if (handler == NULL) 
@@ -1792,7 +1814,7 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   const SIPRegisterHandler * registrar = NULL;
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   // If precise AOR not found, locate the name used for the domain.
-  if (handler == NULL)
+  if (handler == NULL && !m_registeredUserMode)
     handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   if (handler != NULL) {
     registrar = dynamic_cast<const SIPRegisterHandler *>(&*handler);
