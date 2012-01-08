@@ -372,6 +372,9 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
   if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme))
       return false;
+    // RFC says that if no <> then ; parameters belong to field, not URI.
+    m_fieldParameters = paramVars;
+    paramVars = PStringToString(); // Do not use RemoveAll()
   }
   else {
     // get the URI from between the angle brackets
@@ -2518,8 +2521,11 @@ void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
     m_proxy = proxy;  
 
     // Default routeSet if there is a proxy
-    if (addToRouteSet && m_routeSet.empty())
-      m_routeSet.push_back(SIPURL(proxy.GetHostAddress(), proxy.GetPort()));
+    if (addToRouteSet && m_routeSet.empty()) {
+      SIPURL p(proxy);
+      p.Sanitise(SIPURL::RouteURI);
+      m_routeSet.push_back(p);
+    }
   }
 }
 
