@@ -1287,26 +1287,22 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
       { "text-message",       OpalManager::TextMessageWaiting       },
       { "none",               OpalManager::NoMessageWaiting         }
     };
-    PString msgs;
-    PStringArray bodylines = body.Lines ();
+
+    PMIMEInfo info(request.GetEntityBody());
+
+    PString account = info.Get("Message-Account", handler.GetAddressOfRecord().AsString());
+
+    bool nothingSent = true;
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
-
-      for (int i = 0 ; i < bodylines.GetSize () ; i++) {
-
-        PCaselessString line (bodylines [i]);
-        PINDEX j = line.FindLast(validMessageClasses[z].name);
-        if (j != P_MAX_INDEX) {
-          line.Replace(validMessageClasses[z].name, "");
-          line.Replace (":", "");
-          msgs = line.Trim ();
-          handler.GetEndPoint().OnMWIReceived(handler.GetAddressOfRecord().AsString(), validMessageClasses[z].type, msgs);
-          return true;
-        }
+      if (info.Contains(validMessageClasses[z].name)) {
+        handler.GetEndPoint().OnMWIReceived(account, validMessageClasses[z].type, info[validMessageClasses[z].name]);
+        nothingSent = false;
       }
     }
 
     // Received MWI, unknown messages number
-    handler.GetEndPoint().OnMWIReceived(handler.GetAddressOfRecord().AsString(), OpalManager::NumMessageWaitingTypes, "1/0");
+    if (nothingSent)
+      handler.GetEndPoint().OnMWIReceived(account, OpalManager::NumMessageWaitingTypes, info.Get("Message-Waiting", "no"));
 
     return true;
   }
