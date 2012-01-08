@@ -363,6 +363,9 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
   if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme))
       return false;
+    // RFC says that if no <> then ; parameters belong to field, not URI.
+    m_fieldParameters = paramVars;
+    paramVars = PStringToString(); // Do not use RemoveAll()
   }
   else {
     // get the URI from between the angle brackets
