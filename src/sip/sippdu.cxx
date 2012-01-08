@@ -510,9 +510,7 @@ void SIPURL::Sanitise(UsageContext context)
   for (i = 0; i < PARRAYSIZE(SanitaryFields); i++) {
     if (SanitaryFields[i].contexts&(1<<context)) {
       PCaselessString name = SanitaryFields[i].name;
-      paramVars.MakeUnique();
       paramVars.RemoveAt(name);
-      m_fieldParameters.MakeUnique();
       m_fieldParameters.RemoveAt(name);
     }
   }
@@ -520,7 +518,6 @@ void SIPURL::Sanitise(UsageContext context)
   for (i = 0; i < paramVars.GetSize(); ++i) {
     PCaselessString key = paramVars.GetKeyAt(i);
     if (key.NumCompare("OPAL-") == EqualTo) {
-      paramVars.MakeUnique();
       paramVars.RemoveAt(key);
       --i; // Allow for ++ in for loop
     }
@@ -2523,9 +2520,10 @@ void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 
   // Default routeSet if there is a proxy
   if (addToRouteSet && m_routeSet.empty() && !proxy.IsEmpty()) {
-    PStringStream str;
-    str << "sip:" << proxy.GetHostName() << ':'  << proxy.GetPort() << ";lr";
-    m_routeSet.push_back(SIPURL(proxy.GetHostAddress(), proxy.GetPort()));
+    SIPURL route = proxy;
+    route.GetFieldParameters().Set("lr", PString::Empty()); // Always be loose
+    route.Sanitise(SIPURL::RouteURI);
+    m_routeSet.push_back(route);
   }
 }
 
