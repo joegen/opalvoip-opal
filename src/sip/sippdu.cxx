@@ -2518,12 +2518,13 @@ void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
 
     m_proxy = proxy;  
 
-  // Default routeSet if there is a proxy
-  if (addToRouteSet && m_routeSet.empty() && !proxy.IsEmpty()) {
-    SIPURL route = proxy;
-    route.GetFieldParameters().Set("lr", PString::Empty()); // Always be loose
-    route.Sanitise(SIPURL::RouteURI);
-    m_routeSet.push_back(route);
+    // Default routeSet if there is a proxy
+    if (addToRouteSet && m_routeSet.empty()) {
+      SIPURL route = proxy;
+      route.GetFieldParameters().Set("lr", PString::Empty()); // Always be loose
+      route.Sanitise(SIPURL::RouteURI);
+      m_routeSet.push_back(route);
+    }
   }
 }
 
