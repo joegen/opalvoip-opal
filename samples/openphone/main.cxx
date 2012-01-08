@@ -5737,7 +5737,7 @@ bool PresenceDialog::TransferDataFromWindow()
     config->SetPath(groupName);
     PwxString aor;
     if (config->Read(PresenceAORKey, &aor) && aor == presentity->GetAOR()) {
-      config->Write(LastPresenceStateKey, state);
+      config->Write(LastPresenceStateKey, (int)state);
       break;
     }
   }
@@ -5794,7 +5794,11 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
       m_TargetBitRate->SetValue(mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())/1000);
+#if wxCHECK_VERSION(2,9,0)
+      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10);
+#else
       m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10, 1);
+#endif
 
       m_FrameRate->SetMax(30);
       m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
