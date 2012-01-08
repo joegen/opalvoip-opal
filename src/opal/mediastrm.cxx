@@ -746,10 +746,12 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (!rtpSession.ReadData(packet))
     return false;
 
+#if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     PTRACE(3, "Media\tAutomatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
     ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp()));
   }
+#endif
 
   timestamp = packet.GetTimestamp();
   return true;
