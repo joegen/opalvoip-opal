@@ -707,7 +707,15 @@ class OpalEndPoint : public PObject
 
   /**@name Other services */
   //@{
-    /**Callback called when Message Waiting Indication (MWI) is received
+    /**Callback called when Message Waiting Indication (MWI) is received.
+       Multiple callbacks may occur with each MessageWaitingType. A \p type
+       of NumMessageWaitingTypes indicates the server is unable to distinguish
+       the message type.
+
+       The \p extraInfo parameter is generally of the form "a/b" where a and b
+       unsigned integers representing new and old message count. However, it
+       may be a simple "yes" or "no" if the remote cannot provide a message
+       count.
      */
     virtual void OnMWIReceived (
       const PString & party,                ///< Name of party MWI is for
