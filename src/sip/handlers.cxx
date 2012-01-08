@@ -1365,9 +1365,11 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
       }
     }
 
-    // Received MWI, unknown messages number
+    // Received MWI, but not counts, must be old form. Also make sure we send a
+    // lower case yes/no to call back function, regardless of what comes down the wire.
     if (nothingSent)
-      notifyInfo.m_endpoint.OnMWIReceived(account, OpalManager::NumMessageWaitingTypes, info.Get("Message-Waiting", "no"));
+      notifyInfo.m_endpoint.OnMWIReceived(account, OpalManager::NumMessageWaitingTypes,
+                                 (info.Get("Message-Waiting") *= "yes") ? "yes" : "no");
   }
 };
 
