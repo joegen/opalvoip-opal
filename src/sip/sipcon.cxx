@@ -1024,7 +1024,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
   OpalMediaTypeDefinition * mediaDef = mediaType.GetDefinition();
-  if (!PAssertNULL(mediaDef))
+  if (!PAssert(mediaDef != NULL, PString("Unusable media type \"") + mediaType + '"'))
     return false;
 
   // See if any media formats of this session id, so don't create unused RTP session
