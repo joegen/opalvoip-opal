@@ -2394,7 +2394,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
     return RTP_Session::e_ProcessPacket;
   }
 
-  switch (socket.GetErrorNumber()) {
+  switch (socket.GetErrorNumber(PChannel::LastReadError)) {
     case ECONNRESET :
     case ECONNREFUSED :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " port on remote not ready.");
