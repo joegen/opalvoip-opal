@@ -984,7 +984,15 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     else {
       SDPMediaDescription * incomingMedia = sdp->GetMediaDescriptionByIndex(session);
       if (PAssert(incomingMedia != NULL, "SDP Media description list changed")) {
-        SDPMediaDescription * outgoingMedia = incomingMedia->GetMediaType().GetDefinition()->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
+        SDPMediaDescription * outgoingMedia = NULL;
+        SDPDummyMediaDescription * dummy = dynamic_cast<SDPDummyMediaDescription *>(incomingMedia);
+        if (dummy != NULL)
+          outgoingMedia = new SDPDummyMediaDescription(*dummy);
+        else {
+          OpalMediaTypeDefinition * def = incomingMedia->GetMediaType().GetDefinition();
+          if (def != NULL)
+            outgoingMedia = def->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
+        }
         if (PAssert(outgoingMedia != NULL, "SDP Media description clone failed")) {
           if (incomingMedia->GetSDPMediaFormats().IsEmpty())
             outgoingMedia->AddSDPMediaFormat(new SDPMediaFormat(*incomingMedia, OpalG711_ULAW_64K));
