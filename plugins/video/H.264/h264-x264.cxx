@@ -748,7 +748,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       , m_constraints(0)
       , m_maxMBPS(0)
       , m_packetisationMode(1)
-      , m_maxRTPSize(1400)
+      , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
       , m_maxNALUSize(1400)
       , m_tsto(31)
       , m_keyFramePeriod(0)
@@ -891,7 +891,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(MyClockRate/m_frameTime);
       m_encoder.SetTargetBitrate(m_bitRate/1000);
-      m_encoder.SetMaxRTPFrameSize(std::min(m_maxRTPSize, m_maxNALUSize));
+      m_encoder.SetMaxRTPPayloadSize(std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize));
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
       m_encoder.ApplyOptions();
@@ -938,6 +938,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
     AVCodecContext * m_context;
     AVFrame        * m_picture;
     H264Frame        m_fullFrame;
+    size_t           m_outputSize;
 
   public:
     MyDecoder(const PluginCodec_Definition * defn)
@@ -945,6 +946,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       , m_codec(NULL)
       , m_context(NULL)
       , m_picture(NULL)
+      , m_outputSize(352*288*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
     {
     }
 
@@ -1001,14 +1003,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
 
     virtual size_t GetOutputDataSize()
     {
-      /* Example just uses maximums. If they are very large, e.g. 4096x4096
-         then a VERY large buffer will be created by OPAL. It is more sensible
-         to use a "typical" size here and allow it to get bigger via the
-         PluginCodec_ReturnCoderBufferTooSmall mechanism if needed. */
-
-      return MyMaxWidth*MyMaxHeight*3/2 + 
-             sizeof(PluginCodec_Video_FrameHeader) +
-             PluginCodec_RTP_MinHeaderSize;
+      return m_outputSize;
     }
 
 
@@ -1082,8 +1077,10 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       size_t ySize = m_context->width * m_context->height;
       size_t uvSize = ySize/4;
       size_t newToLen = ySize+uvSize+uvSize+sizeof(PluginCodec_Video_FrameHeader)+PluginCodec_RTP_GetHeaderLength(toPtr);
-      if (newToLen > toLen)
+      if (newToLen > toLen) {
+        m_outputSize = newToLen;
         flags |= PluginCodec_ReturnCoderBufferTooSmall;
+      }
       else {
         flags |= PluginCodec_ReturnCoderLastFrame;
 

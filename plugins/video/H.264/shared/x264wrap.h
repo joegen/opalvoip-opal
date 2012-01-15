@@ -62,7 +62,7 @@ extern "C" {
 #define SET_FRAME_HEIGHT          7
 #define ENCODE_FRAMES             8
 #define ENCODE_FRAMES_BUFFERED    9
-#define SET_MAX_FRAME_SIZE        10
+#define SET_MAX_PAYLOAD_SIZE      10
 #define SET_MAX_KEY_FRAME_PERIOD  11
 #define SET_TSTO                  12
 #define SET_PROFILE_LEVEL         13
@@ -81,7 +81,7 @@ class H264Encoder
     bool SetFrameHeight(unsigned height);
     bool SetFrameRate(unsigned rate);
     bool SetTargetBitrate(unsigned rate);
-    bool SetMaxRTPFrameSize(unsigned size);
+    bool SetMaxRTPPayloadSize(unsigned size);
     bool SetTSTO(unsigned tsto);
     bool SetMaxKeyFramePeriod(unsigned period);
 
