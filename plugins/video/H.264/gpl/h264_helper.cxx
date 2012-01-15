@@ -261,9 +261,9 @@ int main(int argc, char *argv[])
           WritePipe(&ret, sizeof(ret));
         }
         break;
-      case SET_MAX_FRAME_SIZE:
+      case SET_MAX_PAYLOAD_SIZE:
           ReadPipe(&val, sizeof(val));
-          x264.SetMaxRTPFrameSize (val);
+          x264.SetMaxRTPPayloadSize (val);
           rtpSize = val;
           WritePipe(&msg, sizeof(msg)); 
         break;
