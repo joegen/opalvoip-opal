@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 
   PTRACE(5, HelperTraceName, "GPL executable ready");
 
-  rtpSize = 1400;
+  rtpSize = 1500;
 
   for (;;) {
     unsigned msg;
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
       case SET_MAX_PAYLOAD_SIZE:
           ReadPipe(&val, sizeof(val));
           x264.SetMaxRTPPayloadSize (val);
-          rtpSize = val;
+          rtpSize = val+100; // Allow for standard 12 byte RTP header and a LOT of header extensions
           WritePipe(&msg, sizeof(msg)); 
         break;
       default:
