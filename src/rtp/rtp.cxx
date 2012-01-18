@@ -2669,7 +2669,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
     return OpalRTPSession::e_ProcessPacket;
   }
 
-  switch (socket.GetErrorNumber()) {
+  switch (socket.GetErrorNumber(PChannel::LastReadError)) {
     case ECONNRESET :
     case ECONNREFUSED :
       PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName << " port on remote not ready.");
