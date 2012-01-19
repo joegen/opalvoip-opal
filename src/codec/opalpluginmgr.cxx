@@ -1077,13 +1077,14 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   if ((flags & PluginCodec_ReturnCoderBufferTooSmall) != 0) {
     m_bufferRTP->SetPayloadSize(getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
 
-    fromLen = src.GetHeaderSize() + src.GetPayloadSize();
-    toLen = m_bufferRTP->GetSize();
-    flags = 0;
-
     // Send an empty payload frame that has a marker bit
     RTP_DataFrame marker(src, src.GetHeaderSize());
     marker.SetMarker(true);
+
+    fromLen = marker.GetHeaderSize();
+    toLen = m_bufferRTP->GetSize();
+    flags = 0;
+
     if (!Transcode((const BYTE *)marker, &fromLen, m_bufferRTP->GetPointer(), &toLen, &flags))
       return false;
 
