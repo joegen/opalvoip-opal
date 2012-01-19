@@ -263,6 +263,14 @@ bool SIP_Presentity::Close()
   if (!m_publishedTupleId.IsEmpty() && m_subProtocol != e_PeerToPeer)
     m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
 
+  PTRACE(4, "SIPPres\t'" << m_aor << "' awaiting unsubscriptions to complete.");
+  while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR))
+    PThread::Sleep(100);
+  for (StringMap::iterator subs = presenceIdByAor.begin(); subs != presenceIdByAor.end(); ++subs) {
+    while (m_endpoint->IsSubscribed(SIPSubscribe::Presence, subs->second))
+      PThread::Sleep(100);
+  }
+
   m_endpoint = NULL;
   PTRACE(3, "SIPPres\t'" << m_aor << "' closed.");
   return true;
