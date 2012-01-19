@@ -237,7 +237,7 @@ bool H264Encoder::SetTargetBitrate(unsigned rate)
 }
 
 
-bool H264Encoder::SetMaxRTPFrameSize(unsigned size)
+bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
   m_context.i_slice_max_size = size;
   m_encapsulation.SetMaxPayloadSize(size);
@@ -714,9 +714,9 @@ bool H264Encoder::SetTargetBitrate(unsigned rate)
 }
 
 
-bool H264Encoder::SetMaxRTPFrameSize(unsigned size)
+bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
-  return WriteValue(SET_MAX_FRAME_SIZE, size);
+  return WriteValue(SET_MAX_PAYLOAD_SIZE, size);
 }
 
 
