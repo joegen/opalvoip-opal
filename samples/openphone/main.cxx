@@ -1914,6 +1914,7 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
             config->Write(SpeedDialAddressKey, info.m_Address);
             config->Write(SpeedDialPresentityKey, info.m_Presentity);
             config->Write(SpeedDialDescriptionKey, info.m_Description);
+            config->Flush();
           }
         }
       }
@@ -1951,6 +1952,7 @@ void MyManager::OnSashPositioned(wxSplitterEvent& event)
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
   config->Write(SashPositionKey, event.GetSashPosition());
+  config->Flush();
 }
 
 
@@ -1969,6 +1971,7 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
   wxString key;
   key.sprintf(ColumnWidthKey, event.GetColumn());
   config->Write(key, m_speedDials->GetColumnWidth(event.GetColumn()));
+  config->Flush();
 }
 
 
@@ -2023,6 +2026,7 @@ void MyManager::EditSpeedDial(int index)
     config->Write(SpeedDialAddressKey, dlg.m_Address);
     config->Write(SpeedDialPresentityKey, dlg.m_Presentity);
     config->Write(SpeedDialDescriptionKey, dlg.m_Description);
+    config->Flush();
   }
 }
 
@@ -2082,6 +2086,7 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(GeneralGroup);
   config->Write(LastDialedKey, m_LastDialed);
+  config->Flush();
 
   PwxString from = local;
   if (from.empty())
@@ -2158,6 +2163,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(GeneralGroup);
   config->Write(LastReceivedKey, m_LastDialed);
+  config->Flush();
 
   // Bring window to front if not already
   if (!IsActive())
@@ -2248,6 +2254,7 @@ void MyManager::OnEstablishedCall(OpalCall & call)
     wxConfigBase * config = wxConfig::Get();
     config->SetPath(GeneralGroup);
     config->Write(CurrentSIPConnectionKey, PwxString(connection->GetDialog().AsString()));
+    config->Flush();
   }
 #endif // OPAL_SIP
 }
@@ -2482,6 +2489,8 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
             config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY = y);
           }
         }
+
+        config->Flush();
       }
     }
   }
@@ -2936,6 +2945,7 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
   config->Write(LocalVideoFrameYKey, m_localVideoFrameY);
   config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX);
   config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY);
+  config->Flush();
 }
 
 
@@ -3453,6 +3463,7 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarProxyKey, m_Proxy);
   config.Write(RegistrarTimeToLiveKey, m_TimeToLive);
   config.Write(RegistrarCompatibilityKey, (int)m_Compatibility);
+  config.Flush();
 }
 
 // these must match the drop-down box on the Registration/Subcription dialog box
@@ -4640,6 +4651,8 @@ bool OptionsDialog::TransferDataFromWindow()
 
   m_manager.AdjustVideoFormats();
 
+  config->Flush();
+
   ::wxEndBusyCursor();
 
   return true;
@@ -5649,6 +5662,7 @@ bool PresenceDialog::TransferDataFromWindow()
     PwxString aor;
     if (config->Read(PresenceAORKey, &aor) && aor == presentity->GetAOR()) {
       config->Write(LastPresenceStateKey, (int)state);
+      config->Flush();
       break;
     }
   }
@@ -5888,6 +5902,8 @@ void CallDialog::OnOK(wxCommandEvent &)
       config->Write(key, entry);
     }
   }
+
+  config->Flush();
 
   EndModal(wxID_OK);
 }
@@ -6137,6 +6153,8 @@ void CallIMDialog::OnOK(wxCommandEvent &)
       config->Write(key, entry);
     }
   }
+
+  config->Flush();
 
   EndModal(wxID_OK);
 }
@@ -6395,7 +6413,9 @@ void InCallPanel::OnSpeakerMute(wxCommandEvent & cmdEvent)
 {
   bool muted = !cmdEvent.IsChecked();
   SetVolume(false, m_SpeakerVolume->GetValue(), muted);
-  wxConfig::Get()->Write(SpeakerMuteKey, muted);
+  wxConfigBase * config = wxConfig::Get();
+  config->Write(SpeakerMuteKey, muted);
+  config->Flush();
 }
 
 
@@ -6403,7 +6423,9 @@ void InCallPanel::OnMicrophoneMute(wxCommandEvent & cmdEvent)
 {
   bool muted = !cmdEvent.IsChecked();
   SetVolume(true, m_MicrophoneVolume->GetValue(), muted);
-  wxConfig::Get()->Write(MicrophoneMuteKey, muted);
+  wxConfigBase * config = wxConfig::Get();
+  config->Write(MicrophoneMuteKey, muted);
+  config->Flush();
 }
 
 
@@ -6430,7 +6452,9 @@ void InCallPanel::SpeakerVolume(wxScrollEvent & scrollEvent)
 {
   int newValue = scrollEvent.GetPosition();
   SetVolume(false, newValue, !m_SpeakerMute->GetValue());
-  wxConfig::Get()->Write(SpeakerVolumeKey, newValue);
+  wxConfigBase * config = wxConfig::Get();
+  config->Write(SpeakerVolumeKey, newValue);
+  config->Flush();
 }
 
 
@@ -6438,7 +6462,9 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & scrollEvent)
 {
   int newValue = scrollEvent.GetPosition();
   SetVolume(true, newValue, !m_MicrophoneMute->GetValue());
-  wxConfig::Get()->Write(MicrophoneVolumeKey, newValue);
+  wxConfigBase * config = wxConfig::Get();
+  config->Write(MicrophoneVolumeKey, newValue);
+  config->Flush();
 }
 
 
