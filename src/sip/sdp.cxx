@@ -334,8 +334,8 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 
     PCaselessString key = m_fmtp(sep1prev, sep2pos-1).Trim();
     if (key.IsEmpty()) {
-      PTRACE(2, "SDP\tBadly formed FMTP parameter \"" << m_fmtp << '"');
-      break;
+      PTRACE(2, "SDP\tBadly formed FMTP parameter in \"" << m_fmtp << '"');
+      continue;
     }
 
     OpalMediaOption * option = mediaFormat.FindOption(key);
