@@ -83,13 +83,13 @@ lib: $(TARGET)
 $(TARGET): $(OBJS)
 	$(ARCHIVE.cmdline)
 
-encoder$(EXESUFFIX): $(ENCODER_OBJS)	
+encoder$(EXESUFFIX): $(TARGET) $(ENCODER_OBJS)	
 	$(LINK.o.cmdline)
 
-decoder$(EXESUFFIX): $(DECODER_OBJS)	
+decoder$(EXESUFFIX): $(TARGET) $(DECODER_OBJS)	
 	$(LINK.o.cmdline)
 
-signalcompare$(EXESUFFIX): $(SIGNALCMP_OBJS)	
+signalcompare$(EXESUFFIX): $(TARGET) $(SIGNALCMP_OBJS)	
 	$(LINK.o.cmdline)
 
 clean:
