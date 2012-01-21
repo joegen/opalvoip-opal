@@ -3086,7 +3086,7 @@
                                                 <border>0</border>
                                                 <option>0</option>
                                                 <object class="wxComboBox" name="telURI" base="EditComboBox">
-                                                    <style>wxCB_READONLY|wxCB_SORT</style>
+                                                    <style>wxCB_READONLY</style>
                                                     <selection>-1</selection>
                                                     <choices>
                                                     </choices>
@@ -3134,7 +3134,7 @@
                                                         <border>12</border>
                                                         <option>0</option>
                                                         <object class="wxComboBox" name="RouteSource" base="EditComboBox">
-                                                            <style>wxCB_READONLY|wxCB_SORT</style>
+                                                            <style>wxCB_READONLY</style>
                                                             <selection>-1</selection>
                                                             <choices>
                                                             </choices>

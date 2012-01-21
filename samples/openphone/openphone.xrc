@@ -4644,7 +4644,7 @@
                                             <object class="sizeritem">
                                                 <object class="wxComboBox" name="telURI">
                                                     <size>40, 12d</size>
-                                                    <style>wxCB_READONLY|wxCB_SORT</style>
+                                                    <style>wxCB_READONLY</style>
                                                     <selection>-1</selection>
                                                     <content>
                                                     </content>
@@ -4687,7 +4687,7 @@
                                                         <border>12</border>
                                                         <object class="wxComboBox" name="RouteSource">
                                                             <size>40, 11d</size>
-                                                            <style>wxCB_READONLY|wxCB_SORT</style>
+                                                            <style>wxCB_READONLY</style>
                                                             <selection>-1</selection>
                                                             <content>
                                                             </content>

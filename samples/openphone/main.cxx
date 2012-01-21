@@ -735,8 +735,8 @@ bool MyManager::Initialise()
 
   // Log window - gets informative text - bottom half of splitter
   m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), wxSize(initialSize.x, 128), wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
-  m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
-  m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
+  m_logWindow->SetBackgroundColour(*wxBLACK);
+  m_logWindow->SetForegroundColour(*wxGREEN);
 
   // Set up sizer to automatically resize the splitter to size of window
   wxBoxSizer * sizer = new wxBoxSizer(wxVERTICAL);
@@ -1440,7 +1440,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
     m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
     m_speedDials->SetImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
   }
-
+  
   // Now either replace the tab or set it for the first time
   if (m_tabs->GetPageCount() == 0)
     m_tabs->AddPage(m_speedDials, SpeedDialTabTitle);
@@ -1454,6 +1454,8 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
     m_speedDials->SetItemData(index, (intptr_t)&*it);
     UpdateSpeedDial(index, *it);
   }
+  
+  m_speedDials->Show();
 }
 
 
@@ -1494,7 +1496,11 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
 
 void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 {
-    m_logWindow->WriteText(theEvent.GetString());
+  m_logWindow->WriteText(theEvent.GetString());
+#if defined(__WXMAC__) && wxCHECK_VERSION(2,9,2)
+  // Workaround for OSX (2.9.2) bug
+  m_logWindow->SetStyle(0, m_logWindow->GetLastPosition(), wxTextAttr(*wxGREEN, *wxBLACK));
+#endif
 }
 
 
