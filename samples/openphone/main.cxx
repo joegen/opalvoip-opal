@@ -747,6 +747,24 @@ bool MyManager::Initialise()
   config->Read(SashPositionKey, &width);
   m_splitter->SplitHorizontally(m_tabs, m_logWindow, width);
 
+  // Read the speed dials from the configuration
+  config->SetPath(SpeedDialsGroup);
+  SpeedDialInfo info;
+  long groupIndex;
+  if (config->GetFirstGroup(info.m_Name, groupIndex)) {
+    do {
+      config->SetPath(info.m_Name);
+      if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
+        config->Read(SpeedDialNumberKey, &info.m_Number);
+        if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
+          config->Read(SpeedDialStateURLKey, &info.m_Presentity);
+        config->Read(SpeedDialDescriptionKey, &info.m_Description);
+        m_speedDialInfo.insert(info);
+      }
+      config->SetPath(wxT(".."));
+    } while (config->GetNextGroup(info.m_Name, groupIndex));
+  }
+
   // Speed dial window - icons for each speed dial
   int view;
   if (!config->Read(ActiveViewKey, &view) || view < 0 || view >= e_NumViews)
@@ -1221,7 +1239,6 @@ bool MyManager::Initialise()
 
   config->SetPath(RegistrarGroup);
   wxString groupName;
-  long groupIndex;
   if (config->GetFirstGroup(groupName, groupIndex)) {
     do {
       config->SetPath(groupName);
@@ -1432,22 +1449,10 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
     m_tabs->InsertPage(0, m_speedDials, SpeedDialTabTitle);
   }
 
-  // Read the speed dials from the configuration
-  config->SetPath(SpeedDialsGroup);
-  SpeedDialInfo info;
-  long groupIndex;
-  if (config->GetFirstGroup(info.m_Name, groupIndex)) {
-    do {
-      config->SetPath(info.m_Name);
-      if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
-        config->Read(SpeedDialNumberKey, &info.m_Number);
-        if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
-          config->Read(SpeedDialStateURLKey, &info.m_Presentity);
-        config->Read(SpeedDialDescriptionKey, &info.m_Description);
-        UpdateSpeedDial(INT_MAX, info);
-      }
-      config->SetPath(wxT(".."));
-    } while (config->GetNextGroup(info.m_Name, groupIndex));
+  for (set<SpeedDialInfo>::iterator it = m_speedDialInfo.begin(); it != m_speedDialInfo.end(); ++it) {
+    long index = m_speedDials->InsertItem(INT_MAX, it->m_Name);
+    m_speedDials->SetItemData(index, (intptr_t)&*it);
+    UpdateSpeedDial(index, *it);
   }
 }
 
