@@ -90,8 +90,9 @@ class OpalMediaCommand : public PObject
 #define OPAL_DEFINE_MEDIA_COMMAND(cls, name) \
   class cls : public OpalMediaCommand \
   { \
-	PCLASSINFO(cls, OpalMediaCommand) \
+      PCLASSINFO(cls, OpalMediaCommand) \
     public: \
+      cls() { } \
       virtual PString GetName() const { return name; } \
   }
 
