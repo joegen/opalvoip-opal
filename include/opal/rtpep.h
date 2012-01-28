@@ -154,8 +154,8 @@ class OpalRTPEndPoint : public OpalEndPoint
       OpalConnection & m_connection;
       int              m_previousResult;
     };
-    typedef std::map<WORD, LocalRtpInfo> LocalRtpInfoMap;
-    LocalRtpInfoMap m_connectionsByRtpLocalPort;
+    typedef std::map<OpalTransportAddress, LocalRtpInfo> LocalRtpInfoMap;
+    LocalRtpInfoMap m_connectionsByRtpLocalAddr;
 };
 
 
