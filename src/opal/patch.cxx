@@ -214,6 +214,8 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     PINDEX packetTime = sourceFormat.GetFrameTime()*framesPerPacket;
     patch.source.SetDataSize(packetSize, packetTime);
     stream->SetDataSize(packetSize, packetTime);
+    stream->InternalUpdateMediaFormat(stream->GetMediaFormat());
+    patch.source.InternalUpdateMediaFormat(patch.source.GetMediaFormat());
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return true;
   }
@@ -235,6 +237,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
     patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
     patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
+    stream->InternalUpdateMediaFormat(primaryCodec->GetOutputFormat());
 
     PTRACE(3, "Patch\tAdded media stream sink " << *stream
            << " using transcoder " << *primaryCodec << ", data size=" << stream->GetDataSize());
@@ -291,6 +294,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
   patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
   patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
+  stream->InternalUpdateMediaFormat(secondaryCodec->GetOutputFormat());
 
   PTRACE(3, "Patch\tAdded media stream sink " << *stream
           << " using transcoders " << *primaryCodec
