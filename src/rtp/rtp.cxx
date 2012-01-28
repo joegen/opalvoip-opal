@@ -2392,7 +2392,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
          << " ssrc=" << syncSourceOut);
 
   OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-  if (ep != NULL)
+  if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
     ep->SetConnectionByRtpLocalPort(this, &m_connection);
 
   return true;

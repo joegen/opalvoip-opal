@@ -114,16 +114,16 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     return false;
   }
 
-  WORD localPort = rtp->GetLocalDataPort();
-  LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalPort.find(localPort);
-  if (!PAssert(itLocal != m_connectionsByRtpLocalPort.end(), PLogicError))
+  OpalTransportAddress localAddr = rtp->GetLocalMediaAddress();
+  LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalAddr.find(localAddr);
+  if (!PAssert(itLocal != m_connectionsByRtpLocalAddr.end(), PLogicError))
     return false;
 
-  WORD remotePort = rtp->GetRemoteDataPort();
-  LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalPort.find(remotePort);
-  if (itRemote == m_connectionsByRtpLocalPort.end()) {
+  OpalTransportAddress remoteAddr = rtp->GetRemoteMediaAddress();
+  LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalAddr.find(remoteAddr);
+  if (itRemote == m_connectionsByRtpLocalAddr.end()) {
     PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
-              "remote RTP port " << remotePort << " not this process.");
+              "remote RTP address " << remoteAddr << " not this process.");
     return false;
   }
 
@@ -138,7 +138,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   }
 
   PTRACE(3, "RTPEp\tSession " << stream.GetSessionID() << ", "
-            "RTP ports " << localPort << " and " << remotePort
+            "RTP at " << localAddr << " and " << remoteAddr
          << ' ' << (cached ? "cached" : "flagged") << " as "
          << (result ? "bypassed" : "normal")
          << " on connection " << connection);
@@ -154,8 +154,8 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
 
   PWaitAndSignal mutex(inUseFlag);
 
-  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(rtp->GetLocalDataPort());
-  if (it == m_connectionsByRtpLocalPort.end() || it->second.m_previousResult < 0)
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(rtp->GetLocalMediaAddress());
+  if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
@@ -163,8 +163,8 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
             "on connection " << it->second.m_connection);
   it->second.m_previousResult = -1;
 
-  it = m_connectionsByRtpLocalPort.find(rtp->GetRemoteDataPort());
-  if (it == m_connectionsByRtpLocalPort.end() || it->second.m_previousResult < 0)
+  it = m_connectionsByRtpLocalAddr.find(rtp->GetRemoteMediaAddress());
+  if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
     return;
 
   PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
@@ -180,21 +180,23 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConn
   if (rtp == NULL)
     return;
 
-  WORD localPort = rtp->GetLocalDataPort();
+  OpalTransportAddress localAddr = rtp->GetLocalMediaAddress();
   inUseFlag.Wait();
   if (connection == NULL) {
-    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalPort.find(localPort);
-    if (it != m_connectionsByRtpLocalPort.end()) {
+    LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
+    if (it != m_connectionsByRtpLocalAddr.end()) {
       PTRACE(4, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-                "forgetting local RTP port " << localPort << " on connection " << it->second.m_connection);
-      m_connectionsByRtpLocalPort.erase(it);
+                "forgetting local RTP at " << localAddr << " on connection " << it->second.m_connection);
+      m_connectionsByRtpLocalAddr.erase(it);
     }
   }
   else {
     std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
-                m_connectionsByRtpLocalPort.insert(LocalRtpInfoMap::value_type(localPort, *connection));
+                m_connectionsByRtpLocalAddr.insert(LocalRtpInfoMap::value_type(localAddr, *connection));
+    PAssert(insertResult.second || &insertResult.first->second.m_connection == connection,
+            "Failed to remove port " + localAddr);
     PTRACE_IF(4, insertResult.second, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-              "remembering local RTP port " << localPort << " on connection " << *connection);
+              "remembering local RTP at " << localAddr << " on connection " << *connection);
   }
   inUseFlag.Signal();
 }
