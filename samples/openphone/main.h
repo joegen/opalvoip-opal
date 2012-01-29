@@ -1063,7 +1063,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     wxDataFormat       m_ClipboardFormat;
 
     set<SpeedDialInfo> m_speedDialInfo;
-    SpeedDialInfo * GetSelectedSpeedDial(int previous = -1) const;
+    SpeedDialInfo * GetSelectedSpeedDial() const;
 
     MyPCSSEndPoint   * pcssEP;
     OpalLineEndPoint * potsEP;
