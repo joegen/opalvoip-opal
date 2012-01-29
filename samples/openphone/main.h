@@ -1005,7 +1005,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnMyPresence(wxCommandEvent& event);
 #if OPAL_HAS_IM
     void OnStartIM(wxCommandEvent& event);
-    void OnStartInstantMessage(wxCommandEvent& event);
+    void OnInCallIM(wxCommandEvent& event);
     void OnSendIMSpeedDial(wxCommandEvent& event);
 #endif // OPAL_HAS_IM
 
