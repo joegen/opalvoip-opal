@@ -2403,11 +2403,9 @@ bool OpalRTPSession::Close()
 {
   bool ok = Shutdown(true) | Shutdown(false);
 
-  if (ok) {
-    OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-    if (ep != NULL)
-      ep->SetConnectionByRtpLocalPort(this, NULL);
-  }
+  OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
+  if (ep != NULL)
+    ep->SetConnectionByRtpLocalPort(this, NULL);
 
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
