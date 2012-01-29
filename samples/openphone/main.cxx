@@ -561,7 +561,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
 #if OPAL_HAS_IM
   EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
-  EVT_MENU(XRCID("MenuStartMessage"),    MyManager::OnStartInstantMessage)
+  EVT_MENU(XRCID("MenuInCallMessage"),   MyManager::OnInCallIM)
   EVT_MENU(XRCID("SendIMSpeedDial"),     MyManager::OnSendIMSpeedDial)
 #endif // OPAL_HAS_IM
 
@@ -1537,7 +1537,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartRecording"),  m_activeCall != NULL && !m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuStopRecording"),   m_activeCall != NULL &&  m_activeCall->IsRecording());
   menubar->Enable(XRCID("MenuSendAudioFile"),   m_activeCall != NULL);
-  menubar->Enable(XRCID("MenuStartMessage"),    m_activeCall != NULL);
+  menubar->Enable(XRCID("MenuInCallMessage"),   m_activeCall != NULL);
 
   menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
 
@@ -1724,39 +1724,13 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnStartInstantMessage(wxCommandEvent & /*event*/)
+void MyManager::OnInCallIM(wxCommandEvent & /*event*/)
 {
-#if 0
-  if (m_activeCall != NULL) {
-    PSafePtr<OpalPCSSConnection> pcss = m_activeCall->GetConnectionAs<OpalPCSSConnection>(0, PSafeReference);
-    if (pcss != NULL) {
-      std::string callId((const char *)pcss->GetToken());
-      PSafePtr<OpalConnection> conn = pcss->GetOtherPartyConnection();
-      if (conn != NULL) {
-        PWaitAndSignal m(conversationMapMutex);
-        ConversationMapType::iterator r = conversationMap.find(callId);
-        if (r != conversationMap.end()) {
-          r->second->Show(true);  // bring window to front
-          return;
-        }
-        PString remoteAddress(conn->GetRemotePartyCallbackURL());
-        PString localName(conn->GetLocalPartyName());
-        PString remoteName(conn->GetRemotePartyName());
-        OpalMediaFormat mediaFormat;
-#if OPAL_HAS_MSRP
-        mediaFormat = OpalMSRP;
-#elif OPAL_HAS_SIPIM
-        mediaFormat = OpalSIPIM;
-#else
-        mediaFormat = OpalT140;
-#endif
-        IMDialog * dialog = new IMDialog(this, callId, mediaFormat, localName, remoteAddress, remoteName);
-        conversationMap.insert(ConversationMapType::value_type(callId, dialog));
-        dialog->Show();
-      }
-    }
-  }
-#endif
+  if (m_activeCall == NULL)
+    return;
+
+  if (m_imEP->CreateContext(*m_activeCall) == NULL)
+    wxMessageBox(wxT("Cannot send IMs to active call"), wxT("Error"));
 }
 
 

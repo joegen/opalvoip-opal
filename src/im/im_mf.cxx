@@ -373,6 +373,15 @@ OpalMediaFormatList OpalIMEndPoint::GetMediaFormats() const
 }
 
 
+PSafePtr<OpalIMContext> OpalIMEndPoint::CreateContext(OpalCall & call)
+{
+  if (call.IsNetworkOriginated())
+    return InternalCreateContext(call.GetPartyB(), call.GetPartyA(), NULL, false, &call);
+  else
+    return InternalCreateContext(call.GetPartyA(), call.GetPartyB(), NULL, false, &call);
+}
+
+
 PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & localURL,
                                                               const PURL & remoteURL,
                                                               const char * overrideScheme,

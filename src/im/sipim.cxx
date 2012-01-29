@@ -252,18 +252,32 @@ bool OpalSIPIMContext::Open(bool byRemote)
   if (byRemote)
     return true;
 
+  if (m_call != NULL) {
+    PSafePtr<SIPConnection> conn = m_call->GetConnectionAs<SIPConnection>();
+    if (conn == NULL) {
+      PTRACE(2, "SIPIM\tNo SIP connection");
+      return false;
+    }
+
+    if (conn->DoesRemoteAllowMethod(SIP_PDU::Method_MESSAGE))
+      return true;
+
+    PTRACE(2, "SIPIM\tMESSAGE not allowed");
+    return false;
+  }
+
   OpalManager & manager = m_endpoint->GetManager();
 
   OpalMediaFormatList list = m_endpoint->GetMediaFormats();
   list.Remove(manager.GetMediaFormatMask());
   list.Reorder(manager.GetMediaFormatOrder());
   if (list.IsEmpty()) {
-    PTRACE(2, "OpalIM\tNo media formats available");
+    PTRACE(2, "SIPIM\tNo media formats available");
     return false;
   }
 
   if (list.front() == OpalSIPIM) {
-    PTRACE(3, "OpalIM\tDefault RFC 3428 pager mode for SIP");
+    PTRACE(3, "SIPIM\tDefault RFC 3428 pager mode for SIP");
     return true;
   }
 
@@ -288,14 +302,14 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
   // RFC3428
   OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
   if (imEP == NULL) {
-    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM endpoint");
+    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM endpoint");
     return;
   }
 
   PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(
                                           imEP->FindContextByIdWithLock(params.m_id));
   if (context == NULL) {
-    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM context for \"" << params.m_id << '"');
+    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for \"" << params.m_id << '"');
     return;
   }
 
@@ -333,7 +347,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
   // RFC3428
   OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
   if (imEP == NULL) {
-    PTRACE2(2, &endpoint, "OpalIM\tCannot find IM endpoint");
+    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM endpoint");
     return;
   }
 

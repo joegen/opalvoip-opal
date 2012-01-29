@@ -140,7 +140,7 @@
                 </item>
                 <item>
                     <label>Message</label>
-                    <name>MenuStartMessage</name>
+                    <name>MenuInCallMessage</name>
                 </item>
                 <item>
                     <label>H&amp;old</label>

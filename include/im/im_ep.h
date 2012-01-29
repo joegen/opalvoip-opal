@@ -101,6 +101,12 @@ class OpalIMEndPoint : public OpalEndPoint
       const char * scheme = NULL  ///< Scheme to use, default to remoteURL.GetScheme()
     ) { return InternalCreateContext(localURL, remoteURL, scheme, false, NULL); }
 
+    /**Create a Instant Messaging context based on an existing call.
+      */
+    PSafePtr<OpalIMContext> CreateContext(
+      OpalCall & call
+    );
+
     /** Remove a new context.
         Generally only used internally.
         This will call notifiers indicating converstaion end.

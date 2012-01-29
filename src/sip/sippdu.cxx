@@ -3716,6 +3716,19 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   : SIPTransaction(Method_MESSAGE, ep, trans)
   , m_parameters(params)
 {
+  SIPURL addr(params.m_remoteAddress);
+
+  if (!params.m_localAddress.IsEmpty())
+    m_localAddress = params.m_localAddress;
+  else {
+    if (!params.m_addressOfRecord.IsEmpty())
+      m_localAddress = params.m_addressOfRecord;
+    else
+      m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
+  }
+
+  InitialiseHeaders(addr, addr, m_localAddress.AsQuotedString(), params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
+
   Construct(params);
 }
 
@@ -3730,19 +3743,6 @@ SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
 
 void SIPMessage::Construct(const Params & params)
 {
-  SIPURL addr(params.m_remoteAddress);
-
-  if (!params.m_localAddress.IsEmpty())
-    m_localAddress = params.m_localAddress;
-  else {
-    if (!params.m_addressOfRecord.IsEmpty())
-      m_localAddress = params.m_addressOfRecord;
-    else
-      m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
-  }
-
-  InitialiseHeaders(addr, addr, m_localAddress.AsQuotedString(), params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
-
   if (!params.m_contentType.IsEmpty()) {
     m_mime.SetContentType(params.m_contentType);
     m_entityBody = params.m_body;
