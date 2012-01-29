@@ -91,7 +91,7 @@ case "$target_os" in
         ;;
 
         cygwin*|mingw**)
-          LDSO='-module -avoid-version -shared'
+          LDSO='-module -shared'
           PLUGINEXT=dll
           WIN32=yes
           AC_CHECK_HEADERS([malloc.h])
