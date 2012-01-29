@@ -587,9 +587,13 @@ class SIPConnection : public OpalRTPConnection
       */
     PRACKMode GetPRACKMode() const { return m_prackMode; }
 
-    /** Return a bit mask of the allowed SIP methods.
+    /** Return a bit mask of the allowed local SIP methods.
       */
     virtual unsigned GetAllowedMethods() const;
+
+    /** REturn true if remote allows the method.
+     */
+    bool DoesRemoteAllowMethod(SIP_PDU::Methods method) const { return (m_allowedMethods&(1<<method)) != 0; }
 
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
