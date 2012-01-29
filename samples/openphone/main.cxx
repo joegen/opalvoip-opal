@@ -1432,7 +1432,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       m_speedDials->InsertColumn(i, titles[i]);
       wxString key;
       key.sprintf(ColumnWidthKey, i);
-      if (config->Read(key, &width))
+      if (config->Read(key, &width) && width > 0)
         m_speedDials->SetColumnWidth(i, width);
     }    
   }
@@ -1478,9 +1478,12 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
 
   if (m_speedDialDetail) {
     for (int i = 0; i < e_NumColumns; i++) {
-      wxString key;
-      key.sprintf(ColumnWidthKey, i);
-      config->Write(key, m_speedDials->GetColumnWidth(i));
+      int width = m_speedDials->GetColumnWidth(i);
+      if (width > 0) {
+        wxString key;
+        key.sprintf(ColumnWidthKey, i);
+        config->Write(key, width);
+      }
     }
   }
   
@@ -1666,9 +1669,9 @@ void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
 }
 
 
-SpeedDialInfo * MyManager::GetSelectedSpeedDial(int previous) const
+SpeedDialInfo * MyManager::GetSelectedSpeedDial() const
 {
-  int idx = m_speedDials->GetNextItem(previous, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  int idx = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
   return idx < 0 ? NULL : (SpeedDialInfo *)m_speedDials->GetItemData(idx);
 }
 
@@ -1844,20 +1847,18 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
   if (!wxTheClipboard->Open())
     return;
 
-  wxString tabbedText;
+  tstringstream tabbedText;
   int pos = -1;
-  SpeedDialInfo * info;
-  while ((info = GetSelectedSpeedDial(pos)) != NULL) {
-    tabbedText += info->m_Name;
-    tabbedText += '\t';
-    tabbedText += info->m_Number;
-    tabbedText += '\t';
-    tabbedText += info->m_Address;
-    tabbedText += '\t';
-    tabbedText += info->m_Description;
-    tabbedText += '\t';
-    tabbedText += info->m_Presentity;
-    tabbedText += wxT("\r\n");
+  while ((pos = m_speedDials->GetNextItem(pos, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
+    SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(pos);
+    if (PAssertNULL(info) != NULL) {
+      tabbedText << info->m_Name << '\t'
+                 << info->m_Number << '\t'
+                 << info->m_Address << '\t'
+                 << info->m_Description << '\t'
+                 << info->m_Presentity
+                 << "\r\n";
+    }
   }
 
   // Want pure text so can copy to notepad or something, and our built
@@ -1865,10 +1866,10 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
   // just guarantees the format of teh string, where just using CF_TEXT
   // coupld provide anything.
   wxDataObjectComposite * multiFormatData = new wxDataObjectComposite;
-  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText);
+  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText.str());
   myFormatData->SetFormat(m_ClipboardFormat);
   multiFormatData->Add(myFormatData);
-  multiFormatData->Add(new wxTextDataObject(tabbedText));
+  multiFormatData->Add(new wxTextDataObject(tabbedText.str()));
   wxTheClipboard->SetData(multiFormatData);
   wxTheClipboard->Close();
 }
@@ -1915,9 +1916,12 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
   if (count == 0)
     return;
 
-  wxString str;
-  str.Printf(wxT("Delete %u item%s?"), count, count != 1 ? wxT("s") : wxT(""));
-  wxMessageDialog dlg(this, str, wxT("OpenPhone Speed Dials"), wxYES_NO);
+  tstringstream strm;
+  strm << "Delete " << count << " item";
+  if (count > 1)
+    strm << 's';
+  strm << '?';
+  wxMessageDialog dlg(this, strm.str(), wxT("OpenPhone Speed Dials"), wxYES_NO);
   if (dlg.ShowModal() != wxID_YES)
     return;
 
