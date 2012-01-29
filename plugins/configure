@@ -6459,7 +6459,7 @@ fi
         ;;
 
         cygwin*|mingw**)
-          LDSO='-module -avoid-version -shared'
+          LDSO='-module -shared'
           PLUGINEXT=dll
           WIN32=yes
           for ac_header in malloc.h
