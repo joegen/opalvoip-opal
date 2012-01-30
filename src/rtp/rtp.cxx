@@ -224,11 +224,12 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
 
   BYTE * ptr = (BYTE *)&theArray[MinHeaderSize + 4*GetContribSrcCount()];
   id = *(PUInt16b *)ptr;
-  ptr += 4;
+  int extensionSize = *(PUInt16b *)(ptr += 2) * 4;
+  ptr += 2;
 
   if (idx < 0) {
     // RFC 3550 format
-    length = *(PUInt16b *)(ptr += 2);
+    length = extensionSize;
     return ptr + 2;
   }
 
@@ -238,14 +239,19 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
       switch (*ptr & 0xf) {
         case 0 :
           ++ptr;
+          --extensionSize;
           break;
 
         case 15 :
           return NULL;
 
         default :
-          ptr += (*ptr >> 4)+2;
+          int len = (*ptr >> 4)+2;
+          ptr += len;
+          extensionSize -= len;
       }
+      if (extensionSize <= 0)
+        return NULL;
     }
 
     id = *ptr >> 4;
@@ -256,8 +262,11 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
   if ((id&0xfff0) == 0x1000) {
     // RFC 5285 two byte format
     while (idx-- > 0) {
-      if (*ptr++ != 0)
-        ptr += *ptr + 1;
+      if (*ptr++ != 0) {
+        int len = *ptr + 1;
+        ptr += len;
+        extensionSize -= len;
+      }
     }
 
     id = *ptr++;
