@@ -602,7 +602,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   if (m_subProtocol != e_PeerToPeer)
     m_endpoint->PublishPresence(sipPresence, GetExpiryTime());
   else
-    m_endpoint->Notify(SIPURL(m_aor.AsString()), SIPSubscribe::Presence, sipPresence.AsXML());
+    m_endpoint->Notify(m_aor, SIPSubscribe::Presence, sipPresence.AsXML());
 }
 
 
