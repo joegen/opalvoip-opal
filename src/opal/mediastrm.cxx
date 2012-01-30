@@ -71,7 +71,6 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , defaultDataSize(mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1))
   , timestamp(0)
   , marker(true)
-  , mismatchedPayloadTypes(0)
   , mediaPatch(NULL)
   , m_payloadType(mediaFormat.GetPayloadType())
   , m_frameTime(mediaFormat.GetFrameTime())
@@ -318,31 +317,6 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   timestamp = packet.GetTimestamp();
 
   int size = packet.GetPayloadSize();
-  if (size > 0 && m_payloadType < RTP_DataFrame::MaxPayloadType) {
-    if (packet.GetPayloadType() == m_payloadType) {
-      PTRACE_IF(2, mismatchedPayloadTypes > 0,
-                "H323RTP\tPayload type matched again " << m_payloadType);
-      mismatchedPayloadTypes = 0;
-    }
-    else {
-      mismatchedPayloadTypes++;
-      if (mismatchedPayloadTypes < MAX_PAYLOAD_TYPE_MISMATCHES) {
-        PTRACE(2, "Media\tRTP data with mismatched payload type,"
-                  " is " << packet.GetPayloadType() << 
-                  " expected " << m_payloadType <<
-                  ", ignoring packet.");
-        size = 0;
-      }
-      else {
-        PTRACE_IF(2, mismatchedPayloadTypes == MAX_PAYLOAD_TYPE_MISMATCHES,
-                  "Media\tRTP data with consecutive mismatched payload types,"
-                  " is " << packet.GetPayloadType() << 
-                  " expected " << m_payloadType <<
-                  ", ignoring payload type from now on.");
-      }
-    }
-  }
-
   if (size == 0) {
     PINDEX dummy;
     if (!InternalWriteData(NULL, 0, dummy))
@@ -594,6 +568,15 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
 }
 
 
+bool OpalMediaStreamPacing::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  m_frameTime = mediaFormat.GetFrameTime();
+  m_frameSize = mediaFormat.GetFrameSize();
+  m_timeUnits = mediaFormat.GetTimeUnits();
+  return true;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
@@ -659,6 +642,12 @@ PBoolean OpalNullMediaStream::RequiresPatchThread() const
 PBoolean OpalNullMediaStream::IsSynchronous() const
 {
   return m_isSynchronous;
+}
+
+
+bool OpalNullMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+{
+  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) && OpalMediaStreamPacing::UpdateMediaFormat(newMediaFormat);
 }
 
 
