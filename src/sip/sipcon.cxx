@@ -314,7 +314,7 @@ SIPConnection::~SIPConnection()
   PTRACE(4, "SIP\tDeleting connection.");
 
   // Delete the transport now we are finished with it
-  SetTransport(PString::Empty());
+  SetTransport(SIPURL());
 
   delete m_authentication;
   delete originalInvite;
@@ -1874,7 +1874,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
   {
-    SIPURL newRemotePartyID = responseMIME.GetString("Remote-Party-ID");
+    SIPURL newRemotePartyID(responseMIME, "Remote-Party-ID");
     if (!newRemotePartyID.IsEmpty()) {
       if (m_ciscoRemotePartyID.IsEmpty() && newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
         PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
@@ -2350,7 +2350,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
 
-  m_ciscoRemotePartyID = mime.GetString("Remote-Party-ID");
+  m_ciscoRemotePartyID = SIPURL(mime, "Remote-Party-ID");
   PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
             "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
 
@@ -2519,7 +2519,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   m_answerFormatList.RemoveAll();
 
-  SIPURL newRemotePartyID = request.GetMIME().GetString("Remote-Party-ID");
+  SIPURL newRemotePartyID(request.GetMIME(), "Remote-Party-ID");
   if (!newRemotePartyID.IsEmpty() && m_ciscoRemotePartyID != newRemotePartyID) {
     PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
 
@@ -3194,13 +3194,13 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
     // see if endpoint contains a TCP listener we can use
     OpalTransportAddress newAddr;
     if (endpoint.FindListenerForProtocol(OpalTransportAddress::TcpPrefix(), newAddr)) {
-      response.GetMIME().SetContact(SIPURL("", newAddr, 0).AsQuotedString());
+      response.GetMIME().SetContact(SIPURL(PString::Empty(), newAddr, 0).AsQuotedString());
       PTRACE(3, "SIP\tPromoting connection to TCP");
     }
   }
 
   // AdjustToRegistration already did a check for GetConferenceState, this is quicker ...
-  if (mime.GetContact().Find("isfocus") != P_MAX_INDEX)
+  if (mime.GetContact().GetParamVars().Contains("isfocus"))
     m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 
   if (response.GetStatusCode() > 100 && response.GetStatusCode() < 300)
