@@ -588,7 +588,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
-  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
+  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnSpeedDialRightClick) 
+  EVT_LIST_END_LABEL_EDIT(SpeedDialsID, MyManager::OnSpeedDialEndEdit)
 
   EVT_COMMAND(ID_LOG_MESSAGE,         wxEvtLogMessage,         MyManager::OnLogMessage)
   EVT_COMMAND(ID_RINGING,             wxEvtRinging,            MyManager::OnEvtRinging)
@@ -609,7 +610,6 @@ MyManager::MyManager()
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
   , m_speedDials(NULL)
-  , m_speedDialDetail(false)
   , pcssEP(NULL)
   , potsEP(NULL)
 #if OPAL_H323
@@ -772,6 +772,7 @@ bool MyManager::Initialise()
 
   // Speed dial window - icons for each speed dial
   int view;
+  config->SetPath(AppearanceGroup);
   if (!config->Read(ActiveViewKey, &view) || view < 0 || view >= e_NumViews)
     view = e_ViewDetails;
   static const wxChar * const ViewMenuNames[e_NumViews] = {
@@ -1431,7 +1432,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       m_speedDials->InsertColumn(i, titles[i]);
       wxString key;
       key.sprintf(ColumnWidthKey, i);
-      if (config->Read(key, &width))
+      if (config->Read(key, &width) && width > 0)
         m_speedDials->SetColumnWidth(i, width);
     }    
   }
@@ -1451,7 +1452,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   for (set<SpeedDialInfo>::iterator it = m_speedDialInfo.begin(); it != m_speedDialInfo.end(); ++it) {
     long index = m_speedDials->InsertItem(INT_MAX, it->m_Name);
     m_speedDials->SetItemData(index, (intptr_t)&*it);
-    UpdateSpeedDial(index, *it);
+    UpdateSpeedDial(index, *it, false);
   }
 }
 
@@ -1475,9 +1476,12 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
 
   if (m_speedDialDetail) {
     for (int i = 0; i < e_NumColumns; i++) {
-      wxString key;
-      key.sprintf(ColumnWidthKey, i);
-      config->Write(key, m_speedDials->GetColumnWidth(i));
+      int width = m_speedDials->GetColumnWidth(i);
+      if (width > 0) {
+        wxString key;
+        key.sprintf(ColumnWidthKey, i);
+        config->Write(key, width);
+      }
     }
   }
   
@@ -1659,9 +1663,9 @@ void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
 }
 
 
-SpeedDialInfo * MyManager::GetSelectedSpeedDial(int previous) const
+SpeedDialInfo * MyManager::GetSelectedSpeedDial() const
 {
-  int idx = m_speedDials->GetNextItem(previous, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  int idx = m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
   return idx < 0 ? NULL : (SpeedDialInfo *)m_speedDials->GetItemData(idx);
 }
 
@@ -1857,20 +1861,18 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
   if (!wxTheClipboard->Open())
     return;
 
-  wxString tabbedText;
+  tstringstream tabbedText;
   int pos = -1;
-  SpeedDialInfo * info;
-  while ((info = GetSelectedSpeedDial(pos)) != NULL) {
-    tabbedText += info->m_Name;
-    tabbedText += '\t';
-    tabbedText += info->m_Number;
-    tabbedText += '\t';
-    tabbedText += info->m_Address;
-    tabbedText += '\t';
-    tabbedText += info->m_Description;
-    tabbedText += '\t';
-    tabbedText += info->m_Presentity;
-    tabbedText += wxT("\r\n");
+  while ((pos = m_speedDials->GetNextItem(pos, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
+    SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(pos);
+    if (PAssertNULL(info) != NULL) {
+      tabbedText << info->m_Name << '\t'
+                 << info->m_Number << '\t'
+                 << info->m_Address << '\t'
+                 << info->m_Description << '\t'
+                 << info->m_Presentity
+                 << "\r\n";
+    }
   }
 
   // Want pure text so can copy to notepad or something, and our built
@@ -1878,10 +1880,10 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
   // just guarantees the format of teh string, where just using CF_TEXT
   // coupld provide anything.
   wxDataObjectComposite * multiFormatData = new wxDataObjectComposite;
-  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText);
+  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText.str());
   myFormatData->SetFormat(m_ClipboardFormat);
   multiFormatData->Add(myFormatData);
-  multiFormatData->Add(new wxTextDataObject(tabbedText));
+  multiFormatData->Add(new wxTextDataObject(tabbedText.str()));
   wxTheClipboard->SetData(multiFormatData);
   wxTheClipboard->Close();
 }
@@ -1894,7 +1896,6 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
       wxTextDataObject myFormatData;
       myFormatData.SetFormat(m_ClipboardFormat);
       if (wxTheClipboard->GetData(myFormatData)) {
-        wxConfigBase * config = wxConfig::Get();
         wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
         while (tabbedLines.HasMoreTokens()) {
           wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
@@ -1905,15 +1906,7 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
           info.m_Description = tabbedText.GetNextToken();
           info.m_Presentity = tabbedText.GetNextToken();
 
-          if (UpdateSpeedDial(INT_MAX, info)) {
-            config->SetPath(SpeedDialsGroup);
-            config->SetPath(info.m_Name);
-            config->Write(SpeedDialNumberKey, info.m_Number);
-            config->Write(SpeedDialAddressKey, info.m_Address);
-            config->Write(SpeedDialPresentityKey, info.m_Presentity);
-            config->Write(SpeedDialDescriptionKey, info.m_Description);
-            config->Flush();
-          }
+          UpdateSpeedDial(INT_MAX, info, true);
         }
       }
     }
@@ -1928,9 +1921,12 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
   if (count == 0)
     return;
 
-  wxString str;
-  str.Printf(wxT("Delete %u item%s?"), count, count != 1 ? wxT("s") : wxT(""));
-  wxMessageDialog dlg(this, str, wxT("OpenPhone Speed Dials"), wxYES_NO);
+  tstringstream strm;
+  strm << "Delete " << count << " item";
+  if (count > 1)
+    strm << 's';
+  strm << '?';
+  wxMessageDialog dlg(this, strm.str(), wxT("OpenPhone Speed Dials"), wxYES_NO);
   if (dlg.ShowModal() != wxID_YES)
     return;
 
@@ -1973,7 +1969,7 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 }
 
 
-void MyManager::OnRightClick(wxListEvent& event)
+void MyManager::OnSpeedDialRightClick(wxListEvent& event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
   wxMenu * menu = menuBar->Remove(0);
@@ -1984,6 +1980,30 @@ void MyManager::OnRightClick(wxListEvent& event)
   menu->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
   PopupMenu(menu, event.GetPoint());
   delete menu;
+}
+
+
+void MyManager::OnSpeedDialEndEdit(wxListEvent& event)
+{
+  if (event.IsEditCancelled())
+    return;
+
+  int index = event.GetIndex();
+  SpeedDialInfo * oldInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+  if (oldInfo == NULL)
+    return;
+
+  if (oldInfo->m_Name == event.GetLabel())
+    return;
+
+  if (HasSpeedDialName(event.GetLabel())) {
+    event.Veto();
+    return;
+  }
+
+  SpeedDialInfo newInfo(*oldInfo);
+  newInfo.m_Name = event.GetLabel();
+  UpdateSpeedDial(index, newInfo, true);
 }
 
 
@@ -2012,46 +2032,49 @@ void MyManager::EditSpeedDial(int index)
       MonitorPresence(dlg.m_Presentity, dlg.m_Address, true);
   }
 
-  *info = dlg;
-
-  if (UpdateSpeedDial(index, dlg)) {
-    wxConfigBase * config = wxConfig::Get();
-    config->SetPath(SpeedDialsGroup);
-    if (!info->m_Name.IsEmpty())
-      config->DeleteGroup(info->m_Name);
-    config->SetPath(dlg.m_Name);
-    config->Write(SpeedDialNumberKey, dlg.m_Number);
-    config->Write(SpeedDialAddressKey, dlg.m_Address);
-    config->Write(SpeedDialPresentityKey, dlg.m_Presentity);
-    config->Write(SpeedDialDescriptionKey, dlg.m_Description);
-    config->Flush();
-  }
+  UpdateSpeedDial(index, dlg, true);
 }
 
 
-bool MyManager::UpdateSpeedDial(int index, const SpeedDialInfo & info)
+bool MyManager::UpdateSpeedDial(int index, const SpeedDialInfo & newInfo, bool saveConfig)
 {
   if (index != INT_MAX)
-    m_speedDials->SetItem(index, e_NameColumn, info.m_Name);
+    m_speedDials->SetItem(index, e_NameColumn, newInfo.m_Name);
   else {
-    std::pair<set<SpeedDialInfo>::iterator, bool> result = m_speedDialInfo.insert(info);
+    std::pair<set<SpeedDialInfo>::iterator, bool> result = m_speedDialInfo.insert(newInfo);
     if (!result.second)
       return false;
 
-    index = m_speedDials->InsertItem(INT_MAX, info.m_Name);
+    index = m_speedDials->InsertItem(INT_MAX, newInfo.m_Name);
     m_speedDials->SetItemData(index, (intptr_t)&*result.first);
+  }
+
+  SpeedDialInfo * oldInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
+
+  if (saveConfig) {
+    wxConfigBase * config = wxConfig::Get();
+    config->SetPath(SpeedDialsGroup);
+    if (!oldInfo->m_Name.IsEmpty())
+      config->DeleteGroup(oldInfo->m_Name);
+    config->SetPath(newInfo.m_Name);
+    config->Write(SpeedDialNumberKey, newInfo.m_Number);
+    config->Write(SpeedDialAddressKey, newInfo.m_Address);
+    config->Write(SpeedDialPresentityKey, newInfo.m_Presentity);
+    config->Write(SpeedDialDescriptionKey, newInfo.m_Description);
+    config->Flush();
   }
 
   m_speedDials->SetItemImage(index, Icon_Unknown);
 
   if (m_speedDialDetail) {
-    m_speedDials->SetItem(index, e_NumberColumn, info.m_Number);
+    m_speedDials->SetItem(index, e_NumberColumn, newInfo.m_Number);
     m_speedDials->SetItem(index, e_StatusColumn, IconStatusNames[Icon_Unknown]);
-    m_speedDials->SetItem(index, e_AddressColumn, info.m_Address);
-    m_speedDials->SetItem(index, e_PresentityColumn, info.m_Presentity);
-    m_speedDials->SetItem(index, e_DescriptionColumn, info.m_Description);
+    m_speedDials->SetItem(index, e_AddressColumn, newInfo.m_Address);
+    m_speedDials->SetItem(index, e_PresentityColumn, newInfo.m_Presentity);
+    m_speedDials->SetItem(index, e_DescriptionColumn, newInfo.m_Description);
   }
 
+  *oldInfo = newInfo;
   return true;
 }
 
