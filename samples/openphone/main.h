@@ -993,7 +993,8 @@ class MyManager : public wxFrame, public OpalManager
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
-    void OnRightClick(wxListEvent& event);
+    void OnSpeedDialRightClick(wxListEvent& event);
+    void OnSpeedDialEndEdit(wxListEvent& event);
 
     void OnMyPresence(wxCommandEvent& event);
     void OnStartInstantMessage(wxCommandEvent& event);
@@ -1029,7 +1030,8 @@ class MyManager : public wxFrame, public OpalManager
     );
     bool UpdateSpeedDial(
       int index,
-      const SpeedDialInfo & info
+      const SpeedDialInfo & info,
+      bool saveConfig
     );
 
     enum {
@@ -1059,7 +1061,7 @@ class MyManager : public wxFrame, public OpalManager
     wxDataFormat       m_ClipboardFormat;
 
     set<SpeedDialInfo> m_speedDialInfo;
-    SpeedDialInfo * GetSelectedSpeedDial(int previous = -1) const;
+    SpeedDialInfo * GetSelectedSpeedDial() const;
 
     MyPCSSEndPoint   * pcssEP;
     OpalLineEndPoint * potsEP;
