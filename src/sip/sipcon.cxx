@@ -2734,7 +2734,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   referTo.SetQuery(PString::Empty());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (!endpoint.SetupTransfer(GetToken(), replaces, referTo.AsString(), NULL) && referSub)
+  if (!endpoint.SetupTransfer(GetToken(), replaces, referTo.AsQuotedString(), NULL) && referSub)
     (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
 }
 
