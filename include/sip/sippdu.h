@@ -56,6 +56,7 @@ class SIPConnection;
 class SIP_PDU;
 class SIPSubscribeHandler;
 class SIPDialogContext;
+class SIPMIMEInfo;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -72,12 +73,22 @@ class SIPURL : public PURL
   public:
     SIPURL();
 
+    SIPURL(
+      const PURL & url
+    ) : PURL(url) { }
+    SIPURL & operator=(
+      const PURL & url
+    ) { PURL::operator=(url); return *this; }
+
     /** str goes straight to Parse()
       */
     SIPURL(
       const char * cstr,    ///<  C string representation of the URL.
       const char * defaultScheme = NULL ///<  Default scheme for URL
     );
+    SIPURL & operator=(
+      const char * cstr
+    ) { Parse(cstr); return *this; }
 
     /** str goes straight to Parse()
       */
@@ -85,6 +96,9 @@ class SIPURL : public PURL
       const PString & str,  ///<  String representation of the URL.
       const char * defaultScheme = NULL ///<  Default scheme for URL
     );
+    SIPURL & operator=(
+      const PString & str
+    ) { Parse(str); return *this; }
 
     /** If name does not start with 'sip' then construct URI in the form
         <pre><code>
@@ -102,8 +116,16 @@ class SIPURL : public PURL
     );
 
     SIPURL(
-      const OpalTransportAddress & _address, 
+      const OpalTransportAddress & address, 
       WORD listenerPort = 0
+    );
+    SIPURL & operator=(
+      const OpalTransportAddress & address
+    );
+
+    SIPURL(
+      const SIPMIMEInfo & mime,
+      const char * name
     );
 
     /**Compare the two SIPURLs and return their relative rank.
@@ -186,26 +208,14 @@ class SIPURL : public PURL
   protected:
     void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
 
-    /** Parses name-addr, like:
-        <pre>
-        "displayname"<scheme:user:password\@host:port;transport=type>;tag=value
-        into:
-        displayname (quotes around name are optional, all before '<' is used)
-        scheme
-        username
-        password
-        hostname
-        port
-        pathStr
-        path
-        paramVars
-        queryVars
-        fragment
-        </pre>
-        Note that tag parameter outside of <> will be lost,
-        but tag in URL without <> will be kept until Sanitise()
-     */
+    // Override from PURL()
     virtual PBoolean InternalParse(
+      const char * cstr,
+      const char * defaultScheme
+    ) { return ReallyInternalParse(false, cstr, defaultScheme); }
+
+    bool ReallyInternalParse(
+      bool fromField,
       const char * cstr,
       const char * defaultScheme
     );
@@ -274,13 +284,13 @@ class SIPMIMEInfo : public PMIMEInfo
     PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
-    PString GetFrom() const;
+    SIPURL GetFrom() const;
     void SetFrom(const PString & v);
 
-    PString GetPAssertedIdentity() const;
+    SIPURL GetPAssertedIdentity() const;
     void SetPAssertedIdentity(const PString & v);
 
-    PString GetPPreferredIdentity() const;
+    SIPURL GetPPreferredIdentity() const;
     void SetPPreferredIdentity(const PString & v);
 
     PString GetAccept() const;
@@ -299,14 +309,14 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetCallID() const;
     void SetCallID(const PString & v);
 
-    PString GetContact() const;
+    SIPURL GetContact() const;
     bool GetContacts(SIPURLList & contacts) const;
     void SetContact(const PString & v);
 
     PString GetSubject() const;
     void SetSubject(const PString & v);
 
-    PString GetTo() const;
+    SIPURL GetTo() const;
     void SetTo(const PString & v);
 
     PString GetVia() const;
@@ -318,10 +328,10 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetFirstVia() const;
     OpalTransportAddress GetViaReceivedAddress() const;
 
-    PString GetReferTo() const;
+    SIPURL GetReferTo() const;
     void SetReferTo(const PString & r);
 
-    PString GetReferredBy() const;
+    SIPURL GetReferredBy() const;
     void SetReferredBy(const PString & r);
 
     PINDEX  GetContentLength() const;
@@ -733,21 +743,18 @@ class SIPDialogContext
 
     const SIPURL & GetRequestURI() const { return m_requestURI; }
     void SetRequestURI(const SIPURL & url) { m_requestURI = url; }
-    bool SetRequestURI(const PString & uri) { return m_requestURI.Parse(uri); }
 
     const PString & GetLocalTag() const { return m_localTag; }
     void SetLocalTag(const PString & tag) { m_localTag = tag; }
 
     const SIPURL & GetLocalURI() const { return m_localURI; }
     void SetLocalURI(const SIPURL & url);
-    bool SetLocalURI(const PString & uri);
 
     const PString & GetRemoteTag() const { return m_remoteTag; }
     void SetRemoteTag(const PString & tag) { m_remoteTag = tag; }
 
     const SIPURL & GetRemoteURI() const { return m_remoteURI; }
     void SetRemoteURI(const SIPURL & url);
-    bool SetRemoteURI(const PString & uri);
 
     const SIPURLList & GetRouteSet() const { return m_routeSet; }
     void SetRouteSet(const PString & str) { m_routeSet.FromString(str); }
