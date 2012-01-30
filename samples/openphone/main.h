@@ -1000,7 +1000,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
     void OnSpeedDialColumnResize(wxListEvent& event);
-    void OnRightClick(wxListEvent& event);
+    void OnSpeedDialRightClick(wxListEvent& event);
+    void OnSpeedDialEndEdit(wxListEvent& event);
 
     void OnMyPresence(wxCommandEvent& event);
 #if OPAL_HAS_IM
@@ -1033,7 +1034,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     );
     bool UpdateSpeedDial(
       int index,
-      const SpeedDialInfo & info
+      const SpeedDialInfo & info,
+      bool saveConfig
     );
 
     enum {
