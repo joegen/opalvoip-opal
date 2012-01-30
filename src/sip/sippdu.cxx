@@ -219,6 +219,12 @@ SIPURL::SIPURL(const PString & str, const char * defaultScheme)
 }
 
 
+SIPURL::SIPURL(const SIPMIMEInfo & mime, const char * name)
+{
+  ReallyInternalParse(true, mime.GetString(name), "sip");
+}
+
+
 SIPURL::SIPURL(const PString & name,
                const OpalTransportAddress & address,
                WORD listenerPort)
@@ -235,7 +241,14 @@ SIPURL::SIPURL(const OpalTransportAddress & address, WORD listenerPort)
 {
   ParseAsAddress(PString::Empty(), address, listenerPort);
 }
-  
+
+SIPURL & SIPURL::operator=(const OpalTransportAddress & address)
+{
+  ParseAsAddress(PString::Empty(), address, 0);
+  return *this;
+}
+
+
 void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & address, WORD listenerPort)
 {
   PIPSocket::Address ip;
@@ -275,7 +288,7 @@ void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & a
 }
 
 
-PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
+PBoolean SIPURL::ReallyInternalParse(bool fromHeader, const char * cstr, const char * p_defaultScheme)
 {
   /* This will try to parse an SIP URI according to the RFC3261 EBNF
 
@@ -363,9 +376,12 @@ PBoolean SIPURL::InternalParse(const char * cstr, const char * p_defaultScheme)
   if (startBracket == P_MAX_INDEX || endBracket == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme))
       return false;
-    // RFC says that if no <> then ; parameters belong to field, not URI.
-    m_fieldParameters = paramVars;
-    paramVars = PStringToString(); // Do not use RemoveAll()
+
+    if (fromHeader) {
+      // RFC says that if no <> then ; parameters belong to field, not URI.
+      m_fieldParameters = paramVars;
+      paramVars = PStringToString(); // Do not use RemoveAll()
+    }
   }
   else {
     // get the URI from between the angle brackets
@@ -788,9 +804,9 @@ void SIPMIMEInfo::SetContentEncoding(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetFrom() const
+SIPURL SIPMIMEInfo::GetFrom() const
 {
-  return GetString("From");
+  return SIPURL(*this, "From");
 }
 
 
@@ -799,9 +815,9 @@ void SIPMIMEInfo::SetFrom(const PString & v)
   SetAt("From",  v);
 }
 
-PString SIPMIMEInfo::GetPAssertedIdentity() const
+SIPURL SIPMIMEInfo::GetPAssertedIdentity() const
 {
-  return (*this)["P-Asserted-Identity"];
+  return SIPURL(*this, "P-Asserted-Identity");
 }
 
 void SIPMIMEInfo::SetPAssertedIdentity(const PString & v)
@@ -809,9 +825,9 @@ void SIPMIMEInfo::SetPAssertedIdentity(const PString & v)
   SetAt("P-Asserted-Identity", v);
 }
 
-PString SIPMIMEInfo::GetPPreferredIdentity() const
+SIPURL SIPMIMEInfo::GetPPreferredIdentity() const
 {
-  return (*this)["P-Preferred-Identity"];
+  return SIPURL(*this, "P-Preferred-Identity");
 }
 
 void SIPMIMEInfo::SetPPreferredIdentity(const PString & v)
@@ -831,9 +847,9 @@ void SIPMIMEInfo::SetCallID(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetContact() const
+SIPURL SIPMIMEInfo::GetContact() const
 {
-  return GetString("Contact");
+  return SIPURL(*this, "Contact");
 }
 
 
@@ -861,9 +877,9 @@ void SIPMIMEInfo::SetSubject(const PString & v)
 }
 
 
-PString SIPMIMEInfo::GetTo() const
+SIPURL SIPMIMEInfo::GetTo() const
 {
-  return GetString("To");
+  return SIPURL(*this, "To");
 }
 
 
@@ -941,9 +957,9 @@ OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
 }
 
 
-PString SIPMIMEInfo::GetReferTo() const
+SIPURL SIPMIMEInfo::GetReferTo() const
 {
-  return GetString("Refer-To");
+  return SIPURL(*this, "Refer-To");
 }
 
 
@@ -952,10 +968,10 @@ void SIPMIMEInfo::SetReferTo(const PString & r)
   SetAt("Refer-To",  r);
 }
 
-PString SIPMIMEInfo::GetReferredBy() const
+SIPURL SIPMIMEInfo::GetReferredBy() const
 {
   // If no RFC 3892 header, try Cisco custom header
-  return GetString(Contains("Referred-By") ? "Referred-By" : "Diversion");
+  return SIPURL(*this, Contains("Referred-By") ? "Referred-By" : "Diversion");
 }
 
 
@@ -986,6 +1002,12 @@ void SIPMIMEInfo::SetCSeq(const PString & v)
 PString SIPMIMEInfo::GetRoute() const
 {
   return Get("Route");
+}
+
+
+bool SIPMIMEInfo::GetRoute(SIPURLList & proxies) const
+{
+  return proxies.FromString(GetRoute(), false);
 }
 
 
@@ -1841,12 +1863,9 @@ void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
 
   // add mandatory fields to response (RFC 2543, 11.2)
   const SIPMIMEInfo & requestMIME = request.GetMIME();
-  m_mime.SetTo(requestMIME.GetTo());
-  m_mime.SetFrom(requestMIME.GetFrom());
-  m_mime.SetCallID(requestMIME.GetCallID());
-  m_mime.SetCSeq(requestMIME.GetCSeq());
-  m_mime.SetVia(requestMIME.GetVia());
-  m_mime.SetRecordRoute(requestMIME.GetRecordRoute());
+  static const char * FieldsToCopy[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route" };
+  for (PINDEX i = 0; i < PARRAYSIZE(FieldsToCopy); ++i)
+    m_mime.Set(FieldsToCopy[i], requestMIME.Get(FieldsToCopy[i]));
 }
 
 
@@ -2117,8 +2136,8 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     m_versionMajor = cmd.Mid(4).AsUnsigned();
     m_versionMinor = cmd(cmd.Find('.')+1, space).AsUnsigned();
     m_statusCode = (StatusCodes)cmd.Mid(++space).AsUnsigned();
-    m_info    = cmd.Mid(cmd.Find(' ', space));
-    m_uri     = PString();
+    m_info = cmd.Mid(cmd.Find(' ', space));
+    m_uri = PString::Empty();
   }
   else {
     // parse the method, URI and version
@@ -2477,38 +2496,15 @@ static void SetWithTag(const SIPURL & url, SIPURL & uri, PString & tag, bool loc
 }
 
 
-static bool SetWithTag(const PString & str, SIPURL & uri, PString & tag, bool local)
-{
-  SIPURL url;
-  if (!url.Parse(str))
-    return false;
-
-  SetWithTag(url, uri, tag, local);
-  return true;
-}
-
-
 void SIPDialogContext::SetLocalURI(const SIPURL & url)
 {
   SetWithTag(url, m_localURI, m_localTag, true);
 }
 
 
-bool SIPDialogContext::SetLocalURI(const PString & uri)
-{
-  return SetWithTag(uri, m_localURI, m_localTag, true);
-}
-
-
 void SIPDialogContext::SetRemoteURI(const SIPURL & url)
 {
   SetWithTag(url, m_remoteURI, m_remoteTag, false);
-}
-
-
-bool SIPDialogContext::SetRemoteURI(const PString & uri)
-{
-  return SetWithTag(uri, m_remoteURI, m_remoteTag, false);
 }
 
 
@@ -2550,9 +2546,9 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
      See RFC 5658 for a description of these problems.
   */
   if (m_requestURI.IsEmpty() || pdu.GetMethod() != SIP_PDU::NumMethods || pdu.GetStatusCode()/100 == 2) {
-    PString contact = mime.GetContact();
+    SIPURL contact = mime.GetContact();
     if (!contact.IsEmpty()) {
-      m_requestURI.Parse(contact);
+      m_requestURI = contact;
       PTRACE(4, "SIP\tSet Request URI to " << m_requestURI);
     }
   }
@@ -2698,7 +2694,7 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
     m_mime.SetContact(params.m_contactAddress);
 
   if (!params.m_proxyAddress.IsEmpty())
-    SetRoute(SIPURL(params.m_proxyAddress));
+    SetRoute(params.m_proxyAddress);
 
   m_mime.AddMIME(params.m_mime);
 }
@@ -2741,12 +2737,9 @@ PBoolean SIPTransaction::Start()
   if (m_remoteAddress.IsEmpty()) {
     SIPURL destination;
     destination = m_uri;
-    PStringList routeSet = GetMIME().GetRoute();
-    if (!routeSet.IsEmpty()) {
-      SIPURL firstRoute = routeSet.front();
-      if (firstRoute.GetParamVars().Contains("lr"))
-        destination = firstRoute;
-    }
+    SIPURLList routeSet;
+    if (GetMIME().GetRoute(routeSet) && routeSet.front().GetParamVars().Contains("lr"))
+      destination = routeSet.front();
 
     // Do a DNS SRV lookup
     destination.AdjustToDNS();
@@ -3237,7 +3230,7 @@ SIPTransaction * SIPInvite::CreateDuplicate() const
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
   // For Asterisk this is not merely SHOULD, but SHALL ....
-  newTransaction->GetMIME().SetFrom(m_mime.GetFrom());
+  newTransaction->GetMIME().Set("From", m_mime.Get("From"));
   return newTransaction;
 }
 
@@ -3738,7 +3731,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   SIPURL remoteAddress = params.m_remoteAddress;
   SIPURL localAddress = params.m_localAddress;
   if (localAddress.IsEmpty())
-    localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostName(), trans);
+    localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostAddress(), trans);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));
@@ -3801,7 +3794,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 {
   InitialiseHeaders(address,
                     address,
-                    "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                    SIPURL(address.GetUserName(), address.GetHostAddress()),
                     GenerateCallID(),
                     ep.GetNextCSeq(),
                     CreateVia(ep, trans));
