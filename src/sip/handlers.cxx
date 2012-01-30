@@ -2154,7 +2154,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
   PURL entity;
   PXMLElement * rootElement = xml.GetRootElement();
   if (notifyInfo.m_handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
-    entity = SIPURL(notifyInfo.m_response.GetMIME().GetFrom()); // Can't trust entity, Asterisk gets it wrong
+    entity = notifyInfo.m_response.GetMIME().GetFrom(); // Can't trust entity, Asterisk gets it wrong
   else if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
     notifyInfo.m_response.SetEntityBody("Invalid/unsupported entity");
     PTRACE2(1, NULL, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << '"');

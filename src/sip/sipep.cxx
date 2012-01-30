@@ -197,7 +197,7 @@ PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
     for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection) {
       PSafePtr<SIPConnection> sipConnection = PSafePtrCast<OpalConnection, SIPConnection>(connection);
       if (&sipConnection->GetTransport() == transport && sipConnection->LockReadWrite()) {
-        sipConnection->SetTransport(NULL);
+        sipConnection->SetTransport(SIPURL());
         sipConnection->UnlockReadWrite();
       }
     }
@@ -938,7 +938,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   if (transport.IsReliable())
     newTransport = &transport;
   else {
-    newTransport = CreateTransport(SIPURL("", transport.GetRemoteAddress(), 0), transport.GetInterface());
+    newTransport = CreateTransport(SIPURL(PString::Empty(), transport.GetRemoteAddress(), 0), transport.GetInterface());
     if (newTransport == NULL) {
       PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
       request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
@@ -961,7 +961,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   SIPConnection *connection = CreateConnection(*call,
                                                SIPURL::GenerateTag(),
                                                NULL,
-                                               PString::Empty(),
+                                               SIPURL(),
                                                newTransport,
                                                request);
   if (!AddConnection(connection)) {
