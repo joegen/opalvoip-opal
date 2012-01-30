@@ -958,7 +958,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     }
 
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
-  PTRACE(5, "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets.");
+  PTRACE(5, "OpalPlugin\tEncoded video frame " << m_totalFrames << " into "
+         << dstList.GetSize() << " packets (ts=" << src.GetTimestamp() << ')');
 
   m_totalFrames++;
   if (lastFrameWasIFrame)
@@ -968,11 +969,11 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   if (!lastFrameWasIFrame)
     m_consecutiveIntraFrames = 0;
   else if (forceIFrame)
-    PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at " << m_totalFrames);
+    PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at frame " << m_totalFrames);
   else if (++m_consecutiveIntraFrames == 1) 
-    PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at " << m_totalFrames);
+    PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_totalFrames);
   else if (m_consecutiveIntraFrames < 10)
-    PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at " << m_totalFrames);
+    PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at frame " << m_totalFrames);
   else if (m_consecutiveIntraFrames == 10) {
     PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assuming codec cannot do P-Frames");
   }
