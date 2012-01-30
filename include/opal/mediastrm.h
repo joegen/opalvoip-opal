@@ -175,9 +175,6 @@ class OpalMediaStream : public PSafeObject
     bool UpdateMediaFormat(
       const OpalMediaFormat & mediaFormat   ///<  New media format
     );
-    virtual bool InternalUpdateMediaFormat(
-      const OpalMediaFormat & mediaFormat   ///<  New media format
-    );
 
     /**Execute the command specified to the transcoder. The commands are
        highly context sensitive, for example OpalVideoUpdatePicture would only
@@ -414,6 +411,7 @@ class OpalMediaStream : public PSafeObject
   protected:
     void IncrementTimestamp(PINDEX size);
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
     OpalConnection & connection;
     unsigned         sessionID;
@@ -425,7 +423,6 @@ class OpalMediaStream : public PSafeObject
     PINDEX           defaultDataSize;
     unsigned         timestamp;
     bool             marker;
-    unsigned         mismatchedPayloadTypes;
 
     OpalMediaPatch * mediaPatch;
 
@@ -438,6 +435,8 @@ class OpalMediaStream : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnPatchStop());
     P_REMOVE_VIRTUAL_VOID(OnStopMediaPatch());
     P_REMOVE_VIRTUAL_VOID(RemovePatch(OpalMediaPatch *));
+
+  friend class OpalMediaPatch;
 };
 
 typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
@@ -457,6 +456,10 @@ class OpalMediaStreamPacing
       bool reading,     ///< Are reading from medium
       PINDEX bytes,     ///< Bytes read/written
       bool & marker     ///< RTP Marker
+    );
+
+    bool UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat   ///<  New media format
     );
 
   protected:
@@ -527,6 +530,8 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
   //@}
 
   protected:
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+
     bool m_isSynchronous;
     bool m_requiresPatchThread;
 };
@@ -887,16 +892,6 @@ class OpalVideoMediaStream : public OpalMediaStream
 
   /**@name Overrides of PChannel class */
   //@{
-    /**Update the media format. This can be used to adjust the
-       parameters of a codec at run time. Note you cannot change the basic
-       media format, eg change GSM0610 to G.711, only options for that
-       format, eg 6k3 mode to 5k3 mode in G.723.1. If the formats are
-       different then a OpalMediaFormat::Merge() is performed.
-      */
-    virtual bool InternalUpdateMediaFormat(
-      const OpalMediaFormat & mediaFormat   ///<  New media format
-    );
-
     /**Open the media stream.
 
        The default behaviour sets the OpalLineInterfaceDevice format and
@@ -972,6 +967,8 @@ class OpalVideoMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+
     PVideoInputDevice  * m_inputDevice;
     PVideoOutputDevice * m_outputDevice;
     bool                 m_autoDeleteInput;
