@@ -386,6 +386,8 @@ bool RTP_DataFrame::SetPaddingSize(PINDEX sz)
 
 void RTP_DataFrame::PrintOn(ostream & strm) const
 {
+  int csrcCount = GetContribSrcCount();
+
   strm <<  "V="  << GetVersion()
        << " X="  << GetExtension()
        << " M="  << GetMarker()
@@ -393,27 +395,30 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
        << " SSRC=" << hex << GetSyncSource() << dec
-       << " size=" << GetPayloadSize()
+       << " CSRS-sz=" << csrcCount
+       << " hdr-sz=" << GetHeaderSize()
+       << " pl-sz=" << GetPayloadSize()
        << '\n';
 
-  int csrcCount = GetContribSrcCount();
   for (int csrc = 0; csrc < csrcCount; csrc++)
     strm << "  CSRC[" << csrc << "]=" << GetContribSource(csrc) << '\n';
 
   if (GetExtension()) {
-    int idx = -1;
-    for (;;) {
+    for (int idx = -1; ; ++idx) {
       unsigned id;
       PINDEX len;
       BYTE * ptr = GetHeaderExtension(id, len, idx);
-      if (ptr == NULL)
+      if (ptr == NULL) {
+        if (idx < 0)
+          continue;
         break;
-      strm << "  Header Extension: " << id << '\n'
-           << hex << setfill('0') << PBYTEArray(ptr, len, false) << setfill(' ') << dec << '\n';
+      }
+      strm << "  Header Extension: " << id << " (0x" << hex << id << ")\n"
+           << setfill('0') << PBYTEArray(ptr, len, false) << setfill(' ') << dec << '\n';
     }
   }
 
-  strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
+  strm << "Payload:\n" << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }
 
 
