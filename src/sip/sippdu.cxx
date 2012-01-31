@@ -1864,8 +1864,11 @@ void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
   // add mandatory fields to response (RFC 2543, 11.2)
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   static const char * FieldsToCopy[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route" };
-  for (PINDEX i = 0; i < PARRAYSIZE(FieldsToCopy); ++i)
-    m_mime.Set(FieldsToCopy[i], requestMIME.Get(FieldsToCopy[i]));
+  for (PINDEX i = 0; i < PARRAYSIZE(FieldsToCopy); ++i) {
+    PString value = requestMIME.Get(FieldsToCopy[i]);
+    if (!value.IsEmpty())
+      m_mime.Set(FieldsToCopy[i], value);
+  }
 }
 
 
