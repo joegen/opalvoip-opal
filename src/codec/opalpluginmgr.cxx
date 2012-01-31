@@ -1109,25 +1109,25 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   // Do sanity check on returned data.
   if (!m_bufferRTP->SetPacketSize(toLen)) {
-    PTRACE(1, "OpalPlugin\tInvalid return size, error in plug in.");
+    PTRACE(1, "OpalPlugin\tInvalid return size, error in plug in\n" << *m_bufferRTP);
     return false;
   }
 
   size_t payloadSize = m_bufferRTP->GetPayloadSize();
   if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)) {
-    PTRACE(1, "OpalPlugin\tInvalid video header size, error in plug in.");
+    PTRACE(1, "OpalPlugin\tInvalid video header size, error in plug in\n" << *m_bufferRTP);
     return false;
   }
 
   OpalVideoTranscoder::FrameHeader * videoHeader = (OpalVideoTranscoder::FrameHeader *)m_bufferRTP->GetPayloadPtr();
   if (videoHeader->x != 0 || videoHeader->y != 0 ||
       videoHeader->width > 10000 || videoHeader->height > 10000) {
-    PTRACE(1, "OpalPlugin\tInvalid video header values, error in plug in.");
+    PTRACE(1, "OpalPlugin\tInvalid video header values, error in plug in\n" << *m_bufferRTP);
     return false;
   }
 
   if (payloadSize < sizeof(OpalVideoTranscoder::FrameHeader)+videoHeader->width*videoHeader->height*3/2) {
-    PTRACE(1, "OpalPlugin\tInvalid video frame size, error in plug in.");
+    PTRACE(1, "OpalPlugin\tInvalid video frame size, error in plug in\n" << *m_bufferRTP);
     return false;
   }
 
