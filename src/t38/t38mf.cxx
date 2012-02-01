@@ -61,13 +61,22 @@ const OpalMediaFormat & GetOpalT38()
                           "t38",
                           false, // No jitter for data
                           1440, // 100's bits/sec
-                          512,
+                          528,
                           0,
                           0)
       {
         static const char * const RateMan[] = { "localTCF", "transferredTCF" };
         AddOption(new OpalMediaOptionEnum("T38FaxRateManagement", false, RateMan, PARRAYSIZE(RateMan), OpalMediaOption::EqualMerge, 1));
         AddOption(new OpalMediaOptionInteger("T38FaxVersion", false, OpalMediaOption::MinMerge, 0, 0, 1));
+        AddOption(new OpalMediaOptionInteger("T38MaxBitRate", false, OpalMediaOption::NoMerge, 14400, 1200, 14400));
+        AddOption(new OpalMediaOptionInteger("T38FaxMaxBuffer", false, OpalMediaOption::NoMerge, 2000, 10, 65535));
+        AddOption(new OpalMediaOptionInteger("T38FaxMaxDatagram", false, OpalMediaOption::NoMerge, 528, 10, 65535));
+        static const char * const UdpEC[] = { "t38UDPFEC", "t38UDPRedundancy" };
+        AddOption(new OpalMediaOptionEnum("T38FaxUdpEC", false, UdpEC, PARRAYSIZE(UdpEC), OpalMediaOption::AlwaysMerge, 1));
+        AddOption(new OpalMediaOptionBoolean("T38FaxFillBitRemoval", false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingMMR", false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingJBIG", false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean("Use-ECM", false, OpalMediaOption::NoMerge, true));
       }
   } const T38;
   return T38;
