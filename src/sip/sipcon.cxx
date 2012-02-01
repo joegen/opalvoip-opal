@@ -2061,7 +2061,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
             if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
               PStringToString info;
               info.SetAt("result", "error");
-              info.SetAt("party", "A");
+              info.SetAt("party", "B");
               info.SetAt("code", psprintf("%u", response.GetStatusCode()));
               OnTransferNotify(info, this);
             }
@@ -2126,7 +2126,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           }
 
           PStringToString info;
-          info.SetAt("result", "completed");
+          info.SetAt("result", "success");
           info.SetAt("party", "A");
           OnTransferNotify(info, this);
         }
