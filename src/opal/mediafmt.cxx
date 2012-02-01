@@ -775,7 +775,8 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
 
 OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & c)
-  : m_info(NULL) // can't use PContainer copy c-tor as this c-tor must be synchronized
+  : PContainer() // can't use PContainer copy c-tor as this c-tor must be synchronized
+  , m_info(NULL)
 {
   PWaitAndSignal m(c.m_mutex); // here is no need to use mutex of the shared object
   PContainer::AssignContents(c);
