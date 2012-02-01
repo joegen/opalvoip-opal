@@ -238,10 +238,6 @@ class OpalIVRConnection : public OpalLocalConnection
     void OnEstablished();
     
     /**A call back function to monitor the progress of a transfer.
-       When a transfer operation is initiated, the Transfer() function will
-       generally return immediately and the transfer may take some time. This
-       call back can give indication to the application of the progress of
-       the transfer.
 
        The default behaviour calls the OpalEndPoint function of the same name.
        The default action of that function is to return false, thereby
