@@ -774,6 +774,27 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 }
 
 
+OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & c)
+  : m_info(NULL) // can't use PContainer copy c-tor as this c-tor must be synchronized
+{
+  PWaitAndSignal m(c.m_mutex); // here is no need to use mutex of the shared object
+  PContainer::AssignContents(c);
+  m_info = c.m_info;
+}
+
+
+OpalMediaFormat::~OpalMediaFormat()
+{
+  if (m_info != NULL)
+    m_info->media_format_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
+
+  Destruct();
+
+  if (m_info != NULL)
+    m_info->media_format_mutex.Signal();
+}
+
+
 void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
 {
   if (info == NULL)
@@ -853,12 +874,21 @@ PBoolean OpalMediaFormat::MakeUnique()
 
 void OpalMediaFormat::AssignContents(const PContainer & c)
 {
-  m_mutex.Wait();
+  PWaitAndSignal m1(m_mutex);
 
-  PContainer::AssignContents(c);
-  m_info = ((const OpalMediaFormat &)c).m_info;
+  const OpalMediaFormat & other = (const OpalMediaFormat &)c;
+  PWaitAndSignal m2(other.m_mutex);
 
-  m_mutex.Signal();
+  if (m_info != NULL) {
+    m_info->media_format_mutex.Wait(); // don't use PWaitAndSignal as m_info can be removed
+    PContainer::AssignContents(c);
+    if (m_info != NULL)
+      m_info->media_format_mutex.Signal();
+  }
+  else // current object can't be removed
+    PContainer::AssignContents(c);
+
+  m_info = other.m_info;
 }
 
 
@@ -867,8 +897,8 @@ void OpalMediaFormat::DestroyContents()
   m_mutex.Wait();
 
   if (m_info != NULL) {
-    m_info->media_format_mutex.Wait();
     delete m_info;
+    m_info = NULL;
   }
 
   m_mutex.Signal();
