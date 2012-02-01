@@ -3131,17 +3131,15 @@ bool MyManager::StartGatekeeper()
   if (m_gatekeeperMode == 0)
     h323EP->RemoveGatekeeper();
   else {
-    PString gkDesc = m_gatekeeperIdentifier;
-    if (!m_gatekeeperIdentifier.IsEmpty() || !m_gatekeeperAddress.IsEmpty())
-      gkDesc += "@";
-    gkDesc += m_gatekeeperAddress.p_str();
-
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
       return true;
     }
 
-    LogWindow << "H.323 registration failed for " << gkDesc << endl;
+    LogWindow << "H.323 registration failed for " << m_gatekeeperIdentifier;
+    if (!m_gatekeeperIdentifier.IsEmpty() && !m_gatekeeperAddress.IsEmpty())
+      LogWindow << '@';
+    LogWindow << m_gatekeeperAddress << endl;
   }
 
   return m_gatekeeperMode < 2;

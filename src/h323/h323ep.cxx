@@ -367,7 +367,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
   H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByAddress(h323addr);
+  return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByAddress(h323addr);
 }
 
 
@@ -376,28 +376,38 @@ PBoolean H323EndPoint::SetGatekeeperZone(const PString & address,
                                      H323Transport * transport)
 {
   H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
+  return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
 }
 
 
 PBoolean H323EndPoint::LocateGatekeeper(const PString & identifier, H323Transport * transport)
 {
-  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverByName(identifier);
+  return InternalCreateGatekeeper(transport, H323TransportAddress()) && gatekeeper->DiscoverByName(identifier);
 }
 
 
 PBoolean H323EndPoint::DiscoverGatekeeper(H323Transport * transport)
 {
-  return InternalCreateGatekeeper(transport) && gatekeeper->DiscoverAny();
+  return InternalCreateGatekeeper(transport, H323TransportAddress()) && gatekeeper->DiscoverAny();
 }
 
 
-bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport)
+bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H323TransportAddress & gkAddress)
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
-  if (transport == NULL)
-    transport = new H323TransportUDP(*this);
+  if (transport == NULL) {
+    OpalTransportAddressArray interfaces = GetInterfaceAddresses();
+    for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+      if (interfaces[i].IsCompatible(gkAddress))
+        transport = new H323TransportUDP(*this, interfaces[i]);
+        break;
+    }
+    if (transport == NULL) {
+      PTRACE(2, "H323\tCannot find a compatible listener for \"" << gkAddress << '"');
+      return false;
+    }
+  }
 
   gatekeeper = CreateGatekeeper(transport);
   if (gatekeeper == NULL)
