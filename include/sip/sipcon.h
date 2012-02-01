@@ -246,9 +246,9 @@ class SIPConnection : public OpalRTPConnection
        the REFER to the remote endpoint of this call to do an INVITE with
        Replaces header to the remote party of the supplied tokens call. This
        is used for consultation transfer where A calls B, B holds A, B calls C,
-       B transfers C to A. The last step is a REFER to C with call details of
-       A that are extracted from the A to B call leg. This short cut is
-       possible because A nd C may be other endpoints but both B's are in tis
+       B transfers A to C. The last step is a REFER to A with call details of
+       C that are extracted from the B to C call leg. This short cut is
+       possible because A nd C may be other endpoints but both B's are in this
        instance of OPAL.
        
        In the end, both calls are cleared. The OnTransferNotify() function can
