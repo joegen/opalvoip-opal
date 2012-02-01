@@ -260,7 +260,7 @@ endif
 
 ifeq ($(OPAL_T120DATA), yes)
 SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
-	   $(OPAL_SRCDIR)/t120/h323t120.cxx 
+	   $(OPAL_SRCDIR)/t120/h323t120.cxx \
 	   $(OPAL_SRCDIR)/t120/x224.cxx 
 endif
 
