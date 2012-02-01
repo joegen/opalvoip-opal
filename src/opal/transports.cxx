@@ -824,19 +824,18 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
     return NULL;
 
   PBYTEArray pdu;
-  PIPSocket::Address remoteAddr;
-  WORD remotePort;
-  PString iface;
-  PINDEX readCount;
-  bool preReadOK;
-  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(m_bufferSize), m_bufferSize, remoteAddr, remotePort, iface, readCount, timeout)) {
+  PMonitoredSockets::BundleParams param;
+  param.m_buffer = pdu.GetPointer(m_bufferSize);
+  param.m_length = m_bufferSize;
+  param.m_timeout = timeout;
+  listenerBundle->ReadFromBundle(param);
+
+  switch (param.m_errorCode) {
     case PChannel::NoError :
-      pdu.SetSize(readCount);
-      preReadOK = true;
+      pdu.SetSize(param.m_lastCount);
       break;
 
     case PChannel::BufferTooSmall :
-      preReadOK = false;
       break;
 
     case PChannel::Interrupted :
@@ -844,14 +843,14 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
       return NULL;
 
     default :
-      PTRACE(1, "Listen\tUDP read error.");
+      PTRACE(1, "Listen\tUDP read error: " << PChannel::GetErrorText(param.m_errorCode, param.m_errorNumber));
       return NULL;
   }
 
-  OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, iface);
+  OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, param.m_iface);
   transport->m_preReadPacket = pdu;
-  transport->m_preReadOK = preReadOK;
-  transport->SetRemoteAddress(OpalTransportAddress(remoteAddr, remotePort, OpalTransportAddress::UdpPrefix()));
+  transport->m_preReadOK = param.m_errorCode == PChannel::NoError;
+  transport->SetRemoteAddress(OpalTransportAddress(param.m_addr, param.m_port, OpalTransportAddress::UdpPrefix()));
   return transport;
 }
 
