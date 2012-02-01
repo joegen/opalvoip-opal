@@ -447,18 +447,19 @@ class InCallPanel : public CallPanelBase
     void SetVolume(bool microphone, int value, bool muted);
     void UpdateStatistics();
 
-    wxButton  * m_Hold;
-    wxButton  * m_Conference;
-    wxButton  * m_SpeakerHandset;
-    wxCheckBox* m_SpeakerMute;
-    wxCheckBox* m_MicrophoneMute;
-    wxSlider  * m_SpeakerVolume;
-    wxSlider  * m_MicrophoneVolume;
-    wxGauge   * m_vuSpeaker;
-    wxGauge   * m_vuMicrophone;
-    wxTimer     m_vuTimer;
-    unsigned    m_updateStatistics;
-    bool        m_FirstTime;
+    wxButton     * m_Hold;
+    wxButton     * m_Conference;
+    wxButton     * m_SpeakerHandset;
+    wxCheckBox   * m_SpeakerMute;
+    wxCheckBox   * m_MicrophoneMute;
+    wxSlider     * m_SpeakerVolume;
+    wxSlider     * m_MicrophoneVolume;
+    wxGauge      * m_vuSpeaker;
+    wxGauge      * m_vuMicrophone;
+    wxTimer        m_vuTimer;
+    wxStaticText * m_callTime;
+    unsigned       m_updateStatistics;
+    bool           m_FirstTime;
 
     StatisticsPage m_pages[NumPages];
 
