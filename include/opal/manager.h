@@ -838,18 +838,44 @@ class OpalManager : public PObject
     /**A call back function to monitor the progress of a transfer.
        When a transfer operation is initiated, the Transfer() function will
        generally return immediately and the transfer may take some time. This
-       call back can give indicateion to the application of the progress of
+       call back can give an indication to the application of the progress of
+       the transfer.
        the transfer.
 
-       The exact format of the \p info parameter is dependent on the protocol
-       being used. It will always have a value info["result"] which will be
-       "success" or "failed". Other variables are protocol dependent.
+       For example in SIP, the OpalCall::Transfer() function will have sent a
+       REFER request to the remote party. The remote party sends us NOTIFY
+       requests about the progress of the REFER request.
 
-       For SIP, there is an additional info["state"] containing the NOTIFY
-       subscription state and an info["code"] entry containing the 3 digit
-       code returned in the NOTIFY body.
+       An application can now make a decision during the transfer operation
+       to short circuit the sequence, or let it continue. It can also
+       determine if the transfer did not go through, and it should "take back"
+       the call. Note no action is required to "take back" the call other than
+       indicate to the user that they are back on.
 
        A return value of false will immediately disconnect the current call.
+
+       The exact format of the \p info parameter is dependent on the protocol
+       being used. As a minimum, it will always have a values info["result"]
+       and info["party"].
+
+       The info["party"] indicates the part the \p connection is playing in
+       the transfer. This will be:
+          "A"   party being transferred
+          "B"   party initiating the transfer of "A"
+          "C"   party "A" is being transferred to
+
+       The info["result"] will be at least one of the following:
+          "success"     Transfer completed successfully (party A or B)
+          "incoming"    New call was from a transfer (party C)
+          "started"     Transfer operation has started (party A)
+          "progress"    Transfer is in progress (party B)
+          "error"       Transfer could not begin (party B)
+          "failed"      Transfer started but did not complete (party A or B)
+
+       For SIP, there may be an additional info["state"] containing the NOTIFY
+       subscription state, an info["code"] entry containing the 3 digit
+       code returned in the NOTIFY body and info["Referred-By"] indicating the
+       URI of party B. Other fields may also be present.
 
        The default behaviour returns false if info["result"] == "success".
       */
