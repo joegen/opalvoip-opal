@@ -6374,6 +6374,7 @@ InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow 
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, wxT("MicrophoneVolume"));
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, wxT("SpeakerGauge"));
   m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, wxT("MicrophoneGauge"));
+  m_callTime = FindWindowByNameAs<wxStaticText>(this, wxT("CallTime"));
 
   OnHoldChanged(false);
 
@@ -6575,10 +6576,8 @@ static void SetGauge(wxGauge * gauge, int level)
 void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 {
   if (IsShown()) {
-    if (++m_updateStatistics > 8) {
+    if (++m_updateStatistics % 8 == 0)
       UpdateStatistics();
-      m_updateStatistics = 0;
-    }
 
     int micLevel = -1;
     int spkLevel = -1;
@@ -6590,6 +6589,12 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 
     SetGauge(m_vuSpeaker, spkLevel);
     SetGauge(m_vuMicrophone, micLevel);
+
+    if (m_updateStatistics % 3 == 0) {
+      PTime established = connection->GetPhaseTime(OpalConnection::EstablishedPhase);
+      if (established.IsValid())
+        m_callTime->SetLabel(PwxString((PTime() - established).AsString(0, PTimeInterval::NormalFormat, 5)));
+    }
   }
 }
 
