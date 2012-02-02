@@ -198,7 +198,7 @@ bool OpalIVRConnection::OnTransferNotify(const PStringToString & info,
                                          const OpalConnection * transferringConnection)
 {
   PString result = info["result"];
-  if (result != "progress")
+  if (result != "progress" && info["party"] == "B")
     m_vxmlSession.SetTransferComplete(result == "success");
 
   return OpalConnection::OnTransferNotify(info, transferringConnection);
@@ -411,20 +411,18 @@ OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
 
 PBoolean OpalIVRMediaStream::Open()
 {
-  PTRACE(3, "IVR\tOpen");
   if (isOpen)
     return true;
 
   if (m_vxmlSession.IsOpen()) {
+    PTRACE(3, "IVR\tRe-opening");
     PVXMLChannel * vxmlChannel = m_vxmlSession.GetAndLockVXMLChannel();
-    PString vxmlChannelMediaFormat;
-    
     if (vxmlChannel == NULL) {
       PTRACE(1, "IVR\tVXML engine not really open");
       return false;
     }
 
-    vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
+    PString vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
     m_vxmlSession.UnLockVXMLChannel();
     
     if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
@@ -435,6 +433,7 @@ PBoolean OpalIVRMediaStream::Open()
     return OpalMediaStream::Open();
   }
 
+  PTRACE(3, "IVR\tOpening");
   if (m_vxmlSession.Open(mediaFormat))
     return OpalMediaStream::Open();
 
