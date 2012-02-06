@@ -2563,6 +2563,8 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   while (!m_responsePackets.empty())
     m_responsePackets.pop();
 
+  response.DecodeSDP(GetLocalMediaFormats());
+
   OnReceivedAnswerSDP(response);
 
   m_handlingINVITE = false;
@@ -3315,6 +3317,8 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responseFailTimer = endpoint.GetAckTimeout();
     originalInvite->SendResponse(*transport, m_responsePackets.front());
   }
+
+  request.DecodeSDP(GetLocalMediaFormats());
 
   OnReceivedAnswerSDP(request);
 }
