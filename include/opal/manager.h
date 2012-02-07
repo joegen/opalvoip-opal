@@ -869,6 +869,7 @@ class OpalManager : public PObject
           "incoming"    New call was from a transfer (party C)
           "started"     Transfer operation has started (party A)
           "progress"    Transfer is in progress (party B)
+          "blind"       Transfer is blind, no further notification (party B)
           "error"       Transfer could not begin (party B)
           "failed"      Transfer started but did not complete (party A or B)
 
