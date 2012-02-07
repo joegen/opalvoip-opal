@@ -495,7 +495,7 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 
 bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PReadWaitAndSignal mutex(inUse);
+  PWriteWaitAndSignal mutex(inUse);
 
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
