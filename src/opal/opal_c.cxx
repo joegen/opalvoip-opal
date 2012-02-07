@@ -1596,7 +1596,7 @@ static void SetOptionOverrides(bool originating,
                                const OpalParamProtocol & params)
 {
   if (!IsNullString(params.m_defaultOptions)) {
-    PStringStream strm = params.m_defaultOptions;
+    PStringStream strm(params.m_defaultOptions);
     strm >> options;
   }
 
@@ -1607,7 +1607,7 @@ static void SetOptionOverrides(bool originating,
     options.Set(originating ? OPAL_OPT_CALLING_DISPLAY_NAME : OPAL_OPT_CALLED_DISPLAY_NAME, params.m_displayName);
 
   if (params.m_userInputMode > OpalUserInputDefault && params.m_userInputMode <= OpalUserInputInBand) {
-    static char * const ModeNames[] = { "Q.931", "String", "Tone", "RFC2833", "InBand" };
+    static char const * const ModeNames[] = { "Q.931", "String", "Tone", "RFC2833", "InBand" };
     options.Set(OPAL_OPT_USER_INPUT_MODE, ModeNames[params.m_userInputMode-1]);
   }
 }
