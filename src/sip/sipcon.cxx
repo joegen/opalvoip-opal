@@ -377,7 +377,16 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
 void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this);
-  
+
+  if (m_referInProgress) {
+    m_referInProgress = false;
+
+    PStringToString info;
+    info.SetAt("result", "blind");
+    info.SetAt("party", "B");
+    OnTransferNotify(info, this);
+  }
+
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
 
@@ -519,8 +528,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
   if (call == NULL) {
-    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI());
-    referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we are doing NOTIFYs or not
+    SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
     m_referInProgress = referTransaction->Start();
     return m_referInProgress;
   }
@@ -553,8 +561,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
          << ";from-tag=" << sip->GetDialog().GetLocalTag();
       referTo.SetQueryVar("Replaces", id);
 
-      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI());
-      referTransaction->GetMIME().SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or NOT
+      SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSub);
       referTransaction->GetMIME().AddSupported("replaces");
       m_referInProgress = referTransaction->Start();
       return m_referInProgress;
@@ -2059,6 +2066,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
           default :
             if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
+              m_referInProgress = false;
+
               PStringToString info;
               info.SetAt("result", "error");
               info.SetAt("party", "B");
@@ -2954,9 +2963,16 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (response.GetMIME()("Refer-Sub") == "false") {
+      if (!response.GetMIME().GetBoolean("Refer-Sub")) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "SIP\tBlind transfer accepted, without NOTIFY so ending local call.");
+        m_referInProgress = false;
+
+        PStringToString info;
+        info.SetAt("result", "blind");
+        info.SetAt("party", "B");
+        OnTransferNotify(info, this);
+
         Release(OpalConnection::EndedByCallForwarded);
       }
       // Do next case
