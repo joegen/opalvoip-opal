@@ -6506,16 +6506,16 @@ void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
     if (connection != NULL) {
       spkLevel = connection->GetAudioSignalLevel(false);
       micLevel = connection->GetAudioSignalLevel(true);
+
+      if (m_updateStatistics % 3 == 0) {
+        PTime established = connection->GetPhaseTime(OpalConnection::EstablishedPhase);
+        if (established.IsValid())
+          m_callTime->SetLabel(PwxString((PTime() - established).AsString(0, PTimeInterval::NormalFormat, 5)));
+      }
     }
 
     SetGauge(m_vuSpeaker, spkLevel);
     SetGauge(m_vuMicrophone, micLevel);
-
-    if (m_updateStatistics % 3 == 0) {
-      PTime established = connection->GetPhaseTime(OpalConnection::EstablishedPhase);
-      if (established.IsValid())
-        m_callTime->SetLabel(PwxString((PTime() - established).AsString(0, PTimeInterval::NormalFormat, 5)));
-    }
   }
 }
 
