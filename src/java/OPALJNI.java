@@ -177,6 +177,8 @@ class OPALJNI {
   public final static native String OpalParamSetUpCall_m_alertingType_get(long jarg1, OpalParamSetUpCall jarg1_);
   public final static native void OpalParamSetUpCall_m_protocolCallId_set(long jarg1, OpalParamSetUpCall jarg1_, String jarg2);
   public final static native String OpalParamSetUpCall_m_protocolCallId_get(long jarg1, OpalParamSetUpCall jarg1_);
+  public final static native void OpalParamSetUpCall_m_overrides_set(long jarg1, OpalParamSetUpCall jarg1_, long jarg2, OpalParamProtocol jarg2_);
+  public final static native long OpalParamSetUpCall_m_overrides_get(long jarg1, OpalParamSetUpCall jarg1_);
   public final static native long new_OpalParamSetUpCall();
   public final static native void delete_OpalParamSetUpCall(long jarg1);
   public final static native void OpalStatusIncomingCall_m_callToken_set(long jarg1, OpalStatusIncomingCall jarg1_, String jarg2);
@@ -205,6 +207,12 @@ class OPALJNI {
   public final static native String OpalStatusIncomingCall_m_redirectingNumber_get(long jarg1, OpalStatusIncomingCall jarg1_);
   public final static native long new_OpalStatusIncomingCall();
   public final static native void delete_OpalStatusIncomingCall(long jarg1);
+  public final static native void OpalParamAnswerCall_m_callToken_set(long jarg1, OpalParamAnswerCall jarg1_, String jarg2);
+  public final static native String OpalParamAnswerCall_m_callToken_get(long jarg1, OpalParamAnswerCall jarg1_);
+  public final static native void OpalParamAnswerCall_m_overrides_set(long jarg1, OpalParamAnswerCall jarg1_, long jarg2, OpalParamProtocol jarg2_);
+  public final static native long OpalParamAnswerCall_m_overrides_get(long jarg1, OpalParamAnswerCall jarg1_);
+  public final static native long new_OpalParamAnswerCall();
+  public final static native void delete_OpalParamAnswerCall(long jarg1);
   public final static native void OpalStatusMediaStream_m_callToken_set(long jarg1, OpalStatusMediaStream jarg1_, String jarg2);
   public final static native String OpalStatusMediaStream_m_callToken_get(long jarg1, OpalStatusMediaStream jarg1_);
   public final static native void OpalStatusMediaStream_m_identifier_set(long jarg1, OpalStatusMediaStream jarg1_, String jarg2);
@@ -326,6 +334,8 @@ class OPALJNI {
   public final static native String OpalMessage_m_param_m_callToken_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_incomingCall_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusIncomingCall jarg2_);
   public final static native long OpalMessage_m_param_m_incomingCall_get(long jarg1, OpalMessage_m_param jarg1_);
+  public final static native void OpalMessage_m_param_m_answerCall_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalParamAnswerCall jarg2_);
+  public final static native long OpalMessage_m_param_m_answerCall_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_userInput_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusUserInput jarg2_);
   public final static native long OpalMessage_m_param_m_userInput_get(long jarg1, OpalMessage_m_param jarg1_);
   public final static native void OpalMessage_m_param_m_messageWaiting_set(long jarg1, OpalMessage_m_param jarg1_, long jarg2, OpalStatusMessageWaiting jarg2_);
@@ -362,6 +372,7 @@ class OPALJNI {
   public final static native long OpalMessagePtr_GetRegistrationStatus(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetCallSetUp(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetIncomingCall(long jarg1, OpalMessagePtr jarg1_);
+  public final static native long OpalMessagePtr_GetAnswerCall(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetUserInput(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetMessageWaiting(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetLineAppearance(long jarg1, OpalMessagePtr jarg1_);

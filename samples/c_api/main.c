@@ -165,7 +165,7 @@ int InitialiseOPAL()
 #endif
                                                       " "
                                     OPAL_PREFIX_IVR
-                                    " TraceLevel=4";
+                                    " TraceLevel=4 TraceFile=debugstream";
 
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
@@ -198,12 +198,14 @@ int InitialiseOPAL()
     return 0;
   }
 
+#if 0
   // Test shut down and re-initialisation
   ShutDownFunction(hOPAL);
   if ((hOPAL = InitialiseFunction(&version, OPALOptions)) == NULL) {
     fputs("Could not re-initialise OPAL\n", stderr);
     return 0;
   }
+#endif
 
 
   // General options
@@ -322,7 +324,9 @@ static void HandleMessages(unsigned timeout)
         if (CurrentCallToken == NULL) {
           memset(&command, 0, sizeof(command));
           command.m_type = OpalCmdAnswerCall;
-          command.m_param.m_callToken = message->m_param.m_incomingCall.m_callToken;
+          command.m_param.m_answerCall.m_callToken = message->m_param.m_incomingCall.m_callToken;
+          command.m_param.m_answerCall.m_overrides.m_userName = "test123";
+          command.m_param.m_answerCall.m_overrides.m_displayName = "Test Called Party";
           if ((response = MySendCommand(&command, "Could not answer call")) != NULL)
             FreeMessageFunction(response);
         }
@@ -400,6 +404,7 @@ int DoCall(const char * from, const char * to)
   command.m_type = OpalCmdSetUpCall;
   command.m_param.m_callSetUp.m_partyA = from;
   command.m_param.m_callSetUp.m_partyB = to;
+  command.m_param.m_callSetUp.m_overrides.m_displayName = "Test Calling Party";
   if ((response = MySendCommand(&command, "Could not make call")) == NULL)
     return 0;
 
