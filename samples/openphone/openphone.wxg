@@ -372,7 +372,7 @@
         </object>
     </object>
     <object class="OptionsDialog" name="OptionsDialog" base="EditDialog">
-        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxTHICK_FRAME</style>
+        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU</style>
         <title>Options</title>
         <centered>1</centered>
         <size>400, 250d</size>
@@ -4978,7 +4978,7 @@
                                                 <option>1</option>
                                                 <object class="wxStaticText" name="CallTime" base="EditStaticText">
                                                     <attribute>1</attribute>
-                                                    <label>0:00</label>
+                                                    <label>-:--</label>
                                                     <font>
                                                         <size>12</size>
                                                         <family>default</family>
