@@ -73,10 +73,12 @@ class PURL;
 #define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
 #define OPAL_OPT_CALL_IDENTIFIER      "Call-Identifier"       ///< String option to override generated call identifier
 #define OPAL_OPT_CALLING_PARTY_URL    "Calling-Party-URL"     ///< String option to set outgoing local URL
-#define OPAL_OPT_CALLING_PARTY_NUMBER "Calling-Party-Number"  ///< String option to set outgoing local number
+#define OPAL_OPT_CALLING_PARTY_NUMBER "Calling-Party-Number"  ///< String option to set outgoing local number, deprecated, same as OPAL_OPT_CALLING_PARTY_NAME
 #define OPAL_OPT_CALLING_PARTY_NAME   "Calling-Party-Name"    ///< String option to set outgoing local name
 #define OPAL_OPT_CALLING_PARTY_DOMAIN "Calling-Party-Domain"  ///< String option to set outgoing local host/address/domain
 #define OPAL_OPT_CALLING_DISPLAY_NAME "Calling-Display-Name"  ///< String option to set outgoing display name
+#define OPAL_OPT_CALLED_PARTY_NAME    "Called-Party-Name"     ///< String option to set outgoing party name
+#define OPAL_OPT_CALLED_DISPLAY_NAME  "Called-Display-Name"   ///< String option to set outgoing display name
 #define OPAL_OPT_REDIRECTING_PARTY    "Redirecting-Party"     ///< String option to set redirecting/refferred-by party
 #define OPAL_OPT_PRESENTATION_BLOCK   "Presentation-Block"    ///< String option to block outgoing calling number presentation
 #define OPAL_OPT_ORIGINATOR_ADDRESS   "Originator-Address"    ///< String option for originator address used by IVR
@@ -841,6 +843,7 @@ class OpalConnection : public PSafeObject
           "incoming"    New call was from a transfer (party C)
           "started"     Transfer operation has started (party A)
           "progress"    Transfer is in progress (party B)
+          "blind"       Transfer is blind, no further notification (party B)
           "error"       Transfer could not begin (party B)
           "failed"      Transfer started but did not complete (party A or B)
 

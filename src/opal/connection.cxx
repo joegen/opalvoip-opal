@@ -1552,6 +1552,8 @@ void OpalConnection::SetStringOptions(const StringOptions & options, bool overwr
     for (PINDEX i = 0; i < options.GetSize(); ++i)
       m_stringOptions.SetAt(options.GetKeyAt(i), options.GetDataAt(i));
   }
+
+  OnApplyStringOptions();
 }
 
 void OpalConnection::OnApplyStringOptions()
@@ -1562,6 +1564,15 @@ void OpalConnection::OnApplyStringOptions()
 
   if (LockReadWrite()) {
     PCaselessString str;
+
+    str = m_stringOptions(IsOriginating() ? OPAL_OPT_CALLING_PARTY_NAME : OPAL_OPT_CALLED_PARTY_NAME);
+    if (!str.IsEmpty())
+      SetLocalPartyName(str);
+
+    // Allow for explicitly haveing empty string for display name
+    str = IsOriginating() ? OPAL_OPT_CALLING_DISPLAY_NAME : OPAL_OPT_CALLED_DISPLAY_NAME;
+    if (m_stringOptions.Contains(str))
+      SetDisplayName(m_stringOptions[str]);
 
     str = m_stringOptions(OPAL_OPT_USER_INPUT_MODE);
     if (str == "RFC2833")

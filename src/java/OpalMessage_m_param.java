@@ -105,6 +105,15 @@ public class OpalMessage_m_param {
     return (cPtr == 0) ? null : new OpalStatusIncomingCall(cPtr, false);
   }
 
+  public void setM_answerCall(OpalParamAnswerCall value) {
+    OPALJNI.OpalMessage_m_param_m_answerCall_set(swigCPtr, this, OpalParamAnswerCall.getCPtr(value), value);
+  }
+
+  public OpalParamAnswerCall getM_answerCall() {
+    long cPtr = OPALJNI.OpalMessage_m_param_m_answerCall_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalParamAnswerCall(cPtr, false);
+  }
+
   public void setM_userInput(OpalStatusUserInput value) {
     OPALJNI.OpalMessage_m_param_m_userInput_set(swigCPtr, this, OpalStatusUserInput.getCPtr(value), value);
   }
