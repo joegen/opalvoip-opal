@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 25
+#define OPAL_C_API_VERSION 26
 
 
 ///////////////////////////////////////
@@ -972,7 +972,9 @@ typedef struct OpalParamSetUpCall {
 
   const char * m_protocolCallId;  /**< ID assigned by the underlying protocol for the call. 
                                        Only available in version 18 and above */
-
+  OpalParamProtocol m_overrides;  /**< Overrides for the default parameters for the protocol.
+                                       For example, m_userName and m_displayName can be
+                                       changed on a call by call basis. */
 } OpalParamSetUpCall;
 
 
@@ -1006,6 +1008,21 @@ typedef struct OpalStatusIncomingCall {
   const char * m_redirectingNumber; ///< This is the E.164 number of the party doing transfer, if available.
 } OpalStatusIncomingCall;
 
+
+/**Incoming call response parameters for OpalCmdAlerting and OpalCmdAnswerCall messages.
+
+   When a new call is detected via the OpalIndIncomingCall indication, the application
+   should respond with OpalCmdClearCall, which does not use this structure, or
+   OpalCmdAnswerCall, which does. An optional OpalCmdAlerting may also be sent
+   which also uses this structure to allow for the override of default call parameters
+   such as suer name or display name on a call by call basis.
+  */
+typedef struct OpalParamAnswerCall {
+  const char * m_callToken;       ///< Call token for call to be answered.
+  OpalParamProtocol m_overrides;  /**< Overrides for the default parameters for the protocol.
+                                       For example, m_userName and m_displayName can be
+                                       changed on a call by call basis. */
+} OpalParamAnswerCall;
 
 /**Type code for media stream status/control.
    This is used by the OpalIndMediaStream indication and OpalCmdMediaStream command
@@ -1287,8 +1304,9 @@ struct OpalMessage {
     OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
     OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistration
     OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldcall/OpalCmdRetrieveCall/OpalCmdStopRecording/OpalCmdAlerting
+    const char *             m_callToken;          ///< Used by OpalCmdHoldcall/OpalCmdRetrieveCall/OpalCmdStopRecording
     OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
+    OpalParamAnswerCall      m_answerCall;         ///< Used by OpalCmdAnswerCall/OpalCmdAlerting
     OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput/OpalCmdUserInput
     OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
     OpalStatusLineAppearance m_lineAppearance;     ///< Used by OpalIndLineAppearance
@@ -1319,7 +1337,7 @@ class OpalMessagePtr
     OpalMessageType GetType() const;
     void SetType(OpalMessageType type);
 
-    const char               * GetCallToken() const;          ///< Used by OpalCmdAnswerCall/OpalCmdHoldCall/OpalCmdRetrieveCall/OpalCmdStopRecording/OpalCmdAlerting
+    const char               * GetCallToken() const;          ///< Used by OpalCmdHoldCall/OpalCmdRetrieveCall/OpalCmdStopRecording
     void                       SetCallToken(const char * token);
 
     const char               * GetCommandError() const;       ///< Used by OpalIndCommandError
@@ -1330,6 +1348,7 @@ class OpalMessagePtr
     OpalStatusRegistration   * GetRegistrationStatus() const; ///< Used by OpalIndRegistration
     OpalParamSetUpCall       * GetCallSetUp() const;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
     OpalStatusIncomingCall   * GetIncomingCall() const;       ///< Used by OpalIndIncomingCall
+    OpalParamAnswerCall      * GetAnswerCall() const;         ///< Used by OpalCmdAnswerCall/OpalCmdAlerting
     OpalStatusUserInput      * GetUserInput() const;          ///< Used by OpalIndUserInput/OpalCmdUserInput
     OpalStatusMessageWaiting * GetMessageWaiting() const;     ///< Used by OpalIndMessageWaiting
     OpalStatusLineAppearance * GetLineAppearance() const;     ///< Used by OpalIndLineAppearance

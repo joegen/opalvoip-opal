@@ -1794,7 +1794,9 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU & pdu, const SIPConnection * connection)
+void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
+                                       const OpalTransport & transport,
+                                       const SIPConnection * connection)
 {
   if (!PAssert(transport.IsOpen(), PLogicError))
     return;
@@ -1811,6 +1813,10 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
   if (pdu.GetMethod() == SIP_PDU::NumMethods) {
     user   = to.GetUserName();
     domain = from.GetHostName();
+    if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
+      to.SetDisplayName(connection->GetDisplayName());
+      mime.SetTo(to.AsQuotedString());
+    }
   }
   else {
     user   = from.GetUserName();
@@ -1852,6 +1858,8 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport & transport, SIP_PDU 
       PSafePtr<OpalConnection> other = connection->GetOtherPartyConnection();
       if (other != NULL && other->GetConferenceState(NULL))
         contact.GetFieldParameters().Set("isfocus", "");
+
+      contact.SetDisplayName(connection->GetDisplayName());
     }
 
     contact.Sanitise(SIPURL::ContactURI);

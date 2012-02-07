@@ -75,6 +75,15 @@ public class OpalParamSetUpCall {
     return OPALJNI.OpalParamSetUpCall_m_protocolCallId_get(swigCPtr, this);
   }
 
+  public void setM_overrides(OpalParamProtocol value) {
+    OPALJNI.OpalParamSetUpCall_m_overrides_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
+  }
+
+  public OpalParamProtocol getM_overrides() {
+    long cPtr = OPALJNI.OpalParamSetUpCall_m_overrides_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
+  }
+
   public OpalParamSetUpCall() {
     this(OPALJNI.new_OpalParamSetUpCall(), true);
   }
