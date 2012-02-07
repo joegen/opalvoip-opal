@@ -3634,22 +3634,33 @@ SIPTransaction * SIPPublish::CreateDuplicate() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPRefer::SIPRefer(SIPConnection & connection, const SIPURL & referTo, const SIPURL & referredBy)
+SIPRefer::SIPRefer(SIPConnection & connection,
+                   const SIPURL & referTo,
+                   const SIPURL & referredBy,
+                   bool referSub)
   : SIPTransaction(Method_REFER, connection)
 {
   m_mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
+
   m_mime.SetReferTo(referTo.AsQuotedString());
+
   if(!referredBy.IsEmpty()) {
     SIPURL adjustedReferredBy = referredBy;
     adjustedReferredBy.Sanitise(SIPURL::RequestURI);
     m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
+
+  m_mime.SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or not ...
+  m_mime.AddSupported("norefersub");
 }
 
 
 SIPTransaction * SIPRefer::CreateDuplicate() const
 {
-  return new SIPRefer(*m_connection, m_mime.GetReferTo(), m_mime.GetReferredBy());
+  return new SIPRefer(*m_connection,
+                      m_mime.GetReferTo(),
+                      m_mime.GetReferredBy(),
+                      m_mime.GetBoolean("Refer-Sub"));
 }
 
 
