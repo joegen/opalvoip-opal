@@ -1448,7 +1448,7 @@
                                                 <flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>4</border>
                                                 <object class="wxStaticText" name="CallTime">
-                                                    <label>0:00</label>
+                                                    <label>-:--</label>
                                                     <font>
                                                         <style>normal</style>
                                                         <family>default</family>
@@ -1649,7 +1649,7 @@
     </object>
     <object class="wxDialog" name="OptionsDialog" subclass="OptionsDialog">
         <centered>1</centered>
-        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxTHICK_FRAME</style>
+        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU</style>
         <size>400, 250d</size>
         <title>Options</title>
         <object class="wxBoxSizer">
