@@ -1852,7 +1852,7 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via, 
 void SIP_PDU::InitialiseHeaders(SIPConnection & connection, const OpalTransport & transport, unsigned cseq)
 {
   InitialiseHeaders(connection.GetDialog(), CreateVia(connection.GetEndPoint(), transport), cseq);
-  connection.GetEndPoint().AdjustToRegistration(transport, *this);
+  connection.GetEndPoint().AdjustToRegistration(*this, transport, &connection);
 }
 
 
@@ -2072,7 +2072,7 @@ bool SIP_PDU::SendResponse(OpalTransport & transport, SIP_PDU & response, SIPEnd
   }
 
   if (endpoint != NULL)
-    endpoint->AdjustToRegistration(transport, response);
+    endpoint->AdjustToRegistration(response, transport, NULL);
 
   return response.Write(transport, newAddress);
 }
@@ -3537,7 +3537,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
   SetParameters(params);
 
-  ep.AdjustToRegistration(trans, *this);
+  ep.AdjustToRegistration(*this, trans, NULL);
 }
 
 
@@ -3578,7 +3578,7 @@ SIPNotify::SIPNotify(SIPEndPoint & ep,
 
   m_entityBody = body;
 
-  ep.AdjustToRegistration(trans, *this);
+  ep.AdjustToRegistration(*this, trans, NULL);
 }
 
 

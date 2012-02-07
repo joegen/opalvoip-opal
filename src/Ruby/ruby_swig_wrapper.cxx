@@ -1822,34 +1822,35 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_OpalMessagePtr swig_types[9]
 #define SWIGTYPE_p_OpalMessageType swig_types[10]
 #define SWIGTYPE_p_OpalMessage_m_param swig_types[11]
-#define SWIGTYPE_p_OpalParamCallCleared swig_types[12]
-#define SWIGTYPE_p_OpalParamGeneral swig_types[13]
-#define SWIGTYPE_p_OpalParamProtocol swig_types[14]
-#define SWIGTYPE_p_OpalParamRecording swig_types[15]
-#define SWIGTYPE_p_OpalParamRegistration swig_types[16]
-#define SWIGTYPE_p_OpalParamSetUpCall swig_types[17]
-#define SWIGTYPE_p_OpalParamSetUserData swig_types[18]
-#define SWIGTYPE_p_OpalProductDescription swig_types[19]
-#define SWIGTYPE_p_OpalRegistrationStates swig_types[20]
-#define SWIGTYPE_p_OpalSilenceDetectMode swig_types[21]
-#define SWIGTYPE_p_OpalStatusCallCleared swig_types[22]
-#define SWIGTYPE_p_OpalStatusIVR swig_types[23]
-#define SWIGTYPE_p_OpalStatusIncomingCall swig_types[24]
-#define SWIGTYPE_p_OpalStatusLineAppearance swig_types[25]
-#define SWIGTYPE_p_OpalStatusMediaStream swig_types[26]
-#define SWIGTYPE_p_OpalStatusMessageWaiting swig_types[27]
-#define SWIGTYPE_p_OpalStatusRegistration swig_types[28]
-#define SWIGTYPE_p_OpalStatusTransferCall swig_types[29]
-#define SWIGTYPE_p_OpalStatusUserInput swig_types[30]
-#define SWIGTYPE_p_OpalUserInputModes swig_types[31]
-#define SWIGTYPE_p_OpalVideoRecordMixMode swig_types[32]
-#define SWIGTYPE_p_char swig_types[33]
-#define SWIGTYPE_p_f_p_q_const__OpalMessage__int swig_types[34]
-#define SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int swig_types[35]
-#define SWIGTYPE_p_unsigned_int swig_types[36]
-#define SWIGTYPE_p_void swig_types[37]
-static swig_type_info *swig_types[39];
-static swig_module_info swig_module = {swig_types, 38, 0, 0, 0, 0};
+#define SWIGTYPE_p_OpalParamAnswerCall swig_types[12]
+#define SWIGTYPE_p_OpalParamCallCleared swig_types[13]
+#define SWIGTYPE_p_OpalParamGeneral swig_types[14]
+#define SWIGTYPE_p_OpalParamProtocol swig_types[15]
+#define SWIGTYPE_p_OpalParamRecording swig_types[16]
+#define SWIGTYPE_p_OpalParamRegistration swig_types[17]
+#define SWIGTYPE_p_OpalParamSetUpCall swig_types[18]
+#define SWIGTYPE_p_OpalParamSetUserData swig_types[19]
+#define SWIGTYPE_p_OpalProductDescription swig_types[20]
+#define SWIGTYPE_p_OpalRegistrationStates swig_types[21]
+#define SWIGTYPE_p_OpalSilenceDetectMode swig_types[22]
+#define SWIGTYPE_p_OpalStatusCallCleared swig_types[23]
+#define SWIGTYPE_p_OpalStatusIVR swig_types[24]
+#define SWIGTYPE_p_OpalStatusIncomingCall swig_types[25]
+#define SWIGTYPE_p_OpalStatusLineAppearance swig_types[26]
+#define SWIGTYPE_p_OpalStatusMediaStream swig_types[27]
+#define SWIGTYPE_p_OpalStatusMessageWaiting swig_types[28]
+#define SWIGTYPE_p_OpalStatusRegistration swig_types[29]
+#define SWIGTYPE_p_OpalStatusTransferCall swig_types[30]
+#define SWIGTYPE_p_OpalStatusUserInput swig_types[31]
+#define SWIGTYPE_p_OpalUserInputModes swig_types[32]
+#define SWIGTYPE_p_OpalVideoRecordMixMode swig_types[33]
+#define SWIGTYPE_p_char swig_types[34]
+#define SWIGTYPE_p_f_p_q_const__OpalMessage__int swig_types[35]
+#define SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int swig_types[36]
+#define SWIGTYPE_p_unsigned_int swig_types[37]
+#define SWIGTYPE_p_void swig_types[38]
+static swig_type_info *swig_types[40];
+static swig_module_info swig_module = {swig_types, 39, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2123,8 +2124,9 @@ typedef union {
     OpalParamRegistration    m_registrationInfo;                                   
     OpalStatusRegistration   m_registrationStatus;                                 
     OpalParamSetUpCall       m_callSetUp;                                                                                            
-    const char *             m_callToken;                                                                                                                 
+    const char *             m_callToken;                                                                               
     OpalStatusIncomingCall   m_incomingCall;                                       
+    OpalParamAnswerCall      m_answerCall;                                                       
     OpalStatusUserInput      m_userInput;                                                        
     OpalStatusMessageWaiting m_messageWaiting;                                       
     OpalStatusLineAppearance m_lineAppearance;                                       
@@ -7872,6 +7874,79 @@ fail:
 }
 
 
+
+/*
+  Document-method: Opal::OpalParamSetUpCall.m_overrides
+
+  call-seq:
+    m_overrides -> OpalParamProtocol
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalParamSetUpCall.m_overrides=
+
+  call-seq:
+    m_overrides=(x) -> OpalParamProtocol
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalParamSetUpCall_m_overrides_set(int argc, VALUE *argv, VALUE self) {
+  OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
+  OpalParamProtocol *arg2 = (OpalParamProtocol *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamSetUpCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamSetUpCall *","m_overrides", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamSetUpCall * >(argp1);
+  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_overrides", 2, argv[0] )); 
+  }
+  arg2 = reinterpret_cast< OpalParamProtocol * >(argp2);
+  if (arg1) (arg1)->m_overrides = *arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalParamSetUpCall_m_overrides_get(int argc, VALUE *argv, VALUE self) {
+  OpalParamSetUpCall *arg1 = (OpalParamSetUpCall *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  OpalParamProtocol *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamSetUpCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamSetUpCall *","m_overrides", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamSetUpCall * >(argp1);
+  result = (OpalParamProtocol *)& ((arg1)->m_overrides);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
 _wrap_OpalParamSetUpCall_allocate(VALUE self) {
@@ -8937,6 +9012,217 @@ fail:
 
 SWIGINTERN void
 free_OpalStatusIncomingCall(OpalStatusIncomingCall *arg1) {
+    delete arg1;
+}
+
+
+/*
+  Document-class: Opal::OpalParamAnswerCall
+
+  Proxy of C++ Opal::OpalParamAnswerCall class
+
+
+*/
+swig_class SwigClassOpalParamAnswerCall;
+
+
+/*
+  Document-method: Opal::OpalParamAnswerCall.m_callToken
+
+  call-seq:
+    m_callToken -> char
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalParamAnswerCall.m_callToken=
+
+  call-seq:
+    m_callToken=(x) -> char
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalParamAnswerCall_m_callToken_set(int argc, VALUE *argv, VALUE self) {
+  OpalParamAnswerCall *arg1 = (OpalParamAnswerCall *) 0 ;
+  char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamAnswerCall *","m_callToken", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamAnswerCall * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_callToken", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(reinterpret_cast< const char * >(arg2))) + 1;
+    arg1->m_callToken = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
+  } else {
+    arg1->m_callToken = 0;
+  }
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalParamAnswerCall_m_callToken_get(int argc, VALUE *argv, VALUE self) {
+  OpalParamAnswerCall *arg1 = (OpalParamAnswerCall *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  char *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamAnswerCall *","m_callToken", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamAnswerCall * >(argp1);
+  result = (char *) ((arg1)->m_callToken);
+  vresult = SWIG_FromCharPtr((const char *)result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+
+/*
+  Document-method: Opal::OpalParamAnswerCall.m_overrides
+
+  call-seq:
+    m_overrides -> OpalParamProtocol
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalParamAnswerCall.m_overrides=
+
+  call-seq:
+    m_overrides=(x) -> OpalParamProtocol
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalParamAnswerCall_m_overrides_set(int argc, VALUE *argv, VALUE self) {
+  OpalParamAnswerCall *arg1 = (OpalParamAnswerCall *) 0 ;
+  OpalParamProtocol *arg2 = (OpalParamProtocol *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamAnswerCall *","m_overrides", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamAnswerCall * >(argp1);
+  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "OpalParamProtocol *","m_overrides", 2, argv[0] )); 
+  }
+  arg2 = reinterpret_cast< OpalParamProtocol * >(argp2);
+  if (arg1) (arg1)->m_overrides = *arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalParamAnswerCall_m_overrides_get(int argc, VALUE *argv, VALUE self) {
+  OpalParamAnswerCall *arg1 = (OpalParamAnswerCall *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  OpalParamProtocol *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamAnswerCall *","m_overrides", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalParamAnswerCall * >(argp1);
+  result = (OpalParamProtocol *)& ((arg1)->m_overrides);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OpalParamProtocol, 0 |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+SWIGINTERN VALUE
+_wrap_OpalParamAnswerCall_allocate(VALUE self) {
+#else
+  SWIGINTERN VALUE
+  _wrap_OpalParamAnswerCall_allocate(int argc, VALUE *argv, VALUE self) {
+#endif
+    
+    
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_OpalParamAnswerCall);
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+    rb_obj_call_init(vresult, argc, argv);
+#endif
+    return vresult;
+  }
+  
+
+
+/*
+  Document-method: Opal::OpalParamAnswerCall.new
+
+  call-seq:
+    OpalParamAnswerCall.new
+
+Class constructor.
+
+*/
+SWIGINTERN VALUE
+_wrap_new_OpalParamAnswerCall(int argc, VALUE *argv, VALUE self) {
+  OpalParamAnswerCall *result = 0 ;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  result = (OpalParamAnswerCall *)new OpalParamAnswerCall();
+  DATA_PTR(self) = result;
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN void
+free_OpalParamAnswerCall(OpalParamAnswerCall *arg1) {
     delete arg1;
 }
 
@@ -13347,6 +13633,79 @@ fail:
 
 
 /*
+  Document-method: Opal::OpalMessage_m_param.m_answerCall
+
+  call-seq:
+    m_answerCall -> OpalParamAnswerCall
+
+Get value of attribute.
+
+*/
+
+/*
+  Document-method: Opal::OpalMessage_m_param.m_answerCall=
+
+  call-seq:
+    m_answerCall=(x) -> OpalParamAnswerCall
+
+Set new value for attribute.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalMessage_m_param_m_answerCall_set(int argc, VALUE *argv, VALUE self) {
+  OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
+  OpalParamAnswerCall *arg2 = (OpalParamAnswerCall *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalMessage_m_param, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalMessage_m_param *","m_answerCall", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalMessage_m_param * >(argp1);
+  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "OpalParamAnswerCall *","m_answerCall", 2, argv[0] )); 
+  }
+  arg2 = reinterpret_cast< OpalParamAnswerCall * >(argp2);
+  if (arg1) (arg1)->m_answerCall = *arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_OpalMessage_m_param_m_answerCall_get(int argc, VALUE *argv, VALUE self) {
+  OpalMessage_m_param *arg1 = (OpalMessage_m_param *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  OpalParamAnswerCall *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalMessage_m_param, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalMessage_m_param *","m_answerCall", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalMessage_m_param * >(argp1);
+  result = (OpalParamAnswerCall *)& ((arg1)->m_answerCall);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+
+/*
   Document-method: Opal::OpalMessage_m_param.m_userInput
 
   call-seq:
@@ -14625,6 +14984,40 @@ fail:
 
 
 /*
+  Document-method: Opal::OpalMessagePtr.GetAnswerCall
+
+  call-seq:
+    GetAnswerCall -> OpalParamAnswerCall
+
+An instance method.
+
+*/
+SWIGINTERN VALUE
+_wrap_OpalMessagePtr_GetAnswerCall(int argc, VALUE *argv, VALUE self) {
+  OpalMessagePtr *arg1 = (OpalMessagePtr *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  OpalParamAnswerCall *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalMessagePtr, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalMessagePtr const *","GetAnswerCall", 1, self )); 
+  }
+  arg1 = reinterpret_cast< OpalMessagePtr * >(argp1);
+  result = (OpalParamAnswerCall *)((OpalMessagePtr const *)arg1)->GetAnswerCall();
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OpalParamAnswerCall, 0 |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+
+/*
   Document-method: Opal::OpalMessagePtr.GetUserInput
 
   call-seq:
@@ -14991,7 +15384,7 @@ free_OpalContext(OpalContext *arg1) {
   Document-method: Opal::OpalContext.Initialise
 
   call-seq:
-    Initialise(char options, unsigned int version=25) -> unsigned int
+    Initialise(char options, unsigned int version=26) -> unsigned int
     Initialise(char options) -> unsigned int
 
 An instance method.
@@ -16039,6 +16432,7 @@ static swig_type_info _swigt__p_OpalMessage = {"_p_OpalMessage", "OpalMessage *"
 static swig_type_info _swigt__p_OpalMessagePtr = {"_p_OpalMessagePtr", "OpalMessagePtr *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalMessageType = {"_p_OpalMessageType", "enum OpalMessageType *|OpalMessageType *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalMessage_m_param = {"_p_OpalMessage_m_param", "OpalMessage_m_param *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_OpalParamAnswerCall = {"_p_OpalParamAnswerCall", "OpalParamAnswerCall *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalParamCallCleared = {"_p_OpalParamCallCleared", "OpalParamCallCleared *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalParamGeneral = {"_p_OpalParamGeneral", "OpalParamGeneral *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpalParamProtocol = {"_p_OpalParamProtocol", "OpalParamProtocol *", 0, 0, (void*)0, 0};
@@ -16079,6 +16473,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_OpalMessagePtr,
   &_swigt__p_OpalMessageType,
   &_swigt__p_OpalMessage_m_param,
+  &_swigt__p_OpalParamAnswerCall,
   &_swigt__p_OpalParamCallCleared,
   &_swigt__p_OpalParamGeneral,
   &_swigt__p_OpalParamProtocol,
@@ -16119,6 +16514,7 @@ static swig_cast_info _swigc__p_OpalMessage[] = {  {&_swigt__p_OpalMessage, 0, 0
 static swig_cast_info _swigc__p_OpalMessagePtr[] = {  {&_swigt__p_OpalMessagePtr, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalMessageType[] = {  {&_swigt__p_OpalMessageType, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalMessage_m_param[] = {  {&_swigt__p_OpalMessage_m_param, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_OpalParamAnswerCall[] = {  {&_swigt__p_OpalParamAnswerCall, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalParamCallCleared[] = {  {&_swigt__p_OpalParamCallCleared, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalParamGeneral[] = {  {&_swigt__p_OpalParamGeneral, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpalParamProtocol[] = {  {&_swigt__p_OpalParamProtocol, 0, 0, 0},{0, 0, 0, 0}};
@@ -16159,6 +16555,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_OpalMessagePtr,
   _swigc__p_OpalMessageType,
   _swigc__p_OpalMessage_m_param,
+  _swigc__p_OpalParamAnswerCall,
   _swigc__p_OpalParamCallCleared,
   _swigc__p_OpalParamGeneral,
   _swigc__p_OpalParamProtocol,
@@ -16445,7 +16842,7 @@ SWIGEXPORT void Init_opal(void) {
   }
   
   SWIG_RubyInitializeTrackings();
-  rb_define_const(mOpal, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(25)));
+  rb_define_const(mOpal, "OPAL_C_API_VERSION", SWIG_From_int(static_cast< int >(26)));
   rb_define_module_function(mOpal, "OpalInitialise", VALUEFUNC(_wrap_OpalInitialise), -1);
   rb_define_const(mOpal, "OPAL_INITIALISE_FUNCTION", SWIG_FromCharPtr("OpalInitialise"));
   rb_define_module_function(mOpal, "OpalShutDown", VALUEFUNC(_wrap_OpalShutDown), -1);
@@ -16703,6 +17100,8 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalParamSetUpCall.klass, "m_alertingType", VALUEFUNC(_wrap_OpalParamSetUpCall_m_alertingType_get), -1);
   rb_define_method(SwigClassOpalParamSetUpCall.klass, "m_protocolCallId=", VALUEFUNC(_wrap_OpalParamSetUpCall_m_protocolCallId_set), -1);
   rb_define_method(SwigClassOpalParamSetUpCall.klass, "m_protocolCallId", VALUEFUNC(_wrap_OpalParamSetUpCall_m_protocolCallId_get), -1);
+  rb_define_method(SwigClassOpalParamSetUpCall.klass, "m_overrides=", VALUEFUNC(_wrap_OpalParamSetUpCall_m_overrides_set), -1);
+  rb_define_method(SwigClassOpalParamSetUpCall.klass, "m_overrides", VALUEFUNC(_wrap_OpalParamSetUpCall_m_overrides_get), -1);
   SwigClassOpalParamSetUpCall.mark = 0;
   SwigClassOpalParamSetUpCall.destroy = (void (*)(void *)) free_OpalParamSetUpCall;
   SwigClassOpalParamSetUpCall.trackObjects = 0;
@@ -16738,6 +17137,18 @@ SWIGEXPORT void Init_opal(void) {
   SwigClassOpalStatusIncomingCall.mark = 0;
   SwigClassOpalStatusIncomingCall.destroy = (void (*)(void *)) free_OpalStatusIncomingCall;
   SwigClassOpalStatusIncomingCall.trackObjects = 0;
+  
+  SwigClassOpalParamAnswerCall.klass = rb_define_class_under(mOpal, "OpalParamAnswerCall", rb_cObject);
+  SWIG_TypeClientData(SWIGTYPE_p_OpalParamAnswerCall, (void *) &SwigClassOpalParamAnswerCall);
+  rb_define_alloc_func(SwigClassOpalParamAnswerCall.klass, _wrap_OpalParamAnswerCall_allocate);
+  rb_define_method(SwigClassOpalParamAnswerCall.klass, "initialize", VALUEFUNC(_wrap_new_OpalParamAnswerCall), -1);
+  rb_define_method(SwigClassOpalParamAnswerCall.klass, "m_callToken=", VALUEFUNC(_wrap_OpalParamAnswerCall_m_callToken_set), -1);
+  rb_define_method(SwigClassOpalParamAnswerCall.klass, "m_callToken", VALUEFUNC(_wrap_OpalParamAnswerCall_m_callToken_get), -1);
+  rb_define_method(SwigClassOpalParamAnswerCall.klass, "m_overrides=", VALUEFUNC(_wrap_OpalParamAnswerCall_m_overrides_set), -1);
+  rb_define_method(SwigClassOpalParamAnswerCall.klass, "m_overrides", VALUEFUNC(_wrap_OpalParamAnswerCall_m_overrides_get), -1);
+  SwigClassOpalParamAnswerCall.mark = 0;
+  SwigClassOpalParamAnswerCall.destroy = (void (*)(void *)) free_OpalParamAnswerCall;
+  SwigClassOpalParamAnswerCall.trackObjects = 0;
   rb_define_const(mOpal, "OpalMediaStateNoChange", SWIG_From_int(static_cast< int >(OpalMediaStateNoChange)));
   rb_define_const(mOpal, "OpalMediaStateOpen", SWIG_From_int(static_cast< int >(OpalMediaStateOpen)));
   rb_define_const(mOpal, "OpalMediaStateClose", SWIG_From_int(static_cast< int >(OpalMediaStateClose)));
@@ -16976,6 +17387,8 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_callToken", VALUEFUNC(_wrap_OpalMessage_m_param_m_callToken_get), -1);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_incomingCall=", VALUEFUNC(_wrap_OpalMessage_m_param_m_incomingCall_set), -1);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_incomingCall", VALUEFUNC(_wrap_OpalMessage_m_param_m_incomingCall_get), -1);
+  rb_define_method(SwigClassOpalMessage_m_param.klass, "m_answerCall=", VALUEFUNC(_wrap_OpalMessage_m_param_m_answerCall_set), -1);
+  rb_define_method(SwigClassOpalMessage_m_param.klass, "m_answerCall", VALUEFUNC(_wrap_OpalMessage_m_param_m_answerCall_get), -1);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_userInput=", VALUEFUNC(_wrap_OpalMessage_m_param_m_userInput_set), -1);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_userInput", VALUEFUNC(_wrap_OpalMessage_m_param_m_userInput_get), -1);
   rb_define_method(SwigClassOpalMessage_m_param.klass, "m_messageWaiting=", VALUEFUNC(_wrap_OpalMessage_m_param_m_messageWaiting_set), -1);
@@ -17015,6 +17428,7 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetRegistrationStatus", VALUEFUNC(_wrap_OpalMessagePtr_GetRegistrationStatus), -1);
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetCallSetUp", VALUEFUNC(_wrap_OpalMessagePtr_GetCallSetUp), -1);
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetIncomingCall", VALUEFUNC(_wrap_OpalMessagePtr_GetIncomingCall), -1);
+  rb_define_method(SwigClassOpalMessagePtr.klass, "GetAnswerCall", VALUEFUNC(_wrap_OpalMessagePtr_GetAnswerCall), -1);
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetUserInput", VALUEFUNC(_wrap_OpalMessagePtr_GetUserInput), -1);
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetMessageWaiting", VALUEFUNC(_wrap_OpalMessagePtr_GetMessageWaiting), -1);
   rb_define_method(SwigClassOpalMessagePtr.klass, "GetLineAppearance", VALUEFUNC(_wrap_OpalMessagePtr_GetLineAppearance), -1);

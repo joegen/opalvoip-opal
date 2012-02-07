@@ -734,14 +734,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   }
 
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceAddress);
-  {
-    PString callingParty;
-    callingParty = connection.GetStringOptions()(OPAL_OPT_CALLING_PARTY_NAME);
-    if (callingParty.IsEmpty())
-      H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
-    else
-      H323SetAliasAddresses(PStringArray(callingParty), setup.m_sourceAddress);
-  }
+  H323SetAliasAddresses(connection.GetLocalAliasNames(), setup.m_sourceAddress);
 
   setup.m_conferenceID = connection.GetConferenceIdentifier();
   setup.m_conferenceGoal.SetTag(H225_Setup_UUIE_conferenceGoal::e_create);
@@ -1397,15 +1390,9 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
 {
   const PStringList & aliases = connection.GetLocalAliasNames();
 
-  PString localName;
-  PString displayName;
+  PString localName = connection.GetLocalPartyName();
+  PString displayName = connection.GetDisplayName();
   PString number;
-
-  {
-    const OpalConnection::StringOptions & stringOptions = connection.GetStringOptions();
-    localName   = stringOptions(OPAL_OPT_CALLING_PARTY_NAME, connection.GetLocalPartyName());
-    displayName = stringOptions(OPAL_OPT_CALLING_DISPLAY_NAME, connection.GetDisplayName());
-  }
 
   if (OpalIsE164(localName)) {
     number = localName;

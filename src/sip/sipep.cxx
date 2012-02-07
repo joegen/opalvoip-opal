@@ -1791,7 +1791,9 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
 }
 
 
-void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU & pdu)
+void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
+                                       const OpalTransport & transport,
+                                       const SIPConnection * connection)
 {
   // When we start adding things like P-Asserted-Identity, this function will change
   // Right now it just does the Contact field
@@ -1805,6 +1807,10 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
   if (pdu.GetMethod() == SIP_PDU::NumMethods) {
     user   = to.GetUserName();
     domain = from.GetHostName();
+    if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
+      to.SetDisplayName(connection->GetDisplayName());
+      mime.SetTo(to.AsQuotedString());
+    }
   }
   else {
     user   = from.GetUserName();
@@ -1840,10 +1846,14 @@ void SIPEndPoint::AdjustToRegistration(const OpalTransport &transport, SIP_PDU &
     }
 
     if (contact.IsEmpty())
-      contact = GetLocalURL(transport, user);
+      contact = GetLocalURL(transport, connection != NULL ? connection->GetLocalPartyName() : user);
 
     contact.Sanitise(SIPURL::ContactURI);
-    pdu.GetMIME().SetContact(contact.AsQuotedString());
+
+    if (connection != NULL)
+      contact.SetDisplayName(connection->GetDisplayName());
+
+    mime.SetContact(contact.AsQuotedString());
   }
 
   if (!mime.Has("Route") && registrar != NULL)

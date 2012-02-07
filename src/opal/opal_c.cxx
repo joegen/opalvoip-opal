@@ -1589,6 +1589,28 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 }
 
 
+static void SetOptionOverrides(bool originating,
+                               OpalConnection::StringOptions & options,
+                               const OpalParamProtocol & params)
+{
+  if (!IsNullString(params.m_defaultOptions)) {
+    PStringStream strm = params.m_defaultOptions;
+    strm >> options;
+  }
+
+  if (!IsNullString(params.m_userName))
+    options.Set(originating ? OPAL_OPT_CALLING_PARTY_NAME : OPAL_OPT_CALLED_PARTY_NAME, params.m_userName);
+
+  if (!IsNullString(params.m_displayName))
+    options.Set(originating ? OPAL_OPT_CALLING_DISPLAY_NAME : OPAL_OPT_CALLED_DISPLAY_NAME, params.m_displayName);
+
+  if (params.m_userInputMode > OpalUserInputDefault && params.m_userInputMode <= OpalUserInputInBand) {
+    static char * const ModeNames[] = { "Q.931", "String", "Tone", "RFC2833", "InBand" };
+    options.Set(OPAL_OPT_USER_INPUT_MODE, ModeNames[params.m_userInputMode-1]);
+  }
+}
+
+
 void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
   if (IsNullString(command.m_param.m_callSetUp.m_partyB)) {
@@ -1616,6 +1638,8 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
   OpalConnection::StringOptions options;
   if (!IsNullString(command.m_param.m_callSetUp.m_alertingType))
     options.SetAt(OPAL_OPT_ALERTING_TYPE, command.m_param.m_callSetUp.m_alertingType);
+  if (m_apiVersion >= 26)
+    SetOptionOverrides(true, options, command.m_param.m_answerCall.m_overrides);
 
   PString token;
   if (SetUpCall(partyA, command.m_param.m_callSetUp.m_partyB, token, NULL, 0, &options)) {
@@ -1641,17 +1665,21 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
     return;
   }
 
+  OpalConnection::StringOptions options;
+  if (m_apiVersion >= 26)
+    SetOptionOverrides(false, options, command.m_param.m_answerCall.m_overrides);
+
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken))
+  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
     return;
 #endif
 
 #if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken))
+  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
     return;
 #endif
 
-  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken))
+  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
     return;
 
   response.SetError("No call found by the token provided.");
@@ -1665,17 +1693,21 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     return;
   }
 
+  OpalConnection::StringOptions options;
+  if (m_apiVersion >= 26)
+    SetOptionOverrides(false, options, command.m_param.m_answerCall.m_overrides);
+
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_callToken))
+  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
     return;
 #endif
 
 #if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_callToken))
+  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
     return;
 #endif
 
-  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_callToken))
+  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
     return;
 
   response.SetError("No call found by the token provided.");
@@ -2469,6 +2501,13 @@ OpalParamSetUpCall * OpalMessagePtr::GetCallSetUp() const
 OpalStatusIncomingCall * OpalMessagePtr::GetIncomingCall() const
 {
   return m_message->m_type == OpalIndIncomingCall ? &m_message->m_param.m_incomingCall : NULL;
+}
+
+
+OpalParamAnswerCall * OpalMessagePtr::GetAnswerCall() const
+{
+  return m_message->m_type == OpalCmdAlerting ||
+         m_message->m_type == OpalCmdAnswerCall ? &m_message->m_param.m_answerCall : NULL;
 }
 
 

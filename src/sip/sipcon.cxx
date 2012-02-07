@@ -1487,22 +1487,28 @@ bool SIPConnection::WriteINVITE()
   if (!transportProtocol.IsEmpty())
     myAddress.SetParamVar("transport", transportProtocol);
 
-  // only allow override of calling party number if the local party
-  // name hasn't been first specified by a register handler. i.e a
-  // register handler's target number is always used
-  bool changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NUMBER);
-  if (changedUserName)
-    myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NUMBER]);
-  else {
-    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NAME);
+  bool changedUserName = false;
+  if (IsOriginating()) {
+    // only allow override of calling party number if the local party
+    // name hasn't been first specified by a register handler. i.e a
+    // register handler's target number is always used
+    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NUMBER);
     if (changedUserName)
-      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NAME]);
+      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NUMBER]);
+    else {
+      changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLING_PARTY_NAME);
+      if (changedUserName)
+        myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLING_PARTY_NAME]);
+    }
+  }
+  else {
+    changedUserName = m_stringOptions.Contains(OPAL_OPT_CALLED_PARTY_NAME);
+    if (changedUserName)
+      myAddress.SetUserName(m_stringOptions[OPAL_OPT_CALLED_PARTY_NAME]);
   }
 
-  bool changedDisplayName = m_stringOptions.Contains(OPAL_OPT_CALLING_DISPLAY_NAME);
+  bool changedDisplayName = myAddress.GetDisplayName() != GetDisplayName();
   if (changedDisplayName)
-    myAddress.SetDisplayName(m_stringOptions[OPAL_OPT_CALLING_DISPLAY_NAME]);
-  else
     myAddress.SetDisplayName(GetDisplayName());
 
   // Domain cannot be an empty string so do not set if override is empty
@@ -3183,7 +3189,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(GetAllowedMethods());
 
-  endpoint.AdjustToRegistration(*transport, response);
+  endpoint.AdjustToRegistration(response, *transport, this);
 
   // this can be used to promote any incoming calls to TCP. Not quite there yet, but it *almost* works
   bool promoteToTCP = false;    // disable code for now

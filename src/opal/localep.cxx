@@ -99,26 +99,32 @@ bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 }
 
 
-bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token)
+bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token, OpalConnection::StringOptions * options)
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
     PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
     return false;
   }
+
+  if (options != NULL)
+    connection->SetStringOptions(*options, false);
 
   connection->AlertingIncoming();
   return true;
 }
 
 
-bool OpalLocalEndPoint::AcceptIncomingCall(const PString & token)
+bool OpalLocalEndPoint::AcceptIncomingCall(const PString & token, OpalConnection::StringOptions * options)
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
     PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
     return false;
   }
+
+  if (options != NULL)
+    connection->SetStringOptions(*options, false);
 
   connection->AcceptIncoming();
   return true;
@@ -209,6 +215,18 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
 OpalLocalConnection::~OpalLocalConnection()
 {
   PTRACE(4, "LocalCon\tDeleted connection.");
+}
+
+
+void OpalLocalConnection::OnApplyStringOptions()
+{
+  OpalConnection::OnApplyStringOptions();
+
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection != NULL && dynamic_cast<OpalLocalConnection*>(&*otherConnection) == NULL) {
+    PTRACE(4, "LocalCon\tPassing string options to " << *otherConnection);
+    otherConnection->SetStringOptions(m_stringOptions, false);
+  }
 }
 
 

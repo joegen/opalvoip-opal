@@ -855,7 +855,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Set registration search mode.
        If true then only the user indicated as "local" address
-       (e.g. from OPAL_OPT_CALLING_PARTY_NUMBER etc) by the will be used
+       (e.g. from OPAL_OPT_CALLING_PARTY_NAME etc) by the will be used
        in searches of the registrations. No default to first user of the
        same domain will be performed. */
     void SetRegisteredUserMode(bool v) { m_registeredUserMode = v; }
@@ -891,8 +891,9 @@ class SIPEndPoint : public OpalRTPEndPoint
        the given transport is set to the Contact field.
      */
     void AdjustToRegistration(
+      SIP_PDU & pdu,
       const OpalTransport & transport,
-      SIP_PDU & pdu
+      const SIPConnection * connection
     );
 
     /**Return the local URL for the given transport and user name.

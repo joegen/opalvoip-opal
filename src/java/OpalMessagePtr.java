@@ -93,6 +93,11 @@ public class OpalMessagePtr {
     return (cPtr == 0) ? null : new OpalStatusIncomingCall(cPtr, false);
   }
 
+  public OpalParamAnswerCall GetAnswerCall() {
+    long cPtr = OPALJNI.OpalMessagePtr_GetAnswerCall(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalParamAnswerCall(cPtr, false);
+  }
+
   public OpalStatusUserInput GetUserInput() {
     long cPtr = OPALJNI.OpalMessagePtr_GetUserInput(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusUserInput(cPtr, false);
