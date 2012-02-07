@@ -166,7 +166,8 @@ class OpalLocalEndPoint : public OpalEndPoint
        connection.
       */
     virtual bool AlertingIncomingCall(
-      const PString & token ///<  Token of connection to accept call
+      const PString & token, ///<  Token of connection to indicate alerting
+      OpalConnection::StringOptions * options = NULL  ///< Optional string optiosn to apply
     );
 
     /**Accept the incoming connection.
@@ -174,7 +175,8 @@ class OpalLocalEndPoint : public OpalEndPoint
        connection.
       */
     virtual bool AcceptIncomingCall(
-      const PString & token ///<  Token of connection to accept call
+      const PString & token, ///<  Token of connection to accept call
+      OpalConnection::StringOptions * options = NULL  ///< Optional string optiosn to apply
     );
 
     /**Reject the incoming connection.
@@ -333,6 +335,9 @@ class OpalLocalConnection : public OpalConnection
        to is intrinsically local.
       */
     virtual PBoolean IsNetworkConnection() const { return false; }
+
+    /// Call back for connection to act on changed string options
+    virtual void OnApplyStringOptions();
 
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
