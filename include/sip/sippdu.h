@@ -1308,7 +1308,8 @@ class SIPRefer : public SIPTransaction
     SIPRefer(
       SIPConnection & connection,
       const SIPURL & referTo,
-      const SIPURL & referred_by = SIPURL()
+      const SIPURL & referred_by,
+      bool referSub
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
