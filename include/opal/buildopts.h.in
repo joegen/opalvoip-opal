@@ -125,7 +125,7 @@
 #undef  OPAL_CAPI
 #undef  OPAL_T120DATA
 
-#if P_VXML
+#if OPAL_PTLIB_VXML
   #undef  OPAL_IVR
 #endif
 
