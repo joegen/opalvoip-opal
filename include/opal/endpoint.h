@@ -157,6 +157,16 @@ class OpalEndPoint : public PObject
       */
     virtual PString GetDefaultTransport() const;
 
+#if OPAL_PTLIB_SSL
+    /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
+      */
+    virtual bool GetSSLCredentials(
+      PSSLCertificate & ca,     ///< Certificate Authority (may be NULL if self signed)
+      PSSLCertificate & cert,   ///< Certificate for this endpoint
+      PSSLPrivateKey & key      ///< Private key to enable certificate for this endpoint
+    ) const;
+#endif
+
     /**Find a listener given the transport address.
       */
     OpalListener * FindListener(
@@ -878,12 +888,6 @@ class OpalEndPoint : public PObject
       */
     void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
   //@}
-
-#if OPAL_PTLIB_SSL
-    /** Get the name of the file to use as SSL certificate for SSL based calls, e.g. sips or h323s
-      */
-    PString GetSSLCertificate() const;
-#endif
 
   protected:
     OpalManager   & manager;

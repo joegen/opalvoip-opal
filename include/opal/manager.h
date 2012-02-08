@@ -55,6 +55,8 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
+class PSSLCertificate;
+class PSSLPrivateKey;
 
 
 class OpalConferenceState : public PObject
@@ -1285,6 +1287,49 @@ class OpalManager : public PObject
 
   /**@name Networking and NAT Management */
   //@{
+#if OPAL_PTLIB_SSL
+    /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
+        This function loads the certificates and keys for use by a OpalListener
+        or OpalTrransport on the \p endpoint parameter. It allows for embedded
+        certificates and keys, while the default behaviour loads the
+        certificates and keys from files pointed to by member variables.
+      */
+    virtual bool GetSSLCredentials(
+      const OpalEndPoint & ep,  ///< Endpoint transport is based on.
+      PSSLCertificate & ca,     ///< Certificate Authority (may be NULL if self signed)
+      PSSLCertificate & cert,   ///< Certificate for this endpoint
+      PSSLPrivateKey & key      ///< Private key to enable certificate for this endpoint
+    ) const;
+
+    /**Get the default CA filename
+      */
+    const PString & GetSSLCertificateAuthorityFile() const { return m_caFile; }
+
+    /**Set the default CA filename
+      */
+    void SetSSLCertificateAuthorityFile(const PString & file) { m_caFile = file; }
+
+    /**Get the default local certificate filename
+      */
+    const PString & GetSSLCertificateFile() const { return m_certificateFile; }
+
+    /**Set the default local certificate filename
+      */
+    void SetSSLCertificateFile(const PString & file) { m_certificateFile = file; }
+
+    /**Get the default local private key filename
+      */
+    const PString & GetSSLPrivateKeyFile() const { return m_privateKeyFile; }
+
+    /**Set the default local private key filename
+      */
+    void SetSSLPrivateKeyFile(const PString & file) { m_privateKeyFile = file; }
+
+    /**Set flag to auto-create a self signed root certificate and private key.
+     */
+    void SetSSLAutoCreateCertificate(bool yes) { m_autoCreateCertificate = yes; }
+#endif
+
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
 
@@ -1743,7 +1788,7 @@ class OpalManager : public PObject
     unsigned      maxAudioJitterDelay;
     PStringArray  mediaFormatOrder;
     PStringArray  mediaFormatMask;
-    PBoolean          disableDetectInBandDTMF;
+    bool          disableDetectInBandDTMF;
     PTimeInterval noMediaTimeout;
     PString       ilsServer;
 
@@ -1791,6 +1836,13 @@ class OpalManager : public PObject
         
         OpalManager & m_manager;
     };
+
+#if OPAL_PTLIB_SSL
+    PFilePath m_caFile;
+    PFilePath m_certificateFile;
+    PFilePath m_privateKeyFile;
+    bool      m_autoCreateCertificate;
+#endif
 
     PString            translationHost;
     PIPSocket::Address translationAddress;
