@@ -56,6 +56,7 @@
 #include <ptclib/random.h>
 #include <ptclib/url.h>
 #include <ptclib/mime.h>
+#include <ptclib/pssl.h>
 
 #include "../../version.h"
 #include "../../revision.h"
@@ -251,6 +252,11 @@ OpalManager::OpalManager()
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
+#if OPAL_PTLIB_SSL
+  , m_certificateFile("server.cer")
+  , m_privateKeyFile("server.key")
+  , m_autoCreateCertificate(true)
+#endif
   , translationAddress(0, NULL)       // Invalid address to disable
 #if P_NAT
   , m_natMethods(new PNatStrategy)
@@ -1516,6 +1522,54 @@ void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
     endpointsMutex.EndWrite();
   }
 }
+
+
+#if OPAL_PTLIB_SSL
+bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
+                                    PSSLCertificate & ca,
+                                    PSSLCertificate & cert,
+                                    PSSLPrivateKey & key) const
+{
+  if (!m_caFile.IsEmpty()) {
+    if (!ca.Load(m_caFile)) {
+      PTRACE(2, "OPALSSL\tCould not load CA file \"" << m_caFile << '"');
+      return false;
+    }
+  }
+
+  if (m_autoCreateCertificate &&
+        (!PFile::Exists(m_certificateFile) || !PFile::Exists(m_privateKeyFile))) {
+    PStringStream dn;
+    dn << "/O=" << PProcess::Current().GetManufacturer()
+       << "/CN=" << PProcess::Current().GetName() << '@' << PIPSocket::GetHostName();
+
+    PSSLPrivateKey key(2048);
+    PSSLCertificate root;
+    if (!root.CreateRoot(dn, key)) {
+      PTRACE(1, "MTGW\tCould not create certificate");
+      return false;
+    }
+
+    root.Save(m_certificateFile);
+    PTRACE(2, "OPALSSL\tCreated new certificate file \"" << m_certificateFile << '"');
+
+    key.Save(m_privateKeyFile, true);
+    PTRACE(2, "OPALSSL\tCreated new private key file \"" << m_privateKeyFile << '"');
+  }
+
+  if (!key.Load(m_privateKeyFile)) {
+    PTRACE(2, "OPALSSL\tCould not load private key file \"" << m_privateKeyFile << '"');
+    return false;
+  }
+
+  if (!cert.Load(m_certificateFile)) {
+    PTRACE(2, "OPALSSL\tCould not load certificate file \"" << m_certificateFile << '"');
+    return false;
+  }
+
+  return true;
+}
+#endif
 
 
 PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const

@@ -729,9 +729,9 @@ bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTranspo
 }
 
 #if OPAL_PTLIB_SSL
-PString OpalEndPoint::GetSSLCertificate() const
+bool OpalEndPoint::GetSSLCredentials(PSSLCertificate & ca, PSSLCertificate & cert, PSSLPrivateKey & key) const
 {
-  return "server.pem";
+  return manager.GetSSLCredentials(*this, ca, cert, key);
 }
 #endif
 

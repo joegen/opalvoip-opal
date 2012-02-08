@@ -1549,59 +1549,18 @@ const PCaselessString & OpalTransportUDP::GetProtoPrefix() const
 
 #if OPAL_PTLIB_SSL
 
-static PBoolean SetSSLCertificate(PSSLContext & sslContext,
-                             const PFilePath & certificateFile,
-                                        PBoolean create,
-                                   const char * dn = NULL)
-{
-  if (create && !PFile::Exists(certificateFile)) {
-    PSSLPrivateKey key(1024);
-    PSSLCertificate certificate;
-    PStringStream name;
-    if (dn != NULL)
-      name << dn;
-    else {
-      name << "/O=" << PProcess::Current().GetManufacturer()
-           << "/CN=" << PProcess::Current().GetName() << '@' << PIPSocket::GetHostName();
-    }
-    if (!certificate.CreateRoot(name, key)) {
-      PTRACE(1, "MTGW\tCould not create certificate");
-      return PFalse;
-    }
-    certificate.Save(certificateFile);
-    key.Save(certificateFile, PTrue);
-  }
-
-  return sslContext.UseCertificate(certificateFile) &&
-         sslContext.UsePrivateKey(certificateFile);
-}
-
 OpalTransportTLS::OpalTransportTLS(OpalEndPoint & ep,
-                                     PIPSocket::Address binding,
-                                     WORD port,
-                                     PBoolean reuseAddr)
+                                   PIPSocket::Address binding,
+                                   WORD port,
+                                   PBoolean reuseAddr)
   : OpalTransportTCP(ep, binding, port, reuseAddr)
 {
-  sslContext = new PSSLContext(PSSLContext::TLSv1);
-}
-
-
-OpalTransportTLS::OpalTransportTLS(OpalEndPoint & ep, PTCPSocket * socket)
-  : OpalTransportTCP(ep, PIPSocket::GetDefaultIpAny(), 0)
-{
-  sslContext = new PSSLContext(PSSLContext::TLSv1);
-  PSSLChannel * sslChannel = new PSSLChannel(sslContext);
-  if (!sslChannel->Open(socket))
-    delete sslChannel;
-  else
-    Open(sslChannel);
 }
 
 
 OpalTransportTLS::~OpalTransportTLS()
 {
   CloseWait();
-  delete sslContext;
   PTRACE(4,"Opal\tDeleted transport " << *this);
 }
 
@@ -1628,7 +1587,7 @@ PBoolean OpalTransportTLS::Connect()
   localPort = manager.GetNextTCPPort();
   WORD firstPort = localPort;
   for (;;) {
-    PTRACE(4, "OpalTCPS\tConnecting to "
+    PTRACE(4, "OpalTLS\tConnecting to "
            << remoteAddress.AsString(true) << ':' << remotePort
            << " (local port=" << localPort << ')');
     if (socket->Connect(localAddress, localPort, remoteAddress))
@@ -1636,7 +1595,7 @@ PBoolean OpalTransportTLS::Connect()
 
     int errnum = socket->GetErrorNumber();
     if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
-      PTRACE(1, "OpalTCPS\tCould not connect to "
+      PTRACE(1, "OpalTLS\tCould not connect to "
                 << remoteAddress.AsString(true) << ':' << remotePort
                 << " (local port=" << localPort << ") - "
                 << socket->GetErrorText() << '(' << errnum << ')');
@@ -1653,19 +1612,29 @@ PBoolean OpalTransportTLS::Connect()
 
   socket->SetReadTimeout(PMaxTimeInterval);
 
-  PString certificateFile = endpoint.GetSSLCertificate();
-  if (!SetSSLCertificate(*sslContext, certificateFile, PTrue)) {
-    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
-    return PFalse;
-  }
+  PSSLCertificate ca, cert;
+  PSSLPrivateKey key;
+  if (!endpoint.GetSSLCredentials(ca, cert, key))
+    return false;
 
-  PSSLChannel * sslChannel = new PSSLChannel(sslContext);
-  if (!sslChannel->Connect(socket)) {
-    delete sslChannel;
-    return PFalse;
-  }
+  PSSLChannel * sslChannel = new PSSLChannel();
 
-  return Open(sslChannel);
+  sslChannel->AddCA(ca); // Don't care about error return on this one
+
+  if (!sslChannel->UseCertificate(cert)) {
+    PTRACE(1, "OpalTLS\tCould not use certificate");
+  }
+  else if (!sslChannel->UsePrivateKey(key)) {
+    PTRACE(1, "OpalTLS\tCould not use private key");
+  }
+  else if (!sslChannel->Connect(socket)) {
+    PTRACE(1, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
+  }
+  else
+    return Open(sslChannel);
+
+  delete sslChannel;
+  return false;
 }
 
 PBoolean OpalTransportTLS::OnOpen()
@@ -1678,20 +1647,20 @@ PBoolean OpalTransportTLS::OnOpen()
 
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
-    PTRACE(1, "OpalTCPS\tGetPeerAddress() failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTLS\tGetPeerAddress() failed: " << socket->GetErrorText());
     return PFalse;
   }
 
   // get local address of incoming socket to ensure that multi-homed machines
   // use a NIC address that is guaranteed to be addressable to destination
   if (!socket->GetLocalAddress(localAddress, localPort)) {
-    PTRACE(1, "OpalTCPS\tGetLocalAddress() failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTLS\tGetLocalAddress() failed: " << socket->GetErrorText());
     return PFalse;
   }
 
 #ifndef __BEOS__
   if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
-    PTRACE(1, "OpalTCPS\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTLS\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
   }
 
   // make sure do not lose outgoing packets on close
@@ -1702,7 +1671,7 @@ PBoolean OpalTransportTLS::OnOpen()
   }
 #endif
 
-  PTRACE(3, "OpalTCPS\tStarted connection to "
+  PTRACE(3, "OpalTLS\tStarted connection to "
          << remoteAddress.AsString(true) << ':' << remotePort
          << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
@@ -1746,9 +1715,17 @@ void OpalListenerTLS::Construct()
 {
   sslContext = new PSSLContext();
 
-  PString certificateFile = endpoint.GetSSLCertificate();
-  if (!SetSSLCertificate(*sslContext, certificateFile, PTrue)) {
-    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
+  PSSLCertificate ca, cert;
+  PSSLPrivateKey key;
+  if (endpoint.GetSSLCredentials(ca, cert, key)) {
+    sslContext->AddCA(ca);
+    if (!sslContext->UseCertificate(cert)) {
+      PTRACE(1, "OpalTLS\tCould not use certificate");
+    }
+    else if (!sslContext->UsePrivateKey(key)) {
+      PTRACE(1, "OpalTLS\tCould not use private key");
+    }
+    sslContext->SetCipherList("ALL");
   }
 }
 
@@ -1760,7 +1737,7 @@ OpalTransport * OpalListenerTLS::Accept(const PTimeInterval & timeout)
 
   listener.SetReadTimeout(timeout); // Wait for remote connect
 
-  PTRACE(4, "TCPS\tWaiting on socket accept on " << GetLocalAddress());
+  PTRACE(4, "OpalTLS\tWaiting on socket accept on " << GetLocalAddress());
   PTCPSocket * socket = new PTCPSocket;
   if (!socket->Accept(listener)) {
     if (socket->GetErrorCode() != PChannel::Interrupted) {
@@ -1771,23 +1748,19 @@ OpalTransport * OpalListenerTLS::Accept(const PTimeInterval & timeout)
     return NULL;
   }
 
-  OpalTransportTLS * transport = new OpalTransportTLS(endpoint);
   PSSLChannel * ssl = new PSSLChannel(sslContext);
   if (!ssl->Accept(socket)) {
-    PTRACE(1, "TCPS\tAccept failed: " << ssl->GetErrorText());
-    delete transport;
-    delete ssl;
-    delete socket;
+    PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
+    delete ssl; // Will also delete socket
     return NULL;
   }
 
+  OpalTransportTLS * transport = new OpalTransportTLS(endpoint);
   if (transport->Open(ssl))
     return transport;
 
-  PTRACE(1, "TCPS\tFailed to open transport, connection not started.");
-  delete transport;
-  delete ssl;
-  delete socket;
+  PTRACE(1, "OpalTLS\tFailed to open transport, connection not started.");
+  delete transport; // Will also delete ssl and socket
   return NULL;
 }
 

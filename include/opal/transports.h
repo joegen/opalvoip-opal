@@ -1393,10 +1393,6 @@ class OpalTransportTLS : public OpalTransportTCP
         WORD port = 0,              ///<  Local port to bind to
         PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
       );
-      OpalTransportTLS(
-        OpalEndPoint & endpoint,    ///<  Endpoint object
-        PTCPSocket * socket         ///<  Socket to use
-      );
 
       /// Destroy the TCPS channel
       ~OpalTransportTLS();
@@ -1405,9 +1401,6 @@ class OpalTransportTLS : public OpalTransportTCP
       PBoolean Connect();
       PBoolean OnOpen();
       virtual const PCaselessString & GetProtoPrefix() const;
-
-    protected:
-      PSSLContext * sslContext;
 };
 
 typedef OpalInternalIPTransportTemplate<OpalListenerTLS, OpalTransportTLS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTLSTransport;
