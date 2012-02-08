@@ -1404,7 +1404,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 {
   if (IsNullString(command.m_param.m_protocol.m_prefix)) {
     SET_MESSAGE_STRING(response, m_param.m_protocol.m_userName, GetDefaultUserName());
-    if (!IsNullString(command.m_param.m_protocol.m_userName))
+    if (command.m_param.m_protocol.m_userName != NULL)
       SetDefaultUserName(command.m_param.m_protocol.m_userName);
 
     SET_MESSAGE_STRING(response, m_param.m_protocol.m_displayName, GetDefaultUserName());
@@ -1437,7 +1437,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   }
 
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_userName, ep->GetDefaultLocalPartyName());
-  if (!IsNullString(command.m_param.m_protocol.m_userName))
+  if (command.m_param.m_protocol.m_userName != NULL)
     ep->SetDefaultLocalPartyName(command.m_param.m_protocol.m_userName);
 
   SET_MESSAGE_STRING(response, m_param.m_protocol.m_displayName, ep->GetDefaultDisplayName());
