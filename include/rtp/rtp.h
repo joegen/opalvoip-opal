@@ -193,6 +193,15 @@ class RTP_DataFrame : public PBYTEArray
     // sub-section sizes: header payload and padding.
     bool SetPacketSize(PINDEX sz);
 
+    /**Get absolute (wall clock) time of packet, if known.
+      */
+    PTime GetAbsoluteTime() const { return m_absoluteTime; }
+
+    /**Set absolute (wall clock) time of packet.
+      */
+    void SetAbsoluteTime() { m_absoluteTime.SetCurrentTime(); }
+    void SetAbsoluteTime(const PTime & t) { m_absoluteTime = t; }
+
     /** Get sequence number discontinuity.
         If non-zero this indicates the number of packets detected as missing
         before this packet.
@@ -205,6 +214,7 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX   m_headerSize;
     PINDEX   m_payloadSize;
     PINDEX   m_paddingSize;
+    PTime    m_absoluteTime;
     unsigned m_discontinuity;
 
 #if PTRACING
@@ -1010,6 +1020,9 @@ class OpalRTPSession : public OpalMediaSession
     DWORD jitterLevel;
     DWORD jitterLevelOnRemote;
     DWORD maximumJitterLevel;
+
+    DWORD m_syncTimestamp;
+    PTime m_syncRealTime;
 
     DWORD markerSendCount;
     DWORD markerRecvCount;
