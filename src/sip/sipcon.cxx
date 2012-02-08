@@ -1991,6 +1991,10 @@ void SIPConnection::UpdateRemoteAddresses()
   SIPURL request = m_dialog.GetRequestURI();
   request.Sanitise(SIPURL::ExternalURI);
   remotePartyURL = request.AsString();
+
+  // If no local name, then use what the remote thinks we are
+  if (localPartyName.IsEmpty())
+    localPartyName = m_dialog.GetLocalURI().GetUserName();
 }
 
 
