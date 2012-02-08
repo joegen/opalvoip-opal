@@ -1827,7 +1827,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
     PAssertNULL(registrar);
   }
 
-  if (!mime.Has("Contact")) {
+  if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
     SIPURL contact;
     if (registrar != NULL) {
       PIPSocket::Address ip;
