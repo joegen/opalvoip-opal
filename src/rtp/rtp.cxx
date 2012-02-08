@@ -75,6 +75,7 @@ RTP_DataFrame::RTP_DataFrame(PINDEX payloadSz, PINDEX bufferSz)
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(payloadSz)
   , m_paddingSize(0)
+  , m_absoluteTime(0)
   , m_discontinuity(0)
 {
   theArray[0] = '\x80'; // Default to version 2
@@ -87,6 +88,7 @@ RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic)
   , m_headerSize(MinHeaderSize)
   , m_payloadSize(0)
   , m_paddingSize(0)
+  , m_absoluteTime(0)
   , m_discontinuity(0)
 {
   SetPacketSize(len);
@@ -1550,7 +1552,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
-  
+
+  if (m_syncRealTime.IsValid())
+    frame.SetAbsoluteTime(m_syncRealTime + PTimeInterval((frame.GetTimestamp() - m_syncTimestamp)/m_timeUnits));
+
 #if OPAL_RTCP_XR
   m_metrics.OnPacketReceived();
 #endif
@@ -1930,8 +1935,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 }
 
 
-void OpalRTPSession::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender), const ReceiverReportArray & reports)
+void OpalRTPSession::OnRxSenderReport(const SenderReport & sender, const ReceiverReportArray & reports)
 {
+  m_syncTimestamp = sender.rtpTimestamp;
+  m_syncRealTime = sender.realTimestamp;
+
 #if PTRACING
   if (PTrace::CanTrace(3)) {
     ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
@@ -1941,6 +1949,7 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender),
     strm << PTrace::End;
   }
 #endif
+
   OnReceiverReports(reports);
 }
 
