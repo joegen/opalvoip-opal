@@ -147,10 +147,10 @@ bool SIPHandler::ShutDown()
   {
     PSafeLockReadWrite mutex(*this);
     if (!mutex.IsLocked())
-      return true;
+    return true;
 
-    while (!m_stateQueue.empty())
-      m_stateQueue.pop();
+  while (!m_stateQueue.empty())
+    m_stateQueue.pop();
 
     switch (GetState()) {
       case Subscribed :
@@ -207,6 +207,9 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
+  if (GetState() == Unsubscribed)
+    return false;
+
   // If subscribing with zero expiry time, is same as unsubscribe
   if (newState == Subscribing && GetExpire() == 0)
     newState = Unsubscribing;
@@ -214,7 +217,7 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
   // If unsubscribing and never got a response from server, rather than trying
   // to send more unsuccessful packets, abort transactions and mark Unsubscribed
   if (newState == Unsubscribing && !m_receivedResponse) {
-    ShutDown();
+    SetState(Unsubscribed); // Allow garbage collection thread to clean up
     return true;
   }
 
@@ -616,8 +619,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       m_currentExpireTime = 0; // OK, stop trying
       m_expireTimer.Stop(false);
-      SetState(Unsubscribed);
-      ShutDown();
+      SetState(Unsubscribed); // Allow garbage collection thread to clean up
   }
 }
 
@@ -1120,12 +1122,22 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
     m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
     request.SendResponse(*m_transport, *m_previousResponse, m_endpoint);
-    if (GetState() != Unsubscribing)
-      ShutDown();
-    else {
-      SetState(Unsubscribed);
-      SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
+
+    switch (GetState()) {
+      case Unsubscribed :
+        break;
+
+      case Subscribed :
+      case Unavailable :
+        SendRequest(Unsubscribing);
+        break;
+
+      default :
+        SetState(Unsubscribed); // Allow garbage collection thread to clean up
+        SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
+        break;
     }
+
     return true;
   }
 
