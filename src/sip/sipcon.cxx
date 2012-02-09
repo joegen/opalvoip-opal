@@ -67,10 +67,10 @@
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
-static const char HeaderPrefix[] = SIP_HEADER_PREFIX;
-static const char TagParamName[] = ";tag=";
-static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
-static const char ApplicationDTMFKey[]            = "application/dtmf";
+static const PConstCaselessString HeaderPrefix(SIP_HEADER_PREFIX);
+static const PConstCaselessString RemotePartyID("Remote-Party-ID");
+static const PConstCaselessString ApplicationDTMFRelayKey("application/dtmf-relay");
+static const PConstCaselessString ApplicationDTMFKey("application/dtmf");
 
 #if OPAL_VIDEO
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
@@ -1868,7 +1868,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
   {
-    SIPURL newRemotePartyID(responseMIME, "Remote-Party-ID");
+    SIPURL newRemotePartyID(responseMIME, RemotePartyID);
     if (!newRemotePartyID.IsEmpty()) {
       if (m_ciscoRemotePartyID.IsEmpty() && newRemotePartyID.GetUserName() == m_dialog.GetRemoteURI().GetUserName()) {
         PTRACE(3, "SIP\tOld style Remote-Party-ID set to \"" << newRemotePartyID << '"');
@@ -2331,7 +2331,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
 
-  m_ciscoRemotePartyID = SIPURL(mime, "Remote-Party-ID");
+  m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
   PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
             "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
 
@@ -2499,7 +2499,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   m_answerFormatList.RemoveAll();
 
-  SIPURL newRemotePartyID(request.GetMIME(), "Remote-Party-ID");
+  SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
   if (!newRemotePartyID.IsEmpty() && m_ciscoRemotePartyID != newRemotePartyID) {
     PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
 
@@ -3107,7 +3107,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     if (key.NumCompare(HeaderPrefix) == EqualTo) {
       PString data = m_stringOptions.GetDataAt(i);
       if (!data.IsEmpty()) {
-        mime.SetAt(key.Mid(sizeof(HeaderPrefix)-1), m_stringOptions.GetDataAt(i));
+        mime.SetAt(key.Mid(HeaderPrefix.GetLength()), m_stringOptions.GetDataAt(i));
         if (key == SIP_HEADER_REPLACES)
           mime.AddRequire("replaces");
       }
@@ -3194,6 +3194,12 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   response.SetAllow(GetAllowedMethods());
 
   endpoint.AdjustToRegistration(response, *transport, this);
+
+  if (!m_ciscoRemotePartyID.IsEmpty()) {
+    SIPURL party(mime.GetContact());
+    party.GetFieldParameters().RemoveAll();
+    mime.Set(RemotePartyID, party.AsQuotedString());
+  }
 
   // this can be used to promote any incoming calls to TCP. Not quite there yet, but it *almost* works
   bool promoteToTCP = false;    // disable code for now
