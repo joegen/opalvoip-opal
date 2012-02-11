@@ -1153,7 +1153,7 @@ class OpalMixerNode : public PSafeObject
       std::map<PString, CachedAudio> m_cache;
 
       void PushOne(
-        OpalMixerMediaStream & stream,
+        PSafePtr<OpalMixerMediaStream> & stream,
         CachedAudio & cache,
         const short * audioToSubtract
       );
