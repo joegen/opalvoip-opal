@@ -1265,7 +1265,7 @@ void OpalMixerNode::UseMediaPassThrough(unsigned sessionID, OpalConnection * con
     if (m_connections.GetSize() < 2)
       return;
 
-    PSafePtr<OpalConnection> connection2 = m_connections.GetAt(1);
+    PSafePtr<OpalConnection> connection2 = m_connections.GetAt(1, PSafeReference);
     if (connection2 == NULL)
       return;
 
@@ -1274,7 +1274,7 @@ void OpalMixerNode::UseMediaPassThrough(unsigned sessionID, OpalConnection * con
   if (other2 == NULL)
     return;
 
-  PSafePtr<OpalConnection> connection1 = m_connections.GetAt(0);
+  PSafePtr<OpalConnection> connection1 = m_connections.GetAt(0, PSafeReference);
   if (connection1 == NULL)
     return;
 
@@ -1320,11 +1320,11 @@ OpalMixerNode::AudioMixer::~AudioMixer()
 }
 
 
-void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
+void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
                                         CachedAudio & cache,
                                         const short * audioToSubtract)
 {
-  MIXER_DEBUG_OUT(stream.GetID() << ',');
+  MIXER_DEBUG_OUT(stream->GetID() << ',');
 
   switch (cache.m_state) {
     case CachedAudio::Collecting :
@@ -1340,16 +1340,18 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
 
     case CachedAudio::Completed :
       m_mutex.Signal();
-      stream.PushPacket(cache.m_encoded);
       MIXER_DEBUG_OUT(cache.m_encoded.GetPayloadType() << ','
-                   << cache.m_encoded.GetTimestamp() << ','
-                   << cache.m_encoded.GetPayloadSize() << ',');
+          << cache.m_encoded.GetTimestamp() << ','
+          << cache.m_encoded.GetPayloadSize() << ',');
+      stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+      stream->PushPacket(cache.m_encoded);
+      stream.SetSafetyMode(PSafeReadOnly); // restore lock
       return;
   }
 
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  OpalMediaFormat mediaFormat = stream->GetMediaFormat();
   if (mediaFormat == OpalPCM16) {
-    if (cache.m_raw.GetPayloadSize() < stream.GetDataSize()) {
+    if (cache.m_raw.GetPayloadSize() < stream->GetDataSize()) {
       MIXER_DEBUG_OUT(','
                    << cache.m_raw.GetTimestamp() << ','
                    << cache.m_raw.GetPayloadSize() << ',');
@@ -1357,11 +1359,13 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
     }
 
     cache.m_state = CachedAudio::Completed;
-    stream.PushPacket(cache.m_raw);
     MIXER_DEBUG_OUT("PCM-16,"
-                 << cache.m_raw.GetTimestamp() << ','
-                 << cache.m_raw.GetPayloadSize() << ',');
-    MIXER_DEBUG_WAV(stream.GetID(), cache.m_raw);
+        << cache.m_raw.GetTimestamp() << ','
+        << cache.m_raw.GetPayloadSize() << ',');
+    MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
+    stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+    stream->PushPacket(cache.m_raw);
+    stream.SetSafetyMode(PSafeReadOnly); // restore lock
     return;
   }
 
@@ -1369,8 +1373,8 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
     cache.m_transcoder = OpalTranscoder::Create(OpalPCM16, mediaFormat);
     if (cache.m_transcoder == NULL) {
       PTRACE(2, "MixerNode\tCould not create transcoder to "
-             << mediaFormat << " for stream id " << stream.GetID());
-      stream.Close();
+             << mediaFormat << " for stream id " << stream->GetID());
+      stream->Close();
       return;
     }
   }
@@ -1387,16 +1391,18 @@ void OpalMixerNode::AudioMixer::PushOne(OpalMixerMediaStream & stream,
     cache.m_encoded.SetPayloadType(cache.m_transcoder->GetPayloadType(false));
     cache.m_encoded.SetTimestamp(cache.m_raw.GetTimestamp());
     cache.m_state = CachedAudio::Completed;
-    stream.PushPacket(cache.m_encoded);
     MIXER_DEBUG_OUT(cache.m_encoded.GetPayloadType() << ','
-                 << cache.m_encoded.GetTimestamp() << ','
-                 << cache.m_encoded.GetPayloadSize() << ',');
-    MIXER_DEBUG_WAV(stream.GetID(), cache.m_raw);
+        << cache.m_encoded.GetTimestamp() << ','
+        << cache.m_encoded.GetPayloadSize() << ',');
+    MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
+    stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+    stream->PushPacket(cache.m_encoded);
+    stream.SetSafetyMode(PSafeReadOnly); // restore lock
   }
   else {
     PTRACE(2, "MixerNode\tCould not convert audio to "
-           << mediaFormat << " for stream id " << stream.GetID());
-    stream.Close();
+           << mediaFormat << " for stream id " << stream->GetID());
+    stream->Close();
   }
 }
 
@@ -1415,12 +1421,12 @@ bool OpalMixerNode::AudioMixer::OnPush()
     // Check for full participant, so can subtract their signal
     StreamMap_T::iterator inputStream = m_inputStreams.find(stream->GetID());
     if (inputStream != m_inputStreams.end())
-      PushOne(*stream, m_cache[stream->GetID()], ((AudioStream *)inputStream->second)->m_cacheSamples);
+      PushOne(stream, m_cache[stream->GetID()], ((AudioStream *)inputStream->second)->m_cacheSamples);
     else {
       // Listen only participant, can use cached encoded audio
       PString encodedFrameKey = stream->GetMediaFormat();
       encodedFrameKey.sprintf(":%u", stream->GetDataSize());
-      PushOne(*stream, m_cache[encodedFrameKey], NULL);
+      PushOne(stream, m_cache[encodedFrameKey], NULL);
     }
   }
 
@@ -1484,8 +1490,11 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
 
   for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-    if (mediaFormat == OpalYUV420P)
+    if (mediaFormat == OpalYUV420P) {
+      stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
       stream->PushPacket(*output);
+      stream.SetSafetyMode(PSafeReadOnly); // restore lock
+    }
     else {
       unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
       unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
@@ -1536,9 +1545,13 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
         }
       }
 
+      stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+
       RTP_DataFrameList & list = cachedVideo[key];
       for (RTP_DataFrameList::iterator frame = list.begin(); frame != list.end(); ++frame)
         stream->PushPacket(*frame);
+
+      stream.SetSafetyMode(PSafeReadOnly); // restore lock
     }
   }
 
