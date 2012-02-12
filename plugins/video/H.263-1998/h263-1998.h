@@ -98,8 +98,9 @@ class Packetizer
 
 class H263_Base_EncoderContext
 {
+  protected:
+    H263_Base_EncoderContext(const char * prefix, Packetizer * packetizer);
   public:
-    H263_Base_EncoderContext(const char * prefix);
     virtual ~H263_Base_EncoderContext();
 
     virtual bool Init() = 0;
@@ -134,7 +135,6 @@ class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
 {
   public:
     H263_RFC2190_EncoderContext();
-    ~H263_RFC2190_EncoderContext();
     bool Init();
     void SetMaxRTPFrameSize (unsigned size);
     static void RTPCallBack(AVCodecContext *avctx, void * data, int size, int mb_nb);
@@ -170,16 +170,17 @@ class Depacketizer
 
 class H263_Base_DecoderContext
 {
-  public:
+  protected:
     H263_Base_DecoderContext(const char * prefix, Depacketizer * depacketizer);
+  public:
     ~H263_Base_DecoderContext();
+
+    bool OpenCodec();
+    void CloseCodec();
 
     virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
   protected:
-    bool OpenCodec();
-    void CloseCodec();
-
     const char *     m_prefix;
     AVCodec        * m_codec;
     AVCodecContext * m_context;

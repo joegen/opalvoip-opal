@@ -1038,6 +1038,10 @@ typedef struct AVPanScan{
 #define FF_BUFFER_TYPE_COPY     8 ///< Just a (modified) copy of some other buffer, don't deallocate anything.
 
 
+#ifndef AV_PICTURE_TYPE_NONE
+#define AV_PICTURE_TYPE_NONE 0
+#endif
+
 #define FF_I_TYPE  1 ///< Intra
 #define FF_P_TYPE  2 ///< Predicted
 #define FF_B_TYPE  3 ///< Bi-dir predicted
