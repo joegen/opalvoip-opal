@@ -143,14 +143,19 @@ DEF_FIELD(CurrentSIPConnection);
 
 static const wxChar NetworkingGroup[] = wxT("/Networking");
 DEF_FIELD(Bandwidth);
+DEF_FIELD(RTPTOS);
+DEF_FIELD(MaxRtpPayloadSize);
+#if OPAL_PTLIB_SSL
+DEF_FIELD(CertificateAuthority);
+DEF_FIELD(LocalCertificate);
+DEF_FIELD(PrivateKey);
+#endif
 DEF_FIELD(TCPPortBase);
 DEF_FIELD(TCPPortMax);
 DEF_FIELD(UDPPortBase);
 DEF_FIELD(UDPPortMax);
 DEF_FIELD(RTPPortBase);
 DEF_FIELD(RTPPortMax);
-DEF_FIELD(RTPTOS);
-DEF_FIELD(MaxRtpPayloadSize);
 DEF_FIELD(NATHandling);
 DEF_FIELD(NATRouter);
 DEF_FIELD(STUNServer);
@@ -888,16 +893,24 @@ bool MyManager::Initialise()
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(value1);
 #endif
+  if (config->Read(RTPTOSKey, &value1))
+    SetMediaTypeOfService(value1);
+  if (config->Read(MaxRtpPayloadSizeKey, &value1))
+    SetMaxRtpPayloadSize(value1);
+#if OPAL_PTLIB_SSL
+  if (config->Read(CertificateAuthorityKey, &str))
+    SetSSLCertificateAuthorityFile(str);
+  if (config->Read(LocalCertificateKey, &str))
+    SetSSLCertificateFile(str);
+  if (config->Read(PrivateKeyKey, &str))
+    SetSSLPrivateKeyFile(str);
+#endif
   if (config->Read(TCPPortBaseKey, &value1) && config->Read(TCPPortMaxKey, &value2))
     SetTCPPorts(value1, value2);
   if (config->Read(UDPPortBaseKey, &value1) && config->Read(UDPPortMaxKey, &value2))
     SetUDPPorts(value1, value2);
   if (config->Read(RTPPortBaseKey, &value1) && config->Read(RTPPortMaxKey, &value2))
     SetRtpIpPorts(value1, value2);
-  if (config->Read(RTPTOSKey, &value1))
-    SetMediaTypeOfService(value1);
-  if (config->Read(MaxRtpPayloadSizeKey, &value1))
-    SetMaxRtpPayloadSize(value1);
   config->Read(NATRouterKey, &m_NATRouter);
   config->Read(STUNServerKey, &m_STUNServer);
   if (!config->Read(NATHandlingKey, &m_NATHandling))
@@ -3628,8 +3641,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_RADIOBUTTON(XRCID("NoNATUsed"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
+  EVT_BUTTON(XRCID("FindCertificateAuthority"), OptionsDialog::FindCertificateAuthority)
+  EVT_BUTTON(XRCID("FindLocalCertificate"), OptionsDialog::FindLocalCertificate)
+  EVT_BUTTON(XRCID("FindPrivateKey"), OptionsDialog::FindPrivateKey)
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
-  EVT_RADIOBOX(XRCID("InterfaceProtocol"), OptionsDialog::ChangedInterfaceInfo)
+  EVT_CHOICE(XRCID("InterfaceProtocol"), OptionsDialog::ChangedInterfaceInfo)
   EVT_TEXT(XRCID("InterfaceAddress"), OptionsDialog::ChangedInterfaceInfo)
   EVT_TEXT(XRCID("InterfacePort"), OptionsDialog::ChangedInterfaceInfo)
   EVT_BUTTON(XRCID("AddInterface"), OptionsDialog::AddInterface)
@@ -3766,14 +3782,19 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByNameAs<wxChoice>(this, wxT("BandwidthClass"))->SetSelection(bandwidthClass);
 #endif
 
+  INIT_FIELD(RTPTOS, m_manager.GetMediaTypeOfService());
+  INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
+#if OPAL_PTLIB_SSL
+  INIT_FIELD(CertificateAuthority, m_manager.GetSSLCertificateAuthorityFile());
+  INIT_FIELD(LocalCertificate, m_manager.GetSSLCertificateFile());
+  INIT_FIELD(PrivateKey, m_manager.GetSSLPrivateKeyFile());
+#endif
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, m_manager.GetTCPPortMax());
   INIT_FIELD(UDPPortBase, m_manager.GetUDPPortBase());
   INIT_FIELD(UDPPortMax, m_manager.GetUDPPortMax());
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
-  INIT_FIELD(RTPTOS, m_manager.GetMediaTypeOfService());
-  INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
 
   m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("NoNATUsed"));
   m_NATRouterRadio = FindWindowByNameAs<wxRadioButton>(this, wxT("UseNATRouter"));
@@ -3803,7 +3824,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_AddInterface->Disable();
   m_RemoveInterface = FindWindowByNameAs<wxButton>(this, wxT("RemoveInterface"));
   m_RemoveInterface->Disable();
-  m_InterfaceProtocol = FindWindowByNameAs<wxRadioBox>(this, wxT("InterfaceProtocol"));
+  m_InterfaceProtocol = FindWindowByNameAs<wxChoice>(this, wxT("InterfaceProtocol"));
   m_InterfacePort = FindWindowByNameAs<wxTextCtrl>(this, wxT("InterfacePort"));
   m_InterfaceAddress = FindWindowByNameAs<wxComboBox>(this, wxT("InterfaceAddress"));
   m_InterfaceAddress->Append(wxT("*"));
@@ -4284,11 +4305,16 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
 #endif
   config->Write(BandwidthKey, adjustedBandwidth);
+  SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
+  SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
+#if OPAL_PTLIB_SSL
+  SAVE_FIELD(CertificateAuthority, m_manager.SetSSLCertificateAuthorityFile);
+  SAVE_FIELD(LocalCertificate, m_manager.SetSSLCertificateFile);
+  SAVE_FIELD(PrivateKey, m_manager.SetSSLPrivateKeyFile);
+#endif
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
-  SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
-  SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
   m_manager.m_NATHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
   config->Write(NATHandlingKey, m_manager.m_NATHandling);
   SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
@@ -4707,6 +4733,51 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 }
 
 
+void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
+{
+  wxString newFile = wxFileSelector(wxT("File or directory for Certificate Authority"),
+                                    wxT(""),
+                                    m_CertificateAuthority,
+                                    wxT(".cer"),
+                                    wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
+                                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (!newFile.empty()) {
+    m_CertificateAuthority = newFile;
+    TransferDataToWindow();
+  }
+}
+
+
+void OptionsDialog::FindLocalCertificate(wxCommandEvent &)
+{
+  wxString newFile = wxFileSelector(wxT("File or directory for local Certificate"),
+                                    wxT(""),
+                                    m_LocalCertificate,
+                                    wxT(".cer"),
+                                    wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
+                                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (!newFile.empty()) {
+    m_LocalCertificate = newFile;
+    TransferDataToWindow();
+  }
+}
+
+
+void OptionsDialog::FindPrivateKey(wxCommandEvent &)
+{
+  wxString newFile = wxFileSelector(wxT("File or directory for private key"),
+                                    wxT(""),
+                                    m_PrivateKey,
+                                    wxT(".key"),
+                                    wxT("KEY files (*.key)|*.key|PEM files (*.pem)|*.pem"),
+                                    wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+  if (!newFile.empty()) {
+    m_PrivateKey = newFile;
+    TransferDataToWindow();
+  }
+}
+
+
 void OptionsDialog::NATHandling(wxCommandEvent &)
 {
   if (m_STUNServerRadio->GetValue()) {
@@ -4755,7 +4826,7 @@ void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 
 
 static const char * const InterfacePrefixes[] = {
-  "all:", "h323:tcp$", "sip:udp$", "sip:tcp$"
+  "all:", "h323:tcp$", "h323:tls$", "sip:udp$", "sip:tcp$", "sip:udp$"
 };
 
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
