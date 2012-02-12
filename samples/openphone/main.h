@@ -588,14 +588,19 @@ class OptionsDialog : public wxDialog
     ////////////////////////////////////////
     // Networking fields
     wxString        m_Bandwidth;
+    int             m_RTPTOS;
+    int             m_MaxRtpPayloadSize;
+#if OPAL_PTLIB_SSL
+    PwxString       m_CertificateAuthority;
+    PwxString       m_LocalCertificate;
+    PwxString       m_PrivateKey;
+#endif
     int             m_TCPPortBase;
     int             m_TCPPortMax;
     int             m_UDPPortBase;
     int             m_UDPPortMax;
     int             m_RTPPortBase;
     int             m_RTPPortMax;
-    int             m_RTPTOS;
-    int             m_MaxRtpPayloadSize;
     wxRadioButton * m_NoNATUsedRadio;
     wxRadioButton * m_NATRouterRadio;
     wxRadioButton * m_STUNServerRadio;
@@ -604,12 +609,15 @@ class OptionsDialog : public wxDialog
     PwxString       m_STUNServer;
     wxTextCtrl    * m_STUNServerWnd;
     wxListBox     * m_LocalInterfaces;
-    wxRadioBox    * m_InterfaceProtocol;
+    wxChoice      * m_InterfaceProtocol;
     wxComboBox    * m_InterfaceAddress;
     wxTextCtrl    * m_InterfacePort;
     wxButton      * m_AddInterface;
     wxButton      * m_RemoveInterface;
     void BandwidthClass(wxCommandEvent & event);
+    void FindCertificateAuthority(wxCommandEvent & event);
+    void FindLocalCertificate(wxCommandEvent & event);
+    void FindPrivateKey(wxCommandEvent & event);
     void NATHandling(wxCommandEvent & event);
     void SelectedLocalInterface(wxCommandEvent & event);
     void ChangedInterfaceInfo(wxCommandEvent & event);
