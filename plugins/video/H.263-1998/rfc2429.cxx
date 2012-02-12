@@ -215,7 +215,7 @@ bool RFC2429Frame::Reset(unsigned width, unsigned height)
 
 bool RFC2429Frame::GetPacket(RTPFrame & frame, unsigned int & flags)
 {
-  if (m_encodedFrame.pos >= m_encodedFrame.len)
+  if (m_encodedFrame.ptr == NULL || m_encodedFrame.pos >= m_encodedFrame.len)
     return false;
 
   uint32_t i;

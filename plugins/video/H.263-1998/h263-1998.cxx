@@ -75,6 +75,10 @@ static const char sdpH263P[]     = { "h263-1998" };
 static const char h263Desc[]     = { "H.263" };
 static const char sdpH263[]      = { "h263" };
 
+
+#define MAX_H263_CUSTOM_SIZES 10
+#define DEFAULT_CUSTOM_MPI "0,0,"STRINGIZE(PLUGINCODEC_MPI_DISABLED)
+
 static struct StdSizes {
   enum { 
     SQCIF, 
@@ -177,13 +181,13 @@ static void RFC2429Dump(std::ostream & trace, const RTPFrame & rtp)
       
 /////////////////////////////////////////////////////////////////////////////
       
-H263_Base_EncoderContext::H263_Base_EncoderContext(const char * prefix)
+H263_Base_EncoderContext::H263_Base_EncoderContext(const char * prefix, Packetizer * packetizer)
   : m_prefix(prefix)
   , m_codec(NULL)
   , m_context(NULL)
   , m_inputFrame(NULL)
   , m_alignedInputYUV(NULL)
-  , m_packetizer(NULL)
+  , m_packetizer(packetizer)
 { 
   FFMPEGLibraryInstance.Load();
 }
@@ -550,14 +554,10 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 /////////////////////////////////////////////////////////////////////////////
 
 H263_RFC2190_EncoderContext::H263_RFC2190_EncoderContext()
-  : H263_Base_EncoderContext("H.263-RFC2190")
+  : H263_Base_EncoderContext("H.263-RFC2190", new RFC2190Packetizer())
 {
-  m_packetizer = new RFC2190Packetizer();
 }
 
-H263_RFC2190_EncoderContext::~H263_RFC2190_EncoderContext()
-{
-}
 
 //s->avctx->rtp_callback(s->avctx, s->ptr_lastgob, current_packet_size, number_mb)
 void H263_RFC2190_EncoderContext::RTPCallBack(AVCodecContext *avctx, void * data, int size, int mb_nb)
@@ -600,9 +600,8 @@ void H263_RFC2190_EncoderContext::SetMaxRTPFrameSize(unsigned size)
 /////////////////////////////////////////////////////////////////////////////
 
 H263_RFC2429_EncoderContext::H263_RFC2429_EncoderContext()
-  : H263_Base_EncoderContext("H.263-RFC2429")
+  : H263_Base_EncoderContext("H.263-RFC2429", new RFC2429Frame)
 {
-  m_packetizer = new RFC2429Frame;
 }
 
 H263_RFC2429_EncoderContext::~H263_RFC2429_EncoderContext()
@@ -658,11 +657,6 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * prefix, Depacket
     m_context->debug |= FF_DEBUG_BUGS | FF_DEBUG_BUFFERS;
 #endif
 
-  if (!OpenCodec()) { // decoder will re-initialise context with correct frame size
-    PTRACE(1, m_prefix, "Failed to open codec for decoder");
-    return;
-  }
-
   m_depacketizer->NewFrame();
 
   PTRACE(4, m_prefix, "Decoder created");
@@ -682,7 +676,7 @@ H263_Base_DecoderContext::~H263_Base_DecoderContext()
 
 bool H263_Base_DecoderContext::OpenCodec()
 {
-  if (m_codec == NULL) {
+  if (m_codec == NULL || m_context == NULL || m_outputFrame == NULL) {
     PTRACE(1, m_prefix, "Codec not initialized");
     return 0;
   }
@@ -1144,14 +1138,113 @@ static int encoder_get_output_data_size(const PluginCodec_Definition *, void *, 
   return PluginCodec_RTP_MaxPayloadSize;
 }
 
+
+static bool GetCustomMPI(const char * str,
+                         unsigned width[MAX_H263_CUSTOM_SIZES],
+                         unsigned height[MAX_H263_CUSTOM_SIZES],
+                         unsigned mpi[MAX_H263_CUSTOM_SIZES],
+                         size_t & count)
+{
+  count = 0;
+  for (;;) {
+    width[count] = height[count] = mpi[count] = 0;
+
+    char * end;
+    width[count] = strtoul(str, &end, 10);
+    if (*end != ',')
+      return false;
+
+    str = end+1;
+    height[count] = strtoul(str, &end, 10);
+    if (*end != ',')
+      return false;
+
+    str = end+1;
+    mpi[count] = strtoul(str, &end, 10);
+    if (mpi[count] == 0 || mpi[count] > PLUGINCODEC_MPI_DISABLED)
+      return false;
+
+    if (mpi[count] < PLUGINCODEC_MPI_DISABLED && (width[count] < 16 || height[count] < 16))
+      return false;
+
+    if (mpi[count] == 0 || mpi[count] > PLUGINCODEC_MPI_DISABLED)
+      return false;
+    ++count;
+    if (count >= MAX_H263_CUSTOM_SIZES || *end != ';')
+      return true;
+
+    str = end+1;
+  }
+}
+
+
+static int MergeCustomH263(char ** result, const char * dest, const char * src)
+{
+  size_t srcCount;
+  unsigned srcWidth[MAX_H263_CUSTOM_SIZES], srcHeight[MAX_H263_CUSTOM_SIZES], srcMPI[MAX_H263_CUSTOM_SIZES];
+  if (!GetCustomMPI(src, srcWidth, srcHeight, srcMPI, srcCount)) {
+    PTRACE(2, "IPP-H.263", "Invalid source custom MPI format \"" << src << '"');
+    return false;
+  }
+
+  size_t dstCount;
+  unsigned dstWidth[MAX_H263_CUSTOM_SIZES], dstHeight[MAX_H263_CUSTOM_SIZES], dstMPI[MAX_H263_CUSTOM_SIZES];
+  if (!GetCustomMPI(dest, dstWidth, dstHeight, dstMPI, dstCount)) {
+    PTRACE(2, "IPP-H.263", "Invalid destination custom MPI format \"" << dest << '"');
+    return false;
+  }
+
+  size_t resultCount = 0;
+  unsigned resultWidth[MAX_H263_CUSTOM_SIZES];
+  unsigned resultHeight[MAX_H263_CUSTOM_SIZES];
+  unsigned resultMPI[MAX_H263_CUSTOM_SIZES];
+
+  for (size_t s = 0; s < srcCount; ++s) {
+    for (size_t d = 0; d < dstCount; ++d) {
+      if (srcWidth[s] == dstWidth[d] && srcHeight[s] == dstHeight[d]) {
+        resultWidth[resultCount] = srcWidth[s];
+        resultHeight[resultCount] = srcHeight[s];
+        resultMPI[resultCount] = std::max(srcMPI[s], dstMPI[d]);
+        ++resultCount;
+      }
+    }
+  }
+
+  if (resultCount == 0)
+    *result = strdup(DEFAULT_CUSTOM_MPI);
+  else {
+    size_t len = 0;
+    char buffer[MAX_H263_CUSTOM_SIZES*20];
+    for (size_t i = 0; i < resultCount; ++i)
+      len += sprintf(&buffer[len], len == 0 ? "%u,%u,%u" : ";%u,%u,%u", resultWidth[i], resultHeight[i], resultMPI[i]);
+    *result = strdup(buffer);
+  }
+
+  return true;
+}
+
+
+static void FreeString(char * str)
+{
+  free(str);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 static void * create_decoder(const struct PluginCodec_Definition * codec)
 {
+  H263_Base_DecoderContext * decoder;
   if (strcmp(codec->sourceFormat, h263Desc) == 0)
-    return new H263_RFC2190_DecoderContext();
+    decoder = new H263_RFC2190_DecoderContext();
   else
-    return new H263_RFC2429_DecoderContext();
+    decoder = new H263_RFC2429_DecoderContext();
+
+  if (decoder->OpenCodec()) // decoder will re-initialise context with correct frame size
+    return decoder;
+
+  delete decoder;
+  return NULL;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * context)
@@ -1323,11 +1416,21 @@ static struct PluginCodec_Option const mediaPacketization =
   "RFC2190"                           // Initial value
 };
 
-static struct PluginCodec_Option const sifMPI =
-  { PluginCodec_StringOption, "SIF MPI", false, PluginCodec_EqualMerge, "320,240,1", "CUSTOM"};
-
-static struct PluginCodec_Option const sif4MPI =
-  { PluginCodec_StringOption, "SIF4 MPI", false, PluginCodec_EqualMerge, "640,480,1", "CUSTOM"};
+static struct PluginCodec_Option const customMPI =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_CUSTOM_MPI,             // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_CustomMerge,            // Merge mode
+  DEFAULT_CUSTOM_MPI,                 // Initial value
+  "CUSTOM",                           // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  NULL,                               // Minimum value
+  NULL,                               // Maximum value
+  MergeCustomH263,
+  FreeString
+};
 
 static struct PluginCodec_Option const annexF =
   { PluginCodec_BoolOption,    H263_ANNEX_F,   false,  PluginCodec_MinMerge, "1", "F", "0" };
@@ -1356,8 +1459,7 @@ static struct PluginCodec_Option const * const h263POptionTable[] = {
   &sqcifMPI,
   &cif4MPI,
   &cif16MPI,
-  &sifMPI,
-  &sif4MPI,
+  &customMPI,
   &annexF,
   &annexI,
   &annexJ,
