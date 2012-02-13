@@ -34,6 +34,10 @@ CFLAGS        += @CFLAGS@ -I@prefix@/include -I$(PLUGINDIR)/../include -I$(PLUGI
 LDFLAGS       += @LDFLAGS@ @LDSO@
 PLUGINEXT     :=@PLUGINEXT@
 
+ifneq ($(DEBUG),)
+CFLAGS        += -g
+endif
+
 OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/$(BASENAME)
 
 SONAME	= $(BASENAME)_ptplugin
