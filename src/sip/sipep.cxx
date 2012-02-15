@@ -452,7 +452,7 @@ PBoolean SIPEndPoint::GarbageCollection()
 {
   PTRACE(6, "SIP\tGarbage collection: transactions=" << m_transactions.GetSize() << ", connections=" << connectionsActive.GetSize());
 
-  PSafePtr<SIPTransactionBase> transaction(m_transactions, PSafeReadOnly);
+  PSafePtr<SIPTransactionBase> transaction(m_transactions, PSafeReference);
   while (transaction != NULL) {
     if (transaction->IsTerminated())
       m_transactions.Remove(transaction++);
