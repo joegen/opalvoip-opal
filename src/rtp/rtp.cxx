@@ -52,8 +52,9 @@
 
 #include <algorithm>
 
+#if OPAL_H323
 #include <h323/h323con.h>
-
+#endif
 
 #define new PNEW
 
@@ -2331,6 +2332,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
         {
         PTRACE ( 4, "RTP\tAttempting natMethod: " << natMethod->GetName() );            
         // NOTE crash on not h323?
+#if OPAL_H323
         H323Connection* pCon = dynamic_cast<H323Connection*>(&m_connection);
         H323Connection::SessionInformation *info = pCon ? pCon->BuildSessionInformation(GetSessionID()) : NULL;
         if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress, info)) {
@@ -2339,6 +2341,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
           controlSocket->GetLocalAddress(bindingAddress, localControlPort);
         }
         else {
+#endif
           PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
           if (natMethod->CreateSocket(dataSocket, bindingAddress) && natMethod->CreateSocket(controlSocket, bindingAddress)) {
@@ -2353,7 +2356,9 @@ bool OpalRTPSession::Open(const PString & localInterface)
             PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
           }
+#if OPAL_H323
         }
+#endif
         }
         break;
 
