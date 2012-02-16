@@ -3831,11 +3831,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   PIPSocket::InterfaceTable ifaces;
   if (PIPSocket::GetInterfaceTable(ifaces)) {
     for (i = 0; i < ifaces.GetSize(); i++) {
-      PwxString addr = ifaces[i].GetAddress().AsString(true);
+      PIPSocket::Address ip = ifaces[i].GetAddress();
+      PwxString addr = ip.AsString(true);
       PwxString name = wxT("%");
       name += PwxString(ifaces[i].GetName());
       m_InterfaceAddress->Append(addr);
-      m_InterfaceAddress->Append(name);
+      m_InterfaceAddress->Append(PwxString(PIPSocket::Address::GetAny(ip.GetVersion()).AsString(true)) + name);
       m_InterfaceAddress->Append(addr + name);
     }
   }
@@ -4826,7 +4827,7 @@ void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 
 
 static const char * const InterfacePrefixes[] = {
-  "all:", "h323:tcp$", "h323:tls$", "sip:udp$", "sip:tcp$", "sip:udp$"
+  "all:", "h323:tcp$", "h323:tls$", "sip:udp$", "sip:tcp$", "sip:tls$"
 };
 
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
