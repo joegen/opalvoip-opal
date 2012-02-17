@@ -44,7 +44,7 @@
 #include "ptlib.h"
 #include <opal/buildopts.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460_NAT
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
@@ -1186,4 +1186,4 @@ void H46019UDPSocket::H46024Bdirect(const H323TransportAddress & address)
 }
 
 
-#endif  // OPAL_H460
+#endif  // OPAL_H460_NAT

@@ -44,7 +44,7 @@
 
 ///////////////////////////////////////////////////////////////
 
-#if OPAL_PTLIB_VXML
+#if OPAL_IVR
 
 OpalVXMLSession::OpalVXMLSession(OpalIVRConnection & conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
@@ -91,7 +91,7 @@ bool OpalVXMLSession::OnTransfer(const PString & destination, TransferType type)
 }
 
 
-#endif // #if OPAL_PTLIB_EXPAT
+#endif // OPAL_IVR
 
 
 // End of File /////////////////////////////////////////////////////////////

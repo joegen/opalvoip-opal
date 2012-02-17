@@ -140,8 +140,8 @@
   #endif
 
   #undef  OPAL_H460
-  #if OPAL_H460
-    #define H323_H460   OPAL_H460
+  #if OPAL_H460 && P_NAT
+    #undef OPAL_H460_NAT
   #endif
 #else // OPAL_H323
   #define H323_DISABLE_H225 1
@@ -163,6 +163,12 @@
   #define H323_DISABLE_H4509 1
   #define H323_DISABLE_H45010 1
   #define H323_DISABLE_H45011 1
+#endif
+
+#if !OPAL_H460_NAT
+  #define H323_DISABLE_H46018 1
+  #define H323_DISABLE_H46019 1
+  #define H323_DISABLE_H46024B 1
 #endif
 
 

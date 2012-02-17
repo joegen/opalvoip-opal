@@ -1176,7 +1176,7 @@ class OpalConnection : public PSafeObject
       const OpalMediaCommand & command  ///< Media command being executed
     );
 
-#ifdef P_NAT
+#if P_NAT
     // Get Nat Method in use
     virtual PNatMethod * GetNatMethod(
       const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()

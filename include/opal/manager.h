@@ -1400,7 +1400,7 @@ class OpalManager : public PObject
       const PIPSocket::Address & address
     );
 
-#ifdef P_NAT
+#if P_NAT
     /** Get all NAT Methods
       */
     PNatStrategy & GetNatMethods() const { return *m_natMethods; }

@@ -14,10 +14,7 @@
 #define new PNEW
 
 
-// NOTE
-//#if ! H323_DISABLE_H46024B
-
-
+#if ! H323_DISABLE_H46024B
 
 //
 // AlternateAddress
@@ -223,7 +220,7 @@ PObject * H46024B_AlternateAddresses::Clone() const
 }
 
 
-//#endif // if ! H323_DISABLE_H46024B
+#endif // if ! H323_DISABLE_H46024B
 
 
 // End of H46024B.cxx
