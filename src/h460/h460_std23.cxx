@@ -39,7 +39,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#ifdef OPAL_H46O 
+#if OPAL_H46O_NAT
 
 #include <h460/h460_std23.h>
 #include <h323.h>
@@ -741,4 +741,4 @@ PString H460_FeatureStd24::GetNATStrategyString(NatInstruct method)
 #pragma warning(default : 4239)
 #endif
 
-#endif // Win32_WCE
+#endif // OPAL_H46O_NAT

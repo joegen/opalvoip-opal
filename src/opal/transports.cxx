@@ -619,11 +619,11 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & endpoint,
 }
 
 
+#if P_NAT
 OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
   PIPSocket::Address localIP = localAddress;
 
-#ifdef P_NAT
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP)) {
     OpalManager & manager = endpoint.GetManager();
@@ -634,10 +634,15 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
       manager.TranslateIPAddress(localIP, remoteIP);
     }
   }
-#endif
 
   return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
 }
+#else // P_NAT
+OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress &) const
+{
+  return OpalTransportAddress(localAddress, listenerPort, GetProtoPrefix());
+}
+#endif // P_NAT
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -882,12 +887,12 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 }
 
 
+#if P_NAT
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
   PIPSocket::Address localIP(""); // Make invalid
   WORD port = listenerPort;
 
-#ifdef P_NAT
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP)) {
     PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
@@ -896,7 +901,6 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
       listenerBundle->GetAddress(localIP.AsString(), localIP, port, true);
     }
   }
-#endif
 
   if (!localIP.IsValid()) {
     listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
@@ -906,6 +910,12 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
 
   return OpalTransportAddress(localIP, port, GetProtoPrefix());
 }
+#else // P_NAT
+OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress &) const
+{
+  return OpalTransportAddress(localAddress, listenerPort, GetProtoPrefix());
+}
+#endif // P_NAT
 
 
 //////////////////////////////////////////////////////////////////////////

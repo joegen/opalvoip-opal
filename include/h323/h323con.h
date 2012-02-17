@@ -2098,7 +2098,7 @@ class H323Connection : public OpalRTPConnection
    ) const;
 #endif
     
-#ifdef P_NAT
+#if OPAL_H460_NAT
     virtual PUDPSocket * GetNatSocket(unsigned session, PBoolean rtp);
 
     /** Set RTP NAT information callback
@@ -2137,7 +2137,7 @@ class H323Connection : public OpalRTPConnection
         PUDPSocket * rtp;
         PUDPSocket * rtcp;
     };
-#endif // P_NAT
+#endif // OPAL_H460_NAT
 
 
     /** Callback for media commands.
@@ -2307,9 +2307,10 @@ class H323Connection : public OpalRTPConnection
     PSimpleTimer m_h245FastUpdatePictureTimer;
 #endif
 
-    // NOTE correct ifdef
+#if OPAL_H460_NAT
     PMutex NATSocketMutex;
-    std::map<unsigned,NAT_Sockets> m_NATSockets;
+    std::map<unsigned, NAT_Sockets> m_NATSockets;
+#endif // OPAL_H460_NAT
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);

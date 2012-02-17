@@ -321,7 +321,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
     PIPSocket::Address remoteIP;
     associatedRemoteAddress.GetIpAddress(remoteIP);
 
-#ifdef P_NAT
+#if P_NAT
     PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
     if (natMethod != NULL) {
       natMethod->GetInterfaceAddress(natInterfaceIP);
@@ -606,7 +606,7 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-#ifdef P_NAT
+#if P_NAT
 PNatStrategy & OpalEndPoint::GetNatMethods() const
 {
   return manager.GetNatMethods();

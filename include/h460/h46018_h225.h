@@ -41,12 +41,14 @@
  * $Date$
  */
 
-#ifndef H46018_NAT
-#define H46018_NAT
+#ifndef OPAL_H46018_H225
+#define OPAL_H46018_NAT
 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
+
+#if OPAL_H460_NAT
 
 #include <h323/h323pdu.h>
 
@@ -297,6 +299,7 @@ class PNatMethod_H46019  : public PNatMethod_Null
 
   protected:
 
+#if OPAL_H460_NAT
     /**@name General Functions */
     //@{
     /**  SetConnectionSockets
@@ -309,6 +312,7 @@ class PNatMethod_H46019  : public PNatMethod_Null
       PUDPSocket * control,                        ///< control socket 
       H323Connection::SessionInformation * info    ///< session Information
     );
+#endif
     
     PBoolean available;                    ///< Whether this NAT Method is available for call
     PBoolean active;                    ///< Whether the method is active for call
@@ -519,5 +523,6 @@ class H46019UDPSocket : public PUDPSocket
     bool rtpSocket;
 };
 
+#endif // OPAL_H460_NAT
 
-#endif // H46018_NAT
+#endif // OPAL_H46018_H225

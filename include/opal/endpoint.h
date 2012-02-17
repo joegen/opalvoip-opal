@@ -641,7 +641,7 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
-#ifdef P_NAT
+#if P_NAT
     /** Get all NAT Methods
       */
     PNatStrategy & GetNatMethods() const;

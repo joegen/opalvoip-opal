@@ -52,9 +52,7 @@
 
 #include <algorithm>
 
-#if OPAL_H323
 #include <h323/h323con.h>
-#endif
 
 #define new PNEW
 
@@ -2297,7 +2295,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
 
-#ifdef P_NAT
+#if P_NAT
   PNatMethod * natMethod = m_connection.GetNatMethod(remoteAddress);
   if (natMethod != NULL) {
     PTRACE(4, "RTP\tNAT Method " << natMethod->GetName() << " selected for call.");
@@ -2316,7 +2314,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
 
   PIPSocket::Address bindingAddress = localInterface;
 
-#ifdef P_NAT
+#if P_NAT
   if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
     switch (natMethod->GetRTPSupport()) {
       case PNatMethod::RTPIfSendMedia :
@@ -2331,17 +2329,18 @@ bool OpalRTPSession::Open(const PString & localInterface)
       case PNatMethod::RTPSupported :
         {
         PTRACE ( 4, "RTP\tAttempting natMethod: " << natMethod->GetName() );            
-        // NOTE crash on not h323?
-#if OPAL_H323
+        void * info = NULL;
+#if OPAL_H460_NAT
         H323Connection* pCon = dynamic_cast<H323Connection*>(&m_connection);
-        H323Connection::SessionInformation *info = pCon ? pCon->BuildSessionInformation(GetSessionID()) : NULL;
+        if (pCon != NULL)
+          info = pCon->BuildSessionInformation(GetSessionID());
+#endif
         if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress, info)) {
           PTRACE(4, "RTP\tSession " << sessionID << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
           dataSocket->GetLocalAddress(bindingAddress, localDataPort);
           controlSocket->GetLocalAddress(bindingAddress, localControlPort);
         }
         else {
-#endif
           PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
           if (natMethod->CreateSocket(dataSocket, bindingAddress) && natMethod->CreateSocket(controlSocket, bindingAddress)) {
@@ -2356,9 +2355,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
             PTRACE(2, "RTP\tSession " << sessionID << ", " << natMethod->GetName()
                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
           }
-#if OPAL_H323
         }
-#endif
         }
         break;
 

@@ -1578,6 +1578,8 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << m_dialog.GetRequestURI());
 
+  originating = true;
+
   OnApplyStringOptions();
 
   if (m_stringOptions.Contains(SIP_HEADER_PREFIX"Route")) {
@@ -1597,8 +1599,6 @@ PBoolean SIPConnection::SetUpConnection()
     transportAddress.AdjustToDNS(); // Do a DNS SRV lookup
     PTRACE(4, "SIP\tConnecting to " << m_dialog.GetRequestURI() << " via " << transportAddress);
   }
-
-  originating = PTrue;
 
   if (!SetTransport(transportAddress)) {
     Release(EndedByUnreachable);

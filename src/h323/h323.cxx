@@ -4422,7 +4422,9 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   fastStartState = FastStartDisabled;
   if (!fastStartChannels.IsEmpty()) {
     fastStartChannels.RemoveAll();
+#if OPAL_H460_NAT
     m_NATSockets.clear();
+#endif // OPAL_H460_NAT
     PTRACE(3, "H245\tReceived early start OLC, aborting fast start");
   }
 
@@ -4446,7 +4448,7 @@ PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
 {
   PBoolean success = false;
 
-#if OPAL_H460
+#if OPAL_H460_NAT
   PTRACE(4,"Handling Generic OLC Session " << sessionID );
   for (PINDEX i = 0; i < alternate.GetSize(); i++) {
     const H245_GenericInformation & info = alternate[i];
@@ -4505,10 +4507,11 @@ PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
         ((H46019UDPSocket *)sockets.rtp)->Activate(RTPaddress,payload,ttl, muxId);
         ((H46019UDPSocket *)sockets.rtcp)->Activate(RTCPaddress,payload,ttl, muxId);
       }
+
       success = true;
     }
   }
-#endif  // OPAL_H460
+#endif // OPAL_H460_NAT
 
   return success;
 }
@@ -4517,8 +4520,8 @@ PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
 PBoolean H323Connection::OnSendingOLCGenericInformation(const unsigned & sessionID,
                               H245_ArrayOf_GenericInformation & generic, PBoolean isAck) const
 {
-#if OPAL_H460
   PTRACE(4,"Set Generic " << (isAck ? "OLCack" : "OLC") << " Session " << sessionID );
+#if OPAL_H460_NAT
   if (m_H46019enabled) {
     unsigned payload=0; unsigned ttl=0;
     std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(sessionID);
@@ -4589,7 +4592,7 @@ PBoolean H323Connection::OnSendingOLCGenericInformation(const unsigned & session
     if (generic.GetSize() > 0)
       return true;
   }
-#endif
+#endif // OPAL_H460_NAT
 
   return false;
 }
@@ -5393,6 +5396,7 @@ void H323Connection::H46019Enabled()
 }
 
 
+#if OPAL_H460_NAT
 PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp) 
 {
     std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(session);
@@ -5420,6 +5424,7 @@ void H323Connection::SetRTPNAT(unsigned sessionid, PUDPSocket * _rtp, PUDPSocket
 
     m_NATSockets.insert(pair<unsigned, NAT_Sockets>(sessionid, sockets));
 }
+#endif // OPAL_H460_NAT
 
 
 PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featureSet) const
@@ -5450,6 +5455,7 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 #endif
 
 
+#if OPAL_H460_NAT
 H323Connection::SessionInformation::SessionInformation(const OpalGloballyUniqueID & id, const PString & token, unsigned session)
   : m_callID(id), m_callToken(token), m_sessionID(session)
 {
@@ -5493,6 +5499,7 @@ const PString & H323Connection::SessionInformation::GetCUI()
   return m_CUI;
 }
 
+#endif // OPAL_H460_NAT
 
 #endif // OPAL_H323
 
