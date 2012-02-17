@@ -41,7 +41,7 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
-#ifdef OPAL_H460
+#if OPAL_H460_NAT
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
@@ -307,4 +307,4 @@ void H460_FeatureStd19::SetAvailable(bool avail)
 }
 
 
-#endif // OPAL_H460
+#endif // OPAL_H460_NAT

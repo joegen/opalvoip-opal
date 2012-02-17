@@ -1934,11 +1934,11 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
 
 void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessageBuffer & response)
 {
-#if OPAL_HAS_MIXER
   PSafePtr<OpalCall> call;
   if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
 
+#if OPAL_HAS_MIXER
   if (IsNullString(command.m_param.m_recording.m_file)) {
     if (!call->IsRecording())
       response.SetError("No recording active for call.");
@@ -1959,6 +1959,8 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
   }
 
   if (!call->StartRecording(command.m_param.m_recording.m_file, options))
+#else
+  if (!IsNullString(command.m_param.m_recording.m_file))
 #endif
     response.SetError("Could not start recording for call.");
 }
@@ -1966,11 +1968,11 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
 
 void OpalManager_C::HandleStopRecording(const OpalMessage & command, OpalMessageBuffer & response)
 {
-#if OPAL_HAS_MIXER
   PSafePtr<OpalCall> call;
   if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
     return;
 
+#if OPAL_HAS_MIXER
   call->StopRecording();
 #endif
 }

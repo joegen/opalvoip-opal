@@ -238,8 +238,11 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
       OpalTransport * transport = NULL;
       if (handler->GetState () != SIPHandler::Subscribed ||
            (transport = handler->GetTransport()) == NULL ||
-           transport->IsReliable() ||
-           GetManager().GetNatMethod(transport->GetRemoteAddress().GetHostName()) == NULL)
+           transport->IsReliable()
+#if P_NAT
+           || GetManager().GetNatMethod(transport->GetRemoteAddress().GetHostName()) == NULL
+#endif
+           )
         continue;
 
       switch (natMethod) {

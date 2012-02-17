@@ -422,18 +422,8 @@ void OpalMSRPMediaSession::SetConnection(PSafePtr<OpalMSRPManager::Connection> &
 
 OpalMediaSession * OpalMSRPMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
 {
-  // as this is called in the constructor of an OpalConnection descendant, 
-  // we can't use a virtual function on OpalConnection
-#if OPAL_SIP
-  if (conn.GetPrefixName() *= "sip") {
-    PTRACE(2, "MSRP\tCreating MSRP media session for SIP connection");
-    return new OpalMSRPMediaSession(conn, sessionID);
-  }
-#endif
-
-  PTRACE(2, "MSRP\tCannot create MSRP media session for unknown connection type " << conn.GetPrefixName());
-  
-  return NULL;
+  PTRACE(2, "MSRP\tCreating MSRP media session for SIP connection");
+  return new OpalMSRPMediaSession(conn, sessionID);
 }
 
 ////////////////////////////////////////////////////////

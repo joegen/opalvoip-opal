@@ -92,7 +92,7 @@ static const char * const DefaultMediaFormatOrder[] = {
 #if OPAL_HAS_SIPIM
   OPAL_SIPIM,
 #endif
-#if OPAL_RFC4175
+#if OPAL_HAS_RFC4103
   OPAL_T140,
 #endif
 #if OPAL_HAS_MSRP
@@ -1707,9 +1707,9 @@ void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
 }
 
 
-#ifdef P_NAT
+#if P_NAT
 
-#ifdef P_STUN
+#if P_STUN
 
 PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
@@ -2184,7 +2184,7 @@ OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
 }
 
 
-#ifdef P_NAT
+#if P_NAT
 void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
 {
   PNatMethod * nat = m_manager.GetNatMethod();
