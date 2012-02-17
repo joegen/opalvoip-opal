@@ -35,6 +35,7 @@
 #include <opal/pres_ent.h>
 
 #include <opal/manager.h>
+#include <opal/endpoint.h>
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
