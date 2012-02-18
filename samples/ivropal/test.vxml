@@ -150,6 +150,9 @@
 
     <!-- This happens if a timeout occurs -->
     <noinput>
+      <audio src="file:transfer_timeout.wav">
+        Nothing entered, returning to main menu.
+      </audio>
       <goto next="#MainMenu"/>
     </noinput>
 
