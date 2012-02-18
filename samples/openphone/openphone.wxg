@@ -1609,7 +1609,7 @@
                                                         <border>12</border>
                                                         <option>0</option>
                                                         <object class="wxButton" name="TestVideoCapture" base="EditButton">
-                                                            <label>Test</label>
+                                                            <label>Test Video</label>
                                                         </object>
                                                     </object>
                                                 </object>
