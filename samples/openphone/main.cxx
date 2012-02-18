@@ -3732,6 +3732,9 @@ END_EVENT_TABLE()
 
 OptionsDialog::OptionsDialog(MyManager * manager)
   : m_manager(*manager)
+  , m_TestVideoThread(NULL)
+  , m_TestVideoGrabber(NULL)
+  , m_TestVideoDisplay(NULL)
 {
   PINDEX i;
 
@@ -3957,6 +3960,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_videoGrabDeviceCombo->Append(PwxString(devices[i]));
 
   AdjustVideoControls(m_VideoGrabDevice);
+
+  m_TestVideoCapture = FindWindowByNameAs<wxButton>(this, wxT("TestVideoCapture"));
 
   ////////////////////////////////////////
   // Fax fields
@@ -4237,6 +4242,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
 OptionsDialog::~OptionsDialog()
 {
+  if (m_TestVideoThread != NULL) {
+    m_TestVideoGrabber->Close();
+    m_TestVideoDisplay->Close();
+    m_TestVideoThread->WaitForTermination();
+    delete m_TestVideoThread;
+  }
+
   long i;
   for (i = 0; i < m_Presentities->GetItemCount(); ++i)
     delete (OpalPresentity *)m_Presentities->GetItemData(i);
@@ -4982,6 +4994,16 @@ void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
+  if (m_TestVideoThread != NULL) {
+    m_TestVideoGrabber->Close();
+    m_TestVideoDisplay->Close();
+    m_TestVideoThread->WaitForTermination();
+    delete m_TestVideoThread;
+    m_TestVideoThread = NULL;
+    m_TestVideoCapture->SetLabel(wxT("Test Video"));
+    return;
+  }
+
   if (!wxDialog::TransferDataFromWindow())
     return;
 
@@ -5012,18 +5034,36 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     return;
   }
 
-  if (!grabber->Start())
-    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
-  else {
-    PBYTEArray frame;
-    unsigned frameCount = 0;
-    while (grabber->GetFrame(frame) &&
-           display->SetFrameData(0, 0, grabber->GetFrameWidth(), grabber->GetFrameHeight(), frame))
-      frameCount++;
+  if (grabber->Start()) {
+    m_TestVideoCapture->SetLabel(wxT("Stop Video"));
+    m_TestVideoGrabber = grabber;
+    m_TestVideoDisplay = display;
+    m_TestVideoThread = new PThreadObj<OptionsDialog>(*this, &OptionsDialog::TestVideoThreadMain, false, "TestVideo");
   }
+  else {
+    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    delete display;
+    delete grabber;
+  }
+}
 
-  delete display;
-  delete grabber;
+
+void OptionsDialog::TestVideoThreadMain()
+{
+  PBYTEArray frame;
+  unsigned frameCount = 0;
+  while (m_TestVideoGrabber->GetFrame(frame) &&
+         m_TestVideoDisplay->SetFrameData(0, 0,
+                                          m_TestVideoGrabber->GetFrameWidth(),
+                                          m_TestVideoGrabber->GetFrameHeight(),
+                                          frame))
+    frameCount++;
+
+  delete m_TestVideoDisplay;
+  m_TestVideoDisplay = NULL;
+
+  delete m_TestVideoGrabber;
+  m_TestVideoGrabber = NULL;
 }
 
 

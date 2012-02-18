@@ -670,9 +670,15 @@ class OptionsDialog : public wxDialog
     wxComboBox * m_videoGrabDeviceCombo;
     wxChoice   * m_videoSourceChoice;
 
+    wxButton           * m_TestVideoCapture;
+    PThread            * m_TestVideoThread;
+    PVideoInputDevice  * m_TestVideoGrabber;
+    PVideoOutputDevice * m_TestVideoDisplay;
+
     void AdjustVideoControls(const PwxString & device);
     void ChangeVideoGrabDevice(wxCommandEvent & event);
     void TestVideoCapture(wxCommandEvent & event);
+    void TestVideoThreadMain();
 
     ////////////////////////////////////////
     // Fax fields
