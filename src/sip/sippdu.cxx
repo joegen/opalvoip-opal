@@ -855,7 +855,7 @@ SIPURL SIPMIMEInfo::GetContact() const
 
 bool SIPMIMEInfo::GetContacts(SIPURLList & contacts) const
 {
-  return contacts.FromString(GetContact());
+  return contacts.FromString(GetString("Contact"));
 }
 
 
