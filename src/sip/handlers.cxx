@@ -710,7 +710,8 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
 void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  switch (GetState()) {
+  State previousState = GetState();
+  switch (previousState) {
     case Unsubscribing :
       SetState(Unsubscribed);
       SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
@@ -722,7 +723,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << GetState());
+      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << previousState);
       return;
   }
 
@@ -769,8 +770,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   if (replyContacts.empty() && GetExpire() != 0) {
     // Huh? Nothing we tried to register, registered! How is that possible?
     PTRACE(2, "SIP\tREGISTER returned no Contact addresses we requested, not really registered.");
-    SendRequest(Unsubscribed);
-    SendStatus(SIP_PDU::GlobalFailure_NotAcceptable, Subscribing);
+    SendRequest(Unsubscribing);
+    SendStatus(SIP_PDU::GlobalFailure_NotAcceptable, previousState);
     return;
   }
 
@@ -787,33 +788,32 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
     m_contactAddresses = replyContacts;
     SetState(Subscribed);
-    SendStatus(SIP_PDU::Successful_OK, Subscribing);
+    SendStatus(SIP_PDU::Successful_OK, previousState);
     return;
   }
 
   // Remember (possibly new) NAT address
   m_externalAddress == externalAddress;
 
-  // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
   if (GetExpire() == 0) {
+    // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
     PTRACE(2, "SIP\tRe-registering with NAT address " << externalAddress);
     for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
       contact->SetHostAddress(externalAddress);
-
     SetExpire(m_originalExpireTime);
-    SendRequest(Refreshing);
-    return;
+  }
+  else {
+    /* If we got here then we have done a successful register, but registrar indicated
+       that we are behind firewall. Unregister what we just registered */
+    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
+    for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
+      contact->GetFieldParameters().Remove("expires");
+    m_contactAddresses = replyContacts;
+    SetExpire(0);
   }
 
-  /* If we got here then we have done a successful register, but registrar indicated
-     that we are behind firewall. Unregister what we just registered */
-
-  PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
-  for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
-    contact->GetFieldParameters().Remove("expires");
-  m_contactAddresses = replyContacts;
-  SetExpire(0);
-  SendRequest(Refreshing);
+  SendRequest(previousState);
+  SendStatus(SIP_PDU::Information_Trying, previousState);
 }
 
 
