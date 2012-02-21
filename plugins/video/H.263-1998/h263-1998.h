@@ -121,6 +121,8 @@ class H263_Base_EncoderContext
 
     virtual void SetMaxRTPFrameSize (unsigned size) = 0;
 
+    bool GetStatistics(char * stats, size_t maxSize);
+
   protected:
     const char     * m_prefix;
     AVCodec        * m_codec;
@@ -181,6 +183,8 @@ class H263_Base_DecoderContext
     void CloseCodec();
 
     virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+
+    bool GetStatistics(char * stats, size_t maxSize);
 
   protected:
     const char *     m_prefix;
