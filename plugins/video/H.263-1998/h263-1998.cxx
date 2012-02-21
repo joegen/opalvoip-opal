@@ -551,6 +551,16 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 }
 
 
+bool H263_Base_EncoderContext::GetStatistics(char * stats, size_t maxSize)
+{
+  if (m_inputFrame == NULL)
+    return false;
+
+  snprintf(stats, maxSize, "QP=%i\n", m_inputFrame->quality);
+  return true;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H263_RFC2190_EncoderContext::H263_RFC2190_EncoderContext()
@@ -646,6 +656,8 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * prefix, Depacket
     PTRACE(1, m_prefix, "Failed to allocate frame for decoder");
     return;
   }
+
+  m_outputFrame->quality = -1;
 
   // debugging flags
 #if PLUGINCODEC_TRACING
@@ -813,6 +825,16 @@ bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
   flags |= PluginCodec_ReturnCoderLastFrame;
 
+  return true;
+}
+
+
+bool H263_Base_DecoderContext::GetStatistics(char * stats, size_t maxSize)
+{
+  if (m_outputFrame == NULL)
+    return false;
+
+  snprintf(stats, maxSize, "QP=%i\n", m_outputFrame->quality);
   return true;
 }
 
@@ -1138,6 +1160,11 @@ static int encoder_get_output_data_size(const PluginCodec_Definition *, void *, 
   return PluginCodec_RTP_MaxPayloadSize;
 }
 
+static int encoder_statistics(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+{
+  return len != NULL && *len > 1 && parm != NULL && context != NULL &&
+         ((H263_Base_EncoderContext *)context)->GetStatistics((char *)parm, *len);
+}
 
 static bool GetCustomMPI(const char * str,
                          unsigned width[MAX_H263_CUSTOM_SIZES],
@@ -1268,6 +1295,13 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
   return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
 }
 
+static int decoder_statistics(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+{
+  return len != NULL && *len > 1 && parm != NULL && context != NULL &&
+         ((H263_Base_DecoderContext *)context)->GetStatistics((char *)parm, *len);
+}
+
+
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1313,6 +1347,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_STATISTICS,        encoder_statistics },
   PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
   { NULL }
 };
@@ -1320,6 +1355,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
 static PluginCodec_ControlDefn DecoderControls[] = {
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_STATISTICS,        decoder_statistics },
   { NULL }
 };
 

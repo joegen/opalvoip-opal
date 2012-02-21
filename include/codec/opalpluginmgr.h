@@ -239,6 +239,7 @@ class OpalPluginTranscoder
     OpalPluginControl getActiveOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
+    OpalPluginControl getCodecStatistics;
 };
 
 
@@ -319,6 +320,8 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
   public:
     OpalPluginVideoTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
     ~OpalPluginVideoTranscoder();
+
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
