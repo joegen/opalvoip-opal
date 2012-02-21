@@ -145,7 +145,7 @@ static void AddEventsOption(OpalMediaFormat & mediaFormat,
 {
   OpalRFC288EventsOption * option = new OpalRFC288EventsOption(OpalRFC288EventsName(),
                                                                false,
-                                                               OpalMediaOption::AndMerge,
+                                                               OpalMediaOption::IntersectionMerge,
                                                                OpalRFC2833EventsMask(defaultValues));
 #if OPAL_SIP
   option->SetFMTPName("FMTP");
