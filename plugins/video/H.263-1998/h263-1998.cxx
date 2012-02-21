@@ -556,7 +556,7 @@ bool H263_Base_EncoderContext::GetStatistics(char * stats, size_t maxSize)
   if (m_inputFrame == NULL)
     return false;
 
-  snprintf(stats, maxSize, "QP=%i\n", m_inputFrame->quality);
+  snprintf(stats, maxSize, "Quality=%i\n", m_inputFrame->quality);
   return true;
 }
 
@@ -834,7 +834,7 @@ bool H263_Base_DecoderContext::GetStatistics(char * stats, size_t maxSize)
   if (m_outputFrame == NULL)
     return false;
 
-  snprintf(stats, maxSize, "QP=%i\n", m_outputFrame->quality);
+  snprintf(stats, maxSize, "Quality=%i\n", m_outputFrame->quality);
   return true;
 }
 
