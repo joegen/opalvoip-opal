@@ -73,9 +73,12 @@ class OpalMediaStatistics : public PObject
     unsigned m_maximumJitter;
     unsigned m_jitterBufferDelay;
 
+#if OPAL_VIDEO
     // Video
     unsigned m_totalFrames;
     unsigned m_keyFrames;
+    int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
+#endif
 
     // Fax
 #if OPAL_FAX

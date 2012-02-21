@@ -62,9 +62,12 @@ OpalMediaStatistics::OpalMediaStatistics()
   , m_averageJitter(0)
   , m_maximumJitter(0)
 
+#if OPAL_VIDEO
     // Video
   , m_totalFrames(0)
   , m_keyFrames(0)
+  , m_quality(-1)
+#endif
 {
 }
 

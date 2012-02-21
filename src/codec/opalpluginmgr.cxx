@@ -624,6 +624,7 @@ OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, 
   , getActiveOptionsControl(defn, PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS)
   , freeOptionsControl(defn, PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS)
   , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
+  , getCodecStatistics(defn, PLUGINCODEC_CONTROL_GET_STATISTICS)
 {
   if (codecDef->createCodec == NULL)
     context = NULL;
@@ -1150,6 +1151,19 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 };
 
 
+void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalVideoTranscoder::GetStatistics(statistics);
+
+  char buf[1000];
+  if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
+    PConstString str(buf);
+    PStringOptions stats(str);
+    statistics.m_quality = stats.GetInteger("Quality", -1);
+  }
+}
+
+
 #endif // OPAL_VIDEO
 
 
@@ -1209,14 +1223,12 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
   PCLASSINFO(OpalFaxTranscoder, OpalTranscoder);
   protected:
     RTP_DataFrame * bufferRTP;
-    OpalPluginControl getCodecStatistics;
 
   public:
     OpalFaxTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder)
       : OpalTranscoder(GetRawPCM(codecDefn->sourceFormat, codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)),
                        GetRawPCM(codecDefn->destFormat,   codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn)))
       , OpalPluginTranscoder(codecDefn, isEncoder)
-      , getCodecStatistics(codecDefn, PLUGINCODEC_CONTROL_GET_STATISTICS)
     { 
       bufferRTP = NULL;
 

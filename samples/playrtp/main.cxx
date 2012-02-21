@@ -169,13 +169,15 @@ void PlayRTP::Main()
   }
 
   OpalPCAPFile pcap;
-  if (!pcap.Open(args[0]))
+  if (!pcap.Open(args[0])) {
+    cerr << "Could not open file \"" << args[0] << "\"\n";
     return;
+  }
 
   if (args.HasOption('f')) {
     OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
     if (!pcap.DiscoverRTP(discoveredRTPMap)) {
-      cerr << "error: no RTP sessions found" << endl;
+      cerr << "No RTP sessions found" << endl;
       return;
     }
     cout << "Found " << discoveredRTPMap.size() << " sessions:\n" << discoveredRTPMap << endl;
@@ -215,7 +217,7 @@ void PlayRTP::Main()
   else {
     OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
     if (!pcap.DiscoverRTP(discoveredRTPMap)) {
-      cerr << "error: no RTP sessions found - please use -S/-D/-s/-d option to specify session manually" << endl;
+      cerr << "No RTP sessions found - please use -S/-D/-s/-d option to specify session manually" << endl;
       return;
     }
 
@@ -393,6 +395,9 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
   DWORD lastTimeStamp = 0;
 
+  PINDEX totalBytes = 0;
+  unsigned intraFrames = 0;
+  int qualitySum = 0;
   unsigned fragmentationCount = 0;
   unsigned nextSequenceNumber = 0;
   unsigned missingPackets = 0;
@@ -524,6 +529,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     if (m_singleStep) 
       cout << "Input packet of length " << rtp.GetPayloadSize() << (rtp.GetMarker() ? " with MARKER" : "") << " -> ";
 
+    totalBytes += rtp.GetPayloadSize();
+
     m_vfu = false;
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
@@ -554,8 +561,14 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
         else {
           ++m_videoFrames;
 
+          OpalMediaStatistics stats;
+          m_transcoder->GetStatistics(stats);
+          if (stats.m_quality >= 0)
+            qualitySum += stats.m_quality;
+
           OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
           if (video->WasLastFrameIFrame()) {
+            ++intraFrames;
             m_eventLog << "Frame " << m_videoFrames << ": I-Frame received";
             if (m_videoError)
               m_eventLog << " - decode error cleared";
@@ -634,8 +647,6 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
             m_yuvFile.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(extendedFrame));
           }
-          //if (m_vfu)
-          //  m_singleStep = true;
 
           if (m_info > 1)
             cout << ',' << frame->width << ',' << frame->height;
@@ -665,32 +676,39 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
   m_eventLog << "Packet " << m_packetCount << ": completed" << endl;
 
-  delete m_transcoder;
-  m_transcoder = NULL;
-
-
   // Output final stats.
-  cout << (m_yuvFile.IsOpen() ? "Written " : "Played ") << m_packetCount << " packets";
+  cout << '\n';
 
-  if (missingPackets > 0)
-    cout << ", " << missingPackets << " missing";
+  if (m_yuvFile.IsOpen())
+    cout <<   "Written file   : " << m_yuvFile.GetFilePath() << '\n';
 
-  if (fragmentationCount > 0)
-    cout << ", " << fragmentationCount << " fragments";
+  cout <<     "Payload Type   : " << rtpStreamPayloadType << " (" << m_transcoder->GetInputFormat() << ")\n"
+              "Source         : " << pcap.GetSrcIP() << ':' << pcap.GetSrcPort() << "\n"
+              "Destination    : " << pcap.GetDstIP() << ':' << pcap.GetDstPort() << "\n"
+              "Total packets  : " << m_packetCount << "\n"
+              "Total bytes    : " << totalBytes << '\n';
 
-  if (m_videoFrames > 0) {
-    cout << ", " << m_videoFrames << " frames at "
-         << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight();
-    if (!m_yuvFile.IsOpen()) {
-      PTimeInterval playTime = PTimer::Tick() - playStartTick;
-      cout << ", " << playTime << " seconds, "
-           << fixed << setprecision(1)
-           << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps";
-    }
+  PTimeInterval playTime = PTimer::Tick() - playStartTick;
+  if (!m_yuvFile.IsOpen() && playTime > 0) {
+    cout <<   "Duration       : " << playTime << " seconds\n"
+         <<   "Bit rate       : "  << fixed << setprecision(1)
+           << (totalBytes*8/playTime.GetMilliSeconds()) << "kbps\n";
   }
 
-  cout << endl;
+  if (m_videoFrames > 0) {
+    cout <<   "Resolution     : " << m_yuvFile.GetFrameWidth() << "x" << m_yuvFile.GetFrameHeight() << "\n"
+              "Video frames   : " << m_videoFrames << "\n"
+              "Intra Frames   : " << intraFrames << '\n';
+    if (m_videoFrames > 0 && qualitySum > 0)
+      cout << "Avg quaility   : " << (qualitySum/m_videoFrames) << '\n';
+    if (!m_yuvFile.IsOpen() && playTime > 0)
+      cout << "Frame rate     : " << fixed << setprecision(1)
+           << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps\n";
+  }
 
+  cout <<     "Missing packets: " << missingPackets << "\n"
+              "IP fragments   : " << fragmentationCount
+       << endl;
 
   if (!m_encodedFileName.IsEmpty()) {
     PStringStream args; 
@@ -704,6 +722,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     cmd.WaitForTermination();
     cout << "done" << endl;
   }
+
+  // Clean up
+  delete m_transcoder;
+  m_transcoder = NULL;
 }
 
 
