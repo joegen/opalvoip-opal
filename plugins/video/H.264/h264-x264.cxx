@@ -241,38 +241,66 @@ static struct PluginCodec_Option const SDPProfileAndLevel =
   "42800A"                            // FMTP default value (as per RFC)
 };
 
-static struct PluginCodec_Option const MaxMBPS =
+static struct PluginCodec_Option const MaxMBPS_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Max MBPS",                         // User visible name
-  false,                              // User Read/Only flag
+  "SIP/SDP Max MBPS",                 // User visible name
+  true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   "max-mbps",                         // FMTP option name
   "0",                                // FMTP default value
-  H241_CustomMaxMBPS,                 // H.245 generic capability code and bit mask
+  0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "983040"                            // Maximum value
 };
 
-static struct PluginCodec_Option const MaxFS =
+static struct PluginCodec_Option const MaxMBPS_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Max FS",                           // User visible name
-  false,                              // User Read/Only flag
+  "H.241 Max MBPS",                   // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H241_CustomMaxMBPS,                 // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "1966"                              // Maximum value
+};
+
+static struct PluginCodec_Option const MaxFS_SDP =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "SIP/SDP Max FS",                   // User visible name
+  true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   "max-fs",                           // FMTP option name
   "0",                                // FMTP default value
-  H241_CustomMaxFS,                   // H.245 generic capability code and bit mask
+  0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "36864"                             // Maximum value
 };
 
-static struct PluginCodec_Option const MaxBR =
+static struct PluginCodec_Option const MaxFS_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Max BR",                           // User visible name
+  "H.241 Max FS",                     // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H241_CustomMaxFS,                   // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "144"                               // Maximum value
+};
+
+static struct PluginCodec_Option const MaxBR_SDP =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "SIP/SDP Max BR",                   // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
@@ -281,6 +309,20 @@ static struct PluginCodec_Option const MaxBR =
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "240000"                            // Maximum value
+};
+
+static struct PluginCodec_Option const MaxBR_H241 =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "H.241 Max BR",                     // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H241_CustomMaxBRandCPB,             // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "9600"                              // Maximum value
 };
 
 static struct PluginCodec_Option const MaxNaluSize =
@@ -371,9 +413,9 @@ static struct PluginCodec_Option const * OptionTable[] = {
   &H241Level,
   &SDPProfileAndLevel,
   &MaxNaluSize,
-  &MaxMBPS,
-  &MaxFS,
-  &MaxBR,
+  &MaxMBPS_H241,
+  &MaxFS_H241,
+  &MaxBR_H241,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
 #ifdef PLUGIN_CODEC_VERSION_INTERSECT
@@ -387,9 +429,9 @@ static struct PluginCodec_Option const * const OptionTable_0[] = {
   &Level,
   &SDPProfileAndLevel,
   &MaxNaluSize,
-  &MaxMBPS,
-  &MaxFS,
-  &MaxBR,
+  &MaxMBPS_SDP,
+  &MaxFS_SDP,
+  &MaxBR_SDP,
   &PacketizationMode_0,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
@@ -401,9 +443,9 @@ static struct PluginCodec_Option const * const OptionTable_1[] = {
   &Level,
   &SDPProfileAndLevel,
   &MaxNaluSize,
-  &MaxMBPS,
-  &MaxFS,
-  &MaxBR,
+  &MaxMBPS_SDP,
+  &MaxFS_SDP,
+  &MaxBR_SDP,
   &PacketizationMode_1,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
@@ -558,6 +600,9 @@ public:
   {
     size_t levelIndex = 0;
     size_t profileIndex = sizeof(ProfileInfo)/sizeof(ProfileInfo[0]);
+    unsigned maxMBPS;
+    unsigned maxFrameSizeInMB;
+    unsigned maxBitRate;
 
     if (original["Protocol"] == "H.323") {
       unsigned h241profiles = original.GetUnsigned(H241Profiles.m_name);
@@ -571,6 +616,10 @@ public:
         if (h241level <= LevelInfo[levelIndex].m_H241)
           break;
       }
+
+      maxMBPS = original.GetUnsigned(MaxMBPS_H241.m_name)*500;
+      maxFrameSizeInMB = original.GetUnsigned(MaxFS_H241.m_name)*256;
+      maxBitRate = original.GetUnsigned(MaxBR_H241.m_name)*25000;
     }
     else {
       std::string sdpProfLevel = original[SDPProfileAndLevel.m_name];
@@ -603,12 +652,17 @@ public:
         if ((sdpConstraints & 0x10) == LevelInfo[levelIndex].m_constraints)
           break;
       }
+
+      maxMBPS = original.GetUnsigned(MaxMBPS_SDP.m_name);
+      maxFrameSizeInMB = original.GetUnsigned(MaxFS_SDP.m_name);
+      maxBitRate = original.GetUnsigned(MaxBR_SDP.m_name)*1000;
     }
 
     Change(ProfileInfo[profileIndex].m_Name, original, changed, Profile.m_name); 
     Change(LevelInfo[levelIndex].m_Name, original, changed, Level.m_name);
 
-    unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, original.GetUnsigned(MaxFS.m_name));
+    if (maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
+      maxFrameSizeInMB = LevelInfo[levelIndex].m_MaxFrameSize;
     ClampSizes(LevelInfo[levelIndex],
                original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
                original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
@@ -616,13 +670,15 @@ public:
                original, changed);
 
     // Frame rate
-    unsigned maxMBPS = std::max(LevelInfo[levelIndex].m_MaxMBPS, original.GetUnsigned(MaxMBPS.m_name));
+    if (maxMBPS < LevelInfo[levelIndex].m_MaxMBPS)
+      maxMBPS = LevelInfo[levelIndex].m_MaxMBPS;
     ClampMin(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH),
                             original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT))*MyClockRate/maxMBPS,
              original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
     // Bit rate
-    unsigned maxBitRate = std::max(LevelInfo[levelIndex].m_MaxBitRate, original.GetUnsigned(MaxBR.m_name)*1000);
+    if (maxBitRate < LevelInfo[levelIndex].m_MaxBitRate)
+      maxBitRate = LevelInfo[levelIndex].m_MaxBitRate;
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_MAX_BIT_RATE);
     ClampMax(maxBitRate, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
     return true;
@@ -685,18 +741,24 @@ public:
     ClampSizes(LevelInfo[levelIndex], maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
 
     // Do this afer the clamping, maxFrameSizeInMB may change
-    if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize)
-      Change(maxFrameSizeInMB, original, changed, MaxFS.m_name);
+    if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize) {
+      Change(maxFrameSizeInMB, original, changed, MaxFS_SDP.m_name);
+      Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241.m_name);
+    }
 
     // Set exception to bit rate if necessary
     unsigned bitRate = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
-    if (bitRate > LevelInfo[levelIndex].m_MaxBitRate)
-      Change(bitRate/1000, original, changed, MaxBR.m_name);
+    if (bitRate > LevelInfo[levelIndex].m_MaxBitRate) {
+      Change((bitRate+999)/1000, original, changed, MaxBR_SDP.m_name);
+      Change((bitRate+24999)/25000, original, changed, MaxBR_H241.m_name);
+    }
 
     // Set exception to frame rate if necessary
     unsigned mbps = maxFrameSizeInMB*MyClockRate/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME);
-    if (mbps > LevelInfo[levelIndex].m_MaxMBPS)
-      Change(mbps, original, changed, MaxMBPS.m_name);
+    if (mbps > LevelInfo[levelIndex].m_MaxMBPS) {
+      Change(mbps, original, changed, MaxMBPS_SDP.m_name);
+      Change((mbps+499)/500, original, changed, MaxMBPS_H241.m_name);
+    }
 
     return true;
   }
@@ -799,7 +861,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
         return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
 
-      if (strcasecmp(optionName, MaxMBPS.m_name) == 0)
+      if (strcasecmp(optionName, MaxMBPS_SDP.m_name) == 0)
         return SetOptionUnsigned(m_maxMBPS, optionValue, 0);
 
       if (strcasecmp(optionName, Level.m_name) == 0) {
