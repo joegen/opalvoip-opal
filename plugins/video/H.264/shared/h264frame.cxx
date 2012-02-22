@@ -89,8 +89,6 @@ H264Frame::~H264Frame ()
 
 void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 {
-  uint8_t* currentPositionInFrame=(uint8_t*) m_encodedFrame;
-
   m_NALs[m_numberOfNALsInFrame].type = type;
   m_NALs[m_numberOfNALsInFrame].length = length;
   m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
