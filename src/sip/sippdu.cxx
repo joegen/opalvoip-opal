@@ -3489,7 +3489,7 @@ SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPSubscribeHandler & handl
 #if P_EXPAT
 bool SIPSubscribe::NotifyCallbackInfo::LoadAndValidate(PXML & xml,
                                                        const PXML::ValidationInfo * validator,
-                                                       int options)
+                                                       PXML::Options options)
 {
   PString error;
   if (xml.LoadAndValidate(m_request.GetEntityBody(), validator, error, options))
