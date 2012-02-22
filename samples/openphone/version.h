@@ -32,7 +32,7 @@
 #ifndef _OpenPhone_VERSION_H
 #define _OpenPhone_VERSION_H
 
-#include <../../version.h>
+#include "../../version.h"
 
 #define	PRODUCT_NAME_TEXT	"Open Phone"
 #define	EXE_NAME_TEXT	        "openphone"
