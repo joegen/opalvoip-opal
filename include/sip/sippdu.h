@@ -1173,7 +1173,7 @@ class SIPSubscribe : public SIPTransaction
       bool LoadAndValidate(
         PXML & xml,
         const PXML::ValidationInfo * validator,
-        int options = PXML::WithNS
+        PXML::Options options = PXML::WithNS
       );
 #endif
 
