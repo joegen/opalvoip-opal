@@ -48,7 +48,7 @@ OpalWAVFile::OpalWAVFile(unsigned fmt)
 }
 
 
-OpalWAVFile::OpalWAVFile(OpenMode mode, int opts, unsigned fmt)
+OpalWAVFile::OpalWAVFile(OpenMode mode, OpenOptions opts, unsigned fmt)
   : PWAVFile(mode, opts, fmt)
 {
   SetAutoconvert();
@@ -57,7 +57,7 @@ OpalWAVFile::OpalWAVFile(OpenMode mode, int opts, unsigned fmt)
 
 OpalWAVFile::OpalWAVFile(const PFilePath & name, 
                                   OpenMode mode,  /// Mode in which to open the file.
-                                       int opts,  /// #OpenOptions enum# for open operation.
+                               OpenOptions opts,  /// #OpenOptions enum# for open operation.
                                    unsigned fmt)  /// Type of WAV File to create
   : PWAVFile(name, mode, opts, fmt)
 {
