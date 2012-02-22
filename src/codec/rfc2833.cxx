@@ -66,7 +66,7 @@ OpalRFC2833EventsMask & OpalRFC2833EventsMask::operator&=(const OpalRFC2833Event
 {
   iterator lhs;
   const_iterator rhs;
-  for (lhs = begin(), rhs = other.begin(); lhs != end() && rhs != end(); ++lhs,++rhs)
+  for (lhs = begin(), rhs = other.begin(); lhs != end() && rhs != other.end(); ++lhs,++rhs)
     *lhs = *lhs && *rhs;
   return *this;
 }
