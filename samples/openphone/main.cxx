@@ -559,7 +559,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
-  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
+  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnSendVFU)
+  EVT_MENU(XRCID("MenuSendIntra"),       MyManager::OnSendIntra)
   EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
   EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
 
@@ -1630,6 +1631,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
   menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
+  menubar->Enable(XRCID("MenuSendIntra"), hasRxVideo);
   menubar->Enable(XRCID("MenuVideoControl"), hasStopVideo);
   menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
 
@@ -2908,11 +2910,22 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnVFU(wxCommandEvent& /*event*/)
+void MyManager::OnSendVFU(wxCommandEvent& /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
   if (connection != NULL) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
+    if (stream != NULL)
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
+  }
+}
+
+
+void MyManager::OnSendIntra(wxCommandEvent& /*event*/)
+{
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
   }
