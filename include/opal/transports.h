@@ -531,9 +531,14 @@ class OpalListenerIP : public OpalListener
 
 
   protected:
+    bool CanCreateTransport(
+      const OpalTransportAddress & localAddress,
+      const OpalTransportAddress & remoteAddress
+    ) const;
+
     PIPSocket::Address localAddress;
     WORD               listenerPort;
-    PBoolean               exclusiveListener;
+    bool               exclusiveListener;
 };
 
 
@@ -729,13 +734,14 @@ class OpalListenerUDP : public OpalListenerIP
 class OpalTransport : public PIndirectChannel
 {
     PCLASSINFO(OpalTransport, PIndirectChannel);
-  public:
+  protected:
   /**@name Construction */
   //@{
     /**Create a new transport channel.
      */
     OpalTransport(OpalEndPoint & endpoint);
 
+  public:
     /** Destroy the transport channel.
       */
     ~OpalTransport();
@@ -748,6 +754,25 @@ class OpalTransport : public PIndirectChannel
     void PrintOn(
       ostream & strm
     ) const;
+
+    /**Low level write to the channel. This function will block until the
+       requested number of characters are written or the write timeout is
+       reached. The GetLastWriteCount() function returns the actual number
+       of bytes written.
+
+       This will use the <code>writeChannel</code> pointer to actually do the
+       write. If <code>writeChannel</code> is null the this asserts.
+
+       The GetErrorCode() function should be consulted after Write() returns
+       false to determine what caused the failure.
+
+       @return
+       true if at least len bytes were written to the channel.
+     */
+    virtual PBoolean Write(
+      const void * buf, ///< Pointer to a block of memory to write.
+      PINDEX len        ///< Number of bytes to write.
+    );
   //@}
 
   /**@name Operations */
@@ -905,6 +930,15 @@ class OpalTransport : public PIndirectChannel
       void * userData                 ///<  user data to pass to write function
     );
 
+    /**Set keep alive time and data.
+       The data is sent on the transport if no traffic has occurred for the
+       specified time.
+      */
+    void SetKeepAlive(
+      const PTimeInterval & timeout,
+      const PBYTEArray & data
+    );
+
     /**Attach a thread to the transport.
       */
     virtual void AttachThread(
@@ -925,9 +959,13 @@ class OpalTransport : public PIndirectChannel
     PMutex & GetWriteMutex() { return m_writeMutex; }
 
   protected:
+    PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
+
     OpalEndPoint & endpoint;
     PThread      * thread;      ///<  Thread handling the transport
     PMutex         m_writeMutex;
+    PTimer         m_keepAliveTimer;
+    PBYTEArray     m_keepAliveData;
 };
 
 
@@ -1373,8 +1411,12 @@ class OpalListenerTLS : public OpalListenerTCP
       */
     ~OpalListenerTLS();
 
-    OpalTransport * Accept(const PTimeInterval & timeout);
+    virtual OpalTransport * Accept(const PTimeInterval & timeout);
     virtual const PCaselessString & GetProtoPrefix() const;
+    virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & localAddress,
+      const OpalTransportAddress & remoteAddress
+    ) const;
 
   protected:
     void Construct();

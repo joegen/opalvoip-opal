@@ -867,6 +867,16 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) { natBindingTimeout = t; natBindingTimer.RunContinuous (natBindingTimeout); }
     const PTimeInterval & GetNATBindingTimeout() const { return natBindingTimeout; }
 
+    void GetKeepAlive(
+      PTimeInterval & keepAliveTimeout,
+      PBYTEArray & keepAliveData
+    ) { keepAliveTimeout = m_keepAliveTimeout; keepAliveData = m_keepAliveData; }
+    void SetKeepAlive(
+      const PTimeInterval & keepAliveTimeout,
+      const PBYTEArray & keepAliveData
+    ) { m_keepAliveTimeout = keepAliveTimeout; m_keepAliveData = keepAliveData; }
+
+
     void AddTransaction(
       SIPTransaction * transaction
     ) { m_transactions.Append(transaction); }
@@ -1006,6 +1016,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
     PTimeInterval natBindingTimeout;
+    PTimeInterval m_keepAliveTimeout;
+    PBYTEArray    m_keepAliveData;
     bool          m_registeredUserMode;
 
     bool              m_shuttingDown;

@@ -54,6 +54,9 @@
 #define new PNEW
 
 
+static BYTE DefaultKeepAliveData[] = { '\r', '\n', '\r', '\n' };
+
+
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr,
@@ -71,6 +74,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
   , natBindingTimeout(0, 0, 1)       // 1 minute
+  , m_keepAliveTimeout(0, 0, 1)      // 1 minute
+  , m_keepAliveData(DefaultKeepAliveData, sizeof(DefaultKeepAliveData))
   , m_registeredUserMode(false)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
@@ -221,7 +226,9 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
   do {
     HandlePDU(*transport);
   } while (transport->IsOpen() && !transport->bad() && !transport->eof());
-  
+
+  transport->Close();
+
   PTRACE(4, "SIP\tRead thread finished.");
 }
 
@@ -326,6 +333,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   }
 
   transport->SetPromiscuous(OpalTransport::AcceptFromAny);
+  transport->SetKeepAlive(m_keepAliveTimeout, m_keepAliveData);
 
   if (transport->IsReliable())
     transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(TransportThreadMain),
