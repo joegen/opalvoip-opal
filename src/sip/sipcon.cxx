@@ -877,7 +877,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   }
   else {
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
-    localMedia->SetDirection((SDPMediaDescription::Direction)GetAutoStart(mediaType));
+    localMedia->SetDirection((SDPMediaDescription::Direction)(3&(unsigned)GetAutoStart(mediaType)));
   }
 
   if (mediaType == OpalMediaType::Audio()) {

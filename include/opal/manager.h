@@ -1602,7 +1602,7 @@ class OpalManager : public PObject
 
     /**Set if should auto-start receive video channels on connection.
      */
-    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Receive, can); }
+    void SetAutoStartReceiveVideo(bool can) { OpalMediaType::Video()->SetAutoStart(OpalMediaType::Receive, can); }
 
     /**See if should auto-start transmit video channels on connection.
      */
@@ -1610,7 +1610,7 @@ class OpalManager : public PObject
 
     /**Set if should auto-start transmit video channels on connection.
      */
-    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video().GetDefinition()->SetAutoStart(OpalMediaType::Transmit, can); }
+    void SetAutoStartTransmitVideo(bool can) { OpalMediaType::Video()->SetAutoStart(OpalMediaType::Transmit, can); }
 
 #endif
 
