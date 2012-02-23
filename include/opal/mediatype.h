@@ -31,9 +31,11 @@
 #ifndef OPAL_OPAL_MEDIATYPE_H
 #define OPAL_OPAL_MEDIATYPE_H
 
-#include <ptbuildopts.h>
-#include <ptlib/pfactory.h>
 #include <opal/buildopts.h>
+
+#include <ptlib/pfactory.h>
+#include <ptlib/bitwise_enum.h>
+
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -78,6 +80,7 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static const OpalMediaType & Fax();
     static const OpalMediaType & UserInput();
 
+    OpalMediaTypeDefinition * operator->() const { return GetDefinition(); }
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
     static OpalMediaTypeDefinition * GetDefinition(unsigned sessionId);
@@ -91,21 +94,10 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static OpalMediaType GetMediaTypeFromSDP(const std::string & key, const std::string & transport);
 #endif  // OPAL_SIP
 
-    enum AutoStartMode {
-      // Do not change order of enum as useful for bitmasking rx/tx
-      OfferInactive,
-      Receive,
-      Transmit,
-      ReceiveTransmit,
-      DontOffer,
-
-      TransmitReceive = ReceiveTransmit
-    };
-
-    __inline friend AutoStartMode operator++(AutoStartMode & mode)                 { return (mode = (AutoStartMode)(mode+1)); }
-    __inline friend AutoStartMode operator--(AutoStartMode & mode)                 { return (mode = (AutoStartMode)(mode-1)); }
-    __inline friend AutoStartMode operator|=(AutoStartMode & m1, AutoStartMode m2) { return (m1 = (AutoStartMode)((m1 & ~DontOffer) | m2)); }
-    __inline friend AutoStartMode operator-=(AutoStartMode & m1, AutoStartMode m2) { return (m1 = (AutoStartMode)((int)m1 & ~((int)m2|DontOffer))); }
+    P_DECLARE_BITWISE_ENUM_EX(AutoStartMode, 3,
+                              (OfferInactive, Receive, Transmit, DontOffer),
+                              ReceiveTransmit = Receive|Transmit,
+                              TransmitReceive = Receive|Transmit);
 
     AutoStartMode GetAutoStart() const;
 };
