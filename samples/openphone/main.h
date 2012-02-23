@@ -1009,7 +1009,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnNewCodec(wxCommandEvent& event);
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
-    void OnVFU(wxCommandEvent& event);
+    void OnSendVFU(wxCommandEvent& event);
+    void OnSendIntra(wxCommandEvent& event);
     void OnVideoControl(wxCommandEvent& event);
     void OnDefVidWinPos(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
