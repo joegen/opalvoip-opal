@@ -690,6 +690,9 @@ PBoolean OpalRTPMediaStream::Open()
 
   rtpSession.Restart(IsSource());
 
+  m_forceIntraFrameFlag = true;
+  m_forceIntraFrameTimer = 500;
+
   return OpalMediaStream::Open();
 }
 
@@ -752,6 +755,18 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return false;
+  }
+
+  /* This is to allow for remote systems that are not quite ready to receive
+     video immediately after the stream is set up. Specification says they
+     MUST, but ... sigh. So, they sometime miss the first few packets which
+     contains Intra-Frame and then, though further failure of implementation,
+     do not subsequently ask for a new Intra-Frame using one of the several
+     mechanisms available. Net result, no video. It won't hurt to send another
+     Intra-Frame, so we do. Thus, interoperability is improved! */
+  if (m_forceIntraFrameFlag && m_forceIntraFrameTimer.HasExpired()) {
+    ExecuteCommand(OpalVideoUpdatePicture());
+    m_forceIntraFrameFlag = false;
   }
 
   timestamp = packet.GetTimestamp();
