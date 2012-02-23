@@ -271,7 +271,8 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     OpalTransport * CreateTransport(
       const SIPURL & remoteURL,
-      const PString & localInterface = PString::Empty()
+      const PString & localInterface = PString::Empty(),
+      SIP_PDU::StatusCodes * reason = NULL
     );
 
     virtual void HandlePDU(
