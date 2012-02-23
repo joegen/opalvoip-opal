@@ -278,69 +278,65 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 
   SetState(newState);
 
-  if (GetTransport() == NULL)
-    OnFailed(SIP_PDU::Local_BadTransportAddress);
-  else {
-    m_lastCseq = 0;
+  SIP_PDU::StatusCodes reason = SIP_PDU::Local_BadTransportAddress;
 
-    // Restoring or first time, try every interface
-    if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
-      PWaitAndSignal mutex(m_transport->GetWriteMutex());
-      if (m_transport->WriteConnect(WriteSIPHandler, this))
-        return true;
+  for (unsigned retry = 0; retry < 2; ++retry) {
+    if (m_transport == NULL) {
+      if (m_proxy.IsEmpty()) {
+        // Look for a "proxy" parameter to override default proxy
+        const PStringToString & params = m_remoteAddress.GetParamVars();
+        if (params.Contains(OPAL_PROXY_PARAM)) {
+          m_proxy.Parse(params(OPAL_PROXY_PARAM));
+          m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
+        }
+      }
+
+      SIPURL url;
+      if (!m_proxy.IsEmpty())
+        url = m_proxy;
+      else {
+        url = m_remoteAddress;
+        url.AdjustToDNS();
+      }
+
+      // Must specify a network interface or get infinite recursion
+      m_transport = GetEndPoint().CreateTransport(url, "*", &reason);
+      if (m_transport == NULL)
+        break;
+
+      PTRACE_CONTEXT_ID_TO(m_transport);
     }
-    else {
-      // We contacted the server on an interface last time, assume it still works!
-      if (WriteSIPHandler(*m_transport, false))
-        return true;
+
+    if (m_transport->IsOpen()) {
+      m_lastCseq = 0;
+
+      // Restoring or first time, try every interface
+      if (newState == Restoring || m_transport->GetInterface().IsEmpty()) {
+        PWaitAndSignal mutex(m_transport->GetWriteMutex());
+        if (m_transport->WriteConnect(WriteSIPHandler, this))
+          return true;
+      }
+      else {
+        // We contacted the server on an interface last time, assume it still works!
+        if (WriteSIPHandler(*m_transport, false))
+          return true;
+      }
+
+      reason = SIP_PDU::Local_TransportError;
+      m_transport->CloseWait();
     }
 
-    OnFailed(SIP_PDU::Local_TransportError);
-  }
-
-  if (newState == Unsubscribing) {
-    // Transport level error, probably never going to get the unsubscribe through
-    SetState(Unsubscribed);
-    return true;
-  }
-
-  RetryLater(m_offlineExpireTime);
-  return true;
-}
-
-
-OpalTransport * SIPHandler::GetTransport()
-{
-  if (m_transport != NULL) {
-    if (m_transport->IsOpen())
-      return m_transport;
-
-    m_transport->CloseWait();
     delete m_transport;
     m_transport = NULL;
   }
 
-  if (m_proxy.IsEmpty()) {
-    // Look for a "proxy" parameter to override default proxy
-    const PStringToString & params = m_remoteAddress.GetParamVars();
-    if (params.Contains(OPAL_PROXY_PARAM)) {
-      m_proxy.Parse(params(OPAL_PROXY_PARAM));
-      m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
-    }
-  }
+  OnFailed(reason);
 
-  SIPURL url;
-  if (!m_proxy.IsEmpty())
-    url = m_proxy;
-  else {
-    url = m_remoteAddress;
-    url.AdjustToDNS();
-  }
-
-  // Must specify a network interface or get infinite recursion
-  m_transport = GetEndPoint().CreateTransport(url, "*");
-  PTRACE_CONTEXT_ID_TO(m_transport);
-  return m_transport;
+  if (newState == Unsubscribing)
+    SetState(Unsubscribed); // Transport level error, probably never going to get the unsubscribe through
+  else
+    RetryLater(m_offlineExpireTime);
+  return true;
 }
 
 
