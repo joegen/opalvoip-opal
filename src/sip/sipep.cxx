@@ -276,11 +276,13 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 }
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PString & localInterface)
+OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PString & localInterface, SIP_PDU::StatusCodes * reason)
 {
   OpalTransportAddress remoteAddress = remoteURL.GetHostAddress();
   if (remoteAddress.IsEmpty()) {
     if (GetRegistrationsCount() == 0) {
+      if (reason != NULL)
+        *reason = SIP_PDU::Local_CannotMapScheme;
       PTRACE(1, "SIP\tCannot use tel URI with phone-context or existing registration.");
       return false;
     }
@@ -313,6 +315,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   if (transport == NULL) {
     // No compatible listeners, can't create a transport to send if we cannot hear the responses!
     PTRACE(2, "SIP\tNo compatible listener to create transport for " << remoteAddress);
+    if (reason != NULL)
+      *reason = SIP_PDU::Local_NoCompatibleListener;
     return NULL;
   }
 
@@ -327,6 +331,16 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   transport->SetBufferSize(m_maxSizeUDP);
   if (!transport->Connect()) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
+    if (reason != NULL) {
+      switch (transport->GetErrorCode()) {
+        case PChannel::Timeout :
+          *reason = SIP_PDU::Local_Timeout;
+          break;
+        default :
+          *reason = SIP_PDU::Local_BadTransportAddress;
+          break;
+      }
+    }
     transport->CloseWait();
     delete transport;
     return NULL;
@@ -804,7 +818,9 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
     handler.SetSafetyMode(PSafeReadWrite);
     activeSIPHandlers.Append(handler);
 
-    handler->GetTransport()->SetInterface(transport.GetInterface());
+    OpalTransport * handlerTransport = handler->GetTransport();
+    if (handlerTransport != NULL)
+      handlerTransport->SetInterface(transport.GetInterface());
 
     mime.SetTo(dialog->GetLocalURI().AsQuotedString());
   }
@@ -1791,12 +1807,12 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName(const OpalTransport & transpor
   OpalTransportAddress addr(myAddress, myPort, transport.GetLocalAddress().GetProtoPrefix());
   PString defPartyName(GetDefaultLocalPartyName());
   SIPURL rpn;
-  PINDEX pos;
-  if ((pos = defPartyName.Find('@')) == P_MAX_INDEX) 
+  PString user, host;
+  if (!defPartyName.Split('@', user, host)) 
     rpn = SIPURL(defPartyName, addr, myPort);
   else {
-    rpn = SIPURL(defPartyName.Left(pos), addr, myPort);   // set transport from address
-    rpn.SetHostName(defPartyName.Mid(pos+1));
+    rpn = SIPURL(user, addr, myPort);   // set transport from address
+    rpn.SetHostName(host);
   }
 
   rpn.SetDisplayName(GetDefaultDisplayName());
@@ -1991,12 +2007,13 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
 
 void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
 {
+  OpalTransport * transport = NULL;
   if (priority == SIPEndPoint::LowPriority) {
     for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
       if (handler->GetState() == SIPHandler::Subscribed &&
-          handler->GetTransport() != NULL &&
-          handler->GetTransport()->GetInterface().Find(entry.GetName()) != P_MAX_INDEX) {
-        handler->GetTransport()->SetInterface(PString::Empty());
+          (transport = handler->GetTransport()) != NULL &&
+           transport->GetInterface().Find(entry.GetName()) != P_MAX_INDEX) {
+        transport->SetInterface(PString::Empty());
         handler->ActivateState(SIPHandler::Refreshing);
       }
     }

@@ -410,7 +410,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetSIPETag() const;
     void SetSIPETag(const PString & v);
 
-    void GetAlertInfo(PString & info, int & appearance);
+    void GetAlertInfo(PString & info, int & appearance) const;
     void SetAlertInfo(const PString & info, int appearance);
 
     PString GetCallInfo() const;
@@ -520,6 +520,8 @@ class SIP_PDU : public PSafeObject
       Local_TransportError,
       Local_BadTransportAddress,
       Local_Timeout,
+      Local_NoCompatibleListener,
+      Local_CannotMapScheme,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,

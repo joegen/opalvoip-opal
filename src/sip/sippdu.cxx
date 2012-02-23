@@ -162,6 +162,8 @@ const char * SIP_PDU::GetStatusCodeDescription(int code)
     { SIP_PDU::Local_TransportError,                "Transport Error" },
     { SIP_PDU::Local_BadTransportAddress,           "Invalid Address/Hostname" },
     { SIP_PDU::Local_Timeout,                       "Timeout or retries exceeded" },
+    { SIP_PDU::Local_NoCompatibleListener,          "No compatible listener" },
+    { SIP_PDU::Local_CannotMapScheme,               "Cannot map URI scheme to registration" },
 
     { 0 }
   };
@@ -1493,7 +1495,7 @@ void SIPMIMEInfo::SetSIPETag(const PString & v)
 }
 
 
-void SIPMIMEInfo::GetAlertInfo(PString & info, int & appearance)
+void SIPMIMEInfo::GetAlertInfo(PString & info, int & appearance) const
 {
   info.MakeEmpty();
   appearance = -1;
@@ -2090,8 +2092,16 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   *stream >> cmd >> m_mime;
 
   if (!stream->good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
-    PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-              << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
+#if PTRACING
+    if (stream->good() && cmd.IsEmpty() && m_mime.IsEmpty())
+      PTRACE(5, "SIP\tProbable keep-alive from " << transport.GetLastReceivedAddress());
+    else if (pdu.IsEmpty())
+      PTRACE(1, "SIP\tInvalid message from " << transport.GetLastReceivedAddress()
+             << ", request \"" << cmd << "\", mime:\n" << m_mime);
+    else
+      PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+                << " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
+#endif
     return SIP_PDU::Failure_BadRequest;
   }
 

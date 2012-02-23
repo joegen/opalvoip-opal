@@ -90,8 +90,6 @@ public:
   inline SIPHandler::State GetState () 
   { return m_state; }
 
-  virtual OpalTransport * GetTransport();
-
   virtual SIPAuthentication * GetAuthentication()
   { return authentication; }
 
@@ -140,7 +138,7 @@ public:
   const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
   const SIPURL & GetProxy() const         { return m_proxy; }
 
-  SIPMIMEInfo m_mime;
+  OpalTransport * GetTransport() const { return m_transport; }
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
@@ -163,6 +161,8 @@ protected:
   const SIPURL                m_addressOfRecord;
   SIPURL                      m_remoteAddress;
   const PString               m_callID;
+  SIPMIMEInfo                 m_mime;
+
   unsigned                    m_lastCseq;
   int                         m_currentExpireTime;
   int                         m_originalExpireTime;
