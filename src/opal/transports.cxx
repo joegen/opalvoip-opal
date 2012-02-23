@@ -645,6 +645,24 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
 #endif // P_NAT
 
 
+bool OpalListenerIP::CanCreateTransport(const OpalTransportAddress & localAddress,
+                                        const OpalTransportAddress & remoteAddress) const
+{
+  if (remoteAddress.GetProtoPrefix() != GetProtoPrefix())
+    return false;
+
+  // The following then checks for IPv4/IPv6
+  OpalTransportAddress myLocalAddress = GetLocalAddress();
+  if (!myLocalAddress.IsCompatible(remoteAddress))
+    return false;
+
+  if (localAddress.IsEmpty())
+    return true;
+  
+  return myLocalAddress.IsCompatible(localAddress);
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 OpalListenerTCP::OpalListenerTCP(OpalEndPoint & ep,
@@ -740,17 +758,13 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & localAddress,
                                                  const OpalTransportAddress & remoteAddress) const
 {
-  OpalTransportAddress myLocalAddress = GetLocalAddress();
-  if (myLocalAddress.IsCompatible(remoteAddress)) {
-    if (!localAddress.IsEmpty())
-      return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
-#if OPAL_PTLIB_SSL
-    if (remoteAddress.NumCompare(OpalTransportAddress::TlsPrefix()) == EqualTo)
-      return new OpalTransportTLS(endpoint);
-#endif
+  if (!CanCreateTransport(localAddress, remoteAddress))
+    return NULL;
+
+  if (localAddress.IsEmpty())
     return new OpalTransportTCP(endpoint);
-  }
-  return NULL;
+
+  return localAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
 }
 
 
@@ -863,11 +877,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & localAddress,
                                                  const OpalTransportAddress & remoteAddress) const
 {
-  if (remoteAddress.GetProtoPrefix() != GetProtoPrefix())
-    return NULL;
-
-  // The following then checks for IPv4/IPv6
-  if (!GetLocalAddress().IsCompatible(remoteAddress))
+  if (!CanCreateTransport(localAddress, remoteAddress))
     return NULL;
 
   PString iface;
@@ -924,6 +934,7 @@ OpalTransport::OpalTransport(OpalEndPoint & end)
   : endpoint(end)
 {
   thread = NULL;
+  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
 }
 
 
@@ -976,6 +987,8 @@ void OpalTransport::CloseWait()
   PThread * exitingThread = thread;
   thread = NULL;
   channelPointerMutex.EndWrite();
+
+  m_keepAliveTimer.Stop();
 
   if (exitingThread != NULL) {
     if (exitingThread == PThread::Current())
@@ -1035,6 +1048,30 @@ PBoolean OpalTransport::IsRunning() const
     return PFalse;
 
   return !thread->IsTerminated();
+}
+
+
+void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray & data)
+{
+  m_keepAliveTimer.Stop(true);
+
+  m_keepAliveData = data;
+  if (!data.IsEmpty())
+    m_keepAliveTimer = timeout;
+}
+
+
+void OpalTransport::KeepAlive(PTimer &, INT)
+{
+  Write(m_keepAliveData, m_keepAliveData.GetSize());
+  PTRACE(5, "Opal\tTransport keep alive sent: " << GetLastWriteCount() << " bytes");
+}
+
+
+PBoolean OpalTransport::Write(const void * buf, PINDEX len)
+{
+  m_keepAliveTimer.Reset();
+  return PIndirectChannel::Write(buf, len);
 }
 
 
@@ -1625,9 +1662,10 @@ PBoolean OpalTransportTLS::Connect()
   PSSLCertificate ca, cert;
   PSSLPrivateKey key;
   if (!endpoint.GetSSLCredentials(ca, cert, key))
-    return false;
+    return SetErrorValues(AccessDenied, EINVAL);
 
   PSSLChannel * sslChannel = new PSSLChannel();
+  sslChannel->SetReadTimeout(5000);
 
   sslChannel->AddCA(ca); // Don't care about error return on this one
 
@@ -1644,7 +1682,7 @@ PBoolean OpalTransportTLS::Connect()
     return Open(sslChannel);
 
   delete sslChannel;
-  return false;
+  return SetErrorValues(AccessDenied, EACCES);
 }
 
 PBoolean OpalTransportTLS::OnOpen()
@@ -1774,9 +1812,24 @@ OpalTransport * OpalListenerTLS::Accept(const PTimeInterval & timeout)
   return NULL;
 }
 
+
 const PCaselessString & OpalListenerTLS::GetProtoPrefix() const
 {
   return OpalTransportAddress::TlsPrefix();
+}
+
+
+OpalTransport * OpalListenerTLS::CreateTransport(const OpalTransportAddress & localAddress,
+                                                 const OpalTransportAddress & remoteAddress) const
+{
+  if (!CanCreateTransport(localAddress, remoteAddress))
+    return NULL;
+
+  PIPSocket::Address binding = PIPSocket::Address::GetAny();
+  if (!localAddress.IsEmpty())
+    localAddress.GetIpAddress(binding);
+
+  return new OpalTransportTLS(endpoint, binding);
 }
 
 
