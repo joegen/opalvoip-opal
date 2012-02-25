@@ -511,10 +511,9 @@ endif # Darwin
 
 ####################################################
 
-ifeq ($(OSTYPE),mingw)
-#LDFLAGS += -enable-auto-import -enable-runtime-pseudo-reloc -enable-stdcall-fixup -fatal-warning
-LDFLAGS += -enable-auto-import -fatal-warning
-endif # mingw
+#ifeq ($(OSTYPE),mingw)
+#LDFLAGS += -enable-runtime-pseudo-reloc -fatal-warning
+#endif # mingw
 
 ###############################################################################
 # Build rules
