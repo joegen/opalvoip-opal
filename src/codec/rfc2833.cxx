@@ -559,10 +559,10 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
     if (m_receiveState == ReceiveActive)
       m_receiveTimer = 200;
     else
-      m_receiveTimer.Stop();
+      m_receiveTimer.Stop(false);
   }
   else {
-    m_receiveTimer.Stop();
+    m_receiveTimer.Stop(false);
 
     // finish any existing tone
     if (m_receiveState == ReceiveActive) 
