@@ -710,7 +710,6 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
-      synchronousOnRelease = false;
 #if OPAL_STATISTICS
       InternalGetStatistics(m_finalStatistics, true);
       PTRACE(3, "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);

@@ -816,7 +816,6 @@ OpalCapiConnection::OpalCapiConnection(OpalCall & call,
   , m_PLCI(0)
   , m_NCCI(0)
 {
-  synchronousOnRelease = false;
 }
 
 
