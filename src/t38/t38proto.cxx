@@ -75,8 +75,10 @@ class OpalFaxMediaStream : public OpalNullMediaStream
       if (isOpen &&
           m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
           m_connection.m_finalStatistics.m_fax.m_result < 0) {
-        if (mediaPatch != NULL)
-          mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
+        // make a referenced copy so can't be deleted out from under us
+        PatchPtr patch = m_mediaPatch;
+        if (patch != NULL)
+          patch->ExecuteCommand(OpalFaxTerminate(), false);
         GetStatistics(m_connection.m_finalStatistics);
         PTRACE(4, "FAX\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
       }

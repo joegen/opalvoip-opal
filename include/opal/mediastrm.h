@@ -380,7 +380,7 @@ class OpalMediaStream : public PSafeObject
 
     /**Get the patch thread that is using the stream.
       */
-    OpalMediaPatch * GetPatch() const { return mediaPatch; }
+    OpalMediaPatch * GetPatch() const { return m_mediaPatch; }
 
     /**Add a filter to the owning patch safely.
       */
@@ -417,7 +417,8 @@ class OpalMediaStream : public PSafeObject
     bool             marker;
     unsigned         mismatchedPayloadTypes;
 
-    OpalMediaPatch * mediaPatch;
+    typedef PSafePtr<OpalMediaPatch, PSafePtrMultiThreaded> PatchPtr;
+    PatchPtr m_mediaPatch;
 
     RTP_DataFrame::PayloadTypes m_payloadType;
     unsigned                    m_frameTime;
