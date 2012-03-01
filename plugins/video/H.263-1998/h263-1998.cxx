@@ -362,7 +362,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
   if (STRCMPI(option, H263_ANNEX_K) == 0) {
     // Annex K: Slice Structure
     // does not work with eyeBeam
-    if (atoi(value) == 1)
+    if (atoi(value) != 0)
       m_context->flags |= CODEC_FLAG_H263P_SLICE_STRUCT; 
     else
       m_context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT; 
@@ -1469,16 +1469,16 @@ static struct PluginCodec_Option const customMPI =
 };
 
 static struct PluginCodec_Option const annexF =
-  { PluginCodec_BoolOption,    H263_ANNEX_F,   false,  PluginCodec_MinMerge, "1", "F", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_F,   false,  PluginCodec_AndMerge, "1", "F", "0" };
 
 static struct PluginCodec_Option const annexI =
-  { PluginCodec_BoolOption,    H263_ANNEX_I,   false,  PluginCodec_MinMerge, "1", "I", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_I,   false,  PluginCodec_AndMerge, "1", "I", "0" };
 
 static struct PluginCodec_Option const annexJ =
-  { PluginCodec_BoolOption,    H263_ANNEX_J,   true,  PluginCodec_MinMerge, "1", "J", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_J,   true,  PluginCodec_AndMerge, "1", "J", "0" };
 
 static struct PluginCodec_Option const annexK =
-  { PluginCodec_IntegerOption, H263_ANNEX_K,   true,  PluginCodec_EqualMerge, "0", "K", "0", 0, "0", "4" };
+  { PluginCodec_IntegerOption, H263_ANNEX_K,   true,  PluginCodec_MinMerge, "0", "K", "0", 0, "0", "4" };
 
 static struct PluginCodec_Option const annexN =
   { PluginCodec_BoolOption,    H263_ANNEX_N,   true,  PluginCodec_AndMerge, "0", "N", "0" };
@@ -1487,7 +1487,7 @@ static struct PluginCodec_Option const annexT =
   { PluginCodec_BoolOption,    H263_ANNEX_T,   true,  PluginCodec_AndMerge, "0", "T", "0" };
 
 static struct PluginCodec_Option const annexD =
-  { PluginCodec_BoolOption,    H263_ANNEX_D,   true,  PluginCodec_MinMerge, "1", "D", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_D,   true,  PluginCodec_AndMerge, "1", "D", "0" };
 
 static struct PluginCodec_Option const * const h263POptionTable[] = {
   &qcifMPI,
