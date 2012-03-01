@@ -253,8 +253,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   , releaseMethod(ReleaseWithNothing)
 //  , m_messageContext(NULL)
 {
-  synchronousOnRelease = false;
-
   SIPURL adjustedDestination = destination;
 
   // Look for a "proxy" parameter to override default proxy

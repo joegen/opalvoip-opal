@@ -221,7 +221,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , displayName(ep.GetDefaultDisplayName())
   , remotePartyName(token)
   , callEndReason(NumCallEndReasons)
-  , synchronousOnRelease(true)
   , silenceDetector(NULL)
 #if OPAL_AEC
   , echoCanceler(NULL)
@@ -427,7 +426,7 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 }
 
 
-void OpalConnection::Release(CallEndReason reason)
+void OpalConnection::Release(CallEndReason reason, bool synchronous)
 {
   {
     PWaitAndSignal mutex(m_phaseMutex);
@@ -436,9 +435,10 @@ void OpalConnection::Release(CallEndReason reason)
       return;
     }
     SetPhase(ReleasingPhase);
+    SetCallEndReason(reason);
   }
 
-  if (synchronousOnRelease) {
+  if (synchronous) {
     if (!LockReadWrite()) {
       PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
@@ -447,7 +447,6 @@ void OpalConnection::Release(CallEndReason reason)
     PTRACE(3, "OpalCon\tReleasing " << *this);
 
     // Now set reason for the connection close
-    SetCallEndReason(reason);
 
     UnlockReadWrite();
 
