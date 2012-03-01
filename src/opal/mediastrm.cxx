@@ -72,7 +72,6 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , timestamp(0)
   , marker(true)
   , mismatchedPayloadTypes(0)
-  , mediaPatch(NULL)
   , m_payloadType(mediaFormat.GetPayloadType())
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
@@ -109,11 +108,9 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 
 bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
 
-  // If we are source, then update the sink side, and vice versa
   return mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
 }
 
@@ -133,9 +130,8 @@ bool OpalMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMedia
 
 PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PSafeLockReadOnly safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch == NULL)
     return false;
@@ -164,9 +160,8 @@ PBoolean OpalMediaStream::Start()
   if (!Open())
     return false;
 
-  PSafeLockReadOnly safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch == NULL)
     return false;
@@ -203,23 +198,7 @@ PBoolean OpalMediaStream::Close()
   UnlockReadWrite();
 
   connection.OnClosedMediaStream(*this);
-
-  if (mediaPatch != NULL && LockReadWrite()) {
-    PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
-    OpalMediaPatch * patch = mediaPatch;
-    mediaPatch = NULL;
-
-    if (IsSink())
-      patch->RemoveSink(this);
-	
-    UnlockReadWrite();
-
-    if (IsSource()) {
-      patch->Close();
-      connection.GetEndPoint().GetManager().DestroyMediaPatch(patch);
-    }
-  }
-
+  SetPatch(NULL);
   connection.RemoveMediaStream(*this);
   return true;
 }
@@ -393,14 +372,11 @@ PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
 
 PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 {
-  OpalMediaPatch * patch = NULL;
-  if (LockReadOnly()) {
-    patch = mediaPatch;
-    UnlockReadOnly();
-  }
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
 
   // OpalMediaPatch::PushFrame() might block, do outside of mutex
-  return patch != NULL && patch->PushFrame(packet);
+  return mediaPatch != NULL && mediaPatch->PushFrame(packet);
 }
 
 
@@ -435,13 +411,16 @@ bool OpalMediaStream::EnableJitterBuffer(bool) const
 
 bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 {
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
 
   // If we are source, then update the sink side, and vice versa
   if (!fromPatch && mediaPatch != NULL)
     return mediaPatch->SetPaused(pause);
+
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return false;
 
   if (m_paused == pause)
     return false;
@@ -456,6 +435,13 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return false;
+
+  PatchPtr mediaPatch = m_mediaPatch;
+  m_mediaPatch = patch;
+
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
     ostream & trace = PTrace::Begin(4, __FILE__, __LINE__);
@@ -469,23 +455,11 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
   }
 #endif
 
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
-
-  if (mediaPatch == NULL) {
-    mediaPatch = patch;
-    return true;
-  }
-
-  OpalMediaPatch * oldPatch = mediaPatch;
-  mediaPatch = patch;
-
-  if (IsSink())
-    oldPatch->RemoveSink(this);
-  else {
-    oldPatch->Close();
-    connection.GetEndPoint().GetManager().DestroyMediaPatch(oldPatch);
+  if (mediaPatch != NULL) {
+    if (IsSink())
+      mediaPatch->RemoveSink(this);
+    else
+      mediaPatch->Close();
   }
 
   return true;
@@ -494,24 +468,30 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 
 void OpalMediaStream::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadOnly safeLock(*this);
-  if (safeLock.IsLocked() && mediaPatch != NULL)
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
+
+  if (mediaPatch != NULL)
     mediaPatch->AddFilter(filter, stage);
 }
 
 
 PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadOnly safeLock(*this);
-  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(filter, stage);
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
+
+  return mediaPatch != NULL && mediaPatch->RemoveFilter(filter, stage);
 }
 
 
 #if OPAL_STATISTICS
 void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
-  PSafeLockReadOnly safeLock(*this);
-  if (safeLock.IsLocked() && mediaPatch != NULL && !fromPatch)
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
+
+  if (mediaPatch != NULL && !fromPatch)
     mediaPatch->GetStatistics(statistics, IsSink());
 }
 #endif
@@ -519,6 +499,9 @@ void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromP
 
 void OpalMediaStream::OnStartMediaPatch() 
 { 
+  // We make referenced copy of pointer so can't be deleted out from under us
+  PatchPtr mediaPatch = m_mediaPatch;
+
   connection.OnStartMediaPatch(*mediaPatch);
 }
 
@@ -775,7 +758,11 @@ bool OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 
 PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  if (!isOpen || IsSink() || mediaPatch == NULL)
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
+    return false;
+
+  if (!isOpen || IsSink() || m_mediaPatch == NULL)
     return OpalMediaStream::SetPatch(patch);
 
   rtpSession.Close(true);
