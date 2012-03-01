@@ -176,6 +176,19 @@ AC_SUBST(OPAL_VERSION)
 AC_SUBST(BUILD_TYPE)
 
 dnl ########################################################################
+dnl Check for PTLIB
+dnl ########################################################################
+
+OPAL_FIND_PTLIB()
+
+PKG_REQUIRES="$PKG_REQUIRES ptlib"
+CFLAGS="$CFLAGS $PTLIB_CFLAGS"
+LDFLAGS="$LDFLAGS $PTLIB_CFLAGS"
+CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
+#LIBS="$LIBS $PTLIB_LIBS"
+
+
+dnl ########################################################################
 dnl Construct the plugins install path
 dnl ########################################################################
 
@@ -197,22 +210,16 @@ else
   EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
 fi
 
+echo $OSTYPE $target_os
+case "$OSTYPE" in
+  cygwin | mingw )
+    EXPANDED_PLUGIN_DIR="plugins"
+  ;;
+esac
+
 AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
 AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
 
-
-
-dnl ########################################################################
-dnl Check for PTLIB
-dnl ########################################################################
-
-OPAL_FIND_PTLIB()
-
-PKG_REQUIRES="$PKG_REQUIRES ptlib"
-CFLAGS="$CFLAGS $PTLIB_CFLAGS"
-LDFLAGS="$LDFLAGS $PTLIB_CFLAGS"
-CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-#LIBS="$LIBS $PTLIB_LIBS"
 
 
 dnl ########################################################################
@@ -232,7 +239,7 @@ case "$OSTYPE" in
         ;;
 
         Darwin )
-	  SHAREDLIBEXT=dylib
+          SHAREDLIBEXT=dylib
           SHARED_CFLAGS="-fPIC"
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
@@ -241,22 +248,20 @@ case "$OSTYPE" in
 #	   CFLAGS="$CFLAGS -fno-common -dynamic"
 #          LDSO="-dynamiclib -multiply_defined suppress"
 dnl FIXME
-STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
+          STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
-	  case "$target_cpu" in
-	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
+          case "$target_cpu" in
+	       x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
           esac
           HAVE_RANLIB=no
         ;;
 
         cygwin|mingw )
-	  SHAREDLIBEXT=dll
+          SHAREDLIBEXT=dll
           SHARED_CFLAGS=
           OPAL_DETERMINE_LIBNAMES(DEBUG)
           OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-Wl,--kill-at -shared"
-
-#	  LDSO="-module -avoid-version -shared"
           HAVE_RANLIB=yes
         ;;
 
