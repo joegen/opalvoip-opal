@@ -187,8 +187,6 @@ H323Connection::H323Connection(OpalCall & call,
   , features(ep.GetFeatureSet())
 #endif
 {
-  synchronousOnRelease = false;
-
   if (alias.IsEmpty())
     remotePartyName = remotePartyAddress = address;
   else {
