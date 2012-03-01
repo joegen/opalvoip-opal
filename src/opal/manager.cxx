@@ -1102,17 +1102,10 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
                                                PBoolean requiresPatchThread)
 {
-  if (requiresPatchThread) {
+  if (requiresPatchThread)
     return new OpalMediaPatch(source);
-  } else {
+  else
     return new OpalPassiveMediaPatch(source);
-  }
-}
-
-
-void OpalManager::DestroyMediaPatch(OpalMediaPatch * patch)
-{
-  delete patch;
 }
 
 
