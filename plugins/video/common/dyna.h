@@ -109,7 +109,6 @@ class FFMPEGLibrary
 
     void AvLogSetLevel(int level);
     void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
-    int FFCheckAlignment(void);
 
     bool IsLoaded();
     CriticalSection processLock;
