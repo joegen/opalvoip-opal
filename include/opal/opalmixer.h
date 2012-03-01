@@ -44,10 +44,12 @@
 
 #include <opal/localep.h>
 #include <codec/vidcodec.h>
+#include <ptclib/threadpool.h>
 
 
 class RTP_DataFrame;
 class OpalJitterBuffer;
+class OpalMixerConnection;
 
 
 //#define OPAL_MIXER_AUDIO_DEBUG 1
@@ -514,17 +516,41 @@ class OpalMixerNodeManager : public PObject
     void RemoveNodeNames(
       PStringList names   ///< list of alias names for nodes
     );
+
+    /**Queue user input for braodcast
+      */
+    void QueueUserInput(
+      const PSafePtr<OpalMixerNode> & node,     ///< Node to qhich user input is broadcast
+      const OpalMixerConnection * connection,   ///<  Connection NOT to send to
+      const PString & value                     ///<  String value of indication
+    );
   //@}
 
   protected:
     PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
     PDictionary<PString, OpalMixerNode>               m_nodesByName;
+
+    struct UserInput {
+      UserInput(
+        const PSafePtr<OpalMixerNode> & node,
+        const OpalMixerConnection * connection,
+        const PString & value
+      ) : m_node(node)
+        , m_connection(connection)
+        , m_value(value)
+      { }
+
+      PSafePtr<OpalMixerNode> m_node;
+      const OpalMixerConnection * m_connection;
+      PString m_value;
+
+      void Work();
+    };
+    PQueuedThreadPool<UserInput> m_userInputPool;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-class OpalMixerConnection;
 
 /** Mixer EndPoint.
     This class represents an endpoint that mixes media. It can be used as the
