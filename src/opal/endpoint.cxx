@@ -40,7 +40,7 @@
 #include <opal/endpoint.h>
 #include <opal/manager.h>
 #include <opal/call.h>
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 //
 // TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
@@ -585,14 +585,6 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
 }
 
 
-OpalMediaSession * OpalEndPoint::CreateMediaSession(OpalConnection & /*connection*/,
-                                                    unsigned /*sessionId*/,
-                                                    const OpalMediaType & /*mediaType*/)
-{
-  return NULL;
-}
-
-
 PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
                                      OpalMediaStream & stream)
 {
@@ -603,6 +595,42 @@ PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
 void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   manager.OnClosedMediaStream(stream);
+}
+
+
+void OpalEndPoint::SetMediaCryptoSuites(const PStringArray & security)
+{
+  m_mediaCryptoSuites = security;
+
+  PStringArray valid = GetAllMediaCryptoSuites();
+  PAssert(!valid.IsEmpty(), PInvalidParameter);
+
+  PINDEX i = 0;
+  while (i < m_mediaCryptoSuites.GetSize()) {
+    if (valid.GetValuesIndex(m_mediaCryptoSuites[i]) != P_MAX_INDEX)
+      ++i;
+    else
+      m_mediaCryptoSuites.RemoveAt(i);
+  }
+
+  if (m_mediaCryptoSuites.IsEmpty())
+    m_mediaCryptoSuites.AppendString(valid[0]);
+}
+
+
+PStringArray OpalEndPoint::GetAllMediaCryptoSuites() const
+{
+  PStringArray cryptoSuites;
+
+  cryptoSuites.AppendString(OpalMediaCryptoSuite::ClearText());
+
+  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+  for  (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
+    if (*it != OpalMediaCryptoSuite::ClearText() && OpalMediaCryptoSuiteFactory::CreateInstance(*it)->Supports(GetPrefixName()))
+      cryptoSuites.AppendString(*it);
+  }
+
+  return cryptoSuites;
 }
 
 

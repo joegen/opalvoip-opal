@@ -41,6 +41,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <opal/localep.h>
 
 
@@ -271,7 +272,6 @@ class OpalFaxConnection : public OpalLocalConnection
     void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
     OpalMediaStatistics m_finalStatistics;
 #endif
-
 };
 
 
@@ -284,9 +284,13 @@ class T38_UDPTLPacket;
 class OpalFaxSession : public OpalMediaSession
 {
   public:
-    OpalFaxSession(OpalConnection & connection, unsigned sessionId);
+    static const PCaselessString & UDPTL();
+
+    OpalFaxSession(const Init & init);
     ~OpalFaxSession();
 
+    virtual bool Open(const PString & localInterface);
+    virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
 

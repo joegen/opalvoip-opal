@@ -217,14 +217,7 @@ class SIPEndPoint : public OpalRTPEndPoint
        The default implementation is to create a OpalSIPConnection.
       */
     virtual SIPConnection * CreateConnection(
-      OpalCall & call,                         ///<  Owner of connection
-      const PString & token,                   ///<  token used to identify connection
-      void * userData,                         ///<  User data for connection
-      const SIPURL & destination,              ///<  Destination for outgoing call
-      OpalTransport * transport,               ///<  Transport INVITE has been received on
-      SIP_PDU * invite,                        ///<  Original INVITE pdu
-      unsigned int options = 0,                ///<  connection options
-      OpalConnection::StringOptions * stringOptions = NULL ///<  complex string options
+      const SIPConnection::Init & init     ///< Initialisation parameters
 
     );
     
@@ -1096,6 +1089,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnMessageFailed(const SIPURL &, SIP_PDU::StatusCodes));
+    P_REMOVE_VIRTUAL(SIPConnection *,CreateConnection(OpalCall &, const PString &, void *, const SIPURL &, OpalTransport *, SIP_PDU *, unsigned, OpalConnection::StringOptions *), NULL);
 };
 
 

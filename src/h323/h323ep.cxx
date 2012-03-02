@@ -155,6 +155,7 @@ PString H323EndPoint::GetDefaultTransport() const
     ;
 }
 
+
 void H323EndPoint::SetEndpointTypeInfo(H225_EndpointType & info) const
 {
   info.IncludeOptionalField(H225_EndpointType::e_vendor);
@@ -516,14 +517,6 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
                           userData,
                           options,
                           stringOptions);
-}
-
-
-OpalMediaSession * H323EndPoint::CreateMediaSession(OpalConnection & connection,
-                                                    unsigned sessionId,
-                                                    const OpalMediaType & mediaType)
-{
-  return new H323RTPSession(dynamic_cast<H323Connection &>(connection), sessionId, mediaType);
 }
 
 

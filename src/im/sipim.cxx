@@ -114,11 +114,11 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OpalSIPIMMediaType : public OpalMediaTypeDefinition 
+class OpalSIPIMMediaType : public OpalRTPAVPMediaType 
 {
   public:
     OpalSIPIMMediaType()
-      : OpalMediaTypeDefinition(SIP_IM_MediaType, "message|sip")
+      : OpalRTPAVPMediaType(SIP_IM_MediaType, "message")
     {
     }
 

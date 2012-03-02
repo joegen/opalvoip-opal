@@ -267,11 +267,15 @@ class OpalMSRPMediaSession : public OpalMediaSession
 {
   PCLASSINFO(OpalMSRPMediaSession, OpalMediaSession);
   public:
-    OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId);
+    static const PCaselessString & TCP_MSRP();
+
+    OpalMSRPMediaSession(const Init & init);
     ~OpalMSRPMediaSession();
 
     virtual PObject * Clone() const { return new OpalMSRPMediaSession(*this); }
 
+    virtual const PCaselessString & GetSessionType() const { return TCP_MSRP(); }
+    virtual bool Open(const PString & localInterface);
     virtual bool Close();
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
@@ -313,10 +317,8 @@ class OpalMSRPMediaSession : public OpalMediaSession
     OpalTransportAddress m_remoteAddress;
 
   private:
-    OpalMSRPMediaSession(const OpalMSRPMediaSession & obj)
-      : OpalMediaSession(obj.m_connection, obj.m_sessionId, obj.m_mediaType)
-      , m_manager(obj.m_manager)
-    { }
+    OpalMSRPMediaSession(const OpalMSRPMediaSession & other)
+      : OpalMediaSession(Init(other.m_connection, other.m_sessionId, other.m_mediaType)), m_manager(other.m_manager) { }
     void operator=(const OpalMSRPMediaSession &) { }
 };
 

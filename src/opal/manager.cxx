@@ -1267,13 +1267,13 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
     return ok;
   }
 
-  PINDEX equal = spec.Find('=');
-  if (equal == P_MAX_INDEX) {
+  PString pat, dest;
+  if (!spec.Split('=', pat, dest)) {
     PTRACE(2, "OpalMan\tInvalid route table entry: \"" << spec << '"');
     return false;
   }
 
-  RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
+  RouteEntry * entry = new RouteEntry(pat, dest);
   if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
     PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
@@ -1534,7 +1534,7 @@ bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
         (!PFile::Exists(m_certificateFile) || !PFile::Exists(m_privateKeyFile))) {
     PStringStream dn;
     dn << "/O=" << PProcess::Current().GetManufacturer()
-       << "/CN=" << PProcess::Current().GetName() << '@' << PIPSocket::GetHostName();
+       << "/CN=" << PIPSocket::GetHostName();
 
     PSSLPrivateKey key(2048);
     PSSLCertificate root;

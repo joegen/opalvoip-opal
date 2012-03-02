@@ -41,12 +41,13 @@
 
 #include <ptlib/socket.h>
 #include <opal/transports.h>
+#include <rtp/srtp_session.h>
 
 
 #define SIP_DEFAULT_SESSION_NAME    "Opal SIP Session"
-#define SDP_MEDIA_TRANSPORT_RTPAVP  "RTP/AVP"
 
 static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
+
 
 #define new PNEW
 
@@ -638,11 +639,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   port = (WORD)portStr.AsUnsigned();
 
   // parse the transport
-  PString transport = tokens[2];
-  if (transport != GetSDPTransportType()) {
-    PTRACE(2, "SDP\tMedia session transport " << transport << " not compatible with " << GetSDPTransportType());
-    return false;
-  }
+  m_transportType = tokens[2];
 
   // check everything
   switch (port) {
@@ -716,6 +713,11 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
 bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 {
+  if (m_transportType != GetSDPTransportType()) {
+    PTRACE(2, "SDP\tMedia session transport " << m_transportType << " not compatible with " << GetSDPTransportType());
+    return false;
+  }
+
   unsigned bw = GetBandwidth(SDPSessionDescription::TransportIndependentBandwidthType());
   if (bw == 0)
     bw = GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType())*1000;
@@ -732,9 +734,21 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 }
 
 
+void SDPMediaDescription::SetCryptoKeys(OpalMediaCryptoKeyList &)
+{
+  // Do nothing
+}
+
+
+OpalMediaCryptoKeyList SDPMediaDescription::GetCryptoKeys() const
+{
+  return OpalMediaCryptoKeyList();
+}
+
+
 void SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-  /* NOTE: must make sure anything passed through to a SDPFormat isntance does
+  /* NOTE: must make sure anything passed through to a SDPFormat instance does
            not require it to have an OpalMediaFormat yet, as that is not created
            until PostDecode() */
 
@@ -970,6 +984,140 @@ PString SDPDummyMediaDescription::GetSDPPortList() const
 
 //////////////////////////////////////////////////////////////////////////////
 
+SDPCryptoSuite::SDPCryptoSuite(unsigned tag)
+  : m_tag(tag)
+{
+  if (m_tag == 0)
+    m_tag = 1;
+}
+
+
+bool SDPCryptoSuite::Decode(const PString & sdp)
+{
+  if (sdp.GetLength() < 7 || sdp[0] < '1' || sdp[0] > '2' || sdp[1] != ' ')
+    return false;
+
+  m_tag = sdp[0] - '0';
+
+  PINDEX space = sdp.Find(' ', 2);
+  if (space == P_MAX_INDEX)
+    return false;
+
+  m_suiteName = sdp(2, space-1);
+
+  PINDEX sessionParamsPos = sdp.Find(' ', space+1);
+  PURL::SplitVars(sdp.Mid(sessionParamsPos+1), m_sessionParams, ' ', '=', PURL::QuotedParameterTranslation);
+
+  PStringArray keyParams = sdp(space+1, sessionParamsPos-1).Tokenise(';');
+  for (PINDEX kp =0; kp < keyParams.GetSize(); ++kp) {
+    PCaselessString method, info;
+    if (!keyParams[kp].Split(':', method, info) || method != "inline" || info.IsEmpty())
+      return false;
+
+    PStringArray keyParts = info.Tokenise('|');
+    m_keyParams.push_back(KeyParam(keyParts[0]));
+    KeyParam & newKeyParam = m_keyParams.back();
+
+    switch (keyParts.GetSize()) {
+      case 3 :
+        {
+          PString idx, len;
+          if (!keyParts[2].Split(':', idx, len))
+            return false;
+          if ((newKeyParam.m_mkiIndex = idx.AsUnsigned()) == 0)
+            return false;
+          if ((newKeyParam.m_mkiLength = len.AsUnsigned()) == 0)
+            return false;
+        }
+        // Do next case
+
+      case 2 :
+        {
+          PCaselessString lifetime = keyParts[1];
+          if (lifetime.NumCompare("2^") == PObject::EqualTo)
+            newKeyParam.m_lifetime = 1ULL << lifetime.Mid(2).AsUnsigned();
+          else
+            newKeyParam.m_lifetime = lifetime.AsUnsigned64();
+          if (newKeyParam.m_lifetime == 0)
+            return false;
+        }
+    }
+  }
+
+  return !m_keyParams.empty();
+}
+
+
+bool SDPCryptoSuite::SetKeyInfo(const OpalMediaCryptoKeyInfo & keyInfo)
+{
+  PString str = keyInfo.ToString();
+  if (str.IsEmpty())
+    return false;
+
+  m_suiteName = keyInfo.GetCryptoSuite().GetFactoryName();
+
+  m_keyParams.clear();
+  m_keyParams.push_back(KeyParam(str));
+  return true;
+}
+
+
+OpalMediaCryptoKeyInfo * SDPCryptoSuite::GetKeyInfo() const
+{
+  OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(m_suiteName);
+  if (cryptoSuite == NULL) {
+    PTRACE(2, "SDP\tUnknown crypto suite \"" << m_suiteName << '"');
+    return NULL;
+  }
+
+  OpalMediaCryptoKeyInfo * keyInfo = cryptoSuite->CreateKeyInfo();
+  if (PAssertNULL(keyInfo) == NULL)
+    return NULL;
+
+  keyInfo->SetTag(m_tag);
+
+  if (keyInfo->FromString(m_keyParams.front().m_keySalt))
+    return keyInfo;
+
+  delete keyInfo;
+  return NULL;
+}
+
+
+void SDPCryptoSuite::PrintOn(ostream & strm) const
+{
+  strm << "a=crypto:" << m_tag << ' ' << m_suiteName << " inline:";
+  for (list<KeyParam>::const_iterator it = m_keyParams.begin(); it != m_keyParams.end(); ++it) {
+    strm << it->m_keySalt;
+    if (it->m_lifetime > 0) {
+      strm << '|';
+      unsigned bit = 1;
+      for (bit = 48; bit > 0; --bit) {
+        if ((1ULL<<bit) == it->m_lifetime) {
+          strm << "2^" << bit;
+          break;
+        }
+      }
+      if (bit == 0)
+        strm << it->m_lifetime;
+
+      if (it->m_mkiIndex > 0)
+        strm << '|' << it->m_mkiIndex << ':' << it->m_mkiLength;
+    }
+  }
+
+  for (PStringOptions::const_iterator it = m_sessionParams.begin(); it != m_sessionParams.end(); ++it) {
+    strm << ' ' << it->first;
+    if (!it->second.IsEmpty())
+      strm << '=' << it->second;
+  }
+
+  strm << "\r\n";
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
 {
@@ -978,7 +1126,7 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
-  return SDP_MEDIA_TRANSPORT_RTPAVP; 
+  return m_cryptoSuites.IsEmpty() ? OpalRTPSession::RTP_AVP() : OpalSRTPSession::RTP_SAVP(); 
 }
 
 
@@ -993,29 +1141,57 @@ PString SDPRTPAVPMediaDescription::GetSDPPortList() const
   if (formats.IsEmpty())
     return " 127"; // Have to have SOMETHING
 
-  PStringStream str;
-
-  SDPMediaFormatList::const_iterator format;
+  PStringStream strm;
 
   // output RTP payload types
-  for (format = formats.begin(); format != formats.end(); ++format)
-    str << ' ' << (int)format->GetPayloadType();
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+    strm << ' ' << (int)format->GetPayloadType();
 
-  return str;
+  return strm;
 }
 
-bool SDPRTPAVPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+bool SDPRTPAVPMediaDescription::PrintOn(ostream & strm, const PString & connectString) const
 {
   // call ancestor
-  if (!SDPMediaDescription::PrintOn(str, connectString))
+  if (!SDPMediaDescription::PrintOn(strm, connectString))
     return false;
 
   // output attributes for each payload type
-  SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
-    str << *format;
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+    strm << *format;
+
+  for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
+    strm << *crypto;
 
   return true;
+}
+
+
+void SDPRTPAVPMediaDescription::SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys)
+{
+  m_cryptoSuites.RemoveAll();
+  unsigned tag = 1;
+  for (OpalMediaCryptoKeyList::iterator it = cryptoKeys.begin(); it != cryptoKeys.end(); ++it) {
+    SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(tag);
+    if (!cryptoSuite->SetKeyInfo(*it))
+      delete cryptoSuite;
+    else {
+      m_cryptoSuites.Append(cryptoSuite);
+      it->SetTag(cryptoSuite->GetTag());
+      ++tag;
+    }
+  }
+}
+
+
+OpalMediaCryptoKeyList SDPRTPAVPMediaDescription::GetCryptoKeys() const
+{
+  OpalMediaCryptoKeyList keys;
+
+  for (PList<SDPCryptoSuite>::const_iterator it = m_cryptoSuites.begin(); it != m_cryptoSuites.end(); ++it)
+    keys.Append(it->GetKeyInfo());
+
+  return keys;
 }
 
 
@@ -1057,6 +1233,17 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       SDPMediaFormat * format = FindFormat(params);
       if (format != NULL)
         format->SetRTCP_FB(params);
+    }
+    return;
+  }
+
+  if (attr *= "crypto") {
+    SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
+    if (cryptoSuite->Decode(value))
+      m_cryptoSuites.Append(cryptoSuite);
+    else {
+      delete cryptoSuite;
+      PTRACE(2, "SDP\tCannot decode SDP crypto attribute: \"" << value << '"');
     }
     return;
   }
@@ -1299,7 +1486,7 @@ SDPApplicationMediaDescription::SDPApplicationMediaDescription(const OpalTranspo
 
 PCaselessString SDPApplicationMediaDescription::GetSDPTransportType() const
 { 
-  return "rtp/avp"; 
+  return OpalRTPSession::RTP_AVP(); 
 }
 
 

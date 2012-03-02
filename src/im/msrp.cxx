@@ -56,15 +56,17 @@
 
 const char MSRPMediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"msrp";
 
+const PCaselessString & OpalMSRPMediaSession::TCP_MSRP() { static const PConstCaselessString s("TCP/MSRP"); return s; }
+
+static OpalMediaSessionFactory::Worker<OpalMSRPMediaSession> tcp_msrp_session(OpalMSRPMediaSession::TCP_MSRP());
+
 class OpalMSRPMediaType : public OpalMediaTypeDefinition 
 {
   public:
     OpalMSRPMediaType()
-      : OpalMediaTypeDefinition(MSRPMediaType, "message|tcp/msrp")
+      : OpalMediaTypeDefinition(MSRPMediaType, "message", OpalMSRPMediaSession::TCP_MSRP())
     {
     }
-
-    virtual OpalMediaSession * CreateMediaSession(OpalConnection & conn, unsigned sessionID) const;
 
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(
@@ -304,20 +306,25 @@ PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, MSRPInitialiser);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-OpalMSRPMediaSession::OpalMSRPMediaSession(OpalConnection & connection, unsigned sessionId)
-  : OpalMediaSession(connection, sessionId, MSRPMediaType)
-  , m_manager(MSRPInitialiser::KickStart(connection.GetEndPoint().GetManager()))
-  , m_isOriginating(connection.IsOriginating())
-  , m_localMSRPSessionId(m_manager.CreateSessionID())
-  , m_localUrl(m_manager.SessionIDToURL(connection.GetTransport().GetLocalAddress(), m_localMSRPSessionId))
+OpalMSRPMediaSession::OpalMSRPMediaSession(const Init & init)
+  : OpalMediaSession(init)
+  , m_manager(MSRPInitialiser::KickStart(init.m_connection.GetEndPoint().GetManager()))
 {
-  // set the local URL
 }
 
 
 OpalMSRPMediaSession::~OpalMSRPMediaSession()
 {
   CloseMSRP();
+}
+
+
+bool OpalMSRPMediaSession::Open(const PString & localInterface)
+{
+  m_isOriginating = m_connection.IsOriginating();
+  m_localMSRPSessionId = m_manager.CreateSessionID();
+  m_localUrl = m_manager.SessionIDToURL(localInterface, m_localMSRPSessionId);
+  return true;
 }
 
 
@@ -344,7 +351,8 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
                                                                          unsigned sessionID, 
                                                                          PBoolean isSource)
 {
-  PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in " << (m_connection.IsOriginating() ? "originator" : "receiver") << " with " << m_localUrl);
+  PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in "
+         << (m_connection.IsOriginating() ? "originator" : "receiver") << " with " << m_localUrl);
   return new OpalMSRPMediaStream(m_connection, mediaFormat, sessionID, isSource, *this);
 }
 
@@ -416,14 +424,6 @@ void OpalMSRPMediaSession::SetConnection(PSafePtr<OpalMSRPManager::Connection> &
     m_connectionPtr = conn;
     m_connectionPtr.SetSafetyMode(PSafeReference);
   }
-}
-
-////////////////////////////////////////////////////////
-
-OpalMediaSession * OpalMSRPMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
-{
-  PTRACE(2, "MSRP\tCreating MSRP media session for SIP connection");
-  return new OpalMSRPMediaSession(conn, sessionID);
 }
 
 ////////////////////////////////////////////////////////

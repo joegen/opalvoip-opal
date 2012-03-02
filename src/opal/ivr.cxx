@@ -325,13 +325,9 @@ bool OpalIVRConnection::StartScript(const PString & script)
       continue;
     }
 
-    PINDEX pos = str.Find("=");
-    PString key(str);
-    PString val;
-    if (pos != P_MAX_INDEX) {
-      key = str.Left(pos);
-      val = str.Mid(pos+1);
-    }
+    PString key, val;
+    if (!str.Split('=', key, val))
+      key = str;
 
     if (key *= "repeat") {
       if (!val.IsEmpty())

@@ -381,7 +381,7 @@ endif
 
 ifeq ($(OPAL_SRTP), yes)
 
-SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
+SOURCES += $(OPAL_SRCDIR)/rtp/srtp_session.cxx
 
 endif
 
