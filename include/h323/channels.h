@@ -154,7 +154,7 @@ class H323Channel : public PObject
        During OLC negotations teh master may change the session number being
        used for the logical channel.
 
-       Returns false if the sesion could not be renumbered.
+       Returns false if the session could not be renumbered.
       */
     virtual bool SetSessionID(
       unsigned sessionID   ///< New session ID
@@ -624,7 +624,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
        During OLC negotations teh master may change the session number being
        used for the logical channel.
 
-       Returns false if the sesion could not be renumbered.
+       Returns false if the session could not be renumbered.
       */
     virtual bool SetSessionID(
       unsigned sessionID   ///< New session ID

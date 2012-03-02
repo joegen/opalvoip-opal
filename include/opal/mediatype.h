@@ -43,7 +43,6 @@
 
 
 class OpalMediaTypeDefinition;
-class OpalSecurityMode;
 class OpalConnection;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -127,7 +126,8 @@ class OpalMediaTypeDefinition
     /// Create a new media type definition
     OpalMediaTypeDefinition(
       const char * mediaType,          ///< name of the media type (audio, video etc)
-      const char * sdpType,            ///< name of the SDP type 
+      const char * sdpType,            ///< name of the SDP type
+      const char * mediaSession,       ///< name of media session class (via factory)
       unsigned requiredSessionId = 0,  ///< Session ID to use, asserts if already in use
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer   ///< Default value for auto-start transmit & receive
     );
@@ -145,19 +145,17 @@ class OpalMediaTypeDefinition
     void SetAutoStart(OpalMediaType::AutoStartMode v) { m_autoStart = v; }
     void SetAutoStart(OpalMediaType::AutoStartMode v, bool on) { if (on) m_autoStart |= v; else m_autoStart -= v; }
 
-    /** Create a media session suitable for the media type.
-      */
-    virtual OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,    ///< Connection that owns the sesion
-      unsigned sessionId              ///< Unique (in connection) session ID for session
-    ) const;
-
     /** Return the default session ID for this media type.
       */
     unsigned GetDefaultSessionId() const { return m_defaultSessionId; }
 
+    /** Return the default session type (factory name) for this media type.
+      */
+    const PString & GetMediaSessionType() const { return m_mediaSessionType; }
+
   protected:
     OpalMediaType m_mediaType;
+    PString       m_mediaSessionType;
     unsigned      m_defaultSessionId;
     OpalMediaType::AutoStartMode m_autoStart;
 
@@ -180,6 +178,9 @@ class OpalMediaTypeDefinition
   protected:
     std::string m_sdpType;
 #endif
+
+  private:
+    P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(OpalConnection &, unsigned), NULL);
 };
 
 
@@ -234,11 +235,6 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
       unsigned     requiredSessionId = 0,
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer
     );
-
-    OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,    ///< Connection that owns the sesion
-      unsigned sessionId              ///< Unique (in connection) session ID for session
-    ) const;
 };
 
 
@@ -278,11 +274,6 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 {
   public:
     OpalFaxMediaType();
-
-    OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,    ///< Connection that owns the sesion
-      unsigned sessionId              ///< Unique (in connection) session ID for session
-    ) const;
 
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(

@@ -404,13 +404,8 @@ AC_SUBST(OPAL_ZRTP)
 dnl     ########################
 dnl     SRTP
 dnl     ########################
-dnl MSWIN_DISPLAY     libsrtp,Cisco libSRTP support
-dnl MSWIN_IF_FEATURE  libsrtp,!libzrtp
-dnl MSWIN_CHECK_FILE  libsrtp,include\srtp.h,HAS_LIBSRTP=1
-dnl MSWIN_DIR_SYMBOL  libsrtp,LIBSRTP_DIR
-dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
-dnl MSWIN_CHECK_DIR   libsrtp,..\external\srtp
-dnl MSWIN_CHECK_DIR   libsrtp,c:\libs
+dnl MSWIN_DISPLAY libsrtp,Cisco libSRTP support
+dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP
 
 AC_ARG_ENABLE([srtp],
               [AC_HELP_STRING([--enable-srtp],[enable SRTP protocol support])],
@@ -418,20 +413,15 @@ AC_ARG_ENABLE([srtp],
 
 SRTP_LIBS=
 SRTP_CFLAGS=
-if test "x$OPAL_ZRTP" = "xyes" ; then
-  AC_MSG_NOTICE([disable SRTP due to presence of ZRTP])
-  OPAL_SRTP=no
+if test "x$OPAL_SRTP" = "xno" ; then
+  AC_MSG_NOTICE([disabled by user])
 else
-  if test "x$OPAL_SRTP" = "xno" ; then
-    AC_MSG_NOTICE([disabled by user])
-  else
-    OPAL_FIND_LIBSRTP([OPAL_SRTP=yes], [OPAL_SRTP=no])
-    if test "x${OPAL_SRTP}" = "xyes" ; then
-      AC_DEFINE([OPAL_SRTP], [1], [libsrtp support])
-      OPAL_ADD_CFLAGS_LIBS([$SRTP_CFLAGS], [$SRTP_LIBS])
-    fi
-    OPAL_MSG_CHECK([libsrtp support],[$OPAL_SRTP])
+  OPAL_FIND_LIBSRTP([OPAL_SRTP=yes], [OPAL_SRTP=no])
+  if test "x${OPAL_SRTP}" = "xyes" ; then
+    AC_DEFINE([OPAL_SRTP], [1], [libsrtp support])
+    OPAL_ADD_CFLAGS_LIBS([$SRTP_CFLAGS], [$SRTP_LIBS])
   fi
+  OPAL_MSG_CHECK([libsrtp support],[$OPAL_SRTP])
 fi
 AC_SUBST(OPAL_SRTP)
 

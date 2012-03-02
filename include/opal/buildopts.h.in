@@ -277,32 +277,7 @@
 // libSRTP support
 //
 
-/* Temporarily disabled as is currently broken, doesn't work,
-    probably doesn't even compile, need to sort out API to enable/disable,
-    add SDP and H.245 handling, and link into libsrtp
-*/
-//#undef HAS_LIBSRTP
-
-#if HAS_LIBSRTP && !OPAL_ZRTP && !defined(_WIN32_WCE)
-
-  #define OPAL_SRTP  1
-
-  #if defined(_MSC_VER)
-
-    #pragma include_alias("srtp/srtp.h",         "@LIBSRTP_DIR@/include/srtp.h")
-    #pragma include_alias(<srtp/include/srtp.h>, <@LIBSRTP_DIR@/include/srtp.h>)
-    #pragma include_alias("crypto_kernel.h",     "@LIBSRTP_DIR@/crypto/include/crypto_kernel.h")
-    #pragma include_alias("rdbx.h",              "@LIBSRTP_DIR@/crypto/include/rdbx.h")
-    #pragma include_alias("rdb.h",               "@LIBSRTP_DIR@/crypto/include/rdb.h")
-    #pragma include_alias("integers.h",          "@LIBSRTP_DIR@/crypto/include/integers.h")
-
-    #ifdef _DEBUG
-      #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/libsrtp.lib"
-    #else
-      #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/libsrtp.lib"
-    #endif
-  #endif
-#endif
+#undef OPAL_SRTP
 
 
 /////////////////////////////////////////////////

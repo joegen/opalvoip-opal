@@ -43,7 +43,7 @@
 #include <opal/transports.h>
 #include <opal/mediatype.h>
 #include <opal/mediafmt.h>
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 /////////////////////////////////////////////////////////
 
@@ -196,6 +196,9 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType);
 
+    virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
+    virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
+
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : m_direction; }
@@ -221,6 +224,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
     OpalTransportAddress transportAddress;
+    PString m_transportType;
     WORD port;
     WORD portCount;
     OpalMediaType mediaType;
@@ -248,6 +252,41 @@ class SDPDummyMediaDescription : public SDPMediaDescription
 };
 
 
+class SDPCryptoSuite : public PObject
+{
+  public:
+    SDPCryptoSuite(unsigned tag);
+
+    bool SetKeyInfo(const OpalMediaCryptoKeyInfo & keyInfo);
+    OpalMediaCryptoKeyInfo * GetKeyInfo() const;
+
+    bool Decode(const PString & attrib);
+    void PrintOn(ostream & strm) const;
+
+    struct KeyParam {
+      KeyParam(const PString & keySalt)
+        : m_keySalt(keySalt)
+        , m_lifetime(0)
+        , m_mkiIndex(0)
+        , m_mkiLength(0)
+      { }
+
+      PString  m_keySalt;
+      PUInt64  m_lifetime;
+      unsigned m_mkiIndex;
+      unsigned m_mkiLength;
+    };
+
+    unsigned GetTag() const { return m_tag; }
+    const PString & GetName() const { return m_suiteName; }
+
+  protected:
+    unsigned       m_tag;
+    PString        m_suiteName;
+    list<KeyParam> m_keyParams;
+    PStringOptions m_sessionParams;
+};
+
 /////////////////////////////////////////////////////////
 //
 //  SDP media description for media classes using RTP/AVP transport (audio and video)
@@ -255,14 +294,19 @@ class SDPDummyMediaDescription : public SDPMediaDescription
 
 class SDPRTPAVPMediaDescription : public SDPMediaDescription
 {
-  PCLASSINFO(SDPRTPAVPMediaDescription, SDPMediaDescription);
+    PCLASSINFO(SDPRTPAVPMediaDescription, SDPMediaDescription);
   public:
     SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType);
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
     virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
+    virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
     virtual void SetAttribute(const PString & attr, const PString & value);
+
+  protected:
+    PList<SDPCryptoSuite> m_cryptoSuites;
 };
 
 /////////////////////////////////////////////////////////

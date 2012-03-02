@@ -47,6 +47,10 @@
 
 OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
 
+const PCaselessString & OpalFaxSession::UDPTL() { static const PConstCaselessString s("UDPTL"); return s; }
+
+static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxSession::UDPTL());
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -86,14 +90,8 @@ const OpalMediaFormat & GetOpalT38()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxMediaType::OpalFaxMediaType()
-  : OpalMediaTypeDefinition("fax", "image", 3) // Must be 3 for H.323 operation
+  : OpalMediaTypeDefinition("fax", "image", OpalFaxSession::UDPTL(), 3) // Must be 3 for H.323 operation
 {
-}
-
-
-OpalMediaSession * OpalFaxMediaType::CreateMediaSession(OpalConnection & conn, unsigned sessionID) const
-{
-  return new OpalFaxSession(conn, sessionID);
 }
 
 

@@ -53,13 +53,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323RTPSession::H323RTPSession(H323Connection & conn, unsigned sessionId, const OpalMediaType & mediaType)
-  : OpalRTPSession(conn, sessionId, mediaType)
-  , connection(conn)
-{
-}
-
-
 PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
                                     H245_H2250LogicalChannelParameters & param) const
 {
@@ -227,7 +220,7 @@ void H323RTPSession::OnSendRasInfo(H225_RTPSession & info)
 PBoolean H323RTPSession::OnReceivedAckAltPDU(H323_RTPChannel & channel,
                                              const H245_ArrayOf_GenericInformation & alternate)
 {
-  return connection.OnReceiveOLCGenericInformation(channel.GetSessionID(),alternate);
+  return dynamic_cast<H323Connection*>(&m_connection)->OnReceiveOLCGenericInformation(channel.GetSessionID(), alternate);
 }
 
 

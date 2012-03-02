@@ -1424,7 +1424,7 @@ class OpalH239MediaType : public OpalMediaTypeDefinition
 {
   public:
     OpalH239MediaType()
-      : OpalMediaTypeDefinition(H239MediaType, NULL)
+      : OpalMediaTypeDefinition(H239MediaType, NULL, NULL)
     { }
 };
 

@@ -608,15 +608,6 @@ class OpalEndPoint : public PObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
-    /** Create a new underlying media session instance.
-        Default behaviour returns NULL.
-      */
-    virtual OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,    ///< COnnection that owns the new media session
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
-
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
        stream according to the logic of its underlying protocol.
@@ -640,6 +631,30 @@ class OpalEndPoint : public PObject
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
+
+    /**Set media security methods in priority order.
+       The \p security parameter is an array of names for security methods,
+       e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
+       Note "Clear" is not compulsory and if absent will mean that a secure
+       media is required or the call will not proceed.
+
+       An empty list is assumed to be "Clear".
+      */
+    void SetMediaCryptoSuites(
+      const PStringArray & security   ///< New security methods to use
+    );
+
+    /**Get media security methods in priority order.
+       Returns an array of names for security methods,
+       e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
+      */
+    PStringArray GetMediaCryptoSuites() const
+      { return m_mediaCryptoSuites.IsEmpty() ? GetAllMediaCryptoSuites() : m_mediaCryptoSuites; }
+
+    /**Get all possible media security methods for this endpoint type.
+       Note this will always return "Clear" as the first entry.
+      */
+    virtual PStringArray GetAllMediaCryptoSuites() const;
 
 #if P_NAT
     /** Get all NAT Methods
@@ -898,6 +913,7 @@ class OpalEndPoint : public PObject
     OpalProductInfo productInfo;
     PString         defaultLocalPartyName;
     PString         defaultDisplayName;
+    PStringArray    m_mediaCryptoSuites;
 
     unsigned initialBandwidth;  // in 100s of bits/sev
     OpalConnection::StringOptions      m_defaultStringOptions;
@@ -921,6 +937,7 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &), false);
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
+    P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(OpalConnection &, unsigned, const OpalMediaType &), NULL);
 };
 
 

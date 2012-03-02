@@ -130,16 +130,33 @@ class SIPConnection : public OpalRTPConnection
 
   /**@name Construction */
   //@{
+    struct Init {
+      Init(OpalCall & call)
+        : m_call(call)
+        , m_userData(NULL)
+        , m_invite(NULL)
+        , m_transport(NULL)
+        , m_deleteTransport(true)
+        , m_options(0)
+        , m_stringOptions(NULL)
+        { }
+
+      OpalCall & m_call;          ///<  Owner call for connection
+      PString m_token;            ///<  token to identify the connection
+      SIPURL m_address;           ///<  Destination address for outgoing call
+      void * m_userData;          ///<  User data
+      SIP_PDU * m_invite;         ///<  Invite packet
+      OpalTransport * m_transport; ///< Transport INVITE came in on
+      bool m_deleteTransport;     ///<  Transport is deleting when connection is deleted
+      unsigned m_options;         ///<  Connection options
+      OpalConnection::StringOptions * m_stringOptions;  ///<  complex string options
+    };
+
     /**Create a new connection.
      */
     SIPConnection(
-      OpalCall & call,                          ///<  Owner call for connection
-      SIPEndPoint & endpoint,                   ///<  Owner endpoint for connection
-      const PString & token,                    ///<  token to identify the connection
-      const SIPURL & address,                   ///<  Destination address for outgoing call
-      OpalTransport * transport,                ///<  Transport INVITE came in on
-      unsigned int options = 0,                 ///<  Connection options
-      OpalConnection::StringOptions * stringOptions = NULL  ///<  complex string options
+      SIPEndPoint & endpoint,   ///< Owner endpoint for connection
+      const Init & init         ///< Initialisation parameters
     );
 
     /**Destroy connection.
@@ -633,7 +650,6 @@ class SIPConnection : public OpalRTPConnection
       bool offerCurrentOnly
     );
     virtual bool OnSendOfferSDPSession(
-      const OpalMediaType & mediaType,
       unsigned sessionID,
       SDPSessionDescription & sdpOut,
       bool offerOpenMediaStreamOnly

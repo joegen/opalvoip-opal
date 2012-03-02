@@ -664,8 +664,8 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   // NAT Detection with GNUGK
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_nonStandardData)) {
     PString NATaddr = rcf.m_nonStandardData.m_data.AsString();
-    if ((!NATaddr.IsEmpty()) && (NATaddr.Left(4) == "NAT="))
-      endpoint.OnGatekeeperNATDetect(NATaddr.Right(NATaddr.GetLength()-4),endpointIdentifier,gkRouteAddress);
+    if (NATaddr.NumCompare("NAT=") == EqualTo)
+      endpoint.OnGatekeeperNATDetect(NATaddr.Mid(4), endpointIdentifier, gkRouteAddress);
   }
   
   endpoint.OnRegistrationConfirm();

@@ -132,8 +132,8 @@ void FaxOPAL::Main()
 
   cout << "Fax Mode: ";
   if (args.HasOption('A')) {
-    OpalMediaType::Fax().GetDefinition()->SetAutoStart(OpalMediaType::ReceiveTransmit);
-    OpalMediaType::Audio().GetDefinition()->SetAutoStart(OpalMediaType::DontOffer);
+    OpalMediaType::Fax()->SetAutoStart(OpalMediaType::ReceiveTransmit);
+    OpalMediaType::Audio()->SetAutoStart(OpalMediaType::DontOffer);
     cout << "Offer T.38 only";
     prefix = "t38";
   }

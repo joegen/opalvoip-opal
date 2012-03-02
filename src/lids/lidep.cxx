@@ -287,12 +287,7 @@ PBoolean OpalLineEndPoint::AddDeviceNames(const PStringArray & descriptors)
 const OpalLineInterfaceDevice * OpalLineEndPoint::GetDeviceByName(const PString & descriptor)
 {
   PString deviceType, deviceName;
-
-  PINDEX colon = descriptor.Find(':');
-  if (colon != P_MAX_INDEX) {
-    deviceType = descriptor.Left(colon).Trim();
-    deviceName = descriptor.Mid(colon+1).Trim();
-  }
+  descriptor.Split(':', deviceType, deviceName);
 
   if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
     PTRACE(1, "LID EP\tInvalid device description \"" << descriptor << '"');

@@ -416,7 +416,13 @@ PSafePtr<OpalConnection> SIPEndPoint::MakeConnection(OpalCall & call,
   if (listeners.IsEmpty())
     return NULL;
 
-  return AddConnection(CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
+  SIPConnection::Init init(call);
+  init.m_token = SIPURL::GenerateTag();
+  init.m_userData = userData;
+  init.m_address = TranslateENUM(remoteParty);
+  init.m_options = options;
+  init.m_stringOptions = stringOptions;
+  return AddConnection(CreateConnection(init));
 }
 
 
@@ -517,16 +523,9 @@ PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 
 
 
-SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
-                                              const PString & token,
-                                              void * /*userData*/,
-                                              const SIPURL & destination,
-                                              OpalTransport * transport,
-                                              SIP_PDU * /*invite*/,
-                                              unsigned int options,
-                                              OpalConnection::StringOptions * stringOptions)
+SIPConnection * SIPEndPoint::CreateConnection(const SIPConnection::Init & init)
 {
-  return new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
+  return new SIPConnection(*this, init);
 }
 
 
@@ -550,7 +549,12 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   options.SetAt(SIP_HEADER_REFERRED_BY, otherConnection->GetRedirectingParty());
   options.SetAt(OPAL_OPT_CALLING_PARTY_URL, otherConnection->GetLocalPartyURL());
 
-  SIPConnection * connection = CreateConnection(call, SIPURL::GenerateTag(), userData, TranslateENUM(remoteParty), NULL, NULL, 0, &options);
+  SIPConnection::Init init(call);
+  init.m_token = SIPURL::GenerateTag();
+  init.m_userData = userData;
+  init.m_address = TranslateENUM(remoteParty);
+  init.m_stringOptions = &options;
+  SIPConnection * connection = CreateConnection(init);
   if (!AddConnection(connection))
     return false;
 
@@ -568,7 +572,10 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
 {
   OpalCall & call = connection.GetCall();
   
-  SIPConnection * conn = CreateConnection(call, SIPURL::GenerateTag(), NULL, forwardParty, NULL, NULL);
+  SIPConnection::Init init(call);
+  init.m_token = SIPURL::GenerateTag();
+  init.m_address = forwardParty;
+  SIPConnection * conn = CreateConnection(init);
   if (!AddConnection(conn))
     return PFalse;
 
@@ -638,6 +645,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_INVITE :
       pdu->AdjustVia(transport);   // // Adjust the Via list
       if (toToken.IsEmpty()) {
+        PWaitAndSignal mutex(inUseFlag);
+
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
           PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
@@ -962,15 +971,19 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
 
   // create and check transport
   OpalTransport * newTransport;
-  if (transport.IsReliable())
+  bool deleteTransport;
+  if (transport.IsReliable()) {
     newTransport = &transport;
+    deleteTransport = false;
+  }
   else {
     newTransport = CreateTransport(SIPURL(PString::Empty(), transport.GetRemoteAddress(), 0), transport.GetInterface());
     if (newTransport == NULL) {
       PTRACE(1, "SIP\tFailed to create transport for SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
       request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);
-      return PFalse;
+      return false;
     }
+    deleteTransport = true;
   }
 
   if (call == NULL) {
@@ -985,12 +998,12 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
   // ask the endpoint for a connection
-  SIPConnection *connection = CreateConnection(*call,
-                                               SIPURL::GenerateTag(),
-                                               NULL,
-                                               SIPURL(),
-                                               newTransport,
-                                               request);
+  SIPConnection::Init init(*call);
+  init.m_token = SIPURL::GenerateTag();
+  init.m_transport = newTransport;
+  init.m_deleteTransport = deleteTransport;
+  init.m_invite = request;
+  SIPConnection *connection = CreateConnection(init);
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
     request->SendResponse(transport, SIP_PDU::Failure_NotFound, this);

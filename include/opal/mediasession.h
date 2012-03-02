@@ -45,6 +45,7 @@ class OpalConnection;
 class OpalMediaStream;
 class OpalMediaFormat;
 class OpalMediaFormatList;
+class OpalMediaCryptoSuite;
 
 
 #if OPAL_STATISTICS
@@ -124,19 +125,86 @@ class OpalMediaStatistics : public PObject
 #endif
 
 
+/** Class for contianing the cryptographic keys for use by OpalMediaCryptoSuite.
+  */
+class OpalMediaCryptoKeyInfo : public PObject {
+  protected:
+    OpalMediaCryptoKeyInfo(const OpalMediaCryptoSuite & cryptoSuite) : m_cryptoSuite(cryptoSuite) { }
+
+  public:
+    virtual ~OpalMediaCryptoKeyInfo() { }
+
+    virtual bool IsValid() const = 0;
+    virtual void Randomise() = 0;
+    virtual bool FromString(const PString & str) = 0;
+    virtual PString ToString() const = 0;
+
+    const OpalMediaCryptoSuite & GetCryptoSuite() const { return m_cryptoSuite; }
+
+    void SetTag(const PString & tag) { m_tag = tag; }
+    const PString & GetTag() const { return m_tag; }
+
+  protected:
+    const OpalMediaCryptoSuite & m_cryptoSuite;
+    PString m_tag;
+};
+
+typedef PList<OpalMediaCryptoKeyInfo> OpalMediaCryptoKeyList;
+
+
+/** Class for desribing the crytpographic mechanism used by an OpalMediaSession.
+    These are singletons that descibe the cypto suite in use
+  */
+class OpalMediaCryptoSuite : public PObject
+{
+    PCLASSINFO(OpalMediaCryptoSuite, PObject);
+  protected:
+    OpalMediaCryptoSuite() { }
+
+  public:
+    static const PCaselessString & ClearText();
+
+    virtual const PCaselessString & GetFactoryName() const = 0;
+    virtual bool Supports(const PCaselessString & proto) const = 0;
+    virtual bool ChangeSessionType(PCaselessString & mediaSession) const = 0;
+
+    virtual const char * GetDescription() const = 0;
+
+    virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const = 0;
+};
+
+typedef PFactory<OpalMediaCryptoSuite, PCaselessString> OpalMediaCryptoSuiteFactory;
+
+
 /** Class for carrying media session information
   */
 class OpalMediaSession : public PObject
 {
     PCLASSINFO(OpalMediaSession, PObject);
   public:
-    OpalMediaSession(
-      OpalConnection & connection,    ///< Connection that owns the sesion
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
+    /// Initialisation information for constructing a session
+    struct Init {
+      Init(
+        OpalConnection & connection,    ///< Connection that owns the sesion
+        unsigned sessionId,             ///< Unique (in connection) session ID for session
+        const OpalMediaType & mediaType ///< Media type for session
+      ) : m_connection(connection)
+        , m_sessionId(sessionId)
+        , m_mediaType(mediaType)
+      { }
 
-    virtual bool Open(const PString & localInterface);
+
+      OpalConnection & m_connection;
+      unsigned         m_sessionId;
+      OpalMediaType    m_mediaType;
+    };
+
+  protected:
+    OpalMediaSession(const Init & init);
+
+  public:
+    virtual const PCaselessString & GetSessionType() const = 0;
+    virtual bool Open(const PString & localInterface) = 0;
     virtual bool Close();
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
     virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
@@ -164,6 +232,15 @@ class OpalMediaSession : public PObject
     void Use() { m_referenceCount++; }
     bool Release() { return --m_referenceCount > 0; }
 
+    void OfferCryptoSuite(const PString & cryptoSuite);
+    OpalMediaCryptoKeyList & GetOfferedCryptoKeys() { return m_offeredCryptokeys; }
+
+    virtual bool ApplyCryptoKey(
+      OpalMediaCryptoKeyList & keys,
+      bool rx
+    );
+
+
     unsigned GetSessionID() const { return m_sessionId; }
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
@@ -174,23 +251,19 @@ class OpalMediaSession : public PObject
     bool             m_isExternalTransport;
     PAtomicInteger   m_referenceCount;
 
+    OpalMediaCryptoKeyList m_offeredCryptokeys;
+
   private:
     OpalMediaSession(const OpalMediaSession & other) : PObject(other), m_connection(other.m_connection) { }
     void operator=(const OpalMediaSession &) { }
 };
 
 
-class OpalSecurityMode : public PObject
-{
-  PCLASSINFO(OpalSecurityMode, PObject);
-  public:
-    virtual OpalMediaSession * CreateSession(
-      OpalConnection & connection,    ///< Connection that owns the sesion
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    ) = 0;
-    virtual bool Open() = 0;
-};
+typedef PParamFactory<OpalMediaSession, const OpalMediaSession::Init &, PCaselessString> OpalMediaSessionFactory;
+
+#ifdef OPAL_SRTP
+PFACTORY_LOAD(OpalSRTPSession);
+#endif
 
 
 #endif // OPAL_OPAL_MEDIASESSION_H

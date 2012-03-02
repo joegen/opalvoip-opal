@@ -129,9 +129,11 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
 #else
                                                  const char *,
 #endif
+                                                 const char * mediaSession,
                                                  unsigned requiredSessionId,
                                                  OpalMediaType::AutoStartMode autoStart)
   : m_mediaType(mediaType)
+  , m_mediaSessionType(mediaSession)
   , m_autoStart(autoStart)
 #if OPAL_SIP
   , m_sdpType(sdpType != NULL ? sdpType : "")
@@ -162,12 +164,6 @@ OpalMediaTypeDefinition::~OpalMediaTypeDefinition()
 }
 
 
-OpalMediaSession * OpalMediaTypeDefinition::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
-{ 
-  return connection.CreateMediaSession(sessionID, m_mediaType);
-}
-
-
 #if OPAL_SIP
 SDPMediaDescription * OpalMediaTypeDefinition::CreateSDPMediaDescription(const OpalTransportAddress &, OpalMediaSession *) const
 {
@@ -182,17 +178,8 @@ OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
                                          const char * sdpType,
                                          unsigned requiredSessionId,
                                          OpalMediaType::AutoStartMode autoStart)
-  : OpalMediaTypeDefinition(mediaType, sdpType, requiredSessionId, autoStart)
+  : OpalMediaTypeDefinition(mediaType, sdpType, OpalRTPSession::RTP_AVP(), requiredSessionId, autoStart)
 {
-}
-
-
-OpalMediaSession * OpalRTPAVPMediaType::CreateMediaSession(OpalConnection & connection, unsigned sessionID) const
-{
-  OpalMediaSession * session = OpalMediaTypeDefinition::CreateMediaSession(connection, sessionID);
-  if (session == NULL)
-    session = new OpalRTPSession(connection, sessionID, m_mediaType);
-  return session;
 }
 
 

@@ -107,19 +107,42 @@ ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compres
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalMediaSession::OpalMediaSession(OpalConnection & connection, unsigned sessionId, const OpalMediaType & mediaType)
-  : m_connection(connection)
-  , m_sessionId(sessionId)
-  , m_mediaType(mediaType)
+const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
+
+class OpalMediaClearText : public OpalMediaCryptoSuite
+{
+  virtual const PCaselessString & GetFactoryName() const { return ClearText(); }
+  virtual bool Supports(const PCaselessString &) const { return true; }
+  virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
+  virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
+
+  struct KeyInfo : public OpalMediaCryptoKeyInfo
+  {
+    KeyInfo(const OpalMediaCryptoSuite & cryptoSuite) : OpalMediaCryptoKeyInfo(cryptoSuite) { }
+    PObject * Clone() const { return new KeyInfo(m_cryptoSuite); }
+    virtual bool IsValid() const { return true; }
+    virtual void Randomise() { }
+    virtual bool FromString(const PString &) { return true; }
+    virtual PString ToString() const { return PString::Empty(); }
+  };
+
+  virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const { return new KeyInfo(*this); }
+};
+
+PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalMediaClearText, OpalMediaCryptoSuite::ClearText(), true);
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalMediaSession::OpalMediaSession(const Init & init)
+  : m_connection(init.m_connection)
+  , m_sessionId(init.m_sessionId)
+  , m_mediaType(init.m_mediaType)
   , m_isExternalTransport(false)
   , m_referenceCount(1)
 {
-  PTRACE_CONTEXT_ID_FROM(connection);
-}
-
-bool OpalMediaSession::Open(const PString &)
-{
-  return true;
+  PTRACE_CONTEXT_ID_FROM(init.m_connection);
+  PTRACE(5, "Media\tSession " << m_sessionId << " for " << m_mediaType << " created.");
 }
 
 
@@ -170,6 +193,27 @@ void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const
 {
 }
 #endif
+
+
+void OpalMediaSession::OfferCryptoSuite(const PString & cryptoSuiteName)
+{
+  OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteName);
+  if (cryptoSuite == NULL) {
+    PTRACE(1, "Media\tCannot create crypto suite for " << cryptoSuiteName);
+    return;
+  }
+
+  OpalMediaCryptoKeyInfo * keyInfo = cryptoSuite->CreateKeyInfo();
+  keyInfo->Randomise();
+  m_offeredCryptokeys.Append(keyInfo);
+}
+
+
+bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
+{
+  return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -39,6 +39,7 @@
 
 #include <rtp/rtp.h>
 #include <opal/mediafmt.h>
+#include <ptlib/sockets.h>
 
 
 /**Class for a reading RTP from an Ethernet Capture (PCAP) file.

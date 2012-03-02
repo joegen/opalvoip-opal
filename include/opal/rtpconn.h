@@ -40,7 +40,9 @@
 #include <opal/connection.h>
 #include <opal/mediatype.h>
 #include <opal/mediasession.h>
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
+#include <ptlib/bitwise_enum.h>
+
 
 class OpalRTPEndPoint;
 
@@ -181,12 +183,20 @@ class OpalRTPConnection : public OpalConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
+    P_DECLARE_BITWISE_ENUM(CreateMediaSessionsSecurity, 2, (e_NoMediaSessions, e_ClearMediaSession, e_SecureMediaSession));
+
     /**Create all media sessions for available media types.
        Note that the sessions are not opened, just created.
 
+       Sessions using media security will alsoe be created if \p secure is
+       true. This indicates the media key exchange can be done securely,
+       typically it means signaling channel is also secure.
+
        @returns a list of the media types for which sessions where created.
       */
-    OpalMediaTypeList CreateAllMediaSessions();
+    vector<bool> CreateAllMediaSessions(
+      CreateMediaSessionsSecurity security  ///< Wse secure media, or not
+    );
 
     /**Get an RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
@@ -212,7 +222,8 @@ class OpalRTPConnection : public OpalConnection
       */
     virtual OpalMediaSession * UseMediaSession(
       unsigned sessionId,               ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType   ///< Media type for session
+      const OpalMediaType & mediaType,  ///< Media type for session
+      const PString & sessionType = PString::Empty() ///< Type of session to create
     );
 
     /**Release the session.

@@ -42,7 +42,7 @@
 
 #if OPAL_H323
 
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 
 class H225_RTPSession;
@@ -143,11 +143,7 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
   //@{
     /**Create a new RTP session H323 info.
      */
-    H323RTPSession(
-      H323Connection & connection,    ///<  Owner of the RTP session
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
+    H323RTPSession(const Init & init) : OpalRTPSession(init) { }
   //@}
 
   /**@name Operations */
@@ -245,8 +241,6 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
       PBoolean isDataPort,
       unsigned & errorCode
     );
-
-    const H323Connection & connection; ///<  Owner of the RTP session
 };
 
 
