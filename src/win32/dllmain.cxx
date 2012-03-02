@@ -32,8 +32,7 @@
 
 // Include header files for everything that uses factories or plugins
 #include <h323/h235auth.h>
-#include <rtp/rtp.h>
-#include <rtp/srtp.h>
+#include <opal/mediasession.h>
 #include <codec/opalwavfile.h>
 #include <codec/ratectl.h>
 #include <codec/opalpluginmgr.h>

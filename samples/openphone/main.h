@@ -73,6 +73,7 @@ class wxSplitterEvent;
 class wxSpinCtrl;
 class wxListCtrl;
 class wxListEvent;
+class wxCheckListBox;
 class wxNotebook;
 class wxGrid;
 class wxGridEvent;
@@ -735,13 +736,6 @@ class OptionsDialog : public wxDialog
     void ChangedCodecOptionValue(wxCommandEvent & event);
 
     ////////////////////////////////////////
-    // Security fields
-    bool         m_SecureH323;
-    bool         m_SecureSIP;
-    PwxString    m_RTPSecurityModeH323;
-    PwxString    m_RTPSecurityModeSIP;
-
-    ////////////////////////////////////////
     // H.323 fields
     int          m_GatekeeperMode;
     PwxString    m_GatekeeperAddress;
@@ -749,6 +743,7 @@ class OptionsDialog : public wxDialog
     int          m_GatekeeperTTL;
     PwxString    m_GatekeeperLogin;
     PwxString    m_GatekeeperPassword;
+
     int          m_DTMFSendMode;
     int          m_CallIntrusionProtectionLevel;
     bool         m_DisableFastStart;
@@ -756,6 +751,7 @@ class OptionsDialog : public wxDialog
     bool         m_DisableH245inSETUP;
     int          m_ExtendedVideoRoles;
     bool         m_EnableH239Control;
+
     wxListBox  * m_Aliases;
     wxTextCtrl * m_NewAlias;
     wxButton   * m_AddAlias;
@@ -766,12 +762,24 @@ class OptionsDialog : public wxDialog
     void AddAlias(wxCommandEvent & event);
     void RemoveAlias(wxCommandEvent & event);
 
+#if OPAL_PTLIB_SSL
+    int              m_H323SignalingSecurity;
+    wxCheckListBox * m_H323MediaCryptoSuites;
+    wxButton       * m_H323MediaCryptoSuiteUp;
+    wxButton       * m_H323MediaCryptoSuiteDown;
+    void H323SignalingSecurityChanged(wxCommandEvent & event);
+    void H323MediaCryptoSuiteChanged(wxCommandEvent & event);
+    void H323MediaCryptoSuiteUp(wxCommandEvent & event);
+    void H323MediaCryptoSuiteDown(wxCommandEvent & event);
+#endif
+
     ////////////////////////////////////////
     // SIP fields
     bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
+
     int       m_LineAppearanceCode;
     int       m_SIPUserInputMode;
     int       m_SIPPRACKMode;
@@ -793,6 +801,17 @@ class OptionsDialog : public wxDialog
     void SelectedRegistration(wxListEvent & event);
     void DeselectedRegistration(wxListEvent & event);
     void ActivateRegistration(wxListEvent & event);
+
+#if OPAL_PTLIB_SSL
+    int              m_SIPSignalingSecurity;
+    wxCheckListBox * m_SIPMediaCryptoSuites;
+    wxButton       * m_SIPMediaCryptoSuiteUp;
+    wxButton       * m_SIPMediaCryptoSuiteDown;
+    void SIPSignalingSecurityChanged(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteChanged(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteUp(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteDown(wxCommandEvent & event);
+#endif
 
     ////////////////////////////////////////
     // Routing fields
@@ -1094,6 +1113,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
 
     vector<PwxString> m_LocalInterfaces;
     void StartAllListeners();
+#if OPAL_PTLIB_SSL
+    void SetSignalingSecurity(OpalEndPoint * ep, int security, const char * unsecure, const char * secure);
+#endif
 
 #if OPAL_H323
     MyH323EndPoint * h323EP;

@@ -972,13 +972,6 @@ class OpalConnection : public PSafeObject
       bool isSource                      ///< Stream is a source/sink
     );
 
-    /** Create a new underlying RTP session instance.
-      */
-    virtual OpalMediaSession * CreateMediaSession(
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
-
     /** Indicate whether a particular media type can auto-start.
         This is typically used for things like video or fax to contol if on
         initial connection, that media type is opened straight away. Streams
@@ -1881,6 +1874,8 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(ApplyStringOptions(OpalConnection::StringOptions &));
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(unsigned) const, false);
     P_REMOVE_VIRTUAL(bool, OnTransferNotify(const PStringToString &), false);
+    P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(unsigned, const OpalMediaType &), NULL);
+
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

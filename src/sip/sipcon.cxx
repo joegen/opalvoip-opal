@@ -49,6 +49,7 @@
 #include <ptclib/pdns.h>
 #include <ptclib/pxml.h>
 #include <h323/q931.h>
+#include <rtp/srtp_session.h>
 
 #if OPAL_HAS_H224
 #include <h224/h224.h>
@@ -215,24 +216,18 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPConnection::SIPConnection(OpalCall & call,
-                             SIPEndPoint & ep,
-                             const PString & token,
-                             const SIPURL & destination,
-                             OpalTransport * newTransport,
-                             unsigned int options,
-                             OpalConnection::StringOptions * stringOptions)
-  : OpalRTPConnection(call, ep, token, options, stringOptions)
+SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
+  : OpalRTPConnection(init.m_call, ep, init.m_token, init.m_options, init.m_stringOptions)
   , endpoint(ep)
-  , transport(newTransport)
-  , deleteTransport(newTransport == NULL || !newTransport->IsReliable())
+  , transport(init.m_transport)
+  , deleteTransport(init.m_deleteTransport)
   , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
                      (1<<SIP_PDU::Method_ACK   )|
                      (1<<SIP_PDU::Method_CANCEL)|
                      (1<<SIP_PDU::Method_BYE   )) // Minimum set
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
-  , originalInvite(NULL)
+  , originalInvite(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
   , originalInviteTime(0)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
@@ -253,7 +248,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , releaseMethod(ReleaseWithNothing)
 //  , m_messageContext(NULL)
 {
-  SIPURL adjustedDestination = destination;
+  SIPURL adjustedDestination = init.m_address;
 
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = adjustedDestination.GetParamVars();
@@ -282,6 +277,11 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
+  m_dialog.SetLocalTag(GetToken());
+  if (transport != NULL && originalInvite != NULL) {
+    m_dialog.Update(*transport, *originalInvite);
+    originalInviteTime.SetCurrentTime();
+  }
 
   // Update remote party parameters
   UpdateRemoteAddresses();
@@ -688,7 +688,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   // Create the OpalMediaSession if required
-  OpalMediaSession * session = UseMediaSession(sessionId, mediaType);
+  OpalMediaSession * session = UseMediaSession(sessionId, mediaType, mediaDescription.GetSDPTransportType());
   if (session == NULL)
     return NULL;
 
@@ -776,7 +776,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       sessions.resize(std::max(sessions.size(),session+1));
       if (!sessions[session]) {
         sessions[session] = true;
-        if (OnSendOfferSDPSession(stream->GetMediaFormat().GetMediaType(), session, sdpOut, true))
+        if (OnSendOfferSDPSession(session, sdpOut, true))
           sdpOK = true;
       }
     }
@@ -785,13 +785,18 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     PTRACE(4, "SIP\tOffering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
-    OpalMediaTypeList mediaTypes = CreateAllMediaSessions();
-    unsigned sessionId = 0;
-    for (OpalMediaTypeList::iterator iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
-      if (OnSendOfferSDPSession(*iterMediaType, ++sessionId, sdpOut, false))
-        sdpOK = true;
-      else
-        ReleaseMediaSession(sessionId);
+    CreateMediaSessionsSecurity security = e_ClearMediaSession;
+    if (dynamic_cast<OpalTransportTLS *>(transport) != NULL)
+      security |= e_SecureMediaSession;
+
+    vector<bool> sessions = CreateAllMediaSessions(security);
+    for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
+      if (sessions[session]) {
+        if (OnSendOfferSDPSession(session, sdpOut, false))
+          sdpOK = true;
+        else
+          ReleaseMediaSession(session);
+      }
     }
   }
 
@@ -799,17 +804,17 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 }
 
 
-bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
-                                                     unsigned   sessionId,
-                                        SDPSessionDescription & sdp,
-                                                         bool   offerOpenMediaStreamOnly)
+bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
+                             SDPSessionDescription & sdp,
+                                              bool   offerOpenMediaStreamOnly)
 {
-  OpalMediaSession * mediaSession = offerOpenMediaStreamOnly ? UseMediaSession(sessionId, mediaType)
-                                                             : GetMediaSession(sessionId);
+  OpalMediaSession * mediaSession = GetMediaSession(sessionId);
   if (mediaSession == NULL) {
-    PTRACE(1, "SIP\tCould not create RTP session " << sessionId << " for media type " << mediaType);
+    PTRACE(1, "SIP\tCould not create RTP session " << sessionId);
     return false;
   }
+
+  OpalMediaType mediaType = mediaSession->GetMediaType();
 
   if (!mediaSession->Open(transport->GetInterface())) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
@@ -823,7 +828,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     return false;
   }
 
-  SDPMediaDescription * localMedia = mediaType.GetDefinition()->CreateSDPMediaDescription(sdpContactAddress, mediaSession);
+  SDPMediaDescription * localMedia = mediaType->CreateSDPMediaDescription(sdpContactAddress, mediaSession);
   if (localMedia == NULL) {
     PTRACE(2, "SIP\tCan't create SDP media description for media type " << mediaType);
     return false;
@@ -876,6 +881,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   else {
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
     localMedia->SetDirection((SDPMediaDescription::Direction)(3&(unsigned)GetAutoStart(mediaType)));
+    localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
   }
 
   if (mediaType == OpalMediaType::Audio()) {
@@ -977,13 +983,15 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     return false;
   }
 
-  bool sdpOK = false;
-  unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
+  size_t sessionCount = sdp->GetMediaDescriptions().GetSize();
 
   vector<bool> goodSession(sessionCount+1);
-  for (unsigned session = 1; session <= sessionCount; ++session) {
+  bool gotNothing = true;
+  size_t session;
+
+  for (session = 1; session <= sessionCount; ++session) {
     if (OnSendAnswerSDPSession(*sdp, session, sdpOut)) {
-      sdpOK = true;
+      gotNothing = false;
       goodSession[session] = true;
     }
     else {
@@ -1009,21 +1017,22 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     }
   }
 
-  if (sdpOK) {
-    /* Shut down any media that is in a session not mentioned in a re-INVITE.
-       While the SIP/SDP specification says this shouldn't happen, it does
-       anyway so we need to deal. */
-    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-      unsigned session = stream->GetSessionID();
-      if (session > sessionCount || !goodSession[session])
-        stream->Close();
-    }
+  if (gotNothing)
+    return false;
 
-    // In case some new streams got created.
-    ownerCall.StartMediaStreams();
+  /* Shut down any media that is in a session not mentioned in a re-INVITE.
+      While the SIP/SDP specification says this shouldn't happen, it does
+      anyway so we need to deal. */
+  for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
+    unsigned session = stream->GetSessionID();
+    if (session > sessionCount || !goodSession[session])
+      stream->Close();
   }
 
-  return sdpOK;
+  // In case some new streams got created.
+  ownerCall.StartMediaStreams();
+
+  return true;
 }
 
 
@@ -1036,33 +1045,25 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
-  OpalMediaTypeDefinition * mediaDef = mediaType.GetDefinition();
-  if (!PAssert(mediaDef != NULL, PString("Unusable media type \"") + mediaType + '"'))
+
+  if (!PAssert(mediaType.GetDefinition() != NULL, PString("Unusable media type \"") + mediaType + '"'))
     return false;
 
   // See if any media formats of this session id, so don't create unused RTP session
-  if (!m_localMediaFormats.HasType(mediaType)) {
+  if (!m_answerFormatList.HasType(mediaType)) {
     PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
     return false;
   }
 
-  SDPMediaDescription * localMedia = NULL;
-
-  if (!m_answerFormatList.HasType(mediaType)) {
-    PTRACE(1, "SIP\tNo available media formats in SDP media description for session " << sessionId);
-
-    // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
-    localMedia = mediaDef->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
-    if (localMedia  == NULL) {
-      PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
+  // See if we already have a secure version of the media session
+  for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+    if (it->second->GetMediaType() == mediaType && it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP()) {
+      PTRACE(3, "SIP\tNot creating " << mediaType << " media session, already secure.");
       return false;
     }
-    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
-      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
-    sdpOut.AddMediaDescription(localMedia);
-    return false;
   }
-  
+
+  // Create new media session
   OpalTransportAddress localAddress;
   bool remoteChanged = false;
   OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
@@ -1074,7 +1075,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   if (mediaSession->GetMediaType() != mediaType) {
     previousSession = mediaSession;
 
-    mediaSession = mediaDef->CreateMediaSession(*this, sessionId);
+    mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
+                                            OpalMediaSession::Init(*this, sessionId, mediaType));
     if (mediaSession == NULL) {
       PTRACE(2, "SIP\tCould not create session for " << mediaType);
       return false;
@@ -1085,11 +1087,38 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   }
 
   // construct a new media session list 
-  if ((localMedia = mediaDef->CreateSDPMediaDescription(localAddress, mediaSession)) == NULL) {
+  SDPMediaDescription * localMedia = mediaType->CreateSDPMediaDescription(localAddress, mediaSession);
+  if (localMedia == NULL) {
     if (previousSession != NULL)
       delete mediaSession;
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
     return false;
+  }
+
+  OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
+  if (!keys.IsEmpty()) {
+    // Set rx key from the other side SDP, which it's tx key
+    if (!mediaSession->ApplyCryptoKey(keys, true)) {
+      PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
+      return false;
+    }
+
+    // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
+    OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
+    if (PAssertNULL(txKey) == NULL)
+      return false;
+
+    // But witha  different value
+    txKey->Randomise();
+
+    keys.RemoveAll();
+    keys.Append(txKey);
+    if (!mediaSession->ApplyCryptoKey(keys, false)) {
+      PTRACE(2, "SIP\tUnexpected error with crypto suite(s) for " << mediaType << " session " << sessionId);
+      return false;
+    }
+
+    localMedia->SetCryptoKeys(keys);
   }
 
   PTRACE(4, "SIP\tAnswering offer for media type " << mediaType);
@@ -2334,14 +2363,14 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  bool isReinvite = IsOriginating() || originalInvite != NULL;
+  bool isReinvite = IsOriginating() ||
+        (originalInvite != NULL && originalInvite->GetTransactionID() != request.GetTransactionID());
   PTRACE_IF(4, !isReinvite, "SIP\tInitial INVITE to " << request.GetURI());
 
   // originalInvite should contain the first received INVITE for
   // this connection
-  delete originalInvite;
-  originalInvite     = new SIP_PDU(request);
-  originalInviteTime = PTime();
+  if (originalInvite == NULL)
+    originalInvite = new SIP_PDU(request);
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
 
@@ -3111,8 +3140,43 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // Set up the media session, e.g. RTP
   bool remoteChanged = false;
   OpalTransportAddress localAddress;
-  if (SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress, remoteChanged) == NULL)
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress, remoteChanged);
+  if (mediaSession == NULL)
     return false;
+
+  OpalMediaCryptoKeyList keys = mediaDescription->GetCryptoKeys();
+  if (!keys.IsEmpty()) {
+    // Set our rx keys to remotes tx keys indicated in SDP
+    if (!mediaSession->ApplyCryptoKey(keys, true)) {
+      PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
+      return false;
+    }
+
+    // Now match up the tag number on our offered keys
+    OpalMediaCryptoKeyList & offeredKeys = mediaSession->GetOfferedCryptoKeys();
+    OpalMediaCryptoKeyList::iterator it;
+    for (it = offeredKeys.begin(); it != offeredKeys.end(); ++it) {
+      if (it->GetTag() == keys.front().GetTag())
+        break;
+    }
+    if (it == offeredKeys.end()) {
+      PTRACE(2, "SIP\tRemote selected crypto suite(s) we did not offer for " << mediaType << " session " << sessionId);
+      return false;
+    }
+
+    keys.RemoveAll();
+    keys.Append(&*it);
+
+    offeredKeys.DisallowDeleteObjects(); // Can't have in two lists and both dispose of pointer
+    offeredKeys.erase(it);
+    offeredKeys.AllowDeleteObjects();
+    offeredKeys.RemoveAll();
+
+    if (!mediaSession->ApplyCryptoKey(keys, false)) {
+      PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
+      return false;
+    }
+  }
 
   SDPMediaDescription::Direction otherSidesDir = sdp.GetDirection(sessionId);
 

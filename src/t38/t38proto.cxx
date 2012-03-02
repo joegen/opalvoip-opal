@@ -101,8 +101,8 @@ PBoolean OpalFaxMediaStream::IsSynchronous() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxSession::OpalFaxSession(OpalConnection & connection, unsigned sessionId)
-  : OpalMediaSession(connection, sessionId, OpalMediaType::Fax())
+OpalFaxSession::OpalFaxSession(const Init & init)
+  : OpalMediaSession(init)
   , m_dataSocket(NULL)
   , m_consecutiveBadPackets(0)
   , m_oneGoodPacket(false)
@@ -194,6 +194,12 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
       PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
     }
   }
+}
+
+
+bool OpalFaxSession::Open(const PString &)
+{
+  return true;
 }
 
 

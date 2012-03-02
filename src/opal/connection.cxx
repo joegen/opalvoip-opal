@@ -699,23 +699,19 @@ void OpalConnection::AdjustMediaFormats(bool   local,
   if (local) {
     for (PStringToString::const_iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
       PString key = it->first;
-      PINDEX colon = key.Find(':');
-      if (colon != P_MAX_INDEX) {
-        PString fmtName = key.Left(colon);
-        PString optName = key.Mid(colon+1);
-        if (!fmtName.IsEmpty() && !optName.IsEmpty()) {
-          PString optValue = it->second;
-          OpalMediaFormatList::const_iterator iterFormat;
-          while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
-            OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
-            if (format.SetOptionValue(optName, optValue)) {
-              PTRACE(4, "OpalCon\tSet media format " << format
-                     << " option " << optName << " to \"" << optValue << '"');
-            }
-            else {
-              PTRACE(2, "OpalCon\tFailed to set media format " << format
-                     << " option " << optName << " to \"" << optValue << '"');
-            }
+      PString fmtName, optName;
+      if (key.Split(':', fmtName, optName) && !fmtName.IsEmpty() && !optName.IsEmpty()) {
+        PString optValue = it->second;
+        OpalMediaFormatList::const_iterator iterFormat;
+        while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {
+          OpalMediaFormat & format = const_cast<OpalMediaFormat &>(*iterFormat);
+          if (format.SetOptionValue(optName, optValue)) {
+            PTRACE(4, "OpalCon\tSet media format " << format
+                    << " option " << optName << " to \"" << optValue << '"');
+          }
+          else {
+            PTRACE(2, "OpalCon\tFailed to set media format " << format
+                    << " option " << optName << " to \"" << optValue << '"');
           }
         }
       }
@@ -732,19 +728,13 @@ unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, b
 }
 
 
-OpalMediaSession * OpalConnection::CreateMediaSession(unsigned sessionId, const OpalMediaType & mediaType)
-{
-  return endpoint.CreateMediaSession(*this, sessionId, mediaType);
-}
-
-
 void OpalConnection::AutoStartMediaStreams(bool force)
 {
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeList::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
     OpalMediaType mediaType = *iter;
     if ((GetAutoStart(mediaType)&OpalMediaType::Transmit) != 0 && (force || GetMediaStream(mediaType, true) == NULL))
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, mediaType.GetDefinition()->GetDefaultSessionId());
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, mediaType->GetDefaultSessionId());
   }
   StartMediaStreams();
 }
@@ -1826,7 +1816,7 @@ void OpalConnection::AutoStartMap::SetAutoStart(const OpalMediaType & mediaType,
   m_initialised = true;
 
   // deconflict session ID
-  unsigned sessionID = mediaType.GetDefinition()->GetDefaultSessionId();
+  unsigned sessionID = mediaType->GetDefaultSessionId();
   if (size() == 0) {
     if (sessionID == 0) 
       sessionID = 1;

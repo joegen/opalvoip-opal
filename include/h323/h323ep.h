@@ -148,14 +148,6 @@ class H323EndPoint : public OpalRTPEndPoint
       unsigned int options = NULL,      ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions = NULL
     );
-
-    /** Create a new underlying RTP session instance.
-      */
-    virtual OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
   //@}
 
   /**@name Set up functions */

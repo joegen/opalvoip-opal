@@ -108,26 +108,6 @@ static bool DummyPluginDirs = PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
 
 /////////////////////////////////////////////////////////////////////////////
 
-template <typename CodecClass>
-class OpalFixedCodecFactory : public PFactory<OpalFactoryCodec>
-{
-  public:
-    class Worker : public PFactory<OpalFactoryCodec>::WorkerBase 
-    {
-      public:
-        Worker(const PString & key)
-          : PFactory<OpalFactoryCodec>::WorkerBase()
-        { PFactory<OpalFactoryCodec>::Register(key, this); }
-
-      protected:
-        virtual OpalFactoryCodec * Create(const PString &) const
-        { return new CodecClass(); }
-    };
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 template <class base>
 class OpalPluginMediaOption : public base
 {

@@ -71,6 +71,10 @@
 #include "h460/h46019.h"
 #endif
 
+
+static const char h323_rtp_session_type[] = "rtp/h323";
+static OpalMediaSessionFactory::Worker<H323RTPSession> h323_rtp_session(h323_rtp_session_type);
+
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #if OPAL_H239
@@ -1925,13 +1929,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   if (addAccessTokenToSetup && !gkAccessTokenOID && !gkAccessTokenData.IsEmpty()) {
     PString oid1, oid2;
-    PINDEX comma = gkAccessTokenOID.Find(',');
-    if (comma == P_MAX_INDEX)
+    if (!gkAccessTokenOID.Split(',', oid1, oid2))
       oid1 = oid2 = gkAccessTokenOID;
-    else {
-      oid1 = gkAccessTokenOID.Left(comma);
-      oid2 = gkAccessTokenOID.Mid(comma+1);
-    }
     setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
     PINDEX last = setup.m_tokens.GetSize();
     setup.m_tokens.SetSize(last+1);
@@ -3977,7 +3976,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 {
   if (GetMediaStream(mediaType, isSource) == NULL) {
     OpalMediaStreamPtr mediaStream = GetMediaStream(mediaType, !isSource);
-    return mediaStream != NULL ? mediaStream->GetSessionID() : mediaType.GetDefinition()->GetDefaultSessionId();
+    return mediaStream != NULL ? mediaStream->GetSessionID() : mediaType->GetDefaultSessionId();
   }
 
   unsigned sessionID = 1000000;
@@ -4770,7 +4769,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
     return NULL;
 
-  H323RTPSession * session = dynamic_cast<H323RTPSession *>(UseMediaSession(sessionID, mediaType));
+  H323RTPSession * session = dynamic_cast<H323RTPSession *>(UseMediaSession(sessionID, mediaType, h323_rtp_session_type));
   if (PAssertNULL(session) == NULL)
     return NULL;
 

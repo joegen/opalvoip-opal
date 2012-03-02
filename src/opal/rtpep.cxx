@@ -67,14 +67,6 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 }
 
 
-OpalMediaSession * OpalRTPEndPoint::CreateMediaSession(OpalConnection & connection,
-                                                       unsigned sessionId,
-                                                       const OpalMediaType & mediaType)
-{
-  return new OpalRTPSession(connection, sessionId, mediaType);
-}
-
-
 static OpalRTPSession * GetRTPFromStream(const OpalMediaStream & stream)
 {
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
@@ -109,7 +101,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 
   if (!PIPSocket::IsLocalHost(rtp->GetRemoteAddress())) {
     PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
-              "remote RTP address " << rtp->GetRemoteAddress() << " not local.");
+              "remote RTP address " << rtp->GetRemoteAddress() << " not local (different host).");
     CheckEndLocalRTP(connection, rtp);
     return false;
   }
@@ -123,7 +115,7 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalAddr.find(remoteAddr);
   if (itRemote == m_connectionsByRtpLocalAddr.end()) {
     PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
-              "remote RTP address " << remoteAddr << " not this process.");
+              "remote RTP address " << remoteAddr << " not local (different process).");
     return false;
   }
 

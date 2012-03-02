@@ -81,7 +81,7 @@ class OpalT140MediaType : public OpalRTPAVPMediaType
 {
   public:
     OpalT140MediaType()
-      : OpalRTPAVPMediaType(T140MediaType, "text|RTP/AVP")
+      : OpalRTPAVPMediaType(T140MediaType, "text")
     {
     }
   

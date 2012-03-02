@@ -73,15 +73,6 @@ class OpalRTPEndPoint : public OpalEndPoint
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-    /** Create a new underlying media session instance.
-        Default behaviour returns NULL.
-      */
-    virtual OpalMediaSession * CreateMediaSession(
-      OpalConnection & connection,    ///< COnnection that owns the new media session
-      unsigned sessionId,             ///< Unique (in connection) session ID for session
-      const OpalMediaType & mediaType ///< Media type for session
-    );
-
     /**Call back for closed a media stream.
 
        The default behaviour checks for local RTP session then calls the
