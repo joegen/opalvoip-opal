@@ -624,6 +624,7 @@ OPAL_LID
 OPAL_T120DATA
 OPAL_H501
 OPAL_H239
+OPAL_H460_NAT
 OPAL_H460
 OPAL_H450
 OPAL_FAX
@@ -753,8 +754,8 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_ios
-with_plugin_installdir
 enable_versioncheck
+with_plugin_installdir
 enable_localspeexdsp
 enable_zrtp
 with_zrtp_includedir
@@ -779,6 +780,7 @@ enable_rfc4103
 enable_fax
 enable_h450
 enable_h460
+enable_h460nat
 enable_h239
 enable_h501
 enable_t120
@@ -1450,6 +1452,7 @@ Optional Features:
   --enable-fax            whether to enable T.38 FAX protocol support
   --enable-h450           whether to enable H.450
   --enable-h460           whether to enable H.460
+  --enable-h460nat        whether to enable H.460.24
   --enable-h239           whether to enable H.239
   --enable-h501           whether to enable H.501
   --enable-t120           whether to enable T.120
@@ -4699,6 +4702,7 @@ OPAL_HAS_H224=yes
 OPAL_HAS_H281=yes
 OPAL_H450=yes
 OPAL_H460=yes
+OPAL_H460_NAT=yes
 OPAL_H239=yes
 OPAL_H501=yes
 OPAL_T120DATA=no
@@ -4765,40 +4769,6 @@ _ACEOF
 $as_echo "$as_me: Opal version is ${OPAL_VERSION}" >&6;};
 
 #use to set the version in opal.pc
-
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking where plugins are being installed" >&5
-$as_echo_n "checking where plugins are being installed... " >&6; }
-
-# Check whether --with-plugin-installdir was given.
-if test "${with_plugin_installdir+set}" = set; then :
-  withval=$with_plugin_installdir; PLUGIN_DIR="$withval"
-else
-  PLUGIN_DIR="opal-${OPAL_VERSION}"
-
-fi
-
-
-EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
-if test "x${exec_prefix}" = "xNONE" ; then
-  if test "x${prefix}" = "xNONE" ; then
-    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
-  else
-    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
-  fi
-else
-  EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
-fi
-
-
-cat >>confdefs.h <<_ACEOF
-#define OPAL_PLUGIN_DIR "${EXPANDED_PLUGIN_DIR}"
-_ACEOF
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${EXPANDED_PLUGIN_DIR}" >&5
-$as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
 
 
 
@@ -5422,6 +5392,47 @@ CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking where plugins are being installed" >&5
+$as_echo_n "checking where plugins are being installed... " >&6; }
+
+# Check whether --with-plugin-installdir was given.
+if test "${with_plugin_installdir+set}" = set; then :
+  withval=$with_plugin_installdir; PLUGIN_DIR="$withval"
+else
+  PLUGIN_DIR="opal-${OPAL_VERSION}"
+
+fi
+
+
+EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
+if test "x${exec_prefix}" = "xNONE" ; then
+  if test "x${prefix}" = "xNONE" ; then
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
+  else
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
+  fi
+else
+  EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
+fi
+
+echo $OSTYPE $target_os
+case "$OSTYPE" in
+  cygwin | mingw )
+    EXPANDED_PLUGIN_DIR="plugins"
+  ;;
+esac
+
+
+cat >>confdefs.h <<_ACEOF
+#define OPAL_PLUGIN_DIR "${EXPANDED_PLUGIN_DIR}"
+_ACEOF
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${EXPANDED_PLUGIN_DIR}" >&5
+$as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
+
+
+
+
 LDSOOPTS=
 case "$OSTYPE" in
 	solaris )
@@ -5501,7 +5512,7 @@ case "$OSTYPE" in
         ;;
 
         Darwin )
-	  SHAREDLIBEXT=dylib
+          SHAREDLIBEXT=dylib
           SHARED_CFLAGS="-fPIC"
 
           if test "xDEBUG" = "xDEBUG" ; then
@@ -5575,16 +5586,16 @@ case "$OSTYPE" in
 
 #	   CFLAGS="$CFLAGS -fno-common -dynamic"
 #          LDSO="-dynamiclib -multiply_defined suppress"
-STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
+          STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
-	  case "$target_cpu" in
-	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
+          case "$target_cpu" in
+	       x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
           esac
           HAVE_RANLIB=no
         ;;
 
         cygwin|mingw )
-	  SHAREDLIBEXT=dll
+          SHAREDLIBEXT=dll
           SHARED_CFLAGS=
 
           if test "xDEBUG" = "xDEBUG" ; then
@@ -5655,8 +5666,6 @@ STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 
 
           LDSOOPTS="-Wl,--kill-at -shared"
-
-#	  LDSO="-module -avoid-version -shared"
           HAVE_RANLIB=yes
         ;;
 
@@ -6669,7 +6678,7 @@ int
 main ()
 {
 
-                            PCLI * cli;
+                            PCLI cli;
 
   ;
   return 0;
@@ -7545,15 +7554,10 @@ fi
 
 SRTP_LIBS=
 SRTP_CFLAGS=
-if test "x$OPAL_ZRTP" = "xyes" ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: disable SRTP due to presence of ZRTP" >&5
-$as_echo "$as_me: disable SRTP due to presence of ZRTP" >&6;}
-  OPAL_SRTP=no
-else
-  if test "x$OPAL_SRTP" = "xno" ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: disabled by user" >&5
+if test "x$OPAL_SRTP" = "xno" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: disabled by user" >&5
 $as_echo "$as_me: disabled by user" >&6;}
-  else
+else
 
           ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -7593,7 +7597,7 @@ else
   OPAL_SRTP=no
 fi
 
-    if test "x${OPAL_SRTP}" = "xyes" ; then
+  if test "x${OPAL_SRTP}" = "xyes" ; then
 
 $as_echo "#define OPAL_SRTP 1" >>confdefs.h
 
@@ -7609,14 +7613,13 @@ $as_echo "#define OPAL_SRTP 1" >>confdefs.h
             PKG_REQUIRES="$PKG_REQUIRES "
           fi
 
-    fi
+  fi
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsrtp support" >&5
 $as_echo_n "checking libsrtp support... " >&6; }
           { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPAL_SRTP" >&5
 $as_echo "$OPAL_SRTP" >&6; }
 
-  fi
 fi
 
 
@@ -8470,6 +8473,46 @@ $as_echo "$OPAL_H460" >&6; }
           if test "x$OPAL_H460" = "xyes"; then
 
 $as_echo "#define OPAL_H460 1" >>confdefs.h
+
+          fi
+
+
+
+          if test "x$OPAL_H460_NAT" = "x"; then
+            as_fn_error $? "No default specified for OPAL_H460_NAT, please correct configure.ac" "$LINENO" 5
+	  fi
+          # Check whether --enable-h460nat was given.
+if test "${enable_h460nat+set}" = set; then :
+  enableval=$enable_h460nat; OPAL_H460_NAT=$enableval
+fi
+
+
+          if test "xOPAL_H323" != "x"; then
+            if test "x$OPAL_H323" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h460nat support disabled due to disabled dependency OPAL_H323" >&5
+$as_echo "$as_me: h460nat support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_H460_NAT=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h460nat support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h460nat support disabled due to disabled dependency " >&6;}
+	      OPAL_H460_NAT=no
+	    fi
+	  fi
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable H.460.24" >&5
+$as_echo_n "checking whether to enable H.460.24... " >&6; }
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPAL_H460_NAT" >&5
+$as_echo "$OPAL_H460_NAT" >&6; }
+
+
+          if test "x$OPAL_H460_NAT" = "xyes"; then
+
+$as_echo "#define OPAL_H460_NAT 1" >>confdefs.h
 
           fi
 
