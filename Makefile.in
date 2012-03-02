@@ -149,6 +149,7 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
+           $(OPAL_SRCDIR)/rtp/rtp_session.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
            $(OPAL_SRCDIR)/rtp/metrics.cxx \
            $(OPAL_SRCDIR)/rtp/pcapfile.cxx \
