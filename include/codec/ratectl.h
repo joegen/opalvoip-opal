@@ -42,6 +42,8 @@
 
 #include <rtp/rtp.h>
 
+#include <deque>
+
 extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
 
 /**  This class is used to calculate the instantaneous bit rate of a data stream
