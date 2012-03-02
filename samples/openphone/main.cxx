@@ -4371,7 +4371,7 @@ static void SaveSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool
   PStringArray enabledMethods;
   for (unsigned item = 0; item < listbox->GetCount(); ++item) {
     if (listbox->IsChecked(item)) {
-      PString description = listbox->GetString(item).c_str();
+      PString description = PwxString(listbox->GetString(item));
       for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
         OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
         if (cryptoSuite != NULL && description == cryptoSuite->GetDescription()) {
