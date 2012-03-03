@@ -10,6 +10,7 @@
 
 #include <ptlib.h>
 #include "asn/h235_srtp.h"
+#include "asn/h225.h"
 
 #define new PNEW
 
