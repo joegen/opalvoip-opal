@@ -138,7 +138,7 @@ class H235_SRTP_SrtpKeyParameters_mki : public PASN_Sequence
 // ArrayOf_GenericData
 //
 
-class GenericData;
+class H225_GenericData;
 
 class H235_SRTP_ArrayOf_GenericData : public PASN_Array
 {
@@ -149,7 +149,7 @@ class H235_SRTP_ArrayOf_GenericData : public PASN_Array
     H235_SRTP_ArrayOf_GenericData(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
 
     PASN_Object * CreateObject() const;
-    GenericData & operator[](PINDEX i) const;
+    H225_GenericData & operator[](PINDEX i) const;
     PObject * Clone() const;
 };
 
