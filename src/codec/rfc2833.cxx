@@ -247,7 +247,7 @@ OpalRFC2833Proto::~OpalRFC2833Proto()
 
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 {
-  PWaitAndSignal mutex(m_mutex);
+  PWaitAndSignal mutex(m_sendMutex);
 
   // find an audio session in the current connection to send the packet on
   if (m_rtpSession == NULL) {
@@ -299,9 +299,6 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 
 void OpalRFC2833Proto::SendAsyncFrame()
 {
-  // be thread safe
-  PWaitAndSignal mutex(m_mutex);
-
   if (m_rtpSession == NULL) {
     PTRACE(2, "RFC2833\tCannot send as no RTP session attached to " << m_baseMediaFormat);
     m_transmitState = TransmitIdle;
@@ -486,7 +483,9 @@ char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833, bool hasNSE)
 
 void OpalRFC2833Proto::AsyncTimeout(PTimer &, INT)
 {
+  m_sendMutex.Wait();
   SendAsyncFrame();
+  m_sendMutex.Signal();
 }
 
 
@@ -521,7 +520,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 
   status = OpalRTPSession::e_IgnorePacket;
 
-  PWaitAndSignal mutex(m_mutex);
+  PWaitAndSignal mutex(m_receiveMutex);
 
   if (frame.GetPayloadSize() < 4) {
     PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small for " << m_baseMediaFormat);
@@ -559,10 +558,10 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
     if (m_receiveState == ReceiveActive)
       m_receiveTimer = 200;
     else
-      m_receiveTimer.Stop();
+      m_receiveTimer.Stop(false);
   }
   else {
-    m_receiveTimer.Stop();
+    m_receiveTimer.Stop(false);
 
     // finish any existing tone
     if (m_receiveState == ReceiveActive) 
@@ -586,15 +585,17 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 
 void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
+  m_receiveMutex.Wait();
+
   PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)m_receivedTone
          << " for " << m_baseMediaFormat);
-
-  PWaitAndSignal mutex(m_mutex);
 
   if (m_receiveState != ReceiveIdle) {
     m_receiveState = ReceiveIdle;
     //OnEndReceive(receivedTone, 0, 0);
   }
+
+  m_receiveMutex.Signal();
 
   m_receiveTimer.Stop(false);
 }

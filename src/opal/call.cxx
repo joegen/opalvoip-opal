@@ -132,13 +132,23 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
     }
   }
 
+  switch (connectionsActive.GetSize()) {
+    case 0 :
+      break;
+
+    case 1 :
+      connectionsActive.GetAt(0, PSafeReference)->Release();
+      break;
+
+    default :
+      // Release all but A-Party, it gets done in the B-Party OnReleased thread.
+      for (PINDEX i = 1; i < connectionsActive.GetSize(); ++i)
+        connectionsActive.GetAt(i, PSafeReference)->Release();
+  }
+
   UnlockReadWrite();
 
   InternalOnClear();
-
-  PSafePtr<OpalConnection> connection;
-  while (EnumerateConnections(connection, PSafeReadWrite))
-    connection->Release(reason);
 }
 
 
@@ -732,7 +742,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
   {
     PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
     if (last != NULL)
-      last->Release(connection.GetCallEndReason());
+      last->Release(connection.GetCallEndReason(), true);
   }
 
   InternalOnClear();

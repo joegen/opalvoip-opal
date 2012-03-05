@@ -67,7 +67,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 OpalMediaPatch::~OpalMediaPatch()
 {
   PWaitAndSignal m(patchThreadMutex);
-  inUse.StartWrite();
+  LockReadWrite();
   if (patchThread != NULL) {
     PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
     delete patchThread;
@@ -81,7 +81,8 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 {
   strm << "Patch[" << this << "] " << source;
 
-  inUse.StartRead();
+  if (!LockReadOnly())
+    return;
 
   if (sinks.GetSize() > 0) {
     strm << " -> ";
@@ -97,7 +98,7 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
     }
   }
 
-  inUse.EndRead();
+  UnlockReadOnly();
 }
 
 void OpalMediaPatch::Start()
@@ -118,7 +119,8 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
-  inUse.StartWrite();
+  if (!LockReadWrite())
+    return;
 
   if (m_bypassFromPatch != NULL)
     m_bypassFromPatch->SetBypassPatch(NULL);
@@ -131,33 +133,34 @@ void OpalMediaPatch::Close()
 
   while (sinks.GetSize() > 0) {
     OpalMediaStreamPtr stream = sinks.front().stream;
-    inUse.EndWrite();
+    UnlockReadWrite();
     if (!stream->Close()) {
       // The only way we can get here is if the sink is in the proccess of being closed
-      // but is blocked on the inUse mutex waiting to remove the sink from this patch.
+      // but is blocked on the mutex waiting to remove the sink from this patch.
       // Se we unlock it, and wait for it to do it in the other thread.
       PThread::Sleep(10);
     }
-    inUse.StartWrite();
+    if (!LockReadWrite())
+      return;
   }
 
   PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
   {
     PWaitAndSignal m(patchThreadMutex);
     if (patchThread != NULL && !patchThread->IsSuspended()) {
-      inUse.EndWrite();
+      UnlockReadWrite();
       PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
       return;
     }
   }
 
-  inUse.EndWrite();
+  UnlockReadWrite();
 }
 
 
 PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   if (PAssertNULL(sinkStream) == NULL)
     return false;
@@ -181,7 +184,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
 
 bool OpalMediaPatch::ResetTranscoders()
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (!s->CreateTranscoders())
@@ -312,7 +315,8 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 
   bool closeSource = false;
 
-  inUse.StartWrite();
+  if (!LockReadWrite())
+    return;
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->stream == stream) {
@@ -328,7 +332,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
       m_bypassFromPatch->SetBypassPatch(NULL);
   }
 
-  inUse.EndWrite();
+  UnlockReadWrite();
 
   if (closeSource  && source.GetPatch() == this)
     source.Close();
@@ -337,7 +341,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 
 OpalMediaStreamPtr OpalMediaPatch::GetSink(PINDEX i) const
 {
-  PReadWaitAndSignal mutex(inUse);
+  PSafeLockReadOnly mutex(*this);
   return i < sinks.GetSize() ? sinks[i].stream : OpalMediaStreamPtr();
 }
 
@@ -358,7 +362,8 @@ OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 
 OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
 {
-  inUse.StartRead();
+  if (!LockReadOnly())
+    return NULL;
 
   if (i >= sinks.GetSize()) {
     UnLockSinkTranscoder();
@@ -380,14 +385,15 @@ OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
 
 void OpalMediaPatch::UnLockSinkTranscoder() const
 {
-  inUse.EndRead();
+  UnlockReadOnly();
 }
 
 
 #if OPAL_STATISTICS
 void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics, bool fromSink) const
 {
-  inUse.StartRead();
+  if (!LockReadOnly())
+    return;
 
   if (fromSink)
     source.GetStatistics(statistics, true);
@@ -395,7 +401,7 @@ void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics, bool fromSi
   if (!sinks.IsEmpty())
     sinks.front().GetStatistics(statistics, !fromSink);
 
-  inUse.EndRead();
+  UnlockReadOnly();
 }
 
 
@@ -447,7 +453,7 @@ OpalMediaPatch::Sink::~Sink()
 
 void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   if (source.GetMediaFormat().GetMediaType() != stage.GetMediaType())
     return;
@@ -465,7 +471,7 @@ void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat &
 
 PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
     if (f->notifier == filter && f->stage == stage) {
@@ -482,20 +488,21 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
 void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
                                  const OpalMediaFormat & mediaFormat)
 {
-  inUse.StartRead();
+  if (!LockReadOnly())
+    return;
 
   for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
     if (f->stage.IsEmpty() || f->stage == mediaFormat)
       f->notifier(frame, (INT)this);
   }
 
-  inUse.EndRead();
+  UnlockReadOnly();
 }
 
 
 bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
@@ -513,7 +520,7 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 
 PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoolean fromSink)
 {
-  PReadWaitAndSignal mutex(inUse);
+  PSafeLockReadOnly mutex(*this);
 
   if (fromSink) {
     OpalMediaPatch * patch = m_bypassToPatch != NULL ? m_bypassToPatch : this;
@@ -541,7 +548,7 @@ void OpalMediaPatch::OnMediaCommand(OpalMediaCommand & command, INT)
 
 bool OpalMediaPatch::SetPaused(bool pause)
 {
-  PReadWaitAndSignal mutex(inUse);
+  PSafeLockReadOnly mutex(*this);
 
   bool atLeastOne = source.SetPaused(pause, true);
 
@@ -570,7 +577,7 @@ bool OpalMediaPatch::OnStartMediaPatch()
 
 bool OpalMediaPatch::EnableJitterBuffer()
 {
-  PReadWaitAndSignal mutex(inUse);
+  PSafeLockReadOnly mutex(*this);
 
   bool enab = m_bypassToPatch == NULL;
 
@@ -628,11 +635,7 @@ void OpalMediaPatch::Main()
       break;
     }
  
-    inUse.StartRead();
-    bool written = DispatchFrame(sourceFrame);
-    inUse.EndRead();
-
-    if (!written) {
+    if (!DispatchFrame(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because all sink writes failed");
       break;
     }
@@ -677,7 +680,7 @@ void OpalMediaPatch::Main()
 
 bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 {
-  PWriteWaitAndSignal mutex(inUse);
+  PSafeLockReadWrite mutex(*this);
 
   if (!PAssert(m_bypassFromPatch == NULL, PLogicError))
     return false; // Can't be both!
@@ -718,19 +721,20 @@ bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
 
 PBoolean OpalMediaPatch::PushFrame(RTP_DataFrame & frame)
 {
-  PReadWaitAndSignal mutex(inUse);
   return DispatchFrame(frame);
 }
 
 
 bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
+  if (!LockReadOnly())
+    return false;
+
   if (m_bypassFromPatch != NULL) {
     PTRACE(3, "Patch\tMedia patch bypass started by " << *m_bypassFromPatch << " on " << *this);
-    inUse.EndRead();
+    UnlockReadOnly();
     m_bypassEnded.Wait();
     PTRACE(4, "Patch\tMedia patch bypass ended on " << *this);
-    inUse.StartRead();
     return true;
   }
 
@@ -751,6 +755,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     }
   }
 
+  UnlockReadOnly();
   return written;
 }
 

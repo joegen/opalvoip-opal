@@ -113,21 +113,11 @@ void IAX2Connection::StartOperation()
   SetPhase(SetUpPhase);
 }
 
-void IAX2Connection::Release( CallEndReason reason)		        
-{ 
-  PTRACE(4, "IAX2Con\tRelease( CallEndReason " << reason);
-
-  iax2Processor.Hangup(GetCallEndReasonText(reason)); ///Send hangup frame
-
-  iax2Processor.Release(reason); 
-
-  OpalConnection::Release(reason);
-}
-
 void IAX2Connection::OnReleased()
 {
   PTRACE(4, "IAX2Con\tOnReleased()" << *this);
 
+  iax2Processor.Hangup(GetCallEndReasonText(GetCallEndReason())); ///Send hangup frame
   iax2Processor.OnReleased();
   OpalConnection::OnReleased();  
 }

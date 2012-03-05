@@ -57,7 +57,7 @@ class OpalTranscoder;
    the Start() function is called on the patch when the creator code is
    ready for it to begin. For example all sink streams have been added.
   */
-class OpalMediaPatch : public PObject
+class OpalMediaPatch : public PSafeObject
 {
     PCLASSINFO(OpalMediaPatch, PObject);
   public:
@@ -302,7 +302,6 @@ class OpalMediaPatch : public PObject
 
     Thread * patchThread;
     PMutex patchThreadMutex;
-    mutable PReadWriteMutex inUse;
 
   private:
     P_REMOVE_VIRTUAL(bool, OnPatchStart(), false);

@@ -76,9 +76,6 @@ class IAX2CallProcessor : public IAX2Processor
   /**Get the iax2 encryption info */
   IAX2Encryption & GetEncryptionInfo() { return encryption; }
 
-  /**Call back from the IAX2Connection class */
-  virtual void Release(OpalConnection::CallEndReason releaseReason = OpalConnection::EndedByLocalUser);
-
   /**From the IAX2Connection class. CAlling this sends a hangup frame */
   void ClearCall(OpalConnection::CallEndReason releaseReason = OpalConnection::EndedByLocalUser);
 

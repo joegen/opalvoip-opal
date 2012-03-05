@@ -1059,14 +1059,6 @@ class OpalManager : public PObject
       PBoolean requiresPatchThread = true  ///< The patch requires a thread
     );
 
-    /**Destroy a OpalMediaPatch instance.
-
-       The default behaviour simply calls delete patch.
-      */
-    virtual void DestroyMediaPatch(
-      OpalMediaPatch * patch
-    );
-
     /**Call back for a media patch thread starting.
        This function is called within the context of the thread associated
        with the media patch.
