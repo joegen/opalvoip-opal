@@ -183,7 +183,7 @@ PString OpalManagerConsole::GetArgumentUsage() const
 }
 
 
-bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
+bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
   if (args.HasOption('V')) {
     const PProcess & process = PProcess::Current();
@@ -404,6 +404,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       if (verbose)
         cout << aor << '\n';
     }
+
+    AddRouteEntry("sip.*:.* = " + defaultRoute);
   }
 #endif // OPAL_SIP
 
@@ -458,6 +460,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       if (verbose)
         cout << *h323->GetGatekeeper() << flush;
     }
+
+    AddRouteEntry("h323.*:.* = " + defaultRoute);
   }
 #endif // OPAL_H323
 
@@ -483,6 +487,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       else if (verbose)
         cout << "LID to country: " << lines->GetLine("*")->GetDevice().GetCountryCodeName() << endl;
     }
+
+    AddRouteEntry("pstn:.* = " + defaultRoute);
   }
 #endif // OPAL_LID
 
@@ -498,6 +504,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       cerr << "Could not open CAPI controllers." << endl;
     else if (verbose)
       cout << "Found " << controllers << " CAPI controllers." << endl;
+
+    AddRouteEntry("isdn:.* = " + defaultRoute);
   }
 #endif
 

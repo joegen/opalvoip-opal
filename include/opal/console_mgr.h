@@ -60,7 +60,11 @@ class OpalManagerConsole : public OpalManager
     PString GetArgumentSpec() const;
     PString GetArgumentUsage() const;
 
-    bool Initialise(PArgList & args, bool verbose);
+    bool Initialise(
+      PArgList & args,
+      bool verbose,
+      const PString & defaultRoute = PString::Empty()
+    );
 
   protected:
 #if OPAL_SIP
