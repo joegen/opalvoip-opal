@@ -42,6 +42,7 @@
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
+#include <lids/capi_ep.h>
 
 
 static void PrintVersion(ostream & strm)
@@ -111,7 +112,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
 
 #if OPAL_SIP
          "[SIP options:]"
-         "S-sip:             SIP listens on interface, defaults to udp$*:5060, 'x' disables.\n"
+         "-no-sip.           Disable SIP\n"
+         "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n"
          "r-register:        SIP registration to server.\n"
          "-register-auth-id: SIP registration authorisation id, default is username.\n"
          "-register-proxy:   SIP registration proxy, default is none.\n"
@@ -123,7 +125,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
 
 #if OPAL_H323
          "[H.323 options:]"
-         "H-h323:            H.323 listens on interface, defaults to tcp$*:1720, 'x' disables.\n"
+         "-no-h323.          Disable H.323\n"
+         "H-h323:            H.323 listens on interface, defaults to tcp$*:1720.\n"
          "g-gk-host:         H.323 gatekeeper host.\n"
          "G-gk-id:           H.323 gatekeeper identifier.\n"
          "-no-fast.          H.323 fast connect disabled.\n"
@@ -131,11 +134,18 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-h323-ui:          H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n"
 #endif
 
+#if OPAL_LID || OPAL_CAPI
+         "[PSTN options:]"
+#if OPAL_CAPI
+         "-no-capi.          Disable SDN via CAPI\n"
+#endif
 #if OPAL_LID
-         "[Line Interface options:]"
-         "L-lines:           Set Line Interface Devices, 'x' disables.\n"
+         "-no-lid.           Disable Line Interface Devices"
+         "L-lines:           Set Line Interface Devices.\n"
          "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
 #endif
+#endif
+         "-stun:"
 
          "[IP options:]"
 #ifdef P_STUN
@@ -177,7 +187,7 @@ void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 }
 
 
-bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
+bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
   if (!args.IsParsed()) {
     PArgList::ParseResult result = args.Parse(GetArgumentSpec());
@@ -325,8 +335,11 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
 
 #if OPAL_SIP
   // Set up SIP
-  interfaces = args.GetOptionString("sip");
-  if (interfaces != "x") {
+  if (args.HasOption("no-sip") || (interfaces = args.GetOptionString("sip")) == "x") {
+    if (verbose)
+      cout << "SIP disabled" << endl;
+  }
+  else {
     SIPEndPoint * sip  = CreateSIPEndPoint();
     if (!sip->StartListeners(interfaces.Lines())) {
       cerr << "Could not start SIP listeners." << endl;
@@ -386,14 +399,19 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       if (verbose)
         cout << aor << '\n';
     }
+
+    AddRouteEntry("sip.*:.* = " + defaultRoute);
   }
 #endif // OPAL_SIP
 
 
 #if OPAL_H323
   // Set up H.323
-  interfaces = args.GetOptionString("h323");
-  if (interfaces != "x") {
+  if (args.HasOption("no-h323") || (interfaces = args.GetOptionString("h323")) == "x") {
+    if (verbose)
+      cout << "H.323 disabled" << endl;
+  }
+  else {
     H323EndPoint * h323 = CreateH323EndPoint();
     if (!h323->StartListeners(interfaces.Lines())) {
       cerr << "Could not start H.323 listeners." << endl;
@@ -437,12 +455,18 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       if (verbose)
         cout << *h323->GetGatekeeper() << flush;
     }
+
+    AddRouteEntry("h323.*:.* = " + defaultRoute);
   }
 #endif // OPAL_H323
 
 #if OPAL_LID
   // If we have LIDs speficied in command line, load them
-  if (args.HasOption("lines")) {
+  if (args.HasOption("no-lid") || !args.HasOption("lines")) {
+    if (verbose)
+      cout << "Line Interface Devices disabled" << endl;
+  }
+  else {
     OpalLineEndPoint * lines = CreateLineEndPoint();
     if (!lines->AddDeviceNames(args.GetOptionString("lines").Lines())) {
       cerr << "Could not start Line Interface Device(s)" << endl;
@@ -458,8 +482,27 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose)
       else if (verbose)
         cout << "LID to country: " << lines->GetLine("*")->GetDevice().GetCountryCodeName() << endl;
     }
+
+    AddRouteEntry("pstn:.* = " + defaultRoute);
   }
 #endif // OPAL_LID
+
+#if OPAL_CAPI
+  if (args.HasOption("no-capi")) {
+    if (verbose)
+      cout << "ISDN CAPI disabled" << endl;
+  }
+  else {
+    OpalCapiEndPoint * capi = CreateCapiEndPoint();
+    unsigned controllers = capi->OpenControllers();
+    if (controllers == 0)
+      cerr << "Could not open CAPI controllers." << endl;
+    else if (verbose)
+      cout << "Found " << controllers << " CAPI controllers." << endl;
+
+    AddRouteEntry("isdn:.* = " + defaultRoute);
+  }
+#endif
 
   PString telProto = args.GetOptionString("tel");
   if (!telProto.IsEmpty()) {
@@ -514,6 +557,14 @@ OpalLineEndPoint * OpalManagerConsole::CreateLineEndPoint()
 #endif // OPAL_LID
 
 
+#if OPAL_CAPI
+OpalCapiEndPoint * OpalManagerConsole::CreateCapiEndPoint()
+{
+  return new OpalCapiEndPoint(*this);
+}
+#endif // OPAL_LID
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManagerCLI::OpalManagerCLI()
@@ -539,9 +590,9 @@ PString OpalManagerCLI::GetArgumentSpec() const
 }
 
 
-bool OpalManagerCLI::Initialise(PArgList & args, bool verbose)
+bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  if (!OpalManagerConsole::Initialise(args, verbose))
+  if (!OpalManagerConsole::Initialise(args, verbose, defaultRoute))
     return false;
 
   if (m_cli == NULL) {

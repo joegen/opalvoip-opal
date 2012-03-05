@@ -87,17 +87,13 @@ void IvrOPAL::Main()
     return;
   }
 
-  if (!m_manager->Initialise(args, true))
+  if (!m_manager->Initialise(args, true, "ivr:"))
     return;
 
 
   // Set up IVR
   MyIVREndPoint * ivr  = new MyIVREndPoint(*m_manager);
   ivr->SetDefaultVXML(args[0]);
-
-
-  m_manager->AddRouteEntry("sip.*:.* = ivr:");
-  m_manager->AddRouteEntry("h323.*:.* = ivr:");
 
 
   if (args.GetCount() == 1)
