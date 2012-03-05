@@ -85,7 +85,7 @@ void ConfOPAL::Main()
     return;
   }
 
-  if (!m_manager->Initialise(args, true))
+  if (!m_manager->Initialise(args, true, "mcu:<du>"))
     return;
 
   // Set up PCSS to do speaker playback
@@ -118,10 +118,6 @@ void ConfOPAL::Main()
   }
 
   MyMixerEndPoint * mixer = m_manager->m_mixer = new MyMixerEndPoint(*m_manager, info);
-
-
-  m_manager->AddRouteEntry("sip.*:.* = mcu:<du>");
-  m_manager->AddRouteEntry("h323.*:.* = mcu:<du>");
 
 
   // Wait for call to come in and finish
