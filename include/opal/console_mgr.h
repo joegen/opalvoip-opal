@@ -41,6 +41,7 @@
 class SIPEndPoint;
 class H323EndPoint;
 class OpalLineEndPoint;
+class OpalCapiEndPoint;
 
 
 /**Opal manager class for console applications.
@@ -70,6 +71,9 @@ class OpalManagerConsole : public OpalManager
 #endif
 #if OPAL_LID
     OpalLineEndPoint * CreateLineEndPoint();
+#endif
+#if OPAL_CAPI
+    OpalCapiEndPoint * CreateCapiEndPoint();
 #endif
 };
 
