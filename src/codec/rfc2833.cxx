@@ -396,8 +396,6 @@ void OpalRFC2833Proto::SendAsyncFrame()
 
 OpalMediaFormat OpalRFC2833Proto::GetTxMediaFormat() const
 {
-  PWaitAndSignal mutex(m_sendMutex);
-
   OpalMediaFormat format = m_baseMediaFormat;
   format.SetPayloadType(m_txPayloadType);
   OpalRFC288EventsOption * opt = format.FindOptionAs<OpalRFC288EventsOption>(OpalRFC288EventsName());
@@ -409,8 +407,6 @@ OpalMediaFormat OpalRFC2833Proto::GetTxMediaFormat() const
 
 OpalMediaFormat OpalRFC2833Proto::GetRxMediaFormat() const
 {
-  PWaitAndSignal mutex(m_receiveMutex);
-
   OpalMediaFormat format = m_baseMediaFormat;
   format.SetPayloadType(m_rxPayloadType);
   OpalRFC288EventsOption * opt = format.FindOptionAs<OpalRFC288EventsOption>(OpalRFC288EventsName());
@@ -439,8 +435,6 @@ static void SetXxMediaFormat(const OpalMediaFormat & mediaFormat,
 
 void OpalRFC2833Proto::SetTxMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PWaitAndSignal mutex(m_sendMutex);
-
   SetXxMediaFormat(mediaFormat, m_txPayloadType, m_txEvents);
   PTRACE(4, "RFC2833\tSet tx pt=" << m_txPayloadType << ","
             " events=\"" << m_txEvents << "\""
@@ -450,8 +444,6 @@ void OpalRFC2833Proto::SetTxMediaFormat(const OpalMediaFormat & mediaFormat)
 
 void OpalRFC2833Proto::SetRxMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PWaitAndSignal mutex(m_receiveMutex);
-
   SetXxMediaFormat(mediaFormat, m_rxPayloadType, m_rxEvents);
   PTRACE(4, "RFC2833\tSet rx pt=" << m_rxPayloadType << ","
             " events=\"" << m_rxEvents << "\""
