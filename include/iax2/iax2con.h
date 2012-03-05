@@ -210,23 +210,6 @@ class IAX2Connection : public OpalConnection
       */
   void OnEstablished();
 
-  /**Release the current connection.
-     This removes the connection from the current call. The call may
-     continue if there are other connections still active on it. If this was
-     the last connection for the call then the call is disposed of as well.
-     
-     Note that this function will return quickly as the release and
-     disposal of the connections is done by another thread.
-  
-     This sends an IAX2 hangup frame to the remote endpoint.
- 
-     The ConnectionRun that manages packets going into/out of the
-     IAX2Connection will continue to run, and will send the appropriate
-     IAX2 hangup messages. Death of the Connection thread will happen when the 
-     OnReleased thread of the OpalConnection runs */
-  virtual void Release( CallEndReason reason = EndedByLocalUser ///<Reason for call release
-		);
-
   /**Indicate to remote endpoint an alert is in progress.  If this is
      an incoming connection and the AnswerCallResponse is in a
      AnswerCallDeferred or AnswerCallPending state, then this function

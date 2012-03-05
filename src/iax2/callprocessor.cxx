@@ -135,13 +135,6 @@ void IAX2CallProcessor::PrintOn(ostream & strm) const
        << "  Video frames rcvd   " << videoFramesRcvd      << endl;
 }
 
-void IAX2CallProcessor::Release(OpalConnection::CallEndReason reason)
-{
-  PTRACE(3, "Processor\tRelease(" << reason << ")");
-  PStringStream str;
-  str << reason;
-  Hangup(str);
-}
 
 void IAX2CallProcessor::ClearCall(OpalConnection::CallEndReason reason)
 {
@@ -1131,7 +1124,7 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
   
   if (!RemoteSelectedCodecOk()) {
     PTRACE(3, "Remote node sected a bad codec, hangup call ");
-    Release();
+    Hangup("bad codec");
     return;
   }
   PString codecName = IAX2FullFrameVoice::GetOpalNameOfCodec((unsigned short)selectedCodec);

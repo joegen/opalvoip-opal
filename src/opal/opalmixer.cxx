@@ -1011,14 +1011,14 @@ void OpalMixerConnection::OnApplyStringOptions()
 
 bool OpalMixerConnection::SendUserInputString(const PString & value)
 {
-  m_node->BroadcastUserInput(this, value);
+  m_endpoint.QueueUserInput(m_node, this, value);
   return true;
 }
 
 
 PBoolean OpalMixerConnection::SendUserInputTone(char tone, unsigned /*duration*/)
 {
-  m_node->BroadcastUserInput(this, tone);
+  m_endpoint.QueueUserInput(m_node, this, tone);
   return true;
 }
 
@@ -1811,6 +1811,7 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
 
 OpalMixerNodeManager::OpalMixerNodeManager(OpalManager & manager)
   : m_manager(manager)
+  , m_userInputPool(1)
 {
   m_nodesByName.DisallowDeleteObjects();
 }
@@ -1913,6 +1914,20 @@ PString OpalMixerNodeManager::CreateInternalURI(const PGloballyUniqueID & guid)
 
 void OpalMixerNodeManager::OnNodeStatusChanged(const OpalMixerNode &, OpalConferenceState::ChangeType)
 {
+}
+
+
+void OpalMixerNodeManager::QueueUserInput(const PSafePtr<OpalMixerNode> & node,
+                                          const OpalMixerConnection * connection,
+                                          const PString & value)
+{
+  m_userInputPool.AddWork(new UserInput(node, connection, value));
+}
+
+
+void OpalMixerNodeManager::UserInput::Work()
+{
+  m_node->BroadcastUserInput(m_connection, m_value);
 }
 
 

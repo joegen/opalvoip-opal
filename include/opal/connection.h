@@ -867,7 +867,8 @@ class OpalConnection : public PSafeObject
        disposal of the connections is done by another thread.
       */
     virtual void Release(
-      CallEndReason reason = EndedByLocalUser ///<  Reason for call release
+      CallEndReason reason = EndedByLocalUser, ///<  Reason for call release
+      bool synchronous = false                 ///< If true spawns thread to release connection
     );
 
     /**Clean up the termination of the connection.
@@ -1759,7 +1760,6 @@ class OpalConnection : public PSafeObject
     PString              remotePartyAddress;
     PString              m_redirectingParty;
     CallEndReason        callEndReason;
-    bool                 synchronousOnRelease;
     PString              m_calledPartyNumber;
     PString              m_calledPartyName;
 

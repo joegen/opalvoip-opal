@@ -174,6 +174,7 @@ class OpalRFC2833Proto : public PObject
     unsigned m_tonesReceived;
     PTimer   m_receiveTimer;
     DWORD    m_previousReceivedTimestamp;
+    PMutex   m_receiveMutex;
 
     enum {
       TransmitIdle,
@@ -191,8 +192,7 @@ class OpalRFC2833Proto : public PObject
     PTimeInterval    m_asyncStart;
     BYTE             m_transmitCode;
     unsigned         m_transmitDuration;
-
-    PMutex m_mutex;
+    PMutex        m_sendMutex;
 };
 
 
