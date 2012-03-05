@@ -67,7 +67,7 @@ PString MyManager::GetArgumentSpec() const
 
 bool MyManager::Initialise(PArgList & args, bool verbose)
 {
-  if (!OpalManagerCLI::Initialise(args, verbose))
+  if (!OpalManagerCLI::Initialise(args, verbose, "mcu:<du>"))
     return false;
 
   // Set up PCSS to do speaker playback
@@ -78,9 +78,6 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
   // Set up conference mixer
   m_mixer = new MyMixerEndPoint(*this);
-
-  AddRouteEntry("sip.*:.* = mcu:<du>");
-  AddRouteEntry("h323.*:.* = mcu:<du>");
 
   if (args.HasOption('a')) {
     PFilePath path = args.GetOptionString('a');

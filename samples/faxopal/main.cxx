@@ -112,19 +112,6 @@ void FaxOPAL::Main()
   static char const * FormatMask[] = { "!G.711*", "!@fax" };
   m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
 
-  if (!m_manager->Initialise(args, !args.HasOption('q')))
-    return;
-
-  // Create audio or T.38 fax endpoint.
-  MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
-  if (args.HasOption('d'))
-    fax->SetDefaultDirectory(args.GetOptionString('d'));
-
-  if (!fax->IsAvailable()) {
-    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
-    return;
-  }
-
   PString prefix;
 
   if (args.HasOption('q'))
@@ -147,8 +134,18 @@ void FaxOPAL::Main()
   }
   cout << '\n';
 
-  m_manager->AddRouteEntry("sip.*:.* = " + prefix + ":" + args[0] + ";receive");
-  m_manager->AddRouteEntry("h323.*:.* = " + prefix + ":" + args[0] + ";receive");
+  if (!m_manager->Initialise(args, !args.HasOption('q'), prefix + ":" + args[0] + ";receive"))
+    return;
+
+  // Create audio or T.38 fax endpoint.
+  MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
+  if (args.HasOption('d'))
+    fax->SetDefaultDirectory(args.GetOptionString('d'));
+
+  if (!fax->IsAvailable()) {
+    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
+    return;
+  }
 
   OpalConnection::StringOptions stringOptions;
 

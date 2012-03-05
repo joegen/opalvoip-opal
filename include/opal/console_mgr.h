@@ -43,6 +43,7 @@
 class SIPEndPoint;
 class H323EndPoint;
 class OpalLineEndPoint;
+class OpalCapiEndPoint;
 
 
 /**OPAL manager class for console applications.
@@ -61,7 +62,11 @@ class OpalManagerConsole : public OpalManager
     virtual PString GetArgumentUsage() const;
     virtual void Usage(ostream & strm, const PArgList & args);
 
-    virtual bool Initialise(PArgList & args, bool verbose);
+    virtual bool Initialise(
+      PArgList & args,
+      bool verbose,
+      const PString & defaultRoute = PString::Empty()
+    );
     virtual void Run();
     virtual void EndRun();
 
@@ -74,6 +79,9 @@ class OpalManagerConsole : public OpalManager
 #endif
 #if OPAL_LID
     OpalLineEndPoint * CreateLineEndPoint();
+#endif
+#if OPAL_CAPI
+    OpalCapiEndPoint * CreateCapiEndPoint();
 #endif
 
     PSyncPoint m_endRun;
@@ -95,7 +103,11 @@ class OpalManagerCLI : public OpalManagerConsole
     ~OpalManagerCLI();
 
     virtual PString GetArgumentSpec() const;
-    virtual bool Initialise(PArgList & args, bool verbose);
+    virtual bool Initialise(
+      PArgList & args,
+      bool verbose,
+      const PString & defaultRoute = PString::Empty()
+    );
     virtual void Run();
     virtual void EndRun();
 
