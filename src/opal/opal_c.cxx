@@ -1933,7 +1933,7 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
 void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessageBuffer & response)
 {
   PSafePtr<OpalCall> call;
-  if (!FindCall(command.m_param.m_userInput.m_callToken, response, call))
+  if (!FindCall(command.m_param.m_recording.m_callToken, response, call))
     return;
 
 #if OPAL_HAS_MIXER
