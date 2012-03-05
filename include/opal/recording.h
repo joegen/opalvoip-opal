@@ -46,6 +46,11 @@
 class OpalRecordManager
 {
   public:
+    /** Factory for creating new recording managers. Selection is made based on the
+        file extension of the file supplied to OpalManager::StartRecording().
+
+        Currently only WAV files, and for WIndows only, AVI files, are supported.
+        Howeer this factory allows an application to add their own file formats. */
     typedef PFactory<OpalRecordManager, PCaselessString> Factory;
 
 #if OPAL_VIDEO
@@ -71,16 +76,27 @@ class OpalRecordManager
     };
 #endif
 
+    // Options for recording calls.
     struct Options {
-      bool      m_stereo;
-      PString   m_audioFormat;
+      bool      m_stereo;       /**< Flag to indicate the recoding will be stereo where
+                                      incoming & outgoing audio are in individual channels. */
+      PString   m_audioFormat;  /**< Audio format for file output. The formats that are
+                                     supported is dependent on the concrete
+                                     OpalRecordManager class. For example, for WAV files
+                                     "PCM-16", "G.723.1", "G.728", "G.729" or "MS-GSM"
+                                     is supported. */
 
 #if OPAL_VIDEO
-      VideoMode m_videoMixing;
-      PString   m_videoFormat;
-      unsigned  m_videoWidth;
-      unsigned  m_videoHeight;
-      unsigned  m_videoRate;
+      VideoMode m_videoMixing;  ///< Mode for how incoming video is mixed.
+      PString   m_videoFormat;  /**< Audio format for file output. The formats that are
+                                     supported is dependent on the concrete
+                                     OpalRecordManager class. For example, for AVI files
+                                     this will be the four letter code supported by the
+                                     operating system, e.g. "MSVC" for Microsoft Video 1. */
+      unsigned  m_videoWidth;   ///< Video mixer buffer width. Inputs are scaled accordingly.
+      unsigned  m_videoHeight;  ///< Video mixer buffer heigth. Inputs are scaled accordingly.
+      unsigned  m_videoRate;    /**< Video mixer output frame rate. This is independent of
+                                     the input frame rates. */
 #endif
 
       Options(
