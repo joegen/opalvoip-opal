@@ -370,7 +370,11 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
 #if WIN32
 
+#ifdef __MINGW32__
+static const char DefaultPluginDirs[] = "plugins";
+#else
 static const char DefaultPluginDirs[] = "." DIR_TOKENISER "C:\\PTLib_Plugins";
+#endif
 
 #include <io.h>
 
