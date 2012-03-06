@@ -99,11 +99,6 @@ IAX2_AVAIL = yes
 VPATH_CXX += $(OPAL_SRCDIR)/iax2 
 endif
 
-ifneq (,$(wildcard src/zrtp))
-ZRTP_AVAIL = yes
-VPATH_CXX += $(OPAL_SRCDIR)/zrtp
-endif
-
 ifneq (,$(wildcard src/sip))
 SIP_AVAIL = yes
 VPATH_CXX += $(OPAL_SRCDIR)/sip
@@ -307,12 +302,10 @@ endif
 # ZRTP files
 
 ifeq ($(OPAL_ZRTP),yes)
-ifdef ZRTP_AVAIL
 
-SOURCES += $(OPAL_SRCDIR)/zrtp/opalzrtp.cxx \
+SOURCES += $(OPAL_SRCDIR)/rtp/opalzrtp.cxx \
            $(OPAL_SRCDIR)/rtp/zrtpudp.cxx
 
-endif
 endif
 
 
@@ -707,7 +700,7 @@ install:
 
 	mkdir -p $(DESTDIR)$(includedir)/opal; chmod 755 $(DESTDIR)$(includedir)/opal
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)/opal
-	( for dir in asn codec h323 h460 iax2 im lids opal rtp sip t120 t38 zrtp; \
+	( for dir in asn codec h323 h460 iax2 im lids opal rtp sip t120 t38; \
 		do mkdir -p $(DESTDIR)$(includedir)/opal/$$dir ; chmod 755 $(DESTDIR)$(includedir)/opal/$$dir ; \
 		( for fn in include/$$dir/*.h ; do \
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/opal/$$dir ; \
