@@ -60,9 +60,10 @@ class OpalWAVRecordManager : public OpalRecordManager
 
   protected:
     struct Mixer : public OpalAudioMixer {
-      Mixer(bool stereo) : OpalAudioMixer(stereo) { }
+      Mixer() { }
       ~Mixer() { StopPushThread(); }
 
+      bool Open(const PFilePath & fn, const Options & options);
       virtual bool OnMixed(RTP_DataFrame * & output);
 
       OpalWAVFile m_file;
@@ -98,27 +99,13 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
     return false;
   }
 
-  m_mixer = new Mixer(m_options.m_stereo);
+  m_mixer = new Mixer();
+  if (m_mixer->Open(fn, m_options))
+    return true;
 
-  if (!m_mixer->m_file.SetFormat(m_options.m_audioFormat)) {
-    PTRACE(2, "OpalRecord\tWAV file recording does not support format " << m_options.m_audioFormat);
-    delete m_mixer;
-    m_mixer = NULL;
-    return false;
-  }
-
-  if (!m_mixer->m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
-    PTRACE(2, "OpalRecord\tCould not open file \"" << fn << '"');
-    delete m_mixer;
-    m_mixer = NULL;
-    return false;
-  }
-
-  if (m_options.m_stereo)
-    m_mixer->m_file.SetChannels(2);
-
-  PTRACE(4, "OpalRecord\t" << (m_options.m_stereo ? "Stereo" : "Mono") << " mixer opened for file \"" << fn << '"');
-  return true;
+  delete m_mixer;
+  m_mixer = NULL;
+  return false;
 }
 
 
@@ -177,6 +164,29 @@ bool OpalWAVRecordManager::WriteAudio(const PString & strm, const RTP_DataFrame 
 bool OpalWAVRecordManager::WriteVideo(const PString &, const RTP_DataFrame &)
 {
   return false;
+}
+
+
+bool OpalWAVRecordManager::Mixer::Open(const PFilePath & fn, const Options & options)
+{
+  if (!m_file.SetFormat(options.m_audioFormat)) {
+    PTRACE(2, "OpalRecord\tWAV file recording does not support format " << options.m_audioFormat);
+    return false;
+  }
+
+  if (!m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
+    PTRACE(2, "OpalRecord\tCould not open file \"" << fn << '"');
+    return false;
+  }
+
+  if (options.m_stereo) {
+    m_file.SetChannels(2);
+    if (m_file.GetChannels() == 2)
+      m_stereo = true;
+  }
+
+  PTRACE(4, "OpalRecord\t" << (m_stereo ? "Stereo" : "Mono") << " mixer opened for file \"" << fn << '"');
+  return true;
 }
 
 
