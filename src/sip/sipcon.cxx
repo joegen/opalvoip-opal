@@ -3052,8 +3052,10 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 
   if (recvStream == NULL &&
       ownerCall.OpenSourceMediaStreams(*this, mediaType, rtpSessionId) &&
-      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL)
-     recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+      (recvStream = GetMediaStream(rtpSessionId, true)) != NULL) {
+    recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
+    recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+  }
 
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
