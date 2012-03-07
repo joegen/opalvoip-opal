@@ -1052,6 +1052,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   m_bufferRTP->SetPayloadSize(0);
   m_bufferRTP->CopyHeader(src);
+  m_bufferRTP->SetPadding(false);
 
   if (!Transcode((const BYTE *)src, &fromLen, m_bufferRTP->GetPointer(), &toLen, &flags))
     return false;
