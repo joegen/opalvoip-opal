@@ -223,6 +223,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
   , m_receiveState(ReceiveIdle)
   , m_receivedTone('\0')
   , m_tonesReceived(0)
+  , m_previousReceivedTimestamp(0)
   , m_transmitState(TransmitIdle)
   , m_rtpSession(NULL)
   , m_transmitTimestamp(0)
