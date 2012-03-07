@@ -4070,6 +4070,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   INIT_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo);
   INIT_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat);
+  if (m_AudioRecordingFormat.empty())
+    m_AudioRecordingFormat = OpalPCM16.GetName();
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
