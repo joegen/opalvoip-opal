@@ -611,7 +611,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
     sinkStream = otherConnection->OpenMediaStream(sinkFormat, sessionID, false);
     if (sinkStream != NULL) {
-      startedOne = true;
       if (!sourceStream.SetSafetyMode(PSafeReadOnly))
         return false;
 
@@ -623,8 +622,12 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
           return false;
       }
 
-      patch->AddSink(sinkStream);
       sourceStream.SetSafetyMode(PSafeReference);
+
+      if (patch->AddSink(sinkStream))
+        startedOne = true;
+      else
+        sinkStream->Close();
     }
   }
 
