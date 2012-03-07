@@ -334,6 +334,11 @@ class PWAVFileFormatPlugin : public PWAVFileFormat
       UpdateHeader(wavFmtChunk, extendedHeader);
     }
 
+    bool CanSetChannels(unsigned channels) const
+    {
+      return channels == 1;
+    }
+
     void UpdateHeader(PWAV::FMTChunk & wavFmtChunk, PBYTEArray & /*extendedHeader*/)
     {
       wavFmtChunk.bytesPerSample = (WORD)(wavFmtChunk.numChannels*m_mediaFormat.GetFrameSize());
