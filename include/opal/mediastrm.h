@@ -203,7 +203,8 @@ class OpalMediaStream : public PSafeObject
 
     /**Close the media stream.
 
-       The default does nothing.
+       The default marks the stream as closed and calls
+       OpalConnection::OnClosedMediaStream().
       */
     virtual PBoolean Close();
 
@@ -413,6 +414,13 @@ class OpalMediaStream : public PSafeObject
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
+    /**Close any internal components of the stream.
+       This should be used in preference to overriding the Close() function as
+       it is guaranteed to be called exactly once and avoids race conditions in
+       the shut down sequence of a media stream.
+      */
+    virtual void InternalClose() = 0;
+
     OpalConnection & connection;
     unsigned         sessionID;
     PString          identifier;
@@ -531,6 +539,7 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
   //@}
 
   protected:
+    virtual void InternalClose() { }
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
 
     bool m_isSynchronous;
@@ -572,12 +581,6 @@ class OpalRTPMediaStream : public OpalMediaStream
        The default behaviour simply sets the isOpen variable to true.
       */
     virtual PBoolean Open();
-
-    /**Close the media stream.
-
-       The default does nothing.
-      */
-    virtual PBoolean Close();
 
     /**Set the paused state for stream.
        This will stop reading/writing data from the stream.
@@ -648,6 +651,8 @@ class OpalRTPMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     OpalRTPSession & rtpSession;
     unsigned         minAudioJitterDelay;
     unsigned         maxAudioJitterDelay;
@@ -713,18 +718,14 @@ class OpalRawMediaStream : public OpalMediaStream
       bool autoDelete = true  ///< Auto delete channel on exit or replacement
     );
 
-    /**Close the media stream.
-
-       Closes the associated PChannel.
-      */
-    virtual PBoolean Close();
-
     /**Get average signal level in last frame.
       */
     virtual unsigned GetAverageSignalLevel();
   //@}
 
   protected:
+    virtual void InternalClose();
+
     PChannel * m_channel;
     bool       m_autoDelete;
     PMutex     m_channelMutex;
@@ -902,12 +903,6 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
-    /**Close the media stream.
-
-       The default does nothing.
-      */
-    virtual PBoolean Close();
-
     /**Execute the command specified to the transcoder. The commands are
        highly context sensitive, for example OpalVideoUpdatePicture would only
        apply to a video transcoder.
@@ -970,6 +965,7 @@ class OpalVideoMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
 
     PVideoInputDevice  * m_inputDevice;
@@ -1026,15 +1022,11 @@ class OpalUDPMediaStream : public OpalMediaStream
        Returns false.
       */
     virtual PBoolean IsSynchronous() const;
-
-    /**Close the media stream.
-       Closes the associated OpalTransportUDP.
-      */
-    virtual PBoolean Close();
-
   //@}
 
   private:
+    virtual void InternalClose();
+
     OpalTransportUDP & udpTransport;
 };
 
