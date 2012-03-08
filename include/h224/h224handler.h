@@ -219,24 +219,25 @@ private:
 
 class OpalH224MediaStream : public OpalMediaStream
 {
-  PCLASSINFO(OpalH224MediaStream, OpalMediaStream);
-  
-public:
-  OpalH224MediaStream(OpalConnection & connection,
-                      OpalH224Handler & h224Handler,
-                      const OpalMediaFormat & mediaFormat,
-                      unsigned sessionID,
-                      PBoolean isSource);
-  ~OpalH224MediaStream();
-  
-  virtual void OnStartMediaPatch();
-  virtual PBoolean Close();
-  virtual PBoolean ReadPacket(RTP_DataFrame & packet);
-  virtual PBoolean WritePacket(RTP_DataFrame & packet);
-  virtual PBoolean IsSynchronous() const { return false; }
-  virtual PBoolean RequiresPatchThread() const { return isSource ? false : true; }
-  
-private:
+    PCLASSINFO(OpalH224MediaStream, OpalMediaStream);
+    
+  public:
+    OpalH224MediaStream(OpalConnection & connection,
+                        OpalH224Handler & h224Handler,
+                        const OpalMediaFormat & mediaFormat,
+                        unsigned sessionID,
+                        PBoolean isSource);
+    ~OpalH224MediaStream();
+    
+    virtual void OnStartMediaPatch();
+    virtual PBoolean ReadPacket(RTP_DataFrame & packet);
+    virtual PBoolean WritePacket(RTP_DataFrame & packet);
+    virtual PBoolean IsSynchronous() const { return false; }
+    virtual PBoolean RequiresPatchThread() const { return isSource ? false : true; }
+    
+  private:
+    virtual void InternalClose();
+
     OpalH224Handler & h224Handler;
 };
 

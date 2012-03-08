@@ -442,13 +442,10 @@ PBoolean OpalIVRMediaStream::Open()
 }
 
 
-PBoolean OpalIVRMediaStream::Close()
+void OpalIVRMediaStream::InternalClose()
 {
   if (connection.IsReleased())
-    return OpalRawMediaStream::Close();
-
-  // Pause the vxmlSession here ...
-  return OpalMediaStream::Close();
+    OpalRawMediaStream::InternalClose();
 }
 
 

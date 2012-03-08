@@ -89,12 +89,6 @@ class OpalIAX2MediaStream : public OpalMediaStream
     */
     virtual PBoolean Start();
 
-    /**Close the media stream.
- 
-       The default does nothing.
-      */
-    virtual PBoolean Close();
- 
     /**
        Goes to the IAX2Connection class, and removes a packet from the connection. The connection class turned the media 
        packet into a RTP_DataFrame class, and jitter buffered it.
@@ -122,6 +116,8 @@ class OpalIAX2MediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose() { }
+
     /**The connection is the source/sink of our data packets */
     IAX2Connection & connection;
 

@@ -70,10 +70,9 @@ class OpalFaxMediaStream : public OpalNullMediaStream
       m_isAudio = true; // Even though we are not REALLY audio, act like we are
     }
 
-    bool Close()
+    virtual void InternalClose()
     {
-      if (isOpen &&
-          m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
+      if (m_connection.m_state == OpalFaxConnection::e_CompletedSwitch &&
           m_connection.m_finalStatistics.m_fax.m_result < 0) {
         // make a referenced copy so can't be deleted out from under us
         PatchPtr patch = m_mediaPatch;
@@ -83,7 +82,7 @@ class OpalFaxMediaStream : public OpalNullMediaStream
         PTRACE(4, "FAX\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
       }
 
-      return OpalNullMediaStream::Close();
+      OpalNullMediaStream::InternalClose();
     }
 
   private:

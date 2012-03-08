@@ -411,6 +411,9 @@ class OpalIMMediaStream : public OpalMediaStream
 
     bool ReadPacket(RTP_DataFrame & packet);
     bool WritePacket(RTP_DataFrame & packet);
+
+  protected:
+    virtual void InternalClose() { }
 };
 
 #endif // OPAL_HAS_IM
