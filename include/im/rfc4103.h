@@ -83,6 +83,9 @@ class OpalT140MediaStream : public OpalMediaStream
 
     bool ReadPacket(RTP_DataFrame & packet);
     bool WritePacket(RTP_DataFrame & packet);
+
+  protected:
+    virtual void InternalClose() { }
 };
 
 

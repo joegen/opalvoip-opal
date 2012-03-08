@@ -1116,14 +1116,9 @@ PBoolean OpalMixerMediaStream::Open()
 }
 
 
-PBoolean OpalMixerMediaStream::Close()
+void OpalMixerMediaStream::InternalClose()
 {
-  if (!isOpen)
-    return false;
-
   m_node->DetachStream(this);
-
-  return OpalMediaStream::Close();
 }
 
 

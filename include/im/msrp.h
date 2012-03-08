@@ -365,6 +365,8 @@ class OpalMSRPMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose() { }
+
     OpalMSRPMediaSession & m_msrpSession;
     PString                m_remoteParty;
 };

@@ -224,22 +224,23 @@ PBoolean OpalMediaStream::Close()
 
   PTRACE(4, "Media\tClosing stream " << *this);
 
-  if (!LockReadWrite())
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
     return false;
 
   // Allow for race condition where it is closed in another thread during the above wait
-  if (!isOpen) {
-    UnlockReadWrite();
+  if (!isOpen)
     return false;
-  }
 
   isOpen = false;
 
-  UnlockReadWrite();
+  InternalClose();
 
   connection.OnClosedMediaStream(*this);
   SetPatch(NULL);
   connection.RemoveMediaStream(*this);
+
+  PTRACE(5, "Media\tClosed stream " << *this);
   return true;
 }
 
@@ -685,17 +686,11 @@ PBoolean OpalRTPMediaStream::Open()
 }
 
 
-PBoolean OpalRTPMediaStream::Close()
+void OpalRTPMediaStream::InternalClose()
 {
-  if (!isOpen)
-    return false;
-    
-  PTRACE(3, "Media\tClosing RTP for " << *this);
-
   // Break any I/O blocks and wait for the thread that uses this object to
   // terminate before we allow it to be deleted.
   rtpSession.Shutdown(IsSource());
-  return OpalMediaStream::Close();
 }
 
 
@@ -977,15 +972,10 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
 }
 
 
-PBoolean OpalRawMediaStream::Close()
+void OpalRawMediaStream::InternalClose()
 {
-  if (!isOpen)
-    return false;
-
   if (m_channel != NULL)
     m_channel->Close();
-
-  return OpalMediaStream::Close();
 }
 
 
@@ -1283,18 +1273,13 @@ PBoolean OpalVideoMediaStream::Open()
 }
 
 
-PBoolean OpalVideoMediaStream::Close()
+void OpalVideoMediaStream::InternalClose()
 {
-  if (!OpalMediaStream::Close())
-    return false;
-
   if (m_inputDevice != NULL)
     m_inputDevice->Stop();
 
   if (m_outputDevice != NULL)
     m_outputDevice->Stop();
-
-  return true;
 }
 
 
@@ -1496,13 +1481,9 @@ PBoolean OpalUDPMediaStream::IsSynchronous() const
 }
 
 
-PBoolean OpalUDPMediaStream::Close()
+void OpalUDPMediaStream::InternalClose()
 {
-  if (!isOpen)
-    return false;
-    
   udpTransport.Close();
-  return OpalMediaStream::Close();
 }
 
 
