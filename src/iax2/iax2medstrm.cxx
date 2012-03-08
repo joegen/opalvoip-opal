@@ -94,14 +94,6 @@ PBoolean OpalIAX2MediaStream::Start()
   return OpalMediaStream::Start();
 }
   
-PBoolean OpalIAX2MediaStream::Close()
-{
-  PBoolean res = OpalMediaStream::Close();
-
-  PTRACE(3, "Media\t" << *this << " is now closed"); 
-  return res;
-}
- 
  
 PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {

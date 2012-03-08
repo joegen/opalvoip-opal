@@ -380,7 +380,6 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
     );
 
     virtual bool Open();
-    virtual bool Close();
 
     PURL GetRemoteURL() const           { return m_msrpSession.GetRemoteURL(); }
     void SetRemoteURL(const PURL & url) { m_msrpSession.SetRemoteURL(url); }

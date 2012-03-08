@@ -411,10 +411,6 @@ PBoolean OpalMSRPMediaStream::WritePacket(RTP_DataFrame & frame)
   return m_msrpSession.WritePacket(frame);
 }
 
-PBoolean OpalMSRPMediaStream::Close()
-{
-  return OpalIMMediaStream::Close();
-}
 
 void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::IncomingMSRP & incomingMSRP)
 {

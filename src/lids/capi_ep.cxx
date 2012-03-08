@@ -1181,12 +1181,10 @@ OpalCapiMediaStream::OpalCapiMediaStream(OpalCapiConnection & conn,
 }
 
 
-PBoolean OpalCapiMediaStream::Close()
+void OpalCapiMediaStream::InternalClose()
 {
   m_queue.Close();
-  bool ok = OpalMediaStream::Close();
   m_written.Signal();
-  return ok;
 }
 
 

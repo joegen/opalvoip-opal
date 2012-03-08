@@ -964,7 +964,7 @@ PBoolean OpalLineMediaStream::Open()
 }
 
 
-PBoolean OpalLineMediaStream::Close()
+void OpalLineMediaStream::InternalClose()
 {
   if (directLineNumber != UINT_MAX)
     line.GetDevice().SetLineToLineDirect(line.GetLineNumber(), directLineNumber, false);
@@ -972,8 +972,6 @@ PBoolean OpalLineMediaStream::Close()
     line.StopReading();
   else
     line.StopWriting();
-
-  return OpalMediaStream::Close();
 }
 
 
