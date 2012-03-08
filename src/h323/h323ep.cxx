@@ -242,9 +242,9 @@ bool H323EndPoint::SetGatewaySupportedProtocol(H225_ArrayOf_SupportedProtocols &
 }
 
 
-bool H323EndPoint::OnSetGatewayPrefixes(PStringList & prefixes) const
+bool H323EndPoint::OnSetGatewayPrefixes(PStringList & /*prefixes*/) const
 {
-	return false;
+  return false;
 }
 
 
@@ -1387,7 +1387,7 @@ void H323EndPoint::LoadBaseFeatureSet()
 }
 
 
-bool H323EndPoint::OnFeatureInstance(int instType, const PString & identifer)
+bool H323EndPoint::OnFeatureInstance(int /*instType*/, const PString & /*identifer*/)
 {
   return true;
 }

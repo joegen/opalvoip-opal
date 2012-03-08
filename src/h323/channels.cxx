@@ -508,9 +508,9 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_H2250LogicalChannelParameters &
 }
 
 
-void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
+void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & /*param*/) const
 {
-  PTRACE(1,"H323_RealTimeChannel\tUnused old functin?");
+  PTRACE(1,"H323_RealTimeChannel\tUnused old function?");
 }
 
 
@@ -875,7 +875,7 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 }
 
 
-void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
+void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
                                     H245_OpenLogicalChannelAck & ack) const
 {
   if (listener == NULL && transport == NULL) {

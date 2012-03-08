@@ -675,7 +675,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
        port is zero indicating the media is not to be used. So don't return these
        bogus media formats from SDP to the "remote media format list". */
     m_remoteFormatList.Remove(PString('@')+mediaType);
-    return false;
+    return NULL;
   }
 
   OpalTransportAddress remoteMediaAddress = mediaDescription.GetTransportAddress();
@@ -1054,6 +1054,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
   }
 
+#if OPAL_SRTP
   // See if we already have a secure version of the media session
   for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
     if (it->second->GetMediaType() == mediaType && it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP()) {
@@ -1061,6 +1062,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
       return false;
     }
   }
+#endif
 
   // Create new media session
   OpalTransportAddress localAddress;
