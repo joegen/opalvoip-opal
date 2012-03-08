@@ -164,11 +164,11 @@ class OpalCapiEndPoint : public OpalEndPoint
     struct IdToConnMap : public std::map<DWORD, PSafePtr<OpalCapiConnection> >
     {
       bool Forward(const OpalCapiMessage & message, DWORD id);
+      PMutex m_mutex;
     };
 
     IdToConnMap m_cbciToConnection;
     IdToConnMap m_plciToConnection;
-    IdToConnMap m_ncciToConnection;
 
   friend class OpalCapiConnection;
 };
