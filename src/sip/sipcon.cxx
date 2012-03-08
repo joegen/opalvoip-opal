@@ -227,8 +227,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
                      (1<<SIP_PDU::Method_BYE   )) // Minimum set
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
-  , originalInvite(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
-  , originalInviteTime(0)
+  , m_lastReceivedINVITE(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
   , m_needReINVITE(false)
@@ -278,10 +277,8 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
   m_dialog.SetLocalTag(GetToken());
-  if (transport != NULL && originalInvite != NULL) {
-    m_dialog.Update(*transport, *originalInvite);
-    originalInviteTime.SetCurrentTime();
-  }
+  if (transport != NULL && m_lastReceivedINVITE != NULL)
+    m_dialog.Update(*transport, *m_lastReceivedINVITE);
 
   // Update remote party parameters
   UpdateRemoteAddresses();
@@ -315,7 +312,7 @@ SIPConnection::~SIPConnection()
   SetTransport(SIPURL());
 
   delete m_authentication;
-  delete originalInvite;
+  delete m_lastReceivedINVITE;
 }
 
 
@@ -410,10 +407,10 @@ void SIPConnection::OnReleased()
       if (callEndReason != EndedByCallForwarded)
         SendInviteResponse(sipCode);
       else {
-        SIP_PDU response(*originalInvite, sipCode);
+        SIP_PDU response(*m_lastReceivedINVITE, sipCode);
         AdjustInviteResponse(response);
         response.GetMIME().SetContact(m_forwardParty);
-        originalInvite->SendResponse(*transport, response); 
+        m_lastReceivedINVITE->SendResponse(*transport, response); 
       }
 
       /* Wait for ACK from remote before destroying object. Note that we either
@@ -573,7 +570,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
 PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean withMedia)
 {
-  if (IsOriginating() || originalInvite == NULL) {
+  if (IsOriginating() || m_lastReceivedINVITE == NULL) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
     return PTrue;
   }
@@ -587,7 +584,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
   if (GetPhase() >= AlertingPhase) 
     return PFalse;
 
-  if (!withMedia && (!m_prackEnabled || originalInvite->GetSDP() != NULL))
+  if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
@@ -648,10 +645,10 @@ PBoolean SIPConnection::SetConnected()
 bool SIPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
                                          OpalTransportAddressArray & transports) const
 {
-  if (originalInvite == NULL)
+  if (m_lastReceivedINVITE == NULL)
     return OpalRTPConnection::GetMediaTransportAddresses(mediaType, transports);
 
-  SDPSessionDescription * sdp = originalInvite->GetSDP();
+  SDPSessionDescription * sdp = m_lastReceivedINVITE->GetSDP();
   if (sdp == NULL)
     return false;
 
@@ -934,15 +931,15 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
 
 bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
 {
-  if (!PAssert(originalInvite != NULL, PLogicError))
+  if (!PAssert(m_lastReceivedINVITE != NULL, PLogicError))
     return false;
 
-  SDPSessionDescription * sdp = originalInvite->GetSDP();
+  SDPSessionDescription * sdp = m_lastReceivedINVITE->GetSDP();
 
   /* If we had SDP but no media could not be decoded from it, then we should return
      Not Acceptable Here error and not do an offer. Only offer if there was no body
      at all or there was a valid SDP with no m lines. */
-  if (sdp == NULL && !originalInvite->GetEntityBody().IsEmpty())
+  if (sdp == NULL && !m_lastReceivedINVITE->GetEntityBody().IsEmpty())
     return false;
 
   if (sdp == NULL || sdp->GetMediaDescriptions().IsEmpty()) {
@@ -1289,8 +1286,8 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
      after OnIncomingConnection() will fill m_remoteFormatList appropriately
      adjusted by AdjustMediaFormats() */
   SDPSessionDescription sdp(0, 0, OpalTransportAddress());
-  if (originalInvite != NULL && originalInvite->GetMIME().GetContentType() == "application/sdp")
-    sdp.Decode(originalInvite->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats());
+  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetMIME().GetContentType() == "application/sdp")
+    sdp.Decode(m_lastReceivedINVITE->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats());
   return sdp.GetMediaFormats();
 }
 
@@ -1303,12 +1300,12 @@ bool SIPConnection::SetRemoteMediaFormats()
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (originalInvite == NULL || !originalInvite->DecodeSDP(GetLocalMediaFormats())) {
+  if (m_lastReceivedINVITE == NULL || !m_lastReceivedINVITE->DecodeSDP(GetLocalMediaFormats())) {
     m_remoteFormatList = GetLocalMediaFormats();
     m_remoteFormatList.MakeUnique();
   }
   else {
-    m_remoteFormatList = originalInvite->GetSDP()->GetMediaFormats();
+    m_remoteFormatList = m_lastReceivedINVITE->GetSDP()->GetMediaFormats();
     AdjustMediaFormats(false, NULL, m_remoteFormatList);
   }
 
@@ -1669,14 +1666,14 @@ PBoolean SIPConnection::SetUpConnection()
 
 PString SIPConnection::GetDestinationAddress()
 {
-  return originalInvite != NULL ? originalInvite->GetURI().AsString() : OpalConnection::GetDestinationAddress();
+  return m_lastReceivedINVITE != NULL ? m_lastReceivedINVITE->GetURI().AsString() : OpalConnection::GetDestinationAddress();
 }
 
 
 PString SIPConnection::GetCalledPartyURL()
 {
-  if (!originating && originalInvite != NULL)
-    return originalInvite->GetURI().AsString();
+  if (!originating && m_lastReceivedINVITE != NULL)
+    return m_lastReceivedINVITE->GetURI().AsString();
 
   SIPURL calledParty = m_dialog.GetRequestURI();
   calledParty.Sanitise(SIPURL::ExternalURI);
@@ -1699,7 +1696,7 @@ bool SIPConnection::SetAlertingType(const PString & info)
 
 PString SIPConnection::GetCallInfo() const
 {
-  return originalInvite != NULL ? originalInvite->GetMIME().GetCallInfo() : PString::Empty();
+  return m_lastReceivedINVITE != NULL ? m_lastReceivedINVITE->GetMIME().GetCallInfo() : PString::Empty();
 }
 
 
@@ -2326,7 +2323,7 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   // connection, assume a duplicate so it is ignored. If it does turn out
   // to be new INVITE, then it should be retried and next time the race
   // will be passed.
-  if (originalInvite == NULL) {
+  if (m_lastReceivedINVITE == NULL) {
     PTRACE(3, "SIP\tIgnoring INVITE from " << request.GetURI() << " as we are originator.");
     return IsDuplicateINVITE;
   }
@@ -2334,9 +2331,8 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   /* If we have same transaction ID, it means it is a retransmission
      of the original INVITE, probably should re-transmit last sent response
      but we just ignore it. Still should work. */
-  if (originalInvite->GetTransactionID() == request.GetTransactionID()) {
-    PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
-    PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << timeSinceInvite);
+  if (m_lastReceivedINVITE->GetTransactionID() == request.GetTransactionID()) {
+    PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << (PTime() - m_phaseTime[SetUpPhase]));
     return IsDuplicateINVITE;
   }
 
@@ -2349,7 +2345,7 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
   // More checks for RFC3261/8.2.2.2 case relating to merged requests.
   if (m_dialog.GetRemoteTag() != requestFromTag ||
       m_dialog.GetCallID() != requestMIME.GetCallID() ||
-      originalInvite->GetMIME().GetCSeq() != requestMIME.GetCSeq() ||
+      m_lastReceivedINVITE->GetMIME().GetCSeq() != requestMIME.GetCSeq() ||
       request.GetTransactionID().NumCompare("z9hG4bK") != EqualTo) // Or RFC2543
     return IsNewINVITE; // No it isn't
 
@@ -2366,15 +2362,14 @@ SIPConnection::TypeOfINVITE SIPConnection::CheckINVITE(const SIP_PDU & request) 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   bool isReinvite = IsOriginating() ||
-        (originalInvite != NULL && originalInvite->GetTransactionID() != request.GetTransactionID());
+        (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetTransactionID() != request.GetTransactionID());
   PTRACE_IF(4, !isReinvite, "SIP\tInitial INVITE to " << request.GetURI());
 
-  // originalInvite should contain the first received INVITE for
-  // this connection
-  if (originalInvite == NULL)
-    originalInvite = new SIP_PDU(request);
+  // m_lastReceivedINVITE should contain the last received INVITE for this connection
+  delete m_lastReceivedINVITE;
+  m_lastReceivedINVITE = new SIP_PDU(request);
 
-  SIPMIMEInfo & mime = originalInvite->GetMIME();
+  SIPMIMEInfo & mime = m_lastReceivedINVITE->GetMIME();
 
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
@@ -2383,7 +2378,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
-    originalInvite->DecodeSDP(GetLocalMediaFormats());
+    m_lastReceivedINVITE->DecodeSDP(GetLocalMediaFormats());
     OnReceivedReINVITE(request);
     return;
   }
@@ -2587,14 +2582,14 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
-  if (originalInvite == NULL) {
+  if (m_lastReceivedINVITE == NULL) {
     PTRACE(2, "SIP\tACK from " << response.GetURI() << " received before INVITE!");
     return;
   }
 
   // Forked request
-  PString origFromTag = originalInvite->GetMIME().GetFieldParameter("From", "tag");
-  PString origToTag   = originalInvite->GetMIME().GetFieldParameter("To",   "tag");
+  PString origFromTag = m_lastReceivedINVITE->GetMIME().GetFieldParameter("From", "tag");
+  PString origToTag   = m_lastReceivedINVITE->GetMIME().GetFieldParameter("To",   "tag");
   PString fromTag     = response.GetMIME().GetFieldParameter("From", "tag");
   PString toTag       = response.GetMIME().GetFieldParameter("To",   "tag");
   if (fromTag != origFromTag || (!toTag.IsEmpty() && (toTag != origToTag))) {
@@ -2819,7 +2814,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
 
-  if (originalInvite == NULL || originalInvite->GetTransactionID() != request.GetTransactionID()) {
+  if (m_lastReceivedINVITE == NULL || m_lastReceivedINVITE->GetTransactionID() != request.GetTransactionID()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
     request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
     return;
@@ -3250,27 +3245,27 @@ bool SIPConnection::SendInviteOK()
     return SendInviteResponse(SIP_PDU::Successful_OK, &sdpOut);
   }
 
-  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
+  SIP_PDU response(*m_lastReceivedINVITE, SIP_PDU::Successful_OK);
   AdjustInviteResponse(response);
 
   response.SetEntityBody(externalSDP);
-  return originalInvite->SendResponse(*transport, response); 
+  return m_lastReceivedINVITE->SendResponse(*transport, response); 
 }
 
 
 PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
                                            const SDPSessionDescription * sdp)
 {
-  if (originalInvite == NULL)
+  if (m_lastReceivedINVITE == NULL)
     return true;
 
-  SIP_PDU response(*originalInvite, code, sdp);
+  SIP_PDU response(*m_lastReceivedINVITE, code, sdp);
   AdjustInviteResponse(response);
 
   if (sdp != NULL)
     response.GetSDP()->SetSessionName(response.GetMIME().GetUserAgent());
 
-  return originalInvite->SendResponse(*transport, response); 
+  return m_lastReceivedINVITE->SendResponse(*transport, response); 
 }
 
 
@@ -3343,7 +3338,7 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
 void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked() && originalInvite != NULL && !m_responsePackets.empty()) {
+  if (safeLock.IsLocked() && m_lastReceivedINVITE != NULL && !m_responsePackets.empty()) {
     PTRACE(3, "SIP\t" << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
            << " not received yet, retry " << m_responseRetryCount << " sending response for " << *this);
 
@@ -3352,7 +3347,7 @@ void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
       timeout = endpoint.GetRetryTimeoutMax();
     m_responseRetryTimer = timeout;
 
-    originalInvite->SendResponse(*transport, m_responsePackets.front()); // Not really a resonse but the function will work  }
+    m_lastReceivedINVITE->SendResponse(*transport, m_responsePackets.front()); // Not really a resonse but the function will work  }
   }
 }
 
@@ -3392,8 +3387,8 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     return;
   }
 
-  if (originalInvite == NULL ||
-      originalInvite->GetMIME().GetCSeqIndex() != rack[1].AsUnsigned() ||
+  if (m_lastReceivedINVITE == NULL ||
+      m_lastReceivedINVITE->GetMIME().GetCSeqIndex() != rack[1].AsUnsigned() ||
       !(rack[2] *= "INVITE") ||
       m_responsePackets.empty() ||
       m_responsePackets.front().GetMIME().GetString("RSeq").AsUnsigned() != rack[0].AsUnsigned()) {
@@ -3413,7 +3408,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responseRetryCount = 0;
     m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
     m_responseFailTimer = endpoint.GetAckTimeout();
-    originalInvite->SendResponse(*transport, m_responsePackets.front());
+    m_lastReceivedINVITE->SendResponse(*transport, m_responsePackets.front());
   }
 
   request.DecodeSDP(GetLocalMediaFormats());
