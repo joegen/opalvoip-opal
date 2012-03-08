@@ -728,8 +728,7 @@ class SIPConnection : public OpalRTPConnection
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
 
-    SIP_PDU             * originalInvite;
-    PTime                 originalInviteTime;
+    SIP_PDU             * m_lastReceivedINVITE;
     time_t                m_sdpSessionId;
     unsigned              m_sdpVersion; // Really a sequence number
     bool                  m_needReINVITE;
