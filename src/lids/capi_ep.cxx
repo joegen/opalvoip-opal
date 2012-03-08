@@ -1036,6 +1036,8 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       resp.param.connect_b3_resp.m_Reject = 0; // Accept call
       resp.AddEmpty(); // Network Control Protocol Information
       PutMessage(resp);
+
+      AutoStartMediaStreams();
       break;
     }
 
