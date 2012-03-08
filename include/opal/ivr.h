@@ -353,12 +353,6 @@ class OpalIVRMediaStream : public OpalRawMediaStream
       */
     virtual PBoolean Open();
 
-    /**Close the media stream.
-
-       Closes the associated PChannel.
-      */
-    virtual PBoolean Close();
-
     /**Indicate if the media stream is synchronous.
        Returns false for IVR streams.
       */
@@ -366,6 +360,8 @@ class OpalIVRMediaStream : public OpalRawMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     PVXMLSession & m_vxmlSession;
 };
 

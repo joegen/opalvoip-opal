@@ -925,10 +925,6 @@ class OpalMixerMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
-    /**Close the media stream.
-      */
-    virtual PBoolean Close();
-
     /**Write an RTP frame of data to the sink media stream.
        The default behaviour simply calls WriteData() on the data portion of the
        RTP_DataFrame and and sets the internal timestamp and marker from the
@@ -973,6 +969,8 @@ class OpalMixerMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     PSafePtr<OpalMixerNode> m_node;
     bool m_listenOnly;
 #if OPAL_VIDEO
