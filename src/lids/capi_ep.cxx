@@ -699,9 +699,7 @@ void OpalCapiEndPoint::ProcessMessages(PThread &, INT)
 
       case CapiNoError :
         PTRACE(pMessage->header.m_Command == CAPI_DATA_B3 ? 6 : 4, "CAPI\tGot message " << *pMessage);
-        inUseFlag.Wait();
         ProcessMessage(*pMessage);
-        inUseFlag.Signal();
         break;
 
       default:
@@ -715,11 +713,20 @@ void OpalCapiEndPoint::ProcessMessages(PThread &, INT)
 
 bool OpalCapiEndPoint::IdToConnMap::Forward(const OpalCapiMessage & message, DWORD id)
 {
+  PSafePtr<OpalCapiConnection> connection;
+
+  m_mutex.Wait();
+
   iterator iter = find(id);
-  if (iter == end() || iter->second == NULL)
+  if (iter != end())
+    connection = iter->second;
+
+  m_mutex.Signal();
+
+  if (connection == NULL)
     return false;
 
-  iter->second->ProcessMessage(message);
+  connection->ProcessMessage(message);
   return true;
 }
 
@@ -752,7 +759,7 @@ void OpalCapiEndPoint::ProcessMessage(const OpalCapiMessage & message)
     case CAPI_CONNECT_B3_ACTIVE :
     case CAPI_DATA_B3 :
     case CAPI_DISCONNECT_B3 :
-      m_ncciToConnection.Forward(message, message.param.m_NCCI);
+      m_plciToConnection.Forward(message, message.param.m_NCCI&0xffff);
       break;
   }
 }
@@ -888,15 +895,13 @@ PBoolean OpalCapiConnection::SetConnected()
 void OpalCapiConnection::OnReleased()
 {
   if (m_NCCI != 0) {
-    m_endpoint.m_ncciToConnection.erase(m_NCCI);
-
     OpalCapiMessage message(CAPI_DISCONNECT_B3, CAPI_REQ, sizeof(OpalCapiMessage::Params::DisconnectB3Req));
     message.param.disconnect_b3_req.m_NCCI = m_NCCI;
     message.AddEmpty(); // Network Control Protocol Information
     PutMessage(message);
   }
 
-  if (m_NCCI != 0) {
+  if (m_PLCI != 0) {
     m_endpoint.m_plciToConnection.erase(m_PLCI);
 
     OpalCapiMessage message(CAPI_DISCONNECT, CAPI_REQ, sizeof(OpalCapiMessage::Params::DisconnectReq));
@@ -1009,7 +1014,6 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       switch (message.param.connect_b3_conf.m_Info) {
         case 0 :
           m_NCCI = message.param.connect_b3_conf.m_NCCI;
-          m_endpoint.m_ncciToConnection[m_NCCI] = this;
           AutoStartMediaStreams();
           OnConnectedInternal();
           break;
@@ -1026,7 +1030,6 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
     case CAPICMD(CAPI_CONNECT_B3,CAPI_IND) :
     {
       m_NCCI = message.param.connect_b3_ind.m_NCCI;
-      m_endpoint.m_ncciToConnection[m_NCCI] = this;
 
       OpalCapiMessage resp(CAPI_CONNECT_B3, CAPI_RESP, sizeof(OpalCapiMessage::Params::ConnectB3Resp));
       resp.param.connect_b3_resp.m_NCCI = m_NCCI;
@@ -1071,10 +1074,7 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       resp.param.disconnect_b3_resp.m_NCCI = m_NCCI;
       PutMessage(resp);
 
-      if (m_NCCI != 0) {
-        m_endpoint.m_ncciToConnection.erase(m_NCCI);
-        m_NCCI = 0;
-      }
+      m_NCCI = 0;
       break;
     }
 
