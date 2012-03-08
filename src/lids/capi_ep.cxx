@@ -883,7 +883,11 @@ PBoolean OpalCapiConnection::SetConnected()
   OpalCapiMessage message(CAPI_CONNECT, CAPI_RESP, sizeof(OpalCapiMessage::Params::ConnectResp));
   message.param.connect_resp.m_PLCI = m_PLCI;
   message.param.connect_resp.m_Reject = 0;
-  message.AddEmpty(); // B protocol
+  OpalCapiMessage::Bprotocol proto;
+  proto.m_B1protocol = 1; // Physical layer: 64 kbit/s bit-transparent operation with byte framing from the network
+  proto.m_B2protocol = 1; // Data link layer: Transparent
+  proto.m_B3protocol = 0; // Network layer: Transparent
+  message.Add(&proto, sizeof(proto)); // B protocol
   message.Add(localPartyName); // Connected party number
   message.AddEmpty(); // Connected party subaddress
   message.AddEmpty(); // Low Layer Compatibility
