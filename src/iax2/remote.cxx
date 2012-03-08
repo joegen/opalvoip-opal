@@ -425,7 +425,7 @@ PBoolean IAX2SequenceNumbers::IsFirstReplyFrame()
 PBoolean IAX2SequenceNumbers::IsSequenceNosZero()
 {
   PWaitAndSignal m(mutex);
-  return ((inSeqNo && 0xff) == 0) && ((outSeqNo && 0xff) == 0); 
+  return ((inSeqNo & 0xff) == 0) && ((outSeqNo & 0xff) == 0); 
 }
 
 void IAX2SequenceNumbers::SetInSeqNo(PINDEX newVal) 

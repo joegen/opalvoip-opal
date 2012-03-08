@@ -105,7 +105,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
                                        unsigned * fromLen,
                                            void * to,         
                                        unsigned * toLen,
-                                   unsigned int * flag)
+                                   unsigned int * /*flag*/)
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
@@ -115,7 +115,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 
   // encode PCM data in sampleBuffer to buffer
   int i = 0;
-  int frameLen = codec->parm.audio.samplesPerFrame*2;
+  unsigned  frameLen = codec->parm.audio.samplesPerFrame*2;
   while ((*fromLen >= ((i+1)*frameLen)) && (((i+1)*codec->parm.audio.bytesPerFrame) <= *toLen) ) {
     speex_encode_int(context->coderState, sampleBuffer + i*codec->parm.audio.samplesPerFrame, &context->speexBits); 
     ++i;
@@ -132,7 +132,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   return 1; 
 }
 
-static void destroy_encoder(const struct PluginCodec_Definition * codec, void * _context)
+static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
@@ -198,7 +198,7 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   return 1;
 }
 
-static void destroy_decoder(const struct PluginCodec_Definition * codec, void * _context)
+static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
 {
   struct PluginSpeexContext * context = (struct PluginSpeexContext *)_context;
 
@@ -209,7 +209,7 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
 
 static int encoder_get_options(
       const PluginCodec_Definition * , 
-      void * context , 
+      void * /*context*/, 
       const char * , 
       void * parm , 
       unsigned * parmLen)
@@ -224,7 +224,7 @@ static int encoder_get_options(
 
 static int valid_for_sip(
       const PluginCodec_Definition * , 
-      void * context , 
+      void * /*context*/, 
       const char * , 
       void * parm , 
       unsigned * parmLen)
@@ -288,7 +288,7 @@ static int coder_get_sip_options(
 }
 
 static int encoder_set_vbr(
-      const PluginCodec_Definition * codec, 
+      const PluginCodec_Definition *, 
       void * _context, 
       const char * , 
       void * parm, 
@@ -303,7 +303,7 @@ static int encoder_set_vbr(
 }
 
 static int decoder_set_vbr(
-      const PluginCodec_Definition * codec, 
+      const PluginCodec_Definition *, 
       void * _context, 
       const char * , 
       void * parm, 

@@ -1646,8 +1646,8 @@ H4507Handler::H4507Handler(H323Connection & conn, H450xDispatcher & disp)
 
 PBoolean H4507Handler::OnReceivedInvoke(int opcode,
                                     int invokeId,
-                                    int linkedId,
-                                    PASN_OctetString *argument)
+                                    int /*linkedId*/,
+                                    PASN_OctetString * /*argument*/)
 {
   currentInvokeId = invokeId;
   PTRACE(3, "H450.7\tOnReceivedInvoke: invokeId = " << invokeId); 
