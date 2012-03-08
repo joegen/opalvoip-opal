@@ -116,7 +116,7 @@ PBoolean H460_FeatureStd18::OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu
 }
 
 
-void H460_FeatureStd18::OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd18::OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & /*pdu*/) 
 {
   isEnabled = true;
 }
@@ -133,7 +133,7 @@ PBoolean H460_FeatureStd18::OnSendRegistrationRequest(H225_FeatureDescriptor & p
 }
 
 
-void H460_FeatureStd18::OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd18::OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & /*pdu*/) 
 {
   isEnabled = true;
   handler->Enable();
@@ -227,7 +227,7 @@ PBoolean H460_FeatureStd19::OnSendSetup_UUIE(H225_FeatureDescriptor & pdu)
 }
 
 
-void H460_FeatureStd19::OnReceiveSetup_UUIE(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd19::OnReceiveSetup_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
 {
   if (isEnabled && isAvailable) {
     remoteSupport = TRUE;
@@ -248,7 +248,7 @@ PBoolean H460_FeatureStd19::OnSendCallProceeding_UUIE(H225_FeatureDescriptor & p
 }
 
 
-void H460_FeatureStd19::OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd19::OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
 {
   if (isEnabled && isAvailable) {
     remoteSupport = TRUE;
@@ -257,7 +257,7 @@ void H460_FeatureStd19::OnReceiveCallProceeding_UUIE(const H225_FeatureDescripto
 }
 
 
-PBoolean H460_FeatureStd19::OnSendFacility_UUIE(H225_FeatureDescriptor & pdu)
+PBoolean H460_FeatureStd19::OnSendFacility_UUIE(H225_FeatureDescriptor & /*pdu*/)
 {
   return FALSE; 
 }
@@ -274,7 +274,7 @@ PBoolean H460_FeatureStd19::OnSendAlerting_UUIE(H225_FeatureDescriptor & pdu)
   return TRUE; 
 
 }
-void H460_FeatureStd19::OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd19::OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
 { 
   if (!remoteSupport) {
     remoteSupport = TRUE;
@@ -293,7 +293,7 @@ PBoolean H460_FeatureStd19::OnSendCallConnect_UUIE(H225_FeatureDescriptor & pdu)
   return TRUE; 
 
 }
-void H460_FeatureStd19::OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd19::OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
 {
   if (!remoteSupport) {
     remoteSupport = TRUE;

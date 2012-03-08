@@ -84,7 +84,7 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 
-H46018TransportThread::H46018TransportThread(OpalEndPoint & ep, H46018Transport * t)
+H46018TransportThread::H46018TransportThread(OpalEndPoint & /*ep*/, H46018Transport * t)
   : PThread(1000, AutoDeleteThread,
   NormalPriority,"H225 Answer:%0x"),transport(t)
 {  
@@ -280,10 +280,10 @@ PBoolean H46018Transport::Connect(const OpalGloballyUniqueID & callIdentifier)
 }
 
 
-void H46018Transport::ConnectionLost(PBoolean established)
+void H46018Transport::ConnectionLost(PBoolean /*established*/)
 {
-  if (closeTransport)
-    return;
+  //if (closeTransport)
+  //  return;
 }
 
 
@@ -452,7 +452,7 @@ H323EndPoint * H46018Handler::GetEndPoint()
 }
 
 
-void H46018Handler::H46024ADirect(bool reply, const PString & token)
+void H46018Handler::H46024ADirect(bool /*reply*/, const PString & /*token*/)
 {
   // NOTE 
 #if 0

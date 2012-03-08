@@ -284,7 +284,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
       if (reason != NULL)
         *reason = SIP_PDU::Local_CannotMapScheme;
       PTRACE(1, "SIP\tCannot use tel URI with phone-context or existing registration.");
-      return false;
+      return NULL;
     }
     remoteAddress = SIPURL(GetRegistrations()[0]).GetHostAddress();
   }

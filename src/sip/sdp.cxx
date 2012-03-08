@@ -1126,7 +1126,11 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
+#if OPAL_SRTP
   return m_cryptoSuites.IsEmpty() ? OpalRTPSession::RTP_AVP() : OpalSRTPSession::RTP_SAVP(); 
+#else
+  return OpalRTPSession::RTP_AVP();
+#endif
 }
 
 
