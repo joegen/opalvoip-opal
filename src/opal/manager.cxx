@@ -1212,36 +1212,82 @@ PStringList OpalManager::GetNetworkURIs(const PString & name) const
 }
 
 
-OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
-  : pattern(pat),
-    destination(dest)
+OpalManager::RouteEntry::RouteEntry(const PString & partyA, const PString & partyB, const PString & dest)
+  : m_partyA(partyA)
+  , m_partyB(partyB)
+  , m_destination(dest)
 {
-  PString adjustedPattern = '^' + pattern;
+  CompileRegEx();
+}
 
-  // The regular expression makes a \t a 't', but we want a tab character.
-  PINDEX tab = 0;
-  while ((tab = adjustedPattern.Find("\\t", tab)) != P_MAX_INDEX) {
-    if (adjustedPattern[tab-1] != '\\')
-      adjustedPattern.Splice("\t", tab, 2);
-    ++tab;
+
+OpalManager::RouteEntry::RouteEntry(const PString & spec)
+{
+  // Make sure we test for backward compatibility format(s)
+
+  PINDEX equal = spec.Find('=');
+  if (equal == P_MAX_INDEX)
+    return; // Must have
+
+  m_destination = spec.Mid(equal+1).Trim();
+
+  PINDEX colon = spec.Find(':');
+  if (colon == 0)
+    return; // No scheme?
+
+  PINDEX tab = spec.Find('\t');
+  if (tab == P_MAX_INDEX)
+    tab = spec.Find("\\t");
+  if (tab == 0)
+    return; // No source?
+
+  if (tab < equal) {
+    m_partyA = spec.Left(tab).Trim();
+    m_partyB = spec(tab+(spec[tab]=='\t'?1:2), equal-1).Trim();
   }
+  else if (colon < equal) {
+    m_partyA = spec.Left(colon+1)+".*";
+    m_partyB = spec(colon+1, equal-1).Trim();
+  }
+  else
+    m_partyA = spec.Left(equal).Trim();
 
-  // Test for backward compatibility format
-  PINDEX colon = adjustedPattern.Find(':');
-  if (colon != P_MAX_INDEX && adjustedPattern.Find('\t', colon) == P_MAX_INDEX)
-    adjustedPattern.Splice(".*\t", colon+1);
+  if (m_partyB.IsEmpty())
+    m_partyB = ".*";
 
-  adjustedPattern += '$';
+  CompileRegEx();
+}
 
-  if (!regex.Compile(adjustedPattern, PRegularExpression::IgnoreCase|PRegularExpression::Extended)) {
-    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << adjustedPattern << '"');
+
+void OpalManager::RouteEntry::CompileRegEx()
+{
+  PStringStream pattern;
+  pattern << '^' << m_partyA << '\t' <<m_partyB << '$';
+  if (!m_regex.Compile(pattern, PRegularExpression::IgnoreCase|PRegularExpression::Extended)) {
+    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << pattern << '"');
   }
 }
 
 
 void OpalManager::RouteEntry::PrintOn(ostream & strm) const
 {
-  strm << pattern << '=' << destination;
+  strm << m_partyA << "\\t" << m_partyB << '=' << m_destination;
+}
+
+
+bool OpalManager::RouteEntry::IsValid() const
+{
+  return !m_destination.IsEmpty() && m_regex.GetErrorCode() == PRegularExpression::NoError;
+}
+
+
+bool OpalManager::RouteEntry::IsMatch(const PString & search) const
+{
+  PINDEX dummy;
+  bool ok = m_regex.Execute(search, dummy);
+  PTRACE(4, "OpalMan\t" << (ok ? "Matched" : "Did not match")
+         << " regex \"" << m_regex.GetPattern() << "\" (" << *this << ')');
+  return ok;
 }
 
 
@@ -1267,15 +1313,9 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
     return ok;
   }
 
-  PString pat, dest;
-  if (!spec.Split('=', pat, dest)) {
-    PTRACE(2, "OpalMan\tInvalid route table entry: \"" << spec << '"');
-    return false;
-  }
-
-  RouteEntry * entry = new RouteEntry(pat, dest);
-  if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
-    PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
+  RouteEntry * entry = new RouteEntry(spec);
+  if (!entry->IsValid()) {
+    PTRACE(2, "OpalMan\tIllegal specification for route table entry: \"" << spec << '"');
     delete entry;
     return false;
   }
@@ -1363,20 +1403,16 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   PString destination;
   while (routeIndex < m_routeTable.GetSize()) {
     RouteEntry & entry = m_routeTable[routeIndex++];
-    PINDEX pos;
-    if (entry.regex.Execute(search, pos)) {
-      PTRACE(4, "OpalMan\tMatched regex \"" << entry.regex.GetPattern() << "\" (\"" << entry.pattern << "\")");
-      if (entry.destination.NumCompare("label:") != EqualTo) {
-        destination = entry.destination;
+    if (entry.IsMatch(search)) {
+      search = entry.GetDestination();
+
+      if (search.NumCompare("label:") != EqualTo) {
+        destination = search;
         break;
       }
 
       // restart search in table using label.
-      search = entry.destination;
       routeIndex = 0;
-    }
-    else {
-      PTRACE(4, "OpalMan\tDid not match regex \"" << entry.regex.GetPattern() << "\" (\"" << entry.pattern << "\")");
     }
   }
 
