@@ -5853,49 +5853,36 @@ void OptionsDialog::RestoreDefaultRoutes(wxCommandEvent &)
 {
   m_Routes->DeleteAllItems();
 
-  for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++) {
-    PString spec = DefaultRoutes[i];
-    PINDEX equal = spec.Find('=');
-    if (equal != P_MAX_INDEX)
-      AddRouteTableEntry(OpalManager::RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim()));
-  }
+  for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++)
+    AddRouteTableEntry(OpalManager::RouteEntry(DefaultRoutes[i]));
 }
 
 
 void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
 {
-  PString expression = entry.pattern;
+  PAssert(entry.IsValid(), PInvalidParameter);
 
-  PINDEX tab = expression.Find('\t');
-  if (tab == P_MAX_INDEX)
-    tab = expression.Find("\\t");
+  PString partyA = entry.GetPartyA();
+  PINDEX colon = partyA.Find(':');
 
-  PINDEX colon = expression.Find(':');
-
-  PwxString source, device, pattern;
-  if (colon >= tab) {
+  PwxString source, device;
+  if (colon == P_MAX_INDEX) {
     source = AllRouteSources;
-    device = expression(colon+1, tab-1);
-    pattern = expression.Mid(tab+1);
+    device = partyA;
   }
   else {
-    source = expression.Left(colon);
+    source = partyA.Left(colon);
     if (source == ".*")
       source = AllRouteSources;
-    if (tab == P_MAX_INDEX)
-      pattern = expression.Mid(colon+1);
-    else {
-      device = expression(colon+1, tab-1);
-      if (device == ".*")
-        device = "";
-      pattern = expression.Mid(tab + (expression[tab] == '\t' ? 1 : 2));
-    }
+    device = partyA.Mid(colon+1);
+    if (device == ".*")
+      device = "";
   }
 
   int pos = m_Routes->InsertItem(INT_MAX, source);
   m_Routes->SetItem(pos, 1, device);
-  m_Routes->SetItem(pos, 2, pattern);
-  m_Routes->SetItem(pos, 3, PwxString(entry.destination));
+  m_Routes->SetItem(pos, 2, PwxString(entry.GetPartyB()));
+  m_Routes->SetItem(pos, 3, PwxString(entry.GetDestination()));
 }
 
 
