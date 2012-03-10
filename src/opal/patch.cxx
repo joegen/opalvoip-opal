@@ -707,6 +707,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     }
   }
   else {
+    PSafeLockReadOnly guard(*m_bypassToPatch);
     for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
       if (s->stream->WritePacket(frame))
         written = true;
