@@ -28,6 +28,8 @@
 
 #include "precompile.h"
 #include "main.h"
+#include <lids/capi_ep.h>
+OpalCapiEndPoint * capiEP;
 
 
 // -ttttt c:\temp\testfax.tif sip:fax@10.0.1.11
@@ -116,6 +118,7 @@ void FaxOPAL::Main()
   }
 
   m_manager = new MyManager();
+  capiEP = new OpalCapiEndPoint(*m_manager);
 
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
@@ -214,6 +217,7 @@ void FaxOPAL::Main()
       m_manager->AddRouteEntry("pstn.*:.* = " + prefix + ":" + args[0] + ";receive");
     }
   }
+  m_manager->AddRouteEntry("isdn.*:.* = " + prefix + ":" + args[0] + ";receive");
 
 
   OpalConnection::StringOptions stringOptions;

@@ -343,6 +343,8 @@ class OpalIVRMediaStream : public OpalRawMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     OpalConnection & conn;
     PVXMLSession & vxmlSession;
 };

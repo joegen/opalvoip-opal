@@ -78,6 +78,7 @@ OPAL_H239=yes
 OPAL_H501=yes
 OPAL_T120DATA=no
 OPAL_LID=yes
+OPAL_CAPI=yes
 OPAL_STATISTICS=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
@@ -563,6 +564,10 @@ dnl OPAL_SIMPLE_OPTION([t120],[OPAL_T120DATA], [whether to enable T.120], [OPAL_
 dnl MSWIN_DISPLAY lids,Line Interface Device
 dnl MSWIN_DEFINE  lids,OPAL_LID
 OPAL_SIMPLE_OPTION([lid],[OPAL_LID], [whether to enable LID support])
+
+dnl MSWIN_DISPLAY capi,CAPI (isdn) Line Interface Device
+dnl MSWIN_DEFINE  capi,OPAL_CAPI
+OPAL_SIMPLE_OPTION([capi],[OPAL_CAPI], [whether to enable CAPI (isdn) support])
 
 dnl MSWIN_DISPLAY ivr,IVR support
 dnl MSWIN_DEFINE  ivr,OPAL_IVR
