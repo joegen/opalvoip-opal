@@ -474,6 +474,8 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
   //@}
 
   protected:
+    virtual void InternalClose() { }
+
     bool m_isSynchronous;
 };
 

@@ -230,13 +230,14 @@ public:
   ~OpalH224MediaStream();
   
   virtual void OnStartMediaPatch();
-  virtual PBoolean Close();
   virtual PBoolean ReadPacket(RTP_DataFrame & packet);
   virtual PBoolean WritePacket(RTP_DataFrame & packet);
   virtual PBoolean IsSynchronous() const { return PFalse; }
   virtual PBoolean RequiresPatchThread() const { return isSource ? PFalse : PTrue; }
   
 private:
+	virtual void InternalClose();
+
     OpalH224Handler & h224Handler;
 };
 

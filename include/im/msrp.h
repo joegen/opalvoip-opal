@@ -390,6 +390,8 @@ class OpalMSRPMediaStream : public OpalIMMediaStream
 
   //@}
   protected:
+    virtual void InternalClose() { }
+
     OpalMSRPMediaSession & m_msrpSession;
     PString m_remoteParty;
     RFC4103Context m_rfc4103Context;
