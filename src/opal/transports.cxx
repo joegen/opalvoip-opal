@@ -1053,9 +1053,12 @@ PBoolean OpalTransport::IsRunning() const
 
 void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray & data)
 {
-  m_keepAliveTimer.Stop(true);
+  m_keepAliveTimer.Stop(false);
 
+  channelPointerMutex.StartWrite();
   m_keepAliveData = data;
+  channelPointerMutex.EndWrite();
+
   if (!data.IsEmpty())
     m_keepAliveTimer = timeout;
 }
@@ -1063,7 +1066,10 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
 
 void OpalTransport::KeepAlive(PTimer &, INT)
 {
+  channelPointerMutex.StartRead();
   Write(m_keepAliveData, m_keepAliveData.GetSize());
+  channelPointerMutex.EndRead();
+
   PTRACE(5, "Opal\tTransport keep alive sent: " << GetLastWriteCount() << " bytes");
 }
 
