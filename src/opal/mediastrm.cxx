@@ -1120,12 +1120,6 @@ OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
 OpalVideoMediaStream::~OpalVideoMediaStream()
 {
   Close();
-
-  if (m_autoDeleteInput)
-    delete m_inputDevice;
-
-  if (m_autoDeleteOutput)
-    delete m_outputDevice;
 }
 
 
@@ -1223,11 +1217,23 @@ PBoolean OpalVideoMediaStream::Open()
 
 void OpalVideoMediaStream::InternalClose()
 {
-  if (m_inputDevice != NULL)
-    m_inputDevice->Stop();
+  if (m_inputDevice != NULL) {
+    if (m_autoDeleteInput) {
+      delete m_inputDevice;
+      m_inputDevice = NULL;
+    }
+    else
+      m_inputDevice->Stop();
+  }
 
-  if (m_outputDevice != NULL)
-    m_outputDevice->Stop();
+  if (m_outputDevice != NULL) {
+    if (m_autoDeleteOutput) {
+      delete m_outputDevice;
+      m_outputDevice = NULL;
+    }
+    else
+      m_outputDevice->Stop();
+  }
 }
 
 
