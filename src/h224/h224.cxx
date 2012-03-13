@@ -1144,19 +1144,15 @@ void OpalH224MediaStream::OnStartMediaPatch()
   OpalMediaStream::OnStartMediaPatch();
 }
 
-PBoolean OpalH224MediaStream::Close()
+
+void OpalH224MediaStream::InternalClose()
 {
-  if (OpalMediaStream::Close() == PFalse) {
-    return PFalse;
-  }
-	
   if (IsSource()) {
     h224Handler.StopTransmit();
     h224Handler.SetTransmitMediaStream(NULL);
   }
-	
-  return PTrue;
 }
+
 
 PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 {
