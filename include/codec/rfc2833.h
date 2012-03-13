@@ -170,11 +170,11 @@ class OpalRFC2833Proto : public PObject
       ReceiveEnding
     } m_receiveState;
 
+    PMutex   m_receiveMutex;
     BYTE     m_receivedTone;
     unsigned m_tonesReceived;
     PTimer   m_receiveTimer;
     DWORD    m_previousReceivedTimestamp;
-    PMutex   m_receiveMutex;
 
     enum {
       TransmitIdle,
@@ -184,6 +184,7 @@ class OpalRFC2833Proto : public PObject
       TransmitEnding3,
     } m_transmitState;
 
+    PMutex           m_sendMutex;
     OpalRTPSession * m_rtpSession;
     PTimer           m_asyncTransmitTimer;
     PTimer           m_asyncDurationTimer;
@@ -192,7 +193,6 @@ class OpalRFC2833Proto : public PObject
     PTimeInterval    m_asyncStart;
     BYTE             m_transmitCode;
     unsigned         m_transmitDuration;
-    PMutex        m_sendMutex;
 };
 
 
