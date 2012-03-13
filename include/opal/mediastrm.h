@@ -419,7 +419,7 @@ class OpalMediaStream : public PSafeObject
        it is guaranteed to be called exactly once and avoids race conditions in
        the shut down sequence of a media stream.
       */
-    virtual void InternalClose() = 0;
+    virtual void InternalClose() { }
 
     OpalConnection & connection;
     unsigned         sessionID;
