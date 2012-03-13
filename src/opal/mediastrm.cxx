@@ -184,17 +184,21 @@ PBoolean OpalMediaStream::Close()
 
   PTRACE(4, "Media\tClosing stream " << *this);
 
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
+  if (!LockReadWrite())
     return false;
 
   // Allow for race condition where it is closed in another thread during the above wait
-  if (!isOpen)
+  if (!isOpen) {
+    PTRACE(4, "Media\tAlrady closed stream " << *this);
+    UnlockReadWrite();
     return false;
+  }
 
   isOpen = false;
 
   InternalClose();
+
+  UnlockReadWrite();
 
   connection.OnClosedMediaStream(*this);
   SetPatch(NULL);
@@ -436,12 +440,13 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
+  if (!LockReadWrite())
     return false;
 
   PatchPtr mediaPatch = m_mediaPatch;
   m_mediaPatch = patch;
+
+  UnlockReadWrite();
 
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
@@ -753,11 +758,7 @@ bool OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 
 PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return false;
-
-  if (!isOpen || IsSink() || m_mediaPatch == NULL)
+  if (!isOpen || IsSink())
     return OpalMediaStream::SetPatch(patch);
 
   rtpSession.Close(true);
