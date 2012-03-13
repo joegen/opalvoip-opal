@@ -115,9 +115,9 @@ void OpalBaseMixer::RemoveStream(const Key_T & key)
   }
 
   if (m_inputStreams.empty())
-    StopPushThread(false);
-
-  m_mutex.Signal();
+    StopPushThread(false); // Will unlock mutex
+  else
+    m_mutex.Signal();
 }
 
 
@@ -131,9 +131,7 @@ void OpalBaseMixer::RemoveAllStreams()
     delete iter->second;
   m_inputStreams.clear();
 
-  StopPushThread(false);
-
-  m_mutex.Signal();
+  StopPushThread(false); // Will unlock mutex
 }
 
 
@@ -224,21 +222,17 @@ void OpalBaseMixer::StopPushThread(bool lock)
   if (lock)
     m_mutex.Wait();
 
+  PThread * thread = m_workerThread;
+  m_workerThread = NULL;
   m_threadRunning = false;
-  if (m_workerThread != NULL) {
-    m_mutex.Signal();
 
+  m_mutex.Signal();
+
+  if (thread != NULL) {
     PTRACE(4, "Mixer\tWaiting for push thread to terminate");
-    m_workerThread->WaitForTermination();
-
-    m_mutex.Wait();
-
-    delete m_workerThread;
-    m_workerThread = NULL;
+    PAssert(thread->WaitForTermination(5000), "Mixer worker thread took too long to terminate.");
+    delete thread;
   }
-
-  if (lock)
-    m_mutex.Signal();
 }
 
 
@@ -1116,14 +1110,9 @@ PBoolean OpalMixerMediaStream::Open()
 }
 
 
-PBoolean OpalMixerMediaStream::Close()
+void OpalMixerMediaStream::InternalClose()
 {
-  if (!isOpen)
-    return false;
-
   m_node->DetachStream(this);
-
-  return OpalMediaStream::Close();
 }
 
 

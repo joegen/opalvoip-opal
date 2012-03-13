@@ -584,12 +584,6 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
-    /**Close the media stream.
-
-       The default does nothing.
-      */
-    virtual PBoolean Close();
-
     /**Read an RTP frame of data from the source media stream.
        The default behaviour simply calls ReadData() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
@@ -664,6 +658,8 @@ class OpalLineMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     OpalLine & line;
     bool       notUsingRTP;
     bool       useDeblocking;

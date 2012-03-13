@@ -348,12 +348,6 @@ class OpalCapiMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Close the media stream.
-
-       The default does nothing.
-      */
-    virtual PBoolean Close();
-
     /**Read raw media data from the source media stream.
        The default behaviour reads from the OpalLine object.
       */
@@ -383,6 +377,8 @@ class OpalCapiMediaStream : public OpalMediaStream
   //@}
 
   protected:
+    virtual void InternalClose();
+
     OpalCapiConnection & m_connection;
     PQueueChannel        m_queue;
     PSyncPoint           m_written;

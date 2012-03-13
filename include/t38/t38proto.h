@@ -345,6 +345,8 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const;
 
   protected:
+    virtual void InternalClose() { }
+
     OpalFaxSession & m_session;
 };
 
