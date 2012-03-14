@@ -57,8 +57,9 @@
 OpalCall::OpalCall(OpalManager & mgr)
   : manager(mgr)
   , myToken(mgr.GetNextToken('C'))
-  , isEstablished(PFalse)
-  , isClearing(PFalse)
+  , m_establishedTime(0)
+  , m_isEstablished(false)
+  , m_isClearing(false)
   , callEndReason(OpalConnection::NumCallEndReasons)
   , endCallSyncPoint(NULL)
 #if OPAL_HAS_MIXER
@@ -119,7 +120,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
   if (!LockReadWrite())
     return;
 
-  isClearing = PTrue;
+  m_isClearing = true;
 
   SetCallEndReason(reason);
 
@@ -183,7 +184,7 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnSetUp " << connection);
 
-  if (isClearing)
+  if (m_isClearing)
     return false;
 
   SetPartyNames();
@@ -210,7 +211,7 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);
 
-  if (isClearing)
+  if (m_isClearing)
     return false;
 
   PBoolean hasMedia = connection.GetMediaStream(OpalMediaType::Audio(), true) != NULL;
@@ -240,7 +241,7 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnConnected " << connection);
 
-  if (isClearing || !LockReadOnly())
+  if (m_isClearing || !LockReadOnly())
     return false;
 
   bool havePartyB = connectionsActive.GetSize() == 1 && !m_partyB.IsEmpty();
@@ -275,10 +276,10 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
   PTRACE(3, "Call\tOnEstablished " << connection);
 
   PSafeLockReadWrite lock(*this);
-  if (isClearing || !lock.IsLocked())
+  if (m_isClearing || !lock.IsLocked())
     return false;
 
-  if (isEstablished)
+  if (m_isEstablished)
     return true;
 
   if (connectionsActive.GetSize() < 2)
@@ -291,7 +292,8 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
       return false;
   }
 
-  isEstablished = true;
+  m_isEstablished = true;
+  m_establishedTime.SetCurrentTime();
   OnEstablishedCall();
 
   return true;
@@ -472,7 +474,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
   PSafeLockReadOnly lock(*this);
-  if (isClearing || !lock.IsLocked())
+  if (m_isClearing || !lock.IsLocked())
     return false;
 
 #if PTRACING

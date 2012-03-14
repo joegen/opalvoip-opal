@@ -94,7 +94,7 @@ class OpalCall : public PSafeObject
   //@{
     /**Indicate tha all connections in call are connected and media is going.
       */
-    PBoolean IsEstablished() const { return isEstablished; }
+    PBoolean IsEstablished() const { return m_isEstablished; }
 
     /**Call back to indicate that the call has been established.
        At this point in time every connection in the call is in the
@@ -510,7 +510,11 @@ class OpalCall : public PSafeObject
 
     /**Get the time the call started.
      */
-    const PTime & GetStartTime() const { return startTime; }
+    const PTime & GetStartTime() const { return m_startTime; }
+
+    /**Get the time the call started.
+     */
+    const PTime & GetEstablishedTime() const { return m_establishedTime; }
   //@}
 
 #if OPAL_HAS_MIXER
@@ -580,9 +584,10 @@ class OpalCall : public PSafeObject
 
     PString m_partyA;
     PString m_partyB;
-    PTime   startTime;
-    bool    isEstablished;
-    bool    isClearing;
+    PTime   m_startTime;
+    PTime   m_establishedTime;
+    bool    m_isEstablished;
+    bool    m_isClearing;
 
     OpalConnection::CallEndReason callEndReason;
     PSyncPoint                  * endCallSyncPoint;
