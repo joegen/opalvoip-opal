@@ -95,12 +95,12 @@ void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
   memcpy(m_encodedFrame+m_encodedFrameLen, payload, length);
 
   if (type == H264_NAL_TYPE_SEQ_PARAM) {
-    PTRACE(4, FrameTraceName, "Profile: "   << (unsigned)payload[0] << 
-                      " Level: "    << (unsigned)payload[2] << 
-		   " Constraints: " << (payload[1] & 0x80 ? 1 : 0) 
-			            << (payload[1] & 0x40 ? 1 : 0) 
-				    << (payload[1] & 0x20 ? 1 : 0) 
-				    << (payload[1] & 0x10 ? 1 : 0));
+    PTRACE(4, FrameTraceName, "Profile: "      << (unsigned)payload[1] << 
+                              " Level: "       << (unsigned)payload[3] << 
+                              " Constraints: " << (payload[2] & 0x80 ? 1 : 0) 
+                                               << (payload[2] & 0x40 ? 1 : 0) 
+                                               << (payload[2] & 0x20 ? 1 : 0) 
+                                               << (payload[2] & 0x10 ? 1 : 0));
   }
 
   m_numberOfNALsInFrame++;
@@ -135,7 +135,7 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
       // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
 #ifdef SEND_STAP_PACKETS
       if (((m_currentNAL + 1) >= m_numberOfNALsInFrame)  ||  
-	  ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) > m_maxPayloadSize)) 
+          ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) > m_maxPayloadSize)) 
       { 
 #endif
         // single nal unit packet
@@ -424,10 +424,10 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
     {
       PTRACE(4, FrameTraceName, "Profile: " << (int)NALptr[0] << 
                                 " Level: "   << (int)NALptr[2] << 
-			        " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
-			                         << (NALptr[1] & 0x40 ? 1 : 0) 
-					         << (NALptr[1] & 0x20 ? 1 : 0) 
-					         << (NALptr[1] & 0x10 ? 1 : 0));
+                                " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
+                                                 << (NALptr[1] & 0x40 ? 1 : 0) 
+                                                 << (NALptr[1] & 0x20 ? 1 : 0) 
+                                                 << (NALptr[1] & 0x10 ? 1 : 0));
     }
   }
   else
