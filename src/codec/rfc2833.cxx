@@ -225,7 +225,6 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
   , m_tonesReceived(0)
   , m_previousReceivedTimestamp(0)
   , m_transmitState(TransmitIdle)
-  , m_rtpSession(NULL)
   , m_transmitTimestamp(0)
   , m_rewriteTransmitTimestamp(false)
   , m_transmitCode('\0')
@@ -249,15 +248,6 @@ OpalRFC2833Proto::~OpalRFC2833Proto()
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 {
   PWaitAndSignal mutex(m_sendMutex);
-
-  // find an audio session in the current connection to send the packet on
-  if (m_rtpSession == NULL) {
-    OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
-    if (stream == NULL || (m_rtpSession = m_connection.GetSession(stream->GetSessionID())) == NULL) {
-      PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833 for " << m_baseMediaFormat);
-      return false;
-    }
-  }
 
   // convert tone to correct code
   PINDEX code = ASCIIToRFC2833(tone, m_txEvents[NSECodeBase]);
@@ -300,8 +290,11 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 
 void OpalRFC2833Proto::SendAsyncFrame()
 {
-  if (m_rtpSession == NULL) {
-    PTRACE(2, "RFC2833\tCannot send as no RTP session attached to " << m_baseMediaFormat);
+  // find an audio session in the current connection to send the packet on
+  RTP_Session * rtpSession = NULL;
+  OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
+  if (stream == NULL || (rtpSession = m_connection.GetSession(stream->GetSessionID())) == NULL) {
+    PTRACE(2, "RFC2833\tNo RTP session suitable for " << m_baseMediaFormat);
     m_transmitState = TransmitIdle;
   }
 
@@ -362,6 +355,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
 
     default:
       PAssertAlways("RFC2833\tUnknown transmit state.");
+      m_transmitState = TransmitIdle;
       return;
   }
 
@@ -372,7 +366,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
   if (!m_rewriteTransmitTimestamp)
     frame.SetTimestamp(m_transmitTimestamp);
 
-  if (!m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp)) {
+  if (!rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp)) {
     PTRACE(3, "RFC2833\tRTP session transmission stopped for " << m_baseMediaFormat);
     // Abort further transmission
     m_transmitState = TransmitIdle;
