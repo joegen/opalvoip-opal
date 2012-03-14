@@ -185,7 +185,6 @@ class OpalRFC2833Proto : public PObject
     } m_transmitState;
 
     PMutex           m_sendMutex;
-    OpalRTPSession * m_rtpSession;
     PTimer           m_asyncTransmitTimer;
     PTimer           m_asyncDurationTimer;
     DWORD            m_transmitTimestamp;
