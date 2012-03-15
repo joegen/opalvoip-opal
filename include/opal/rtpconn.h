@@ -303,7 +303,6 @@ class OpalRTPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
     void CheckForMediaBypass(OpalMediaSession & session);
 

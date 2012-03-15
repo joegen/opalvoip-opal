@@ -63,7 +63,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   PTRACE_CONTEXT_ID_TO(rfc2833Handler);
 
 #if OPAL_T38_CAPABILITY
-  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
+  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalCiscoNSE);
   PTRACE_CONTEXT_ID_TO(ciscoNSEHandler);
 #endif
 }
@@ -506,16 +506,8 @@ void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT typ
 {
   // trigger on start of tone only
   if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
+    GetEndPoint().GetManager().QueueUserInput(this, info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
 }
-
-void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & info, INT type)
-{
-  // trigger on start of tone only
-  if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
