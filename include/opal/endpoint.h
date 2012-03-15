@@ -927,8 +927,6 @@ class OpalEndPoint : public PObject
     } connectionsActive;
     OpalConnection * AddConnection(OpalConnection * connection);
 
-    PMutex inUseFlag;
-
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason,bool);
 

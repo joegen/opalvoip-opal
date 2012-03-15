@@ -778,6 +778,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
 
     OpalMixerNodeInfo  * m_adHocNodeInfo;
     OpalMixerNodeInfo  * m_factoryNodeInfo;
+    PMutex               m_infoMutex; // For above two fields
     PAtomicInteger       m_factoryIndex;
 };
 
