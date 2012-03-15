@@ -74,8 +74,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   , m_registeredUserMode(false)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
-  , m_connectionThreadPool(maxConnectionThreads)
-  , m_handlerThreadPool(maxHandlerThreads)
+  , m_connectionThreadPool(maxConnectionThreads, "SIPCon Pool")
+  , m_handlerThreadPool(maxHandlerThreads, "SIPHandler Pool")
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -400,7 +400,9 @@ PSafePtr<OpalConnection> SIPEndPoint::MakeConnection(OpalCall & call,
 
 void SIPEndPoint::OnReleased(OpalConnection & connection)
 {
+  m_receivedConnectionMutex.Wait();
   m_receivedConnectionTokens.RemoveAt(connection.GetIdentifier());
+  m_receivedConnectionMutex.Signal();
   OpalEndPoint::OnReleased(connection);
 }
 
@@ -606,7 +608,9 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_CANCEL :
+      m_receivedConnectionMutex.Wait();
       token = m_receivedConnectionTokens(mime.GetCallID());
+      m_receivedConnectionMutex.Signal();
       if (!token.IsEmpty()) {
         m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
         return true;
@@ -616,6 +620,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     case SIP_PDU::Method_INVITE :
       pdu->AdjustVia(transport);   // // Adjust the Via list
       if (toToken.IsEmpty()) {
+        PWaitAndSignal mutex(m_receivedConnectionMutex);
+
         token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
           PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
@@ -973,6 +979,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
 
+  // m_receivedConnectionMutex already set
   PString token = connection->GetToken();
   m_receivedConnectionTokens.SetAt(mime.GetCallID(), token);
 
@@ -1875,12 +1882,6 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-PThreadPoolBase::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()
-{ 
-  return new QueuedWorkerThread(*this, PThread::HighPriority); 
-}
-
 
 SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token)
   : m_endpoint(ep)

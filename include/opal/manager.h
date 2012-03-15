@@ -48,6 +48,7 @@
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
 #include <ptclib/pxml.h>
+#include <ptclib/threadpool.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -1763,6 +1764,8 @@ class OpalManager : public PObject
     // needs to be public for gcc 3.4
     void GarbageCollection();
 
+    void QueueUserInput(const PSafePtr<OpalConnection> & connection, const PString & value);
+    void QueueUserInput(const PSafePtr<OpalConnection> & connection, char tone, unsigned duration);
 
   protected:
     // Configuration variables
@@ -1877,6 +1880,24 @@ class OpalManager : public PObject
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::InternalOnClear();
+
+    struct UserInput {
+      UserInput(
+        const PSafePtr<OpalConnection> & connection,
+        const PString & value,
+        unsigned duration
+      ) : m_connection(connection)
+        , m_value(value)
+        , m_duration(duration)
+      { }
+
+      PSafePtr<OpalConnection> m_connection;
+      PString  m_value;
+      unsigned m_duration;
+
+      void Work();
+    };
+    PQueuedThreadPool<UserInput> m_userInputPool;
 
   private:
     P_REMOVE_VIRTUAL(OpalCall *,CreateCall(), 0);

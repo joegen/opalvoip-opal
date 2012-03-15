@@ -747,16 +747,19 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
       if (s->WriteFrame(frame))
         written = true;
     }
+    UnlockReadOnly();
   }
   else {
-    PSafeLockReadOnly guard(*m_bypassToPatch);
-    for (PList<Sink>::iterator s = m_bypassToPatch->sinks.begin(); s != m_bypassToPatch->sinks.end(); ++s) {
+    PSafePtr<OpalMediaPatch> bypassToPatch = m_bypassToPatch;
+    UnlockReadOnly();
+
+    PSafeLockReadOnly guard(*bypassToPatch);
+    for (PList<Sink>::iterator s = bypassToPatch->sinks.begin(); s != bypassToPatch->sinks.end(); ++s) {
       if (s->stream->WritePacket(frame))
         written = true;
     }
   }
 
-  UnlockReadOnly();
   return written;
 }
 

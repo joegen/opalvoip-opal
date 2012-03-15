@@ -442,7 +442,6 @@ PStringList OpalEndPoint::GetAllConnections()
 
 PBoolean OpalEndPoint::HasConnection(const PString & token)
 {
-  PWaitAndSignal wait(inUseFlag);
   return connectionsActive.Contains(token);
 }
 

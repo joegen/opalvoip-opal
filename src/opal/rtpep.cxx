@@ -152,7 +152,7 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
   if (rtp == NULL)
     return;
 
-  PWaitAndSignal mutex(inUseFlag);
+  PWaitAndSignal mutex(m_connectionsByRtpMutex);
 
   LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(rtp->GetLocalMediaAddress());
   if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
@@ -181,7 +181,7 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConn
     return;
 
   OpalTransportAddress localAddr = rtp->GetLocalMediaAddress();
-  inUseFlag.Wait();
+  m_connectionsByRtpMutex.Wait();
   if (connection == NULL) {
     LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
     if (it != m_connectionsByRtpLocalAddr.end()) {
@@ -198,6 +198,6 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConn
     PTRACE_IF(4, insertResult.second, "RTPEp\tSession " << rtp->GetSessionID() << ", "
               "remembering local RTP at " << localAddr << " on connection " << *connection);
   }
-  inUseFlag.Signal();
+  m_connectionsByRtpMutex.Signal();
 }
 

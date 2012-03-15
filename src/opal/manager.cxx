@@ -265,6 +265,7 @@ OpalManager::OpalManager()
   , interfaceMonitor(NULL)
   , activeCalls(*this)
   , garbageCollectSkip(false)
+  , m_userInputPool(1, 0, "UI Pool")
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
@@ -2166,6 +2167,28 @@ void OpalManager::OnCompositionIndication(const OpalIMContext::CompositionInfo &
 }
 
 #endif // OPAL_HAS_IM
+
+
+void OpalManager::QueueUserInput(const PSafePtr<OpalConnection> & connection, const PString & value)
+{
+  m_userInputPool.AddWork(new UserInput(connection, value, 100));
+}
+
+
+void OpalManager::QueueUserInput(const PSafePtr<OpalConnection> & connection, char tone, unsigned duration)
+{
+  m_userInputPool.AddWork(new UserInput(connection, tone, duration));
+}
+
+
+void OpalManager::UserInput::Work()
+{
+  if (m_duration > 0 && m_value.GetLength() == 1)
+    m_connection->OnUserInputTone(m_value[0], m_duration);
+  else
+    m_connection->OnUserInputString(m_value);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

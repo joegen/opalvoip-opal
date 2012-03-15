@@ -207,9 +207,8 @@ OpalRFC2833Info::OpalRFC2833Info(char t, unsigned d, unsigned ts)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & rx, const OpalMediaFormat & fmt)
-  : m_connection(conn)
-  , m_baseMediaFormat(fmt)
+OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx, const OpalMediaFormat & fmt)
+  : m_baseMediaFormat(fmt)
   , m_txPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_rxPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_receiveNotifier(rx)
@@ -242,22 +241,32 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalRTPConnection & conn, const PNotifier & r
   m_txEvents = m_rxEvents;
 }
 
+
 OpalRFC2833Proto::~OpalRFC2833Proto()
 {
 }
 
+
+void OpalRFC2833Proto::UseRTPSession(bool rx, OpalRTPSession * rtpSession)
+{
+  if (rx) {
+    if (rtpSession != NULL) {
+      PTRACE(3, "RTPCon\tSetting receive handler for " << m_baseMediaFormat);
+      rtpSession->AddFilter(m_receiveHandler);
+    }
+  }
+  else {
+    PTRACE(3, "RTPCon\tSetting RTP sesion " << rtpSession << " on " << m_baseMediaFormat);
+    m_sendMutex.Wait();
+    m_rtpSession = rtpSession;
+    m_sendMutex.Signal();
+  }
+}
+
+
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 {
   PWaitAndSignal mutex(m_sendMutex);
-
-  // find an audio session in the current connection to send the packet on
-  if (m_rtpSession == NULL) {
-    OpalMediaStreamPtr stream = m_connection.GetMediaStream(OpalMediaType::Audio(), false);
-    if (stream == NULL || (m_rtpSession = dynamic_cast<OpalRTPSession *>(m_connection.GetMediaSession(stream->GetSessionID()))) == NULL) {
-      PTRACE(2, "RFC2833\tNo RTP session suitable for RFC2833 for " << m_baseMediaFormat);
-      return false;
-    }
-  }
 
   // convert tone to correct code
   PINDEX code = ASCIIToRFC2833(tone, m_txEvents[NSECodeBase]);
@@ -301,7 +310,7 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 void OpalRFC2833Proto::SendAsyncFrame()
 {
   if (m_rtpSession == NULL) {
-    PTRACE(2, "RFC2833\tCannot send as no RTP session attached to " << m_baseMediaFormat);
+    PTRACE(2, "RFC2833\tNo RTP session suitable for " << m_baseMediaFormat);
     m_transmitState = TransmitIdle;
   }
 
@@ -362,6 +371,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
 
     default:
       PAssertAlways("RFC2833\tUnknown transmit state.");
+      m_transmitState = TransmitIdle;
       return;
   }
 

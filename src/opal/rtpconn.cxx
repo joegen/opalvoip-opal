@@ -59,11 +59,11 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   : OpalConnection(call, ep, token, options, stringOptions)
   , remoteIsNAT(false)
 {
-  rfc2833Handler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
+  rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
   PTRACE_CONTEXT_ID_TO(rfc2833Handler);
 
 #if OPAL_T38_CAPABILITY
-  ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE), OpalCiscoNSE);
+  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalCiscoNSE);
   PTRACE_CONTEXT_ID_TO(ciscoNSEHandler);
 #endif
 }
@@ -85,9 +85,7 @@ void OpalRTPConnection::OnReleased()
     OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(it->second);
     if (rtp != NULL && (rtp->GetPacketsSent() != 0 || rtp->GetPacketsReceived() != 0))
       rtp->SendBYE();
-    delete it->second;
   }
-  m_sessions.clear();
 }
 
 
@@ -253,6 +251,33 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 }
 
 
+void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession * mediaSession)
+{
+  SessionMap::iterator it = m_sessions.find(sessionId);
+  if (it == m_sessions.end()) {
+    m_sessions[sessionId] = mediaSession;
+    return;
+  }
+
+  OpalMediaSession::Transport transport = it->second->DetachTransport();
+  mediaSession->AttachTransport(transport);
+  delete it->second;
+  it->second = mediaSession;
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
+  if (rtpSession == NULL || !rtpSession->IsAudio())
+    return;
+
+  if (rfc2833Handler != NULL)
+    rfc2833Handler->UseRTPSession(false, rtpSession);
+
+#if OPAL_T38_CAPABILITY
+  if (ciscoNSEHandler != NULL)
+    ciscoNSEHandler->UseRTPSession(false, rtpSession);
+#endif
+}
+
+
 void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 {
   SessionMap::iterator it = m_sessions.find(sessionID);
@@ -264,21 +289,16 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
   if (it->second->Release())
     return;
 
-#ifdef HAS_LIBZRTP
-  //check is security mode ZRTP
-  if (0 == securityMode.Find("ZRTP")) {
-    OpalRTPSession *session = GetSession(sessionID);
-    if (NULL != session){
-      OpalZrtp_UDP *zsession = (OpalZrtp_UDP*)session;
-      if (NULL != zsession->zrtpStream){
-        ::zrtp_stop_stream(zsession->zrtpStream);
-        zsession->zrtpStream = NULL;
-      }
-    }
-  }
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(it->second);
+  if (rtpSession != NULL && rtpSession->IsAudio()) {
+    if (rfc2833Handler != NULL)
+      rfc2833Handler->UseRTPSession(false, NULL);
 
-  printf("release session %i\n", sessionID);
+#if OPAL_T38_CAPABILITY
+    if (ciscoNSEHandler != NULL)
+      ciscoNSEHandler->UseRTPSession(false, NULL);
 #endif
+  }
 
   delete it->second;
   m_sessions.erase(it);
@@ -348,27 +368,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 #endif // OPAL_VIDEO
 
   return done;
-}
-
-
-void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch)
-{
-  if (isSource) {
-    OpalRTPMediaStream * mediaStream = dynamic_cast<OpalRTPMediaStream *>(&patch.GetSource());
-    if (mediaStream != NULL) {
-      OpalRTPSession & rtpSession = mediaStream->GetRtpSession();
-      if (rfc2833Handler != NULL) {
-        PTRACE(3, "RTPCon\tAdding RFC2833 receive handler");
-        rtpSession.AddFilter(rfc2833Handler->GetReceiveHandler());
-      }
-#if OPAL_T38_CAPABILITY
-      if (ciscoNSEHandler != NULL) {
-        PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
-        rtpSession.AddFilter(ciscoNSEHandler->GetReceiveHandler());
-      }
-#endif
-    }
-  }
 }
 
 
@@ -456,24 +455,28 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
 
-  if (patch.GetSource().GetMediaFormat().GetMediaType() == OpalMediaType::Audio())
-    AttachRFC2833HandlerToPatch(isSource, patch);
+  if (patch.GetSource().GetMediaFormat().GetMediaType() != OpalMediaType::Audio())
+    return;
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(GetMediaSession(patch.GetSource().GetSessionID()));
+  if (rtpSession == NULL)
+    return;
+
+  if (rfc2833Handler != NULL)
+    rfc2833Handler->UseRTPSession(isSource, rtpSession);
+
+#if OPAL_T38_CAPABILITY
+  if (ciscoNSEHandler != NULL)
+    ciscoNSEHandler->UseRTPSession(isSource, rtpSession);
+#endif
 }
 
 void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
 {
   // trigger on start of tone only
   if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
+    GetEndPoint().GetManager().QueueUserInput(this, info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
 }
-
-void OpalRTPConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & info, INT type)
-{
-  // trigger on start of tone only
-  if (type == 0)
-    OnUserInputTone(info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
