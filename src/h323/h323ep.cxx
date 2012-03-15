@@ -682,20 +682,13 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
     return NULL;
   }
 
-  inUseFlag.Wait();
-
-  PString newToken;
-  do {
-    newToken = psprintf("localhost/%u", Q931::GenerateCallReference());
-  } while (connectionsActive.Contains(newToken));
+  PString newToken(PString::Printf, "localhost/%u", Q931::GenerateCallReference());
 
   H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options, stringOptions);
   if (!AddConnection(connection)) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return NULL;
   }
-
-  inUseFlag.Signal();
 
   connection->AttachSignalChannel(newToken, transport, PFalse);
 

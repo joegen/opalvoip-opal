@@ -1017,6 +1017,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;
     PStringToString   m_receivedConnectionTokens;
+    PMutex            m_receivedConnectionMutex;
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 

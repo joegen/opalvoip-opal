@@ -771,7 +771,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 
   PSafePtr<OpalMixerNode> node;
 
-  PWaitAndSignal mutex(inUseFlag);
+  PWaitAndSignal mutex(m_infoMutex);
 
   // Specify mixer node to use after endpoint name (':') and delimit it with ';' and '@'
   PINDEX semicolon = party.Find(';');
@@ -884,10 +884,10 @@ void OpalMixerEndPoint::SetAdHocNodeInfo(const OpalMixerNodeInfo & info)
 
 void OpalMixerEndPoint::SetAdHocNodeInfo(OpalMixerNodeInfo * info)
 {
-  inUseFlag.Wait();
+  m_infoMutex.Wait();
   delete m_adHocNodeInfo;
   m_adHocNodeInfo = info;
-  inUseFlag.Signal();
+  m_infoMutex.Signal();
 }
 
 
@@ -899,10 +899,10 @@ void OpalMixerEndPoint::SetFactoryNodeInfo(const OpalMixerNodeInfo & info)
 
 void OpalMixerEndPoint::SetFactoryNodeInfo(OpalMixerNodeInfo * info)
 {
-  inUseFlag.Wait();
+  m_infoMutex.Wait();
   delete m_factoryNodeInfo;
   m_factoryNodeInfo = info;
-  inUseFlag.Signal();
+  m_infoMutex.Signal();
 }
 
 

@@ -55,12 +55,6 @@
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
   : OpalLocalEndPoint(mgr, prefix)
 {
-  defaultMediaFormats += OpalPCM16;
-  defaultMediaFormats += OpalRFC2833;
-#if OPAL_T38_CAPABILITY
-  defaultMediaFormats += OpalCiscoNSE;
-#endif
-
   SetDefaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
                 "  <form id=\"root\">\n"
@@ -97,8 +91,12 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
   PString vxml = ivrString.Mid(prefixLength);
   if (vxml.Left(2) == "//")
     vxml = vxml.Mid(2);
-  if (vxml.IsEmpty() || vxml == "*")
-    vxml = defaultVXML;
+  if (vxml.IsEmpty() || vxml == "*") {
+    m_defaultsMutex.Signal();
+    vxml = m_defaultVXML;
+    vxml.MakeUnique();
+    m_defaultsMutex.Signal();
+  }
 
   return AddConnection(CreateConnection(call, userData, vxml, options, stringOptions));
 }
@@ -106,8 +104,8 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
 
 OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
 {
-  PWaitAndSignal mutex(inUseFlag);
-  return defaultMediaFormats;
+  PWaitAndSignal mutex(m_defaultsMutex);
+  return m_defaultMediaFormats;
 }
 
 
@@ -143,20 +141,18 @@ static OpalMediaFormatList IncludeMediaFormatsFromVXML(const PString & vxml)
 
 void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 {
-  inUseFlag.Wait();
-
-  defaultVXML = vxml;
-  defaultMediaFormats = IncludeMediaFormatsFromVXML(vxml);
-
-  inUseFlag.Signal();
+  m_defaultsMutex.Wait();
+  m_defaultVXML = vxml;
+  m_defaultMediaFormats = IncludeMediaFormatsFromVXML(vxml);
+  m_defaultsMutex.Signal();
 }
 
 
 void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats)
 {
-  inUseFlag.Wait();
-  defaultMediaFormats = formats;
-  inUseFlag.Signal();
+  m_defaultsMutex.Wait();
+  m_defaultMediaFormats = formats;
+  m_defaultsMutex.Signal();
 }
 
 

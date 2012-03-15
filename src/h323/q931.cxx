@@ -522,21 +522,13 @@ PString Q931::GetMessageTypeName() const
 
 unsigned Q931::GenerateCallReference()
 {
-  static unsigned LastCallReference;
-  static PMutex mutex;
-  PWaitAndSignal wait(mutex);
+  static PAtomicInteger lastCallReference;
 
-  if (LastCallReference == 0)
-    LastCallReference = PRandom::Number();
-  else
-    LastCallReference++;
+  unsigned ref = ++lastCallReference & 0x7fff;
+  if (ref == 0)
+    ref = ++lastCallReference & 0x7fff;
 
-  LastCallReference &= 0x7fff;
-
-  if (LastCallReference == 0)
-    LastCallReference = 1;
-
-  return LastCallReference;
+  return ref;
 }
 
 

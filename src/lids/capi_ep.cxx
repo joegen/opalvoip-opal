@@ -608,7 +608,7 @@ OpalCapiConnection * OpalCapiEndPoint::CreateConnection(OpalCall & call,
 unsigned OpalCapiEndPoint::OpenControllers()
 {
   {
-    PWaitAndSignal mutex(inUseFlag);
+    PWaitAndSignal mutex(m_controllerMutex);
 
     if (m_thread == NULL || m_applicationId == 0) {
       PTRACE(1, "CAPI\tNot registered with drivers, or not installed.");
@@ -665,7 +665,7 @@ unsigned OpalCapiEndPoint::OpenControllers()
 
 bool OpalCapiEndPoint::GetFreeLine(unsigned & controller, unsigned & bearer)
 {
-  PWaitAndSignal mutex(inUseFlag);
+  PWaitAndSignal mutex(m_controllerMutex);
 
   for (controller = 1; controller < m_controllers.size(); ++controller) {
     for (bearer = 0; bearer < m_controllers[controller].m_bearerInUse.size(); ++bearer) {
