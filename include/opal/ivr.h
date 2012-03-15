@@ -145,7 +145,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
 
     /**Get the default VXML to use.
       */
-    const PString & GetDefaultVXML() const { return defaultVXML; }
+    const PString & GetDefaultVXML() const { return m_defaultVXML; }
 
     /** Set the default VXML to use.
       */
@@ -173,17 +173,18 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     /** Set/get the default text to speech engine used by the IVR  
       */
     void SetDefaultTextToSpeech(const PString & tts)
-    { defaultTts = tts; }
+    { m_defaultTTS = tts; }
 
     PString GetDefaultTextToSpeech() const
-    { return defaultTts; }
+    { return m_defaultTTS; }
 
   //@}
 
   protected:
-    PString             defaultVXML;
-    OpalMediaFormatList defaultMediaFormats;
-    PString             defaultTts;
+    PString             m_defaultVXML;
+    OpalMediaFormatList m_defaultMediaFormats;
+    PString             m_defaultTTS;
+    PMutex              m_defaultsMutex;
 
   private:
     P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);

@@ -160,6 +160,7 @@ class OpalCapiEndPoint : public OpalEndPoint
     };
     typedef std::vector<Controller> ControllerVector;
     ControllerVector m_controllers;
+    PMutex           m_controllerMutex;
 
     struct IdToConnMap : public std::map<DWORD, PSafePtr<OpalCapiConnection> >
     {
