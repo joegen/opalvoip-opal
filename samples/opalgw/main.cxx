@@ -33,7 +33,7 @@
 #include "custom.h"
 
 
-PCREATE_PROCESS(OpalGw);
+PCREATE_PROCESS(MyProcess);
 
 
 const WORD DefaultHTTPPort = 1719;
@@ -45,6 +45,7 @@ static const char DefaultAddressFamilyKey[] = "AddressFamily";
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
+static const char MediaBypassKey[] = "Media Bypass";
 static const char PreferredMediaKey[] = "Preferred Media";
 static const char RemovedMediaKey[] = "Removed Media";
 static const char MinJitterKey[] = "Minimum Jitter";
@@ -58,25 +59,15 @@ static const char RTPPortMaxKey[] = "RTP Port Max";
 static const char RTPTOSKey[] = "RTP Type of Service";
 static const char STUNServerKey[] = "STUN Server";
 
-static const char H323AliasesKey[] = "H.323 Aliases";
-static const char DisableFastStartKey[] = "Disable Fast Start";
-static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
-static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
-static const char H323BandwidthKey[] = "H.323 Bandwidth";
-static const char H323ListenersKey[] = "H.323 Interfaces";
-static const char GatekeeperEnableKey[] = "Remote Gatekeeper Enable";
-static const char GatekeeperAddressKey[] = "Remote Gatekeeper Address";
-static const char GatekeeperIdentifierKey[] = "Remote Gatekeeper Identifier";
-static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
-static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
-static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
-
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPRegistrarKey[] = "SIP Registrar";
+static const char SIPAuthIDKey[] = "SIP Auth ID";
+static const char SIPPasswordKey[] = "SIP Password";
 static const char SIPListenersKey[] = "SIP Interfaces";
 
 static const char LIDKey[] = "Line Interface Devices";
+static const char EnableCAPIKey[] = "CAPI ISDN";
 
 static const char VXMLKey[] = "IVR VXML URL";
 
@@ -104,13 +95,13 @@ static const char * const DefaultRoutes[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalGw::OpalGw()
-  : OpalGwProcessAncestor(ProductInfo)
+MyProcess::MyProcess()
+  : MyProcessAncestor(ProductInfo)
 {
 }
 
 
-PBoolean OpalGw::OnStart()
+PBoolean MyProcess::OnStart()
 {
   // change to the default directory to the one containing the executable
   PDirectory exeDir = GetFile().GetDirectory();
@@ -129,14 +120,14 @@ PBoolean OpalGw::OnStart()
 }
 
 
-void OpalGw::OnStop()
+void MyProcess::OnStop()
 {
-  manager.ShutDownEndpoints();
+  m_manager.ShutDownEndpoints();
   PHTTPServiceProcess::OnStop();
 }
 
 
-void OpalGw::OnControl()
+void MyProcess::OnControl()
 {
   // This function get called when the Control menu item is selected in the
   // tray icon mode of the service.
@@ -156,13 +147,13 @@ void OpalGw::OnControl()
 }
 
 
-void OpalGw::OnConfigChanged()
+void MyProcess::OnConfigChanged()
 {
 }
 
 
 
-PBoolean OpalGw::Initialise(const char * initMsg)
+PBoolean MyProcess::Initialise(const char * initMsg)
 {
   PConfig cfg("Parameters");
 
@@ -190,7 +181,8 @@ PBoolean OpalGw::Initialise(const char * initMsg)
   PConfigPage * rsrc = new PConfigPage(*this, "Parameters", "Parameters", authority);
 
   // HTTP authentication username/password
-  rsrc->Add(new PHTTPStringField(UsernameKey, 25, username));
+  rsrc->Add(new PHTTPStringField(UsernameKey, 25, username,
+            "User name to access HTTP user interface for gateway."));
   rsrc->Add(new PHTTPPasswordField(PasswordKey, 25, password));
 
   // Log level for messages
@@ -202,21 +194,23 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 #if OPAL_PTLIB_SSL
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey);
-  rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
+  rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile,
+            "Certificate for HTTPS user interface, if empty HTTP is used."));
   if (certificateFile.IsEmpty())
     disableSSL = true;
   else if (!SetServerCertificate(certificateFile, true)) {
-    PSYSTEMLOG(Fatal, "OpalGw\tCould not load certificate \"" << certificateFile << '"');
+    PSYSTEMLOG(Fatal, "MyProcess\tCould not load certificate \"" << certificateFile << '"');
     return false;
   }
 #endif
 
   // HTTP Port number to use.
   WORD httpPort = (WORD)cfg.GetInteger(HttpPortKey, DefaultHTTPPort);
-  rsrc->Add(new PHTTPIntegerField(HttpPortKey, 1, 32767, httpPort));
+  rsrc->Add(new PHTTPIntegerField(HttpPortKey, 1, 32767, httpPort,
+            "Port for HTTP user interface for gateway."));
 
   // Initialise the core of the system
-  if (!manager.Initialise(cfg, rsrc))
+  if (!m_manager.Initialise(cfg, rsrc))
     return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
@@ -227,7 +221,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 
 #if OPAL_H323
   // Create the status page
-  httpNameSpace.AddResource(new MainStatusPage(*this, *manager.gkServer, authority), PHTTPSpace::Overwrite);
+  httpNameSpace.AddResource(new GkStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
 
@@ -243,6 +237,10 @@ PBoolean OpalGw::Initialise(const char * initMsg)
          << PHTML::Paragraph() << "<center>"
 
          << PHTML::HotLink("Parameters") << "Parameters" << PHTML::HotLink()
+#if OPAL_H323
+         << PHTML::Paragraph()
+         << PHTML::HotLink("GkStatus") << "Gatekeeper Status" << PHTML::HotLink()
+#endif // OPAL_H323
          << PHTML::Paragraph();
 
     if (PIsDescendant(&PSystemLog::GetTarget(), PSystemLogToFile))
@@ -270,7 +268,7 @@ PBoolean OpalGw::Initialise(const char * initMsg)
 }
 
 
-void OpalGw::Main()
+void MyProcess::Main()
 {
   Suspend();
 }
@@ -279,21 +277,24 @@ void OpalGw::Main()
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-{
+  : m_allowMediaBypass(true)
 #if OPAL_H323
-  h323EP = NULL;
-  gkServer = NULL;
+  , m_h323EP(NULL)
 #endif
 #if OPAL_SIP
-  sipEP = NULL;
+  , m_sipEP(NULL)
 #endif
 #if OPAL_LID
-  potsEP = NULL;
+  , m_potsEP(NULL)
+#endif
+#if OPAL_CAPI
+  , m_capiEP(NULL)
+  , m_enableCAPI(true)
 #endif
 #if OPAL_PTLIB_EXPAT
-  ivrEP = NULL;
+  , m_ivrEP(NULL)
 #endif
-
+{
 #if OPAL_VIDEO
   SetAutoStartReceiveVideo(false);
   SetAutoStartTransmitVideo(false);
@@ -303,9 +304,6 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
-#if OPAL_H323
-  delete gkServer;
-#endif
 }
 
 
@@ -316,29 +314,37 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   // Create all the endpoints
 
 #if OPAL_H323
-  if (h323EP == NULL)
-    h323EP = new H323EndPoint(*this);
-  if (gkServer == NULL && h323EP != NULL)
-    gkServer = new MyGatekeeperServer(*h323EP);
+  if (m_h323EP == NULL)
+    m_h323EP = new MyH323EndPoint(*this);
 #endif
 
 #if OPAL_SIP
-  if (sipEP == NULL)
-    sipEP = new SIPEndPoint(*this);
+  if (m_sipEP == NULL)
+    m_sipEP = new SIPEndPoint(*this);
 #endif
 
 #if OPAL_LID
-  if (potsEP == NULL)
-    potsEP = new OpalLineEndPoint(*this);
+  if (m_potsEP == NULL)
+    m_potsEP = new OpalLineEndPoint(*this);
+#endif
+
+#if OPAL_LID
+  if (m_capiEP == NULL)
+    m_capiEP = new OpalCapiEndPoint(*this);
 #endif
 
 #if OPAL_PTLIB_EXPAT
-  if (ivrEP == NULL)
-    ivrEP = new OpalIVREndPoint(*this);
+  if (m_ivrEP == NULL)
+    m_ivrEP = new OpalIVREndPoint(*this);
 #endif
 
   // General parameters for all endpoint types
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), true);
+  m_allowMediaBypass = cfg.GetBoolean(MediaBypassKey);
+  rsrc->Add(new PHTTPBooleanField(MediaBypassKey, m_allowMediaBypass,
+            "Allow media to bypass gateway and be routed directly between the endpoints."));
+
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25,
+                                   "", "Preference order for codecs to be offered to remotes"), true);
   PStringArray formats = fieldArray->GetStrings(cfg);
   if (formats.GetSize() > 0)
     SetMediaFormatOrder(formats);
@@ -346,14 +352,17 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     fieldArray->SetStrings(cfg, GetMediaFormatOrder());
   rsrc->Add(fieldArray);
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), true);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25,
+                                   "", "Codecs to be prevented from being used"), true);
   SetMediaFormatMask(fieldArray->GetStrings(cfg));
   rsrc->Add(fieldArray);
 
   SetAudioJitterDelay(cfg.GetInteger(MinJitterKey, GetMinAudioJitterDelay()),
                       cfg.GetInteger(MaxJitterKey, GetMaxAudioJitterDelay()));
-  rsrc->Add(new PHTTPIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms"));
-  rsrc->Add(new PHTTPIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms"));
+  rsrc->Add(new PHTTPIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(),
+            "ms", "Minimum jitter buffer size"));
+  rsrc->Add(new PHTTPIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(),
+            "ms", " Maximum jitter buffer size"));
 
   SetTCPPorts(cfg.GetInteger(TCPPortBaseKey, GetTCPPortBase()),
               cfg.GetInteger(TCPPortMaxKey, GetTCPPortMax()));
@@ -362,112 +371,67 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   SetRtpIpPorts(cfg.GetInteger(RTPPortBaseKey, GetRtpIpPortBase()),
                 cfg.GetInteger(RTPPortMaxKey, GetRtpIpPortMax()));
 
-  rsrc->Add(new PHTTPIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase()));
-  rsrc->Add(new PHTTPIntegerField(TCPPortMaxKey,  0, 65535, GetTCPPortMax()));
-  rsrc->Add(new PHTTPIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase()));
-  rsrc->Add(new PHTTPIntegerField(UDPPortMaxKey,  0, 65535, GetUDPPortMax()));
-  rsrc->Add(new PHTTPIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase()));
-  rsrc->Add(new PHTTPIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax()));
+  rsrc->Add(new PHTTPIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(),
+            "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"));
+  rsrc->Add(new PHTTPIntegerField(TCPPortMaxKey,  0, 65535, GetTCPPortMax(),
+            "", "Maximum of port range for allocating TCP streams"));
+  rsrc->Add(new PHTTPIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase(),
+            "", "Base of port range for allocating UDP streams, e.g. SIP signalling channel"));
+  rsrc->Add(new PHTTPIntegerField(UDPPortMaxKey,  0, 65535, GetUDPPortMax(),
+            "", "Maximum of port range for allocating UDP streams"));
+  rsrc->Add(new PHTTPIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase(),
+            "", "Base of port range for allocating RTP/UDP streams"));
+  rsrc->Add(new PHTTPIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax(),
+            "", "Maximum of port range for allocating RTP/UDP streams"));
 
   SetMediaTypeOfService(cfg.GetInteger(RTPTOSKey, GetMediaTypeOfService()));
-  rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService()));
+  rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService(),
+            "", "Value for DIFSERV Quality of Service"));
 
-  PString STUNServer = cfg.GetString(STUNServerKey, "stun.voxgratia.org");
-  rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer));
-  if(PIPSocket::GetDefaultIpAddressFamily() != AF_INET6)
-	SetSTUNServer(STUNServer);
+  PString STUNServer = cfg.GetString(STUNServerKey, GetSTUNServer());
+  SetSTUNServer(STUNServer);
+  rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer,
+            "STUN server IP/hostname for NAT traversal"));
 
 #if OPAL_H323
-
-  // Add H.323 parameters
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), true);
-  PStringArray aliases = fieldArray->GetStrings(cfg);
-  if (aliases.IsEmpty())
-    fieldArray->SetStrings(cfg, h323EP->GetAliasNames());
-  else {
-    h323EP->SetLocalUserName(aliases[0]);
-    for (PINDEX i = 1; i < aliases.GetSize(); i++)
-      h323EP->AddAliasName(aliases[i]);
-  }
-  rsrc->Add(fieldArray);
-
-  h323EP->DisableFastStart(cfg.GetBoolean(DisableFastStartKey, h323EP->IsFastStartDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableFastStartKey,  h323EP->IsFastStartDisabled()));
-
-  h323EP->DisableH245Tunneling(cfg.GetBoolean(DisableH245TunnelingKey, h323EP->IsH245TunnelingDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableH245TunnelingKey,  h323EP->IsH245TunnelingDisabled()));
-
-  h323EP->DisableH245inSetup(cfg.GetBoolean(DisableH245inSetupKey, h323EP->IsH245inSetupDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableH245inSetupKey,  h323EP->IsH245inSetupDisabled()));
-
-  h323EP->SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, h323EP->GetInitialBandwidth()/10)*10);
-  rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, h323EP->GetInitialBandwidth()/10, "kb/s"));
-  
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25), false);
-  if (!h323EP->StartListeners(fieldArray->GetStrings(cfg))) {
-    PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
-  }
-  rsrc->Add(fieldArray);
-
-  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, false);
-  rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable));
-
-  PString gkAddress = cfg.GetString(GatekeeperAddressKey);
-  rsrc->Add(new PHTTPStringField(GatekeeperAddressKey, 25, gkAddress));
-
-  PString gkIdentifier = cfg.GetString(GatekeeperIdentifierKey);
-  rsrc->Add(new PHTTPStringField(GatekeeperIdentifierKey, 25, gkIdentifier));
-
-  PString gkInterface = cfg.GetString(GatekeeperInterfaceKey);
-  rsrc->Add(new PHTTPStringField(GatekeeperInterfaceKey, 25, gkInterface));
-
-  PString gkPassword = PHTTPPasswordField::Decrypt(cfg.GetString(GatekeeperPasswordKey));
-  if (!gkPassword)
-    h323EP->SetGatekeeperPassword(gkPassword);
-  rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, 25, gkPassword));
-
-  h323EP->SetGkAccessTokenOID(cfg.GetString(GatekeeperTokenOIDKey));
-  rsrc->Add(new PHTTPStringField(GatekeeperTokenOIDKey, 25, h323EP->GetGkAccessTokenOID()));
-
-  if (gkEnable) {
-    if (h323EP->UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
-      PSYSTEMLOG(Info, "Register with gatekeeper " << *h323EP->GetGatekeeper());
-    }
-    else {
-      PSYSTEMLOG(Error, "Could not register with gatekeeper!");
-    }
-  }
-  else {
-    PSYSTEMLOG(Info, "Not using gatekeeper.");
-    h323EP->RemoveGatekeeper();
-  }
-
-  if (!gkServer->Initialise(cfg, rsrc))
+  if (!m_h323EP->Initialise(cfg, rsrc))
     return false;
 #endif
 
 #if OPAL_SIP
   // Add SIP parameters
-  sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, sipEP->GetDefaultLocalPartyName()));
-  rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, sipEP->GetDefaultLocalPartyName()));
-
-  PString proxy = sipEP->GetProxy().AsString();
-  sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
-  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy));
+  m_sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, m_sipEP->GetDefaultLocalPartyName()));
+  rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, m_sipEP->GetDefaultLocalPartyName(),
+            "SIP local user name"));
 
   SIPRegister::Params registrar;
-  registrar.m_registrarAddress = cfg.GetString(SIPRegistrarKey);
-  rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar.m_registrarAddress));
+  registrar.m_remoteAddress = cfg.GetString(SIPRegistrarKey);
+  rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar.m_registrarAddress,
+            "SIP registrar/proxy IP address, hostname or domain"));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), false);
-  if (!sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
+  registrar.m_authID = cfg.GetString(SIPAuthIDKey);
+  rsrc->Add(new PHTTPStringField(SIPAuthIDKey, 25, registrar.m_authID,
+            "SIP registrar/proxy authentication identifier, defaults to local user name"));
+
+  registrar.m_password = cfg.GetString(SIPPasswordKey);
+  rsrc->Add(new PHTTPStringField(SIPPasswordKey, 25, registrar.m_password,
+            "SIP registrar/proxy authentication password"));
+
+  PString proxy = m_sipEP->GetProxy().AsString();
+  m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
+  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy,
+            "SIP outbound proxy IP/hostname"));
+
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25,
+                                   "", "Local network interfaces to listen for SIP, blank means all"), false);
+  if (!m_sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
   rsrc->Add(fieldArray);
 
   if (!registrar.m_registrarAddress) {
     PString aor;
-    if (sipEP->Register(registrar, aor)) {
+    if (m_sipEP->Register(registrar, aor)) {
       PSYSTEMLOG(Info, "Registered " << aor);
     }
     else {
@@ -479,21 +443,32 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_LID
   // Add POTS and PSTN endpoints
-  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), false);
+  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices(),
+                                   0, "Line Interface Devices to monitor, if any"), false);
   PStringArray devices = fieldArray->GetStrings(cfg);
-  if (!potsEP->AddDeviceNames(devices)) {
+  if (!m_potsEP->AddDeviceNames(devices))
     PSYSTEMLOG(Error, "No LID devices!");
-  }
   rsrc->Add(fieldArray);
 #endif // OPAL_LID
 
 
+#if OPAL_CAPI
+  m_enableCAPI = cfg.GetBoolean(EnableCAPIKey);
+  rsrc->Add(new PHTTPBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available"));
+  if (m_enableCAPI) {
+    if (m_capiEP->OpenControllers() == 0)
+      PSYSTEMLOG(Error, "No CAPI controllers!");
+  }
+#endif
+
+
 #if OPAL_PTLIB_EXPAT
-  // Create IVR protocol handler
+  // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 120, vxml));
+  rsrc->Add(new PHTTPStringField(VXMLKey, 60, vxml,
+            "URL for Interactive Voice Response VXML script"));
   if (!vxml)
-    ivrEP->SetDefaultVXML(vxml);
+    m_ivrEP->SetDefaultVXML(vxml);
 #endif
 
 
@@ -526,10 +501,11 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     cfg.SetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size", arraySize);
   }
 
-  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION);
-  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 30));
-  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 30));
-  routeFields->Append(new PHTTPStringField(RouteDestKey, 30));
+  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
+                                                              "Internal routing of calls to varous sub-systems");
+  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 15));
+  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 15));
+  routeFields->Append(new PHTTPStringField(RouteDestKey, 15));
   rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
   SetRouteTable(routes);
@@ -537,5 +513,170 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   return true;
 }
+
+bool MyManager::AllowMediaBypass(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
+{
+  return m_allowMediaBypass;
+}
+
+
+///////////////////////////////////////////////////////////////
+
+BaseStatusPage::BaseStatusPage(MyManager & mgr, PHTTPAuthority & auth, const char * name)
+  : PServiceHTTPString(name, PString::Empty(), "text/html; charset=UTF-8", auth)
+  , m_manager(mgr)
+{
+}
+
+
+PString BaseStatusPage::LoadText(PHTTPRequest & request)
+{
+  if (string.IsEmpty()) {
+    PHTML html;
+    html << PHTML::Title(GetTitle())
+         << "<meta http-equiv=\"Refresh\" content=\"30\">\n"
+         << PHTML::Body()
+         << MyProcessAncestor::Current().GetPageGraphic()
+         << PHTML::Paragraph() << "<center>"
+
+         << PHTML::Form("POST");
+
+    CreateContent(html);
+
+    html << PHTML::Form()
+         << PHTML::HRule()
+
+         << MyProcessAncestor::Current().GetCopyrightText()
+         << PHTML::Body();
+    string = html;
+  }
+
+  return PServiceHTTPString::LoadText(request);
+}
+
+
+PBoolean BaseStatusPage::Post(PHTTPRequest & request,
+                              const PStringToString & data,
+                              PHTML & msg)
+{
+  PTRACE(2, "Main\tClear call POST received " << data);
+
+  msg << PHTML::Title() << "Accepted Control Command" << PHTML::Body()
+      << PHTML::Heading(1) << "Accepted Control Command" << PHTML::Heading(1);
+
+  if (!OnPostControl(data, msg))
+    msg << PHTML::Heading(2) << "No calls or endpoints!" << PHTML::Heading(2);
+
+  msg << PHTML::Paragraph()
+      << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
+      << "&nbsp;&nbsp;&nbsp;&nbsp;"
+      << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
+
+  PServiceHTML::ProcessMacros(request, msg, "html/status.html",
+                              PServiceHTML::LoadFromFile|PServiceHTML::NoSignatureForFile);
+  return TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////
+
+CallStatusPage::CallStatusPage(MyManager & mgr, PHTTPAuthority & auth)
+  : BaseStatusPage(mgr, auth, "CallStatus")
+{
+}
+
+
+const char * CallStatusPage::GetTitle() const
+{
+  return "OPAL Gateway Call Status";
+}
+
+
+void CallStatusPage::CreateContent(PHTML & html) const
+{
+  html << PHTML::TableStart("border=1")
+       << PHTML::TableRow()
+       << PHTML::TableHeader()
+       << "&nbsp;A&nbsp;Party&nbsp;"
+       << PHTML::TableHeader()
+       << "&nbsp;B&nbsp;Party&nbsp;"
+       << PHTML::TableHeader()
+       << "&nbsp;Duration&nbsp;"
+       << "<!--#macrostart CallStatus-->"
+         << PHTML::TableRow()
+         << PHTML::TableData("NOWRAP")
+         << PHTML::TableData("NOWRAP")
+         << "<!--#status A-Party-->"
+         << PHTML::BreakLine()
+         << "<!--#status B-Party-->"
+         << PHTML::TableData()
+         << "<!--#status Duration-->"
+         << PHTML::TableData()
+         << PHTML::SubmitButton("Clear", "!--#status Token--")
+       << "<!--#macroend CallStatus-->"
+       << PHTML::TableEnd();
+}
+
+
+bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
+{
+  bool gotOne = false;
+
+  for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
+    PString key = it->first;
+    PString value = it->second;
+    if (value == "Clear") {
+      PSafePtr<OpalCall> call = m_manager.FindCallWithLock(key, PSafeReference);
+      if (call != NULL) {
+        msg << PHTML::Heading(2) << "Clearing call " << *call << PHTML::Heading(2);
+        call->Clear();
+        gotOne = true;
+      }
+    }
+  }
+
+  return gotOne;
+}
+
+
+PString MyManager::OnLoadCallStatus(const PString & htmlBlock)
+{
+  PString substitution;
+
+  PArray<PString> calls = GetAllCalls();
+  for (PINDEX i = 0; i < calls.GetSize(); ++i) {
+    PSafePtr<OpalCall> call = FindCallWithLock(calls[i], PSafeReadOnly);
+    if (call == NULL)
+      continue;
+
+    // make a copy of the repeating html chunk
+    PString insert = htmlBlock;
+
+    PServiceHTML::SpliceMacro(insert, "status Token",    call->GetToken());
+    PServiceHTML::SpliceMacro(insert, "status A-Party",  call->GetPartyA());
+    PServiceHTML::SpliceMacro(insert, "status B-Party",  call->GetPartyB());
+
+    PStringStream duration;
+    duration.precision(0);
+    if (call->GetEstablishedTime().IsValid())
+      duration << (call->GetEstablishedTime() - PTime());
+    else
+      duration << '(' << (call->GetStartTime() - PTime()) << ')';
+    PServiceHTML::SpliceMacro(insert, "status Duration", duration);
+
+    // Then put it into the page, moving insertion point along after it.
+    substitution += insert;
+  }
+
+  return substitution;
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,block)
+{
+  GkStatusPage * status = dynamic_cast<GkStatusPage *>(resource.m_resource);
+  return PAssertNULL(status)->m_manager.OnLoadCallStatus(block);
+}
+
 
 // End of File ///////////////////////////////////////////////////////////////
