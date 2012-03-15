@@ -251,6 +251,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_switchedToFaxMode(false)
 #endif
   , releaseMethod(ReleaseWithNothing)
+  , m_receivedUserInputMethod(UserInputMethodUnknown)
 //  , m_messageContext(NULL)
 {
   SIPURL adjustedDestination = destination;
@@ -3337,6 +3338,23 @@ void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
 }
 
 
+void SIPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
+{
+  switch (m_receivedUserInputMethod) {
+    case ReceivedINFO :
+      PTRACE(3, "OpalCon\tUsing INFO, ignoring RFC2833 on " << *this);
+      break;
+
+    case UserInputMethodUnknown :
+      m_receivedUserInputMethod = ReceivedRFC2833;
+      // Do default case
+
+    default:
+      OpalRTPConnection::OnUserInputInlineRFC2833(info, type);
+  }
+}
+
+
 void SIPConnection::OnReceivedINFO(SIP_PDU & request)
 {
   SIP_PDU::StatusCodes status = SIP_PDU::Failure_UnsupportedMediaType;
@@ -3344,34 +3362,57 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
   PCaselessString contentType = mimeInfo.GetContentType();
 
   if (contentType.NumCompare(ApplicationDTMFRelayKey) == EqualTo) {
-    PStringArray lines = request.GetEntityBody().Lines();
-    PINDEX i;
-    char tone = -1;
-    int duration = -1;
-    for (i = 0; i < lines.GetSize(); ++i) {
-      PStringArray tokens = lines[i].Tokenise('=', PFalse);
-      PString val;
-      if (tokens.GetSize() > 1)
-        val = tokens[1].Trim();
-      if (tokens.GetSize() > 0) {
-        if (tokens[0] *= "signal")
-          tone = val[0];   // DTMF relay does not use RFC2833 encoding
-        else if (tokens[0] *= "duration")
-          duration = val.AsInteger();
-      }
+    switch (m_receivedUserInputMethod) {
+      case ReceivedRFC2833 :
+        PTRACE(3, "OpalCon\tUsing RFC2833, ignoring INFO " << ApplicationDTMFRelayKey << " on " << *this);
+        break;
+
+      case UserInputMethodUnknown :
+        m_receivedUserInputMethod = ReceivedINFO;
+        // Do default case
+
+      default:
+        PStringArray lines = request.GetEntityBody().Lines();
+        PINDEX i;
+        char tone = -1;
+        int duration = -1;
+        for (i = 0; i < lines.GetSize(); ++i) {
+          PStringArray tokens = lines[i].Tokenise('=', PFalse);
+          PString val;
+          if (tokens.GetSize() > 1)
+            val = tokens[1].Trim();
+          if (tokens.GetSize() > 0) {
+            if (tokens[0] *= "signal")
+              tone = val[0];   // DTMF relay does not use RFC2833 encoding
+            else if (tokens[0] *= "duration")
+              duration = val.AsInteger();
+          }
+        }
+        if (tone != -1)
+          OnUserInputTone(tone, duration == 0 ? 100 : duration);
+        status = SIP_PDU::Successful_OK;
+        break;
     }
-    if (tone != -1)
-      OnUserInputTone(tone, duration == 0 ? 100 : duration);
-    status = SIP_PDU::Successful_OK;
   }
 
   else if (contentType.NumCompare(ApplicationDTMFKey) == EqualTo) {
-    PString tones = request.GetEntityBody().Trim();
-    if (tones.GetLength() == 1)
-      OnUserInputTone(tones[0], 100);
-    else
-      OnUserInputString(tones);
-    status = SIP_PDU::Successful_OK;
+    switch (m_receivedUserInputMethod) {
+      case ReceivedRFC2833 :
+        PTRACE(3, "OpalCon\tUsing RFC2833, ignoring INFO " << ApplicationDTMFKey << " on " << *this);
+        break;
+
+      case UserInputMethodUnknown :
+        m_receivedUserInputMethod = ReceivedINFO;
+        // Do default case
+
+      default:
+        PString tones = request.GetEntityBody().Trim();
+        if (tones.GetLength() == 1)
+          OnUserInputTone(tones[0], 100);
+        else
+          OnUserInputString(tones);
+        status = SIP_PDU::Successful_OK;
+    }
   }
 
 #if OPAL_VIDEO
@@ -3381,9 +3422,6 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     status = SIP_PDU::Failure_UnsupportedMediaType;
   }
 #endif
-
-  else 
-    status = SIP_PDU::Failure_UnsupportedMediaType;
 
   request.SendResponse(*transport, status);
 

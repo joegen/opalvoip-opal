@@ -625,6 +625,8 @@ class SIPConnection : public OpalRTPConnection
 
   protected:
     virtual bool GarbageCollection();
+    void OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type);
+
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
@@ -765,6 +767,12 @@ class SIPConnection : public OpalRTPConnection
 #if OPAL_HAS_IM
     PSafePtr<OpalSIPIMContext> m_imContext;
 #endif
+
+    enum {
+      UserInputMethodUnknown,
+      ReceivedRFC2833,
+      ReceivedINFO
+    } m_receivedUserInputMethod;
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
