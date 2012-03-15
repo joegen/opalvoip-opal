@@ -364,10 +364,21 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
   }
 }
 
+static H323TransportAddress GetGatekeeperAddress(const PString & address)
+{
+  PIPSocketAddressAndPort addrPort(address, H225_RAS::DefaultRasUdpPort);
+  if (!addrPort.IsValid()) {
+    PIPSocketAddressAndPortVector addresses;
+    if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty())
+      addrPort = addresses[0];
+  }
+
+  return H323TransportAddress(addrPort.AsString(), H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+}
 
 PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
 {
-  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress h323addr = GetGatekeeperAddress(address);
   return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByAddress(h323addr);
 }
 
@@ -376,7 +387,7 @@ PBoolean H323EndPoint::SetGatekeeperZone(const PString & address,
                                      const PString & identifier,
                                      H323Transport * transport)
 {
-  H323TransportAddress h323addr(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+  H323TransportAddress h323addr = GetGatekeeperAddress(address);
   return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
 }
 
@@ -809,7 +820,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       PIPSocket::Address ip = hostname;
       if (!ip.IsValid()) {
         PIPSocketAddressAndPortVector addresses;
-        if (PDNS::LookupSRV(hostname, "_h323._tcp", url.GetPort(), addresses) && !addresses.empty()) {
+        if (PDNS::LookupSRV(hostname, "_h323cs._tcp", url.GetPort(), addresses) && !addresses.empty()) {
           // Only use first entry
           url.SetHostName(addresses[0].GetAddress().AsString());
           url.SetPort(addresses[0].GetPort());
