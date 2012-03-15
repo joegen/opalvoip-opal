@@ -79,8 +79,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   , m_registeredUserMode(false)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
-  , m_connectionThreadPool(maxConnectionThreads)
-  , m_handlerThreadPool(maxHandlerThreads)
+  , m_connectionThreadPool(maxConnectionThreads, "SIPCon Pool")
+  , m_handlerThreadPool(maxHandlerThreads, "SIPHandler Pool")
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -1917,12 +1917,6 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-PThreadPoolBase::WorkerThreadBase * SIPEndPoint::WorkThreadPool::CreateWorkerThread()
-{ 
-  return new QueuedWorkerThread(*this, PThread::HighPriority); 
-}
-
 
 SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token)
   : m_endpoint(ep)
