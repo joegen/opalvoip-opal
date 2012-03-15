@@ -34,27 +34,19 @@
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/shttpsvc.h>
-typedef PSecureHTTPServiceProcess OpalGwProcessAncestor;
+typedef PSecureHTTPServiceProcess MyProcessAncestor;
 #else
 #include <ptclib/httpsvc.h>
-typedef PHTTPServiceProcess OpalGwProcessAncestor;
+typedef PHTTPServiceProcess MyProcessAncestor;
 #endif
 
-#if OPAL_H323
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <h323/gkserver.h>
-#endif
-
-#if OPAL_SIP
 #include <sip/sip.h>
-#endif
-
 #include <lids/lidep.h>
-
-#if OPAL_IVR
+#include <lids/capi_ep.h>
 #include <opal/ivr.h>
-#endif
 
 
 

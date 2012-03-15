@@ -25,7 +25,20 @@
 
 //#define TEST_TOKEN
 
-static const char GatekeeperIdentifierKey[] = "Server Gatekeeper Identifier";
+static const char H323AliasesKey[] = "H.323 Aliases";
+static const char DisableFastStartKey[] = "Disable Fast Start";
+static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
+static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
+static const char H323BandwidthKey[] = "H.323 Bandwidth";
+static const char H323ListenersKey[] = "H.323 Interfaces";
+static const char GatekeeperEnableKey[] = "Remote Gatekeeper Enable";
+static const char GatekeeperAddressKey[] = "Remote Gatekeeper Address";
+static const char RemoteGatekeeperIdentifierKey[] = "Remote Gatekeeper Identifier";
+static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
+static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
+static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
+
+static const char ServerGatekeeperIdentifierKey[] = "Server Gatekeeper Identifier";
 static const char AvailableBandwidthKey[] = "Total Bandwidth";
 static const char DefaultBandwidthKey[] = "Default Bandwidth Allocation";
 static const char MaximumBandwidthKey[] = "Maximum Bandwidth Allocation";
@@ -69,21 +82,121 @@ static const char OSPServerKeyFileKey[] = "OSP Server Key";
 
 ///////////////////////////////////////////////////////////////
 
-MainStatusPage::MainStatusPage(OpalGw & app, MyGatekeeperServer & gk, PHTTPAuthority & auth)
-  : PServiceHTTPString("Status", "", "text/html; charset=UTF-8", auth)
-  , m_gkServer(gk)
+MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
+  : H323EndPoint(mgr)
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+  , m_gkServer(*this)
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
 {
-  PHTML html;
+}
 
-  html << PHTML::Title("OpenH323 Gatekeeper Server Status")
-       << "<meta http-equiv=\"Refresh\" content=\"30\">\n"
-       << PHTML::Body()
-       << app.GetPageGraphic()
-       << PHTML::Paragraph() << "<center>"
 
-       << PHTML::Form("POST")
+bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
+{
+  PHTTPFieldArray * fieldArray;
 
-       << PHTML::TableStart("border=1")
+
+  // Add H.323 parameters
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25,
+                                   "", "H.323 Alias names for local user"), true);
+  PStringArray aliases = fieldArray->GetStrings(cfg);
+  if (aliases.IsEmpty())
+    fieldArray->SetStrings(cfg, GetAliasNames());
+  else {
+    SetLocalUserName(aliases[0]);
+    for (PINDEX i = 1; i < aliases.GetSize(); i++)
+      AddAliasName(aliases[i]);
+  }
+  rsrc->Add(fieldArray);
+
+  DisableFastStart(cfg.GetBoolean(DisableFastStartKey, IsFastStartDisabled()));
+  rsrc->Add(new PHTTPBooleanField(DisableFastStartKey,  IsFastStartDisabled(),
+            "Disable H.323 Fast Connect feature"));
+
+  DisableH245Tunneling(cfg.GetBoolean(DisableH245TunnelingKey, IsH245TunnelingDisabled()));
+  rsrc->Add(new PHTTPBooleanField(DisableH245TunnelingKey,  IsH245TunnelingDisabled(),
+            "Disable H.245 tunneled in H.225.0 signalling channel"));
+
+  DisableH245inSetup(cfg.GetBoolean(DisableH245inSetupKey, IsH245inSetupDisabled()));
+  rsrc->Add(new PHTTPBooleanField(DisableH245inSetupKey,  IsH245inSetupDisabled(),
+            "Disable sending initial tunneled H.245 PDU in SETUP PDU"));
+
+  SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, GetInitialBandwidth()/10)*10);
+  rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, GetInitialBandwidth()/10,
+            "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls"));
+  
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25,
+                                   "", "Local network interfaces to listen for H.323, blank means all"), false);
+  if (!StartListeners(fieldArray->GetStrings(cfg))) {
+    PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
+  }
+  rsrc->Add(fieldArray);
+
+  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, false);
+  rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable,
+            "Enable registration with gatekeeper as client"));
+
+  PString gkAddress = cfg.GetString(GatekeeperAddressKey);
+  rsrc->Add(new PHTTPStringField(GatekeeperAddressKey, 25, gkAddress,
+            "IP/hostname of gatekeeper to register with, if blank a broadcast is used"));
+
+  PString gkIdentifier = cfg.GetString(RemoteGatekeeperIdentifierKey);
+  rsrc->Add(new PHTTPStringField(RemoteGatekeeperIdentifierKey, 25, gkIdentifier,
+            "Gatekeeper identifier to register with, if blank any gatekeeper is used"));
+
+  PString gkInterface = cfg.GetString(GatekeeperInterfaceKey);
+  rsrc->Add(new PHTTPStringField(GatekeeperInterfaceKey, 25, gkInterface,
+            "Local network interface to use to register with gatekeeper, if blank all are used"));
+
+  PString gkPassword = PHTTPPasswordField::Decrypt(cfg.GetString(GatekeeperPasswordKey));
+  if (!gkPassword)
+    SetGatekeeperPassword(gkPassword);
+  rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, 25, gkPassword,
+            "Password for gatekeeper authentication, user is the first alias"));
+
+  SetGkAccessTokenOID(cfg.GetString(GatekeeperTokenOIDKey));
+  rsrc->Add(new PHTTPStringField(GatekeeperTokenOIDKey, 25, GetGkAccessTokenOID(),
+            "Gatekeeper access token OID for H.235 support"));
+
+  if (gkEnable) {
+    if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
+      PSYSTEMLOG(Info, "Register with gatekeeper " << *GetGatekeeper());
+    }
+    else {
+      PSYSTEMLOG(Error, "Could not register with gatekeeper!");
+    }
+  }
+  else {
+    PSYSTEMLOG(Info, "Not using gatekeeper.");
+    RemoveGatekeeper();
+  }
+
+  return m_gkServer.Initialise(cfg, rsrc);
+}
+
+
+///////////////////////////////////////////////////////////////
+
+GkStatusPage::GkStatusPage(MyManager & mgr, PHTTPAuthority & auth)
+  : BaseStatusPage(mgr, auth, "GkStatus")
+  , m_gkServer(mgr.FindEndPointAs<MyH323EndPoint>("h323")->GetGatekeeperServer())
+{
+}
+
+
+const char * GkStatusPage::GetTitle() const
+{
+  return "OPAL Gatekeeper Status";
+}
+
+
+void GkStatusPage::CreateContent(PHTML & html) const
+{
+  html << PHTML::TableStart("border=1")
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;End&nbsp;Point&nbsp;Identifier&nbsp;"
@@ -110,95 +223,23 @@ MainStatusPage::MainStatusPage(OpalGw & app, MyGatekeeperServer & gk, PHTTPAutho
          << PHTML::TableData()
          << PHTML::SubmitButton("Unregister", "!--#status EndPointIdentifier--")
        << "<!--#macroend EndPointStatus-->"
-       << PHTML::TableEnd()
-
-       << PHTML::Paragraph()
-
-       << PHTML::TableStart("border=1")
-       << PHTML::TableRow()
-       << PHTML::TableHeader()
-       << "&nbsp;Call&nbsp;Identifier&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;End&nbsp;Point&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Source/Destination" << PHTML::BreakLine() << "Signalling&nbsp;Addresse&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Last&nbsp;IRR&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Connected&nbsp;"
-       << "<!--#macrostart CallStatus-->"
-         << PHTML::TableRow()
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status CallIdentifier-->"
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status EndPointIdentifier-->"
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status SourceAddress-->"
-         << PHTML::BreakLine()
-         << "<!--#status DestinationAddress-->"
-         << PHTML::TableData()
-         << "<!--#status LastIRR-->"
-         << PHTML::TableData()
-         << "<!--#status ConnectedTime-->"
-         << PHTML::TableData()
-         << PHTML::SubmitButton("Clear", "!--#status CallIdentifier--")
-       << "<!--#macroend CallStatus-->"
-       << PHTML::TableEnd()
-
-       << PHTML::Form()
-       << PHTML::HRule()
-
-       << app.GetCopyrightText()
-       << PHTML::Body();
-
-  string = html;
+       << PHTML::TableEnd();
 }
 
 
-PBoolean MainStatusPage::Post(PHTTPRequest & request,
-                          const PStringToString & data,
-                          PHTML & msg)
+PBoolean GkStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 {
-  PTRACE(2, "Main\tClear call POST received " << data);
-
-  msg << PHTML::Title() << "Accepted Control Command" << PHTML::Body()
-      << PHTML::Heading(1) << "Accepted Control Command" << PHTML::Heading(1);
-
-  if (!m_gkServer.OnPostControl(data, msg))
-    msg << PHTML::Heading(2) << "No calls or endpoints!" << PHTML::Heading(2);
-
-  msg << PHTML::Paragraph()
-      << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
-      << "&nbsp;&nbsp;&nbsp;&nbsp;"
-      << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
-
-  PServiceHTML::ProcessMacros(request, msg, "html/status.html",
-                              PServiceHTML::LoadFromFile|PServiceHTML::NoSignatureForFile);
-  return TRUE;
-}
-
-
-PBoolean MyGatekeeperServer::OnPostControl(const PStringToString & data, PHTML & msg)
-{
-  bool gotOne = FALSE;
+  bool gotOne = false;
 
   for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
     PString key = it->first;
     PString value = it->second;
     if (value == "Unregister") {
-      PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByIdentifier(key);
+      PSafePtr<H323RegisteredEndPoint> ep = m_gkServer.FindEndPointByIdentifier(key);
       if (ep != NULL) {
         msg << PHTML::Heading(2) << "Unregistered endpoint " << *ep << PHTML::Heading(2);
         ep->Unregister();
-        gotOne = TRUE;
-      }
-    }
-    else if (value == "Clear") {
-      PSafePtr<H323GatekeeperCall> call = FindCall(key);
-      if (call != NULL) {
-        msg << PHTML::Heading(2) << "Cleared call " << *call << PHTML::Heading(2);
-        call->Disengage();
-        gotOne = TRUE;
+        gotOne = true;
       }
     }
   }
@@ -249,41 +290,10 @@ PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
 }
 
 
-PString MyGatekeeperServer::OnLoadCallStatus(const PString & htmlBlock)
-{
-  PString substitution;
-
-  for (PSafePtr<H323GatekeeperCall> call = GetFirstCall(PSafeReadOnly); call != NULL; call++) {
-    // make a copy of the repeating html chunk
-    PString insert = htmlBlock;
-
-    PServiceHTML::SpliceMacro(insert, "status CallIdentifier",     call->GetCallIdentifier().AsString());
-    PServiceHTML::SpliceMacro(insert, "status EndPointIdentifier", call->GetEndPoint().GetIdentifier());
-    PServiceHTML::SpliceMacro(insert, "status SourceAddress",      call->GetSourceAddress());
-    PServiceHTML::SpliceMacro(insert, "status DestinationAddress", call->GetDestinationAddress());
-    PServiceHTML::SpliceMacro(insert, "status LastIRR",            call->GetLastInfoResponseTime().AsString("hh:mm:ss"));
-    if (call->GetConnectedTime().GetTimeInSeconds() != 0)
-      PServiceHTML::SpliceMacro(insert, "status ConnectedTime",    call->GetConnectedTime().AsString("hh:mm:ss"));
-
-    // Then put it into the page, moving insertion point along after it.
-    substitution += insert;
-  }
-
-  return substitution;
-}
-
-
 PCREATE_SERVICE_MACRO_BLOCK(EndPointStatus,resource,P_EMPTY,block)
 {
-  MainStatusPage * status = dynamic_cast<MainStatusPage *>(resource.m_resource);
+  GkStatusPage * status = dynamic_cast<GkStatusPage *>(resource.m_resource);
   return PAssertNULL(status)->m_gkServer.OnLoadEndPointStatus(block);
-}
-
-
-PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,block)
-{
-  MainStatusPage * status = dynamic_cast<MainStatusPage *>(resource.m_resource);
-  return PAssertNULL(status)->m_gkServer.OnLoadCallStatus(block);
 }
 
 
@@ -299,7 +309,7 @@ MyGatekeeperServer::MyGatekeeperServer(H323EndPoint & ep)
 }
 
 
-PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
+bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX i;
 
@@ -365,12 +375,12 @@ PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #endif
 
-  PString gkid = cfg.GetString(GatekeeperIdentifierKey, OpalGw::Current().GetName() + " on " + PIPSocket::GetHostName());
-  rsrc->Add(new PHTTPStringField(GatekeeperIdentifierKey, 25, gkid));
+  PString gkid = cfg.GetString(ServerGatekeeperIdentifierKey, MyProcess::Current().GetName() + " on " + PIPSocket::GetHostName());
+  rsrc->Add(new PHTTPStringField(ServerGatekeeperIdentifierKey, 25, gkid));
   SetGatekeeperIdentifier(gkid);
 
   // Interfaces to listen on
-  PHTTPFieldArray * fieldArray = new PHTTPFieldArray(new PHTTPStringField(GkServerListenersKey, 25), PFalse);
+  PHTTPFieldArray * fieldArray = new PHTTPFieldArray(new PHTTPStringField(GkServerListenersKey, 25), false);
   H323TransportAddressArray interfaces = fieldArray->GetStrings(cfg);
   AddListeners(interfaces);
   rsrc->Add(fieldArray);
@@ -426,7 +436,7 @@ PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", "Alias Route Maps");
   routeFields->Append(new PHTTPStringField(RouteAliasKey, 20));
   routeFields->Append(new PHTTPStringField(RouteHostKey, 30));
-  rsrc->Add(new PHTTPFieldArray(routeFields, TRUE));
+  rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
   requireH235 = cfg.GetBoolean(RequireH235Key, requireH235);
   rsrc->Add(new PHTTPBooleanField(RequireH235Key, requireH235));
@@ -445,9 +455,9 @@ PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * security = new PHTTPCompositeField(USERS_SECTION"\\"USERS_KEY" %u\\", "Authentication Credentials");
   security->Append(new PHTTPStringField(UsernameKey, 25));
   security->Append(new PHTTPPasswordField(PasswordKey, 25));
-  rsrc->Add(new PHTTPFieldArray(security, FALSE));
+  rsrc->Add(new PHTTPFieldArray(security, false));
 
-  return TRUE;
+  return true;
 }
 
 
@@ -459,20 +469,20 @@ H323GatekeeperCall * MyGatekeeperServer::CreateCall(const OpalGloballyUniqueID &
 
 
 PBoolean MyGatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias,
-                                               H225_ArrayOf_AliasAddress & aliases,
-                                               H323TransportAddress & address,
-                                               PBoolean & isGkRouted,
-                                               H323GatekeeperCall * call)
+                                                   H225_ArrayOf_AliasAddress & aliases,
+                                                   H323TransportAddress & address,
+                                                   PBoolean & isGkRouted,
+                                                   H323GatekeeperCall * call)
 {
 #ifdef H323_TRANSNEXUS_OSP
   if (ospProvider != NULL) {
     address = "127.0.0.1";
-    return TRUE;
+    return true;
   }
 #endif
 
   if (H323GatekeeperServer::TranslateAliasAddress(alias, aliases, address, isGkRouted, call))
-    return TRUE;
+    return true;
 
   PString aliasString = H323GetAliasAddressString(alias);
   PTRACE(4, "Translating \"" << aliasString << "\" through route maps");
@@ -488,7 +498,7 @@ PBoolean MyGatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & ali
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 
@@ -506,13 +516,13 @@ void MyGatekeeperServer::RouteMap::PrintOn(ostream & strm) const
 }
 
 
-PBoolean MyGatekeeperServer::RouteMap::IsValid() const
+bool MyGatekeeperServer::RouteMap::IsValid() const
 {
   return !alias && regex.GetErrorCode() == PRegularExpression::NoError && !host;
 }
 
 
-PBoolean MyGatekeeperServer::RouteMap::IsMatch(const PString & alias) const
+bool MyGatekeeperServer::RouteMap::IsMatch(const PString & alias) const
 {
   PINDEX start;
   return regex.Execute(alias, start);
@@ -538,10 +548,10 @@ static bool GetE164Alias(const H225_ArrayOf_AliasAddress & aliases, H225_AliasAd
   for (i = 0; i < aliases.GetSize(); ++i) {
     if (aliases[i].GetTag() == H225_AliasAddress::e_dialedDigits) {
       destAlias = aliases[i];
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
@@ -563,19 +573,19 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
     if (!GetE164Alias(info.arq.m_srcInfo, authInfo.callingNumber)) {
       PTRACE(1, "OSP\tNo E164 source address in ARQ");
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-      return FALSE;
+      return false;
     }
 
     // get the dest number
     if (!info.arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo)) {
       PTRACE(1, "OSP\tNo dest aliases in ARQ");
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-      return FALSE;
+      return false;
     }
     if (!GetE164Alias(info.arq.m_destinationInfo, authInfo.calledNumber)) {
       PTRACE(1, "OSP\tNo E164 source address in ARQ");
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-      return FALSE;
+      return false;
     }
 
     // get the call ID
@@ -586,12 +596,12 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
     if ((result = ospTransaction->Authorise(authInfo, numberOfDestinations)) != 0) {
       PTRACE(1, "OSP\tCannot authorise ARQ - result = " << result);
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-      return FALSE;
+      return false;
     } 
     if (numberOfDestinations == 0) {
       PTRACE(1, "OSP\tNo destinations available");
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_noRouteToDestination);
-      return FALSE;
+      return false;
     }
 
     // get the destination
@@ -599,18 +609,18 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
     if ((result = ospTransaction->GetFirstDestination(destInfo)) != 0) {
       PTRACE(1, "OSP\tCannot get first destination - result = " << result);
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_undefinedReason);
-      return FALSE;
+      return false;
     } 
 
     // insert destination into the ACF
     if (!destInfo.Insert(info.acf)) {
       PTRACE(1, "OSP\tCannot insert information info ACF");
       info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_undefinedReason);
-      return FALSE;
+      return false;
     }
 
     PTRACE(4, "OSP routed call to " << destInfo.calledNumber << "@" << destInfo.destinationAddress);
-    return TRUE;
+    return true;
   }
 
   // if answering call, validate the token
@@ -621,7 +631,7 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
      !valInfo.ExtractToken(info.arq.m_tokens)) {
     PTRACE(1, "OSP\tNo tokens in in ARQ");
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_invalidPermission);
-    return FALSE;
+    return false;
   }
 
   // get the source call signalling address
@@ -640,19 +650,19 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
   if (!GetE164Alias(info.arq.m_srcInfo, valInfo.callingNumber)) {
     PTRACE(1, "OSP\tNo E164 source address in ARQ");
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-    return FALSE;
+    return false;
   }
 
   // get the dest number
   if (!info.arq.HasOptionalField(H225_AdmissionRequest::e_destinationInfo)) {
     PTRACE(1, "OSP\tNo dest aliases in ARQ");
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-    return FALSE;
+    return false;
   }
   if (!GetE164Alias(info.arq.m_destinationInfo, valInfo.calledNumber)) {
     PTRACE(1, "OSP\tNo E164 source address in ARQ");
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_incompleteAddress);
-    return FALSE;
+    return false;
   }
 
   // get the call ID
@@ -664,17 +674,17 @@ PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
   if ((result = ospTransaction->Validate(valInfo, authorised, timeLimit)) != 0) {
     PTRACE(1, "OSP\tCannot validate ARQ - result = " << result);
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_invalidPermission);
-    return FALSE;
+    return false;
   }
 
   if (!authorised) {
     PTRACE(1, "OSP\tCall not authorised");
     info.arj.m_rejectReason.SetTag(H225_AdmissionRejectReason::e_requestDenied);
-    return FALSE;
+    return false;
   }
 
   PTRACE(4, "OSP authorised call with time limit of " << timeLimit);
-  return TRUE;
+  return true;
 }
 
 #endif

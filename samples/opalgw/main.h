@@ -30,13 +30,15 @@
 #define _OpalGw_MAIN_H
 
 
+class MyManager;
+
 #if OPAL_H323
 
 class MyGatekeeperServer;
 
 class MyGatekeeperCall : public H323GatekeeperCall
 {
-  PCLASSINFO(MyGatekeeperCall, H323GatekeeperCall);
+    PCLASSINFO(MyGatekeeperCall, H323GatekeeperCall);
   public:
     MyGatekeeperCall(
       MyGatekeeperServer & server,
@@ -77,10 +79,8 @@ class MyGatekeeperServer : public H323GatekeeperServer
     );
 
     // new functions
-    PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
-    PBoolean OnPostControl(const PStringToString & data, PHTML & msg);
+    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
     PString OnLoadEndPointStatus(const PString & htmlBlock);
-    PString OnLoadCallStatus(const PString & htmlBlock);
 
 #ifdef H323_TRANSNEXUS_OSP
     OpalOSP::Provider * GetOSPProvider() const
@@ -105,9 +105,9 @@ class MyGatekeeperServer : public H323GatekeeperServer
           ostream & strm
         ) const;
 
-        PBoolean IsValid() const;
+        bool IsValid() const;
 
-        PBoolean IsMatch(
+        bool IsMatch(
           const PString & alias
         ) const;
 
@@ -132,44 +132,68 @@ class MyGatekeeperServer : public H323GatekeeperServer
 };
 
 
-#endif
+class MyH323EndPoint : public H323EndPoint
+{
+    PCLASSINFO(MyH323EndPoint, H323EndPoint);
+  public:
+    MyH323EndPoint(MyManager & mgr);
+
+    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
+
+    const MyGatekeeperServer & GetGatekeeperServer() const { return m_gkServer; }
+          MyGatekeeperServer & GetGatekeeperServer()       { return m_gkServer; }
+
+  protected:
+    MyGatekeeperServer m_gkServer;
+};
+
+#endif // OPAL_H323
 
 
 class MyManager : public OpalManager
 {
-  PCLASSINFO(MyManager, OpalManager);
-
+    PCLASSINFO(MyManager, OpalManager);
   public:
     MyManager();
     ~MyManager();
 
-    PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
+    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
+
+    virtual bool AllowMediaBypass(
+      const OpalConnection & source,      ///<  Source connection
+      const OpalConnection & destination, ///<  Destination connection
+      const OpalMediaType & mediaType     ///<  Media type for session
+    ) const;
+
+    PString OnLoadCallStatus(const PString & htmlBlock);
 
   protected:
+    bool m_allowMediaBypass;
+
 #if OPAL_H323
-    H323EndPoint       * h323EP;
-    MyGatekeeperServer * gkServer;
+    MyH323EndPoint * m_h323EP;
 #endif
 #if OPAL_SIP
-    SIPEndPoint      * sipEP;
+    SIPEndPoint * m_sipEP;
 #endif
 #if OPAL_LID
-    OpalLineEndPoint * potsEP;
+    OpalLineEndPoint * m_potsEP;
+#endif
+#if OPAL_CAPI
+    OpalCapiEndPoint * m_capiEP;
+    bool               m_enableCAPI;
 #endif
 #if OPAL_PTLIB_EXPAT
-    OpalIVREndPoint  * ivrEP;
+    OpalIVREndPoint * m_ivrEP;
 #endif
-
-  friend class OpalGw;
 };
 
 
-class OpalGw : public OpalGwProcessAncestor
+class MyProcess : public MyProcessAncestor
 {
-  PCLASSINFO(OpalGw, OpalGwProcessAncestor)
-
+    PCLASSINFO(MyProcess, MyProcessAncestor)
   public:
-    OpalGw();
+    MyProcess();
     virtual void Main();
     virtual PBoolean OnStart();
     virtual void OnStop();
@@ -177,28 +201,67 @@ class OpalGw : public OpalGwProcessAncestor
     virtual void OnConfigChanged();
     virtual PBoolean Initialise(const char * initMsg);
 
-
   protected:
-    MyManager manager;
+    MyManager m_manager;
 };
 
 
-#if OPAL_H323
-
-class MainStatusPage : public PServiceHTTPString
+class BaseStatusPage : public PServiceHTTPString
 {
-  PCLASSINFO(MainStatusPage, PServiceHTTPString);
-
+    PCLASSINFO(BaseStatusPage, PServiceHTTPString);
   public:
-    MainStatusPage(OpalGw & app, MyGatekeeperServer & gk, PHTTPAuthority & auth);
+    BaseStatusPage(MyManager & mgr, PHTTPAuthority & auth, const char * name);
+
+    virtual PString LoadText(
+      PHTTPRequest & request    // Information on this request.
+    );
 
     virtual PBoolean Post(
       PHTTPRequest & request,
       const PStringToString &,
       PHTML & msg
     );
-  
+
+  protected:
+    virtual const char * GetTitle() const = 0;
+    virtual void CreateContent(PHTML & html) const = 0;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg) = 0;
+
+    MyManager & m_manager;
+
+  friend class PServiceMacro_CallStatus;
+};
+
+
+class CallStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(CallStatusPage, BaseStatusPage);
+  public:
+    CallStatusPage(MyManager & mgr, PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+};
+
+
+#if OPAL_H323
+
+class GkStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(GkStatusPage, BaseStatusPage);
+  public:
+    GkStatusPage(MyManager & gk, PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
     MyGatekeeperServer & m_gkServer;
+
+  friend class PServiceMacro_EndPointStatus;
 };
 
 #endif // OPAL_H323
