@@ -114,7 +114,6 @@ class OpalRFC2833Proto : public PObject
     PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
     OpalRFC2833Proto(
-      OpalRTPConnection & conn,
       const PNotifier & receiveNotifier,
       const OpalMediaFormat & mediaFormat
     );
@@ -138,7 +137,7 @@ class OpalRFC2833Proto : public PObject
       unsigned timestamp
     );
 
-    const OpalRTPSession::FilterNotifier & GetReceiveHandler() const { return m_receiveHandler; }
+    void UseRTPSession(bool rx, OpalRTPSession * session);
 
     OpalMediaFormat GetTxMediaFormat() const;
     OpalMediaFormat GetRxMediaFormat() const;
@@ -155,7 +154,6 @@ class OpalRFC2833Proto : public PObject
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
-    OpalRTPConnection         & m_connection;
     OpalMediaFormat             m_baseMediaFormat;
     RTP_DataFrame::PayloadTypes m_txPayloadType;
     RTP_DataFrame::PayloadTypes m_rxPayloadType;

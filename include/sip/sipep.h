@@ -1011,6 +1011,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool              m_shuttingDown;
     SIPHandlersList   activeSIPHandlers;
     PStringToString   m_receivedConnectionTokens;
+    PMutex            m_receivedConnectionMutex;
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 
@@ -1047,10 +1048,9 @@ class SIPEndPoint : public OpalRTPEndPoint
     class WorkThreadPool : public PQueuedThreadPool<SIP_Work>
     {
       public:
-        WorkThreadPool(unsigned maxWorkers)
-          : PQueuedThreadPool<SIP_Work>(maxWorkers)
+        WorkThreadPool(unsigned maxWorkers, const char * threadName)
+          : PQueuedThreadPool<SIP_Work>(maxWorkers, 0, threadName, PThread::HighPriority)
         { }
-        virtual WorkerThreadBase * CreateWorkerThread();
     } m_connectionThreadPool, m_handlerThreadPool;
 
 

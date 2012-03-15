@@ -1070,10 +1070,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
 
   // For fax for example, we have to switch the media session according to mediaType
-  OpalMediaSession * previousSession = NULL;
-  if (mediaSession->GetMediaType() != mediaType) {
-    previousSession = mediaSession;
-
+  bool replaceSession = mediaSession->GetMediaType() != mediaType;
+  if (replaceSession) {
     mediaSession = mediaDef->CreateMediaSession(*this, sessionId);
     if (mediaSession == NULL) {
       PTRACE(2, "SIP\tCould not create session for " << mediaType);
@@ -1086,8 +1084,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   // construct a new media session list 
   if ((localMedia = mediaDef->CreateSDPMediaDescription(localAddress, mediaSession)) == NULL) {
-    if (previousSession != NULL)
-      delete mediaSession;
+    if (replaceSession)
+      delete mediaSession; // Still born so can delete, not used anywhere
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
     return false;
   }
@@ -1118,12 +1116,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
   // See if we need to do a session switcharoo, but must be after stream closing
-  if (previousSession != NULL) {
-    OpalMediaSession::Transport transport = previousSession->DetachTransport();
-    mediaSession->AttachTransport(transport);
-    m_sessions[sessionId] = mediaSession;
-    delete previousSession;
-  }
+  if (replaceSession)
+    ReplaceMediaSession(sessionId, mediaSession);
 
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.

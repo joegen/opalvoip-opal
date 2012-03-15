@@ -231,6 +231,13 @@ class OpalRTPConnection : public OpalConnection
       unsigned toSessionID      ///< Session ID to change to
     );
 
+    /**Replace existing session with new one, exchanging transports.
+      */
+    virtual void ReplaceMediaSession(
+      unsigned sessionId,             ///< Session ID to replace
+      OpalMediaSession * mediaSession ///< New session
+    );
+
     /**Set QoS on session.
       */
     virtual bool SetSessionQoS(
@@ -285,13 +292,7 @@ class OpalRTPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
-    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineCiscoNSE);
 
-    /**Attaches the RFC 2833 handler to the media patch
-       This method may be called from subclasses, e.g. within
-       OnPatchMediaStream()
-      */
-    virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
     void CheckForMediaBypass(OpalMediaSession & session);
 
     SessionMap m_sessions;
