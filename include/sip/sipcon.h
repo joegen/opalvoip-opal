@@ -782,6 +782,14 @@ class SIPConnection : public OpalRTPConnection
     PSimpleTimer m_infoPictureFastUpdateTimer;
 #endif
 
+    enum {
+      UserInputMethodUnknown,
+      ReceivedRFC2833,
+      ReceivedINFO
+    } m_receivedUserInputMethod;
+    void OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type);
+
+
   private:
     P_REMOVE_VIRTUAL_VOID(OnCreatingINVITE(SIP_PDU&));
     P_REMOVE_VIRTUAL_VOID(OnReceivedTrying(SIP_PDU &));
