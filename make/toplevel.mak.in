@@ -1,5 +1,5 @@
 #
-# Makefile
+# toplevel.mak
 #
 # Make file for Open Phone Abstraction library
 #
@@ -26,7 +26,7 @@
 # $Date$
 #
 
-include opal_defs.mak
+include $(OPALDIR)/make/opal_defs.mak
 
 SHELL		:= /bin/sh
 OS_NAME=$(shell uname -s)
@@ -578,7 +578,7 @@ $(OPAL_DEPDIR)/%.dep : %.c
 ifeq ($(OPAL_SHARED_LIB),)
 default_target :: opt
 else
-default_target :: Makefile $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
+default_target :: $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 ifeq ($(OPAL_SHARED_LIB),1)
 default_target :: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
 endif
@@ -597,20 +597,13 @@ clean:
 	rm -rf $(OPAL_LIBDIR)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
-depend:   Makefile $(DEPS) 
+depend:   $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
 
 
 ifneq ($(wildcard $(OPAL_DEPDIR)/*.dep),)
 include $(OPAL_DEPDIR)/*.dep
 endif
-
-Makefile: Makefile.in configure
-	@echo
-	@echo "*******************************************************"
-	@echo Makefile is not up to date, is a ./configure necessary?
-	@echo "*******************************************************"
-	@false
 
 
 #####################################################################

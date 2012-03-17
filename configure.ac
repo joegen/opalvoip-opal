@@ -7,7 +7,9 @@ AC_CONFIG_SRCDIR([include/opal/manager.h])
 
 AC_PREREQ([2.66])
 
-m4_include(opal.m4)
+AC_CONFIG_AUX_DIR(make)
+
+m4_include(make/opal.m4)
 
 
 PKG_PROG_PKG_CONFIG()
@@ -16,7 +18,7 @@ if test -z "$PKG_CONFIG" ; then
 fi
 
 
-m4_include(canonical.m4)
+m4_include(make/canonical.m4)
 MY_CANONICAL_TARGET()
 
 
@@ -156,39 +158,6 @@ CFLAGS="$CFLAGS $PTLIB_CFLAGS"
 LDFLAGS="$LDFLAGS $PTLIB_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
 #LIBS="$LIBS $PTLIB_LIBS"
-
-
-dnl ########################################################################
-dnl Construct the plugins install path
-dnl ########################################################################
-
-AC_MSG_CHECKING(where plugins are being installed)
-AC_ARG_WITH([plugin-installdir],
-             AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed, starting at the lib dir]),
-             [PLUGIN_DIR="$withval"],
-             [PLUGIN_DIR="opal-${OPAL_VERSION}"]
-           )
-
-EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
-if test "x${exec_prefix}" = "xNONE" ; then
-  if test "x${prefix}" = "xNONE" ; then
-    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
-  else
-    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
-  fi
-else
-  EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
-fi
-
-case "$target_os" in
-  cygwin | mingw )
-    EXPANDED_PLUGIN_DIR="plugins"
-  ;;
-esac
-
-AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
-AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
-
 
 
 dnl ########################################################################
@@ -645,6 +614,36 @@ fi
 
 OPAL_SIMPLE_OPTION([samples],[OPAL_SAMPLES], [whether to enable samples build])
 
+dnl Construct the plugins install path
+
+AC_MSG_CHECKING(where plugins are being installed)
+AC_ARG_WITH([plugin-installdir],
+             AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed, starting at the lib dir]),
+             [PLUGIN_DIR="$withval"],
+             [PLUGIN_DIR="opal-${OPAL_VERSION}"]
+           )
+
+EXPANDED_PLUGIN_DIR="${libdir}/${PLUGIN_DIR}"
+if test "x${exec_prefix}" = "xNONE" ; then
+  if test "x${prefix}" = "xNONE" ; then
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#/usr/local#`
+  else
+    EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${prefix}#`
+  fi
+else
+  EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
+fi
+
+case "$target_os" in
+  cygwin | mingw )
+    EXPANDED_PLUGIN_DIR="plugins"
+  ;;
+esac
+
+AC_DEFINE_UNQUOTED([OPAL_PLUGIN_DIR], ["${EXPANDED_PLUGIN_DIR}"], [Default plugin dir])
+AC_MSG_RESULT([${EXPANDED_PLUGIN_DIR}])
+
+
 
 dnl ########################################################################
 dnl Output make directives
@@ -675,8 +674,8 @@ dnl ########################################################################
 dnl Output files
 dnl ########################################################################
 
-AC_CONFIG_FILES(opal_defs.mak)
-AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(make/opal_defs.mak)
+AC_CONFIG_FILES(make/toplevel.mak)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
