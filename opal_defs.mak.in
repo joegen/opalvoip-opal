@@ -1,5 +1,5 @@
 #
-# opal_inc.mak
+# opal_defs.mak
 #
 # Make symbols include file for Open Phone Abstraction library
 #
@@ -31,7 +31,16 @@ DEBUG_BUILD             = @DEBUG_BUILD@
 endif
 
 #detected by configure, needed by Makefile
-OSTYPE = @OSTYPE@
+target_cpu := @target_cpu@
+target_os := @target_os@
+target := @target@
+
+# The install directories
+prefix                  = @prefix@
+exec_prefix             = @exec_prefix@
+libdir                  = @libdir@
+includedir              = @includedir@
+datarootdir             = @datarootdir@
 
 # Tool names detected by configure
 CXX                     = @CXX@
@@ -42,13 +51,6 @@ RANLIB                  = @RANLIB@
 LD                      = @LD@
 ARCHIVE                 = @ARCHIVE@
 SWIG                    = @SWIG@
-
-# The install directories
-prefix                  = @prefix@
-exec_prefix             = @exec_prefix@
-libdir                  = @libdir@
-includedir              = @includedir@
-datarootdir             = @datarootdir@
 
 # The opal source and destination dirs
 OPALDIR                 = @OPALDIR@

@@ -38,7 +38,7 @@ ifneq ($(DEBUG),)
 CFLAGS        += -g
 endif
 
-OBJDIR := $(PLUGINDIR)/../lib_@OSTYPE@_@MACHTYPE@/plugins/$(BASENAME)
+OBJDIR := $(PLUGINDIR)/../lib_@target@/plugins/$(BASENAME)
 
 SONAME	= $(BASENAME)_ptplugin
 
