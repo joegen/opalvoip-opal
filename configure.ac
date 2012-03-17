@@ -1,55 +1,24 @@
-# BSR is fishy with CC
-dnl ########################################################################
-dnl Init
-dnl ########################################################################
+dnl
+dnl OPAL configuration
+dnl
 
-AC_INIT
+AC_INIT(opal, 3)
 AC_CONFIG_SRCDIR([include/opal/manager.h])
+
+AC_PREREQ([2.66])
+
+m4_include(opal.m4)
+
 
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then
   AC_MSG_ERROR(OPAL must have pkg-config installed, 1)
 fi
 
-m4_include(opal.m4)
 
+m4_include(canonical.m4)
+MY_CANONICAL_TARGET()
 
-AC_ARG_ENABLE([ios],
-	      AS_HELP_STRING([--enable-ios=iphone|simulator],[enable iOS support for iPhone])
-	     )
-
-if test "x$enable_ios" = "x" ; then
-  IOS_PLATFORM=
-elif test "$enable_ios" = "iphone" ; then
-  IOS_PLATFORM=iPhoneOS
-  IOS_ARCH=armv6
-elif test "$enable_ios" = "simulator" ; then
-  IOS_PLATFORM=iPhoneSimulator
-  IOS_ARCH=i686
-else
-  AC_MSG_ERROR([Unknown iOS variant $enable_ios - use either iphone or simulator])
-fi
-
-if test "x$IOS_PLATFORM" != "x" ; then
-  IOS_DEVROOT="`xcode-select -print-path`/Platforms/${IOS_PLATFORM}.platform/Developer"
-  IOS_VER="`xcodebuild -showsdks | grep iphoneos | sort | tail -n 1 | awk '{ print $2}' `"
-  if test "x$IOS_VER" == "x" ; then
-    AC_MSG_ERROR([Unable to determine iOS version number])
-  fi
-  AC_MSG_NOTICE(configuring for $IOS_PLATFORM version $IOS_VER)
-
-  IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${IOS_PLATFORM}${IOS_VER}.sdk
-
-  CXX=["${IOS_DEVROOT}/usr/bin/g++ -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
-  CC=["${IOS_DEVROOT}/usr/bin/gcc -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
-  LD=["${IOS_DEVROOT}/usr/bin/ld -arch $IOS_ARCH -isysroot ${IOS_SDKROOT}"]
-  LDFLAGS="${LDFLAGS} -L${IOS_SDKROOT}/usr/lib"
-  ENDLDLIBS="-lresolv"
-
-  dnl echo $CC
-  dnl echo $CFLAGS
-  dnl echo $LDFLAGS
-fi
 
 dnl Prevent CFLAGS and CXXFLAGS from being overwritten if undefined
 if test "x${CXXFLAGS}" = "x" ; then
@@ -180,8 +149,6 @@ dnl Check for PTLIB
 dnl ########################################################################
 
 OPAL_FIND_PTLIB()
-AC_MSG_NOTICE(target_cpu=$target_cpu)
-AC_MSG_NOTICE(target_os=$target_os)
 
 
 PKG_REQUIRES="$PKG_REQUIRES ptlib"
@@ -702,9 +669,6 @@ AC_SUBST(INSTALL)
 AC_SUBST(AR)
 AC_SUBST(ARCHIVE)
 AC_SUBST(HAVE_RANLIB)
-AC_SUBST(target_cpu)
-AC_SUBST(target_os)
-AC_SUBST(target)
 
 
 dnl ########################################################################

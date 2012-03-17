@@ -273,8 +273,6 @@ dnl Return:    $PTLIB_VERSION
 dnl            $PTLIB_CFLAGS
 dnl            $PTLIB_CXXFLAGS
 dnl            $PTLIB_LIBS
-dnl            $target
-dnl            $PTLIB_LIBS
 dnl            $DEBUG_LIBS
 dnl            $RELEASE_LIBS
 dnl            $DEFAULT_LIBS
@@ -310,10 +308,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               PKG_CHECK_MODULES(PTLIB, ptlib)
             fi            
 
-	    target_cpu=`$PKG_CONFIG ptlib --variable=target_cpu`
-	    target_os=`$PKG_CONFIG ptlib --variable=target_os`
-	    target=`$PKG_CONFIG ptlib --variable=target`
-
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
@@ -329,10 +323,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             else
               PKG_CHECK_MODULES(PTLIB, ptlib)
             fi            
-
-	    target_cpu=`$PKG_CONFIG ptlib --variable=target_cpu`
-	    target_os=`$PKG_CONFIG ptlib --variable=target_os`
-	    target=`$PKG_CONFIG ptlib --variable=target`
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
