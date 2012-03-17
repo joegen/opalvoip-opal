@@ -59,7 +59,7 @@ endif
 endif
 
 
-ifeq ($(VERBOSE),)
+ifeq ($(V)$(VERBOSE),)
 Q=@
 Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
 Q_DEP= @echo [DEP] `echo $< | sed s^@OPALDIR@/^^` ; 
@@ -164,7 +164,7 @@ endif
 ifeq ($(OPAL_HAS_MIXER), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
            $(OPAL_SRCDIR)/opal/opalmixer.cxx
-ifeq ($(OSTYPE),mingw)
+ifeq ($(target_os),mingw)
 LIBS += -lvfw32
 endif
 endif
@@ -498,14 +498,14 @@ endif # ifeq ($(OPAL_AEC), yes)
 
 ####################################################
 
-ifeq ($(OSTYPE),Darwin)
+ifeq ($(target_os),Darwin)
 CFLAGS		+= -fno-common -dynamic
 ARCHIVE			:= libtool -static -o
 endif # Darwin
 
 ####################################################
 
-#ifeq ($(OSTYPE),mingw)
+#ifeq ($(target_os),mingw)
 #LDFLAGS += -enable-runtime-pseudo-reloc -fatal-warning
 #endif # mingw
 

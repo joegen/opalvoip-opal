@@ -180,6 +180,9 @@ dnl Check for PTLIB
 dnl ########################################################################
 
 OPAL_FIND_PTLIB()
+AC_MSG_NOTICE(target_cpu=$target_cpu)
+AC_MSG_NOTICE(target_os=$target_os)
+
 
 PKG_REQUIRES="$PKG_REQUIRES ptlib"
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
@@ -210,8 +213,7 @@ else
   EXPANDED_PLUGIN_DIR=`echo ${EXPANDED_PLUGIN_DIR} | sed s#\\${exec_prefix}#${exec_prefix}#`
 fi
 
-echo $OSTYPE $target_os
-case "$OSTYPE" in
+case "$target_os" in
   cygwin | mingw )
     EXPANDED_PLUGIN_DIR="plugins"
   ;;
@@ -227,7 +229,7 @@ dnl Architecture dependent stuff
 dnl ########################################################################
 
 LDSOOPTS=
-case "$OSTYPE" in
+case "$target_os" in
 	solaris )
           SHAREDLIBEXT=so
           SHARED_CFLAGS="-KPIC -D__inline=inline"
@@ -287,13 +289,10 @@ dnl FIXME
 esac
 
 dnl ########################################################################
-dnl set LIBDIR accordingly
+dnl set libdir accordingly
 if test "$prefix" = "$OPALDIR"; then
-   LIBDIR=${libdir}_${OSTYPE}_${MACHTYPE}
-else
-   LIBDIR=${libdir}
+   libdir=$OPALDIR/lib_$target
 fi
-AC_SUBST(LIBDIR)
 
 
 dnl ########################################################################
@@ -529,7 +528,7 @@ AC_SUBST(OPAL_RUBY)
 dnl ########################################################################
 dnl MSWIN unconditionally needed LIBS
 dnl ########################################################################
-case "$OSTYPE" in
+case "$target_os" in
         cygwin|mingw)
           OPAL_ADD_CFLAGS_LIBS([], [-lavifil32])
         ;;
@@ -703,8 +702,9 @@ AC_SUBST(INSTALL)
 AC_SUBST(AR)
 AC_SUBST(ARCHIVE)
 AC_SUBST(HAVE_RANLIB)
-AC_SUBST(MACHTYPE)
-AC_SUBST(OSTYPE)
+AC_SUBST(target_cpu)
+AC_SUBST(target_os)
+AC_SUBST(target)
 
 
 dnl ########################################################################

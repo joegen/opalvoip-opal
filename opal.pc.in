@@ -1,11 +1,12 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-libdir=@LIBDIR@
+libdir=@libdir@
 includedir=@includedir@
 suffix=
-machtype=@MACHTYPE@
-ostype=@OSTYPE@
-objdir=obj_@OSTYPE@_@MACHTYPE@${suffix}
+target_cpu=@target_cpu@
+target_os=@target_os@
+target=@target@
+objdir=obj_@target@${suffix}
 
 Name: opal
 Description: Open Phone Application Library
