@@ -1,4 +1,5 @@
 AC_INIT(configure.ac)
+AC_CONFIG_AUX_DIR(../make)
 
 dnl extract recommended PTLIB version from parent directory
 if test \! -e ../configure ; then
@@ -13,11 +14,11 @@ else
 fi
 
 PKG_PROG_PKG_CONFIG()
-AC_CANONICAL_TARGET()
 
-m4_include(../opal.m4)
+m4_include(../make/opal.m4)
 
-OPAL_FIND_PTLIB()
+m4_include(../make/canonical.m4)
+MY_CANONICAL_TARGET()
 
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTLIB_CXXFLAGS -D__STDC_CONSTANT_MACROS" 
@@ -69,7 +70,7 @@ dnl ########################################################################
 WIN32=no
 LDSO=
 case "$target_os" in
-       solaris*)
+       solaris )
           CFLAGS="$CFLAGS -KPIC"
           LDSO='-Bdynamic -G -h $@'
           PLUGINEXT=so
@@ -77,7 +78,7 @@ case "$target_os" in
           AC_FUNC_FORK()
         ;;
 
-        Darwin*)  
+        Darwin )  
 	  CFLAGS="$CFLAGS -fno-common -dynamic -fPIC -D__MACOSX__"
           LDSO='-dynamiclib -multiply_defined suppress'
 	  case "$target_cpu" in
@@ -88,7 +89,7 @@ case "$target_os" in
           AC_FUNC_FORK()
         ;;
 
-        cygwin*|mingw**)
+        cygwin | mingw )
           LDSO='-module -shared'
           PLUGINEXT=dll
           WIN32=yes
@@ -436,7 +437,7 @@ else
                      AC_SUBST(LIBAVCODEC_LIB_NAME)
                      OPAL_LIBAVCODEC_HACK
                      case "$target_os" in
-                        cygwin* | mingw* ) 
+                        cygwin | mingw ) 
                                            LIBAVCODEC_LIB_NAME="avcodec.dll"
                                            ;;
                      esac
@@ -460,6 +461,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       AC_SUBST(LIBAVUTIL_LIBS)
       OPAL_GET_LIBNAME([LIBAVUTIL], [libavutil], [$LIBAVUTIL_LIBS])
       AC_SUBST(LIBAVUTIL_LIB_NAME)
+      CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
     ]
   )
 
@@ -467,7 +469,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   AC_COMPILE_IFELSE(
     [
       AC_LANG_PROGRAM(
-        [[#include LIBAVCODEC_HEADER]],
+        [[#include <${LIBAVCODEC_HEADER}>]],
         [[AVCodecContext c; c.rtp_mode = 1; ]]
       )
     ],
@@ -484,7 +486,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   AC_COMPILE_IFELSE(
     [
       AC_LANG_PROGRAM(
-        [[#include LIBAVCODEC_HEADER]],
+        [[#include <${LIBAVCODEC_HEADER}>]],
         [[enum AVPictureType t = AV_PICTURE_TYPE_NONE; ]]
       )
     ],
@@ -497,7 +499,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       AC_COMPILE_IFELSE(
         [
           AC_LANG_PROGRAM(
-            [[#include LIBAVCODEC_HEADER]],
+            [[#include <${LIBAVCODEC_HEADER}>]],
             [[enum AVPictureType t; ]]
           )
         ],
