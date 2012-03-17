@@ -33,39 +33,35 @@
 
 
 ifdef DEBUG
-DEBUG_BUILD:=yes
+  DEBUG_BUILD:=yes
 endif
  
 ifeq ($(P_SHARELIB),0)
-OPAL_SHARED_LIB:=no
+  OPAL_SHARED_LIB:=no
 endif
 
 
 ifdef OPALDIR
-include $(OPALDIR)/opal_defs.mak
+  include $(OPALDIR)/make/opal_defs.mak
 else
-default_target:
-	@echo "Must have OPALDIR defined"
-	@false
+  $(error Must have OPALDIR defined)
 endif
 
 
 ifdef PTLIBDIR
-opt ::
+  opt ::
 	@true
-include $(PTLIBDIR)/make/ptlib.mak
+  include $(PTLIBDIR)/make/ptlib.mak
 else
-default_target:
-	@echo "Must have PTLIBDIR defined"
-	@false
+  $(error Must have PTLIBDIR defined)
 endif
 
 
-LDFLAGS	         += -L$(OPAL_LIBDIR)
-LDLIBS	         := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
-LIBDIRS          += $(OPALDIR)
+LDFLAGS	 += -L$(OPAL_LIBDIR)
+LDLIBS	 := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
+LIBDIRS  += $(OPALDIR)
 
-$(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
+$(TARGET) : $(OPAL_LIBDIR)/$(OPAL_FILE)
 
 
 # End of file
