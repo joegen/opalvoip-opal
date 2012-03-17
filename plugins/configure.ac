@@ -57,8 +57,6 @@ PLUGINDIR=`pwd`
 AC_SUBST(prefix)
 AC_SUBST(exec_prefix)
 AC_SUBST(libdir)
-AC_SUBST(OSTYPE)
-AC_SUBST(MACHTYPE)
 AC_SUBST(PLUGINDIR)
 AC_SUBST(AC_PLUGIN_DIR)
 AC_SUBST(VC_PLUGIN_DIR)
@@ -79,7 +77,7 @@ case "$target_os" in
           AC_FUNC_FORK()
         ;;
 
-        darwin*)  
+        Darwin*)  
 	  CFLAGS="$CFLAGS -fno-common -dynamic -fPIC -D__MACOSX__"
           LDSO='-dynamiclib -multiply_defined suppress'
 	  case "$target_cpu" in

@@ -140,8 +140,7 @@ AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],
 
 dnl OPAL_DETERMINE_LIBNAMES
 dnl Determine opal library and symlink names
-dnl Arguments: $OSTYPE
-dnl            $MACHTYPE
+dnl Arguments: $target
 dnl            $SHAREDLIBEXT
 dnl            BUILD_TYPE
 dnl            BUILD_NUMBER
@@ -158,8 +157,8 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           else
             OBJ_SUFFIX=""
           fi
-          $1_OPAL_OBJDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}/obj${OBJ_SUFFIX}"
-          OPAL_LIBDIR="\${OPALDIR}/lib_${OSTYPE}_${MACHTYPE}"
+          $1_OPAL_OBJDIR="\${OPALDIR}/lib_${target}/obj${OBJ_SUFFIX}"
+          OPAL_LIBDIR="\${OPALDIR}/lib_${target}"
           $1_LIB_NAME="libopal${OBJ_SUFFIX}"
           $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
@@ -170,7 +169,7 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
             build_suffix="${BUILD_TYPE}${BUILD_NUMBER}"
           fi
 
-          case "$OSTYPE" in
+          case "$target_os" in
                   cygwin|mingw|Darwin)
                     $1_LIB_FILENAME_SHARED_PAT="libopal${OBJ_SUFFIX}.${MAJOR_VERSION}.${MINOR_VERSION}${build_suffix}.${SHAREDLIBEXT}"
                     ;;
@@ -274,8 +273,7 @@ dnl Return:    $PTLIB_VERSION
 dnl            $PTLIB_CFLAGS
 dnl            $PTLIB_CXXFLAGS
 dnl            $PTLIB_LIBS
-dnl            $PTLIB_MACHTYPE
-dnl            $PTLIB_OSTYPE
+dnl            $target
 dnl            $PTLIB_LIBS
 dnl            $DEBUG_LIBS
 dnl            $RELEASE_LIBS
@@ -312,8 +310,9 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               PKG_CHECK_MODULES(PTLIB, ptlib)
             fi            
 
-	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
-	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
+	    target_cpu=`$PKG_CONFIG ptlib --variable=target_cpu`
+	    target_os=`$PKG_CONFIG ptlib --variable=target_os`
+	    target=`$PKG_CONFIG ptlib --variable=target`
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
@@ -331,8 +330,9 @@ AC_DEFUN([OPAL_FIND_PTLIB],
               PKG_CHECK_MODULES(PTLIB, ptlib)
             fi            
 
-	    MACHTYPE=`$PKG_CONFIG ptlib --variable=machtype`
-	    OSTYPE=`$PKG_CONFIG ptlib --variable=ostype`
+	    target_cpu=`$PKG_CONFIG ptlib --variable=target_cpu`
+	    target_os=`$PKG_CONFIG ptlib --variable=target_os`
+	    target=`$PKG_CONFIG ptlib --variable=target`
 
             PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
             PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
@@ -815,7 +815,7 @@ AC_DEFUN([OPAL_FIND_LIBDL],
               AC_MSG_RESULT(no)
             else
               AC_MSG_RESULT(yes)
-              case "$OSTYPE" in
+              case "$target_os" in
                 freebsd|openbsd|netbsd|Darwin)
                   AC_CHECK_LIB([c],[dlopen],
                               [

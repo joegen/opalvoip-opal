@@ -30,7 +30,7 @@ libdir=@libdir@
 
 PLUGINDIR := ../../../
 OPALDIR   := ../../../../
-TARGETDIR := $(OPALDIR)/lib_@OSTYPE@_@MACHTYPE@/plugins
+TARGETDIR := $(OPALDIR)/lib_@target@/plugins
 OBJDIR    := $(TARGETDIR)/h264_x264_gpl
 
 SRCS = h264_helper.cxx
