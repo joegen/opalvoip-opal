@@ -1357,8 +1357,11 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
     else {
       PString error;
       PString body = request.GetEntityBody();
-      if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
+      if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX) {
+        PTRACE(4, "SIP\tCompensating for " << handler.GetProductInfo().name << ","
+                  " replacing " << to.AsString() << " with " << from.AsString());
         body.Replace(to.AsString(), from.AsString());
+      }
       if (!SIPPresenceInfo::ParseXML(body, infoList, error))
         return false;
     }
