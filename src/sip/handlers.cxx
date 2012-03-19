@@ -2161,8 +2161,11 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
   // Common info to all tuples
   PURL entity;
   PXMLElement * rootElement = xml.GetRootElement();
-  if (notifyInfo.m_handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
-    entity = notifyInfo.m_response.GetMIME().GetFrom(); // Can't trust entity, Asterisk gets it wrong
+  if (notifyInfo.m_handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX) {
+    entity = notifyInfo.m_response.GetMIME().GetFrom();
+    PTRACE2(3, NULL, "SIP\tCompensating for " << notifyInfo.m_handler.GetProductInfo().name
+           << ", replacing entity with " << entity.AsString());
+  }
   else if (!entity.Parse(rootElement->GetAttribute("entity"), "pres")) {
     notifyInfo.m_response.SetEntityBody("Invalid/unsupported entity");
     PTRACE2(1, NULL, "SIPPres\tInvalid/unsupported entity \"" << rootElement->GetAttribute("entity") << '"');
