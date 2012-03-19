@@ -1389,7 +1389,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info) const
   if (str.IsEmpty()) {
     str = GetString("Server");
     if (str.IsEmpty()) {
-      PTRACE(4, "SIP\tNo User-Agent or Server fields, Product Info unknown.");
+      PTRACE_IF(4, info.name.IsEmpty(), "SIP\tNo User-Agent or Server fields, Product Info unknown.");
       return; // Have nothing, change nothing
     }
   }
