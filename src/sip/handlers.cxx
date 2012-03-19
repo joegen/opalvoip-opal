@@ -1068,6 +1068,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   SIPMIMEInfo & requestMIME = request.GetMIME();
 
+  requestMIME.GetProductInfo(m_productInfo);
+
   // If we received this NOTIFY before, send the previous response
   if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
 
