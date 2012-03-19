@@ -356,9 +356,13 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler & handler, SIPSubscrib
   list<SIPPresenceInfo> infoList;
   PString error;
   PString body = status.m_notify.GetEntityBody();
-  if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX)
-    body.Replace(SIPURL(status.m_notify.GetMIME().GetTo()).AsString(),
-                 SIPURL(status.m_notify.GetMIME().GetFrom()).AsString());
+  if (handler.GetProductInfo().name.Find("Asterisk") != P_MAX_INDEX) {
+    PString to = status.m_notify.GetMIME().GetTo().AsString();
+    PString from = status.m_notify.GetMIME().GetFrom().AsString();
+    PTRACE(4, "SIP\tCompensating for " << handler.GetProductInfo().name << ","
+              " replacing " << to << " with " << from);
+    body.Replace(to, from);
+  }
   if (!SIPPresenceInfo::ParseXML(body, infoList, error)) {
     status.m_response.SetEntityBody(error);
     return;
@@ -370,7 +374,7 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler & handler, SIPSubscrib
   m_notificationMutex.Wait();
   for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
     SetPIDFEntity(it->m_target);
-    PTRACE(3, "SIPPres\t'" << it->m_entity << "' request for presence of '" << m_aor << "' is " << it->m_state);
+    PTRACE(3, "SIPPres\t'" << m_aor << "' request for presence of '" << it->m_entity << "' is " << it->m_state);
     OnPresenceChange(*it);
   }
   m_notificationMutex.Signal();
