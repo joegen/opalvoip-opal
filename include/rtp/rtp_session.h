@@ -155,6 +155,10 @@ class OpalRTPSession : public OpalMediaSession
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
+    /**Flush incoming data.
+      */
+    virtual void FlushData();
+
     /**Write a data frame from the RTP channel.
       */
     virtual bool WriteData(
@@ -684,7 +688,6 @@ class OpalRTPSession : public OpalMediaSession
     bool appliedQOS;
     bool remoteIsNAT;
     bool localHasNAT;
-    bool m_firstData;
     bool m_firstControl;
     int  badTransmitCounter;
     PTime badTransmitStart;
