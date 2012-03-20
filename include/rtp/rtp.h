@@ -535,6 +535,10 @@ class OpalRTPSession : public OpalMediaSession
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
+    /**Flush incoming data.
+      */
+    virtual void FlushData();
+
     /**Write a data frame from the RTP channel.
       */
     virtual bool WriteData(
@@ -554,10 +558,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool WriteControl(
       RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
     );
-
-    /**Write the RTCP reports.
-      */
-    virtual bool SendReport();
 
    /**Restarts an existing session in the given direction.
       */
@@ -729,13 +729,13 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the time interval for sending RTCP reports in the session.
       */
-    const PTimeInterval & GetReportTimeInterval() { return reportTimeInterval; }
+    const PTimeInterval & GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
 
     /**Set the time interval for sending RTCP reports in the session.
       */
     void SetReportTimeInterval(
       const PTimeInterval & interval ///<  New time interval for reports.
-    )  { reportTimeInterval = interval; }
+    )  { m_reportTimer.RunContinuous(interval); }
 
     /**Get the interval for transmitter statistics in the session.
       */
@@ -974,7 +974,6 @@ class OpalRTPSession : public OpalMediaSession
     bool          allowOneSyncSourceChange;
     bool          allowRemoteTransmitAddressChange;
     bool          allowSequenceChange;
-    PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
     WORD          lastSentSequenceNumber;
@@ -1047,8 +1046,9 @@ class OpalRTPSession : public OpalMediaSession
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
     bool ignorePayloadTypeChanges;
 
-    PMutex       m_reportMutex;
-    PSimpleTimer m_reportTimer;
+    PMutex m_reportMutex;
+    PTimer m_reportTimer;
+    PDECLARE_NOTIFIER(PTimer, RTP_Session, SendReport);
 
     bool closeOnBye;
     bool byeSent;
@@ -1073,7 +1073,6 @@ class OpalRTPSession : public OpalMediaSession
     bool appliedQOS;
     bool remoteIsNAT;
     bool localHasNAT;
-    bool m_firstData;
     bool m_firstControl;
     int  badTransmitCounter;
     PTime badTransmitStart;

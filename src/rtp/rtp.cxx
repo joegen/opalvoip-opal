@@ -737,12 +737,12 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_timeUnits(isAudio ? 8 : 90)
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
-  , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
+  , m_reportTimer(0, 12)  // Seconds
   , remoteAddress(0)
   , remoteTransmitAddress(0)
   , remoteIsNAT(false)
@@ -795,6 +795,8 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   if (natMethod)
     natMethod->CreateSocketPairAsync(m_connection.GetToken());
 #endif
+
+  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
 }
 
 
@@ -966,6 +968,7 @@ void OpalRTPSession::SetCanonicalName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
   canonicalName = name;
+  canonicalName.MakeUnique();
 }
 
 
@@ -982,6 +985,7 @@ void OpalRTPSession::SetToolName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
   toolName = name;
+  toolName.MakeUnique();
 }
 
 
@@ -1013,6 +1017,7 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     resequenceOutOfOrderPackets = false;
+    FlushData();
     if (m_jitterBuffer != NULL) {
       PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
@@ -1329,9 +1334,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   if (frame.GetMarker())
     markerSendCount++;
 
-  if (!SendReport())
-    return e_AbortTransport;
-
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
 
@@ -1559,9 +1561,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   m_metrics.OnPacketReceived();
 #endif
 
-  if (!SendReport())
-    return e_AbortTransport;
-
   if (rxStatisticsCount >= rxStatisticsInterval) {
 
     rxStatisticsCount = 0;
@@ -1679,30 +1678,17 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
   }
 
   report.EndPacket();
-
-  // Wait a fuzzy amount of time so things don't get into lock step
-  int interval = (int)reportTimeInterval.GetMilliSeconds();
-  int third = interval/3;
-  interval += PRandom::Number()%(2*third);
-  interval -= third;
-  m_reportTimer = interval;
-
   return true;
 }
 
 
-bool OpalRTPSession::SendReport()
+void RTP_Session::SendReport(PTimer&, INT)
 {
   PWaitAndSignal mutex(m_reportMutex);
 
-  if (m_reportTimer.IsRunning())
-    return true;
-
   // Have not got anything yet, do nothing
-  if (packetsSent == 0 && packetsReceived == 0) {
-    m_reportTimer = reportTimeInterval;
-    return true;
-  }
+  if (packetsSent == 0 && packetsReceived == 0)
+    return;
 
   RTP_ControlFrame report;
   InsertReportPacket(report);
@@ -1722,7 +1708,7 @@ bool OpalRTPSession::SendReport()
   InsertExtendedReportPacket(report);
 #endif
 
-  return WriteControl(report);
+  WriteControl(report);
 }
 
 
@@ -2416,6 +2402,8 @@ bool OpalRTPSession::Open(const PString & localInterface)
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
 
+  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+
   OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
   if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
     ep->SetConnectionByRtpLocalPort(this, &m_connection);
@@ -2436,6 +2424,7 @@ bool OpalRTPSession::Close()
   // deleted before select decides there is no more data coming
   // over them and exits the reading thread.
   SetJitterBufferSize(0, 0);
+  m_reportTimer.Stop(true);
 
   delete dataSocket;
   dataSocket = NULL;
@@ -2483,6 +2472,9 @@ bool OpalRTPSession::Shutdown(bool reading)
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", shutting down write.");
     shutdownWrite = true;
   }
+
+  if (shutdownRead && shutdownWrite)
+    m_reportTimer.Stop(false);
 
   return true;
 }
@@ -2572,22 +2564,7 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFrame & frame)
 {
-  if (m_firstData && isAudio) {
-    PTimeInterval oldTimeout = dataSocket->GetReadTimeout();
-    dataSocket->SetReadTimeout(0);
-
-    BYTE buffer[2000];
-    PINDEX count = 0;
-    while (dataSocket->Read(buffer, sizeof(buffer)))
-      ++count;
-
-    PTRACE_IF(2, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
-
-    dataSocket->SetReadTimeout(oldTimeout);
-    m_firstData = false;
-  }
-
-  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_reportTimer.GetRemaining());
+  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, PMaxTimeInterval);
 
   {
     PWaitAndSignal mutex(dataMutex);
@@ -2637,6 +2614,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFram
           << PChannel::GetErrorText((PChannel::Errors)selectStatus));
   return e_AbortTransport;
 }
+
+
+void RTP_UDP::FlushData()
+{
+  if (dataSocket == NULL)
+    return;
+
+  PTimeInterval oldTimeout = dataSocket->GetReadTimeout();
+  dataSocket->SetReadTimeout(0);
+
+  PINDEX count = 0;
+  BYTE buffer[2000];
+  while (dataSocket->Read(buffer, sizeof(buffer)))
+    ++count;
+
+  dataSocket->SetReadTimeout(oldTimeout);
+
+  PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed "
+            << count << " RTP data packets before activating jitter buffer");
+}
+
 
 int OpalRTPSession::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
@@ -2738,7 +2736,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & /*frame*/)
 {
-  return SendReport() ? e_IgnorePacket : e_AbortTransport;
+  return e_IgnorePacket;
 }
 
 
