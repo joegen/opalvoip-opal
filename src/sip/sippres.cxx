@@ -185,9 +185,16 @@ bool SIP_Presentity::Open()
         port = SIPURL::DefaultPort;
 
 #if P_DNS
-      PIPSocketAddressAndPortVector addrs;
-      bool found = PDNS::LookupSRV(hostname, "_pres._sip", port, addrs) && addrs.size() > 0;
+      PStringList hosts;
+      bool found = PDNS::LookupSRV(hostname, "_pres._sip", hosts) && !hosts.IsEmpty();
       PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << hostname << "' " << (found ? "succeeded" : "failed"));
+      if (found)
+        hostname = hosts.front();
+
+      PIPSocketAddressAndPortVector addrs;
+      found = PDNS::LookupSRV(hostname, "_sip._udp", port, addrs) && addrs.size() > 0;
+      PTRACE(2, "SIPPres\tSRV lookup for '_sip._udp." << hostname << "' " << (found ? "succeeded" : "failed"));
+
       if (found)
         m_presenceAgent = addrs[0];
       else
