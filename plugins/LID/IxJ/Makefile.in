@@ -31,8 +31,8 @@
 #
 #
 
-STDCCFLAGS =@STDCCFLAGS@
-CXXFLAGS   =@CXXFLAGS@
+CFLAGS=@CFLAGS@
+CXXFLAGS=@CXXFLAGS@
 
 LID_PLUGIN_DIR=@LID_PLUGIN_DIR@
 prefix=@prefix@
@@ -65,7 +65,7 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) -I../../../include $(CXXFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./ixj_lid_pwplugin.so
 

@@ -171,14 +171,6 @@ case "$target_os" in
           OPAL_DETERMINE_LIBNAMES(RELEASE)
           LDSOOPTS="-dynamiclib"
 
-#	   CFLAGS="$CFLAGS -fno-common -dynamic"
-#          LDSO="-dynamiclib -multiply_defined suppress"
-dnl FIXME
-          STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
-
-          case "$target_cpu" in
-	       x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
-          esac
           HAVE_RANLIB=no
         ;;
 
@@ -246,23 +238,27 @@ fi
 
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
-OPAL_CHECK_PTLIB_MANDATORY([URL],     [ptclib/url.h],  [PURL url;])
-OPAL_CHECK_PTLIB([STUN],    [ptclib/pstun.h],[PSTUNClient client;],       [OPAL_PTLIB_STUN])
-OPAL_CHECK_PTLIB([SSL],     [ptclib/pssl.h], [PSSLContext ctx;],          [OPAL_PTLIB_SSL])
-OPAL_CHECK_PTLIB([ASN.1],   [ptclib/pasn.h], [PASNInteger asnint(5);],    [OPAL_PTLIB_ASN])
-OPAL_CHECK_PTLIB([expat],   [ptclib/pxml.h], [PXMLParser parser;],        [OPAL_PTLIB_EXPAT])
-OPAL_CHECK_PTLIB([video],   [ptlib/video.h], [PVideoChannel chan;],       [OPAL_PTLIB_VIDEO])
-OPAL_CHECK_PTLIB([wavfile], [ptclib/pwavfiledev.h], [PWAVFile wav;],       [OPAL_PTLIB_WAVFILE])
-OPAL_CHECK_PTLIB([vxml],    [ptclib/vxml.h], [PVXMLPlayableData data;],   [OPAL_PTLIB_VXML])
-OPAL_CHECK_PTLIB([ipv6],    [ptlib/sockets.h],[in6_addr ad; PIPSocket::Address address(ad);],    [OPAL_PTLIB_IPV6])
-OPAL_CHECK_PTLIB([dtmf],    [ptclib/dtmf.h], [PDTMFDecoder dtmf;],        [OPAL_PTLIB_DTMF])
-OPAL_CHECK_PTLIB([ldap],    [ptclib/pldap.h],[PLDAPSession session;],     [OPAL_PTLIB_LDAP])
-OPAL_CHECK_PTLIB([dns],     [ptclib/pdns.h], [PDNS::SRVRecord record;],   [OPAL_PTLIB_DNS])
-OPAL_CHECK_PTLIB([audio],   [ptlib/sound.h], [PSoundChannel chan;],       [OPAL_PTLIB_AUDIO])
-OPAL_CHECK_PTLIB([config],  [ptlib/config.h],[PConfig conf;],             [OPAL_PTLIB_CONFIG_FILE])
-OPAL_CHECK_PTLIB([cli],     [ptclib/cli.h],  [PCLI cli;],                 [OPAL_PTLIB_CLI])
+OPAL_CHECK_PTLIB([URL],     [PTLIB_URL])
+if test "x$OPAL_PTLIB_URL" != "xyes" ; then
+   AC_MSG_ERROR([Must have URL functionality enabled in PTLib])
+fi
 
-OPAL_CHECK_PTLIB_DEFINE([ssl/aes],   [P_SSL_AES],       [OPAL_PTLIB_SSL_AES])
+OPAL_CHECK_PTLIB([STUN],         [PTLIB_STUN])
+OPAL_CHECK_PTLIB([SSL/TLS],      [PTLIB_SSL])
+OPAL_CHECK_PTLIB([SSL/AES],      [PTLIB_SSL_AES])
+OPAL_CHECK_PTLIB([ASN.1],        [PTLIB_ASN])
+OPAL_CHECK_PTLIB([Expat],        [PTLIB_EXPAT])
+OPAL_CHECK_PTLIB([video],        [PTLIB_VIDEO])
+OPAL_CHECK_PTLIB([WAV file],     [PTLIB_WAVFILE])
+OPAL_CHECK_PTLIB([VXML],         [PTLIB_VXML])
+OPAL_CHECK_PTLIB([IP v6],        [PTLIB_IPV6])
+OPAL_CHECK_PTLIB([DTMF],         [PTLIB_DTMF])
+OPAL_CHECK_PTLIB([LDAP],         [PTLIB_LDAP])
+OPAL_CHECK_PTLIB([DNS resolver], [PTLIB_RESOLVER])
+OPAL_CHECK_PTLIB([audio],        [PTLIB_AUDIO])
+OPAL_CHECK_PTLIB([config],       [PTLIB_CONFIG_FILE])
+OPAL_CHECK_PTLIB([CLI],          [PTLIB_CLI])
+
 
 
 dnl ########################################################################
@@ -475,8 +471,8 @@ dnl MSWIN_DISPLAY  h323,H.323 support
 dnl MSWIN_DEFINE   h323,OPAL_H323
 OPAL_SIMPLE_OPTION(h323,OPAL_H323, [whether to enable H.323 protocol support])
 
-if test "x$OPAL_H323" = "xyes" ; then
-  OPAL_CHECK_PTLIB_MANDATORY([ASN], [ptclib/asner.h],  [PPER_Stream per;])
+if test "x$OPAL_H323" = "xyes" -a "x$OPAL_PTLIB_ASN" != "xyes" ; then
+  AC_MSG_ERROR([Must have ASN.1 for H.323])
 fi
 
 dnl MSWIN_DISPLAY  iax2,IAX2 support

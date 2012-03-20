@@ -388,114 +388,17 @@ AC_DEFUN([OPAL_FIND_PTLIB],
 dnl OPAL_CHECK_PTLIB
 dnl Check if ptlib was compiled with a specific optional feature
 dnl Arguments: $1 Name of feature
-dnl            $2 ptlib/pasn.h Header file to include
-dnl            $3 Code to test the feature
-dnl            $4 Variable to set/define
-dnl Return:    $$4
-dnl Define:    $4
+dnl            $2 Variable to set/define
+dnl Return:    $2
+dnl Define:    OPAL_$2
 AC_DEFUN([OPAL_CHECK_PTLIB],
          [
-          old_CXXFLAGS="$CXXFLAGS"
-          old_LIBS="$LIBS"
-          old_LIBS="$LIBS"
-
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          LIBS="$LIBS $DEFAULT_LIBS"
-
-          AC_LANG(C++)
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-                          #include <ptbuildopts.h>
-                          #include <ptlib.h>
-                          #include <$2>]],
-                          [[
-                            $3
-                         ]])], 
-                         [opal_ptlib_option=yes],
-                         [opal_ptlib_option=no])
-
-          CXXFLAGS="$old_CXXFLAGS"
-          LIBS="$old_LIBS"
-
-          OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
-					$4="$opal_ptlib_option"
-	    		AC_SUBST($4)
-	    		if test "x$opal_ptlib_option" = "xyes" ; then
-	      		AC_DEFINE([$4], [1], [$1])
-	    		fi
-	  
+            AC_MSG_CHECKING([PTLib for $1])
+            OPAL_$2=`pkg-config --variable=$2 ptlib`
+            AC_MSG_RESULT([${OPAL_$2}])
+            AC_SUBST(OPAL_$2)
          ])
 
-dnl OPAL_CHECK_PTLIB_MANDATORY
-dnl Check if ptlib was compiled with a specific mandatory feature
-dnl Arguments: $1 Name of feature
-dnl            $2 ptlib/pasn.h Header file to include
-dnl            $3 Code to test the feature
-AC_DEFUN([OPAL_CHECK_PTLIB_MANDATORY],
-         [
-          old_CXXFLAGS="$CXXFLAGS"
-          old_LIBS="$LIBS"
-
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          LIBS="$LIBS $DEFAULT_LIBS"
-
-          AC_LANG(C++)
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-                          #include <ptbuildopts.h>
-                          #include <ptlib.h>
-                          #include <$2>]],
-                          [[
-                            $3
-                         ]])], 
-                         [opal_ptlib_option=yes],
-                         [opal_ptlib_option=no])
-
-          CXXFLAGS="$old_CXXFLAGS"
-          LIBS="$old_LIBS"
-
-          OPAL_MSG_CHECK([PTLIB has $1], [$opal_ptlib_option])
-          if test "x$opal_ptlib_option" = "xno" ; then
-              echo "  ERROR: compulsory feature from PTLib disabled.";
-              exit 1; 
-          fi
-
-					])
-
-dnl OPAL_CHECK_PTLIB_DEFINE
-dnl Verify if a specific #define in ptlib is defined
-dnl Arguments: $1 define name / description 
-dnl            $2 PTLIB define
-dnl            $3 OPAL define to set
-dnl Return:    
-dnl Define:    $3
-AC_DEFUN([OPAL_CHECK_PTLIB_DEFINE],
-         [
-          old_CXXFLAGS="$CXXFLAGS"
-          CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
-          AC_LANG(C++)
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-                         [[
-			  #include <ptbuildopts.h>
-			  #include <ptlib.h>
-			  #include <iostream>
-			 ]],
-                         [[
-                          #ifndef $2
-		          #error "$2 not defined"
-		          #endif
-                         ]])], 
-                         [opal_ptlib_option=yes],
-                         [opal_ptlib_option=no])
-
-          CXXFLAGS="$old_CXXFLAGS"
-
-          OPAL_MSG_CHECK([PTLIB has option $1], [$opal_ptlib_option])
-	  $3="$opal_ptlib_option"
-	  AC_SUBST($3)
-	  if test "x$opal_ptlib_option" = "xyes" ; then
-	    AC_DEFINE([$3], [1], [$1])
-	  fi
-	  
-         ])
 
 dnl ########################################################################
 dnl LIBAVCODEC
