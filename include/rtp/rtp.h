@@ -585,6 +585,10 @@ class RTP_Session : public PObject
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     ) = 0;
 
+    /**Flush incoming data.
+      */
+    virtual void FlushData();
+
     /**Write a data frame from the RTP channel.
       */
     virtual PBoolean WriteData(
@@ -1130,6 +1134,10 @@ class RTP_UDP : public RTP_Session
     virtual PBoolean ReadData(RTP_DataFrame & frame);
     virtual PBoolean Internal_ReadData(RTP_DataFrame & frame);
 
+    /**Flush incoming data.
+      */
+    virtual void FlushData();
+
     /** Write a data frame to the RTP channel.
       */
     virtual PBoolean WriteData(RTP_DataFrame & frame);
@@ -1286,7 +1294,6 @@ class RTP_UDP : public RTP_Session
     bool appliedQOS;
     bool remoteIsNAT;
     bool localHasNAT;
-    bool m_firstData;
     bool m_firstControl;
     int  badTransmitCounter;
     PTime badTransmitStart;
