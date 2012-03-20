@@ -401,6 +401,7 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     resequenceOutOfOrderPackets = false;
+    FlushData();
     if (m_jitterBuffer != NULL) {
       PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
@@ -444,6 +445,26 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
   PTRACE(5, "RTP\tSession " << m_sessionId << ", ssrc=" << syncSourceIn << ", resequenced "
          << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
+}
+
+
+void OpalRTPSession::FlushData()
+{
+  if (dataSocket == NULL)
+    return;
+
+  PTimeInterval oldTimeout = dataSocket->GetReadTimeout();  
+  dataSocket->SetReadTimeout(0);
+
+  PINDEX count = 0;
+  BYTE buffer[2000];
+  while (dataSocket->Read(buffer, sizeof(buffer)))
+    ++count;
+
+  dataSocket->SetReadTimeout(oldTimeout);
+
+  PTRACE_IF(3, count > 0, "RTP\tSession " << m_sessionId << ", flushed "
+            << count << " RTP data packets before activating jitter buffer");
 }
 
 
@@ -1682,7 +1703,6 @@ bool OpalRTPSession::Open(const PString & localInterface)
   if (dataSocket != NULL && controlSocket != NULL)
     return true;
 
-  m_firstData = true;
   m_firstControl = true;
   byeSent = false;
   shutdownRead = false;
@@ -1968,21 +1988,6 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFrame & frame)
 {
-  if (m_firstData && isAudio) {
-    PTimeInterval oldTimeout = dataSocket->GetReadTimeout();
-    dataSocket->SetReadTimeout(0);
-
-    BYTE buffer[2000];
-    PINDEX count = 0;
-    while (dataSocket->Read(buffer, sizeof(buffer)))
-      ++count;
-
-    PTRACE_IF(2, count > 0, "RTP_UDP\tSession " << m_sessionId << ", flushed " << count << " RTP data packets on startup");
-
-    dataSocket->SetReadTimeout(oldTimeout);
-    m_firstData = false;
-  }
-
   int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_reportTimer.GetRemaining());
 
   {
