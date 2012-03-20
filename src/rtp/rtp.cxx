@@ -1682,7 +1682,7 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
 }
 
 
-void RTP_Session::SendReport(PTimer&, INT)
+void OpalRTPSession::SendReport(PTimer&, INT)
 {
   PWaitAndSignal mutex(m_reportMutex);
 
@@ -2273,7 +2273,6 @@ bool OpalRTPSession::Open(const PString & localInterface)
   if (dataSocket != NULL && controlSocket != NULL)
     return true;
 
-  m_firstData = true;
   m_firstControl = true;
   byeSent = false;
   shutdownRead = false;
@@ -2616,7 +2615,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFram
 }
 
 
-void RTP_UDP::FlushData()
+void OpalRTPSession::FlushData()
 {
   if (dataSocket == NULL)
     return;
@@ -2631,7 +2630,7 @@ void RTP_UDP::FlushData()
 
   dataSocket->SetReadTimeout(oldTimeout);
 
-  PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed "
+  PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << m_sessionId << ", flushed "
             << count << " RTP data packets before activating jitter buffer");
 }
 
