@@ -58,18 +58,6 @@ CXXFLAGS="$CXXFLAGS $WFLAGS"
 
 
 dnl ########################################################################
-dnl set the PREFIX accordingly
-if test "x$prefix" = "xNONE"; then
-   if test "x$OPALDIR" = "x"; then
-      prefix="/usr/local"
-   else
-      prefix="$OPALDIR"
-      AC_MSG_NOTICE(OPALDIR detected - setting install prefix to ${OPALDIR})
-   fi
-fi
-
-
-dnl ########################################################################
 dnl Defaults
 dnl ########################################################################
 
