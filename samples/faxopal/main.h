@@ -63,6 +63,15 @@ class MyFaxEndPoint : public OpalFaxEndPoint
 };
 
 
+class MyFax2EndPoint : public OpalFax2EndPoint
+{
+    PCLASSINFO(MyFax2EndPoint, OpalFax2EndPoint)
+
+  public:
+    MyFax2EndPoint(OpalManager & manager) : OpalFax2EndPoint(manager) { }
+};
+
+
 class FaxOPAL : public PProcess
 {
     PCLASSINFO(FaxOPAL, PProcess)

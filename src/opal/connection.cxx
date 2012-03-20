@@ -234,11 +234,12 @@ OpalConnection::OpalConnection(OpalCall & call,
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-  , m_dtmfNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
+  , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
+  , m_sendInBandDTMF(true)
+  , m_dtmfSendNotifier(PCREATE_NOTIFIER(OnSendInBandDTMF))
 #ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
-  , m_sendInBandDTMF(true)
   , m_installedInBandDTMF(false)
   , m_emittedInBandDTMF(0)
 #endif
@@ -425,16 +426,15 @@ void OpalConnection::Release(CallEndReason reason)
 {
   {
     PWaitAndSignal m(phaseMutex);
-    if (phase >= ReleasingPhase) {
+    if (IsReleased()) {
       PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
     }
     SetPhase(ReleasingPhase);
   }
 
-  {
-    PSafeLockReadWrite safeLock(*this);
-    if (!safeLock.IsLocked()) {
+  if (synchronousOnRelease) {
+    if (!LockReadWrite()) {
       PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
     }
@@ -444,24 +444,31 @@ void OpalConnection::Release(CallEndReason reason)
     // Now set reason for the connection close
     SetCallEndReason(reason);
 
-    if (synchronousOnRelease) {
-      OnReleased();
-      return;
-    }
+    UnlockReadWrite();
+
+    OnReleased();
+    return;
+  }
+
+  PTRACE(3, "OpalCon\tReleasing asynchronously " << *this);
 
     // Add a reference for the thread we are about to start
     SafeReference();
-  }
-
-  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
+  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), reason.AsInteger(),
                   PThread::AutoDeleteThread,
                   PThread::NormalPriority,
                   "OnRelease");
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread &, INT)
+void OpalConnection::OnReleaseThreadMain(PThread &, INT reason)
 {
+  if (LockReadWrite()) {
+    // Now set reason for the connection close
+	SetCallEndReason(CallEndReason(reason));
+	UnlockReadWrite();
+  }
+
   OnReleased();
 
   PTRACE(4, "OpalCon\tOnRelease thread completed for " << *this);
@@ -475,9 +482,11 @@ void OpalConnection::OnReleased()
 {
   PTRACE(3, "OpalCon\tOnReleased " << *this);
 
+  CloseMediaStreams();
+
   endpoint.OnReleased(*this);
 
-  CloseMediaStreams();
+  SetPhase(ReleasedPhase);
 }
 
 
@@ -722,21 +731,7 @@ bool OpalConnection::CloseMediaStream(unsigned sessionId, bool source)
 
 bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
 {
-  if (!stream.Close())
-    return false;
-
-  if (stream.IsSource())
-    return true;
-
-  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-  if (otherConnection == NULL)
-    return true;
-
-  OpalMediaStreamPtr otherStream = otherConnection->GetMediaStream(stream.GetSessionID(), true);
-  if (otherStream == NULL)
-    return true;
-
-  return otherStream->Close();
+  return stream.Close();
 }
 
 
@@ -841,9 +836,31 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 
 void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
+  OpalMediaPatch * patch = stream.GetPatch();
+  if (patch != NULL) {
 #if OPAL_HAS_MIXER
-  OnStopRecording(stream.GetPatch());
+  OnStopRecording(patch);
 #endif
+
+  if (silenceDetector != NULL && patch->RemoveFilter(silenceDetector->GetReceiveHandler(), OpalPCM16)) {
+	PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
+  }
+
+#if OPAL_AEC
+  if (echoCanceler && patch->RemoveFilter(stream.IsSource() ? echoCanceler->GetReceiveHandler()
+                                                               : echoCanceler->GetSendHandler(), OpalPCM16)) {
+    PTRACE(4, "OpalCon\tRemoved echo canceler filter on connection " << *this << ", patch " << patch);
+  }
+#endif
+
+#if OPAL_PTLIB_DTMF
+  if (patch->RemoveFilter(m_dtmfDetectNotifier, OPAL_PCM16)) {
+    PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this << ", patch " << patch);
+  }
+  patch->RemoveFilter(m_dtmfSendNotifier, OPAL_PCM16);
+#endif
+  }
+
   endpoint.OnClosedMediaStream(stream);
 }
 
@@ -897,29 +914,30 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
   OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    PTRACE(3, "OpalCon\tAdding audio filters to patch " << patch);
-
     if (isSource && silenceDetector != NULL) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams(), mediaFormat.GetClockRate());
-      patch.AddFilter(silenceDetector->GetReceiveHandler(), mediaFormat);
+      patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
+	  PTRACE(4, "OpalCon\tRemoved silence detect filter on connection " << *this << ", patch " << patch);
     }
 #if OPAL_AEC
     if (echoCanceler) {
       echoCanceler->SetParameters(endpoint.GetManager().GetEchoCancelParams());
       echoCanceler->SetClockRate(mediaFormat.GetClockRate());
-      patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler() : echoCanceler->GetSendHandler(), OpalPCM16);
+      patch.AddFilter(isSource ? echoCanceler->GetReceiveHandler()
+                                : echoCanceler->GetSendHandler(), OpalPCM16);
+	  PTRACE(4, "OpalCon\tAdded echo canceler filter on connection " << *this << ", patch " << patch);
     }
 #endif
 
 #if OPAL_PTLIB_DTMF
     if (m_detectInBandDTMF && isSource) {
-      patch.AddFilter(m_dtmfNotifier, OPAL_PCM16);
+      patch.AddFilter(m_dtmfDetectNotifier, OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded detect DTMF filter on connection " << *this << ", patch " << patch);
     }
 
     if (m_sendInBandDTMF && !isSource) {
       m_installedInBandDTMF = true;
-      patch.AddFilter(PCREATE_NOTIFIER(OnSendInBandDTMF), OPAL_PCM16);
+      patch.AddFilter(m_dtmfSendNotifier, OPAL_PCM16);
       PTRACE(4, "OpalCon\tAdded send DTMF filter on connection " << *this << ", patch " << patch);
     }
 #endif
@@ -1192,9 +1210,7 @@ void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) &&
-      GetPhase() < ReleasingPhase &&
-      LockReadWrite()) {
+  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) && !IsReleased() && LockReadWrite()) {
     reply = userInputString;
     userInputString = PString();
     UnlockReadWrite();

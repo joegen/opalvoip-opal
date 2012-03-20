@@ -125,6 +125,9 @@ class OpalMediaPatch : public PObject
     void RemoveSink(
       const OpalMediaStreamPtr & stream  ///<  Media stream to remove
     );
+    void RemoveSinkModem(
+      const OpalMediaStreamPtr & stream  ///<  Media stream to remove for modem
+    );
 
     /**Get the current source stream for patch.
       */
@@ -143,15 +146,15 @@ class OpalMediaPatch : public PObject
        filter function notifier.
       */
     void AddFilter(
-      const PNotifier & filter,
-      const OpalMediaFormat & stage = OpalMediaFormat()
+      const PNotifier & filter,   ///< Filter notifier to be called.
+      const OpalMediaFormat & stage = OpalMediaFormat() ///< Stage in codec pipeline to call filter
     );
 
     /**Remove a filter from the media pipeline.
       */
-    PBoolean RemoveFilter(
-      const PNotifier & filter,
-      const OpalMediaFormat & stage = OpalMediaFormat()
+    bool RemoveFilter(
+      const PNotifier & filter,   ///< Filter notifier to be called.
+      const OpalMediaFormat & stage = OpalMediaFormat() ///< Stage in codec pipeline to call filter
     );
 
     /**Filter a frame. Calls all filter functions.

@@ -53,6 +53,7 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC)
 
 
 static const char TIFF_File_FormatName[] = "TIFF-File";
+//static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -886,6 +887,441 @@ void OpalFaxConnection::ReleaseConnection(PThread &, INT)
 {
   if (LockReadWrite()) {
     Release(OpalConnection::EndedByLocalUser);
+    UnlockReadWrite();
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+class OpalFax2MediaStream : public OpalNullMediaStream
+{
+  public:
+    OpalFax2MediaStream(OpalFax2Connection & conn,
+                       const OpalMediaFormat & mediaFormat,
+                       unsigned sessionID,
+                       bool isSource)
+      : OpalNullMediaStream(conn, mediaFormat, sessionID, isSource, isSource, true)
+      , m_connection(conn)
+    {
+      m_isAudio = true; // Even though we are not REALLY audio, act like we are
+    }
+
+    bool Close()
+    {
+      if (isOpen &&
+        m_connection.m_state == OpalFax2Connection::e_CompletedSwitch &&
+		m_connection.m_finalStatistics.m_fax.m_result < 0) {
+        if (mediaPatch != NULL)
+          mediaPatch->ExecuteCommand(OpalFaxTerminate(), false);
+        GetStatistics(m_connection.m_finalStatistics);
+        PTRACE(4, "T38\tGot final statistics: result=" << m_connection.m_finalStatistics.m_fax.m_result);
+      }
+
+      return OpalNullMediaStream::Close();
+    }
+
+  private:
+    OpalFax2Connection & m_connection;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalFax2EndPoint::OpalFax2EndPoint(OpalManager & mgr, const char * g711Prefix, const char * t38Prefix)
+  : OpalLocalEndPoint(mgr, g711Prefix)
+  , m_t38Prefix(t38Prefix)
+  , m_defaultDirectory(".")
+{
+  if (t38Prefix != NULL)
+    mgr.AttachEndPoint(this, m_t38Prefix);
+
+  PTRACE(3, "Fax\tCreated Fax endpoint");
+}
+
+
+OpalFax2EndPoint::~OpalFax2EndPoint()
+{
+  PTRACE(3, "Fax\tDeleted Fax endpoint.");
+}
+
+
+PSafePtr<OpalConnection> OpalFax2EndPoint::MakeConnection(OpalCall & call,
+                                                    const PString & remoteParty,
+                                                             void * userData,
+                                                       unsigned int /*options*/,
+                                    OpalConnection::StringOptions * stringOptions)
+{
+  if (!OpalMediaFormat(TIFF_File_FormatName).IsValid()) {
+    PTRACE(1, "TIFF File format not valid! Missing plugin?");
+    return false;
+  }
+
+  PINDEX prefixLength = remoteParty.Find(':');
+  PStringArray tokens = remoteParty.Mid(prefixLength+1).Tokenise(";", true);
+  if (tokens.IsEmpty()) {
+    PTRACE(2, "Fax\tNo filename specified!");
+    return NULL;
+  }
+
+  bool receiving = false;
+  PString stationId = GetDefaultDisplayName();
+
+  for (PINDEX i = 1; i < tokens.GetSize(); ++i) {
+    if (tokens[i] *= "receive")
+      receiving = true;
+    else if (tokens[i].Left(10) *= "stationid=")
+      stationId = tokens[i].Mid(10);
+  }
+
+  PString filename = tokens[0];
+  if (!PFilePath::IsAbsolutePath(filename))
+    filename.Splice(m_defaultDirectory, 0);
+
+  if (!receiving && !PFile::Exists(filename)) {
+    PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
+    return NULL;
+  }
+
+  OpalConnection::StringOptions localOptions;
+  if (stringOptions == NULL)
+    stringOptions = &localOptions;
+
+  if ((*stringOptions)("stationid").IsEmpty())
+    stringOptions->SetAt("stationid", stationId);
+
+  stringOptions->SetAt(OPAL_OPT_DISABLE_JITTER, "1");
+
+  return AddConnection(CreateConnection(call, userData, stringOptions, filename, receiving,
+                                        remoteParty.Left(prefixLength) *= GetPrefixName()));
+}
+
+
+bool OpalFax2EndPoint::IsAvailable() const
+{
+  return OpalMediaFormat("TIFF-File").IsValid();
+}
+
+
+OpalFax2Connection * OpalFax2EndPoint::CreateConnection(OpalCall & call,
+                                                      void * /*userData*/,
+                                                      OpalConnection::StringOptions * stringOptions,
+                                                      const PString & filename,
+                                                      bool receiving,
+                                                      bool disableT38)
+{
+  return new OpalFax2Connection(call, *this, filename, receiving, disableT38, stringOptions);
+}
+
+
+OpalMediaFormatList OpalFax2EndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+  formats += OpalT38;
+  formats += TIFF_File_FormatName;
+  return formats;
+}
+
+
+void OpalFax2EndPoint::OnFaxCompleted(OpalFax2Connection & connection, bool PTRACE_PARAM(failed))
+{
+  PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
+  connection.Release();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalFax2Connection::OpalFax2Connection(OpalCall        & call,
+                                     OpalFax2EndPoint & ep,
+                                     const PString   & filename,
+                                     bool              receiving,
+                                     bool              disableT38,
+                                     OpalConnection::StringOptions * stringOptions)
+  : OpalLocalConnection(call, ep, NULL, 0, stringOptions, 'F')
+  , m_endpoint(ep)
+  , m_filename(filename)
+  , m_receiving(receiving)
+  , m_disableT38(disableT38)
+  , m_releaseTimeout(0, 0, 1)
+  , m_tiffFileFormat(TIFF_File_FormatName)
+  , m_state(disableT38 ? e_CompletedSwitch : e_AwaitingSwitchToT38)
+{
+  m_tiffFileFormat.SetOptionString("TIFF-File-Name", filename);
+  m_tiffFileFormat.SetOptionBoolean("Receiving", receiving);
+
+  m_faxTimer.SetNotifier(PCREATE_NOTIFIER(OnSendCNGCED));
+
+  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
+            " receiving=" << receiving << ","
+            " disabledT38=" << disableT38 << ","
+            " filename=\"" << filename << '"');
+}
+
+
+OpalFax2Connection::~OpalFax2Connection()
+{
+  PTRACE(3, "FAX\tDeleted FAX connection.");
+}
+
+
+PString OpalFax2Connection::GetPrefixName() const
+{
+  return m_disableT38 ? m_endpoint.GetPrefixName() : m_endpoint.GetT38Prefix();
+}
+
+
+void OpalFax2Connection::ApplyStringOptions(OpalConnection::StringOptions & stringOptions)
+{
+  m_stationId = stringOptions("stationid");
+  OpalConnection::ApplyStringOptions(stringOptions);
+}
+
+
+OpalMediaFormatList OpalFax2Connection::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+
+  if (m_filename.IsEmpty())
+    formats += OpalPCM16;
+  else
+    formats += m_tiffFileFormat;
+
+  if (!m_disableT38) {
+    formats += OpalRFC2833;
+    formats += OpalCiscoNSE;
+  }
+
+  return formats;
+}
+
+
+void OpalFax2Connection::AdjustMediaFormats(bool local, OpalMediaFormatList & mediaFormats, OpalConnection * otherConnection) const
+{
+  // Remove everything but G.711 or fax stuff
+  OpalMediaFormatList::iterator i = mediaFormats.begin();
+  while (i != mediaFormats.end()) {
+    if ((m_state == e_AwaitingSwitchToT38 && i->GetMediaType() == OpalMediaType::Audio()) ||
+        (*i == OpalG711_ULAW_64K || *i == OpalG711_ALAW_64K || *i == OpalRFC2833 || *i == OpalCiscoNSE))
+      ++i;
+    else if (i->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *i == OpalT38))
+      mediaFormats -= *i++;
+    else {
+      i->SetOptionString("TIFF-File-Name", m_filename);
+      i->SetOptionBoolean("Receiving", m_receiving);
+      ++i;
+    }
+  }
+
+  OpalConnection::AdjustMediaFormats(local, mediaFormats, otherConnection);
+}
+
+
+void OpalFax2Connection::OnEstablished()
+{
+  OpalConnection::OnEstablished();
+
+  // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
+  // in which case the SpanDSP will deal with CNG/CED stuff.
+  if (m_state == e_AwaitingSwitchToT38) {
+    m_faxTimer.SetInterval(1000);
+    PTRACE(3, "T38\tStarting timer for CNG/CED tone");
+  }
+}
+
+
+void OpalFax2Connection::OnReleased()
+{
+  m_faxTimer.Stop(false);
+  OpalConnection::OnReleased();
+}
+
+
+OpalMediaStream * OpalFax2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+{
+  return new OpalFax2MediaStream(*this, mediaFormat, sessionID, isSource);
+}
+
+
+void OpalFax2Connection::OnStartMediaPatch(OpalMediaPatch & patch)
+{
+  // Have switched to T.38 mode
+  if (patch.GetSink()->GetMediaFormat() == OpalT38) {
+    m_faxTimer.Stop(false);
+    m_state = e_CompletedSwitch;
+  }
+
+  OpalConnection::OnStartMediaPatch(patch);
+}
+
+
+void OpalFax2Connection::OnStopMediaPatch(OpalMediaPatch & patch)
+{
+  // Finished the fax transmission, look for TIFF
+  OpalMediaStream & source = patch.GetSource();
+  if (source.GetMediaFormat() == m_tiffFileFormat) {
+    m_faxTimer.Stop();
+
+    PTRACE(4, "T38\tStopped fax media stream for " << m_tiffFileFormat);
+//           << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
+
+    // Not an explicit switch, so fax plug in indicated end of fax
+    if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
+      synchronousOnRelease = false;
+#if OPAL_STATISTICS
+	  InternalGetStatistics(m_finalStatistics, true);
+      OnFaxCompleted(m_finalStatistics.m_fax.m_result != 0);
+#else
+	  OnFaxCompleted(true);
+#endif
+	}
+  }
+
+  OpalConnection::OnStopMediaPatch(patch);
+}
+
+
+PBoolean OpalFax2Connection::SendUserInputTone(char tone, unsigned duration)
+{
+  OnUserInputTone(tone, duration);
+  return true;
+}
+
+
+void OpalFax2Connection::OnUserInputTone(char tone, unsigned /*duration*/)
+{
+  // Not yet switched and got a CED from the remote system, start switch
+  if (m_state == e_AwaitingSwitchToT38 && !m_receiving && toupper(tone) == 'Y') {
+    PTRACE(3, "T38\tRequesting mode change in response to CED");
+    PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+  }
+}
+
+
+void OpalFax2Connection::AcceptIncoming()
+{
+  if (LockReadWrite()) {
+    AlertingIncoming();
+    // Do not need to do audio mode initially if not going to T.38, already there!
+//    if (!m_disableT38)
+      AutoStartMediaStreams();
+    OnConnectedInternal();
+    UnlockReadWrite();
+  }
+}
+
+
+void OpalFax2Connection::OnFaxCompleted(bool failed)
+{
+  m_endpoint.OnFaxCompleted(*this, failed);
+
+  // Prevent to reuse filename
+  m_filename.MakeEmpty();
+}
+
+
+#if OPAL_STATISTICS
+
+void OpalFax2Connection::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  InternalGetStatistics(statistics, false);
+}
+
+
+void OpalFax2Connection::InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const
+{
+  if (m_finalStatistics.m_fax.m_result >= 0) {
+    statistics = m_finalStatistics;
+    return;
+  }
+
+  OpalMediaStreamPtr stream;
+  if ((stream = GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
+      (stream = GetMediaStream(OpalMediaType::Fax(), true )) == NULL) {
+
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other == NULL) {
+      PTRACE(2, "T38\tNo connection to get statistics.");
+      return;
+    }
+
+    if ((stream = other->GetMediaStream(OpalMediaType::Fax(), false)) == NULL &&
+        (stream = other->GetMediaStream(OpalMediaType::Fax(), true )) == NULL) {
+      PTRACE(2, "T38\tNo stream to get statistics.");
+      return;
+    }
+  }
+
+  if (terminate)
+    stream->ExecuteCommand(OpalFaxTerminate());
+
+  stream->GetStatistics(statistics);
+}
+
+#endif
+
+
+void OpalFax2Connection::OnSendCNGCED(PTimer &, INT)
+{
+  if (m_state == e_AwaitingSwitchToT38 && LockReadOnly()) {
+    PTimeInterval elapsed = PTime() - connectedTime;
+    if (m_releaseTimeout > 0 && elapsed > m_releaseTimeout) {
+      PTRACE(2, "T38\tDid not switch to T.38 mode, releasing connection");
+      Release(OpalConnection::EndedByCapabilityExchange);
+    }
+    else if (m_receiving) {
+	  PTRACE(2, "T38\tSwitching to T.38 mode");
+	  PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+	}
+	else
+	if (m_switchTimeout > 0 && elapsed > m_switchTimeout) {
+      PTRACE(2, "T38\tDid not switch to T.38 mode, forcing switch");
+      PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+    }
+    else {
+      // Cadence for CNG is 500ms on 3 seconds off
+      OpalConnection::OnUserInputTone('X', 500);
+      m_faxTimer = 3500;
+    }
+    UnlockReadOnly();
+  }
+}
+
+
+bool OpalFax2Connection::SwitchFaxMediaStreams(bool enableFax)
+{
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL && other->SwitchFaxMediaStreams(enableFax))
+    return true;
+
+  PTRACE(1, "T38\tMode change request to " << (enableFax ? "fax" : "audio") << " failed");
+  return false;
+}
+
+
+void OpalFax2Connection::OnSwitchedFaxMediaStreams(bool enabledFax)
+{
+  if (enabledFax) {
+    PTRACE(3, "T38\tMode change request to fax succeeded");
+  }
+  else {
+    PTRACE(4, "T38\tMode change request to fax failed, falling back to G.711");
+      m_disableT38 = true;
+      SwitchFaxMediaStreams(false);
+    }
+
+  m_state = e_CompletedSwitch;
+}
+
+
+void OpalFax2Connection::OpenFaxStreams(PThread &, INT)
+{
+  if (LockReadWrite()) {
+    m_state = e_SwitchingToT38;
+    SwitchFaxMediaStreams(true);
+//    if (!SwitchFaxMediaStreams(true))
+//      m_state = e_CompletedSwitch; // Couldn't, don't try again.
     UnlockReadWrite();
   }
 }

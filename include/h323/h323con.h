@@ -162,6 +162,9 @@ class H323Connection : public OpalRTPConnection
       */
     virtual PString GetPrefixName() const;
 
+	/// Call back for connection to act on changed string options
+    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
+
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
@@ -220,7 +223,7 @@ class H323Connection : public OpalRTPConnection
        An application will not typically call this function as it is used by
        the OpalManager during a release of the connection.
 
-       The default behaviour calls CleanUpOnCallEnd() then calls the ancestor.
+       The default behaviour calls OnRelease() then calls the ancestor.
       */
     virtual void OnReleased();
 
@@ -309,34 +312,6 @@ class H323Connection : public OpalRTPConnection
       MediaInformation & info ///<  Information on media channel
     ) const;
   //@}
-
-  /**@name Backward compatibility functions */
-  //@{
-    /** Called when a connection is cleared, just after CleanUpOnCallEnd()
-        Default behaviour is to call H323Connection::OnConnectionCleared
-      */
-    virtual void OnCleared();
-
-    /**Determine if the call has been established.
-       This can be used in combination with the GetCallEndReason() function
-       to determine the three main phases of a call, call setup, call
-       established and call cleared.
-      */
-    PBoolean IsEstablished() const { return connectionState == EstablishedConnection; }
-
-    /**Clean up the call clearance of the connection.
-       This function will do any internal cleaning up and waiting on background
-       threads that may be using the connection object. After this returns it
-       is then safe to delete the object.
-
-       An application will not typically use this function as it is used by the
-       H323EndPoint during a clear call.
-      */
-    virtual void CleanUpOnCallEnd();
-
-    virtual void ApplyStringOptions(OpalConnection::StringOptions & stringOptions);
-  //@}
-
 
   /**@name Signalling Channel */
   //@{
@@ -2176,6 +2151,9 @@ class H323Connection : public OpalRTPConnection
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
+
+	P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
+	P_REMOVE_VIRTUAL_VOID(OnCleared());
 };
 
 

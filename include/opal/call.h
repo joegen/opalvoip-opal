@@ -108,9 +108,9 @@ class OpalCall : public PSafeObject
 
     /**Get the call clearand reason for this connection shutting down.
        Note that this function is only generally useful in the
-       H323EndPoint::OnConnectionCleared() function. This is due to the
+       OpalEndPoint::OnClearedCall() function. This is due to the
        connection not being cleared before that, and the object not even
-       exiting after that.
+       existing after that.
 
        If the call is still active then this will return OpalConnection::NumCallEndReasons.
       */

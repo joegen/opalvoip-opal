@@ -2709,11 +2709,8 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
     m_detectInBandDTMF = false;
 
     OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
-    if (stream != NULL) {
-      OpalMediaPatch * patch = stream->GetPatch();
-      if (patch != NULL && patch->RemoveFilter(m_dtmfNotifier, OPAL_PCM16)) {
-        PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this << ", patch " << *patch);
-      }
+    if (stream != NULL && stream->RemoveFilter(m_dtmfDetectNotifier, OPAL_PCM16)) {
+      PTRACE(4, "OpalCon\tRemoved detect DTMF filter on connection " << *this);
     }
   }
 }
