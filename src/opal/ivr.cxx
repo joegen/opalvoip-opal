@@ -92,7 +92,7 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.Left(2) == "//")
     vxml = vxml.Mid(2);
   if (vxml.IsEmpty() || vxml == "*") {
-    m_defaultsMutex.Signal();
+    m_defaultsMutex.Wait();
     vxml = m_defaultVXML;
     vxml.MakeUnique();
     m_defaultsMutex.Signal();
