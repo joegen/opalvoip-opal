@@ -26,8 +26,10 @@
 # $Date: 2012-03-17 21:28:55 +1100 (Sat, 17 Mar 2012) $
 #
 
-ifndef OPALDIR
-  OPALDIR=$(CURDIR)
+ifdef OPALDIR
+  CFG_ARGS:=--prefix=$(OPALDIR) $(CFG_ARGS)
+else
+  export OPALDIR=$(CURDIR)
 endif
 
 TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
@@ -49,6 +51,8 @@ default: $(CONFIG_FILES)
 $(CONFIG_FILES): $(CONFIGURE) $(PLUGIN_CONFIG)
 	$(CONFIGURE) $(CFG_ARGS)
 
+ifneq (,$(shell which $(AUTOCONF)))
+
 $(CONFIGURE): $(CONFIGURE).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
 	$(AUTOCONF)
  
@@ -59,6 +63,17 @@ $(ACLOCAL).m4:
 	$(ACLOCAL)
 
 $(CONFIG_FILES): $(addsuffix .in, $(CONFIG_FILES))
+
+else # autoconf installed
+
+$(CONFIGURE): $(CONFIGURE).ac
+	@echo ---------------------------------------------------------------------
+	@echo The configure script requires updating but autoconf not is installed.
+	@echo Either install autoconf or execute the command:
+	@echo touch $@
+	@echo ---------------------------------------------------------------------
+
+endif # autoconf installed
 
 
 # End of Makefile.in
