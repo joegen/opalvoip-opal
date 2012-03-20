@@ -803,6 +803,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     resequenceOutOfOrderPackets = false;
+    FlushData();
     if (m_jitterBuffer != NULL) {
       PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
@@ -846,6 +847,11 @@ PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
   PTRACE(5, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn << ", resequenced "
          << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
+}
+
+
+void RTP_Session::FlushData()
+{
 }
 
 
@@ -2016,7 +2022,6 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
 {
   PWaitAndSignal mutex(dataMutex);
 
-  m_firstData = true;
   m_firstControl = true;
 
   // save local address 
@@ -2320,6 +2325,27 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
   }
 }
 
+
+void RTP_UDP::FlushData()
+{
+  if (dataSocket == NULL)
+    return;
+
+  PTimeInterval oldTimeout = dataSocket->GetReadTimeout();
+  dataSocket->SetReadTimeout(0);
+
+  PINDEX count = 0;
+  BYTE buffer[2000];
+  while (dataSocket->Read(buffer, sizeof(buffer)))
+    ++count;
+
+  dataSocket->SetReadTimeout(oldTimeout);
+
+  PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed "
+            << count << " RTP data packets before activating jitter buffer");
+}
+
+
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
   return EncodingLock(*this)->WaitForPDU(dataSocket, controlSocket, timeout);
@@ -2327,21 +2353,6 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
 
 int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
-  if (m_firstData && isAudio) {
-    PTimeInterval oldTimeout = dataSocket.GetReadTimeout();
-    dataSocket.SetReadTimeout(0);
-
-    BYTE buffer[2000];
-    PINDEX count = 0;
-    while (dataSocket.Read(buffer, sizeof(buffer)))
-      ++count;
-
-    PTRACE_IF(3, count > 0, "RTP_UDP\tSession " << sessionID << ", flushed " << count << " RTP data packets on startup");
-
-    dataSocket.SetReadTimeout(oldTimeout);
-    m_firstData = false;
-  }
-
   return PSocket::Select(dataSocket, controlSocket, timeout);
 }
 
