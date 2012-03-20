@@ -36,6 +36,7 @@ TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
 CONFIG_FILES   := $(OPALDIR)/make/opal_defs.mak $(TOP_LEVEL_MAKE)
 CONFIGURE      := $(OPALDIR)/configure
 PLUGIN_CONFIG  := $(OPALDIR)/plugins/configure
+PLUGIN_ACLOCAL := $(OPALDIR)/plugins/aclocal.m4
 
 AUTOCONF       := autoconf
 ACLOCAL        := aclocal
@@ -56,11 +57,14 @@ ifneq (,$(shell which $(AUTOCONF)))
 $(CONFIGURE): $(CONFIGURE).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
 	$(AUTOCONF)
  
-$(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
-	( cd plugins ; $(AUTOCONF) )
+$(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(PLUGIN_ACLOCAL) $(OPALDIR)/make/*.m4 
+	( cd $(dir $@) ; $(AUTOCONF) )
  
 $(ACLOCAL).m4:
 	$(ACLOCAL)
+
+$(PLUGIN_ACLOCAL):
+	( cd $(dir $@) ; $(ACLOCAL) )
 
 $(CONFIG_FILES): $(addsuffix .in, $(CONFIG_FILES))
 
