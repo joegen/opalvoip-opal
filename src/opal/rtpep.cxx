@@ -158,12 +158,12 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
   it = m_connectionsByRtpLocalAddr.find(rtp->GetRemoteMediaAddress());
   if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
     return;
-
-  PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-            "remote RTP port " << it->first << " is local, ending bypass "
-            "on connection " << it->second.m_connection);
   it->second.m_previousResult = -1;
   OnLocalRTP(connection, it->second.m_connection, rtp->GetSessionID(), false);
+
+  PTRACE(5, "RTPEp\tSession " << rtp->GetSessionID() << ", "
+            "remote RTP port " << it->first << " is local, ended bypass "
+            "on connection " << it->second.m_connection);
 }
 
 
