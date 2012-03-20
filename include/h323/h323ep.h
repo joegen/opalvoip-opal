@@ -731,17 +731,6 @@ class H323EndPoint : public OpalRTPEndPoint
     virtual PBoolean IsConnectionEstablished(
       const PString & token   ///<  Token for identifying connection
     );
-
-    /**A call back function whenever a connection is broken.
-       This indicates that a connection to a remote endpoint is no longer
-       available.
-
-       The default behaviour does nothing.
-      */
-    virtual void OnConnectionCleared(
-      H323Connection & connection,    ///<  Connection that was established
-      const PString & token           ///<  Token for identifying connection
-    );
   //@}
 
 
@@ -1436,6 +1425,8 @@ class H323EndPoint : public OpalRTPEndPoint
     H460_FeatureSet features;
 #endif
 
+  private:
+	P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
 };
 
 #endif // OPAL_H323

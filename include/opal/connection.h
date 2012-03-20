@@ -384,9 +384,11 @@ class OpalConnection : public PSafeObject
       ) : code(reason), q931(cause) { }
       explicit CallEndReason(
         long reason
-      ) : code((CallEndReasonCodes)reason), q931(0) { }
+      ) : code((CallEndReasonCodes)(reason&0xff)), q931((reason>>8)&0xff) { }
 
-      operator CallEndReasonCodes() const { return code; }
+      __inline operator CallEndReasonCodes() const { return code; }
+
+	  __inline int AsInteger() const { return code|(q931<<8); }
 
       CallEndReasonCodes code:8; // Normalised OPAL code
       unsigned           q931:8; // PSTN Interworking code, actually Q.850
@@ -551,7 +553,13 @@ class OpalConnection : public PSafeObject
        This indicates the current phase of the connection sequence. Whether
        all phases and the transitions between phases is protocol dependent.
       */
-    inline Phases GetPhase() const { return phase; }
+    __inline Phases GetPhase() const { return phase; }
+
+	/// Return true if connection is in the established phase.
+	__inline bool IsEstablished() const { return phase == EstablishedPhase; }
+
+	/// Return true if connection is in the established phase.
+	__inline bool IsReleased() const { return phase >= ReleasingPhase; }
 
     /**Set the phase of the connection.
        Note that this is primarily for internal use and calling from user code
@@ -563,9 +571,9 @@ class OpalConnection : public PSafeObject
 
     /**Get the reason for this connection shutting down.
        Note that this function is only generally useful in the
-       H323EndPoint::OnConnectionCleared() function. This is due to the
+       OpalEndPoint::OnClearedCall() function. This is due to the
        connection not being cleared before that, and the object not even
-       exiting after that.
+       existing after that.
 
        If the call is still active then this will return NumCallEndReasons.
       */
@@ -966,18 +974,14 @@ class OpalConnection : public PSafeObject
       bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Request close of a media stream by session.
-       Note that this is usually asymchronous, the OnClosedMediaStream() function is
-       called when the stream is really closed.
+    /**Close of a media stream by session.
       */
     virtual bool CloseMediaStream(
       unsigned sessionId,  ///<  Session ID to search for.
       bool source          ///<  Indicates the direction of stream.
     );
 
-    /**Request close of a specific media stream.
-       Note that this is usually asymchronous, the OnClosedMediaStream() function is
-       called when the stream is really closed.
+    /**Close of a specific media stream.
       */
     virtual bool CloseMediaStream(
       OpalMediaStream & stream  ///< Stream to close
@@ -1700,7 +1704,7 @@ class OpalConnection : public PSafeObject
     bool         m_detectInBandDTMF;
     unsigned     m_dtmfScaleMultiplier;
     unsigned     m_dtmfScaleDivisor;
-    PNotifier    m_dtmfNotifier;
+    PNotifier    m_dtmfDetectNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnDetectInBandDTMF);
 
     bool         m_sendInBandDTMF;
@@ -1708,6 +1712,7 @@ class OpalConnection : public PSafeObject
     PDTMFEncoder m_inBandDTMF;
     PINDEX       m_emittedInBandDTMF;
     PMutex       m_inBandMutex;
+	PNotifier    m_dtmfSendNotifier;
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
 

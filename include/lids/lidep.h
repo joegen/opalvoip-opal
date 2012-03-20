@@ -424,6 +424,17 @@ class OpalLineConnection : public OpalConnection
       OpalMediaStream & stream    ///<  New media stream being opened
     );
 
+	/**Call back for closed a media stream.
+
+	  Note that this is called while the OpalMediaStream is locked. Care needs to be
+	  taken to avoid deadlocks.
+
+	  The default behaviour calls the OpalEndPoint function of the same name.
+     */
+	virtual void OnClosedMediaStream(
+	  const OpalMediaStream & stream     ///<  Media stream being closed
+	);
+
     /**Set  the volume (gain) for the audio media channel to the specified percentage.
       */
     virtual PBoolean SetAudioVolume(

@@ -347,11 +347,17 @@ class OpalMediaStream : public PSafeObject
 
     /**Add a filter to the owning patch safely.
       */
-    void AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage =  OpalMediaFormat());
+    void AddFilter(
+	  const PNotifier & filter,   ///< Filter notifier to be called.
+	  const OpalMediaFormat & stage = OpalMediaFormat() ///< Stage in codec pipeline to call filter
+	) const;
 
     /**Remove a filter from the owning patch safely.
       */
-    bool RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
+    bool RemoveFilter(
+	  const PNotifier & filter,   ///< Filter notifier to be called.
+	  const OpalMediaFormat & stage = OpalMediaFormat() ///< Stage in codec pipeline to call filter
+	) const;
 
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;

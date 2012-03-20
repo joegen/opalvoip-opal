@@ -165,7 +165,7 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
   PTRACE(3, "IAX2Con\tAnswering call: " << response);
 
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+  if (!safeLock.IsLocked() || IsReleased())
     return;
 
   OpalConnection::AnsweringCall(response);
@@ -516,8 +516,8 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
 PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
 { 
-  if (GetPhase() >= ReleasingPhase)/*We are hanging up. */
-    return PFalse;            /* Sending sound now is meaningless */
+  if (IsReleased()) /*We are hanging up. */
+    return false;   /* Sending sound now is meaningless */
   
   PTRACE(6, "Iax2Con\t Start read from  jitter buffer"); 
   if (!jitterBuffer.ReadData(packet)) {

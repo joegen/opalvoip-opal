@@ -56,6 +56,7 @@ void FaxOPAL::Main()
   PArgList & args = GetArguments();
 
   args.Parse("a-audio."
+             "b-capifax."
              "d-directory:"
              "g-gk-host:"
              "G-gk-id:"
@@ -90,6 +91,7 @@ void FaxOPAL::Main()
             "  --help                  : print this help message.\n"
             "  -d or --directory dir   : Set default directory for fax receive\n"
             "  -a or --audio           : Send fax as G.711 audio\n"
+            "  -b or --capifax         : Send fax as G.711 audio via CAPI\n"
             "  -u or --user name       : Set local username, defaults to OS username.\n"
             "  -p or --password pwd    : Set password for authentication.\n"
 #if OPAL_SIP
@@ -123,12 +125,19 @@ void FaxOPAL::Main()
   if (args.HasOption('u'))
     m_manager->SetDefaultUserName(args.GetOptionString('u'));
 
-  PString prefix = args.HasOption('a') ? "fax" : "t38";
+  PString prefix;
+  if (args.HasOption('b'))
+    prefix = "faxi";
+  else
+    prefix = args.HasOption('a') ? "fax" : "t38";
 
   // Create audio or T.38 fax endpoint.
   MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
-  if (args.HasOption('d'))
+  MyFax2EndPoint * fax2  = new MyFax2EndPoint(*m_manager);
+  if (args.HasOption('d')) {
     fax->SetDefaultDirectory(args.GetOptionString('d'));
+    fax2->SetDefaultDirectory(args.GetOptionString('d'));
+  }
 
 
   PCaselessString interfaces;

@@ -504,8 +504,6 @@ void OpalLineConnection::OnReleased()
   else
     line.SetOnHook();
 
-  SetPhase(ReleasedPhase);
-
   OpalConnection::OnReleased();
 }
 
@@ -593,14 +591,18 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
   if (!OpalConnection::OnOpenMediaStream(mediaStream))
     return false;
 
-  if (mediaStream.IsSource()) {
-    OpalMediaPatch * patch = mediaStream.GetPatch();
-    if (patch != NULL)
-      patch->AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
-  }
+  if (mediaStream.IsSource())
+    mediaStream.AddFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
 
   line.StopTone(); // In case a RoutingTone or RingTone is going
   return true;
+}
+
+void OpalLineConnection::OnClosedMediaStream(const OpalMediaStream & mediaStream)
+{
+  mediaStream.RemoveFilter(silenceDetector->GetReceiveHandler(), line.GetReadFormat());
+
+  OpalConnection::OnClosedMediaStream(mediaStream);
 }
 
 
@@ -744,7 +746,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
         return;
       }
       PThread::Sleep(100);
-      if (GetPhase() >= ReleasingPhase)
+      if (IsReleased())
         return;
     } while (count < minimumRingCount); // Wait till we have CLID
 
@@ -777,7 +779,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   if (!OnIncomingConnection(0, NULL)) {
     PTRACE(3, "LID\tWaiting for RING to stop on " << *this);
     while (line.GetRingCount() > 0) {
-      if (GetPhase() >= ReleasingPhase)
+      if (IsReleased())
         return;
       PThread::Sleep(100);
     }

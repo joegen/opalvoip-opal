@@ -106,13 +106,15 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 
 PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool fromPatch)
 {
+  // If we are source, then update the sink side, and vice versa
+  if (!fromPatch) {
+	PSafeLockReadOnly safeLock(*this);
+	return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
+  }
+
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
-
-  // If we are source, then update the sink side, and vice versa
-  if (mediaPatch != NULL && !fromPatch)
-    return mediaPatch->UpdateMediaFormat(newMediaFormat);
 
   if (!mediaFormat.Update(newMediaFormat))
     return false;
@@ -175,47 +177,103 @@ PBoolean OpalMediaStream::Start()
 
 PBoolean OpalMediaStream::Close()
 {
-  if (!isOpen)
-    return false;
+  if (connection.GetEndPoint().GetPrefixName() == "fax"){
+    if (!isOpen)
+      return false;
 
-  PTRACE(4, "Media\tClosing stream " << *this);
+    PTRACE(4, "Media\tClosing stream " << *this);
 
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return false;
+    if (!LockReadWrite())
+      return false;
 
-  // Allow for race condition where it is closed in another thread during the above wait
-  if (!isOpen)
-    return false;
-
-  isOpen = false;
-
-  if (mediaPatch == NULL)
-    InternalClose();
-  else {
-    PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
-    OpalMediaPatch * patch = mediaPatch;
-    mediaPatch = NULL;
-
-    if (IsSink())
-      patch->RemoveSink(this);
-	
-    InternalClose();
-
-    if (IsSource()) {
-      patch->Close();
-      connection.GetEndPoint().GetManager().DestroyMediaPatch(patch);
+    // Allow for race condition where it is closed in another thread during the above wait
+    if (!isOpen) {
+      UnlockReadWrite();
+      return false;
     }
-  }
 
-  if (connection.CloseMediaStream(*this))
+    isOpen = false;
+
+    if (mediaPatch == NULL)
+      UnlockReadWrite();
+    else {
+      PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
+      OpalMediaPatch * patch = mediaPatch;
+      mediaPatch = NULL;
+
+      if (IsSink())
+        patch->RemoveSink(this);
+	
+      UnlockReadWrite();
+
+      if (IsSource()) {
+        patch->Close();
+        connection.GetEndPoint().GetManager().DestroyMediaPatch(patch);
+      }
+    }
+
+    if (connection.CloseMediaStream(*this))
+      return true;
+
+    connection.OnClosedMediaStream(*this);
+    connection.RemoveMediaStream(*this);
     return true;
+  }
+  else {
+    if (!isOpen)
+      return false;
 
-  connection.OnClosedMediaStream(*this);
-  connection.RemoveMediaStream(*this);
+    PTRACE(4, "Media\tClosing stream " << *this);
 
-  PTRACE(5, "Media\tClosed stream " << *this);
-  return true;
+//    PSafeLockReadWrite mutex(*this);
+//    if (!mutex.IsLocked())
+//      return false;
+    if (!LockReadWrite())
+      return false;
+
+    // Allow for race condition where it is closed in another thread during the above wait
+//    if (!isOpen)
+//      return false;
+    if (!isOpen) {
+	  PTRACE(4, "Media\tAlrady closed stream " << *this);
+	  UnlockReadWrite();
+	  return false;
+    }
+
+    isOpen = false;
+
+    InternalClose();
+
+	UnlockReadWrite(); //+++
+
+    connection.OnClosedMediaStream(*this);
+
+	if (mediaPatch != NULL && LockReadWrite()) {
+      PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
+      OpalMediaPatch * patch = mediaPatch;
+      mediaPatch = NULL;
+
+  	  if (IsSink()){
+	    if (connection.GetEndPoint().GetPrefixName() == "modem")
+          patch->RemoveSinkModem(this);
+	    else
+          patch->RemoveSink(this);
+	  }
+	
+      //InternalClose(); //??
+      UnlockReadWrite(); //??
+
+      if (IsSource()) {
+        patch->Close();
+        connection.GetEndPoint().GetManager().DestroyMediaPatch(patch);
+      }
+	}
+
+    connection.RemoveMediaStream(*this);
+
+    PTRACE(5, "Media\tClosed stream " << *this);
+    return true;
+  }
 }
 
 
@@ -440,6 +498,11 @@ void OpalMediaStream::SetPaused(bool p)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
+  if (!LockReadWrite())
+	return false;
+
+  UnlockReadWrite();
+///+++
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
     ostream & trace = PTrace::Begin(4, __FILE__, __LINE__);
@@ -476,18 +539,18 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 }
 
 
-void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+void OpalMediaStream::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadWrite safeLock(*this);
+  PSafeLockReadOnly safeLock(*this);
   if (safeLock.IsLocked() && mediaPatch != NULL)
-    mediaPatch->AddFilter(Filter, Stage);
+    mediaPatch->AddFilter(filter, stage);
 }
 
 
-PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
-  PSafeLockReadWrite safeLock(*this);
-  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(Filter, Stage);
+  PSafeLockReadOnly safeLock(*this);
+  return safeLock.IsLocked() && mediaPatch != NULL && mediaPatch->RemoveFilter(filter, stage);
 }
 
 
