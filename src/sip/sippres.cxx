@@ -357,7 +357,7 @@ void SIP_Presentity::OnPresenceNotify(SIPSubscribeHandler &, SIPSubscribe::Notif
   m_notificationMutex.Wait();
   for (list<SIPPresenceInfo>::iterator it = infoList.begin(); it != infoList.end(); ++it) {
     SetPIDFEntity(it->m_target);
-    PTRACE(3, "SIPPres\t'" << it->m_entity << "' request for presence of '" << m_aor << "' is " << it->m_state);
+    PTRACE(3, "SIPPres\t'" << m_aor << "' request for presence of '" << it->m_entity << "' is " << it->m_state);
     OnPresenceChange(*it);
   }
   m_notificationMutex.Signal();
