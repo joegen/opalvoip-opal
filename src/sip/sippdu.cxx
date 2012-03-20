@@ -2682,8 +2682,17 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
 
 SIPTransaction::~SIPTransaction()
 {
-  PTRACE_IF(1, m_state < Terminated_Success, "SIP\tDestroying transaction id="
-            << GetTransactionID() << " which is not yet terminated.");
+  if (m_state < Terminated_Success) {
+    PTRACE(1, "SIP\tDestroying transaction id="
+           << GetTransactionID() << " which is not yet terminated.");
+    m_state = Terminated_Aborted;
+  }
+
+  // Stop timers here so happens before the below trace log,
+  // and not after it, if we wait for ~PTimer()
+  m_retryTimer.Stop(true);
+  m_completionTimer.Stop(true);
+
   PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " destroyed.");
 }
 
@@ -2927,6 +2936,10 @@ PBoolean SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 
 void SIPTransaction::OnRetry(PTimer &, INT)
 {
+  // Can do this outside mutex as never changes from this state
+  if (IsTerminated())
+    return;
+
   PSafeLockReadWrite lock(*this);
 
   if (!lock.IsLocked() || m_state > Cancelling || (m_state == Proceeding && m_method == Method_INVITE))
@@ -2960,6 +2973,10 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 
 void SIPTransaction::OnTimeout(PTimer &, INT)
 {
+  // Can do this outside mutex as never changes from this state
+  if (IsTerminated())
+    return;
+
   PSafeLockReadWrite lock(*this);
 
   if (lock.IsLocked()) {
