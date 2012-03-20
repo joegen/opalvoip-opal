@@ -584,13 +584,12 @@ RTP_Session::RTP_Session(const Params & params)
   : m_timeUnits(params.isAudio ? 8 : 90)
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
-  , reportTimeInterval(0, 12)  // Seconds
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
-  , reportTimer(reportTimeInterval)
+  , m_reportTimer(0, 12)  // Seconds
   , failed(false)
 {
   PAssert(params.id > 0, PInvalidParameter);
@@ -632,10 +631,15 @@ RTP_Session::RTP_Session(const Params & params)
 
   m_encodingHandler = NULL;
   SetEncoding(params.encoding);
+
+  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
 }
+
 
 RTP_Session::~RTP_Session()
 {
+  m_reportTimer.Stop(true);
+
 #if PTRACING
   PTime now;
   int sentDuration = (now-firstPacketSent).GetSeconds();
@@ -750,7 +754,7 @@ void RTP_Session::SendBYE()
 
 PString RTP_Session::GetCanonicalName() const
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   PString s = canonicalName;
   s.MakeUnique();
   return s;
@@ -759,14 +763,15 @@ PString RTP_Session::GetCanonicalName() const
 
 void RTP_Session::SetCanonicalName(const PString & name)
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   canonicalName = name;
+  canonicalName.MakeUnique();
 }
 
 
 PString RTP_Session::GetToolName() const
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   PString s = toolName;
   s.MakeUnique();
   return s;
@@ -775,8 +780,9 @@ PString RTP_Session::GetToolName() const
 
 void RTP_Session::SetToolName(const PString & name)
 {
-  PWaitAndSignal mutex(reportMutex);
+  PWaitAndSignal mutex(m_reportMutex);
   toolName = name;
+  toolName.MakeUnique();
 }
 
 
@@ -1135,9 +1141,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
   if (packetsSent == 1 && userData != NULL)
     userData->OnTxStatistics(*this);
 
-  if (!SendReport())
-    return e_AbortTransport;
-
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
 
@@ -1390,9 +1393,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
   if (packetsReceived == 1 && userData != NULL)
     userData->OnRxStatistics(*this);
 
-  if (!SendReport())
-    return e_AbortTransport;
-
   if (rxStatisticsCount >= rxStatisticsInterval) {
 
     rxStatisticsCount = 0;
@@ -1513,30 +1513,17 @@ PBoolean RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
   }
 
   report.EndPacket();
-
-  // Wait a fuzzy amount of time so things don't get into lock step
-  int interval = (int)reportTimeInterval.GetMilliSeconds();
-  int third = interval/3;
-  interval += PRandom::Number()%(2*third);
-  interval -= third;
-  reportTimer = interval;
-
   return true;
 }
 
 
-PBoolean RTP_Session::SendReport()
+void RTP_Session::SendReport(PTimer&, INT)
 {
-  PWaitAndSignal mutex(reportMutex);
-
-  if (reportTimer.IsRunning())
-    return true;
+  PWaitAndSignal mutex(m_reportMutex);
 
   // Have not got anything yet, do nothing
-  if (packetsSent == 0 && packetsReceived == 0) {
-    reportTimer = reportTimeInterval;
-    return true;
-  }
+  if (packetsSent == 0 && packetsReceived == 0)
+    return;
 
   RTP_ControlFrame report;
   InsertReportPacket(report);
@@ -1556,7 +1543,7 @@ PBoolean RTP_Session::SendReport()
   InsertExtendedReportPacket(report);
 #endif
 
-  return WriteControl(report);
+  WriteControl(report);
 }
 
 
@@ -2134,6 +2121,7 @@ PBoolean RTP_UDP::Open(PIPSocket::Address transportLocalAddress,
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
 
+  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   return true;
 }
 
@@ -2148,6 +2136,7 @@ void RTP_UDP::Reopen(PBoolean reading)
     shutdownWrite = false;
 
   badTransmitCounter = 0;
+  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   PTRACE(3, "RTP_UDP\tSession " << sessionID << " reopened for " << (reading ? "reading" : "writing"));
 }
@@ -2189,6 +2178,9 @@ bool RTP_UDP::Close(PBoolean reading)
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", shutting down write.");
     shutdownWrite = true;
   }
+
+  if (shutdownRead && shutdownWrite)
+    m_reportTimer.Stop(false);
 
   return true;
 }
@@ -2260,7 +2252,7 @@ PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame)
 PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
 {
   for (;;) {
-    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
+    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, PMaxTimeInterval);
 
     {
       PWaitAndSignal mutex(dataMutex);
@@ -2474,7 +2466,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::OnReadTimeout(RTP_DataFrame & frame)
 
 RTP_Session::SendReceiveStatus RTP_UDP::Internal_OnReadTimeout(RTP_DataFrame & /*frame*/)
 {
-  return SendReport() ? e_IgnorePacket : e_AbortTransport;
+  return e_IgnorePacket;
 }
 
 

@@ -609,10 +609,6 @@ class RTP_Session : public PObject
       RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
     ) = 0;
 
-    /**Write the RTCP reports.
-      */
-    virtual PBoolean SendReport();
-
     /**Close down the RTP session.
       */
     virtual bool Close(
@@ -798,18 +794,13 @@ class RTP_Session : public PObject
 
     /**Get the time interval for sending RTCP reports in the session.
       */
-    const PTimeInterval & GetReportTimeInterval() { return reportTimeInterval; }
+    const PTimeInterval & GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
 
     /**Set the time interval for sending RTCP reports in the session.
       */
     void SetReportTimeInterval(
       const PTimeInterval & interval ///<  New time interval for reports.
-    )  { reportTimeInterval = interval; }
-
-    /**Get the current report timer
-     */
-    PTimeInterval GetReportTimer()
-    { return reportTimer; }
+    )  { m_reportTimer.RunContinuous(interval); }
 
     /**Get the interval for transmitter statistics in the session.
       */
@@ -1025,7 +1016,6 @@ class RTP_Session : public PObject
     bool          allowOneSyncSourceChange;
     PBoolean      allowRemoteTransmitAddressChange;
     PBoolean      allowSequenceChange;
-    PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
     WORD          lastSentSequenceNumber;
@@ -1095,8 +1085,9 @@ class RTP_Session : public PObject
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
     PBoolean ignorePayloadTypeChanges;
 
-    PMutex reportMutex;
-    PTimer reportTimer;
+    PMutex m_reportMutex;
+    PTimer m_reportTimer;
+    PDECLARE_NOTIFIER(PTimer, RTP_Session, SendReport);
 
     PBoolean closeOnBye;
     PBoolean byeSent;
