@@ -184,7 +184,7 @@ bool SIP_Presentity::Open()
       if (port == 0)
         port = SIPURL::DefaultPort;
 
-#if P_DNS
+#if OPAL_PTLIB_DNS_RESOLVER
       PStringList hosts;
       bool found = PDNS::LookupSRV(hostname, "_pres._sip", hosts) && !hosts.IsEmpty();
       PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << hostname << "' " << (found ? "succeeded" : "failed"));
@@ -198,7 +198,8 @@ bool SIP_Presentity::Open()
       if (found)
         m_presenceAgent = addrs[0];
       else
-#endif
+#endif // OPAL_PTLIB_DNS_RESOLVER
+
       if (!m_presenceAgent.Parse(hostname, port)) {
         PTRACE(3, "SIPPres\tCould not determine Presence Server from aor \"" << m_aor << '"');
         return false;

@@ -386,7 +386,7 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
 static PString TranslateENUM(const PString & remoteParty)
 {
-#if OPAL_PTLIB_DNS
+#if OPAL_PTLIB_DNS_RESOLVER
   // if there is no '@', and then attempt to use ENUM
   if (remoteParty.Find('@') == P_MAX_INDEX) {
 
@@ -401,7 +401,7 @@ static PString TranslateENUM(const PString & remoteParty)
       }
     }
   }
-#endif
+#endif // OPAL_PTLIB_DNS_RESOLVER
 
   return remoteParty;
 }

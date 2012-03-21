@@ -608,7 +608,7 @@ void SIPURL::Sanitise(UsageContext context)
 }
 
 
-#if OPAL_PTLIB_DNS
+#if OPAL_PTLIB_DNS_RESOLVER
 PBoolean SIPURL::AdjustToDNS(PINDEX entry)
 {
   // RFC3263 states we do not do lookup if explicit port mentioned
@@ -648,7 +648,7 @@ PBoolean SIPURL::AdjustToDNS(PINDEX)
 {
   return true;
 }
-#endif
+#endif // OPAL_PTLIB_DNS_RESOLVER
 
 
 PString SIPURL::GenerateTag()
