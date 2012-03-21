@@ -354,8 +354,9 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
 static H323TransportAddress GetGatekeeperAddress(const PString & address)
 {
-#if OPAL_PTLIB_DNS
   PIPSocketAddressAndPort addrPort(address, H225_RAS::DefaultRasUdpPort);
+
+#if OPAL_PTLIB_DNS
   if (!addrPort.IsValid()) {
     PIPSocketAddressAndPortVector addresses;
     if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty())
