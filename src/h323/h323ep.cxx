@@ -366,12 +366,14 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
 static H323TransportAddress GetGatekeeperAddress(const PString & address)
 {
+#if OPAL_PTLIB_DNS_RESOLVER
   PIPSocketAddressAndPort addrPort(address, H225_RAS::DefaultRasUdpPort);
   if (!addrPort.IsValid()) {
     PIPSocketAddressAndPortVector addresses;
     if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty())
       addrPort = addresses[0];
   }
+#endif //OPAL_PTLIB_DNS_RESOLVER
 
   return H323TransportAddress(addrPort.AsString(), H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
 }
