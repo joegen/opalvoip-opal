@@ -594,7 +594,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
       }
     }
     else {
-#if P_DNS
+#if P_DNS_RESOLVER
       PIPSocketAddressAndPortVector addresses;
       if (PDNS::LookupSRV(remoteURL.GetHostName(), "_im._msrp", remoteURL.GetPort(), addresses) && !addresses.empty()) {
         ip   = addresses[0].GetAddress(); // Only use first entry
@@ -606,7 +606,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
       }
 #else
       return NULL;
-#endif
+#endif // P_DNS_RESOLVER
     }
   }
 

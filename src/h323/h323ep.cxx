@@ -789,7 +789,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   if (stringOptions != NULL)
     stringOptions->ExtractFromURL(url);
 
-#if OPAL_PTLIB_DNS
+#if OPAL_PTLIB_DNS_RESOLVER
 
   // if there is no gatekeeper, try altarnate address lookup methods
   if (gatekeeper == NULL) {
@@ -822,7 +822,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     }
   }
 
-#endif
+#endif // OPAL_PTLIB_DNS_RESOLVER
 
   alias = url.GetUserName();
 
