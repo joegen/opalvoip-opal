@@ -1115,6 +1115,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (!gotPicture) {
         PTRACE(3, MY_CODEC_LOG, "Decoded " << bytesDecoded<< " of " << bytesToDecode 
                << " bytes without a picture.");
+        flags |= PluginCodec_ReturnCoderRequestIFrame;
         return true;
       }
 
