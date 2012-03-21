@@ -52,7 +52,7 @@
 #undef  OPAL_PTLIB_DTMF
 #undef  OPAL_PTLIB_IPV6
 #ifndef _WIN32_WCE
-#undef  OPAL_PTLIB_DNS
+#undef  OPAL_PTLIB_DNS_RESOLVER
 #endif
 #ifndef P_IPHONEOS
 #undef  OPAL_PTLIB_LDAP
@@ -88,8 +88,8 @@
 #if defined(P_HAS_IPV6) && !defined(OPAL_PTLIB_IPV6)
   #define  OPAL_PTLIB_IPV6 P_HAS_IPV6
 #endif
-#if defined(P_DNS) && !defined(OPAL_PTLIB_DNS)
-  #define  OPAL_PTLIB_DNS P_DNS
+#if defined(P_DNS_RESOLVER) && !defined(OPAL_PTLIB_DNS_RESOLVER)
+  #define  OPAL_PTLIB_DNS_RESOLVER P_DNS_RESOLVER
 #endif
 #if defined(P_LDAP) && !defined(OPAL_PTLIB_LDAP)
   #define  OPAL_PTLIB_LDAP P_LDAP
