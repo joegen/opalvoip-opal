@@ -455,13 +455,7 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  if (!LockReadWrite())
-    return false;
-
-  PatchPtr mediaPatch = m_mediaPatch;
-  m_mediaPatch = patch;
-
-  UnlockReadWrite();
+  PatchPtr mediaPatch = m_mediaPatch.Set(patch);
 
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
