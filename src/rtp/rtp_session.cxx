@@ -99,9 +99,15 @@ public:
 
     virtual PBoolean OnReadPacket(RTP_DataFrame & frame)
     {
-      bool success = m_session.InternalReadData(frame);
-      PTRACE_IF(6, success, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
-      return success;
+      if (!m_session.InternalReadData(frame))
+        return false;
+
+#if OPAL_RTCP_XR
+      m_session.GetMetrics().SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
+#endif
+
+      PTRACE(6, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
+      return true;
    }
 
  protected:
@@ -843,12 +849,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
         PTRACE(2, "RTP\tSession " << m_sessionId << ", packet from SSRC=" << hex << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn << dec);
         return e_IgnorePacket; // Non fatal error, just ignore
       }
-
-      JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
-      if (jitter != NULL) {
-        jitter->Reset();
-        PTRACE(4, "RTP\tSession " << m_sessionId << ", jitter buffer reset due to SSRC change.");
-      }
     }
 
     WORD sequenceNumber = frame.GetSequenceNumber();
@@ -883,11 +883,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
         jitterLevel += variance - ((jitterLevel+(1<<(JitterRoundingGuardBits-1))) >> JitterRoundingGuardBits);
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
-#if OPAL_RTCP_XR
-        JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count in case gets deleted out from under us
-        if (jitter != NULL)
-          m_metrics.SetJitterDelay(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
-#endif
       }
 
       if (frame.GetMarker())
