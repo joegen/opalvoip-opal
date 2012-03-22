@@ -170,6 +170,7 @@ class OpalJitterBuffer : public PSafeObject
 
     DWORD    m_averageFrameTime;
     DWORD    m_lastTimestamp;
+    DWORD    m_lastSyncSource;
     DWORD    m_bufferFilledTime;
     DWORD    m_bufferLowTime;
     DWORD    m_bufferEmptiedTime;
