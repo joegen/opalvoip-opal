@@ -535,6 +535,7 @@ class OpalRTPSession : public OpalMediaSession
 
 #if OPAL_RTCP_XR
     const RTCP_XR_Metrics & GetMetrics() const { return m_metrics; }
+          RTCP_XR_Metrics & GetMetrics()       { return m_metrics; }
 #endif
 
     virtual void SendBYE();
