@@ -1047,8 +1047,9 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
 }
 
 
-void OpalManager::OnClosedMediaStream(const OpalMediaStream & /*channel*/)
+void OpalManager::OnClosedMediaStream(const OpalMediaStream & PTRACE_PARAM(channel))
 {
+  PTRACE(5, "OpalMan\tOnClosedMediaStream " << channel);
 }
 
 #if OPAL_VIDEO
