@@ -259,6 +259,7 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   m_packetsTooLate        = 0;
   m_bufferOverruns        = 0;
   m_consecutiveMarkerBits = 0;
+  m_lastSyncSource        = 0;
 
   Reset();
 
@@ -354,6 +355,14 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     }
   }
   m_lastTimestamp = timestamp;
+
+
+
+  if (frame.GetSyncSource() != m_lastSyncSource) {
+    Reset();
+    m_lastSyncSource = frame.GetSyncSource();
+    PTRACE(4, "Jitter\tBuffer reset due to SSRC change.");
+  }
 
 
   // Add to buffer
@@ -678,9 +687,15 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
 {
-  bool success = m_session.ReadData(frame);
-  PTRACE_IF(6, success, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
-  return success;
+  if (!m_session.ReadData(frame))
+    return false;
+
+#if OPAL_RTCP_XR
+  m_session.GetMetrics().SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
+#endif
+
+  PTRACE(6, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
+  return true;
 }
 
 

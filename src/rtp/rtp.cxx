@@ -1268,12 +1268,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << hex << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn << dec);
         return e_IgnorePacket; // Non fatal error, just ignore
       }
-
-      JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
-      if (jitter != NULL) {
-        jitter->Reset();
-        PTRACE(4, "RTP\tSession " << sessionID << ", jitter buffer reset due to SSRC change.");
-      }
     }
 
     WORD sequenceNumber = frame.GetSequenceNumber();
@@ -1288,8 +1282,11 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         packetsOutOfOrder++;
       }
 
-      // Only do statistics on packets after first received in talk burst
-      if ( ! (isAudio && frame.GetMarker()) ) {
+      /* For audio we do not do statistics on start of talk burst (marker bit)
+         as that could be a substantial time and is not really "jitter".
+         For video we measure jitter between whoile frames which is indicated
+         by the marker bit being on. */
+      if (frame.GetMarker() != isAudio) {
         DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
 
         averageReceiveTimeAccum += diff;
@@ -1308,11 +1305,6 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame
         jitterLevel += variance - ((jitterLevel+(1<<(JitterRoundingGuardBits-1))) >> JitterRoundingGuardBits);
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
-#if OPAL_RTCP_XR
-        JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count in case gets deleted out from under us
-        if (jitter != NULL)
-          m_metrics.SetJitterDelay(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
-#endif
       }
 
       if (frame.GetMarker())
