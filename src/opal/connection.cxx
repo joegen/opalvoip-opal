@@ -499,8 +499,10 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread &, INT reason)
+void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), INT reason)
 {
+  PTRACE_CONTEXT_ID_TO(thread);
+
   if (LockReadWrite()) {
     // Now set reason for the connection close
     SetCallEndReason(CallEndReason(reason));
