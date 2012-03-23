@@ -1883,7 +1883,7 @@ bool OpalRTPSession::Shutdown(bool reading)
 
   // If shutting down both, no reporting any more
   if (shutdownRead && shutdownWrite)
-    m_reportTimer.Stop(true);
+    m_reportTimer.Stop(false);
 
   return true;
 }
