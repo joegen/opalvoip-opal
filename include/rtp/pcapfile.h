@@ -39,6 +39,7 @@
 
 #include <rtp/rtp.h>
 #include <opal/mediafmt.h>
+#include <ptlib/sockets.h>
 
 
 /**Class for a reading RTP from an Ethernet Capture (PCAP) file.
@@ -70,18 +71,22 @@ class OpalPCAPFile : public PFile
     void SetFilterSrcIP(
       const PIPSocket::Address & ip
     ) { m_filterSrcIP = ip; }
+    const PIPSocket::Address & GetFilterSrcIP() const { return m_filterSrcIP; }
 
     void SetFilterDstIP(
       const PIPSocket::Address & ip
     ) { m_filterDstIP = ip; }
+    const PIPSocket::Address & GetFilterDstIP() const { return m_filterDstIP; }
 
     void SetFilterSrcPort(
       WORD port
     ) { m_filterSrcPort = port; }
+    WORD GetFilterSrcPort() const { return m_filterSrcPort; }
 
     void SetFilterDstPort(
       WORD port
     ) { m_filterDstPort = port; }
+    WORD GetFilterDstPort() const { return m_filterDstPort; }
 
 
     struct DiscoveredRTPInfo {
