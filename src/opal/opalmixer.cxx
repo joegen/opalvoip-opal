@@ -1193,9 +1193,11 @@ void OpalMixerNode::ShutDown()
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::Destroyed);
 
-  PSafePtr<OpalConnection> connection;
-  while ((connection = GetFirstConnection()) != NULL)
+  for (PSafePtr<OpalConnection> connection = GetFirstConnection(); connection != NULL; ++connection)
     connection->Release();
+
+  while (GetConnectionCount() > 0)
+    PThread::Sleep(100);
 
   m_audioMixer.RemoveAllStreams();
 #if OPAL_VIDEO
