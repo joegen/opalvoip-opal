@@ -705,6 +705,11 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
       cout << "Frame rate     : " << fixed << setprecision(1)
            << (m_videoFrames*1000.0/playTime.GetMilliSeconds()) << "fps\n";
   }
+  else {
+    if (playTime > 0)
+      cout << "Avg frame time : " << fixed << setprecision(1)
+           << (playTime.GetMilliSeconds()/m_packetCount) << "ms\n";
+  }
 
   cout <<     "Missing packets: " << missingPackets << "\n"
               "IP fragments   : " << fragmentationCount
