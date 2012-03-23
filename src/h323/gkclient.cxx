@@ -126,6 +126,32 @@ H323Gatekeeper::~H323Gatekeeper()
 }
 
 
+PString H323Gatekeeper::GetRegistrationFailReasonString(RegistrationFailReasons reason)
+{
+  static const char * const ReasonStrings[] = {
+    "Successfull",
+    "UnregisteredLocally",
+    "UnregisteredByGatekeeper",
+    "GatekeeperLostRegistration",
+    "InvalidListener",
+    "DuplicateAlias",
+    "SecurityDenied",
+    "TransportError"
+  };
+
+  if (reason < PARRAYSIZE(ReasonStrings))
+    return ReasonStrings[reason];
+
+  if ((reason&RegistrationRejectReasonMask) != 0) {
+    PString tag = H225_RegistrationRejectReason(reason&(RegistrationRejectReasonMask-1)).GetTagName();
+    if (!tag.IsEmpty())
+      return tag;
+  }
+
+  return psprintf("<%04x>", reason);
+}
+
+
 PString H323Gatekeeper::GetName() const
 {
   PStringStream s;
@@ -216,6 +242,7 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
   if (address.IsEmpty())
     address = "udp$*:1719";
 
+  registrationFailReason = TransportError;
   if (!transport->ConnectTo(address))
     return false;
 

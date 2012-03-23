@@ -256,6 +256,9 @@ class H323Gatekeeper : public H225_RAS
       NumRegistrationFailReasons,
       RegistrationRejectReasonMask = 0x8000
     };
+    static PString GetRegistrationFailReasonString(RegistrationFailReasons reason);
+    friend ostream & operator<<(ostream & strm, RegistrationFailReasons reason) { return strm << GetRegistrationFailReasonString(reason); }
+
     /**Get the registration fail reason.
      */
     RegistrationFailReasons GetRegistrationFailReason() const { return registrationFailReason; }
