@@ -751,8 +751,16 @@ void OpalCapiEndPoint::ProcessMessage(const OpalCapiMessage & message)
 
     case CAPI_INFO :
     case CAPI_CONNECT_ACTIVE :
-    case CAPI_DISCONNECT :
       m_plciToConnection.Forward(message, message.param.m_PLCI);
+      break;
+
+    case CAPI_DISCONNECT :
+      if (!m_plciToConnection.Forward(message, message.param.m_PLCI) && message.header.m_Subcommand == CAPI_IND) {
+        // Is a DISCONNECT_IND and it was not forwarded to connection (already gone), then have to handle it here
+        OpalCapiMessage resp(CAPI_DISCONNECT, CAPI_RESP, sizeof(OpalCapiMessage::Params::DisconnectResp));
+        resp.param.disconnect_resp.m_PLCI = message.param.disconnect_ind.m_PLCI;
+        PutMessage(resp);
+      }
       break;
 
     case CAPI_CONNECT_B3 :
