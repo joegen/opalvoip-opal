@@ -3357,7 +3357,7 @@ void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
            << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
            << " for " << *this);
 
-    m_responseRetryTimer.Stop();
+    m_responseRetryTimer.Stop(false);
 
     if (IsReleased()) {
       // Clear out pending responses if we are releasing, just die now.
