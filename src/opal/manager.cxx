@@ -1461,7 +1461,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   PString user = b_party(colon, at-1);
 
   destination.Replace("<da>", b_party, true);
-  destination.Replace("<db>", user, true);
+  destination.Replace("<db>", b_party, true);
 
   if (at != P_MAX_INDEX) {
     destination.Replace("<du>", user, true);
