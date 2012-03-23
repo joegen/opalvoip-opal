@@ -888,7 +888,7 @@ class SIPEndPoint : public OpalRTPEndPoint
        in searches of the registrations. No default to first user of the
        same domain will be performed. */
     void SetRegisteredUserMode(bool v) { m_registeredUserMode = v; }
-    bool GetRegisteredYserMode() const { return m_registeredUserMode; }
+    bool GetRegisteredUserMode() const { return m_registeredUserMode; }
 
     /**Return the SIPAuthentication for a specific realm.
      */
