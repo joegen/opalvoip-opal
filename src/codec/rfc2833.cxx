@@ -350,7 +350,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     case TransmitEnding3:
       payload[1] |= 0x80;
       m_transmitState = TransmitIdle;
-      m_asyncTransmitTimer.Stop();
+      m_asyncTransmitTimer.Stop(false);
       break;
 
     default:
