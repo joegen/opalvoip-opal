@@ -40,6 +40,8 @@
 #endif
 
 
+PURL_LEGACY_SCHEME(isdn, true, false, true, true, false, true, true, false, false, false, 0)
+
 enum {
     MaxLineCount = 30,
     MaxBlockCount = 2,
@@ -566,15 +568,24 @@ PSafePtr<OpalConnection> OpalCapiEndPoint::MakeConnection(OpalCall & call,
                                                       unsigned int   options,
                                      OpalConnection::StringOptions * stringOptions)
 {
-  PINDEX colon = party.Find(':');
-  PString number = party.Mid(colon != P_MAX_INDEX ? colon+1 : 0);
+  PURL uri;
+  if (!uri.Parse(party, "isdn")) {
+    PTRACE(1, "CAPI\tNo available bearers for outgoing call.");
+    return NULL;
+  }
+  
+  OpalConnection::StringOptions localStringOptions;
+  if (stringOptions == NULL)
+    stringOptions = &localStringOptions;
+
+  stringOptions->ExtractFromURL(uri);
 
   unsigned controller, bearer;
   if (GetFreeLine(controller, bearer)) {
     OpalCapiConnection * connection = CreateConnection(call, userData, options, stringOptions, controller, bearer);
     if (AddConnection(connection) != NULL) {
       m_cbciToConnection[(controller<<8)|bearer] = connection;
-      connection->m_calledPartyNumber = number;
+      connection->m_calledPartyNumber = uri.GetUserName(); // Number part
       return connection;
     }
   }
@@ -841,6 +852,8 @@ PBoolean OpalCapiConnection::SetUpConnection()
   originating = true;
   SetPhase(SetUpPhase);
 
+  OnApplyStringOptions();
+
   OpalCapiMessage message(CAPI_CONNECT, CAPI_REQ, sizeof(OpalCapiMessage::Params::ConnectReq));
   message.param.connect_req.m_Controller = m_controller;
   message.param.connect_req.m_CIPValue = 16; // Telephony
@@ -984,6 +997,7 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       message.Get(pos, NULL, 1, m_calledPartyNumber); // Called party address
       message.Get(pos, NULL, 2, remotePartyNumber); // Calling party address
 
+      OnApplyStringOptions();
       if (OnIncomingConnection(0, NULL))
         ownerCall.OnSetUp(*this);
       break;
