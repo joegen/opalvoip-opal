@@ -752,7 +752,7 @@ AC_DEFUN([OPAL_FIND_GSM],
             opal_gsm=no
 
             LIBS="$LIBS -lgsm"
-            AC_RUN_IFELSE(
+            AC_LINK_IFELSE(
             [AC_LANG_PROGRAM([[
             #include <gsm/gsm.h>
  ]],[[
