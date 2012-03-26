@@ -5,7 +5,7 @@ dnl
 AC_INIT(opal, 3)
 AC_CONFIG_SRCDIR([include/opal/manager.h])
 
-AC_PREREQ([2.66])
+AC_PREREQ([2.65])
 
 AC_CONFIG_AUX_DIR(make)
 
