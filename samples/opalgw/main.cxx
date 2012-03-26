@@ -45,7 +45,7 @@ static const char DefaultAddressFamilyKey[] = "AddressFamily";
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
-static const char MediaBypassKey[] = "Media Bypass";
+static const char MediaTransferModeKey[] = "Media Transfer Mode";
 static const char PreferredMediaKey[] = "Preferred Media";
 static const char RemovedMediaKey[] = "Removed Media";
 static const char MinJitterKey[] = "Minimum Jitter";
@@ -61,10 +61,14 @@ static const char STUNServerKey[] = "STUN Server";
 
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPProxyKey[] = "SIP Proxy URL";
-static const char SIPRegistrarKey[] = "SIP Registrar";
-static const char SIPAuthIDKey[] = "SIP Auth ID";
-static const char SIPPasswordKey[] = "SIP Password";
 static const char SIPListenersKey[] = "SIP Interfaces";
+
+#define REGISTRATIONS_SECTION "SIP Registrations"
+#define REGISTRATIONS_KEY "Registration"
+
+static const char SIPAddressofRecordKey[] = "Address of Record";
+static const char SIPAuthIDKey[] = "Auth ID";
+static const char SIPPasswordKey[] = "Password";
 
 static const char LIDKey[] = "Line Interface Devices";
 static const char EnableCAPIKey[] = "CAPI ISDN";
@@ -86,8 +90,8 @@ static const char * const DefaultRoutes[] = {
   "h323:\\+*[0-9]+ = tel:<dn>",
   "sip:\\+*[0-9]+@.* = tel:<dn>",
   "h323:.+@.+ = sip:<da>",
-  "h323:.* = sip:<dn>@",
-  "sip:.* = h323:<dn>",
+  "h323:.* = sip:<db>@",
+  "sip:.* = h323:<du>",
   "tel:[0-9]+\\*[0-9]+\\*[0-9]+\\*[0-9]+ = sip:<dn2ip>",
   "tel:.*=sip:<dn>"
 };
@@ -162,7 +166,9 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #if PTRACING
   PTrace::SetLevel(GetLogLevel());
   PTrace::ClearOptions(PTrace::Timestamp);
-  PTrace::SetOptions(PTrace::DateAndTime);
+#if _DEBUG
+  PTrace::SetOptions(PTrace::FileAndLine);
+#endif
 #endif
 
   // Get the HTTP basic authentication info
@@ -218,6 +224,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   rsrc->BuildHTML(html);
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
+#if OPAL_H323 | OPAL_SIP
+  httpNameSpace.AddResource(new RegistrationStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
+#endif
+
+  httpNameSpace.AddResource(new CallStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
 
 #if OPAL_H323
   // Create the status page
@@ -237,6 +248,12 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::Paragraph() << "<center>"
 
          << PHTML::HotLink("Parameters") << "Parameters" << PHTML::HotLink()
+#if OPAL_H323 | OPAL_SIP
+         << PHTML::Paragraph()
+         << PHTML::HotLink("RegistrationStatus") << "Registration Status" << PHTML::HotLink()
+#endif
+         << PHTML::Paragraph()
+         << PHTML::HotLink("CallStatus") << "Call Status" << PHTML::HotLink()
 #if OPAL_H323
          << PHTML::Paragraph()
          << PHTML::HotLink("GkStatus") << "Gatekeeper Status" << PHTML::HotLink()
@@ -277,7 +294,7 @@ void MyProcess::Main()
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : m_allowMediaBypass(true)
+  : m_mediaTransferMode(MediaTransforForward)
 #if OPAL_H323
   , m_h323EP(NULL)
 #endif
@@ -309,6 +326,7 @@ MyManager::~MyManager()
 
 PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
+  PINDEX arraySize;
   PHTTPFieldArray * fieldArray;
 
   // Create all the endpoints
@@ -339,9 +357,10 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   // General parameters for all endpoint types
-  m_allowMediaBypass = cfg.GetBoolean(MediaBypassKey);
-  rsrc->Add(new PHTTPBooleanField(MediaBypassKey, m_allowMediaBypass,
-            "Allow media to bypass gateway and be routed directly between the endpoints."));
+  m_mediaTransferMode = (MediaTransferMode)cfg.GetInteger(MediaTransferModeKey, m_mediaTransferMode);
+  static const char * const MediaTransferMode[] = { "Bypass", "Forward", "Transcode" };
+  rsrc->Add(new PHTTPSelectField(MediaTransferModeKey, PARRAYSIZE(MediaTransferMode), MediaTransferMode,
+                               m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25,
                                    "", "Preference order for codecs to be offered to remotes"), true);
@@ -404,24 +423,6 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, m_sipEP->GetDefaultLocalPartyName(),
             "SIP local user name"));
 
-  SIPRegister::Params registrar;
-  registrar.m_remoteAddress = cfg.GetString(SIPRegistrarKey);
-  rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar.m_registrarAddress,
-            "SIP registrar/proxy IP address, hostname or domain"));
-
-  registrar.m_authID = cfg.GetString(SIPAuthIDKey);
-  rsrc->Add(new PHTTPStringField(SIPAuthIDKey, 25, registrar.m_authID,
-            "SIP registrar/proxy authentication identifier, defaults to local user name"));
-
-  registrar.m_password = cfg.GetString(SIPPasswordKey);
-  rsrc->Add(new PHTTPStringField(SIPPasswordKey, 25, registrar.m_password,
-            "SIP registrar/proxy authentication password"));
-
-  PString proxy = m_sipEP->GetProxy().AsString();
-  m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
-  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy,
-            "SIP outbound proxy IP/hostname"));
-
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25,
                                    "", "Local network interfaces to listen for SIP, blank means all"), false);
   if (!m_sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
@@ -429,14 +430,38 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
   rsrc->Add(fieldArray);
 
-  if (!registrar.m_registrarAddress) {
+  PString proxy = m_sipEP->GetProxy().AsString();
+  m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
+  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy,
+            "SIP outbound proxy IP/hostname"));
+
+  // Registrar
+  list<SIPRegister::Params> registrations;
+  arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
+  for (PINDEX i = 0; i < arraySize; i++) {
+    SIPRegister::Params registrar;
+    cfg.SetDefaultSection(psprintf(REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u", i+1));
+    registrar.m_addressOfRecord = cfg.GetString(SIPAddressofRecordKey);
+    registrar.m_authID = cfg.GetString(SIPAuthIDKey);
+    registrar.m_password = cfg.GetString(SIPPasswordKey);
+    if (!registrar.m_addressOfRecord.IsEmpty())
+      registrations.push_back(registrar);
+  }
+
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
+        REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
+        "Registration of SIP username at domain/hostname/IP address");
+  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 20));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 15));
+  registrationsFields->Append(new PHTTPStringField(SIPPasswordKey, 15));
+  rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
+
+  for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
     PString aor;
-    if (m_sipEP->Register(registrar, aor)) {
-      PSYSTEMLOG(Info, "Registered " << aor);
-    }
-    else {
-      PSYSTEMLOG(Error, "Could not register with registrar!");
-    }
+    if (m_sipEP->Register(*it, aor))
+      PSYSTEMLOG(Info, "Started register of " << aor);
+    else
+      PSYSTEMLOG(Error, "Could not register " << *it);
   }
 
 #endif
@@ -474,9 +499,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   // Routing
   RouteTable routes;
-  PINDEX arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
+  arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
   for (PINDEX i = 0; i < arraySize; i++) {
-    PString section(PString::Printf, ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1);
+    cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1));
     RouteEntry * entry = new RouteEntry(cfg.GetString(RouteAPartyKey),
                                         cfg.GetString(RouteBPartyKey),
                                         cfg.GetString(RouteDestKey));
@@ -501,11 +526,12 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     cfg.SetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size", arraySize);
   }
 
-  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
-                                                              "Internal routing of calls to varous sub-systems");
+  PHTTPCompositeField * routeFields = new PHTTPCompositeField(
+        ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
+        "Internal routing of calls to varous sub-systems");
   routeFields->Append(new PHTTPStringField(RouteAPartyKey, 15));
   routeFields->Append(new PHTTPStringField(RouteBPartyKey, 15));
-  routeFields->Append(new PHTTPStringField(RouteDestKey, 15));
+  routeFields->Append(new PHTTPStringField(RouteDestKey, 25));
   rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
   SetRouteTable(routes);
@@ -514,9 +540,24 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   return true;
 }
 
-bool MyManager::AllowMediaBypass(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
+MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
 {
-  return m_allowMediaBypass;
+  return m_mediaTransferMode;
+}
+
+
+void MyManager::AdjustMediaFormats(bool local,
+                                   const OpalConnection & connection,
+                                   OpalMediaFormatList & mediaFormats) const
+{
+  // Don't do the reorder done in OpalManager::AdjustMediaFormats if a gateway
+  if (local && connection.IsNetworkConnection()) {
+    PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
+    if (otherConnection != NULL && otherConnection->IsNetworkConnection())
+      return;
+  }
+
+  OpalManager::AdjustMediaFormats(local, connection, mediaFormats);
 }
 
 
@@ -580,6 +621,110 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 
 ///////////////////////////////////////////////////////////////
 
+#if OPAL_H323 | OPAL_SIP
+
+RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, PHTTPAuthority & auth)
+  : BaseStatusPage(mgr, auth, "RegistrationStatus")
+{
+}
+
+
+const char * RegistrationStatusPage::GetTitle() const
+{
+  return "OPAL Gateway Registration Status";
+}
+
+
+void RegistrationStatusPage::CreateContent(PHTML & html) const
+{
+#if OPAL_H323
+  html << PHTML::TableStart("border=1 cellpadding=5")
+       << PHTML::TableRow()
+       << PHTML::TableData("NOWRAP")
+       << "&nbsp;H.323&nbsp;Gatekeeper&nbsp;"
+       << PHTML::TableData("NOWRAP")
+       << "<!--#macro H323RegistrationStatus-->"
+       << PHTML::TableEnd();
+#endif
+#if OPAL_H323 | OPAL_SIP
+  html << PHTML::Paragraph();
+#endif
+#if OPAL_SIP
+  html << PHTML::TableStart("border=1 cellpadding=5")
+       << PHTML::TableRow()
+       << PHTML::TableHeader()
+       << "&nbsp;SIP&nbsp;Address&nbsp;of&nbsp;Record&nbsp;"
+       << PHTML::TableHeader()
+       << "&nbsp;Status&nbsp;"
+       << "<!--#macrostart SIPRegistrationStatus-->"
+         << PHTML::TableRow()
+         << PHTML::TableData("NOWRAP")
+         << "<!--#status AoR-->"
+         << PHTML::TableData("NOWRAP")
+         << "<!--#status State-->"
+       << "<!--#macroend SIPRegistrationStatus-->"
+       << PHTML::TableEnd();
+#endif
+}
+
+
+bool RegistrationStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
+{
+  return false;
+}
+
+#if OPAL_H323
+PCREATE_SERVICE_MACRO(H323RegistrationStatus,resource,P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
+  if (gk == NULL)
+    return "None";
+
+  if (gk->IsRegistered())
+    return "Registered";
+  
+  PStringStream strm;
+  strm << "Failed: " << gk->GetRegistrationFailReason();
+  return strm;
+}
+#endif
+
+#if OPAL_SIP
+PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  PString substitution;
+
+  SIPEndPoint & sip = status->m_manager.GetSIPEndPoint();
+  PStringList registrations = sip.GetRegistrations(true);
+  for (PStringList::iterator it = registrations.begin(); it != registrations.end(); ++it) {
+    // make a copy of the repeating html chunk
+    PString insert = htmlBlock;
+
+    PServiceHTML::SpliceMacro(insert, "status AoR",   *it);
+    PServiceHTML::SpliceMacro(insert, "status State",
+          sip.IsRegistered(*it) ? "Registered" : (sip.IsRegistered(*it, true) ? "Offline" : "Failed"));
+
+    // Then put it into the page, moving insertion point along after it.
+    substitution += insert;
+  }
+
+  return substitution;
+}
+#endif
+
+
+#endif
+
+///////////////////////////////////////////////////////////////
+
 CallStatusPage::CallStatusPage(MyManager & mgr, PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "CallStatus")
 {
@@ -594,7 +739,7 @@ const char * CallStatusPage::GetTitle() const
 
 void CallStatusPage::CreateContent(PHTML & html) const
 {
-  html << PHTML::TableStart("border=1")
+  html << PHTML::TableStart("border=1 cellpadding=3")
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;A&nbsp;Party&nbsp;"
@@ -605,9 +750,8 @@ void CallStatusPage::CreateContent(PHTML & html) const
        << "<!--#macrostart CallStatus-->"
          << PHTML::TableRow()
          << PHTML::TableData("NOWRAP")
-         << PHTML::TableData("NOWRAP")
          << "<!--#status A-Party-->"
-         << PHTML::BreakLine()
+         << PHTML::TableData("NOWRAP")
          << "<!--#status B-Party-->"
          << PHTML::TableData()
          << "<!--#status Duration-->"
@@ -639,13 +783,17 @@ bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 }
 
 
-PString MyManager::OnLoadCallStatus(const PString & htmlBlock)
+PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 {
+  CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
   PString substitution;
 
-  PArray<PString> calls = GetAllCalls();
+  PArray<PString> calls = status->m_manager.GetAllCalls();
   for (PINDEX i = 0; i < calls.GetSize(); ++i) {
-    PSafePtr<OpalCall> call = FindCallWithLock(calls[i], PSafeReadOnly);
+    PSafePtr<OpalCall> call = status->m_manager.FindCallWithLock(calls[i], PSafeReadOnly);
     if (call == NULL)
       continue;
 
@@ -669,13 +817,6 @@ PString MyManager::OnLoadCallStatus(const PString & htmlBlock)
   }
 
   return substitution;
-}
-
-
-PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,block)
-{
-  GkStatusPage * status = dynamic_cast<GkStatusPage *>(resource.m_resource);
-  return PAssertNULL(status)->m_manager.OnLoadCallStatus(block);
 }
 
 

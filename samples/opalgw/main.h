@@ -159,16 +159,29 @@ class MyManager : public OpalManager
 
     bool Initialise(PConfig & cfg, PConfigPage * rsrc);
 
-    virtual bool AllowMediaBypass(
+    virtual MediaTransferMode GetMediaTransferMode(
       const OpalConnection & source,      ///<  Source connection
       const OpalConnection & destination, ///<  Destination connection
       const OpalMediaType & mediaType     ///<  Media type for session
     ) const;
+    void AdjustMediaFormats(
+      bool local,
+      const OpalConnection & connection,
+      OpalMediaFormatList & mediaFormats
+    ) const;
+
 
     PString OnLoadCallStatus(const PString & htmlBlock);
 
+#if OPAL_H323
+    MyH323EndPoint & GetH323EndPoint() const { return *m_h323EP; }
+#endif
+#if OPAL_SIP
+    SIPEndPoint & GetSIPEndPoint() const { return *m_sipEP; }
+#endif
+
   protected:
-    bool m_allowMediaBypass;
+    MediaTransferMode m_mediaTransferMode;
 
 #if OPAL_H323
     MyH323EndPoint * m_h323EP;
@@ -228,10 +241,27 @@ class BaseStatusPage : public PServiceHTTPString
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg) = 0;
 
     MyManager & m_manager;
-
-  friend class PServiceMacro_CallStatus;
 };
 
+
+#if OPAL_H323 | OPAL_SIP
+
+class RegistrationStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(RegistrationStatusPage, BaseStatusPage);
+  public:
+    RegistrationStatusPage(MyManager & mgr, PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+  friend class PServiceMacro_H323RegistrationStatus;
+  friend class PServiceMacro_SIPRegistrationStatus;
+};
+
+#endif
 
 class CallStatusPage : public BaseStatusPage
 {
@@ -243,6 +273,8 @@ class CallStatusPage : public BaseStatusPage
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html) const;
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+  friend class PServiceMacro_CallStatus;
 };
 
 
