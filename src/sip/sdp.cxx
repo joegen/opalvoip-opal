@@ -443,7 +443,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
       m_mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
   }
 
-  if (bandwidth > 1000 && bandwidth < m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
+  if (bandwidth > 1000 && bandwidth < (unsigned)m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
     PTRACE(4, "SDP\tAdjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
     m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
