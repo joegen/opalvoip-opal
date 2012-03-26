@@ -1481,19 +1481,19 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     }
   }
 
+  OnConnectedInternal();
+
   // If didn't get fast start channels accepted by remote then clear our
   // proposed channels
   if (fastStartState != FastStartAcknowledged) {
     fastStartState = FastStartDisabled;
     fastStartChannels.RemoveAll();
   }
-  else if (mediaWaitForConnect) {
+  else {
     // Otherwise start fast started channels if we were waiting for CONNECT
     for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
       channel->Start();
   }
-
-  OnConnectedInternal();
 
   /* do not start h245 negotiation if it is disabled */
   if (endpoint.IsH245Disabled()){
@@ -2448,13 +2448,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
                   m_fastStartChannelBeingOpened = &channelToStart;
-                  if (channelToStart.Open()) {
-                    if (channelToStart.GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
-                      break;
-                    if (channelToStart.Start())
-                      break;
-                    channelToStart.Close();
-                  }
+                  if (channelToStart.Open())
+                    break;
                   m_fastStartChannelBeingOpened = NULL;
                 }
                 else
@@ -4213,19 +4208,14 @@ bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
 }
 
 
-void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Directions direction)
+void H323Connection::OpenFastStartChannel(unsigned sessionID, H323Channel::Directions direction)
 {
   for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
     if (channel->GetSessionID() == sessionID && channel->GetDirection() == direction) {
       m_fastStartChannelBeingOpened = &*channel;
       PTRACE(3, "H225\tOpening fast start channel");
-      if (channel->Open()) {
-        if (channel->GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
-          break;
-        if (channel->Start())
-          break;
-        channel->Close();
-      }
+      if (channel->Open())
+        break;
       m_fastStartChannelBeingOpened = NULL;
     }
   }
@@ -4296,25 +4286,25 @@ void H323Connection::OnSelectLogicalChannels()
       break;
 
     case FastStartResponse :
-      StartFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      StartFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsReceiver);
+      OpenFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsTransmitter);
+      OpenFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsReceiver);
 #if OPAL_VIDEO
       if ((autoStartVideo&OpalMediaType::Transmit) != 0)
-        StartFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsTransmitter);
+        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if ((autoStartVideo&OpalMediaType::Receive) != 0)
-        StartFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsReceiver);
+        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
 #if OPAL_T38_CAPABILITY
       if ((autoStartFax&OpalMediaType::Transmit) != 0)
-        StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsTransmitter);
+        OpenFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsTransmitter);
       if ((autoStartFax&OpalMediaType::Receive) != 0)
-        StartFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsReceiver);
+        OpenFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsReceiver);
 #endif
 #if OPAL_HAS_H224
       if ((autoStartH224&OpalMediaType::Transmit) != 0)
-        StartFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsTransmitter);
+        OpenFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsTransmitter);
       if ((autoStartH224&OpalMediaType::Receive) != 0)
-        StartFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsReceiver);
+        OpenFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsReceiver);
 #endif
       break;
   }
