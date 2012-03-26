@@ -256,7 +256,7 @@ void OpalRFC2833Proto::UseRTPSession(bool rx, OpalRTPSession * rtpSession)
     }
   }
   else {
-    PTRACE(3, "RTPCon\tSetting RTP sesion " << rtpSession << " on " << m_baseMediaFormat);
+    PTRACE(3, "RTPCon\tSetting RTP session 0x" << rtpSession << " on " << m_baseMediaFormat);
     m_sendMutex.Wait();
     m_rtpSession = rtpSession;
     m_sendMutex.Signal();
