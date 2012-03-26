@@ -921,13 +921,13 @@ void OpalManager::AdjustMediaFormats(bool local,
 }
 
 
-bool OpalManager::AllowMediaBypass(const OpalConnection & PTRACE_PARAM(source),
-                                   const OpalConnection & PTRACE_PARAM(destination),
-                                    const OpalMediaType & PTRACE_PARAM(mediaType)) const
+OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConnection & PTRACE_PARAM(source),
+                                                                 const OpalConnection & PTRACE_PARAM(destination),
+                                                                  const OpalMediaType & PTRACE_PARAM(mediaType)) const
 {
-  PTRACE(3, "OpalMan\tAllowMediaBypass for " << mediaType << ", "
+  PTRACE(3, "OpalMan\tGetMediaTransferMode for " << mediaType << ", "
             "from " << source << " to " << destination);
-  return true;
+  return MediaTransforForward;
 }
 
 

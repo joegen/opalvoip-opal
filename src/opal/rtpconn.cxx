@@ -450,7 +450,7 @@ void OpalRTPConnection::CheckForMediaBypass(OpalMediaSession & session)
     return;
 
   const OpalMediaType & mediaType = session.GetMediaType();
-  if (!endpoint.GetManager().AllowMediaBypass(*this, *otherConnection, mediaType))
+  if (endpoint.GetManager().GetMediaTransferMode(*this, *otherConnection, mediaType) != OpalManager::MediaTransferBypass)
     return;
 
   OpalTransportAddressArray transports;
