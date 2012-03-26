@@ -44,7 +44,7 @@
 #endif
 
 
-PURL_LEGACY_SCHEME(isdn, true, false, true, true, false, true, true, false, false, false, 0)
+DEFINE_LEGACY_URL_SCHEME(isdn, true, false, true, true, false, true, true, false, false, false, 0)
 
 enum {
     MaxLineCount = 30,
