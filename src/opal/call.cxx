@@ -420,10 +420,26 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
   OpalMediaFormatList commonFormats;
 
   bool first = true;
+  const OpalMediaTypeList allMediaTypes = OpalMediaType::GetList();
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadOnly, &connection)) {
-    OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(otherConnection->GetMediaFormats());
+    const OpalMediaFormatList otherConnectionsFormats = otherConnection->GetMediaFormats();
+    OpalMediaFormatList possibleFormats;
+    for (OpalMediaTypeList::const_iterator iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
+      OpalMediaFormatList formatsOfMediaType;
+      for (OpalMediaFormatList::const_iterator it = otherConnectionsFormats.begin(); it != otherConnectionsFormats.end(); ++it) {
+        if (it->GetMediaType() == *iterMediaType)
+          formatsOfMediaType += *it;
+      }
+      if (!formatsOfMediaType.IsEmpty()) {
+        if (connection.IsNetworkConnection() && otherConnection->IsNetworkConnection() &&
+              manager.GetMediaTransferMode(connection, *otherConnection, *iterMediaType) != OpalManager::MediaTransferTranscode)
+          possibleFormats += formatsOfMediaType;
+        else
+          possibleFormats += OpalTranscoder::GetPossibleFormats(formatsOfMediaType);
+      }
+    }
     if (first) {
       commonFormats = possibleFormats;
       first = false;

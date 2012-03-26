@@ -933,7 +933,20 @@ class OpalManager : public PObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
-    /**Determine if media will bypass the local host.
+    /// How to handle media between two "network" connections.
+    enum MediaTransferMode {
+      MediaTransferBypass,   /**< Media bypasses this host completely. The RTP
+                                  addressess of each side is passed to the
+                                  other so media goes directly. */
+      MediaTransforForward,  /**< Media passed through this host but is not
+                                  changed, RTP packets a simply forwareded
+                                  to the other side. */
+      MediaTransferTranscode /**< Media is passed through this host and if
+                                  necessary transcoded between media formats.
+                                  Note this can take a lot of CPU. */
+    };
+
+    /**Determine how to handle media between two "network" connections.
        Determine if media is to bypass this host when it is possible to do so.
        For example if the two connections are SIP and H.323, they both use RTP
        and the packets can go directly between the remote endpoints.
@@ -942,9 +955,10 @@ class OpalManager : public PObject
        enable this feature, or for example if firewall traversal is in play,
        or Lawful Intercept, or any application defined reason.
 
-       The default behaviour returns true, allowing bypass.
+       The default behaviour returns MediaTransforForward, disallowing
+       transcoding and full media bypass.
      */
-    virtual bool AllowMediaBypass(
+    virtual MediaTransferMode GetMediaTransferMode(
       const OpalConnection & source,      ///<  Source connection
       const OpalConnection & destination, ///<  Destination connection
       const OpalMediaType & mediaType     ///<  Media type for session

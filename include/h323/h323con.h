@@ -321,7 +321,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get transports for the media session on the connection.
        This is primarily used by the media bypass feature controlled by the
-       OpalManager::AllowMediaBypass() function. It allows one side of the
+       OpalManager::GetMediaTransferMode() function. It allows one side of the
        call to get the transport address of the media on the other side, so it
        can pass it on, bypassing the local host.
 
@@ -1381,7 +1381,7 @@ class H323Connection : public OpalRTPConnection
     /**Start a logical channel for fast start.
        Internal function, not for normal use.
       */
-    virtual void StartFastStartChannel(
+    virtual void OpenFastStartChannel(
       unsigned sessionID,               ///<  Session ID to find logical channel.
       H323Channel::Directions direction ///<  Direction of channel to start
     );

@@ -113,7 +113,7 @@ class OpalRTPConnection : public OpalConnection
 
     /**Get transports for the media session on the connection.
        This is primarily used by the media bypass feature controlled by the
-       OpalManager::AllowMediaBypass() function. It allows one side of the
+       OpalManager::GetMediaTransferMode() function. It allows one side of the
        call to get the transport address of the media on the other side, so it
        can pass it on, bypassing the local host.
 
