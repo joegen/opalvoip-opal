@@ -59,9 +59,14 @@ static const char RTPPortMaxKey[] = "RTP Port Max";
 static const char RTPTOSKey[] = "RTP Type of Service";
 static const char STUNServerKey[] = "STUN Server";
 
+#if OPAL_SIP
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPListenersKey[] = "SIP Interfaces";
+#if OPAL_PTLIB_SSL
+static const char SIPSignalingSecurityKey[] = "SIP Security";
+static const char SIPMediaCryptoSuitesKey[] = "SIP Crypto Suites";
+#endif
 
 #define REGISTRATIONS_SECTION "SIP Registrations"
 #define REGISTRATIONS_KEY "Registration"
@@ -69,6 +74,7 @@ static const char SIPListenersKey[] = "SIP Interfaces";
 static const char SIPAddressofRecordKey[] = "Address of Record";
 static const char SIPAuthIDKey[] = "Auth ID";
 static const char SIPPasswordKey[] = "Password";
+#endif
 
 static const char LIDKey[] = "Line Interface Devices";
 static const char EnableCAPIKey[] = "CAPI ISDN";
@@ -358,8 +364,10 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   // General parameters for all endpoint types
   m_mediaTransferMode = (MediaTransferMode)cfg.GetInteger(MediaTransferModeKey, m_mediaTransferMode);
-  static const char * const MediaTransferMode[] = { "Bypass", "Forward", "Transcode" };
-  rsrc->Add(new PHTTPSelectField(MediaTransferModeKey, PARRAYSIZE(MediaTransferMode), MediaTransferMode,
+  static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
+  static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
+  rsrc->Add(new PHTTPRadioField(MediaTransferModeKey,
+                  PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
                                m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25,
@@ -434,6 +442,44 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
   rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy,
             "SIP outbound proxy IP/hostname"));
+
+#if OPAL_PTLIB_SSL
+  PINDEX security = 0;
+  if (FindEndPoint("sip") != NULL)
+    security |= 1;
+  if (FindEndPoint("sips") != NULL)
+    security |= 2;
+  security = cfg.GetInteger(SIPSignalingSecurityKey, security);
+  switch (security) {
+    case 1 :
+      AttachEndPoint(m_sipEP, "sip");
+      DetachEndPoint("sips");
+      break;
+
+    case 2 :
+      AttachEndPoint(m_sipEP, "sips");
+      DetachEndPoint("sip");
+      break;
+
+    default :
+      AttachEndPoint(m_sipEP, "sip");
+      AttachEndPoint(m_sipEP, "sips");
+  }
+  static const char * const SignalingSecurityValues[] = { "1", "2", "3" };
+  static const char * const SignalingSecurityTitles[] = { "sip only", "sips only", "sip & sips" };
+  rsrc->Add(new PHTTPRadioField(SIPSignalingSecurityKey,
+                     PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
+                                                        security, "Signaling security methods available."));
+
+  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(SIPMediaCryptoSuitesKey,
+              m_sipEP->GetAllMediaCryptoSuites(), 0, "Media security methods available."), true);
+  PStringArray cryptoSuites = fieldArray->GetStrings(cfg);
+  if (cryptoSuites.GetSize() > 0)
+    m_sipEP->SetMediaCryptoSuites(cryptoSuites);
+  else
+    fieldArray->SetStrings(cfg, m_sipEP->GetMediaCryptoSuites());
+  rsrc->Add(fieldArray);
+#endif
 
   // Registrar
   list<SIPRegister::Params> registrations;
@@ -539,6 +585,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   return true;
 }
+
 
 MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
 {
