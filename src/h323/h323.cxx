@@ -4212,11 +4212,14 @@ void H323Connection::OpenFastStartChannel(unsigned sessionID, H323Channel::Direc
 {
   for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
     if (channel->GetSessionID() == sessionID && channel->GetDirection() == direction) {
-      m_fastStartChannelBeingOpened = &*channel;
-      PTRACE(3, "H225\tOpening fast start channel");
-      if (channel->Open())
-        break;
-      m_fastStartChannelBeingOpened = NULL;
+      H323Capability * localCapability = localCapabilities.FindCapability(channel->GetCapability());
+      if (localCapability != NULL && localCapabilities.IsAllowed(*localCapability)) {
+        m_fastStartChannelBeingOpened = &*channel;
+        PTRACE(3, "H225\tOpening fast start channel for " << *localCapability);
+        if (channel->Open())
+          break;
+        m_fastStartChannelBeingOpened = NULL;
+      }
     }
   }
 }
