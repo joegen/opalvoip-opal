@@ -232,7 +232,6 @@ H323Connection::H323Connection(OpalCall & call,
   , isCallIntrusion(false)
   , callIntrusionProtectionLevel(endpoint.GetCallIntrusionProtectionLevel())
 #endif
-  , m_fastStartChannelBeingOpened(NULL)
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
 #endif
@@ -2372,7 +2371,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
   // those that were started are put into the logical channel dictionary
   for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ) {
     if (channel->IsOpen())
-      logicalChannels->Add(*channel++);
+      ++channel;
     else
       fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
   }
@@ -2413,6 +2412,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
   PINDEX i;
 
+  H323LogicalChannelList replyFastStartChannels;
+
   // Go through provided list of structures, if can decode it and match it up
   // with a channel we requested AND it has all the information needed in the
   // m_multiplexParameters, then we can start the channel.
@@ -2447,10 +2448,11 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
-                  m_fastStartChannelBeingOpened = &channelToStart;
-                  if (channelToStart.Open())
-                    break;
-                  m_fastStartChannelBeingOpened = NULL;
+                  replyFastStartChannels.Append(&*channel);
+                  fastStartChannels.DisallowDeleteObjects();
+                  fastStartChannels.erase(channel);
+                  fastStartChannels.AllowDeleteObjects();
+                  break;
                 }
                 else
                   PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
@@ -2469,25 +2471,14 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     }
   }
 
-  // Remove any channels that were not started by above, those that were
-  // started are put into the logical channel dictionary
-  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ) {
-    if (channel->IsOpen())
-      logicalChannels->Add(*channel++);
-    else
-      fastStartChannels.erase(channel++);
-  }
-
   // The channels we just transferred to the logical channels dictionary
   // should not be deleted via this structure now.
+  fastStartChannels = replyFastStartChannels;
   fastStartChannels.DisallowDeleteObjects();
 
   PTRACE(3, "H225\tFast starting " << fastStartChannels.GetSize() << " channels");
   if (fastStartChannels.IsEmpty())
     return false;
-
-  // Have moved open channels to logicalChannels structure, remove them now.
-  fastStartChannels.RemoveAll();
 
   fastStartState = FastStartAcknowledged;
 
@@ -3950,18 +3941,14 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
   OpalMediaFormatList list;
 
-  if (m_fastStartChannelBeingOpened != NULL)
-    list = m_fastStartChannelBeingOpened->GetMediaStream()->GetMediaFormat();
-  else {
 #if OPAL_H239
-    OpalMediaFormatList h239 = GetRemoteH239Formats();
-    for (OpalMediaFormatList::iterator format = h239.begin(); format != h239.end(); ++format)
-      list += *format;
+  OpalMediaFormatList h239 = GetRemoteH239Formats();
+  for (OpalMediaFormatList::iterator format = h239.begin(); format != h239.end(); ++format)
+    list += *format;
 #endif
 
-    list += remoteCapabilities.GetMediaFormats();
-    AdjustMediaFormats(false, NULL, list);
-  }
+  list += remoteCapabilities.GetMediaFormats();
+  AdjustMediaFormats(false, NULL, list);
 
   return list;
 }
@@ -4052,59 +4039,51 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     return NULL;
   }
 
-  if (m_fastStartChannelBeingOpened != NULL) {
-    stream = m_fastStartChannelBeingOpened->GetMediaStream();
-    m_fastStartChannelBeingOpened = NULL;
-    PTRACE(4, "H323\tOpenMediaStream fast started for session " << sessionID);
+  for (H323LogicalChannelList::iterator iterChan = fastStartChannels.begin();
+                                        iterChan != fastStartChannels.end(); ++iterChan) {
+    if (iterChan->GetDirection() == (isSource ? H323Channel::IsReceiver : H323Channel::IsTransmitter) &&
+        iterChan->GetCapability().GetMediaFormat() == mediaFormat) {
+      PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
+      stream = CreateMediaStream(mediaFormat, sessionID, isSource);
+      iterChan->SetMediaStream(stream);
+      logicalChannels->Add(*iterChan);
+      break;
+    }
   }
-  else {
+
+  if (stream == NULL) {
     H323Channel * channel = FindChannel(sessionID, isSource);
     if (channel == NULL) {
-      if (fastStartState == FastStartResponse) {
-        for (H323LogicalChannelList::iterator iterChan = fastStartChannels.begin();
-                                                iterChan != fastStartChannels.end(); ++iterChan) {
-          if (iterChan->GetDirection() == (isSource ? H323Channel::IsReceiver : H323Channel::IsTransmitter) &&
-              iterChan->GetCapability().GetMediaFormat() == mediaFormat &&
-              iterChan->Open()) {
-            channel = &*iterChan;
-            break;
-          }
-        }
+      // Logical channel not open, if receiver that is an error
+      if (isSource) {
+        PTRACE(2, "H323\tOpenMediaStream canot have logical channel for session " << sessionID);
+        return NULL;
       }
 
-      if (channel == NULL) {
-        // Logical channel not open, if receiver that is an error
-        if (isSource) {
-          PTRACE(2, "H323\tOpenMediaStream canot have logical channel for session " << sessionID);
-          return NULL;
-        }
-
-        if (!masterSlaveDeterminationProcedure->IsDetermined() ||
-            !capabilityExchangeProcedure->HasSentCapabilities() ||
-            !capabilityExchangeProcedure->HasReceivedCapabilities()) {
-          PTRACE(2, "H323\tOpenMediaStream cannot (H.245 unavailable) open logical channel for " << mediaFormat);
-          return NULL;
-        }
-
-        // If transmitter, send OpenLogicalChannel using the capability associated with the media format
-        H323Capability * capability = remoteCapabilities.FindCapability(mediaFormat.GetName());
-        if (capability == NULL) {
-          PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
-          return NULL;
-        }
-
-        capability->UpdateMediaFormat(mediaFormat);
-
-        if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
-          PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
-          return NULL;
-        }
-        channel = FindChannel(sessionID, isSource);
+      if (!masterSlaveDeterminationProcedure->IsDetermined() ||
+          !capabilityExchangeProcedure->HasSentCapabilities() ||
+          !capabilityExchangeProcedure->HasReceivedCapabilities()) {
+        PTRACE(2, "H323\tOpenMediaStream cannot (H.245 unavailable) open logical channel for " << mediaFormat);
+        return NULL;
       }
+
+      // If transmitter, send OpenLogicalChannel using the capability associated with the media format
+      H323Capability * capability = remoteCapabilities.FindCapability(mediaFormat.GetName());
+      if (capability == NULL) {
+        PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
+        return NULL;
+      }
+
+      capability->UpdateMediaFormat(mediaFormat);
+
+      if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
+        PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
+        return NULL;
+      }
+      channel = FindChannel(sessionID, isSource);
+      if (PAssertNULL(channel) == NULL)
+        return NULL;
     }
-
-    if (PAssertNULL(channel) == NULL)
-      return NULL;
 
     stream = channel->GetMediaStream();
     if (stream == NULL) {
@@ -4212,13 +4191,11 @@ void H323Connection::OpenFastStartChannel(unsigned sessionID, H323Channel::Direc
 {
   for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
     if (channel->GetSessionID() == sessionID && channel->GetDirection() == direction) {
-      H323Capability * localCapability = localCapabilities.FindCapability(channel->GetCapability());
-      if (localCapability != NULL && localCapabilities.IsAllowed(*localCapability)) {
-        m_fastStartChannelBeingOpened = &*channel;
-        PTRACE(3, "H225\tOpening fast start channel for " << *localCapability);
+      unsigned error;
+      if (OnCreateLogicalChannel(channel->GetCapability(), direction, error)) {
+        PTRACE(3, "H225\tOpening fast start channel for " << channel->GetCapability());
         if (channel->Open())
           break;
-        m_fastStartChannelBeingOpened = NULL;
       }
     }
   }
@@ -4804,13 +4781,15 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
   // Check if in set at all
   if (dir != H323Channel::IsReceiver) {
-    if (!remoteCapabilities.IsAllowed(capability)) {
+    H323Capability * remoteCapability = localCapabilities.FindCapability(capability);
+    if (remoteCapability == NULL || !localCapabilities.IsAllowed(*remoteCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability << " not allowed.");
       return false;
     }
   }
   else {
-    if (!localCapabilities.IsAllowed(capability)) {
+    H323Capability * localCapability = localCapabilities.FindCapability(capability);
+    if (localCapability == NULL || !localCapabilities.IsAllowed(*localCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - receive capability " << capability << " not allowed.");
       return false;
     }
