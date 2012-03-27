@@ -207,6 +207,11 @@ class H323Channel : public PObject
       */
     virtual OpalMediaStreamPtr GetMediaStream() const;
 
+    /**Set the media stream associated with this logical channel.
+       The default behaviour does nothing.
+      */
+    virtual void SetMediaStream(OpalMediaStreamPtr mediaStream);
+
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
@@ -411,9 +416,14 @@ class H323UnidirectionalChannel : public H323Channel
   /**@name Member variable access */
   //@{
     /**Get the media stream associated with this logical channel.
-       The default behaviour returns NULL.
+       The default behaviour returns m_mediaStream.
       */
     virtual OpalMediaStreamPtr GetMediaStream() const;
+
+    /**Set the media stream associated with this logical channel.
+       The default behaviour sets m_mediaStream and m_mediaFormat.
+      */
+    virtual void SetMediaStream(OpalMediaStreamPtr mediaStream);
   //@}
 
 
