@@ -1283,9 +1283,11 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
      after OnIncomingConnection() will fill m_remoteFormatList appropriately
      adjusted by AdjustMediaFormats() */
   SDPSessionDescription sdp(0, 0, OpalTransportAddress());
-  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetMIME().GetContentType() == "application/sdp")
-    sdp.Decode(m_lastReceivedINVITE->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats());
-  return sdp.GetMediaFormats();
+  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetMIME().GetContentType() == "application/sdp" &&
+              sdp.Decode(m_lastReceivedINVITE->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats()))
+    return sdp.GetMediaFormats();
+
+  return endpoint.GetMediaFormats();
 }
 
 
