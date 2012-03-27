@@ -502,7 +502,7 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 
 bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  PSafeLockReadWrite mutex(*this);
+  PSafeLockReadOnly mutex(*this);
 
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
