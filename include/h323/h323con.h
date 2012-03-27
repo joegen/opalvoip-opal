@@ -2252,7 +2252,6 @@ class H323Connection : public OpalRTPConnection
     };
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
-    H323Channel          * m_fastStartChannelBeingOpened;
     
 #if PTRACING
     static const char * GetConnectionStatesName(ConnectionStates s);
