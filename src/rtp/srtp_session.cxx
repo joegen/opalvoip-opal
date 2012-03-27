@@ -332,7 +332,7 @@ bool OpalSRTPKeyInfo::FromString(const PString & str)
   }
 
   SetCipherKey(PBYTEArray(key_salt, keyBytes));
-  SetAuthSalt(PBYTEArray(key_salt+keyBytes, saltBytes));
+  SetAuthSalt(PBYTEArray(key_salt+keyBytes, key_salt.GetSize()-keyBytes));
 
   return true;
 }
@@ -359,7 +359,7 @@ void OpalSRTPKeyInfo::Randomise()
 
 bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 {
-  if (key.GetSize() != (m_cryptoSuite.GetCipherKeyBits()+7)/8) {
+  if (key.GetSize() < (m_cryptoSuite.GetCipherKeyBits()+7)/8) {
     PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
@@ -371,7 +371,7 @@ bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 
 bool OpalSRTPKeyInfo::SetAuthSalt(const PBYTEArray & salt)
 {
-  if (salt.GetSize() != (m_cryptoSuite.GetAuthSaltBits()+7)/8) {
+  if (salt.GetSize() < (m_cryptoSuite.GetAuthSaltBits()+7)/8) {
     PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
