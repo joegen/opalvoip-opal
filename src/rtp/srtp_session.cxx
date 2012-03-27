@@ -253,7 +253,7 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
 {
     PCLASSINFO(OpalSRTPCryptoSuite, OpalMediaCryptoSuite);
   public:
-    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_80; }
+    virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_32; }
     virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-32"; }
     virtual PINDEX GetCipherKeyBits() const { return 128; }
     virtual PINDEX GetAuthSaltBits() const { return 32; }
