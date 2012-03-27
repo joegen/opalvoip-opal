@@ -678,7 +678,7 @@ PBoolean OpalRTPMediaStream::Open()
 
   rtpSession.Restart(IsSource());
 
-  m_forceIntraFrameFlag = true;
+  m_forceIntraFrameFlag = mediaFormat.GetMediaType() == OpalMediaType::Video();
   m_forceIntraFrameTimer = 500;
 
   return OpalMediaStream::Open();
@@ -739,6 +739,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
     return false;
   }
 
+#if OPAL_VIDEO
   /* This is to allow for remote systems that are not quite ready to receive
      video immediately after the stream is set up. Specification says they
      MUST, but ... sigh. So, they sometime miss the first few packets which
@@ -750,6 +751,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
     ExecuteCommand(OpalVideoUpdatePicture());
     m_forceIntraFrameFlag = false;
   }
+#endif
 
   timestamp = packet.GetTimestamp();
 
