@@ -1206,6 +1206,10 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
+  PSafeLockReadOnly safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
   if (IsReleased())
     return false;
 
@@ -1734,9 +1738,30 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
 
 #if OPAL_VIDEO
-void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force) const
+class OpalVideoUpdatePictureDecoupledEvent : public OpalManager::DecoupledEvent {
+  public:
+    OpalVideoUpdatePictureDecoupledEvent(
+      const PSafePtr<OpalConnection> & connection,
+      unsigned sessionId,
+      bool force
+    ) : OpalManager::DecoupledEvent(connection)
+      , m_sessionId(sessionId)
+      , m_force(force)
+    { }
+
+    virtual void Work()
+    {
+      m_connection->SendVideoUpdatePicture(m_sessionId, m_force);
+    }
+
+  protected:
+    unsigned m_sessionId;
+    bool     m_force;
+};
+
+void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force)
 {
-  SendVideoUpdatePicture(session.GetSessionID(), force);
+  GetEndPoint().GetManager().QueueDecoupledEvent(new OpalVideoUpdatePictureDecoupledEvent(this, session.GetSessionID(), force));
 }
 #endif
 
