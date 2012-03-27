@@ -1293,10 +1293,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 #endif
 
   #if OPAL_VIDEO
-    case RTP_ControlFrame::e_IntraFrameRequest :
-      PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC2032 FIR");
-      m_connection.OnRxIntraFrameRequest(*this, true);
-      break;
+      case RTP_ControlFrame::e_IntraFrameRequest :
+        PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC2032 FIR");
+        m_connection.OnRxIntraFrameRequest(*this, true);
+        break;
 
       case RTP_ControlFrame::e_PayloadSpecificFeedBack :
         switch (frame.GetFbType()) {

@@ -1227,7 +1227,7 @@ class OpalConnection : public PSafeObject
     virtual void OnRxIntraFrameRequest(
       const OpalMediaSession & session,   ///<  Session with statistics
       bool force                          ///<  Force Intra frame, or just indicate picture loss
-    ) const;
+    );
 #endif
 
     /**Set the volume (gain) for the audio media channel to the specified percentage.
