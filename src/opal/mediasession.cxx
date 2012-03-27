@@ -211,7 +211,7 @@ void OpalMediaSession::OfferCryptoSuite(const PString & cryptoSuiteName)
 
 bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
 {
-  return true;
+  return false;
 }
 
 
