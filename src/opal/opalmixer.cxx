@@ -708,7 +708,12 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
                                 m_mixer.m_width, m_mixer.m_height, m_mixer.m_frameStore.GetPointer(),
                                 PVideoFrameInfo::eScale);
 
-  m_queue.pop();
+  /* To avoid continual build up of frames in queue if input frame rate
+     greater than mixer frame, we flush the queue, but keep one to allow for
+     slight mismatches in timing when frame rates are identical. */
+  do {
+    m_queue.pop();
+  } while (m_queue.size() > 1);
 }
 
 
