@@ -40,8 +40,6 @@
 #endif
 
 
-PURL_LEGACY_SCHEME(isdn, true, false, true, true, false, true, true, false, false, false, 0)
-
 enum {
     MaxLineCount = 30,
     MaxBlockCount = 2,
@@ -568,24 +566,36 @@ PSafePtr<OpalConnection> OpalCapiEndPoint::MakeConnection(OpalCall & call,
                                                       unsigned int   options,
                                      OpalConnection::StringOptions * stringOptions)
 {
-  PURL uri;
-  if (!uri.Parse(party, "isdn")) {
-    PTRACE(1, "CAPI\tNo available bearers for outgoing call.");
-    return NULL;
-  }
-  
-  OpalConnection::StringOptions localStringOptions;
-  if (stringOptions == NULL)
-    stringOptions = &localStringOptions;
+  PINDEX colon = party.Find(':');
+  PString number = party.Mid(colon != P_MAX_INDEX ? colon+1 : 0);
 
-  stringOptions->ExtractFromURL(uri);
+  colon = number.Find(';');
+  if (colon != P_MAX_INDEX){
+    number = number.Left(colon);
+  }
+
+  PINDEX iParams = party.Find(';');
+
+  if (iParams != P_MAX_INDEX) {
+    PStringToString params;
+
+    PURL::SplitVars(party(iParams + 1, P_MAX_INDEX), params, ';', '=');
+
+    for (PINDEX i = 0; i < params.GetSize(); i++) {
+      PCaselessString key = params.GetKeyAt(i);
+
+      if (key.NumCompare("OPAL-") == EqualTo) {
+        stringOptions->SetAt(key.Mid(5), params.GetDataAt(i));
+      }
+	}
+  }
 
   unsigned controller, bearer;
   if (GetFreeLine(controller, bearer)) {
     OpalCapiConnection * connection = CreateConnection(call, userData, options, stringOptions, controller, bearer);
     if (AddConnection(connection) != NULL) {
       m_cbciToConnection[(controller<<8)|bearer] = connection;
-      connection->m_calledPartyNumber = uri.GetUserName(); // Number part
+      connection->m_calledPartyNumber = number;
       return connection;
     }
   }
@@ -614,16 +624,6 @@ OpalCapiConnection * OpalCapiEndPoint::CreateConnection(OpalCall & call,
   return new OpalCapiConnection(call, *this, options, stringOptions, controller, bearer);
 }
 
-PString OpalCapiEndPoint::GetCapiInfoStr()
-{
-  OpalCapiProfile profile;
-  DWORD capiversion_min;
-  DWORD capiversion_maj;
-  DWORD manufacturerversion_min;
-  DWORD manufacturerversion_maj;
-  DWORD InstalledControllers;
-  char szBuffer[64] = "";
-  PStringStream str;
 
 PString OpalCapiEndPoint::GetDriverInfo() const
 {
@@ -902,7 +902,7 @@ PBoolean OpalCapiConnection::SetUpConnection()
   message.param.connect_req.m_CIPValue = 16; // Telephony
   message.Add(0x80, m_calledPartyNumber); // Called party number
   PString number(m_connStringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_connStringOptions(OPAL_OPT_CALLING_PARTY_NAME, localPartyName)));
-  message.Add(0x00, 0x80, number.Left(number.FindSpan("0123456789#*"))); // Calling party number
+    message.Add(0x00, 0x80, number.Left(number.FindSpan("0123456789#*"))); // Calling party number
   message.AddEmpty(); // Called party subaddress
   message.AddEmpty(); // Calling party subaddress
 
