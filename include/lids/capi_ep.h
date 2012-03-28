@@ -134,6 +134,11 @@ class OpalCapiEndPoint : public OpalEndPoint
     /** Open controllers and start accepting incoming calls.
       */
     unsigned OpenControllers();
+
+    /**Get Information on the CAPI driver being used.
+       This is a string generally of the form name=value\nname=value
+      */
+    PString GetDriverInfo() const;
   //@}
 
   /**@name Member variable access */
