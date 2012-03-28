@@ -597,7 +597,10 @@ PSafePtr<OpalConnection> OpalCapiEndPoint::MakeConnection(OpalCall & call,
 
 OpalMediaFormatList OpalCapiEndPoint::GetMediaFormats() const
 {
-  return OpalG711_ALAW_64K;
+  OpalMediaFormatList formats;
+  formats += OpalG711_ALAW_64K;;
+  //formats += OpalG711_ULAW_64K;  // Need to figure out how to detect/select this
+  return formats;
 }
 
 
@@ -609,6 +612,36 @@ OpalCapiConnection * OpalCapiEndPoint::CreateConnection(OpalCall & call,
                                                         unsigned   bearer)
 {
   return new OpalCapiConnection(call, *this, options, stringOptions, controller, bearer);
+}
+
+
+PString OpalCapiEndPoint::GetDriverInfo() const
+{
+  OpalCapiProfile profile;
+  DWORD capiversion_min;
+  DWORD capiversion_maj;
+  DWORD manufacturerversion_min;
+  DWORD manufacturerversion_maj;
+  DWORD InstalledControllers;
+  char szBuffer[64] = "";
+  PStringStream str;
+
+  m_capi->GET_MANUFACTURER(szBuffer);
+  str << "CAPI_manufacturer=" << szBuffer << '\n';
+
+  m_capi->GET_VERSION(&capiversion_maj, &capiversion_min, &manufacturerversion_maj, &manufacturerversion_min);
+  str << "CAPI_version=" << capiversion_maj << '.' << capiversion_min << '(' << manufacturerversion_maj << '.' << manufacturerversion_min << ")\n";
+
+  m_capi->GET_PROFILE(&profile, 0);
+  InstalledControllers = profile.m_NumControllers;
+  if (InstalledControllers > 30)
+    InstalledControllers = 1;
+  str << "ISDN_controllers=" << InstalledControllers << '\n';
+  for (DWORD controller = 1; controller <= InstalledControllers; ++controller) {
+    m_capi->GET_PROFILE(&profile, controller);
+    str << "Controller#_" << controller << "_NumB=" << profile.m_NumBChannels << '\n';
+  }
+  return str;
 }
 
 
@@ -858,7 +891,8 @@ PBoolean OpalCapiConnection::SetUpConnection()
   message.param.connect_req.m_Controller = m_controller;
   message.param.connect_req.m_CIPValue = 16; // Telephony
   message.Add(0x80, m_calledPartyNumber); // Called party number
-  message.Add(0x00, 0x80, localPartyName.Left(localPartyName.FindSpan("0123456789#*"))); // Calling party number
+  PString number(m_stringOptions(OPAL_OPT_CALLING_PARTY_NUMBER, m_stringOptions(OPAL_OPT_CALLING_PARTY_NAME, localPartyName)));
+  message.Add(0x00, 0x80, number.Left(number.FindSpan("0123456789#*"))); // Calling party number
   message.AddEmpty(); // Called party subaddress
   message.AddEmpty(); // Calling party subaddress
 
@@ -996,6 +1030,7 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       PINDEX pos = sizeof(OpalCapiMessage::Header) + sizeof(message.param.connect_ind);
       message.Get(pos, NULL, 1, m_calledPartyNumber); // Called party address
       message.Get(pos, NULL, 2, remotePartyNumber); // Calling party address
+      remotePartyAddress = remotePartyNumber;
 
       OnApplyStringOptions();
       if (OnIncomingConnection(0, NULL))
