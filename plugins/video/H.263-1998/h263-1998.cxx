@@ -881,13 +881,6 @@ static int free_codec_options ( const struct PluginCodec_Definition *, void *, c
   return 1;
 }
 
-static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1340,7 +1333,6 @@ static const char CIF4_MPI[]   = PLUGINCODEC_CIF4_MPI;
 static const char CIF16_MPI[]  = PLUGINCODEC_CIF16_MPI;
 
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
@@ -1553,7 +1545,7 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   codec_encoder,                      // encode/decode
   EncoderControls,                    // codec controls
 
-  PluginCodec_H323Codec_NoH323,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
@@ -1587,7 +1579,7 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   codec_decoder,                      // encode/decode
   DecoderControls,                    // codec controls
 
-  PluginCodec_H323Codec_NoH323,    // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
