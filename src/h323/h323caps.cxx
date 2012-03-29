@@ -50,6 +50,8 @@
 #include <codec/opalplugin.h>
 #include <codec/rfc2833.h>
 
+#include <algorithm>
+
 
 #define DEFINE_G711_CAPABILITY(cls, code, capName) \
 class cls : public H323_G711Capability { \
