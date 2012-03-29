@@ -233,6 +233,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     static const PCaselessString & PIDFEntityKey();
     static const PCaselessString & SubProtocolKey();
     static const PCaselessString & PresenceAgentKey();
+    static const PCaselessString & TransportKey();
     static const PCaselessString & XcapRootKey();
     static const PCaselessString & XcapAuthIdKey();
     static const PCaselessString & XcapPasswordKey();
