@@ -235,6 +235,7 @@ class SIP_Presentity : public OpalPresentityWithCommandThread, public PValidated
     static const PCaselessString & PIDFEntityKey();
     static const PCaselessString & SubProtocolKey();
     static const PCaselessString & PresenceAgentKey();
+    static const PCaselessString & TransportKey();
     static const PCaselessString & XcapRootKey();
     static const PCaselessString & XcapAuthIdKey();
     static const PCaselessString & XcapPasswordKey();
@@ -280,12 +281,12 @@ class SIP_Presentity : public OpalPresentityWithCommandThread, public PValidated
       const PString & listName = PString::Empty()
     );
 
-    SIPEndPoint           * m_endpoint;
-    SubProtocol             m_subProtocol;
-    PIPSocketAddressAndPort m_presenceAgent;
-    PString                 m_watcherSubscriptionAOR;
-    int                     m_watcherInfoVersion;
-    PString                 m_publishedTupleId;
+    SIPEndPoint * m_endpoint;
+    SubProtocol   m_subProtocol;
+    PString       m_presenceAgent;
+    PString       m_watcherSubscriptionAOR;
+    int           m_watcherInfoVersion;
+    PString       m_publishedTupleId;
 
     typedef std::map<PString, PString> StringMap;
     StringMap m_watcherAorById;
