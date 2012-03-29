@@ -2043,30 +2043,9 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 
             if (mediaPacketizations.GetSize() != 0) { // also update the mediaPacketizations option
               OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
-              PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                                            mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-              if (!packetizationString.IsEmpty()) {
-                // remove packetizations not signaled by the remote party
-                PStringArray packetizations = packetizationString.Tokenise(",");
-                for (PINDEX j = packetizations.GetSize(); j > 0; j--) {
-                  if (!mediaPacketizations.Contains(packetizations[j-1]))
-                    packetizations.RemoveAt(j-1);
-                }
-
-                // construct the new packetization string
-                packetizationString.MakeEmpty();
-                if (packetizations.GetSize() == 0) { // should not happen actually
-                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), PString::Empty());
-                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  PString::Empty());
-                }
-                else {
-                  packetizationString = packetizations[0];
-                  for (PINDEX j = 1; j < packetizations.GetSize(); j++)
-                    packetizationString += "," + packetizations[j];
-                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), packetizationString);
-                  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(),  packetizations[0]);
-                }
-              }
+              PStringSet intersection;
+              if (PStringSet::Intersection(mediaPacketizations, mediaFormat.GetMediaPacketizations(), &intersection))
+                mediaFormat.SetMediaPacketizations(intersection);
             }
           }
         }
@@ -2201,14 +2180,7 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
     if (capability != NULL) {
       capability->GetWritableMediaFormat() = mediaFormat;
       reply = SetCapability(descriptorNum, simultaneous, capability);
-      PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                                    mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-      if (!packetizationString.IsEmpty()) {
-        PStringArray packetizations = packetizationString.Tokenise(",");
-        for (PINDEX i = 0; i < packetizations.GetSize(); i++) {
-          mediaPacketizations += packetizations[i];
-        }
-      }
+      mediaPacketizations.Union(mediaFormat.GetMediaPacketizations());
     }
   }
 
@@ -2480,20 +2452,17 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
        *  version of the codec against possibly multiple codec with the same 'subtype' such as
        *  e_h263VideoCapability.
        */
-      OpalMediaFormat mediaFormat = capability.GetMediaFormat();
-      PString packetizationString = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                                    mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-      if (packetizationString.IsEmpty())
+      PStringSet packetizations = capability.GetMediaFormat().GetMediaPacketizations();
+      if (packetizations.IsEmpty())
         return &capability;
 
       // require at least one of the media format's packetizations to be in the mediaPacketizations list
-      PStringArray packetizations = packetizationString.Tokenise(",");
-      for (PINDEX j = 0; j < packetizations.GetSize(); j++) {
-        if (mediaPacketizations[packetizations[j]])
-          return &capability;
-      }
+      if (PStringSet::Intersection(packetizations, mediaPacketizations))
+        return &capability;
 
-      PTRACE(4, "H323\tUnsupported media packetization " << packetizationString << ", not using capability " << cap);
+
+      PTRACE(4, "H323\tUnsupported media packetization \""
+             << setfill(',') << packetizations << "\", not using capability " << cap);
       return NULL;
     }
   }
