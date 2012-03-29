@@ -723,6 +723,7 @@ class SIPConnection : public OpalRTPConnection
     unsigned              m_sdpVersion; // Really a sequence number
     bool                  m_needReINVITE;
     bool                  m_handlingINVITE;
+    bool                  m_resolveMultipleFormatReINVITE;
     bool                  m_symmetricOpenStream;
     SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
