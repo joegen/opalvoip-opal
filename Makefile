@@ -52,6 +52,8 @@ default: $(CONFIG_FILES)
 $(CONFIG_FILES): $(CONFIGURE) $(PLUGIN_CONFIG)
 	$(CONFIGURE) $(CFG_ARGS)
 
+
+ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))
 
 $(CONFIGURE): $(CONFIGURE).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
@@ -78,6 +80,7 @@ $(CONFIGURE): $(CONFIGURE).ac
 	@echo ---------------------------------------------------------------------
 
 endif # autoconf installed
+endif # autoconf enabled
 
 
 # End of Makefile.in
