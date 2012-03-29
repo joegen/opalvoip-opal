@@ -1014,7 +1014,7 @@ void OpalMediaFormat::SetMediaPacketizations(const PStringSet & packetizations)
     PStringStream strm;
     strm << setfill(',') << packetizations;
     SetOptionString(MediaPacketizationsOption(), strm);
-    SetOptionString(MediaPacketizationOption(),  packetizations[0]);
+    SetOptionString(MediaPacketizationOption(),  packetizations.GetKeyAt(0));
   }
 }
 #endif

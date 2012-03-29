@@ -372,7 +372,7 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
 
   PStringSet mediaPacketizations = mediaFormat.GetMediaPacketizations();
   return !mediaPacketizations.IsEmpty() &&
-         H323SetRTPPacketization(rtpPacketization, mediaPacketizations[0], mediaFormat, payloadType);
+         H323SetRTPPacketization(rtpPacketization, mediaPacketizations.GetKeyAt(0), mediaFormat, payloadType);
 }
 
 bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
