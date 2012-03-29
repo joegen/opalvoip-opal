@@ -853,6 +853,8 @@ bool MyManager::Initialise()
   config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
 
   config->Read(AutoAnswerKey, &m_autoAnswer);
+  config->Read(LastDialedKey, &m_LastDialed);
+
 
   OpalProductInfo productInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str))
