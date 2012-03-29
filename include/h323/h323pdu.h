@@ -538,33 +538,28 @@ unsigned H323GetGenericParameterInteger(
 );
 H245_ParameterValue * H323AddGenericParameter(
   H245_ArrayOf_GenericParameter & params,
-  unsigned ordinal,
-  bool reorder = true
+  unsigned ordinal
 );
 void H323AddGenericParameterBoolean(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
-  bool value = true,
-  bool reorder = true
+  bool value
 );
 void H323AddGenericParameterInteger(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
   unsigned value,
-  H245_ParameterValue::Choices subType = H245_ParameterValue::e_unsignedMin,
-  bool reorder = true
+  H245_ParameterValue::Choices subType
 );
 void H323AddGenericParameterString(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
-  const PString & value,
-  bool reorder = true
+  const PString & value
 );
 void H323AddGenericParameterOctets(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
-  const PBYTEArray & value,
-  bool reorder = true
+  const PBYTEArray & value
 );
 
 #if PTRACING
