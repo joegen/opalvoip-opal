@@ -356,7 +356,7 @@ void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
   for (PINDEX i = 0; i < mediaPacketizations.GetSize(); i++) {
     rtpPacketizations.SetSize(rtpPacketizationCount+1);
     if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount],
-                                mediaPacketizations[i], mediaFormat, payloadType))
+                                mediaPacketizations.GetKeyAt(i), mediaFormat, payloadType))
       rtpPacketizationCount++;
   }
 }
