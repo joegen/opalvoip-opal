@@ -232,6 +232,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_sdpVersion(0)
   , m_needReINVITE(false)
   , m_handlingINVITE(false)
+  , m_resolveMultipleFormatReINVITE(true)
   , m_symmetricOpenStream(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
@@ -3103,8 +3104,10 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
      RTP packet to arrive before setting up codecs etc, our architecture
      cannot deal with that. So what we do is immediately, send a re-INVITE
      nailing the codec down to the first reply. */
-  if (multipleFormats)
+  if (multipleFormats && m_resolveMultipleFormatReINVITE) {
+    m_resolveMultipleFormatReINVITE= false;
     SendReINVITE(PTRACE_PARAM("resolve multiple codecs in answer"));
+  }
 
   if (GetPhase() == EstablishedPhase)
     ownerCall.StartMediaStreams(); // re-INVITE
