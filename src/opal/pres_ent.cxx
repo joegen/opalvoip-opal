@@ -41,6 +41,8 @@
 
 ///////////////////////////////////////////////////////////////////////
 
+PURL_LEGACY_SCHEME(pres, true, false, true, true, false, true, true, false, false, false, 0)
+
 const PCaselessString & OpalPresentity::AuthNameKey()     { static const PConstCaselessString s("Auth ID");       return s; }
 const PCaselessString & OpalPresentity::AuthPasswordKey() { static const PConstCaselessString s("Auth Password"); return s; }
 const PCaselessString & OpalPresentity::TimeToLiveKey()   { static const PConstCaselessString s("Time to Live");  return s; }

@@ -278,12 +278,12 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
       const PString & listName = PString::Empty()
     );
 
-    SIPEndPoint           * m_endpoint;
-    SubProtocol             m_subProtocol;
-    PIPSocketAddressAndPort m_presenceAgent;
-    PString                 m_watcherSubscriptionAOR;
-    int                     m_watcherInfoVersion;
-    PString                 m_publishedTupleId;
+    SIPEndPoint * m_endpoint;
+    SubProtocol   m_subProtocol;
+    PString       m_presenceAgent;
+    PString       m_watcherSubscriptionAOR;
+    int           m_watcherInfoVersion;
+    PString       m_publishedTupleId;
 
     typedef std::map<PString, PString> StringMap;
     StringMap m_watcherAorById;

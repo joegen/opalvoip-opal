@@ -60,8 +60,6 @@
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
 static bool Synonym_for_pres_URL = PFactory<OpalPresentity>::RegisterAs("pres", "sip");
 
-PURL_LEGACY_SCHEME(pres, true, false, true, true, false, true, true, false, false, false, 0)
-
 const PCaselessString & SIP_Presentity::PIDFEntityKey()    { static const PConstCaselessString s("PIDF-Entity");    return s; }
 const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }
 const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s("Presence Agent"); return s; }
@@ -168,47 +166,31 @@ bool SIP_Presentity::Open()
     return false;
   }
 
+  m_presenceAgent.MakeEmpty(); // Make invalid
+
   if (m_subProtocol == e_PeerToPeer) {
-    m_presenceAgent.SetPort(0); // Make invalid
     PTRACE(3, "SIPPres\tUsing peer to peer mode for " << m_aor);
   }
   else {
     // find presence server for Presentity as per RFC 3861
     // if not found, look for default presence server setting
     // if none, use hostname portion of domain name
-    PString agent = m_attributes.Get(PresenceAgentKey);
-    if (agent.IsEmpty()) {
-      PString hostname = m_aor.GetHostName();
-      WORD port = m_aor.GetPort();
-      if (port == 0)
-        port = 5060;
+    m_presenceAgent = m_attributes.Get(PresenceAgentKey);
+    if (m_presenceAgent.IsEmpty()) {
+      m_presenceAgent = m_aor.AsString(PURL::HostPortOnly);
 
 #if P_DNS
-      PStringList hosts;
-      bool found = PDNS::LookupSRV(hostname, "_pres._sip", hosts) && !hosts.IsEmpty();
-      PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << hostname << "' " << (found ? "succeeded" : "failed"));
-      if (found)
-        hostname = hosts.front();
-
-      PIPSocketAddressAndPortVector addrs;
-      found = PDNS::LookupSRV(hostname, "_sip._udp", port, addrs) && addrs.size() > 0;
-      PTRACE(2, "SIPPres\tSRV lookup for '_sip._udp." << hostname << "' " << (found ? "succeeded" : "failed"));
-
-      if (found)
-        m_presenceAgent = addrs[0];
-      else
-#endif
-      if (!m_presenceAgent.Parse(hostname, port)) {
-        PTRACE(3, "SIPPres\tCould not determine Presence Server from aor \"" << m_aor << '"');
-        return false;
+      if (m_aor.GetScheme() == "pres") {
+        PStringList hosts;
+        bool found = PDNS::LookupSRV(m_aor.GetHostName(), "_pres._sip", hosts) && !hosts.IsEmpty();
+        PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName()
+               << "' " << (found ? "succeeded" : "failed"));
+        if (found)
+          m_presenceAgent = hosts.front();
       }
+#endif // P_DNS
     }
-    else {
-      if (!m_presenceAgent.Parse(agent)) {
-        PTRACE(3, "SIPPres\tCould not parse Presence Server \"" << agent << '"');
-        return false;
-      }
-    }
+
     PTRACE(3, "SIPPres\tUsing " << m_presenceAgent << " as presence server for " << m_aor);
   }
 
@@ -300,7 +282,7 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
     if (m_subProtocol >= e_XCAP)
-      param.m_remoteAddress = m_presenceAgent.AsString()+";transport=tcp";
+      param.m_remoteAddress = m_presenceAgent + ";transport=tcp";
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
@@ -414,7 +396,7 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  //param.m_remoteAddress    = m_presenceAgent.AsString() + ";transport=tcp";
+  param.m_remoteAddress    = m_presenceAgent + ";transport=tcp";
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
@@ -601,7 +583,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   if (m_subProtocol != e_PeerToPeer)
-    sipPresence.m_presenceAgent = m_presenceAgent.AsString();
+    sipPresence.m_presenceAgent = m_presenceAgent;
   sipPresence.m_state = cmd.m_state;
   sipPresence.m_note = cmd.m_note;
 
@@ -834,7 +816,7 @@ void SIP_Presentity::InitRootXcap(XCAPClient & xcap)
 {
   PString root = m_attributes.Get(XcapRootKey);
   if (root.IsEmpty())
-    root = "http:" + m_presenceAgent.AsString() + '/';
+    root = "http:" + m_presenceAgent + '/';
   xcap.SetRoot(root);
 }
 
