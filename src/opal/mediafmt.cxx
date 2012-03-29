@@ -996,6 +996,30 @@ bool OpalMediaFormat::ValidateMerge(const OpalMediaFormat & mediaFormat) const
 }
 
 
+#if OPAL_H323
+PStringSet OpalMediaFormat::GetMediaPacketizations() const
+{
+  return GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
+                         GetOptionString(OpalMediaFormat::MediaPacketizationOption())).Tokenise(",");
+}
+
+
+void OpalMediaFormat::SetMediaPacketizations(const PStringSet & packetizations)
+{
+  if (packetizations.IsEmpty()) {
+    SetOptionString(MediaPacketizationsOption(), PString::Empty());
+    SetOptionString(MediaPacketizationOption(),  PString::Empty());
+  }
+  else {
+    PStringStream strm;
+    strm << setfill(',') << packetizations;
+    SetOptionString(MediaPacketizationsOption(), strm);
+    SetOptionString(MediaPacketizationOption(),  packetizations[0]);
+  }
+}
+#endif
+
+
 OpalMediaFormatList OpalMediaFormat::GetAllRegisteredMediaFormats()
 {
   OpalMediaFormatList copy;
