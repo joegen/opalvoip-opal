@@ -63,6 +63,7 @@ static bool Synonym_for_pres_URL = PFactory<OpalPresentity>::RegisterAs("pres", 
 const PCaselessString & SIP_Presentity::PIDFEntityKey()    { static const PConstCaselessString s("PIDF-Entity");    return s; }
 const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }
 const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s("Presence Agent"); return s; }
+const PCaselessString & SIP_Presentity::TransportKey()     { static const PConstCaselessString s("Transport");      return s; }
 const PCaselessString & SIP_Presentity::XcapRootKey()      { static const PConstCaselessString s("XCAP Root");      return s; }
 const PCaselessString & SIP_Presentity::XcapAuthIdKey()    { static const PConstCaselessString s("XCAP Auth ID");   return s; }
 const PCaselessString & SIP_Presentity::XcapPasswordKey()  { static const PConstCaselessString s("XCAP Password");  return s; }
@@ -109,6 +110,7 @@ PStringArray SIP_Presentity::GetAttributeNames() const
   names.AppendString(PIDFEntityKey());
   names.AppendString(SubProtocolKey());
   names.AppendString(PresenceAgentKey());
+  names.AppendString(TransportKey());
   names.AppendString(AuthNameKey());
   names.AppendString(AuthPasswordKey());
   names.AppendString(XcapRootKey());
@@ -128,6 +130,7 @@ PStringArray SIP_Presentity::GetAttributeTypes() const
   names.AppendString("URL");
   names.AppendString("Enum\nPeerToPeer,Agent,XCAP,OMA\nAgent");
   names.AppendString("String");
+  names.AppendString("Enum\nUDP,TCP,TLS\nTCP");
   names.AppendString("String");
   names.AppendString("Password");
   names.AppendString("URL");
@@ -282,7 +285,7 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
     if (m_subProtocol >= e_XCAP)
-      param.m_remoteAddress = m_presenceAgent + ";transport=tcp";
+      param.m_remoteAddress = m_presenceAgent + ";transport=" + m_attributes.Get(TransportKey, "tcp").ToLower();
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
@@ -396,7 +399,7 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceAgent + ";transport=tcp";
+  param.m_remoteAddress    = m_presenceAgent + ";transport=" + m_attributes.Get(TransportKey, "tcp").ToLower();
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
