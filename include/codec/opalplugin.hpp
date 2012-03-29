@@ -175,7 +175,8 @@ class PluginCodec_MediaFormat
                        OptionMap  & changed,
                        const char * option)
     {
-      if (original[option] != value)
+      OptionMap::iterator it = original.find(option);
+      if (it != original.end() && it->second != value)
         changed[option] = value;
     }
 
