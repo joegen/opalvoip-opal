@@ -2303,6 +2303,9 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   H323H263CustomSizes other_customSizes;
   GetCustomMPI(otherFormat, other_customSizes);
 
+  if (!PStringSet::Intersection(mediaFormat.GetMediaPacketizations(), otherFormat.GetMediaPacketizations()))
+    return GreaterThan;
+
   if ((IsValidMPI( sqcifMPI) && IsValidMPI( other_sqcifMPI)) ||
       (IsValidMPI(  qcifMPI) && IsValidMPI(  other_qcifMPI)) ||
       (IsValidMPI(   cifMPI) && IsValidMPI(   other_cifMPI)) ||
@@ -2582,6 +2585,11 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
   H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
+
+  if (!mediaFormat.GetMediaPacketizations().Contains(
+          h263.HasOptionalField(H245_H263VideoCapability::e_h263Options) ? "RFC2429" : "RFC2190"))
+    return false;
+
   int minWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption());
   int minHeight = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption());
   int maxWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption());
