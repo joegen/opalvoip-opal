@@ -356,7 +356,7 @@ void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
   for (PINDEX i = 0; i < mediaPacketizations.GetSize(); i++) {
     rtpPacketizations.SetSize(rtpPacketizationCount+1);
     if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount],
-                                mediaPacketizations[i], mediaFormat, payloadType))
+                                mediaPacketizations.GetKeyAt(i), mediaFormat, payloadType))
       rtpPacketizationCount++;
   }
 }
@@ -560,60 +560,47 @@ unsigned H323GetGenericParameterInteger(const H245_ArrayOf_GenericParameter & pa
 }
 
 
-H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool reorder)
+H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal)
 {
   PINDEX size = params.GetSize();
   params.SetSize(size+1);
-
-  PINDEX pos = size;
-  if (reorder) {
-    for (pos = size; pos > 0; pos--) {
-      const H245_GenericParameter & param = params[pos-1];
-      if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
-                            ((const PASN_Integer &)param.m_parameterIdentifier) < ordinal)
-        break;
-      params[pos] = param;
-    }
-  }
-
-  H245_GenericParameter & param = params[pos];
+  H245_GenericParameter & param = params[size];
   param.m_parameterIdentifier.SetTag(H245_ParameterIdentifier::e_standard);
   (PASN_Integer &)param.m_parameterIdentifier = ordinal;
   return &param.m_parameterValue;
 }
 
 
-void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool value, bool reorder)
+void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsigned ordinal, bool value)
 {
   // Do not include a logical at all if it is false
   if (value)
-    H323AddGenericParameter(params, ordinal, reorder)->SetTag(H245_ParameterValue::e_logical);
+    H323AddGenericParameter(params, ordinal)->SetTag(H245_ParameterValue::e_logical);
 }
 
 
 void H323AddGenericParameterInteger(H245_ArrayOf_GenericParameter & params,
                                     unsigned ordinal,
                                     unsigned value,
-                                    H245_ParameterValue::Choices subType,
-                                    bool reorder)
+                                    H245_ParameterValue::Choices subType)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
   param->SetTag(subType);
   (PASN_Integer &)*param = value;
 }
 
 
-void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value, bool reorder)
+void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
   param->SetTag(H245_ParameterValue::e_octetString);
   (PASN_OctetString &)*param = value;
 }
 
 
-void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value, bool reorder)
+void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal, reorder);
+  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
   param->SetTag(H245_ParameterValue::e_octetString);
   (PASN_OctetString &)*param = value;
 }
