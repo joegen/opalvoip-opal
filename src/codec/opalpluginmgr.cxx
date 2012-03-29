@@ -376,6 +376,11 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         genericInfo.excludeTCS = (option->m_H245Generic&PluginCodec_H245_TCS) == 0;
         genericInfo.excludeOLC = (option->m_H245Generic&PluginCodec_H245_OLC) == 0;
         genericInfo.excludeReqMode = (option->m_H245Generic&PluginCodec_H245_ReqMode) == 0;
+        genericInfo.position = (option->m_H245Generic&PluginCodec_H245_PositionMask) >> PluginCodec_H245_PositionShift;
+        if (genericInfo.position == 0)
+          genericInfo.position = genericInfo.ordinal;
+        if (codecDef->version >= PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM)
+          genericInfo.defaultValue = option->m_H245Default;
         newOption->SetH245Generic(genericInfo);
 #endif // OPAL_H323
 

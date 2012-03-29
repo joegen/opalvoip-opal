@@ -54,7 +54,9 @@
 
 class MY_CODEC { };
 
-#ifdef PLUGIN_CODEC_VERSION_INTERSECT
+#if defined(PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM)
+static unsigned MyVersion = PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM;
+#elif defined(PLUGIN_CODEC_VERSION_INTERSECT)
 static unsigned MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
 #else
 static unsigned MyVersion = PLUGIN_CODEC_VERSION_OPTIONS;
@@ -145,8 +147,8 @@ PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 enum
 {
-    H241_PROFILES                      = 41 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray,
-    H241_LEVEL                         = 42 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H241_PROFILES                      = 41 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray | (1 << PluginCodec_H245_PositionShift),
+    H241_LEVEL                         = 42 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode                                 | (2 << PluginCodec_H245_PositionShift),
     H241_CustomMaxMBPS                 =  3 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_CustomMaxFS                   =  4 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_CustomMaxDPB                  =  5 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
@@ -269,6 +271,12 @@ static struct PluginCodec_Option const MaxMBPS_H241 =
   H241_CustomMaxMBPS,                 // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "1966"                              // Maximum value
+#ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
+  ,
+  NULL,
+  NULL,
+  "0"                                 // H.245 default value
+#endif
 };
 
 static struct PluginCodec_Option const MaxFS_SDP =
@@ -297,6 +305,12 @@ static struct PluginCodec_Option const MaxFS_H241 =
   H241_CustomMaxFS,                   // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "144"                               // Maximum value
+#ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
+  ,
+  NULL,
+  NULL,
+  "0"                                 // H.245 default value
+#endif
 };
 
 static struct PluginCodec_Option const MaxBR_SDP =
@@ -325,6 +339,12 @@ static struct PluginCodec_Option const MaxBR_H241 =
   H241_CustomMaxBRandCPB,             // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "9600"                              // Maximum value
+#ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
+  ,
+  NULL,
+  NULL,
+  "0"                                 // H.245 default value
+#endif
 };
 
 static struct PluginCodec_Option const MaxNaluSize =
@@ -348,7 +368,7 @@ static struct PluginCodec_Option const MediaPacketizations =
 {
   PluginCodec_StringOption,           // Option type
   PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_IntersectionMerge,      // Merge mode
   OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
   OpalPluginCodec_Identifer_H264_NonInterleaved ","
@@ -413,7 +433,6 @@ static struct PluginCodec_Option const * OptionTable[] = {
   &Level,
   &H241Profiles,
   &H241Level,
-  &SDPProfileAndLevel,
   &MaxNaluSize,
   &MaxMBPS_H241,
   &MaxFS_H241,
