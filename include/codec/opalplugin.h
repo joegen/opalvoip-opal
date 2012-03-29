@@ -89,6 +89,7 @@ extern "C" {
 #define  PLUGIN_CODEC_VERSION_FAX       4    // added fax
 #define  PLUGIN_CODEC_VERSION_OPTIONS   5    // added options handling
 #define  PLUGIN_CODEC_VERSION_INTERSECT 6    // added media option intersection merge functionality
+#define  PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM 7 // added suppression of H.245 generic parameters via default
 
 #define  PLUGIN_CODEC_VERSION PLUGIN_CODEC_VERSION_INTERSECT // Always latest version
 
@@ -277,6 +278,8 @@ enum PluginCodec_OptionMerge {
 #define PluginCodec_H245_OLC           0x02000000
 #define PluginCodec_H245_ReqMode       0x01000000
 #define PluginCodec_H245_OrdinalMask   0x0000ffff
+#define PluginCodec_H245_PositionMask  0x00ff0000
+#define PluginCodec_H245_PositionShift 16
 
 typedef int (*PluginCodec_MergeFunction)(char ** result, const char * dest, const char * src);
 typedef void (*PluginCodec_FreeFunction)(char * string);
@@ -295,6 +298,7 @@ struct PluginCodec_Option {
   const char *                 m_maximum;
   PluginCodec_MergeFunction    m_mergeFunction; // Used if m_merge==PluginCodec_CustomMerge
   PluginCodec_FreeFunction     m_freeFunction;
+  const char *                 m_H245Default;
 };
 
 
