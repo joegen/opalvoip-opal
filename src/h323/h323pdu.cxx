@@ -347,32 +347,17 @@ void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                               mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-  if (mediaPacketization.IsEmpty())
-    return;
-  
   // Special case handling by Product Id
   PString h323ProductId = mediaFormat.GetOptionString("h323ProductId");
   if (h323ProductId == "NetMeeting")
     return;
 
-  PStringArray packetizationStrings = mediaPacketization.Tokenise(",");
-  for (PINDEX i = 0; i < packetizationStrings.GetSize(); i++) {
-    PString & packetizationString = packetizationStrings[i];
-    
+  PStringSet mediaPacketizations = mediaFormat.GetMediaPacketizations();
+  for (PINDEX i = 0; i < mediaPacketizations.GetSize(); i++) {
     rtpPacketizations.SetSize(rtpPacketizationCount+1);
-    if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount], packetizationString, mediaFormat, payloadType)) {
-      
-      // Check if already in list
-      PINDEX test;
-      for (test = 0; test < rtpPacketizationCount; test++) {
-        if (rtpPacketizations[test] == rtpPacketizations[rtpPacketizationCount])
-          break;
-      }
-      if (test == rtpPacketizationCount)
-        rtpPacketizationCount++;
-    }
+    if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount],
+                                mediaPacketizations[i], mediaFormat, payloadType))
+      rtpPacketizationCount++;
   }
 }
 
@@ -380,20 +365,14 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
-                               mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption()));
-  if (mediaPacketization.IsEmpty())
-    return PFalse;
-
   // Special case handling by Product Id
   PString h323ProductId = mediaFormat.GetOptionString("h323ProductId");
   if (h323ProductId == "NetMeeting")
     return PFalse;
-  
-  PStringArray packetizationStrings = mediaPacketization.Tokenise(",");
-  
-  // Only use the first packetization (= highest priority)
-  return H323SetRTPPacketization(rtpPacketization, packetizationStrings[0], mediaFormat, payloadType);
+
+  PStringSet mediaPacketizations = mediaFormat.GetMediaPacketizations();
+  return !mediaPacketizations.IsEmpty() &&
+         H323SetRTPPacketization(rtpPacketization, mediaPacketizations[0], mediaFormat, payloadType);
 }
 
 bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
