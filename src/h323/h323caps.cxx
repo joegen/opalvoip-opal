@@ -504,6 +504,14 @@ H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId,
 }
 
 
+struct OpalMediaOptionSortByPosition
+{
+  bool operator()(OpalMediaOption const * const & o1, OpalMediaOption const * const & o2)
+  {
+    return o1->GetH245Generic().position < o2->GetH245Generic().position;
+  }
+};
+
 PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability & pdu,
                                                     const OpalMediaFormat & mediaFormat,
                                                     H323Capability::CommandType type) const
@@ -516,11 +524,13 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
     pdu.m_maxBitRate = bitRate;
   }
 
+  std::vector<OpalMediaOption const *> reorderedOptions;
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
-    OpalMediaOption::H245GenericInfo genericInfo = option.GetH245Generic();
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
     if (genericInfo.mode == OpalMediaOption::H245GenericInfo::None)
       continue;
+
     switch (type) {
       case H323Capability::e_TCS :
         if (genericInfo.excludeTCS)
@@ -535,6 +545,16 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
           continue;
         break;
     }
+
+    if (option.AsString() != genericInfo.defaultValue)
+      reorderedOptions.push_back(&option);
+  }
+
+  std::sort(reorderedOptions.begin(), reorderedOptions.end(), OpalMediaOptionSortByPosition()); 
+
+  for (std::vector<OpalMediaOption const *>::iterator it = reorderedOptions.begin(); it != reorderedOptions.end(); ++it) {
+    const OpalMediaOption & option = **it;
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
 
     H245_ArrayOf_GenericParameter & params =
             genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? pdu.m_collapsing : pdu.m_nonCollapsing;

@@ -3110,8 +3110,8 @@ bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per Table 11 of H.239 ITU spec
-  H323AddGenericParameterBoolean(params, 126, true, false); // Acknowledge
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterBoolean(params, 126, true); // Acknowledge
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
   return WriteControlPDU(pdu);
 }
 
@@ -3132,10 +3132,9 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per 
   //Table 13/H.239  - presentationTokenResponse syntax in the H.239 ITU spec
-  //Added a flag in H323AddGenericParameter to prevent reordering of the generic parameters
-  H323AddGenericParameterBoolean(params, 126, true, false); // Acknowledge
-  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterBoolean(params, 126, true); // Acknowledge
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
 
   return WriteControlPDU(pdu);
 }
@@ -3153,9 +3152,9 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 3).m_messageContent;
   // Note order is important (Table 12/H.239)
-  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
-  H323AddGenericParameterInteger(params, 43, symmetryBreaking, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
+  H323AddGenericParameterInteger(params, 43, symmetryBreaking, H245_ParameterValue::e_unsignedMin);
 
   return WriteControlPDU(pdu);
 }
@@ -3171,8 +3170,8 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per Table 14 of H.239 ITU spec
-  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
   return WriteControlPDU(pdu);
 }
 
@@ -3196,8 +3195,8 @@ bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsign
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 5).m_messageContent;
   // Note order is important (Table 12/H.239)
-  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin, false);
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin, false);
+  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
+  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
 
   return WriteControlPDU(pdu);
 }
