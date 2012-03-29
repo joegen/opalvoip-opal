@@ -69,7 +69,7 @@ extern "C" {
 
 
 static const char YUV420PDesc[]  = { "YUV420P" };
-static const char h263PDesc[]    = { "H.263P" };
+static const char h263PDesc[]    = { "H.263plus" };
 static const char sdpH263P[]     = { "h263-1998" };
 
 static const char h263Desc[]     = { "H.263" };
@@ -1408,6 +1408,15 @@ static struct PluginCodec_Option const mediaPacketization =
   "RFC2190"                           // Initial value
 };
 
+static struct PluginCodec_Option const mediaPacketizationPlus =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_MEDIA_PACKETIZATION,    // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  "RFC2429"                           // Initial value
+};
+
 static struct PluginCodec_Option const customMPI =
 {
   PluginCodec_StringOption,           // Option type
@@ -1446,6 +1455,8 @@ static struct PluginCodec_Option const annexD =
   { PluginCodec_BoolOption,    H263_ANNEX_D,   true,  PluginCodec_AndMerge, "1", "D", "0" };
 
 static struct PluginCodec_Option const * const h263POptionTable[] = {
+  &mediaPacketizationPlus,
+  &maxBR,
   &qcifMPI,
   &cifMPI,
   &sqcifMPI,
