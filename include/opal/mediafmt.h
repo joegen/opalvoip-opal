@@ -313,21 +313,35 @@ class OpalMediaOption : public PObject
 
 #if OPAL_H323
     struct H245GenericInfo {
-      H245GenericInfo() { memset(this, 0, sizeof(*this)); }
-      unsigned ordinal:16;
+      H245GenericInfo()
+        : ordinal(0)
+        , mode(None)
+        , integerType(UnsignedInt)
+        , excludeTCS(false)
+        , excludeOLC(false)
+        , excludeReqMode(false)
+        , position(-1)
+      { }
+
+      unsigned ordinal;
+
       enum Modes {
         None,
         Collapsing,
         NonCollapsing
-      } mode:3;
+      } mode;
+
       enum IntegerTypes {
         UnsignedInt,
         Unsigned32,
         BooleanArray
-      } integerType:3;
-      bool excludeTCS:1;
-      bool excludeOLC:1;
-      bool excludeReqMode:1;
+      } integerType;
+
+      bool    excludeTCS;
+      bool    excludeOLC;
+      bool    excludeReqMode;
+      int     position;     // Position in sequence for parameter
+      PString defaultValue; // Do not include parameter if this value
     };
 
     const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
