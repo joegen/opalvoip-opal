@@ -784,15 +784,10 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
     SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
 
-  PString mediaPacketization;
+  // Update actual media packetization if present
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
-      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
-    mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
-
-  if (m_mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationsOption()) != mediaPacketization ||
-      m_mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption())  != mediaPacketization) {
-    m_mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationsOption(), mediaPacketization);
-    m_mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization);
+      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType) {
+    m_mediaFormat.SetMediaPacketizations(H323GetRTPPacketization(param.m_mediaPacketization));
     if (m_mediaStream != NULL)
       m_mediaStream->UpdateMediaFormat(m_mediaFormat);
   }
