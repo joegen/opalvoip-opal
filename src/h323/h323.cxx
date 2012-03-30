@@ -4382,7 +4382,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
 PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & openPDU,
                                           H245_OpenLogicalChannelAck & ackPDU,
                                           unsigned & /*errorCode*/,
-                                          const unsigned &sessionID)
+                                          unsigned sessionID)
 {
   // If get a OLC via H.245 stop trying to do fast start
   fastStartState = FastStartDisabled;
@@ -4395,7 +4395,6 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   }
 
 #if OPAL_H460
-  PTRACE(4,"H323\tOnOpenLogicalChannel");
   if (openPDU.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation)) {
     OnReceiveOLCGenericInformation(sessionID,openPDU.m_genericInformation);
 
@@ -4404,6 +4403,7 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   }
 #endif
 
+  PTRACE(4,"H323\tOnOpenLogicalChannel: sessionId=" << sessionID);
   //errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   return true;
 }
