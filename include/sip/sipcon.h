@@ -320,6 +320,11 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
     
+    /**Indicate connection requires symmetric media.
+       Default behaviour returns false.
+      */
+    virtual bool RequireSymmetricMediaStreams() const;
+
     /**Create a new media stream.
      */
     virtual OpalMediaStream * CreateMediaStream(

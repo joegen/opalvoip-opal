@@ -972,6 +972,11 @@ class OpalConnection : public PSafeObject
       bool isSource                      ///< Stream is a source/sink
     );
 
+    /**Indicate connection requires symmetric media.
+       Default behaviour returns false.
+      */
+    virtual bool RequireSymmetricMediaStreams() const;
+
     /** Indicate whether a particular media type can auto-start.
         This is typically used for things like video or fax to contol if on
         initial connection, that media type is opened straight away. Streams

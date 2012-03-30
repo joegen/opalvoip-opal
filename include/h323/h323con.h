@@ -1424,7 +1424,7 @@ class H323Connection : public OpalRTPConnection
       const H245_OpenLogicalChannel & openPDU,  ///<  Received PDU for the channel open
       H245_OpenLogicalChannelAck & ackPDU,      ///<  PDU to send for acknowledgement
       unsigned & errorCode,                     ///<  Error to return if refused
-      unsigned sessionID                        ///<  Session ID to open
+      H323Channel & channel                     ///<  Channel being opened
     );
 
     /**Callback for when a logical channel conflict has occurred.
@@ -2319,6 +2319,7 @@ class H323Connection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(OnCleared());
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
     P_REMOVE_VIRTUAL(PBoolean, OnOpenLogicalChannel(const H245_OpenLogicalChannel&,H245_OpenLogicalChannelAck&,unsigned&), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnOpenLogicalChannel(const H245_OpenLogicalChannel &, H245_OpenLogicalChannelAck &, unsigned &, const unsigned &), false);
 };
 
 

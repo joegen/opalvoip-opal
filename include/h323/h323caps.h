@@ -299,10 +299,10 @@ class H323Capability : public PObject
   //@{
     enum CapabilityDirection {
       e_Unknown,
-      e_Receive,
-      e_Transmit,
-      e_ReceiveAndTransmit,
-      e_NoDirection,
+      e_Receive,            ///< Receive capability
+      e_Transmit,           ///< Transmit only capability
+      e_ReceiveAndTransmit, ///< Symmetric capability
+      e_NoDirection,        ///< Ca;ability type has no direction
       NumCapabilityDirections
     };
 
@@ -1864,6 +1864,11 @@ class H323_G711Capability : public H323AudioCapability
 
   /**@name Overrides from class PObject */
   //@{
+    /**Compare two capability instances. This compares the main and sub-types
+       of the capability.
+     */
+    Comparison Compare(const PObject & obj) const;
+
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
@@ -2162,7 +2167,9 @@ class H323Capabilities : public PObject
     PINDEX AddMediaFormat(
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
-      const OpalMediaFormat & mediaFormat ///<  Media format to add.
+      const OpalMediaFormat & mediaFormat, ///<  Media format to add.
+      H323Capability::CapabilityDirection direction =
+                H323Capability::e_Receive ///<  Indicate capability direction
     );
 
     /**Add all matching capabilities to descriptor lists.
