@@ -1424,7 +1424,7 @@ class H323Connection : public OpalRTPConnection
       const H245_OpenLogicalChannel & openPDU,  ///<  Received PDU for the channel open
       H245_OpenLogicalChannelAck & ackPDU,      ///<  PDU to send for acknowledgement
       unsigned & errorCode,                     ///<  Error to return if refused
-      const unsigned & channelNumber = 0        ///<  Channel Number to open
+      unsigned sessionID                        ///<  Session ID to open
     );
 
     /**Callback for when a logical channel conflict has occurred.
