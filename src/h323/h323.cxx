@@ -1480,8 +1480,6 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     }
   }
 
-  OnConnectedInternal();
-
   // If didn't get fast start channels accepted by remote then clear our
   // proposed channels
   if (fastStartState != FastStartAcknowledged) {
@@ -1489,6 +1487,9 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     fastStartChannels.RemoveAll();
   }
   else {
+    // We have fast start, can connect immediately.
+    OnConnectedInternal();
+
     // Otherwise start fast started channels if we were waiting for CONNECT
     for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
       channel->Start();
@@ -3921,6 +3922,17 @@ void H323Connection::InternalEstablishedConnectionCheck()
     OnSelectLogicalChannels(); // Start some media
 
   switch (GetPhase()) {
+    case SetUpPhase :
+    case ProceedingPhase :
+    case AlertingPhase :
+      if ( connectionState == HasExecutedSignalConnect &&
+           FindChannel(H323Capability::DefaultAudioSessionID, true) != NULL &&
+          (FindChannel(H323Capability::DefaultVideoSessionID, true) != NULL ||
+              localCapabilities.FindCapability(H323Capability::e_Video) == NULL ||
+              remoteCapabilities.FindCapability(H323Capability::e_Video) == NULL))
+        OnConnectedInternal();
+      break;
+
     case ConnectedPhase :
       SetPhase(EstablishedPhase);
       OnEstablished();
