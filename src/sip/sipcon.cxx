@@ -1309,15 +1309,25 @@ bool SIPConnection::SetRemoteMediaFormats()
   else {
     m_remoteFormatList = m_lastReceivedINVITE->GetSDP()->GetMediaFormats();
     AdjustMediaFormats(false, NULL, m_remoteFormatList);
-  }
 
-  if (m_remoteFormatList.IsEmpty()) {
-    PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
-    return false;
+    if (m_remoteFormatList.IsEmpty()) {
+      PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
+      return false;
+    }
   }
 
   PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
 
+  return true;
+}
+
+
+bool SIPConnection::RequireSymmetricMediaStreams() const
+{
+  /* Technically SIP can do asymmetric media streams, G.711 one way, G,722 the
+     other, but it is really difficult, we don't support it (yet) and it is
+     highly likely to cause interop issues as many others don't support it
+     either. So for now require symmetry. */
   return true;
 }
 
@@ -1620,7 +1630,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (!externalSDP.IsEmpty())
     request.SetEntityBody(externalSDP);
-  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) {
+  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true) && !m_localMediaFormats.IsEmpty()) {
     if (m_needReINVITE)
       ++m_sdpVersion;
 

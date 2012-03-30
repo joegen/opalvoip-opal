@@ -1777,6 +1777,12 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 }
 
 
+bool OpalConnection::RequireSymmetricMediaStreams() const
+{
+  return false;
+}
+
+
 OpalMediaType::AutoStartMode OpalConnection::GetAutoStart(const OpalMediaType & mediaType) const
 {
   return m_autoStartInfo.GetAutoStart(mediaType);

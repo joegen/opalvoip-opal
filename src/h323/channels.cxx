@@ -389,7 +389,7 @@ PBoolean H323UnidirectionalChannel::Open()
       ok = call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), m_mediaFormat);
     else {
       PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
-      ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID());
+      ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), m_mediaFormat);
     }
 
     if (!ok) {
