@@ -523,7 +523,6 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_H2250LogicalChannelParameters &
 
 void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & /*param*/) const
 {
-  PTRACE(1,"H323_RealTimeChannel\tUnused old function?");
 }
 
 

@@ -1672,7 +1672,7 @@ void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & tran
 
 bool OpalRTPSession::Open(const PString & localInterface)
 {
-  PTRACE(5, "RTP\tSession " << m_sessionId << ", opening.");
+  PTRACE(5, "RTP\tSession " << m_sessionId << ", opening on interface \"" << localInterface << '"');
 
   PWaitAndSignal mutex(dataMutex);
 
