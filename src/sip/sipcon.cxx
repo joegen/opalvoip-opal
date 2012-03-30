@@ -1059,7 +1059,9 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 #if OPAL_SRTP
   // See if we already have a secure version of the media session
   for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    if (it->second->GetMediaType() == mediaType && it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP()) {
+    if (it->second->GetSessionID() != sessionId &&
+        it->second->GetMediaType() == mediaType &&
+        it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP()) {
       PTRACE(3, "SIP\tNot creating " << mediaType << " media session, already secure.");
       return false;
     }
@@ -1317,6 +1319,41 @@ bool SIPConnection::SetRemoteMediaFormats()
   PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
 
   return true;
+}
+
+
+OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                   unsigned sessionID,
+                                                   PBoolean isSource)
+{
+  OpalMediaType mediaType = mediaFormat.GetMediaType();
+
+  PString sessionType;
+  if (m_lastReceivedINVITE != NULL) {
+    SDPSessionDescription * sdp = m_lastReceivedINVITE->GetSDP();
+    if (sdp != NULL) {
+      SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
+      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType)
+        sessionType = mediaDescription->GetSDPTransportType();
+
+      if (sessionType.IsEmpty()) {
+        const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
+        for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+          if (mediaDescriptions[i].GetMediaType() == mediaType) {
+            sessionType = mediaDescriptions[i].GetSDPTransportType();
+            sessionID = i+1;
+          }
+        }
+      }
+    }
+  }
+
+  OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaType, sessionType);
+  if (mediaSession != NULL)
+    return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
+
+  PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+  return NULL;
 }
 
 
