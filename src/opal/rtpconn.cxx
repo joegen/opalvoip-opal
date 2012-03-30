@@ -224,6 +224,8 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
 
   m_sessions[sessionId] = session;
 
+  CheckForMediaBypass(*session);
+
   return session;
 }
 
@@ -423,20 +425,12 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        unsigned sessionID,
                                                        PBoolean isSource)
 {
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
-    if (mediaStream->GetSessionID() == sessionID && mediaStream->IsSource() == isSource && !mediaStream->IsOpen())
-      return mediaStream;
-  }
-
   OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaFormat.GetMediaType());
-  if (mediaSession == NULL) {
-    PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
-    return NULL;
-  }
+  if (mediaSession != NULL)
+    return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  CheckForMediaBypass(*mediaSession);
-
-  return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
+  PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+  return NULL;
 }
 
 

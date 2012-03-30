@@ -320,6 +320,14 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
     
+    /**Create a new media stream.
+     */
+    virtual OpalMediaStream * CreateMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      PBoolean isSource                        ///<  Is a source stream
+    );
+
     /**Open source or sink media stream for session.
       */
     virtual OpalMediaStreamPtr OpenMediaStream(
