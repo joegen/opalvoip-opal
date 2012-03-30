@@ -117,7 +117,13 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 
 vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecurity security)
 {
-  const OpalMediaTypeList allMediaTypes = OpalMediaType::GetList();
+  OpalMediaTypeList allMediaTypes;
+  for (OpalMediaFormatList::iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it) {
+    OpalMediaType mediaType = it->GetMediaType();
+    if (std::find(allMediaTypes.begin(), allMediaTypes.end(), mediaType) == allMediaTypes.end())
+      allMediaTypes.push_back(mediaType);
+  }
+
   const PStringArray cryptoSuites = endpoint.GetMediaCryptoSuites();
 
   vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize());
