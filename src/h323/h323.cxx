@@ -3767,6 +3767,11 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
+  H323Capability::CapabilityDirection symmetric = H323Capability::e_Receive;
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection != NULL &&otherConnection->RequireSymmetricMediaStreams())
+    symmetric = H323Capability::e_ReceiveAndTransmit;
+
   // Add those things that are in the other parties media format list
   static const OpalMediaType mediaList[] = {
     OpalMediaType::Audio(),
@@ -3785,7 +3790,7 @@ void H323Connection::OnSetLocalCapabilities()
 
     for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
       if (format->GetMediaType() == mediaList[m] && format->IsTransportable())
-        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format);
+        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format, symmetric);
     }
   }
 
@@ -3961,6 +3966,24 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
   list += remoteCapabilities.GetMediaFormats();
   AdjustMediaFormats(false, NULL, list);
 
+  if (IsH245Master() &&
+      localCapabilities.GetSize() > 0 &&
+      localCapabilities[0].GetCapabilityDirection() == H323Capability::e_ReceiveAndTransmit) {
+    /* If symmetry is required and we are the master we re-order their formats
+       to OUR order. This avoids a masterSlaveConflict (assuming other end is
+       working correctly) and some unecessaary open logical channel round
+       trips.
+       
+       Techniically, we should be a bit more sophisticated in determining
+       symmtery requirement, but 99.9% of the time of the first, if the entry
+       is symmetric, they all are. */
+    PStringArray order;
+    OpalMediaFormatList local = localCapabilities.GetMediaFormats();
+    for (OpalMediaFormatList::iterator it = local.begin(); it != local.end(); ++it)
+      order.AppendString(it->GetName());
+    list.Reorder(order);
+  }
+
   return list;
 }
 
@@ -4098,7 +4121,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 
     stream = channel->GetMediaStream();
     if (stream == NULL) {
-      PTRACE(2, "H323\tCould not stream for open logical channel " << channel->GetNumber());
+      PTRACE(2, "H323\tCould not open stream for logical channel " << channel->GetNumber());
       channel->Close();
       return NULL;
     }
@@ -4393,9 +4416,13 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
 
 PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & openPDU,
                                           H245_OpenLogicalChannelAck & ackPDU,
-                                          unsigned & /*errorCode*/,
-                                          unsigned sessionID)
+                                          unsigned & errorCode,
+                                          H323Channel & channel)
 {
+  unsigned sessionID = channel.GetSessionID();
+
+  PTRACE(4,"H323\tOnOpenLogicalChannel: sessionId=" << sessionID);
+
   // If get a OLC via H.245 stop trying to do fast start
   fastStartState = FastStartDisabled;
   if (!fastStartChannels.IsEmpty()) {
@@ -4415,8 +4442,31 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   }
 #endif
 
-  PTRACE(4,"H323\tOnOpenLogicalChannel: sessionId=" << sessionID);
-  //errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
+  // Detect symmetry issues
+  H323Capability * capability = remoteCapabilities.FindCapability(channel.GetCapability());
+  if (capability == NULL || capability->GetCapabilityDirection() != H323Capability::e_ReceiveAndTransmit) {
+    capability = localCapabilities.FindCapability(channel.GetCapability());
+    if (capability == NULL || capability->GetCapabilityDirection() != H323Capability::e_ReceiveAndTransmit)
+      return true; // No symmetry requested
+  }
+
+  // Yep are symmetrical, see if opening something different
+  H323Channel * otherChannel = FindChannel(sessionID, false);
+  if (otherChannel == NULL)
+    return true; // No other channel so symmtery yet to raise it's ugly head
+
+  if (channel.GetCapability() == otherChannel->GetCapability())
+    return true; // Is symmetric, all OK!
+
+  /* The correct protocol thing to do is reject the channel if we are the
+     master. However, NetMeeting will not then re-open a channel, so we act
+     like we are a slave and close our end instead. */
+  if (IsH245Master() && GetRemoteApplication().Find("NetMeeting") == P_MAX_INDEX) {
+    errorCode = H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict;
+    return false;
+  }
+
+  OnConflictingLogicalChannel(channel);
   return true;
 }
 
@@ -4626,19 +4676,16 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     return true;
   }
 
-  // Close the conflicting channel that got in before our transmitter
-  channel->Close();
-  CloseLogicalChannelNumber(channel->GetNumber());
-
   // Get the conflisting channel number to close
   H323ChannelNumber number = channel->GetNumber();
+
+  // Close the conflicting channel that got in before our transmitter
+  channel->Close();
+  CloseLogicalChannelNumber(number);
 
   // Must be slave and conflict from something we are sending, so try starting a
   // new channel using the master endpoints transmitter codec.
   logicalChannels->Open(conflictingChannel.GetCapability(), session, number);
-
-  // Now close the conflicting channel
-  CloseLogicalChannelNumber(number);
   return true;
 }
 

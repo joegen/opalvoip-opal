@@ -729,7 +729,8 @@ unsigned H323AudioCapability::GetRxFramesInPacket() const
 
 PBoolean H323AudioCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(H245_Capability::e_receiveAudioCapability);
+  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveAudioCapability
+                                              : H245_Capability::e_receiveAndTransmitAudioCapability);
   return OnSendingPDU((H245_AudioCapability &)cap, GetRxFramesInPacket(), e_TCS);
 }
 
@@ -1029,7 +1030,8 @@ H323Capability::MainTypes H323VideoCapability::GetMainType() const
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(H245_Capability::e_receiveVideoCapability);
+  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveVideoCapability
+                                              : H245_Capability::e_receiveAndTransmitVideoCapability);
   return OnSendingPDU((H245_VideoCapability &)cap, e_TCS);
 }
 
@@ -1574,7 +1576,8 @@ unsigned H323DataCapability::GetDefaultSessionID() const
 
 PBoolean H323DataCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(H245_Capability::e_receiveAndTransmitDataApplicationCapability);
+  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveDataApplicationCapability
+                                              : H245_Capability::e_receiveAndTransmitDataApplicationCapability);
   H245_DataApplicationCapability & app = cap;
   app.m_maxBitRate = maxBitRate;
   return OnSendingPDU(app, e_TCS);
@@ -1738,6 +1741,28 @@ H323_G711Capability::H323_G711Capability(Mode m, Speed s)
 }
 
 
+PObject::Comparison H323_G711Capability::Compare(const PObject & obj) const
+{
+  Comparison comp = H323Capability::Compare(obj);
+  if (comp != EqualTo)
+    return comp;
+
+  const H323_G711Capability & other = dynamic_cast<const H323_G711Capability &>(obj);
+
+  if (mode < other.mode)
+    return LessThan;
+  if (mode > other.mode)
+    return GreaterThan;
+
+  if (speed < other.speed)
+    return LessThan;
+  if (speed > other.speed)
+    return GreaterThan;
+
+  return EqualTo;
+}
+
+
 PObject * H323_G711Capability::Clone() const
 {
   return new H323_G711Capability(*this);
@@ -1869,7 +1894,8 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
     atec.m_audioTelephoneEvent = events;
   }
   else {
-    pdu.SetTag(H245_Capability::e_receiveUserInputCapability);
+    pdu.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveUserInputCapability
+                                                : H245_Capability::e_receiveAndTransmitUserInputCapability);
     H245_UserInputCapability & ui = pdu;
     ui.SetTag(UserInputCapabilitySubTypeCodes[subType]);
   }
@@ -2193,13 +2219,15 @@ static PBoolean MatchWildcard(const PCaselessString & str, const PStringArray & 
 
 PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
                                         PINDEX simultaneous,
-                                        const OpalMediaFormat & mediaFormat)
+                                        const OpalMediaFormat & mediaFormat,
+                                        H323Capability::CapabilityDirection direction)
 {
   PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
   if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) == NULL) {
     H323Capability * capability = H323Capability::Create(mediaFormat);
     if (capability != NULL) {
+      capability->SetCapabilityDirection(direction); 
       capability->GetWritableMediaFormat() = mediaFormat;
       reply = SetCapability(descriptorNum, simultaneous, capability);
       mediaPacketizations.Union(mediaFormat.GetMediaPacketizations());
@@ -2885,6 +2913,17 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
+  PINDEX outerSize = set.GetSize();
+  for (PINDEX outer = 0; outer < outerSize; outer++) {
+    PINDEX middleSize = set[outer].GetSize();
+    for (PINDEX middle = 0; middle < middleSize; middle++) {
+      PINDEX innerSize = set[outer][middle].GetSize();
+      for (PINDEX inner = 0; inner < innerSize; inner++)
+        formats += set[outer][middle][inner].GetMediaFormat();
+    }
+  }
+
+  // Pick up anything missed in above.
   for (PINDEX i = 0; i < table.GetSize(); i++)
     formats += table[i].GetMediaFormat();
 
