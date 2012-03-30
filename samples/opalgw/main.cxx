@@ -173,7 +173,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   PTrace::SetLevel(GetLogLevel());
   PTrace::ClearOptions(PTrace::Timestamp);
 #if _DEBUG
-  PTrace::SetOptions(PTrace::FileAndLine);
+  PTrace::SetOptions(PTrace::FileAndLine|PTrace::ContextIdentifier);
 #endif
 #endif
 
