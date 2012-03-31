@@ -1974,6 +1974,9 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFrame & frame)
 {
+  if (PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
+    return e_AbortTransport;
+
   int selectStatus = WaitForPDU(*dataSocket, *controlSocket, PMaxTimeInterval);
 
   {
