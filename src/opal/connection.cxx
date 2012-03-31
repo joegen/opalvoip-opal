@@ -1711,10 +1711,8 @@ OpalMediaFormatList OpalConnection::GetMediaFormats() const
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
-  if (m_localMediaFormats.IsEmpty()) {
+  if (m_localMediaFormats.IsEmpty())
     m_localMediaFormats = ownerCall.GetMediaFormats(*this);
-    PTRACE(4, "SIP\tLocal media formats set:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
-  }
   return m_localMediaFormats;
 }
 
