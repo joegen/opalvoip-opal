@@ -47,6 +47,8 @@
 #include <codec/vidcodec.h>
 #endif
 
+#include <algorithm>
+
 
 #define new PNEW
 
