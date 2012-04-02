@@ -1489,10 +1489,10 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   else {
     // We have fast start, can connect immediately.
     OnConnectedInternal();
-
-    // Otherwise start fast started channels if we were waiting for CONNECT
+ 
+    // Otherwise make sure fast started channels are open
     for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
-      channel->Start();
+      channel->Open();
   }
 
   /* do not start h245 negotiation if it is disabled */

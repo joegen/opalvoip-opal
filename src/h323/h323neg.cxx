@@ -629,7 +629,7 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
         ok = PTrue;
       }
       else {
-        ok = channel->Start();
+        ok = channel->Open();
         if (ok)
           state = e_Established;
       }
@@ -678,7 +678,7 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
 
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
-      if (!channel->Start())
+      if (!channel->Open())
         return Close();
 
     default :
@@ -705,7 +705,7 @@ PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelC
       state = e_Established;
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
-      if (!channel->Start())
+      if (!channel->Open())
         return Close();
 
     default :
