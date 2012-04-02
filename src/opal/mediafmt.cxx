@@ -2047,13 +2047,26 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
 
 bool OpalMediaFormatList::HasType(const OpalMediaType & type, bool mustBeTransportable) const
 {
-  OpalMediaFormatList::const_iterator format;
-  for (format = begin(); format != end(); ++format) {
+  for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
     if (format->GetMediaType() == type && (!mustBeTransportable || format->IsTransportable()))
       return true;
   }
 
   return false;
+}
+
+
+OpalMediaTypeList OpalMediaFormatList::GetMediaTypes() const
+{
+  OpalMediaTypeList mediaTypes;
+
+  for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
+    OpalMediaType mediaType = format->GetMediaType();
+    if (std::find(mediaTypes.begin(), mediaTypes.end(), mediaType) == mediaTypes.end())
+      mediaTypes.push_back(mediaType);
+  }
+
+  return mediaTypes;
 }
 
 
