@@ -363,6 +363,19 @@ class SIPConnection : public OpalRTPConnection
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
 
+    /**Call back when patching a media stream.
+       This function is called when a connection has created a new media
+       patch between two streams. This is usually called twice per media patch,
+       once for the source stream and once for the sink stream.
+
+       Note this is not called within the context of the patch thread and is
+       called before that thread has started.
+      */
+    virtual void OnPatchMediaStream(
+      PBoolean isSource,        ///< Is source/sink call
+      OpalMediaPatch & patch    ///<  New patch
+    );
+
     /**Pause media streams for connection.
       */
     virtual void OnPauseMediaStream(
@@ -505,7 +518,7 @@ class SIPConnection : public OpalRTPConnection
        Note this is called before th ACK is sent and thus should do as little as possible.
        All the hard work (SDP processing etc) should be in the usual OnReceivedResponse().
       */
-    virtual void OnReceivedResponseToINVITE(
+    virtual bool OnReceivedResponseToINVITE(
       SIPTransaction & transaction,
       SIP_PDU & response
     );
@@ -526,11 +539,11 @@ class SIPConnection : public OpalRTPConnection
   
     /**Handle an incoming Ringing response PDU
       */
-    virtual void OnReceivedRinging(SIP_PDU & pdu);
+    virtual void OnReceivedRinging(SIPTransaction & transaction, SIP_PDU & pdu);
   
     /**Handle an incoming Session Progress response PDU
       */
-    virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
+    virtual void OnReceivedSessionProgress(SIPTransaction & transaction, SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
        Returns: true if handled, if false is returned connection is released.
@@ -671,6 +684,10 @@ class SIPConnection : public OpalRTPConnection
     virtual bool OnSendAnswerSDP(
       SDPSessionDescription & sdpOut
     );
+    virtual bool OnSendAnswerSDP(
+      const SDPSessionDescription & sdpOffer,
+      SDPSessionDescription & sdpAnswer
+    );
     virtual bool OnSendAnswerSDPSession(
       const SDPSessionDescription & sdpIn,
       unsigned sessionIndex,
@@ -678,7 +695,8 @@ class SIPConnection : public OpalRTPConnection
     );
 
     virtual void OnReceivedAnswerSDP(
-      SIP_PDU & pdu
+      SIP_PDU & response,
+      SIPTransaction * transaction
     );
     virtual bool OnReceivedAnswerSDPSession(
       SDPSessionDescription & sdp,
@@ -700,6 +718,9 @@ class SIPConnection : public OpalRTPConnection
     friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
     bool WriteINVITE();
+
+    virtual void SendDelayedACK(bool force);
+    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnDelayedAckTimeout);
 
     virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
@@ -742,6 +763,9 @@ class SIPConnection : public OpalRTPConnection
     SIPURL                m_ciscoRemotePartyID;
 
     SIP_PDU             * m_lastReceivedINVITE;
+    SIP_PDU             * m_delayedAckInviteResponse;
+    PTimer                m_delayedAckTimer;
+    SIP_PDU             * m_lastSentAck;
     time_t                m_sdpSessionId;
     unsigned              m_sdpVersion; // Really a sequence number
     bool                  m_needReINVITE;
@@ -784,7 +808,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
-    bool SetRemoteMediaFormats();
+    bool SetRemoteMediaFormats(SIP_PDU * pdu);
 
     std::map<std::string, SIP_PDU *> m_responses;
 

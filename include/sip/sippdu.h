@@ -954,6 +954,8 @@ class SIPTransaction : public SIPTransactionBase
 
     PString              m_localInterface;
     OpalTransportAddress m_remoteAddress;
+
+  friend class SIPConnection;
 };
 
 
