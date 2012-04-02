@@ -94,6 +94,7 @@ class OpalRTPSession : public OpalMediaSession
   //@{
     virtual const PCaselessString & GetSessionType() const { return RTP_AVP(); }
     virtual bool Open(const PString & localInterface);
+    virtual bool IsOpen() const;
     virtual bool Close();
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const;

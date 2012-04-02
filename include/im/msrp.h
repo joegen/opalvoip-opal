@@ -340,7 +340,7 @@ class OpalMSRPMediaStream : public OpalMediaStream
     ~OpalMSRPMediaStream();
 
     virtual PBoolean IsSynchronous() const         { return false; }
-    virtual PBoolean RequiresPatchThread() const   { return !isSource; }
+    virtual PBoolean RequiresPatchThread() const   { return IsSink(); }
 
     /**Read raw media data from the source media stream.
        The default behaviour reads from the PChannel object.

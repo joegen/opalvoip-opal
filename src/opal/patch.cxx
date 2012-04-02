@@ -105,9 +105,28 @@ void OpalMediaPatch::Start()
 {
   PWaitAndSignal m(patchThreadMutex);
 	
-  if(patchThread != NULL) 
+  if(patchThread != NULL) {
+    PTRACE(5, "Media\tAlready started thread " << patchThread->GetThreadName());
     return;
-	
+  }
+
+  if (!source.IsOpen()) {
+    PTRACE(4, "Media\tDelaying thread starting till source stream open");
+    return;
+  }
+
+  if (sinks.IsEmpty()) {
+    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
+    return;
+  }
+
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (!s->stream->IsOpen()) {
+      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
+      return;
+    }
+  }
+
   patchThread = new Thread(*this);
   patchThread->Resume();
   PThread::Yield();

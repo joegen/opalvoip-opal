@@ -205,6 +205,7 @@ class OpalMediaSession : public PObject
   public:
     virtual const PCaselessString & GetSessionType() const = 0;
     virtual bool Open(const PString & localInterface) = 0;
+    virtual bool IsOpen() const;
     virtual bool Close();
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
     virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
