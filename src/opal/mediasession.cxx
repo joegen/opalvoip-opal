@@ -146,6 +146,12 @@ OpalMediaSession::OpalMediaSession(const Init & init)
 }
 
 
+bool OpalMediaSession::IsOpen() const
+{
+  return true;
+}
+
+
 bool OpalMediaSession::Close()
 {
   return true;

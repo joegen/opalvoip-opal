@@ -194,6 +194,10 @@ class OpalMediaStream : public PSafeObject
       */
     virtual PBoolean Open();
 
+    /**Returns true if the media stream is open.
+      */
+    virtual bool IsOpen() const;
+
     /**Start the media stream.
 
        The default behaviour calls Resume() on the associated OpalMediaPatch
@@ -328,11 +332,11 @@ class OpalMediaStream : public PSafeObject
 
     /**Determine of media stream is a source or a sink.
       */
-    bool IsSource() const { return isSource; }
+    bool IsSource() const { return m_isSource; }
 
     /**Determine of media stream is a source or a sink.
       */
-    bool IsSink() const { return !isSource; }
+    bool IsSink() const { return !m_isSource; }
 
     /**Get the session number of the stream.
      */
@@ -375,10 +379,6 @@ class OpalMediaStream : public PSafeObject
       bool pause,             ///< Indicate that the stream should be paused
       bool fromPatch = false  ///<  Is being called from OpalMediaPatch
     );
-
-    /**Returns true if the media stream is open.
-      */
-    bool IsOpen() const { return isOpen; }
     
     /**Set the patch thread that is using this stream.
       */
@@ -426,8 +426,8 @@ class OpalMediaStream : public PSafeObject
     PString          identifier;
     OpalMediaFormat  mediaFormat;
     bool             m_paused;
-    bool             isSource;
-    bool             isOpen;
+    bool             m_isSource;
+    bool             m_isOpen;
     PINDEX           defaultDataSize;
     unsigned         timestamp;
     bool             marker;
@@ -581,6 +581,10 @@ class OpalRTPMediaStream : public OpalMediaStream
        The default behaviour simply sets the isOpen variable to true.
       */
     virtual PBoolean Open();
+
+    /**Returns true if the media stream is open.
+      */
+    virtual bool IsOpen() const;
 
     /**Set the paused state for stream.
        This will stop reading/writing data from the stream.

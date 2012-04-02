@@ -1819,6 +1819,13 @@ bool OpalRTPSession::Open(const PString & localInterface)
 }
 
 
+bool OpalRTPSession::IsOpen() const
+{
+  return dataSocket != NULL && dataSocket->IsOpen() &&
+         controlSocket != NULL && controlSocket->IsOpen();
+}
+
+
 bool OpalRTPSession::Close()
 {
   bool ok = Shutdown(true) | Shutdown(false);

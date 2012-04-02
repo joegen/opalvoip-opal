@@ -948,7 +948,7 @@ OpalLineMediaStream::~OpalLineMediaStream()
 
 PBoolean OpalLineMediaStream::Open()
 {
-  if (isOpen)
+  if (IsOpen())
     return true;
 
   if (IsSource()) {
