@@ -189,6 +189,10 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       bool mustBeTransportable = true
     ) const;
 
+    /**Get list of all media types in format list.
+      */
+    OpalMediaTypeList GetMediaTypes() const;
+
     /**Reorder the formats in the list.
        The order variable is an array of names and the list is reordered
        according to the order in that array.
