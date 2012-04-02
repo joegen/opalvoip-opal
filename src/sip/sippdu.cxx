@@ -2370,7 +2370,7 @@ PString SIP_PDU::GetTransactionID() const
 }
 
 
-bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & masterList)
+bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & localList)
 {
   if (m_SDP != NULL)
     return true;
@@ -2383,7 +2383,7 @@ bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & masterList)
 
   m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
   PTRACE_CONTEXT_ID_TO(m_SDP);
-  if (m_SDP->Decode(m_entityBody, masterList))
+  if (m_SDP->Decode(m_entityBody, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
     return true;
 
   delete m_SDP;
@@ -3272,38 +3272,12 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
   if (IsTerminated())
     return false;
 
-  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
-    if (IsInProgress())
-      m_connection->OnReceivedResponseToINVITE(*this, response);
-
-    if (response.GetStatusCode() >= 200) {
-      PSafeLockReadWrite lock(*this);
-      if (!lock.IsLocked())
-        return false;
-
-      if (response.GetStatusCode() < 300) {
-        // Need to update where the ACK goes to when have 2xx response as per 13.2.2.4
-        if (!m_connection->LockReadOnly())
-          return false;
-
-        m_remoteAddress = m_connection->GetDialog().GetRemoteTransportAddress();
-        if (m_transport.GetLocalAddress().IsCompatible(m_remoteAddress))
-          PTRACE(4, "SIP\tTransaction remote address changed to " << m_remoteAddress);
-        else {
-          PTRACE(3, "SIP\tChanging transport to remote address " << m_remoteAddress);
-          if (!m_connection->SetTransport(m_remoteAddress)) {
-            PTRACE(2, "SIP\tCould not change transport to " << m_remoteAddress);
-          }
-        }
-
-        m_connection->UnlockReadOnly();
-      }
-
-      // ACK constructed following 13.2.2.4 or 17.1.1.3
-      SIPAck ack(*this, response);
-      if (!SendPDU(ack))
-        return false;
-    }
+  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX &&
+                            m_connection->OnReceivedResponseToINVITE(*this, response)) {
+    // ACK constructed following 13.2.2.4 or 17.1.1.3
+    SIPAck ack(*this, response);
+    if (!SendPDU(ack))
+      return false;
   }
 
   return SIPTransaction::OnReceivedResponse(response);

@@ -455,12 +455,6 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
     }
   }
 
-  // If nothing comes out of the above, e.g. when this is called very early
-  // in the call sequence and there is no second connection in call yet, then
-  // return all the possible media formats.
-  if (commonFormats.IsEmpty())
-    commonFormats = OpalTranscoder::GetPossibleFormats(manager.GetCommonMediaFormats(false, true));
-
   connection.AdjustMediaFormats(true, NULL, commonFormats);
 
   PTRACE(4, "Call\tGetMediaFormats for " << connection << "\n    "
