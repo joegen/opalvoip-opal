@@ -405,19 +405,6 @@ PBoolean H323UnidirectionalChannel::Open()
 }
 
 
-PBoolean H323UnidirectionalChannel::Start()
-{
-  if (!Open())
-    return PFalse;
-
-  if (m_mediaStream == NULL || !m_mediaStream->Start())
-    return PFalse;
-
-  paused = PFalse;
-  return PTrue;
-}
-
-
 void H323UnidirectionalChannel::InternalClose()
 {
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
@@ -457,12 +444,6 @@ H323BidirectionalChannel::H323BidirectionalChannel(H323Connection & conn,
 H323Channel::Directions H323BidirectionalChannel::GetDirection() const
 {
   return IsBidirectional;
-}
-
-
-PBoolean H323BidirectionalChannel::Start()
-{
-  return PTrue;
 }
 
 

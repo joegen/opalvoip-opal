@@ -186,10 +186,6 @@ class H323Channel : public PObject
       */
     virtual PBoolean Open();
 
-    /**This is called when the channel can start transferring data.
-     */
-    virtual PBoolean Start() = 0;
-
     /**This is called to clean up any threads on connection termination.
      */
     virtual void Close();
@@ -405,12 +401,6 @@ class H323UnidirectionalChannel : public H323Channel
     /**Open the channel.
       */
     virtual PBoolean Open();
-
-    /**This is called when the channel can start transferring data.
-       The default action is to start one threads, with it either calling
-       Receive() or Transmit() depending on the receiver member variable.
-     */
-    virtual PBoolean Start();
   //@}
 
   /**@name Member variable access */
@@ -464,12 +454,6 @@ class H323BidirectionalChannel : public H323Channel
        direction for th latter case.
      */
     virtual Directions GetDirection() const;
-
-    /**This is called when the channel can start transferring data.
-       The default action is to start two threads, one calls Receive() and the
-       other calls Transmit().
-     */
-    virtual PBoolean Start();
   //@}
 };
 
