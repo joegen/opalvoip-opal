@@ -1094,7 +1094,7 @@ OpalMixerMediaStream::~OpalMixerMediaStream()
 
 PBoolean OpalMixerMediaStream::Open()
 {
-  if (isOpen)
+  if (m_isOpen)
     return true;
 
   if (mediaFormat.GetMediaType() != OpalMediaType::Audio()
@@ -1140,7 +1140,7 @@ PBoolean OpalMixerMediaStream::IsSynchronous() const
 
 PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 {
-  return !isSource;
+  return IsSink();
 }
 
 
