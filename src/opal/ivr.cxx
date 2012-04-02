@@ -425,7 +425,7 @@ OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
 
 PBoolean OpalIVRMediaStream::Open()
 {
-  if (isOpen)
+  if (m_isOpen)
     return true;
 
   if (m_vxmlSession.IsOpen()) {
