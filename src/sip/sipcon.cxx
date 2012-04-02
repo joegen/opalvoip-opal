@@ -633,6 +633,8 @@ PBoolean SIPConnection::SetConnected()
   
   PTRACE(3, "SIP\tSetConnected " << *this);
 
+  GetLocalMediaFormats();
+
   // send the 200 OK response
   if (!SendInviteOK()) {
     Release(EndedByCapabilityExchange);
