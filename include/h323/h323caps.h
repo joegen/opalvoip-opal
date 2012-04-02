@@ -1864,11 +1864,6 @@ class H323_G711Capability : public H323AudioCapability
 
   /**@name Overrides from class PObject */
   //@{
-    /**Compare two capability instances. This compares the main and sub-types
-       of the capability.
-     */
-    Comparison Compare(const PObject & obj) const;
-
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
