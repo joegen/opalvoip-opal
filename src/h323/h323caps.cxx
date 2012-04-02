@@ -1741,28 +1741,6 @@ H323_G711Capability::H323_G711Capability(Mode m, Speed s)
 }
 
 
-PObject::Comparison H323_G711Capability::Compare(const PObject & obj) const
-{
-  Comparison comp = H323Capability::Compare(obj);
-  if (comp != EqualTo)
-    return comp;
-
-  const H323_G711Capability & other = dynamic_cast<const H323_G711Capability &>(obj);
-
-  if (mode < other.mode)
-    return LessThan;
-  if (mode > other.mode)
-    return GreaterThan;
-
-  if (speed < other.speed)
-    return LessThan;
-  if (speed > other.speed)
-    return GreaterThan;
-
-  return EqualTo;
-}
-
-
 PObject * H323_G711Capability::Clone() const
 {
   return new H323_G711Capability(*this);
