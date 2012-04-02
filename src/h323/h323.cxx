@@ -3967,8 +3967,11 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
   AdjustMediaFormats(false, NULL, list);
 
   if (IsH245Master() &&
-      localCapabilities.GetSize() > 0 &&
-      localCapabilities[0].GetCapabilityDirection() == H323Capability::e_ReceiveAndTransmit) {
+        (localCapabilities.GetSize() > 0 &&
+         localCapabilities[0].GetCapabilityDirection() == H323Capability::e_ReceiveAndTransmit)
+        ||
+        (remoteCapabilities.GetSize() > 0 &&
+         remoteCapabilities[0].GetCapabilityDirection() == H323Capability::e_ReceiveAndTransmit)) {
     /* If symmetry is required and we are the master we re-order their formats
        to OUR order. This avoids a masterSlaveConflict (assuming other end is
        working correctly) and some unecessaary open logical channel round
@@ -3982,6 +3985,7 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
     for (OpalMediaFormatList::iterator it = local.begin(); it != local.end(); ++it)
       order.AppendString(it->GetName());
     list.Reorder(order);
+    PTRACE(2, "H323\tRe-ordered media formats due to symmetry rules on " << *this);
   }
 
   return list;
