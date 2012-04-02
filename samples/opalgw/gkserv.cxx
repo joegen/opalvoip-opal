@@ -92,6 +92,7 @@ MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
 #pragma warning(default:4355)
 #endif
 {
+  terminalType = e_MCUWithAVMP;
 }
 
 
