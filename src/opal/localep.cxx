@@ -349,7 +349,7 @@ OpalLocalMediaStream::OpalLocalMediaStream(OpalLocalConnection & connection,
 
 PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
 {
-  if (!isOpen)
+  if (!IsOpen())
     return false;
 
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
@@ -363,7 +363,7 @@ PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
 
 PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
 {
-  if (!isOpen)
+  if (!IsOpen())
     return false;
 
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
