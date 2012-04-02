@@ -60,36 +60,35 @@
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
 static bool Synonym_for_pres_URL = PFactory<OpalPresentity>::RegisterAs("pres", "sip");
 
-static struct SIPAttributeInfo {
-  SIPAttributeInfo(const char * name, const char * type) : m_name(name), m_type(type) { }
-  const PConstCaselessString m_name;
-  const PConstCaselessString m_type;
-} const AttributeInfo[] = {
-  /*  0 */ SIPAttributeInfo("PIDF-Entity",    "URL"),
-  /*  1 */ SIPAttributeInfo("Sub-Protocol",   "Enum\nPeerToPeer,Agent,XCAP,OMA\nAgent"),
-  /*  2 */ SIPAttributeInfo("Presence Agent", "String"),
-  /*  3 */ SIPAttributeInfo("Transport",      "Enum\nUDP,TCP,TLS\nTCP"),
-  /*  4 */ SIPAttributeInfo(OpalPresentity::AuthNameKey(),    "String"),
-  /*  5 */ SIPAttributeInfo(OpalPresentity::AuthPasswordKey(),"Password"),
-  /*  6 */ SIPAttributeInfo("XCAP Root",      "URL"),
-  /*  7 */ SIPAttributeInfo("XCAP Auth ID",   "String"),
-  /*  8 */ SIPAttributeInfo("XCAP Password",  "Password"),
-  /*  9 */ SIPAttributeInfo("XCAP AUID",      "String"),
-  /* 10 */ SIPAttributeInfo("XCAP AuthFile",  "String"),
-  /* 11 */ SIPAttributeInfo("XCAP BuddyList", "String"),
-  /* 12 */ SIPAttributeInfo(OpalPresentity::TimeToLiveKey(), "Integer\n1,999999999\n300")
-};
+const PCaselessString & SIP_Presentity::PIDFEntityKey()    { static const PConstCaselessString s("PIDF-Entity");    return s; }
+const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }
+const PCaselessString & SIP_Presentity::PresenceAgentKey() { static const PConstCaselessString s("Presence Agent"); return s; }
+const PCaselessString & SIP_Presentity::TransportKey()     { static const PConstCaselessString s("Transport");      return s; }
+const PCaselessString & SIP_Presentity::XcapRootKey()      { static const PConstCaselessString s("XCAP Root");      return s; }
+const PCaselessString & SIP_Presentity::XcapAuthIdKey()    { static const PConstCaselessString s("XCAP Auth ID");   return s; }
+const PCaselessString & SIP_Presentity::XcapPasswordKey()  { static const PConstCaselessString s("XCAP Password");  return s; }
+const PCaselessString & SIP_Presentity::XcapAuthAuidKey()  { static const PConstCaselessString s("XCAP AUID");      return s; }
+const PCaselessString & SIP_Presentity::XcapAuthFileKey()  { static const PConstCaselessString s("XCAP AuthFile");  return s; }
+const PCaselessString & SIP_Presentity::XcapBuddyListKey() { static const PConstCaselessString s("XCAP BuddyList"); return s; }
 
-const PCaselessString & SIP_Presentity::PIDFEntityKey()    { return AttributeInfo[ 0].m_name; }
-const PCaselessString & SIP_Presentity::SubProtocolKey()   { return AttributeInfo[ 1].m_name; }
-const PCaselessString & SIP_Presentity::PresenceAgentKey() { return AttributeInfo[ 2].m_name; }
-const PCaselessString & SIP_Presentity::TransportKey()     { return AttributeInfo[ 3].m_name; }
-const PCaselessString & SIP_Presentity::XcapRootKey()      { return AttributeInfo[ 6].m_name; }
-const PCaselessString & SIP_Presentity::XcapAuthIdKey()    { return AttributeInfo[ 7].m_name; }
-const PCaselessString & SIP_Presentity::XcapPasswordKey()  { return AttributeInfo[ 8].m_name; }
-const PCaselessString & SIP_Presentity::XcapAuthAuidKey()  { return AttributeInfo[ 9].m_name; }
-const PCaselessString & SIP_Presentity::XcapAuthFileKey()  { return AttributeInfo[10].m_name; }
-const PCaselessString & SIP_Presentity::XcapBuddyListKey() { return AttributeInfo[11].m_name; }
+static struct SIPAttributeInfo {
+  const char * m_name;
+  const char * m_type;
+} const AttributeInfo[] = {
+  /*  0 */ { SIP_Presentity::PIDFEntityKey(),    "URL" },
+  /*  1 */ { SIP_Presentity::SubProtocolKey(),   "Enum\nPeerToPeer,Agent,XCAP,OMA\nAgent" },
+  /*  2 */ { SIP_Presentity::PresenceAgentKey(), "String" },
+  /*  3 */ { SIP_Presentity::TransportKey(),     "Enum\nUDP,TCP,TLS\nTCP" },
+  /*  4 */ { OpalPresentity::AuthNameKey(),      "String" },
+  /*  5 */ { OpalPresentity::AuthPasswordKey(),  "Password" },
+  /*  6 */ { SIP_Presentity::XcapRootKey(),      "URL" },
+  /*  7 */ { SIP_Presentity::XcapAuthIdKey(),    "String" },
+  /*  8 */ { SIP_Presentity::XcapPasswordKey(),  "Password" },
+  /*  9 */ { SIP_Presentity::XcapAuthAuidKey(),  "String" },
+  /* 10 */ { SIP_Presentity::XcapAuthFileKey(),  "String" },
+  /* 11 */ { SIP_Presentity::XcapBuddyListKey(), "String" },
+  /* 12 */ { OpalPresentity::TimeToLiveKey(),    "Integer\n1,999999999\n300" }
+};
 
 OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
 OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
