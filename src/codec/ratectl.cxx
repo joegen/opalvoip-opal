@@ -52,7 +52,7 @@ using namespace std;
 #define UDP_OVERHEAD  (20 + 8)
 
 //
-// size of history used for calcluating average packet size
+// size of history used for calculating average packet size
 //
 #define PACKET_HISTORY_SIZE   5
 
