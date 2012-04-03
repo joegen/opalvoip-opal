@@ -58,7 +58,7 @@ class OpalManager_C;
 
 ostream & operator<<(ostream & strm, OpalMessageType type)
 {
-  static const char * Types[] = {
+  static const char * const Types[] = {
     "IndCommandError",
     "CmdSetGeneralParameters",
     "CmdSetProtocolParameters",
@@ -90,7 +90,11 @@ ostream & operator<<(ostream & strm, OpalMessageType type)
     "IndTransferCall",
     "IndCompletedIVR"
   };
-  return strm << Types[type];
+  if (type >= 0 && type < PARRAYSIZE(type))
+    strm << Types[type];
+  else
+    strm << '<' << (unsigned)type << '>';
+  return strm;
 }
 
 
