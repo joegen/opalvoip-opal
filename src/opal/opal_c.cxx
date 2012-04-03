@@ -90,7 +90,7 @@ ostream & operator<<(ostream & strm, OpalMessageType type)
     "IndTransferCall",
     "IndCompletedIVR"
   };
-  if (type >= 0 && type < PARRAYSIZE(type))
+  if (type >= 0 && type < PARRAYSIZE(Types))
     strm << Types[type];
   else
     strm << '<' << (unsigned)type << '>';
