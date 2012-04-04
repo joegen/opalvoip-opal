@@ -2520,7 +2520,7 @@ void SIPDialogContext::SetProxy(const SIPURL & proxy, bool addToRouteSet)
   // Default routeSet if there is a proxy
   if (addToRouteSet && m_routeSet.empty() && !proxy.IsEmpty()) {
     SIPURL route = proxy;
-    route.GetFieldParameters().Set("lr", PString::Empty()); // Always be loose
+    route.SetParamVar("lr", PString::Empty(), false); // Always be loose
     route.Sanitise(SIPURL::RouteURI);
     m_routeSet.push_back(route);
   }
