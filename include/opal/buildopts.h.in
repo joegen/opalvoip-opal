@@ -60,6 +60,7 @@
 #undef  OPAL_PTLIB_VXML
 #undef  OPAL_PTLIB_CONFIG_FILE
 #undef  OPAL_AEC
+#undef  OPAL_PTLIB_LUA
 
 
 // If a "configure" did not set these variables above then they get set from PTlib variables
@@ -99,6 +100,9 @@
 #endif
 #if defined(P_CONFIG_FILE) && !defined(OPAL_PTLIB_CONFIG_FILE)
   #define  OPAL_PTLIB_CONFIG_FILE P_CONFIG_FILE
+#endif
+#if defined(P_LUA) && !defined(OPAL_PTLIB_LUA)
+  #define  OPAL_PTLIB_LUA P_LUA
 #endif
 
 #undef  OPAL_PLUGIN_DIR
