@@ -245,9 +245,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_FAX
   , m_faxMediaStreamsSwitchState(e_NotSwitchingFaxMediaStreams)
 #endif
-#if P_LUA
-  , m_luaScriptLoaded(false)
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
@@ -301,14 +298,13 @@ OpalConnection::OpalConnection(OpalCall & call,
   m_rfc4103Context[1].SetMediaFormat(OpalT140);
 #endif
 
-#if P_LUA
-  BindToInstance(m_lua, "connection");
-  m_lua.SetFunction("PTRACE", PLua::TraceFunction);
-  m_lua.SetValue("token",  callToken);
+#if OPAL_PTLIB_LUA
+  m_lua.SetFunction("SetOption", PCREATE_NOTIFIER(LuaSetOption));
 
-  PString str = GetPrefixName();
-  m_lua.SetValue("prefix", str);
-  m_lua.CallLuaFunction("OnConstruct");
+  m_lua.SetString("token",  callToken);
+  m_lua.SetString("prefix", GetPrefixName());
+
+  m_lua.Call("OnConstruct");
 #endif
 
   m_phaseTime[UninitialisedPhase].SetCurrentTime();
@@ -330,9 +326,8 @@ OpalConnection::~OpalConnection()
   delete t120handler;
 #endif
 
-#if P_LUA
-  m_lua.CallLuaFunction("OnDestroy");
-  UnbindFromInstance(m_lua, "call");
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnDestroy");
 #endif
 
   ownerCall.connectionsActive.Remove(this);
@@ -1683,19 +1678,19 @@ void OpalConnection::OnApplyStringOptions()
     if (!str.IsEmpty())
       SetAlertingType(str);
 
-#if P_LUA
-    if (!m_luaScriptLoaded) {
+#if OPAL_PTLIB_LUA
+    if (!m_lua.IsLoaded()) {
       str = m_stringOptions("script");
       bool ok = true;
       if (!str.IsEmpty()) 
-        ok = m_lua.LoadString(str);
+        ok = m_lua.LoadText(str);
       else {
         str = m_stringOptions("scriptfile");
         if (!str.IsEmpty()) 
           m_lua.LoadFile(str);
       }
     }
-    m_lua.CallLuaFunction("OnSetOptions");
+    m_lua.Call("OnApplyOptions");
 #endif
 
     UnlockReadWrite();
@@ -1719,8 +1714,8 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 
 void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
-#if P_LUA
-  m_lua.CallLuaFunction("OnStartMediaPatch");
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnStartMediaPatch");
 #endif
   GetEndPoint().GetManager().OnStartMediaPatch(*this, patch);
 }
@@ -1728,8 +1723,8 @@ void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 
 void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
-#if P_LUA
-  m_lua.CallLuaFunction("OnStopMediaPatch");
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnStopMediaPatch");
 #endif
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
@@ -1893,11 +1888,12 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
   }
 }
 
-#if P_LUA
+#if OPAL_PTLIB_LUA
 
-int OpalConnection::LuaSetOption(lua_State * /*lua*/)
+void OpalConnection::LuaSetOption(PLua &, const PLua::Signature & sig)
 {
-  return 0;
+  for (size_t i = 0; i < sig.m_arguments.size(); i += 2) {
+  }
 }
 
 #endif
