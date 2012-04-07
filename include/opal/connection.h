@@ -48,10 +48,8 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
-
-#if P_LUA
 #include <ptclib/lua.h>
-#endif
+
 
 class OpalEndPoint;
 class OpalCall;
@@ -1843,16 +1841,9 @@ class OpalConnection : public PSafeObject
     } m_faxMediaStreamsSwitchState;
 #endif
 
-#if P_LUA
-  protected:
+#if OPAL_PTLIB_LUA
     PLua m_lua;
-    bool m_luaScriptLoaded;
-
-  public:
-    PLUA_BINDING_START(OpalConnection)
-      PLUA_BINDING2(LuaSetOption, "SetOption")
-    PLUA_BINDING_END()
-    PLUA_DECLARE_FUNCTION(LuaSetOption);
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaSetOption);
 #endif
 
     // A version of PTime where default constructor creates invalid times

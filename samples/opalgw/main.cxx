@@ -74,12 +74,23 @@ static const char SIPMediaCryptoSuitesKey[] = "SIP Crypto Suites";
 static const char SIPAddressofRecordKey[] = "Address of Record";
 static const char SIPAuthIDKey[] = "Auth ID";
 static const char SIPPasswordKey[] = "Password";
+#endif // OPAL_SIP
+
+#if OPAL_LID
+static const char LIDKey[] = "Line Interface Devices";
 #endif
 
-static const char LIDKey[] = "Line Interface Devices";
+#if OPAL_CAPI
 static const char EnableCAPIKey[] = "CAPI ISDN";
+#endif
 
+#if OPAL_PTLIB_VXML
 static const char VXMLKey[] = "IVR VXML URL";
+#endif
+
+#if OPAL_PTLIB_LUA
+static const char LuaScriptKey[] = "Lua Script";
+#endif
 
 #define ROUTES_SECTION "Routes"
 #define ROUTES_KEY "Route"
@@ -314,7 +325,7 @@ MyManager::MyManager()
   , m_capiEP(NULL)
   , m_enableCAPI(true)
 #endif
-#if OPAL_PTLIB_EXPAT
+#if OPAL_PTLIB_VXML
   , m_ivrEP(NULL)
 #endif
 {
@@ -357,7 +368,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     m_capiEP = new OpalCapiEndPoint(*this);
 #endif
 
-#if OPAL_PTLIB_EXPAT
+#if OPAL_PTLIB_VXML
   if (m_ivrEP == NULL)
     m_ivrEP = new OpalIVREndPoint(*this);
 #endif
@@ -533,7 +544,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 
-#if OPAL_PTLIB_EXPAT
+#if OPAL_PTLIB_VXML
   // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
   rsrc->Add(new PHTTPStringField(VXMLKey, 60, vxml,
@@ -542,6 +553,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     m_ivrEP->SetDefaultVXML(vxml);
 #endif
 
+#if OPAL_PTLIB_LUA
+  rsrc->Add(new PHTTPStringField(LuaScriptKey, 1000, PString::Empty(), "Lua script"));
+#endif
 
   // Routing
   RouteTable routes;
