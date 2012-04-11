@@ -716,9 +716,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
   if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
-    PString id;
-    if (activeSIPHandlers.FindSIPHandlerByCallID(id = pdu->GetMIME().GetCallID(), PSafeReference) != NULL ||
-        GetTransaction(id = pdu->GetTransactionID(), PSafeReference) != NULL) {
+    PString id = pdu->GetTransactionID();
+    if (GetTransaction(id, PSafeReference) != NULL) {
       m_handlerThreadPool.AddWork(new SIP_Work(*this, pdu, id), id);
       return true;
     }
@@ -814,7 +813,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 
   // See if already subscribed. Now this is not perfect as we only check the call-id and strictly
   // speaking we should check the from-tag and to-tags as well due to it being a dialog.
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(mime.GetCallID(), PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = FindHandlerByPDU(pdu, PSafeReadWrite);
   if (handler == NULL) {
     SIPDialogContext newDialog(mime);
     if (dialog == NULL)
@@ -865,7 +864,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = FindHandlerByPDU(response, PSafeReadWrite);
   if (handler != NULL)
     handler->OnReceivedResponse(transaction, response);
   else {
@@ -1027,7 +1026,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
 
 void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = FindHandlerByPDU(transaction, PSafeReadWrite);
   if (handler != NULL) 
     handler->OnTransactionFailed(transaction);
   else {
@@ -1045,7 +1044,7 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
   
   // A NOTIFY will have the same CallID than the SUBSCRIBE request it corresponds to
   // Technically should check for whole dialog, but call-id will do.
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(pdu.GetMIME().GetCallID(), PSafeReadWrite);
+  PSafePtr<SIPHandler> handler = FindHandlerByPDU(pdu, PSafeReadWrite);
 
   if (handler == NULL && eventPackage == SIPSubscribe::MessageSummary) {
     PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
@@ -1913,6 +1912,24 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
 
   if (!mime.Has("Route") && registrar != NULL)
     mime.SetRoute(registrar->GetServiceRoute());
+}
+
+
+PSafePtr<SIPHandler> SIPEndPoint::FindHandlerByPDU(const SIP_PDU & pdu, PSafetyMode mode)
+{
+  const SIPMIMEInfo & mime = pdu.GetMIME();
+
+  PSafePtr<SIPHandler> handler;
+
+  PString id = mime.GetCallID();
+  if ((handler = activeSIPHandlers.FindSIPHandlerByCallID(id, mode)) != NULL)
+    return handler;
+
+  PString tag = mime.GetTo().GetTag();
+  if ((handler = activeSIPHandlers.FindSIPHandlerByCallID(tag, mode)) != NULL)
+    return handler;
+
+  return activeSIPHandlers.FindSIPHandlerByCallID(id+';'+tag, mode);
 }
 
 
