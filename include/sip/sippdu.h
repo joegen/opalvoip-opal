@@ -209,6 +209,9 @@ class SIPURL : public PURL
       bool force = false
     );
 
+    /// Get a tag
+    PString GetTag() const;
+
   protected:
     void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
 

@@ -664,6 +664,12 @@ void SIPURL::SetTag(const PString & tag, bool force)
 }
 
 
+PString SIPURL::GetTag() const
+{
+  return m_fieldParameters.Get(TagStr);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 bool SIPURLList::FromString(const PString & str, bool reversed)
@@ -1833,7 +1839,20 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
   tmp.Sanitise(SIPURL::FromURI);
   m_mime.SetFrom(tmp.AsQuotedString());
 
-  m_mime.SetCallID(callID);
+  /* This is as per EBNF in RFC 3261
+       Call-ID  =  ( "Call-ID" / "i" ) HCOLON callid
+       callid   =  word [ "@" word ]
+     And "word" is the character set below.
+
+     This is necessary as sometimes the code uses the Call-ID for internal
+     references and we need to be able to disinguish between then, even though
+     they use the same Call-ID over the wire.
+  */
+  static const char ValidCallID[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~()<>:\\\"/[]?{}";
+  PINDEX valid = callID.FindSpan(ValidCallID);
+  if (valid != P_MAX_INDEX && callID[valid] == '@')
+    valid = callID.FindSpan(ValidCallID, valid+1);
+  m_mime.SetCallID(callID.Left(valid));
   m_mime.SetMaxForwards(70);
   m_mime.SetVia(via);
 
