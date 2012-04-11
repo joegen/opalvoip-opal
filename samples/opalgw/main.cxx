@@ -85,7 +85,7 @@ static const char EnableCAPIKey[] = "CAPI ISDN";
 #endif
 
 #if OPAL_PTLIB_VXML
-static const char VXMLKey[] = "IVR VXML URL";
+static const char VXMLKey[] = "VXML Script";
 #endif
 
 #if OPAL_PTLIB_LUA
@@ -346,6 +346,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PINDEX arraySize;
   PHTTPFieldArray * fieldArray;
 
+  PString defaultSection = cfg.GetDefaultSection();
+
   // Create all the endpoints
 
 #if OPAL_H323
@@ -504,6 +506,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     if (!registrar.m_addressOfRecord.IsEmpty())
       registrations.push_back(registrar);
   }
+  cfg.SetDefaultSection(defaultSection);
 
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
         REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
@@ -547,14 +550,20 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_PTLIB_VXML
   // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 60, vxml,
-            "URL for Interactive Voice Response VXML script"));
+  rsrc->Add(new PHTTPStringField(VXMLKey, 800, vxml,
+            "Interactive Voice Response VXML script, may be a URL or the actual VXML"));
   if (!vxml)
     m_ivrEP->SetDefaultVXML(vxml);
 #endif
 
 #if OPAL_PTLIB_LUA
-  rsrc->Add(new PHTTPStringField(LuaScriptKey, 1000, PString::Empty(), "Lua script"));
+  PString lua = cfg.GetString(LuaScriptKey);
+  rsrc->Add(new PHTTPStringField(LuaScriptKey, 800, lua,
+            "Lua language interpreter script, may be a filename or the actual script text"));
+  if (m_luaScript != lua) {
+    m_luaScript = lua;
+    GetLua().Run(lua);
+  }
 #endif
 
   // Routing
@@ -585,6 +594,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     }
     cfg.SetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size", arraySize);
   }
+  cfg.SetDefaultSection(defaultSection);
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(
         ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,

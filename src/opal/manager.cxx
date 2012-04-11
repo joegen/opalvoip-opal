@@ -298,6 +298,10 @@ OpalManager::OpalManager()
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
+#if OPAL_PTLIB_LUA
+  m_lua.CreateTable(OPAL_LUA_CALL_TABLE_NAME);
+#endif
+
   PTRACE(4, "OpalMan\tCreated manager.");
 }
 
@@ -386,6 +390,10 @@ void OpalManager::ShutDownEndpoints()
   endpointsMutex.EndWrite();
 
   --m_clearingAllCallsCount; // Allow for endpoints to be added again.
+
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnShutdown");
+#endif
 }
 
 
@@ -530,9 +538,16 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 }
 
 
+#if OPAL_PTLIB_LUA
+void OpalManager::OnEstablishedCall(OpalCall & call)
+{
+  m_lua.Call("OnEstablished", "s", (const char *)call.GetToken());
+}
+#else
 void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 {
 }
+#endif
 
 
 PBoolean OpalManager::IsCallEstablished(const PString & token)
@@ -736,6 +751,18 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   }
 #endif // OPAL_HAS_IM
 
+#if OPAL_PTLIB_LUA
+  PLua::Signature sig;
+  sig.m_arguments.resize(5);
+  sig.m_arguments[0].SetDynamicString(call.GetToken());
+  sig.m_arguments[1].SetDynamicString(connection.GetToken());
+  sig.m_arguments[2].SetDynamicString(connection.GetRemotePartyURL());
+  sig.m_arguments[3].SetDynamicString(connection.GetLocalPartyURL());
+  sig.m_arguments[4].SetDynamicString(destination);
+  if (m_lua.Call("OnIncoming", sig) && !sig.m_results.empty())
+    destination = sig.m_results[0].AsString();
+#endif
+
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
   PStringSet routesTried;
   return OnRouteConnection(routesTried, connection.GetLocalPartyURL(), destination, call, options, &mergedOptions);
@@ -785,6 +812,12 @@ void OpalManager::OnProceeding(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOnProceeding " << connection);
 
   connection.GetCall().OnProceeding(connection);
+
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnProceeding", "ss",
+             (const char *)connection.GetCall().GetToken(),
+             (const char *)connection.GetToken());
+#endif
 }
 
 
@@ -793,6 +826,12 @@ void OpalManager::OnAlerting(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOnAlerting " << connection);
 
   connection.GetCall().OnAlerting(connection);
+
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnAlerting", "ss",
+             (const char *)connection.GetCall().GetToken(),
+             (const char *)connection.GetToken());
+#endif
 }
 
 
@@ -808,6 +847,12 @@ void OpalManager::OnConnected(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOnConnected " << connection);
 
   connection.GetCall().OnConnected(connection);
+
+#if OPAL_PTLIB_LUA
+  m_lua.Call("OnConnected", "ss",
+             (const char *)connection.GetCall().GetToken(),
+             (const char *)connection.GetToken());
+#endif
 }
 
 
@@ -1111,6 +1156,27 @@ OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
 }
 
 
+#if OPAL_PTLIB_LUA
+static void OnStartStopmediaPatch(PLua & lua, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
+{
+  OpalMediaFormat medisFormat = patch.GetSource().GetMediaFormat();
+  lua.Call(fn, "ss",
+        (const char *)connection.GetCall().GetToken(),
+        (const char *)patch.GetSource().GetID(),
+        (const char *)medisFormat.GetName());
+}
+
+void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
+{
+  OnStartStopmediaPatch(m_lua, "OnStartMedia", connection, patch);
+}
+
+
+void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
+{
+  OnStartStopmediaPatch(m_lua, "OnStopMedia", connection, patch);
+}
+#else
 void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
 {
 }
@@ -1119,6 +1185,7 @@ void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPa
 void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
 {
 }
+#endif
 
 
 void OpalManager::OnUserInputString(OpalConnection & connection,

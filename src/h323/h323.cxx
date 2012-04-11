@@ -478,7 +478,8 @@ void H323Connection::AttachSignalChannel(const PString & token,
                                          H323Transport * channel,
                                          PBoolean answeringCall)
 {
-  originating = !answeringCall;
+  if (!answeringCall)
+    InternalSetAsOriginating();
 
   if (signallingChannel != NULL && signallingChannel->IsOpen()) {
     PAssertAlways(PLogicError);
@@ -1785,7 +1786,7 @@ PString H323Connection::GetPrefixName() const
 
 PBoolean H323Connection::SetUpConnection()
 {
-  originating = true;
+  InternalSetAsOriginating();
 
   OnApplyStringOptions();
 

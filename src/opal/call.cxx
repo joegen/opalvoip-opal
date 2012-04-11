@@ -72,6 +72,14 @@ OpalCall::OpalCall(OpalManager & mgr)
 
   connectionsActive.DisallowDeleteObjects();
 
+#if OPAL_PTLIB_LUA
+  PLua & lua = manager.GetLua();
+  PString luaTableName = OPAL_LUA_CALL_TABLE_NAME "." + GetToken();
+  lua.CreateTable(luaTableName);
+  lua.SetFunction(luaTableName + ".Clear", PCREATE_NOTIFIER(LuaClear));
+  lua.Call("OnNewCall", "s", (const char *)GetToken());
+#endif
+
   PTRACE(3, "Call\tCreated " << *this);
 }
 
@@ -84,6 +92,12 @@ OpalCall::~OpalCall()
 {
 #if OPAL_HAS_MIXER
   delete m_recordManager;
+#endif
+
+#if OPAL_PTLIB_LUA
+  PLua & lua = manager.GetLua();
+  lua.Call("OnDestroyCall", "s", (const char *)GetToken());
+  lua.DeleteTable(OPAL_LUA_CALL_TABLE_NAME "." + GetToken());
 #endif
 
   PTRACE(3, "Call\tDestroyed " << *this);
@@ -932,6 +946,32 @@ bool OpalCall::EnumerateConnections(PSafePtr<OpalConnection> & connection,
 
   return false;
 }
+
+
+#if OPAL_PTLIB_LUA
+
+void OpalCall::LuaClear(PLua &, PLua::Signature & sig)
+{
+  OpalConnection::CallEndReason reason;
+
+  switch (sig.m_arguments.size()) {
+    default :
+    case 2 :
+      reason.q931 = sig.m_arguments[1].AsInteger();
+      // Next case
+
+    case 1 :
+      reason.code = (OpalConnection::CallEndReasonCodes)sig.m_arguments[0].AsInteger();
+      // Next case
+
+    case 0 :
+      break;
+  }
+
+  Clear(reason);
+}
+
+#endif // OPAL_PTLIB_LUA
 
 
 /////////////////////////////////////////////////////////////////////////////

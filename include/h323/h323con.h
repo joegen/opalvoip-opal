@@ -1888,7 +1888,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the call direction for this connection.
      */
-    PBoolean HadAnsweredCall() const { return !originating; }
+    PBoolean HadAnsweredCall() const { return !IsOriginating(); }
 
     /**Determined if connection is gatekeeper routed.
      */

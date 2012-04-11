@@ -1437,7 +1437,7 @@ class OpalConnection : public PSafeObject
 
     /**Get the call direction for this connection.
      */
-    PBoolean IsOriginating() const { return originating; }
+    PBoolean IsOriginating() const { return m_originating; }
 
     /**Get the time at which the phase of the call was entered.
       */
@@ -1508,7 +1508,7 @@ class OpalConnection : public PSafeObject
 
     /**Set the remote party display name.
       */
-    void SetRemotePartyName(const PString & name) { remotePartyName = name; }
+    void SetRemotePartyName(const PString & name);
 
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an E.1164 number as one of its aliases
@@ -1723,6 +1723,7 @@ class OpalConnection : public PSafeObject
 
   protected:
     void OnConnectedInternal();
+    void InternalSetAsOriginating();
 
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
 
@@ -1745,7 +1746,7 @@ class OpalConnection : public PSafeObject
 
   protected:
     PString              callToken;
-    PBoolean             originating;
+    PBoolean             m_originating;
     OpalProductInfo      productInfo;
     PString              localPartyName;
     PString              displayName;
@@ -1842,8 +1843,13 @@ class OpalConnection : public PSafeObject
 #endif
 
 #if OPAL_PTLIB_LUA
-    PLua m_lua;
+    PString m_luaTableName;
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaRelease);
     PDECLARE_LuaFunctionNotifier(OpalConnection, LuaSetOption);
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetLocalPartyURL);
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetRemotePartyURL);
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetCalledPartyURL);
+    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetRedirectingParty);
 #endif
 
     // A version of PTime where default constructor creates invalid times
