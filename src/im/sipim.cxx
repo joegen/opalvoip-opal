@@ -241,6 +241,7 @@ static PFactory<OpalIMContext>::Worker<OpalSIPIMContext> static_OpalSIPContext("
 
 OpalSIPIMContext::OpalSIPIMContext()
 {
+  m_conversationId += ';' + SIPURL::GenerateTag();
   m_attributes.Set("acceptable-content-types", "text/plain\ntext/html\napplication/im-iscomposing+xml");
   m_rxCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionIdleTimer));
   m_txCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionIdleTimer));
@@ -360,7 +361,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     SIPURL from(mime.GetFrom());
 
     OpalIM message;
-    message.m_conversationId = mime.GetCallID();
+    message.m_conversationId = mime.GetCallID() + ';' + to.GetTag();
     message.m_to             = to;
     message.m_from           = from;
     message.m_toAddr         = transport.GetLastReceivedAddress();
@@ -398,6 +399,7 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM 
 {
   SIPURL from(message.m_from);
   from.SetDisplayName(m_localName);
+  from.SetTag(message.m_conversationId.Mid(message.m_conversationId.Find(';')+1));
 
   params.m_localAddress    = from.AsQuotedString();
   params.m_addressOfRecord = params.m_localAddress;
