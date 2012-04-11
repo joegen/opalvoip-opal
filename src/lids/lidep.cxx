@@ -832,7 +832,7 @@ PBoolean OpalLineConnection::SetUpConnection()
   PTRACE(3, "LID Con\tSetUpConnection call on " << *this << " to \"" << remotePartyNumber << '"');
 
   SetPhase(SetUpPhase);
-  originating = true;
+  InternalSetAsOriginating();
 
   if (line.IsTerminal()) {
     PSafePtr<OpalConnection> partyA = ownerCall.GetConnection(0);

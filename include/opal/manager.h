@@ -48,6 +48,7 @@
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
 #include <ptclib/pxml.h>
+#include <ptclib/lua.h>
 #include <ptclib/threadpool.h>
 
 #if OPAL_VIDEO
@@ -58,6 +59,10 @@ class OpalEndPoint;
 class OpalMediaPatch;
 class PSSLCertificate;
 class PSSLPrivateKey;
+
+#if OPAL_PTLIB_LUA
+  #define OPAL_LUA_CALL_TABLE_NAME "OpalCall"
+#endif
 
 
 class OpalConferenceState : public PObject
@@ -1787,6 +1792,55 @@ class OpalManager : public PObject
     void SetDefaultILSServer(
       const PString & server
     ) { ilsServer = server; }
+
+#if OPAL_PTLIB_LUA
+    /**Get the lua script for applciation.
+       The Lua script can contain functions which OPAL will call, and can
+       call some functions within OPAL to get information or execute
+       desired behaviour.
+
+       The Lua script can allow ther "require" keyward to load extra modules
+       such as sockets or SQL integration, though this is outside of the scope
+       of OPAL.
+
+       The table <i>OpalCall</i> is always available and is an array of the active
+       calls indeaxed by the call token. Each call has further tables for each
+       connection in the call indexed by connection token.
+
+       The Lua script can contain the following functions, which OPAL will call:
+          OnNewCall(token)
+          OnDestroyCall(token)
+          OnNewConnection(callToken, connectionToken)
+          OnDestroyConnection(callToken, connectionToken)
+          OnIncoming(callToken, connectionToken, remoteParty, localParty, destination)
+            optional return value is an adjusted destination URI.
+          OnProceeding(callToken, connectionToken)
+          OnAlerting(callToken, connectionToken)
+          OnConnected(callToken, connectionToken)
+          OnEstablished(callToken)
+          OnStartMedia(callToken, mediaId)
+          OnStopMedia(callToken, mediaId)
+          OnShutdown()
+
+       The Lua script may call the following functions within OPAL:
+          PTRACE(level, arg [, arg [, ...]])
+          OpalCall[token].Clear([endedByCode [, wait] ])
+          OpalCall[callToken][conToken].Release([endedbyCode])
+          OpalCall[callToken][conToken].SetOption(key, value [, key, value])
+          OpalCall[callToken][conToken].GetLocalPartyURL()
+          OpalCall[callToken][conToken].GetRemotePartyURL()
+          OpalCall[callToken][conToken].GetCalledPartyURL()
+          OpalCall[callToken][conToken].GetRedirectingParty()
+
+        Some additional table fields:
+          OpalCall[callToken][conToken].callToken
+          OpalCall[callToken][conToken].connectionToken
+          OpalCall[callToken][conToken].prefix
+          OpalCall[callToken][conToken].originating
+      */
+    const PLua & GetLua() const { return m_lua; }
+          PLua & GetLua()       { return m_lua; }
+#endif
   //@}
 
     // needs to be public for gcc 3.4
@@ -1940,6 +1994,10 @@ class OpalManager : public PObject
     };
 
     PQueuedThreadPool<DecoupledEvent> m_decoupledEventPool;
+
+#if OPAL_PTLIB_LUA
+    PLua m_lua;
+#endif
 
   private:
     P_REMOVE_VIRTUAL(OpalCall *,CreateCall(), 0);

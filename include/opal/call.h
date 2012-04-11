@@ -598,6 +598,10 @@ class OpalCall : public PSafeObject
     OpalRecordManager * m_recordManager;
 #endif
 
+#if OPAL_PTLIB_LUA
+    PDECLARE_LuaFunctionNotifier(OpalCall, LuaClear);
+#endif
+
   //use to add the connection to the call's connection list
   friend OpalConnection::OpalConnection(OpalCall &, OpalEndPoint &, const PString &, unsigned int, OpalConnection::StringOptions *);
   //use to remove the connection from the call's connection list

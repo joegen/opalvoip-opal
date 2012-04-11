@@ -1676,7 +1676,7 @@ PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << m_dialog.GetRequestURI());
 
-  originating = true;
+  InternalSetAsOriginating();
 
   OnApplyStringOptions();
 
@@ -1744,7 +1744,7 @@ PString SIPConnection::GetDestinationAddress()
 
 PString SIPConnection::GetCalledPartyURL()
 {
-  if (!originating && m_lastReceivedINVITE != NULL)
+  if (!IsOriginating() && m_lastReceivedINVITE != NULL)
     return m_lastReceivedINVITE->GetURI().AsString();
 
   SIPURL calledParty = m_dialog.GetRequestURI();

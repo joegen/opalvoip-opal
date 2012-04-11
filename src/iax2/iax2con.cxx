@@ -81,7 +81,6 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   remotePartyNumber = res[IAX2EndPoint::extensionIndex];
 
   SetCallToken(token);
-  originating = PFalse;
 
   ep.CopyLocalMediaFormats(localMediaFormats);
   AdjustMediaFormats(true, NULL, localMediaFormats);
@@ -282,7 +281,8 @@ PBoolean IAX2Connection::SetUpConnection()
   iax2Processor.SetUserName(userName);
   iax2Processor.SetPassword(password);
   
-  originating = PTrue;
+  InternalSetAsOriginating();
+
   return iax2Processor.SetUpConnection(); 
 }
 

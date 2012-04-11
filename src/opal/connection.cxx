@@ -213,7 +213,7 @@ OpalConnection::OpalConnection(OpalCall & call,
   , endpoint(ep)
   , m_phase(UninitialisedPhase)
   , callToken(token)
-  , originating(PFalse)
+  , m_originating(false)
   , productInfo(ep.GetProductInfo())
   , localPartyName(ep.GetDefaultLocalPartyName())
   , displayName(ep.GetDefaultDisplayName())
@@ -299,12 +299,20 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
 
 #if OPAL_PTLIB_LUA
-  m_lua.SetFunction("SetOption", PCREATE_NOTIFIER(LuaSetOption));
-
-  m_lua.SetString("token",  callToken);
-  m_lua.SetString("prefix", GetPrefixName());
-
-  m_lua.Call("OnConstruct");
+  PLua & lua = endpoint.GetManager().GetLua();
+  m_luaTableName  = OPAL_LUA_CALL_TABLE_NAME "." + ownerCall.GetToken() + '[' + GetToken().ToLiteral() + ']';
+  lua.CreateTable(m_luaTableName );
+  lua.SetFunction(m_luaTableName  + ".Release", PCREATE_NOTIFIER(LuaRelease));
+  lua.SetFunction(m_luaTableName  + ".SetOption", PCREATE_NOTIFIER(LuaSetOption));
+  lua.SetFunction(m_luaTableName  + ".GetLocalPartyURL", PCREATE_NOTIFIER(LuaGetLocalPartyURL));
+  lua.SetFunction(m_luaTableName  + ".GetRemotePartyURL", PCREATE_NOTIFIER(LuaGetRemotePartyURL));
+  lua.SetFunction(m_luaTableName  + ".GetCalledPartyURL", PCREATE_NOTIFIER(LuaGetCalledPartyURL));
+  lua.SetFunction(m_luaTableName  + ".GetRedirectingParty", PCREATE_NOTIFIER(LuaGetRedirectingParty));
+  lua.SetString(m_luaTableName  + ".callToken", call.GetToken());
+  lua.SetString(m_luaTableName  + ".connectionToken", GetToken());
+  lua.SetString(m_luaTableName  + ".prefix", GetPrefixName());
+  lua.SetBoolean(m_luaTableName  + ".originating", false);
+  lua.Call("OnNewConnection", "ss", (const char *)call.GetToken(), (const char *)GetToken());
 #endif
 
   m_phaseTime[UninitialisedPhase].SetCurrentTime();
@@ -318,16 +326,18 @@ OpalConnection::~OpalConnection()
 {
   mediaStreams.RemoveAll();
 
+#if OPAL_PTLIB_LUA
+  PLua & lua = endpoint.GetManager().GetLua();
+  lua.Call("OnDestroyConnection", "ss", (const char *)ownerCall.GetToken(), (const char *)GetToken());
+  lua.DeleteTable(m_luaTableName);
+#endif
+
   delete silenceDetector;
 #if OPAL_AEC
   delete echoCanceler;
 #endif
 #if OPAL_T120DATA
   delete t120handler;
-#endif
-
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnDestroy");
 #endif
 
   ownerCall.connectionsActive.Remove(this);
@@ -349,9 +359,19 @@ bool OpalConnection::GarbageCollection()
 }
 
 
+void OpalConnection::InternalSetAsOriginating()
+{
+  m_originating = true;
+#if OPAL_PTLIB_LUA
+  endpoint.GetManager().GetLua().SetBoolean(m_luaTableName  + ".originating", true);
+#endif
+
+}
+
+
 PBoolean OpalConnection::SetUpConnection()
 {
-  originating = true;
+  InternalSetAsOriginating();
 
   // Check if we are A-Party in this call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
@@ -1678,21 +1698,6 @@ void OpalConnection::OnApplyStringOptions()
     if (!str.IsEmpty())
       SetAlertingType(str);
 
-#if OPAL_PTLIB_LUA
-    if (!m_lua.IsLoaded()) {
-      str = m_stringOptions("script");
-      bool ok = true;
-      if (!str.IsEmpty()) 
-        ok = m_lua.LoadText(str);
-      else {
-        str = m_stringOptions("scriptfile");
-        if (!str.IsEmpty()) 
-          m_lua.LoadFile(str);
-      }
-    }
-    m_lua.Call("OnApplyOptions");
-#endif
-
     UnlockReadWrite();
   }
 }
@@ -1714,18 +1719,12 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 
 void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 {
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnStartMediaPatch");
-#endif
   GetEndPoint().GetManager().OnStartMediaPatch(*this, patch);
 }
 
 
 void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnStopMediaPatch");
-#endif
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
 }
 
@@ -1888,14 +1887,71 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
   }
 }
 
+
 #if OPAL_PTLIB_LUA
 
-void OpalConnection::LuaSetOption(PLua &, const PLua::Signature & sig)
+void OpalConnection::LuaRelease(PLua &, PLua::Signature & sig)
 {
-  for (size_t i = 0; i < sig.m_arguments.size(); i += 2) {
+  OpalConnection::CallEndReason reason;
+
+  switch (sig.m_arguments.size()) {
+    default :
+    case 2 :
+      reason.q931 = sig.m_arguments[1].AsInteger();
+      // Next case
+
+    case 1 :
+      reason.code = (OpalConnection::CallEndReasonCodes)sig.m_arguments[0].AsInteger();
+      // Next case
+
+    case 0 :
+      break;
+  }
+
+  Release(reason);
+}
+
+
+void OpalConnection::LuaSetOption(PLua &, PLua::Signature & sig)
+{
+  for (size_t i = 0; i < sig.m_arguments.size(); ++i) {
+    PString key = sig.m_arguments[i++].AsString();
+    if (i < sig.m_arguments.size())
+      m_stringOptions.SetAt(key, sig.m_arguments[i].AsString());
+    else
+      m_stringOptions.SetAt(key, PString::Empty());
   }
 }
 
-#endif
+
+void OpalConnection::LuaGetLocalPartyURL(PLua &, PLua::Signature & sig)
+{
+  sig.m_results.resize(1);
+  sig.m_results[0].SetDynamicString(GetLocalPartyURL());
+}
+
+
+void OpalConnection::LuaGetRemotePartyURL(PLua &, PLua::Signature & sig)
+{
+  sig.m_results.resize(1);
+  sig.m_results[0].SetDynamicString(GetRemotePartyURL());
+}
+
+
+void OpalConnection::LuaGetCalledPartyURL(PLua &, PLua::Signature & sig)
+{
+  sig.m_results.resize(1);
+  sig.m_results[0].SetDynamicString(GetCalledPartyURL());
+}
+
+
+void OpalConnection::LuaGetRedirectingParty(PLua &, PLua::Signature & sig)
+{
+  sig.m_results.resize(1);
+  sig.m_results[0].SetDynamicString(GetRedirectingParty());
+}
+
+#endif // OPAL_PTLIB_LUA
+
 
 /////////////////////////////////////////////////////////////////////////////

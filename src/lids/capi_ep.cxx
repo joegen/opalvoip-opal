@@ -886,7 +886,8 @@ bool OpalCapiConnection::IsNetworkConnection() const
 
 PBoolean OpalCapiConnection::SetUpConnection()
 {
-  originating = true;
+  InternalSetAsOriginating();
+
   SetPhase(SetUpPhase);
 
   OnApplyStringOptions();
@@ -1065,7 +1066,7 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       resp.param.connect_active_resp.m_PLCI = m_PLCI;
       PutMessage(resp);
 
-      if (originating) {
+      if (IsOriginating()) {
         OpalCapiMessage req(CAPI_CONNECT_B3, CAPI_REQ, sizeof(OpalCapiMessage::Params::ConnectB3Req));
         req.param.connect_b3_req.m_PLCI = m_PLCI;
         req.AddEmpty(); // Network Control Protocol Information
