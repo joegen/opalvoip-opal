@@ -1009,7 +1009,10 @@ class SIPEndPoint : public OpalRTPEndPoint
     bool          m_registeredUserMode;
 
     bool              m_shuttingDown;
+
     SIPHandlersList   activeSIPHandlers;
+    PSafePtr<SIPHandler> FindHandlerByPDU(const SIP_PDU & pdu, PSafetyMode mode);
+
     PStringToString   m_receivedConnectionTokens;
     PMutex            m_receivedConnectionMutex;
 
