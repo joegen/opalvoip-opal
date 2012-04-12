@@ -112,7 +112,7 @@ SIP_Presentity::SIP_Presentity()
 SIP_Presentity::SIP_Presentity(const SIP_Presentity & other)
   : OpalPresentityWithCommandThread(other)
   , PValidatedNotifierTarget(other)
-  , m_endpoint(other.m_endpoint)
+  , m_endpoint(NULL)
   , m_watcherInfoVersion(-1)
 {
 }
@@ -254,10 +254,10 @@ bool SIP_Presentity::Close()
     m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
 
   PTRACE(4, "SIPPres\t'" << m_aor << "' awaiting unsubscriptions to complete.");
-  while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR))
+  while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR, true))
     PThread::Sleep(100);
   for (StringMap::iterator subs = presenceIdByAor.begin(); subs != presenceIdByAor.end(); ++subs) {
-    while (m_endpoint->IsSubscribed(SIPSubscribe::Presence, subs->second))
+    while (m_endpoint->IsSubscribed(SIPSubscribe::Presence, subs->second, true))
       PThread::Sleep(100);
   }
 
@@ -290,8 +290,8 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
     param.m_contentType     = "application/pidf+xml";
     param.m_eventList       = true;
 
-    param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnPresenceSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-    param.m_onNotify         = PCREATE_NOTIFIER2(OnPresenceNotify, SIPSubscribe::NotifyCallbackInfo &);
+    param.m_onSubcribeStatus = PCREATE_NOTIFIER(OnPresenceSubscriptionStatus);
+    param.m_onNotify         = PCREATE_NOTIFIER(OnPresenceNotify);
 
     PString id;
     if (m_endpoint->Subscribe(param, id, false)) {
@@ -390,8 +390,8 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
-  param.m_onSubcribeStatus = PCREATE_NOTIFIER2(OnWatcherInfoSubscriptionStatus, const SIPSubscribe::SubscriptionStatus &);
-  param.m_onNotify         = PCREATE_NOTIFIER2(OnWatcherInfoNotify, SIPSubscribe::NotifyCallbackInfo &);
+  param.m_onSubcribeStatus = PCREATE_NOTIFIER(OnWatcherInfoSubscriptionStatus);
+  param.m_onNotify         = PCREATE_NOTIFIER(OnWatcherInfoNotify);
 
   m_endpoint->Subscribe(param, m_watcherSubscriptionAOR);
 }
