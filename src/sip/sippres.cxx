@@ -111,7 +111,7 @@ SIP_Presentity::SIP_Presentity()
 
 SIP_Presentity::SIP_Presentity(const SIP_Presentity & other)
   : OpalPresentityWithCommandThread(other)
-  , m_endpoint(other.m_endpoint)
+  , m_endpoint(NULL)
   , m_watcherInfoVersion(-1)
 {
 }
@@ -253,10 +253,10 @@ bool SIP_Presentity::Close()
     m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
 
   PTRACE(4, "SIPPres\t'" << m_aor << "' awaiting unsubscriptions to complete.");
-  while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR))
+  while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR, true))
     PThread::Sleep(100);
   for (StringMap::iterator subs = presenceIdByAor.begin(); subs != presenceIdByAor.end(); ++subs) {
-    while (m_endpoint->IsSubscribed(SIPSubscribe::Presence, subs->second))
+    while (m_endpoint->IsSubscribed(SIPSubscribe::Presence, subs->second, true))
       PThread::Sleep(100);
   }
 
