@@ -244,10 +244,9 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
          << PHTML::HotLink("Parameters") << "Parameters" << PHTML::HotLink()
          << PHTML::Paragraph();
 
-    if (PIsDescendant(&PSystemLog::GetTarget(), PSystemLogToFile))
-      html << PHTML::HotLink("logfile.txt") << "Full Log File" << PHTML::HotLink()
-           << PHTML::BreakLine()
-           << PHTML::HotLink("tail_logfile") << "Tail Log File" << PHTML::HotLink()
+    PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+    if (logFile != NULL)
+      html << PHTML::HotLink(PURL(logFile->GetFilePath()).AsString()) << "Full Log File" << PHTML::HotLink()
            << PHTML::Paragraph();
  
     html << PHTML::HRule()
