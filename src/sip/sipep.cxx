@@ -1344,9 +1344,11 @@ bool SIPEndPoint::Unsubscribe(SIPSubscribe::PredefinedPackages eventPackage,
 
 bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & token, bool invalidateNotifiers)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
+                                                activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
   if (handler == NULL)
-    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference);
+    handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
+          activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
   else {
     if (!eventPackage.IsEmpty() && handler->GetEventPackage() != eventPackage)
       handler.SetNULL();
@@ -1368,13 +1370,10 @@ bool SIPEndPoint::Unsubscribe(const PString & eventPackage, const PString & toke
   }
 
   if (invalidateNotifiers) {
-    PSafePtr<SIPSubscribeHandler> subscription = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(handler);
-    if (subscription != NULL) {
-      SIPSubscribe::Params params(subscription->GetParams());
-      params.m_onNotify = NULL;
-      params.m_onSubcribeStatus = NULL;
-      subscription->UpdateParameters(params);
-    }
+    SIPSubscribe::Params params(handler->GetParams());
+    params.m_onNotify = NULL;
+    params.m_onSubcribeStatus = NULL;
+    handler->UpdateParameters(params);
   }
 
   return handler->ActivateState(SIPHandler::Unsubscribing);
