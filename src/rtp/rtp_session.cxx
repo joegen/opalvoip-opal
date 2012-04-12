@@ -931,9 +931,22 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
         // the lowest numbered packet.
         SaveOutOfOrderPacket(frame);
 
-        frame = m_outOfOrderPackets.back();
-        m_outOfOrderPackets.pop_back();
-        sequenceNumber = frame.GetSequenceNumber();
+        for (;;) {
+          if (m_outOfOrderPackets.empty())
+            return e_IgnorePacket;
+
+          frame = m_outOfOrderPackets.back();
+          m_outOfOrderPackets.pop_back();
+
+          sequenceNumber = frame.GetSequenceNumber();
+          if (sequenceNumber >= expectedSequenceNumber)
+            break;
+
+          PTRACE(2, "RTP\tSession " << m_sessionId << ", ssrc=" << syncSourceIn
+                 << ", incorrect sequence after re-ordering, got "
+                 << sequenceNumber << " expected " << expectedSequenceNumber);
+        }
+
         outOfOrderPacketTime = tick;
       }
 
