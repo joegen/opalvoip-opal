@@ -2915,9 +2915,10 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   // Comply to RFC4488
   bool referSub = true;
-  if (requestMIME.Contains("Refer-Sub")) {
-    referSub = !(requestMIME["Refer-Sub"] *= "false");
-    response.GetMIME().SetAt("Refer-Sub", referSub ? "true" : "false");
+  static PConstCaselessString const ReferSubHeader("Refer-Sub");
+  if (requestMIME.Contains(ReferSubHeader)) {
+    referSub = requestMIME.GetBoolean(ReferSubHeader, true);
+    response.GetMIME().SetBoolean(ReferSubHeader, referSub);
   }
 
   if (referSub) {
