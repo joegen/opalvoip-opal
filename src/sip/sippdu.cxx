@@ -3667,7 +3667,7 @@ SIPRefer::SIPRefer(SIPConnection & connection,
     m_mime.SetReferredBy(adjustedReferredBy.AsQuotedString());
   }
 
-  m_mime.SetAt("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or not ...
+  m_mime.SetBoolean("Refer-Sub", referSub); // Use RFC4488 to indicate we doing NOTIFYs or not ...
   m_mime.AddSupported("norefersub");
 }
 
