@@ -133,8 +133,10 @@ OpalIMContext::MessageDisposition OpalIMContext::Send(OpalIM * message)
 
   // make sure various fields are from this context
   message->m_conversationId = GetID();
-  message->m_from = GetLocalURL();
-  message->m_to = GetRemoteURL();
+  if (message->m_from.IsEmpty())
+    message->m_from = GetLocalURL();
+  if (message->m_to.IsEmpty())
+    message->m_to = GetRemoteURL();
 
   // if outgoing message still pending, queue this message
   m_outgoingMessagesMutex.Wait();
