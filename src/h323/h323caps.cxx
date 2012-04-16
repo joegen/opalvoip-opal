@@ -164,9 +164,19 @@ unsigned H323Capability::GetRxFramesInPacket() const
 }
 
 
-PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return subTypePDU.GetTag() == GetSubType();
+  if (subTypePDU.GetTag() != GetSubType())
+    return false;
+
+  if (mediaPacketization.IsEmpty())
+    return true;
+
+  PStringSet mediaPacketizations = GetMediaFormat().GetMediaPacketizations();
+  if (mediaPacketizations.IsEmpty())
+    return true;
+
+  return mediaPacketizations.Contains(mediaPacketization);
 }
 
 
@@ -939,9 +949,9 @@ PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & 
   return PTrue;
 }
 
-PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU) &&
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
 }
 
@@ -1024,9 +1034,9 @@ PBoolean H323NonStandardAudioCapability::OnReceivedPDU(const H245_AudioCapabilit
 }
 
 
-PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU) &&
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
 }
 
@@ -1199,9 +1209,9 @@ PBoolean H323NonStandardVideoCapability::OnReceivedPDU(const H245_VideoCapabilit
 }
 
 
-PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU) &&
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
 }
 
@@ -1247,9 +1257,9 @@ PBoolean H323GenericVideoCapability::OnReceivedPDU(const H245_VideoCapability & 
   return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type);
 }
 
-PBoolean H323GenericVideoCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323GenericVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU) &&
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
 }
 
@@ -1362,7 +1372,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
     const H245_VideoCapability & vidCap = extcap.m_videoCapability[i];
     for (PINDEX c = 0; c < allVideoCapabilities.GetSize(); c++) {
       H323VideoCapability & capability = (H323VideoCapability &)allVideoCapabilities[c];
-      if (capability.IsMatch(vidCap) && capability.OnReceivedPDU(vidCap, type)) {
+      if (capability.IsMatch(vidCap, PString::Empty()) && capability.OnReceivedPDU(vidCap, type)) {
         OpalMediaFormat mediaFormat = capability.GetMediaFormat();
         mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
         if (mediaFormat.ToNormalisedOptions())
@@ -1376,9 +1386,9 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
 }
 
 
-PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  if (!H323Capability::IsMatch(subTypePDU))
+  if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
     return false;
 
   const H245_ExtendedVideoCapability & extcap = (const H245_ExtendedVideoCapability &)subTypePDU.GetObject();
@@ -1436,7 +1446,7 @@ PBoolean H323GenericControlCapability::OnReceivedPDU(const H245_Capability & pdu
 }
 
 
-PBoolean H323GenericControlCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323GenericControlCapability::IsMatch(const PASN_Choice & subTypePDU, const PString &) const
 {
   return H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
 }
@@ -1738,9 +1748,9 @@ PBoolean H323NonStandardDataCapability::OnReceivedPDU(const H245_DataApplication
 }
 
 
-PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU) &&
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
 }
 
@@ -2443,7 +2453,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitAudioCapability :
         if (capability.GetMainType() == H323Capability::e_Audio) {
           const H245_AudioCapability & audio = cap;
-          found = capability.IsMatch(audio);
+          found = capability.IsMatch(audio, PString::Empty());
         }
         break;
 
@@ -2452,7 +2462,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitVideoCapability :
         if (capability.GetMainType() == H323Capability::e_Video) {
           const H245_VideoCapability & video = cap;
-          found = capability.IsMatch(video);
+          found = capability.IsMatch(video, PString::Empty());
         }
         break;
 
@@ -2461,7 +2471,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitDataApplicationCapability :
         if (capability.GetMainType() == H323Capability::e_Data) {
           const H245_DataApplicationCapability & data = cap;
-          found = capability.IsMatch(data.m_application);
+          found = capability.IsMatch(data.m_application, PString::Empty());
         }
         break;
 
@@ -2470,7 +2480,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitUserInputCapability :
         if (capability.GetMainType() == H323Capability::e_UserInput) {
           const H245_UserInputCapability & ui = cap;
-          found = capability.IsMatch(ui);
+          found = capability.IsMatch(ui, PString::Empty());
         }
         break;
 
@@ -2479,7 +2489,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 
       case H245_Capability::e_genericControlCapability :
         if (capability.GetMainType() == H323Capability::e_GenericControl)
-          found = capability.IsMatch(cap);
+          found = capability.IsMatch(cap, PString::Empty());
         break;
     }
 
@@ -2546,22 +2556,25 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 }
 
 
-H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType) const
+H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType, const PString & mediaPacketization) const
 {
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     bool checkExact;
     switch (dataType.GetTag()) {
       case H245_DataType::e_audioData :
-        checkExact = capability.GetMainType() == H323Capability::e_Audio && capability.IsMatch((const H245_AudioCapability &)dataType);
+        checkExact = capability.GetMainType() == H323Capability::e_Audio &&
+                     capability.IsMatch((const H245_AudioCapability &)dataType, mediaPacketization);
         break;
 
       case H245_DataType::e_videoData :
-        checkExact = capability.GetMainType() == H323Capability::e_Video && capability.IsMatch((const H245_VideoCapability &)dataType);
+        checkExact = capability.GetMainType() == H323Capability::e_Video &&
+                     capability.IsMatch((const H245_VideoCapability &)dataType, mediaPacketization);
         break;
 
       case H245_DataType::e_data :
-        checkExact = capability.GetMainType() == H323Capability::e_Data && capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application);
+        checkExact = capability.GetMainType() == H323Capability::e_Data &&
+                     capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application, mediaPacketization);
         break;
 
       default :
@@ -2611,7 +2624,8 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 }
 
 
-H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeElement) const
+H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeElement,
+                                                  const PString & mediaPacketization) const
 {
   PTRACE(4, "H323\tFindCapability: " << modeElement.m_type.GetTagName());
 
@@ -2621,7 +2635,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
       case H245_ModeElementType::e_audioMode :
         if (capability.GetMainType() == H323Capability::e_Audio) {
           const H245_AudioMode & audio = modeElement.m_type;
-          if (capability.IsMatch(audio))
+          if (capability.IsMatch(audio, mediaPacketization))
             return &capability;
         }
         break;
@@ -2629,7 +2643,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
       case H245_ModeElementType::e_videoMode :
         if (capability.GetMainType() == H323Capability::e_Video) {
           const H245_VideoMode & video = modeElement.m_type;
-          if (capability.IsMatch(video))
+          if (capability.IsMatch(video, mediaPacketization))
             return &capability;
         }
         break;
@@ -2637,7 +2651,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
       case H245_ModeElementType::e_dataMode :
         if (capability.GetMainType() == H323Capability::e_Data) {
           const H245_DataMode & data = modeElement.m_type;
-          if (capability.IsMatch(data.m_application))
+          if (capability.IsMatch(data.m_application, mediaPacketization))
             return &capability;
         }
         break;
