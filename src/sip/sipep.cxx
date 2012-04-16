@@ -1909,8 +1909,10 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
     mime.SetContact(contact.AsQuotedString());
   }
 
-  if (!mime.Has("Route") && registrar != NULL)
-    mime.SetRoute(registrar->GetServiceRoute());
+  if (!mime.Has("Route") && registrar != NULL) {
+    if (!pdu.SetRoute(registrar->GetServiceRoute()))
+      pdu.SetRoute(registrar->GetProxy());
+  }
 }
 
 
