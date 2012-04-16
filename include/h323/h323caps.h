@@ -280,7 +280,8 @@ class H323Capability : public PObject
     /**Compare the PDU part of the capability.
       */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
 
     /**Validate that the capability is usable given the connection.
@@ -352,6 +353,7 @@ class H323Capability : public PObject
 
   private:
     mutable OpalMediaFormat m_mediaFormat;
+    P_REMOVE_VIRTUAL(PBoolean, IsMatch(const PASN_Choice &) const, false);
 
   friend class H323Capabilities;
 };
@@ -832,7 +834,8 @@ class H323NonStandardAudioCapability : public H323AudioCapability,
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 };
@@ -923,7 +926,8 @@ class H323GenericAudioCapability : public H323AudioCapability,
     /**Compare the generic part of the capability, if applicable.
      */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 };
@@ -1183,7 +1187,8 @@ class H323NonStandardVideoCapability : public H323VideoCapability,
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 };
@@ -1272,7 +1277,8 @@ class H323GenericVideoCapability : public H323VideoCapability,
     /**Compare the generic part of the capability, if applicable.
      */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 };
@@ -1349,7 +1355,8 @@ class H323ExtendedVideoCapability : public H323GenericVideoCapability
     /**Compare the generic part of the capability, if applicable.
      */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 
@@ -1433,7 +1440,8 @@ class H323GenericControlCapability : public H323Capability,
     /**Compare the generic part of the capability, if applicable.
      */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 
@@ -1821,7 +1829,8 @@ class H323NonStandardDataCapability : public H323DataCapability,
     /**Compare the nonStandardData part of the capability, if applicable.
       */
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU  ///<  sub-type PDU of H323Capability
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
 };
@@ -2305,7 +2314,8 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H245_DataType & dataType  ///<  H245 data type of codec
+      const H245_DataType & dataType,  ///<  H245 data type of codec
+      const PString & mediaPacketization = PString::Empty()  ///< Media packetization, if present
     ) const;
 
     /**Find the capability given the H.245 data type PDU.
@@ -2314,7 +2324,8 @@ class H323Capabilities : public PObject
        NULL if no capability meeting the criteria was found
       */
     H323Capability * FindCapability(
-      const H245_ModeElement & modeElement  ///<  H245 data type of codec
+      const H245_ModeElement & modeElement,  ///<  H245 data type of codec
+      const PString & mediaPacketization = PString::Empty()  ///< Media packetization, if present
     ) const;
 
     /**Find the capability given the type codecs.
