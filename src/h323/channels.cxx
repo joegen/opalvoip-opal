@@ -146,7 +146,6 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
   capability = (H323Capability *)cap.Clone();
   bandwidthUsed = 0;
   opened = PFalse;
-  paused = PTrue;
 }
 
 
