@@ -6102,6 +6102,7 @@ BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
 END_EVENT_TABLE()
 
 RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo * info)
+  : m_user(NULL)
 {
   if (info != NULL)
     m_info = *info;
@@ -6133,6 +6134,9 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
 
 void RegistrationDialog::Changed(wxCommandEvent & /*event*/)
 {
+  if (m_user == NULL)
+    return;
+
   wxString user = m_user->GetValue();
   if (user.empty())
     m_ok->Disable();
