@@ -308,28 +308,6 @@ class H323Channel : public PObject
     /**Get the capability that created this channel.
       */
     const H323Capability & GetCapability() const { return *capability; }
-
-    /**Get the "pause" flag.
-       A paused channel is one that prevents the annunciation of the channels
-       data. For example for audio this would mute the data, for video it would
-       still frame.
-
-       Note that channel is not stopped, and may continue to actually receive
-       data, it is just that nothing is done with it.
-      */
-    PBoolean IsPaused() const { return paused; }
-
-    /**Set the "pause" flag.
-       A paused channel is one that prevents the annunciation of the channels
-       data. For example for audio this would mute the data, for video it would
-       still frame.
-
-       Note that channel is not stopped, and may continue to actually receive
-       data, it is just that nothing is done with it.
-      */
-    void SetPause(
-      PBoolean pause   ///<  New pause flag
-    ) { paused = pause; }
   //@}
 
     virtual bool OnMediaCommand(const OpalMediaCommand &);
@@ -343,7 +321,6 @@ class H323Channel : public PObject
     H323ChannelNumber      number;
     H323ChannelNumber      reverseChannel;
     bool                   opened;
-    bool                   paused;
     PAtomicInteger         m_terminating;
 
   private:

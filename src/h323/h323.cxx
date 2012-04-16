@@ -3565,14 +3565,12 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         }
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
-          chan2->SetPause(IsLocalHold());
           stream->SetPaused(IsLocalHold());
         }
       }
       else {
         OpalMediaStreamPtr stream = GetMediaStream(session_id, true);
         // Enable/mute the receive channel depending on whether the remote endis held
-        chan2->SetPause(IsLocalHold());
         stream->SetPaused(IsLocalHold());
       }
     }
