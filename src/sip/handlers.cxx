@@ -2313,6 +2313,8 @@ void SIPMessageHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 void SIPMessageHandler::UpdateParameters(const SIPMessage::Params & params)
 {
+  m_parameters.m_remoteAddress = params.m_remoteAddress;
+  m_parameters.m_localAddress = params.m_localAddress;
   m_parameters.m_messageId = params.m_messageId;
 
   if (!params.m_body.IsEmpty()) {
