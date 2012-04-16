@@ -2581,9 +2581,9 @@ static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
 }
 
 
-PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  if (!H323Capability::IsMatch(subTypePDU))
+  if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
     return false;
 
   H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
@@ -2591,7 +2591,7 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
-  if (!mediaFormat.GetMediaPacketizations().Contains(
+  if (mediaPacketization.IsEmpty() && !mediaFormat.GetMediaPacketizations().Contains(
           h263.HasOptionalField(H245_H263VideoCapability::e_h263Options) ? "RFC2429" : "RFC2190"))
     return false;
 
