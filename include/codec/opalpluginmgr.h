@@ -697,7 +697,10 @@ class H323H263PluginCapability : public H323VideoPluginCapability
     virtual PBoolean OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
-    virtual PBoolean IsMatch(const PASN_Choice & subTypePDU) const;
+    virtual PBoolean IsMatch(
+      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
+    ) const;
 };
 
 #endif // OPAL_VIDEO
