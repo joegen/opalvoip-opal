@@ -4739,8 +4739,13 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
                       open.m_forwardLogicalChannelParameters.m_multiplexParameters;
     direction = H323Channel::IsReceiver;
 
+    PString mediaPacketization;
+    if (param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
+        param->m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
+      mediaPacketization = H323GetRTPPacketization(param->m_mediaPacketization);
+
     // See if datatype is supported
-    capability = localCapabilities.FindCapability(*dataType);
+    capability = localCapabilities.FindCapability(*dataType, mediaPacketization);
   }
 
   if (capability == NULL) {
