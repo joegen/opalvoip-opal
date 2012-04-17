@@ -77,15 +77,9 @@ public:
   virtual bool IsIntraFrame();
   virtual size_t GetLength() { return m_encodedFrame.len; }
 
-  void SetMaxPayloadSize (uint16_t maxPayloadSize) 
-  {
-    m_maxPayloadSize = maxPayloadSize;
-  }
-
 private:
   uint32_t parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen);
 
-  uint16_t m_maxPayloadSize;
   uint16_t m_minPayloadSize;
   uint32_t m_maxFrameSize;
   bool     m_customClock;

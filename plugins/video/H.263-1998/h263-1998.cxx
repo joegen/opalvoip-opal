@@ -281,6 +281,7 @@ bool H263_Base_EncoderContext::SetOptions(const char * const * options)
 void H263_Base_EncoderContext::SetOption(const char * option, const char * value)
 {
   if (STRCMPI(option, PLUGINCODEC_OPTION_FRAME_TIME) == 0) {
+    m_context->time_base.den = 2997;
     m_context->time_base.num = atoi(value)*m_context->time_base.den/VIDEO_CLOCKRATE;
     return;
   }
@@ -297,6 +298,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
 
   if (STRCMPI(option, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0) {
     m_context->rtp_payload_size = atoi(value);
+    m_packetizer->SetMaxPayloadSize(m_context->rtp_payload_size);
     return;
   }
 
@@ -420,12 +422,15 @@ bool H263_Base_EncoderContext::OpenCodec()
   // Dump info
   PTRACE(5, m_prefix, "Size is " << m_context->width << "x" << m_context->height);
   PTRACE(5, m_prefix, "GOP is " << m_context->gop_size);
+  PTRACE(5, m_prefix, "time_base set to " << m_context->time_base.num << '/' << m_context->time_base.den
+         << " (" << std::setprecision(2) << ((double)m_context->time_base.den/m_context->time_base.num) << "fps)");
   PTRACE(5, m_prefix, "bit_rate set to " << m_context->bit_rate);
   PTRACE(5, m_prefix, "rc_max_rate is " <<  m_context->rc_max_rate);
   PTRACE(5, m_prefix, "rc_min_rate set to " << m_context->rc_min_rate);
   PTRACE(5, m_prefix, "bit_rate_tolerance set to " <<m_context->bit_rate_tolerance);
   PTRACE(5, m_prefix, "qmin set to " << m_context->qmin);
   PTRACE(5, m_prefix, "qmax set to " << m_context->qmax);
+  PTRACE(5, m_prefix, "payload size set to " << m_context->rtp_payload_size);
 
   #define CODEC_TRACER_FLAG(tracer, flag) \
     PTRACE(4, m_prefix, #flag " is " << ((m_context->flags & flag) ? "enabled" : "disabled"));
@@ -591,12 +596,6 @@ bool H263_RFC2190_EncoderContext::Init()
 }
 
 
-void H263_RFC2190_EncoderContext::SetMaxRTPFrameSize(unsigned size)
-{
-  m_context->rtp_payload_size = size;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H263_RFC2429_EncoderContext::H263_RFC2429_EncoderContext()
@@ -615,9 +614,11 @@ bool H263_RFC2429_EncoderContext::Init()
 }
 
 
-void H263_RFC2429_EncoderContext::SetMaxRTPFrameSize (unsigned size)
+/////////////////////////////////////////////////////////////////////////////
+
+Packetizer::Packetizer()
+  : m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
 {
-  ((RFC2429Frame *)m_packetizer)->SetMaxPayloadSize((uint16_t)size);
 }
 
 
@@ -625,6 +626,9 @@ void H263_RFC2429_EncoderContext::SetMaxRTPFrameSize (unsigned size)
 
 H263_Base_DecoderContext::H263_Base_DecoderContext(const char * prefix, Depacketizer * depacketizer)
   : m_prefix(prefix)
+  , m_codec(NULL)
+  , m_context(NULL)
+  , m_outputFrame(NULL)
   , m_depacketizer(depacketizer)
 {
   if (!FFMPEGLibraryInstance.Load())
@@ -1454,6 +1458,20 @@ static struct PluginCodec_Option const annexT =
 static struct PluginCodec_Option const annexD =
   { PluginCodec_BoolOption,    H263_ANNEX_D,   true,  PluginCodec_AndMerge, "1", "D", "0" };
 
+static struct PluginCodec_Option const TemporalSpatialTradeOff =
+{
+  PluginCodec_IntegerOption,          // Option type
+  PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF, // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "31",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "31"                                // Maximum value
+};
+
 static struct PluginCodec_Option const * const h263POptionTable[] = {
   &mediaPacketizationPlus,
   &maxBR,
@@ -1470,6 +1488,7 @@ static struct PluginCodec_Option const * const h263POptionTable[] = {
   &annexN,
   &annexT,
   &annexD,
+  &TemporalSpatialTradeOff,
   NULL
 };
 
