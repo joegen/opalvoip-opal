@@ -32,9 +32,6 @@
 
 #include <codec/opalplugin.hpp>
 
-
-#define MAX_PACKET_LEN 1024
-
 const unsigned char PSC[3]      = { 0x00, 0x00, 0x80 };
 const unsigned char PSC_Mask[3] = { 0xff, 0xff, 0xfc };
 
@@ -280,10 +277,10 @@ bool RFC2190Packetizer::SetLength(size_t newLen)
   // split fragments longer than the maximum
   FragmentListType::iterator r;
   for (r = fragments.begin(); r != fragments.end(); ++r) {
-    while (r->length > MAX_PACKET_LEN) {
+    while (r->length > m_maxPayloadSize) {
       int oldLen = r->length;
-      int newLen = MAX_PACKET_LEN;
-      if ((oldLen - newLen) < MAX_PACKET_LEN)
+      int newLen = m_maxPayloadSize;
+      if ((oldLen - newLen) < m_maxPayloadSize)
         newLen = oldLen / 2;
       fragment oldFrag = *r;
       r = fragments.erase(r);
