@@ -176,8 +176,7 @@ uint32_t Bitstream::GetPos()
 }
 
 RFC2429Frame::RFC2429Frame ()
-  : m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
-  , m_minPayloadSize(0)
+  : m_minPayloadSize(0)
   , m_maxFrameSize(0)
   , m_customClock(false)
 {
