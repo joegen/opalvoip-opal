@@ -86,12 +86,22 @@ typedef unsigned char BYTE;
 class Packetizer
 {
   public:
+    Packetizer();
     virtual ~Packetizer() { }
+
     virtual bool Reset(unsigned width, unsigned height) = 0;
     virtual bool GetPacket(RTPFrame & frame, unsigned int & flags) = 0;
     virtual unsigned char * GetBuffer() = 0;
     virtual size_t GetMaxSize() = 0;
     virtual bool SetLength(size_t len) = 0;
+
+    void SetMaxPayloadSize (uint16_t maxPayloadSize) 
+    {
+      m_maxPayloadSize = maxPayloadSize;
+    }
+
+  protected:
+    uint16_t m_maxPayloadSize;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -117,8 +127,6 @@ class H263_Base_EncoderContext
     void Lock();
     void Unlock();
 
-    virtual void SetMaxRTPFrameSize (unsigned size) = 0;
-
   protected:
     const char     * m_prefix;
     AVCodec        * m_codec;
@@ -136,7 +144,6 @@ class H263_RFC2190_EncoderContext : public H263_Base_EncoderContext
   public:
     H263_RFC2190_EncoderContext();
     bool Init();
-    void SetMaxRTPFrameSize (unsigned size);
     static void RTPCallBack(AVCodecContext *avctx, void * data, int size, int mb_nb);
 };
 
@@ -149,7 +156,6 @@ class H263_RFC2429_EncoderContext : public H263_Base_EncoderContext
     ~H263_RFC2429_EncoderContext();
 
     bool Init();
-    void SetMaxRTPFrameSize (unsigned size);
 };
 
 ////////////////////////////////////////////////////////////////////////////
