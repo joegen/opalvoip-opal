@@ -5832,6 +5832,7 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
 
   m_TargetBitRate = FindWindowByNameAs<wxSlider>(this, wxT("VideoBitRate"));
   m_FrameRate = FindWindowByNameAs<wxSlider>(this, wxT("FrameRate"));
+  m_TSTO = FindWindowByNameAs<wxSlider>(this, wxT("TSTO"));
 
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
   if (connection != NULL) {
@@ -5848,6 +5849,8 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
 
       m_FrameRate->SetMax(30);
       m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
+
+      m_TSTO->SetValue(mediaFormat.GetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption()));
     }
   }
 }
@@ -5865,6 +5868,7 @@ bool VideoControlDialog::TransferDataFromWindow()
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_TargetBitRate->GetValue()*1000);
       mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), mediaFormat.GetClockRate()/m_FrameRate->GetValue());
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption(), m_TSTO->GetValue());
       stream->UpdateMediaFormat(mediaFormat);
     }
   }
@@ -5914,6 +5918,7 @@ BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
 END_EVENT_TABLE()
 
 RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo * info)
+  : m_user(NULL)
 {
   if (info != NULL)
     m_info = *info;
@@ -5941,6 +5946,9 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
 
 void RegistrationDialog::Changed(wxCommandEvent & /*event*/)
 {
+  if (m_user == NULL)
+    return;
+
   wxString user = m_user->GetValue();
   if (user.empty())
     m_ok->Disable();
