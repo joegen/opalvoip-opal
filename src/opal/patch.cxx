@@ -64,13 +64,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 
 OpalMediaPatch::~OpalMediaPatch()
 {
-  PWaitAndSignal m(patchThreadMutex);
-  LockReadWrite();
-  if (patchThread != NULL) {
-    PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
-    delete patchThread;
-    patchThread = NULL;
-  }
+  StopThread();
   PTRACE(5, "Patch\tDestroyed media patch " << this);
 }
 
@@ -113,6 +107,25 @@ void OpalMediaPatch::Start()
 }
 
 
+void OpalMediaPatch::StopThread()
+{
+  patchThreadMutex.Wait();
+  PThread * thread = patchThread;
+  patchThread = NULL;
+  patchThreadMutex.Signal();
+
+  if (thread == NULL)
+    return;
+
+  if (!thread->IsSuspended()) {
+    PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
+    PAssert(thread->WaitForTermination(10000), "Media patch thread not terminated.");
+  }
+
+  delete thread;
+}
+
+
 void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
@@ -141,18 +154,9 @@ void OpalMediaPatch::Close()
     if (!LockReadWrite())
       return;
   }
-
-  PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
-  {
-    PWaitAndSignal m(patchThreadMutex);
-    if (patchThread != NULL && !patchThread->IsSuspended()) {
-      UnlockReadWrite();
-      PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
-      return;
-    }
-  }
-
   UnlockReadWrite();
+
+  StopThread();
 }
 
 
