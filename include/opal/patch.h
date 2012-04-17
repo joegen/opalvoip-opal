@@ -239,6 +239,7 @@ class OpalMediaPatch : public PSafeObject
                 
     /**Called from the associated patch thread */
     virtual void Main();
+    void StopThread();
     bool DispatchFrame(RTP_DataFrame & frame);
     bool EnableJitterBuffer();
 
