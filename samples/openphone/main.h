@@ -200,6 +200,7 @@ class VideoControlDialog : public wxDialog
     MyManager & m_manager;
     wxSlider  * m_TargetBitRate;
     wxSlider  * m_FrameRate;
+    wxSlider  * m_TSTO;
 
     DECLARE_EVENT_TABLE()
 };
