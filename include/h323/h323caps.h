@@ -2391,15 +2391,13 @@ class H323Capabilities : public PObject
       */
     OpalMediaFormatList GetMediaFormats() const;
 
-    const PStringSet & GetMediaPacketizations() const { return mediaPacketizations; }
+    const PStringSet & GetMediaPacketizations() const { return m_mediaPacketizations; }
   //@}
 
-  protected:
-    void SetMediaPacketizations(const PStringSet & packetizations) { mediaPacketizations = packetizations; }
-    
+  protected:    
     H323CapabilitiesList table;
     H323CapabilitiesSet  set;
-    PStringSet           mediaPacketizations;
+    PStringSet           m_mediaPacketizations;
 };
 
 

@@ -255,9 +255,9 @@ bool FFMPEGLibrary::Load()
 #endif
   if (m_libAvcodec.Open("libavcodec"))
     seperateLibAvutil = false;
-  else if (m_libAvcodec.Open("avcodec-52"))
-    seperateLibAvutil = true;
   else if (m_libAvcodec.Open("avcodec-53"))
+    seperateLibAvutil = true;
+  else if (m_libAvcodec.Open("avcodec-52"))
     seperateLibAvutil = true;
   else {
     PTRACE(1, m_codecString, "Failed to load FFMPEG libavcodec library");
@@ -270,8 +270,8 @@ bool FFMPEGLibrary::Load()
           m_libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
 #endif
           m_libAvutil.Open("libavutil") ||
-          m_libAvutil.Open("avutil-50") ||
-          m_libAvutil.Open("avutil-51")
+          m_libAvutil.Open("avutil-51") ||
+          m_libAvutil.Open("avutil-50")
         ) ) {
     PTRACE(1, m_codecString, "Failed to load FFMPEG libavutil library");
     return false;
