@@ -2381,7 +2381,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       if (OnReceivedAuthenticationRequired(transaction, response))
-        handled = true;
+        return;
       break;
 
     case SIP_PDU::Failure_MessageTooLarge :

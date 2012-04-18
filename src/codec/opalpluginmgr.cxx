@@ -2625,17 +2625,20 @@ static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
 
 PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
+  if (subTypePDU.GetTag() != GetSubType())
     return false;
 
   H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
   H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
 
-  const OpalMediaFormat & mediaFormat = GetMediaFormat();
+  PString mp = mediaPacketization;
+  if (mp.IsEmpty())
+    mp = h263.HasOptionalField(H245_H263VideoCapability::e_h263Options) ? "RFC2429" : "RFC2190";
 
-  if (mediaPacketization.IsEmpty() && !mediaFormat.GetMediaPacketizations().Contains(
-          h263.HasOptionalField(H245_H263VideoCapability::e_h263Options) ? "RFC2429" : "RFC2190"))
+  if (!H323VideoPluginCapability::IsMatch(subTypePDU, mp))
     return false;
+
+  const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
   int minWidth  = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption());
   int minHeight = mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption());
