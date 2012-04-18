@@ -309,6 +309,8 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
 
   if (STRCMPI(option, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0) {
     m_context->qmax = atoi(value);
+    if (m_context->qmax >= m_context->qmin)
+      m_context->qmax = m_context->qmin+1;
     return;
   }
 
@@ -1474,16 +1476,16 @@ static struct PluginCodec_Option const customMPI =
 };
 
 static struct PluginCodec_Option const annexF =
-  { PluginCodec_BoolOption,    H263_ANNEX_F,   false,  PluginCodec_AndMerge, "1", "F", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_F,   false, PluginCodec_AndMerge, "1", "F", "0" };
 
 static struct PluginCodec_Option const annexI =
-  { PluginCodec_BoolOption,    H263_ANNEX_I,   false,  PluginCodec_AndMerge, "1", "I", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_I,   false, PluginCodec_AndMerge, "1", "I", "0" };
 
 static struct PluginCodec_Option const annexJ =
-  { PluginCodec_BoolOption,    H263_ANNEX_J,   true,  PluginCodec_AndMerge, "1", "J", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_J,   false, PluginCodec_AndMerge, "1", "J", "0" };
 
 static struct PluginCodec_Option const annexK =
-  { PluginCodec_IntegerOption, H263_ANNEX_K,   true,  PluginCodec_MinMerge, "0", "K", "0", 0, "0", "4" };
+  { PluginCodec_IntegerOption, H263_ANNEX_K,   false, PluginCodec_MinMerge, "0", "K", "0", 0, "0", "4" };
 
 static struct PluginCodec_Option const annexN =
   { PluginCodec_BoolOption,    H263_ANNEX_N,   true,  PluginCodec_AndMerge, "0", "N", "0" };
@@ -1492,7 +1494,7 @@ static struct PluginCodec_Option const annexT =
   { PluginCodec_BoolOption,    H263_ANNEX_T,   true,  PluginCodec_AndMerge, "0", "T", "0" };
 
 static struct PluginCodec_Option const annexD =
-  { PluginCodec_BoolOption,    H263_ANNEX_D,   true,  PluginCodec_AndMerge, "1", "D", "0" };
+  { PluginCodec_BoolOption,    H263_ANNEX_D,   false, PluginCodec_AndMerge, "1", "D", "0" };
 
 static struct PluginCodec_Option const TemporalSpatialTradeOff =
 {
