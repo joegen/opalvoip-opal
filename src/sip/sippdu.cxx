@@ -3392,7 +3392,8 @@ ostream & operator<<(ostream & strm, SIPRegister::CompatibilityModes mode)
   static const char * const Names[] = {
     "FullyCompliant",
     "CannotRegisterMultipleContacts",
-    "CannotRegisterPrivateContacts"
+    "CannotRegisterPrivateContacts",
+    "HasApplicationLayerGateway"
   };
   if (mode < PARRAYSIZE(Names) && Names[mode] != NULL)
     strm << Names[mode];
