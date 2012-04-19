@@ -206,8 +206,8 @@ static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list a
       --len;
       if (buffer[len] == '\n')
         buffer[len] = '\0';
-      // Check for bogus error from H.263, everything works so what does this mean?
-      if (strncmp(buffer, "Too many slices", 15) != 0)
+      // Check for bogus errors, everything works so what does this mean?
+      if (strstr(buffer, "Too many slices") == 0 && strstr(buffer, "Frame num gap") == 0)
         PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "FFMPEG", buffer);
     }
   }
