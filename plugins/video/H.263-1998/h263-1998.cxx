@@ -70,10 +70,10 @@ extern "C" {
 
 static const char YUV420PDesc[]  = { "YUV420P" };
 static const char h263PDesc[]    = { "H.263plus" };
-static const char sdpH263P[]     = { "h263-1998" };
+static const char sdpH263P[]     = { "H263-1998" };
 
 static const char h263Desc[]     = { "H.263" };
-static const char sdpH263[]      = { "h263" };
+static const char sdpH263[]      = { "H263" };
 
 
 #define MAX_H263_CUSTOM_SIZES 10
@@ -309,7 +309,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
 
   if (STRCMPI(option, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0) {
     m_context->qmax = atoi(value);
-    if (m_context->qmax >= m_context->qmin)
+    if (m_context->qmax <= m_context->qmin)
       m_context->qmax = m_context->qmin+1;
     return;
   }
@@ -421,6 +421,9 @@ bool H263_Base_EncoderContext::OpenCodec()
   m_inputFrame->data[1] = m_inputFrame->data[0] + planeSize;
   m_inputFrame->data[2] = m_inputFrame->data[1] + (planeSize / 4);
 
+  if (m_context->width > 352)
+    m_context->flags &= ~CODEC_FLAG_EMU_EDGE; // Totally bizarre! FFMPEG crashes if on for CIF4
+
   // Dump info
   PTRACE(5, m_prefix, "Size is " << m_context->width << "x" << m_context->height);
   PTRACE(5, m_prefix, "GOP is " << m_context->gop_size);
@@ -529,10 +532,9 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     }
 
     if (encodedLen == 0) {
-      PTRACE(1, m_prefix, "Encoder returned no data");
-      dstRTP.SetPayloadSize(0);
-      dstLen = dstRTP.GetHeaderSize();
+      PTRACE(3, m_prefix, "Encoder returned no data");
       flags |= PluginCodec_ReturnCoderLastFrame;
+      dstLen = 0;
       return true;
     }
 
@@ -544,8 +546,10 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     // return the first encoded block of data
     if (!m_packetizer->GetPacket(dstRTP, flags)) {
-      PTRACE(1, m_prefix, "Packetizer failed");
-      return false; // Huh?
+      PTRACE(3, m_prefix, "No packets encoded for frame");
+      flags |= PluginCodec_ReturnCoderLastFrame;
+      dstLen = 0;
+      return true;
     }
   }
 
