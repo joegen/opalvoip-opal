@@ -51,13 +51,13 @@ class RFC2190Packetizer : public Packetizer
     size_t m_bufferLen;
 
     unsigned int TR;
-    unsigned int frameSize;
+    size_t frameSize;
     int iFrame;
     int annexD, annexE, annexF, annexG, pQuant, cpm;
     int macroblocksPerGOB;
 
     struct fragment {
-      unsigned length;
+      size_t length;
       unsigned mbNum;
     };
 
@@ -67,7 +67,7 @@ class RFC2190Packetizer : public Packetizer
     unsigned char * fragPtr;
 
     unsigned m_currentMB;
-    unsigned m_currentBytes;
+    size_t m_currentBytes;
 };
 
 class RFC2190Depacketizer : public Depacketizer
