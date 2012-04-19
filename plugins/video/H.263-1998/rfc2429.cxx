@@ -82,7 +82,7 @@ Bitstream::Bitstream ()
   m_data.ptr = NULL;
 }
 
-void Bitstream::SetBytes (uint8_t* data, uint32_t dataLen, uint8_t sbits, uint8_t ebits)
+void Bitstream::SetBytes (uint8_t* data, size_t dataLen, uint8_t sbits, uint8_t ebits)
 {
   m_data.ptr = data;
   m_data.len = dataLen;
@@ -91,7 +91,7 @@ void Bitstream::SetBytes (uint8_t* data, uint32_t dataLen, uint8_t sbits, uint8_
   m_ebits = ebits;
 }
 
-void Bitstream::GetBytes (uint8_t** data, uint32_t * dataLen)
+void Bitstream::GetBytes (uint8_t** data, size_t * dataLen)
 {
   *data = m_data.ptr;
   *dataLen = m_data.len;
@@ -217,7 +217,7 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
   if (m_encodedFrame.ptr == NULL || m_encodedFrame.pos >= m_encodedFrame.len)
     return false;
 
-  uint32_t i;
+  size_t i;
   // this is the first packet of a new frame
   // we parse the frame for SCs 
   // and later try to split into packets at these borders
@@ -227,13 +227,14 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
       if (m_encodedFrame.ptr[i] == 0 && m_encodedFrame.ptr[i+1] == 0)
         m_startCodes.push_back(i);
     }  
+    unsigned requiredPackets = (m_encodedFrame.len+m_maxPayloadSize-1)/m_maxPayloadSize;
     if (m_encodedFrame.len > m_maxPayloadSize)
-      m_minPayloadSize = (uint16_t)(m_encodedFrame.len / ceil((float)m_encodedFrame.len / (float)m_maxPayloadSize));
+      m_minPayloadSize = m_encodedFrame.len/requiredPackets;
     else
-      m_minPayloadSize = (uint16_t)m_encodedFrame.len;
+      m_minPayloadSize = m_encodedFrame.len;
     PTRACE(6, "H.263-RFC2429",
               "Setting minimal packet size to " << m_minPayloadSize <<
-              " considering " << ceil((float)m_encodedFrame.len / (float)m_maxPayloadSize) << 
+              " considering " << requiredPackets << 
               " packets for this frame");
   }
 
@@ -266,13 +267,13 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
     m_startCodes.erase(m_startCodes.begin());
   }
   else {
-    uint16_t payloadSize = m_encodedFrame.len - m_encodedFrame.pos + 2;
+    size_t payloadSize = m_encodedFrame.len - m_encodedFrame.pos + 2;
     if (payloadSize > m_maxPayloadSize)
       payloadSize = m_maxPayloadSize;
     frame.SetPayloadSize(payloadSize);
   }
   PTRACE(6, "H.263-RFC2429", "Sending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << m_encodedFrame.pos);
-  memcpy(frame.GetPayloadPtr() + 2, m_encodedFrame.ptr + m_encodedFrame.pos, frame.GetPayloadSize() - 2);
+  memcpy(dataPtr + 2, m_encodedFrame.ptr + m_encodedFrame.pos, frame.GetPayloadSize() - 2);
   m_encodedFrame.pos += frame.GetPayloadSize() - 2;
 
   frame.SetMarker(m_encodedFrame.len == m_encodedFrame.pos);
@@ -360,7 +361,7 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet)
 
   if (packet.GetMarker())  { 
     if (headerP && (dataPtr[0] & 0xfc) == 0x80) {
-      uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), packet.GetPayloadSize()- 2 - (headerP ? 0 : 2));
+      size_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), packet.GetPayloadSize()- 2 - (headerP ? 0 : 2));
       PTRACE(6, "H.263-RFC2429", "Frame includes a picture header of " << hdrLen << " bits");
     }
     else {
@@ -404,7 +405,7 @@ bool RFC2429Frame::IsIntraFrame()
   return headerBits.GetBits(1) == 0;
 }
 
-uint32_t RFC2429Frame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen) 
+size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen) 
 {
   Bitstream headerBits;
   headerBits.SetBytes (headerPtr, headerMaxLen, 0, 0);
@@ -484,14 +485,8 @@ uint32_t RFC2429Frame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
         } 
       }
       if (PCF) {
-
-        double factor, divisor, freq;
-
-        factor = headerBits.GetBits(1) + 1000;
-        divisor = headerBits.GetBits(7);
-        freq = 1800000 / (divisor * factor);
-
-        PTRACE(6, "H.263-RFC2429", "Header\tCustom Picture Clock Frequency " << freq);
+        PTRACE(6, "H.263-RFC2429", "Header\tCustom Picture Clock Frequency "
+			   << (1800000 / (headerBits.GetBits(7) * (headerBits.GetBits(1) + 1000.0))));
       }
     }
 

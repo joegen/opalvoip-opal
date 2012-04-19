@@ -34,23 +34,23 @@ class PluginCodec_RTP;
 typedef struct data_t
 {
   uint8_t* ptr;
-  uint32_t pos;
-  uint32_t len;
+  size_t pos;
+  size_t len;
 } data_t;
 
 typedef struct header_data_t
 {
   uint8_t  buf[255];
-  uint32_t len;
-  uint32_t pebits;
+  size_t len;
+  unsigned pebits;
 } header_data_t;
 
 class Bitstream
 {
 public:
   Bitstream ();
-  void SetBytes (uint8_t* data, uint32_t dataLen, uint8_t sbits, uint8_t ebits);
-  void GetBytes (uint8_t** data, uint32_t * dataLen);
+  void SetBytes (uint8_t* data, size_t dataLen, uint8_t sbits, uint8_t ebits);
+  void GetBytes (uint8_t** data, size_t * dataLen);
   uint32_t GetBits (uint32_t numBits);
   uint32_t PeekBits (uint32_t numBits);
   void PutBits(uint32_t posBits, uint32_t numBits, uint32_t value);
@@ -81,14 +81,14 @@ public:
   virtual size_t GetLength() { return m_encodedFrame.len; }
 
 private:
-  uint32_t parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen);
+  size_t parseHeader(uint8_t* headerPtr, size_t headerMaxLen);
 
-  uint16_t m_minPayloadSize;
-  uint32_t m_maxFrameSize;
+  size_t m_minPayloadSize;
+  size_t m_maxFrameSize;
   bool     m_customClock;
   data_t   m_encodedFrame;
   header_data_t m_picHeader;
-  std::vector<uint32_t> m_startCodes;
+  std::vector<size_t> m_startCodes;
 };
 
 #endif /* __H263PFrame_H__ */
