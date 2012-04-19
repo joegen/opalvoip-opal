@@ -901,7 +901,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
   unsigned flags;
 
-  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec");
+  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize, outputDataSize+1024);
@@ -948,10 +948,11 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
  
   if (dstList.IsEmpty())
-    PTRACE(4, "OpalPlugin\tEncoder skipping video frame.");
+    PTRACE(4, "OpalPlugin\tEncoder skipping video frame at " << m_totalFrames);
   else if (PTrace::CanTrace(5)) {
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__);
-    trace << "OpalPlugin\tEncoded video frame into " << dstList.GetSize() << " packets: ";
+    trace << "OpalPlugin\tEncoded video frame " << m_totalFrames
+          << " into " << dstList.GetSize() << " packets: ";
     for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it) {
       if (it != dstList.begin())
         trace << ", ";
