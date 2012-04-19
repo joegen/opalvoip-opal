@@ -70,10 +70,10 @@ extern "C" {
 
 static const char YUV420PDesc[]  = { "YUV420P" };
 static const char h263PDesc[]    = { "H.263plus" };
-static const char sdpH263P[]     = { "h263-1998" };
+static const char sdpH263P[]     = { "H263-1998" };
 
 static const char h263Desc[]     = { "H.263" };
-static const char sdpH263[]      = { "h263" };
+static const char sdpH263[]      = { "H263" };
 
 
 #define MAX_H263_CUSTOM_SIZES 10
