@@ -255,9 +255,7 @@ bool FFMPEGLibrary::Load()
 #endif
   if (m_libAvcodec.Open("libavcodec"))
     seperateLibAvutil = false;
-  else if (m_libAvcodec.Open("avcodec-53"))
-    seperateLibAvutil = true;
-  else if (m_libAvcodec.Open("avcodec-52"))
+  else if (m_libAvcodec.Open("avcodec-" AV_STRINGIFY(LIBAVCODEC_VERSION_MAJOR)))
     seperateLibAvutil = true;
   else {
     PTRACE(1, m_codecString, "Failed to load FFMPEG libavcodec library");
@@ -270,8 +268,7 @@ bool FFMPEGLibrary::Load()
           m_libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
 #endif
           m_libAvutil.Open("libavutil") ||
-          m_libAvutil.Open("avutil-51") ||
-          m_libAvutil.Open("avutil-50")
+          m_libAvutil.Open("avutil-" AV_STRINGIFY(LIBAVUTIL_VERSION_MAJOR))
         ) ) {
     PTRACE(1, m_codecString, "Failed to load FFMPEG libavutil library");
     return false;
@@ -331,10 +328,14 @@ bool FFMPEGLibrary::Load()
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
 
     unsigned libVer = Favcodec_version();
-    if (libVer != LIBAVCODEC_VERSION_INT ) {
+    if (libVer != LIBAVCODEC_VERSION_INT) {
       PTRACE(2, m_codecString, "Warning: compiled against libavcodec headers from version "
-             << (LIBAVCODEC_VERSION_INT >> 16) << ((LIBAVCODEC_VERSION_INT>>8) & 0xff) << (LIBAVCODEC_VERSION_INT & 0xff)
+             << LIBAVCODEC_VERSION_MAJOR << '.' << LIBAVCODEC_VERSION_MINOR << '.' << LIBAVCODEC_VERSION_MICRO
              << ", loaded "
+             << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
+    }
+    else {
+      PTRACE(3, m_codecString, "Loaded libavcodec version "
              << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
     }
 
