@@ -1762,7 +1762,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -1988,7 +1988,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2214,7 +2214,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2401,7 +2401,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2412,7 +2412,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2507,7 +2507,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2518,7 +2518,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2613,7 +2613,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5ppc\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -2624,7 +2624,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3573,7 +3573,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3600,7 +3600,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3695,7 +3695,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3722,7 +3722,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3817,7 +3817,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6pro\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
@@ -3844,7 +3844,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="..\..\..\ptlib\lib\MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6std\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
