@@ -3554,8 +3554,6 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
     if (session_id == H323Capability::DefaultAudioSessionID || session_id == H323Capability::DefaultVideoSessionID) {
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
-      H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
-
       if (!channelNumber.IsFromRemote()) { // Transmit channel
         OpalMediaStreamPtr stream = GetMediaStream(session_id, false);
         if (IsMediaOnHold()) {
