@@ -641,7 +641,12 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
     }
   }
 
-  if (!ok) {
+  if (ok) {
+    OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+    if (mediaStream != NULL)
+      mediaStream->Start();
+  }
+  else {
     reply.BuildOpenLogicalChannelReject(channelNumber, cause);
     Release();
   }
@@ -678,7 +683,12 @@ PBoolean H245NegLogicalChannel::HandleOpenAck(const H245_OpenLogicalChannelAck &
 
       // Channel was already opened when OLC sent, if have error here it is
       // somthing other than an asymmetric codec conflict, so close it down.
-      if (!channel->Open())
+      if (channel->Open()) {
+        OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+        if (mediaStream != NULL)
+          mediaStream->Start();
+      }
+      else
         return Close();
 
     default :
