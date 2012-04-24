@@ -1144,6 +1144,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor,
 
   SIPRegister::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetRegistrarTimeToLive());
+  PTRACE(5, "SIP\tNormalised REGISTER\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
@@ -1283,6 +1284,7 @@ bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & to
 
   SIPSubscribe::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+  PTRACE(5, "SIP\tNormalised SUBSCRIBE\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
@@ -1539,6 +1541,7 @@ bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
 {
   SIPOptions::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+  PTRACE(5, "SIP\tNormalised OPTIONS\n" << params);
 
   PSafePtr<SIPHandler> handler = new SIPOptionsHandler(*this, params);
   activeSIPHandlers.Append(handler);
@@ -1571,6 +1574,7 @@ bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString 
 
   SIPSubscribe::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
+  PTRACE(5, "SIP\tNormalised PUBLISH\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(body);

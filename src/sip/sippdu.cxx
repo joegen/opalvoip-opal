@@ -3207,6 +3207,7 @@ ostream & operator<<(ostream & strm, const SIPParameters & params)
           "       remote=" << params.m_remoteAddress << "\n"
           "        local=" << params.m_localAddress << "\n"
           "      contact=" << params.m_contactAddress << "\n"
+          "        proxy=" << params.m_proxyAddress << "\n"
           "       authID=" << params.m_authID << "\n"
           "        realm=" << params.m_realm << "\n"
           "       expire=" << params.m_expire << "\n"
