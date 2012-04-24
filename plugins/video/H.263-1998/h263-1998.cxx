@@ -396,6 +396,14 @@ bool H263_Base_EncoderContext::OpenCodec()
   m_context->rc_max_rate = m_context->bit_rate;
   m_context->rc_buffer_size = m_context->bit_rate*4; // Enough bits for 4 seconds
   m_context->bit_rate_tolerance = m_context->bit_rate/10;
+  
+  // FFMPEG requires bit rate tolerance to be at least one frame size
+  int oneFrameBits = (int)((int64_t)m_context->bit_rate*m_context->time_base.num/m_context->time_base.den) + 1;
+  if (m_context->bit_rate_tolerance < oneFrameBits) {
+    PTRACE(4, m_prefix, "Limited bit_rate_tolerance "
+           "(" << m_context->bit_rate_tolerance << ") to size of one frame (" << oneFrameBits << ')');
+    m_context->bit_rate_tolerance = oneFrameBits;
+  }
 
   m_context->i_quant_factor = (float)-0.6;  // qscale factor between p and i frames
   m_context->i_quant_offset = (float)0.0;   // qscale offset between p and i frames
