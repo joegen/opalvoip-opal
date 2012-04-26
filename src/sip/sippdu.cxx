@@ -524,6 +524,9 @@ void SIPURL::Sanitise(UsageContext context)
 {
   PINDEX i;
 
+  WORD defPort = (queryVars("transport", scheme == "sips" ? "tls" : "udp") *= "tls")
+                                   ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
+
   // RFC3261, 19.1.1 Table 1
   static struct {
     const char * name;
@@ -571,11 +574,8 @@ void SIPURL::Sanitise(UsageContext context)
 
     case ToURI :
     case FromURI :
-      if (GetPortSupplied()) {
-        // Port not allowed for To or From, RFC3261, 19.1.1
-        portSupplied = false;
-        port = scheme == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
-      }
+      // Port not allowed for To or From, RFC3261, 19.1.1
+      portSupplied = false;
       break;
 
     case RegContactURI :
@@ -592,8 +592,10 @@ void SIPURL::Sanitise(UsageContext context)
          as the contact, but as the thing doing the registering is nearly
          always the thing listening on a port, it is the 99.9% solution.
        */
-      if (!GetPortSupplied())
-        SetPort(scheme == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort);
+      if (!portSupplied) {
+        portSupplied = true;
+        port = defPort;
+      }
       break;
 
     case RegisterURI :
@@ -603,6 +605,9 @@ void SIPURL::Sanitise(UsageContext context)
     default:
       break;
   }
+
+  if (!portSupplied)
+    port = defPort;
 
   Recalculate();
 }
@@ -698,8 +703,7 @@ bool SIPURLList::FromString(const PString & str, bool reversed)
       }
 
       SIPURL uri = line(comma+1, pos-1);
-      if (!uri.GetPortSupplied())
-        uri.SetPort(uri.GetScheme() == "sips" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort);
+      uri.Sanitise(SIPURL::RouteURI);
 
       if (reversed)
         push_front(uri);
