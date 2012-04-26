@@ -1369,7 +1369,10 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
     PMIMEInfo info(notifyInfo.m_request.GetEntityBody());
 
-    PString account = info.Get("Message-Account", notifyInfo.m_handler.GetAddressOfRecord().AsString());
+    PString aor = notifyInfo.m_handler.GetAddressOfRecord().AsString();
+    PString account = info.Get("Message-Account");
+    if (account.IsEmpty() || aor.NumCompare(account) == EqualTo)
+      account = aor;
 
     bool nothingSent = true;
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
