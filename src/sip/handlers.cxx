@@ -1318,7 +1318,7 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
     // lower case yes/no to call back function, regardless of what comes down the wire.
     if (nothingSent)
       handler.GetEndPoint().OnMWIReceived(account, OpalManager::NumMessageWaitingTypes,
-                                 (info.Get("Message-Waiting") *= "yes") ? "yes" : "no");
+                                 (info.Get("Messages-Waiting") *= "yes") ? "yes" : "no");
 
     return true;
   }
