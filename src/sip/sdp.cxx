@@ -64,24 +64,30 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 //  the following functions bind the media type factory to the SDP format types
 //
 
-OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const std::string & transport)
+static OpalMediaType GetMediaTypeFromSDPType(const std::string & sdpType)
 {
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
-  OpalMediaTypeList::iterator iterMediaType;
-
-  for (iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
-    if (iterMediaType->GetDefinition()->GetSDPType() == sdp)
-      return OpalMediaType(*iterMediaType);
-  }
-
-  std::string s = sdp + "|" + transport;
-
-  for (iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
-    if (OpalMediaType::GetDefinition(*iterMediaType)->GetSDPType() == s)
-      return OpalMediaType(*iterMediaType);
+  for (OpalMediaTypeList::iterator iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
+    if (iterMediaType->GetDefinition()->GetSDPType() == sdpType)
+      return *iterMediaType;
   }
 
   return OpalMediaType();
+}
+
+OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const std::string & transport)
+{
+  OpalMediaType mediaType = GetMediaTypeFromSDPType(sdp);
+  if (mediaType.empty()) {
+    mediaType = GetMediaTypeFromSDPType(sdp + '|' + transport);
+    if (mediaType.empty()) {
+      size_t slash = transport.find('/');
+      if (slash != string::npos)
+        mediaType = GetMediaTypeFromSDPType(sdp + '|' + transport.substr(0, slash));
+    }
+  }
+
+  return mediaType;
 }
 
 SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
@@ -249,7 +255,10 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 #else
       case 0:
 #endif
-        strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
+        /* Even though officially, case is not significant for SDP encoding
+           types, we make it upper case anyway as this seems to be the custom,
+           and some very stupid endpoints assume it is always the case. */
+        strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName.ToUpper() << '/' << clockRate;
         if (!parameters.IsEmpty())
           strm << '/' << parameters;
         strm << "\r\n";
@@ -958,6 +967,8 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 3 :
       m_tokens.AppendString("127");
   }
+
+  m_transportType = m_tokens[2];
 }
 
 
@@ -1655,7 +1666,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
               PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
             }
             else if ((mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2])).empty()) {
-              PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
+              PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0] << '|' << tokens[2]);
             }
             else if ((defn = mediaType.GetDefinition()) == NULL) {
               PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);

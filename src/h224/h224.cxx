@@ -52,7 +52,7 @@
 OPAL_INSTANTIATE_MEDIATYPE(h224, OpalH224MediaType);
 
 OpalH224MediaType::OpalH224MediaType()
-  : OpalRTPAVPMediaType("h224", "application")
+  : OpalRTPAVPMediaType("h224", "application|RTP/") // Matches RTP/AVP and RTP/SAVP
 {
 }
 
