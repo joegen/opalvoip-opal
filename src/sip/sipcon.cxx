@@ -1060,14 +1060,14 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
-  if (!PAssert(mediaType.GetDefinition() != NULL, PString("Unusable media type \"") + mediaType + '"'))
-    return false;
-
   // See if any media formats of this session id, so don't create unused RTP session
   if (!m_answerFormatList.HasType(mediaType)) {
     PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
     return false;
   }
+
+  if (!PAssert(mediaType.GetDefinition() != NULL, PString("Unusable media type \"") + mediaType + '"'))
+    return false;
 
 #if OPAL_SRTP
   // See if we already have a secure version of the media session
