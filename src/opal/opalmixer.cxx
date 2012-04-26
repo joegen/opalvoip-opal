@@ -658,6 +658,11 @@ bool OpalVideoMixer::MixStreams(RTP_DataFrame & frame)
       return false;
   }
 
+  // This makes sure subimage are on 32 bit boundary, some parts of the
+  // system can get mightily upset if this is not the case.
+  w &= 0xfffffffc;
+  h &= 0xfffffffc;
+
   for (StreamMap_T::iterator iter = m_inputStreams.begin(); iter != m_inputStreams.end(); ++iter) {
     ((VideoStream *)iter->second)->InsertVideoFrame(x, y, w, h);
 
