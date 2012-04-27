@@ -3670,6 +3670,8 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
   }
 
   SetParameters(params);
+
+  ep.AdjustToRegistration(*this, trans, NULL);
 }
 
 
@@ -3742,18 +3744,18 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 {
   SIPURL addr(params.m_remoteAddress);
 
-  if (!params.m_localAddress.IsEmpty())
-    m_localAddress = params.m_localAddress;
-  else {
-    if (!params.m_addressOfRecord.IsEmpty())
-      m_localAddress = params.m_addressOfRecord;
-    else
-      m_localAddress = m_endpoint.GetRegisteredPartyName(addr, m_transport);
+  m_localAddress = params.m_localAddress;
+  if (m_localAddress.IsEmpty()) {
+    m_localAddress = params.m_addressOfRecord;
+    if (m_localAddress.IsEmpty())
+      m_localAddress = m_endpoint.GetDefaultLocalURL(m_transport);
   }
 
   InitialiseHeaders(addr, addr, m_localAddress, params.m_id, m_endpoint.GetNextCSeq(), CreateVia(m_transport));
 
   Construct(params);
+
+  ep.AdjustToRegistration(*this, trans, NULL);
 }
 
 
@@ -3794,12 +3796,14 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   SIPURL remoteAddress = params.m_remoteAddress;
   SIPURL localAddress = params.m_localAddress;
   if (localAddress.IsEmpty())
-    localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostAddress(), trans);
+    localAddress = ep.GetDefaultLocalURL(trans);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(trans));
 
   Construct(params);
+
+  ep.AdjustToRegistration(*this, trans, NULL);
 }
 
 

@@ -290,9 +290,6 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
 
-  if (proxy.IsEmpty())
-    proxy = endpoint.GetRegisteredProxy(adjustedDestination);
-
   m_dialog.SetProxy(proxy, false); // No default routeSet if there is a proxy for INVITE
 
   forkedInvitations.DisallowDeleteObjects();
@@ -1525,12 +1522,11 @@ PBoolean SIPConnection::WriteINVITE(OpalTransport &, void * param)
 
 bool SIPConnection::WriteINVITE()
 {
-  const SIPURL & requestURI = m_dialog.GetRequestURI();
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())
-    myAddress = endpoint.GetRegisteredPartyName(requestURI, *transport);
+    myAddress = endpoint.GetDefaultLocalURL(*transport);
 
-  PString transportProtocol = requestURI.GetParamVars()("transport");
+  PString transportProtocol = m_dialog.GetRequestURI().GetParamVars()("transport");
   if (!transportProtocol.IsEmpty())
     myAddress.SetParamVar("transport", transportProtocol);
 
