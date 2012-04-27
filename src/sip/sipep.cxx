@@ -1838,9 +1838,16 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
     mime.SetContact(contact.AsQuotedString());
   }
 
-  if (isMethod && registrar != NULL && !mime.Has("Route")) {
-    if (!pdu.SetRoute(registrar->GetServiceRoute()))
-      pdu.SetRoute(registrar->GetProxy());
+  if (isMethod && registrar != NULL) {
+    if (!mime.Has("Route")) {
+      if (!pdu.SetRoute(registrar->GetServiceRoute()))
+        pdu.SetRoute(registrar->GetProxy());
+    }
+
+    // For many registrars From address must be address-of-record
+    from.SetUserName(registrar->GetAddressOfRecord().GetUserName());
+    from.SetHostName(registrar->GetAddressOfRecord().GetHostName());
+    mime.SetFrom(from.AsQuotedString());
   }
 }
 
