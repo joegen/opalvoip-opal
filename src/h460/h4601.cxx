@@ -1024,15 +1024,15 @@ PBoolean H460_FeatureSet::ProcessFirstPDU(const H225_FeatureSet & fs)
   H460_FeatureSet remote = H460_FeatureSet(fs);
 
   /// Remove the features the remote does not support.
-  for (H460_Features::iterator it = Features.begin(); it != Features.end(); ++it) {
-    H460_Feature & feat = it->second;
-    H460_FeatureID id = feat.GetFeatureID();
-    if (!remote.HasFeature(id))
-      RemoveFeature(id);
-    else
+  H460_Features::iterator it = Features.begin();
+  while (it != Features.end()) {
+    H460_FeatureID id = it->second.GetFeatureID();
+    ++it; // Must be before RemoveFeature
+    if (remote.HasFeature(id))
       PTRACE(4,"H460\tUse Common Feature " << id);
+    else
+      RemoveFeature(id);
   }
-
 
   return TRUE;
 }
