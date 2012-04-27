@@ -890,21 +890,9 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     bool GetAuthentication(const PString & authRealm, PString & user, PString & password); 
     
-    /**Return the registered proxy URL for the given host.
+    /**Return the default Contact URL.
      */
-    virtual SIPURL GetRegisteredProxy(const SIPURL & remoteURL);
-
-    /**Return the registered party name URL for the given host.
-     *
-     * That URL can be used in the FORM field of the PDU's. 
-     * The host part can be different from the registration domain.
-     */
-    virtual SIPURL GetRegisteredPartyName(const SIPURL & remoteURL, const OpalTransport & transport);
-
-
-    /**Return the default registered party name URL.
-     */
-    virtual SIPURL GetDefaultRegisteredPartyName(const OpalTransport & transport);
+    virtual SIPURL GetDefaultLocalURL(const OpalTransport & transport);
     
     /**Adjust the outgoing PDU to registered information.
        Various header fields of the PDU must be adjusted to agree with values
