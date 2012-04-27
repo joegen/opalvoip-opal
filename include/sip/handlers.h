@@ -87,20 +87,20 @@ public:
 
   void SetState (SIPHandler::State s);
 
-  inline SIPHandler::State GetState () 
+  inline SIPHandler::State GetState() const
   { return m_state; }
 
-  virtual SIPAuthentication * GetAuthentication()
+  virtual SIPAuthentication * GetAuthentication() const
   { return authentication; }
 
-  virtual const SIPURL & GetAddressOfRecord()
+  virtual const SIPURL & GetAddressOfRecord() const
     { return m_addressOfRecord; }
 
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
 
   virtual void SetExpire(int e);
 
-  virtual int GetExpire()
+  virtual int GetExpire() const
     { return m_currentExpireTime; }
 
   const PString & GetCallID() const
