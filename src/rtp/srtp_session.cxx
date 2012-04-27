@@ -172,7 +172,7 @@ extern "C" {
     return err_status_ok;
   }
 
-  void err_report(int priority, char *format, ...)
+  void err_report(int PTRACE_PARAM(priority), char * PTRACE_PARAM(format), ...)
   {
 #if PTRACING
     va_list args;
