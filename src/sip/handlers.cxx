@@ -943,13 +943,8 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & trans)
       m_parameters.m_localAddress = GetAddressOfRecord().AsString();
 
     m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
-
-    if (m_parameters.m_localAddress.IsEmpty())
-      m_dialog.SetLocalURI(GetEndPoint().GetRegisteredPartyName(m_parameters.m_addressOfRecord, *m_transport));
-    else
-      m_dialog.SetLocalURI(m_parameters.m_localAddress);
-
-    m_dialog.SetProxy(m_proxy, true);
+    m_dialog.SetLocalURI(m_parameters.m_localAddress.IsEmpty() ? m_parameters.m_addressOfRecord : m_parameters.m_localAddress);
+    m_dialog.SetProxy(m_parameters.m_proxyAddress.IsEmpty() ? m_proxy : m_parameters.m_proxyAddress, true);
   }
 
   m_parameters.m_expire = GetState() != Unsubscribing ? GetExpire() : 0;
