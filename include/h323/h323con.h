@@ -1955,7 +1955,23 @@ class H323Connection : public OpalRTPConnection
        to call the user again later.
       */
     PString GetRemotePartyURL() const;
-    
+
+    /**Goal supplied for this connection provided in SETUP
+      */
+    enum ConferenceGoal {
+        e_Create,
+        e_Invite,
+        e_Join
+    };
+
+    /**Get the conference goal for this connection.
+     */
+    ConferenceGoal GetConferenceGoal() { return m_conferenceGoal; }
+
+    /**Set the conference goal for this connection.
+     */
+    void SetConferenceGoal(ConferenceGoal goal) { m_conferenceGoal = goal; }
+
     /**Get the remotes capability table for this connection.
      */
     const H323Capabilities & GetLocalCapabilities() const { return localCapabilities; }
@@ -2236,6 +2252,8 @@ class H323Connection : public OpalRTPConnection
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
     bool       isConsultationTransfer;
+
+    ConferenceGoal m_conferenceGoal;
 
 #if OPAL_H450
     /** Call Intrusion flag and parameters */
