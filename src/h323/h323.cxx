@@ -978,11 +978,18 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
   switch (setup.m_conferenceGoal.GetTag()) {
     case H225_Setup_UUIE_conferenceGoal::e_create:
+      m_conferenceGoal = e_Create;
+      break;
+
     case H225_Setup_UUIE_conferenceGoal::e_join:
+      m_conferenceGoal = e_Join;
       break;
 
     case H225_Setup_UUIE_conferenceGoal::e_invite:
-      return endpoint.OnConferenceInvite(*setupPDU);
+      m_conferenceGoal= e_Invite;
+      if (endpoint.OnConferenceInvite(*setupPDU))
+        break;
+      return false;
 
     case H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService:
       return endpoint.OnCallIndependentSupplementaryService(*setupPDU);
