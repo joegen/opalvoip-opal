@@ -116,12 +116,14 @@ class SIPURL : public PURL
     SIPURL(
       const PString & name,
       const OpalTransportAddress & address,
-      WORD listenerPort = 0
+      WORD listenerPort = 0,
+      const char * scheme = NULL
     );
 
     SIPURL(
       const OpalTransportAddress & address, 
-      WORD listenerPort = 0
+      WORD listenerPort = 0,
+      const char * scheme = NULL
     );
     SIPURL & operator=(
       const OpalTransportAddress & address
@@ -213,7 +215,11 @@ class SIPURL : public PURL
     PString GetTag() const;
 
   protected:
-    void ParseAsAddress(const PString & name, const OpalTransportAddress & _address, WORD listenerPort = 0);
+    void ParseAsAddress(
+      const PString & name,
+      const OpalTransportAddress & address,
+      WORD listenerPort,
+      const char * scheme);
 
     // Override from PURL()
     virtual PBoolean InternalParse(
@@ -226,6 +232,7 @@ class SIPURL : public PURL
       const char * cstr,
       const char * defaultScheme
     );
+    WORD GetDefaultPort() const;
 
     PString        m_displayName;
     PStringOptions m_fieldParameters;

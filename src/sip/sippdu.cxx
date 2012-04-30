@@ -235,67 +235,85 @@ SIPURL::SIPURL(const SIPMIMEInfo & mime, const char * name)
 
 SIPURL::SIPURL(const PString & name,
                const OpalTransportAddress & address,
-               WORD listenerPort)
+               WORD listenerPort,
+               const char * scheme)
 {
   if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0)
     Parse(name);
   else if (address.IsEmpty() && (name.Find('$') != P_MAX_INDEX)) 
-    ParseAsAddress(PString::Empty(), name, listenerPort);
+    ParseAsAddress(PString::Empty(), name, listenerPort, scheme);
   else
-    ParseAsAddress(name, address, listenerPort);
+    ParseAsAddress(name, address, listenerPort, scheme);
 }
 
-SIPURL::SIPURL(const OpalTransportAddress & address, WORD listenerPort)
+SIPURL::SIPURL(const OpalTransportAddress & address, WORD listenerPort, const char * scheme)
 {
-  ParseAsAddress(PString::Empty(), address, listenerPort);
+  ParseAsAddress(PString::Empty(), address, listenerPort, scheme);
 }
 
 SIPURL & SIPURL::operator=(const OpalTransportAddress & address)
 {
-  ParseAsAddress(PString::Empty(), address, 0);
+  ParseAsAddress(PString::Empty(), address, 0, NULL);
   return *this;
 }
 
 
-void SIPURL::ParseAsAddress(const PString & name, const OpalTransportAddress & address, WORD listenerPort)
+void SIPURL::ParseAsAddress(const PString & name,
+                            const OpalTransportAddress & address,
+                            WORD listenerPort,
+                            const char * scheme)
 {
   PIPSocket::Address ip;
   WORD port;
-  if (address.GetIpAndPort(ip, port)) {
-    PString transProto;
-    WORD defaultPort = SIPURL::DefaultPort;
+  if (!address.GetIpAndPort(ip, port))
+    return;
 
-    PStringStream s;
-    s << "sip";
+  PCaselessString proto = address.GetProtoPrefix();
 
-    PCaselessString proto = address.GetProtoPrefix();
+  PCaselessString actualScheme = scheme;
+  if (actualScheme.IsEmpty()) {
 #if OPAL_PTLIB_SSL
-    if (proto == OpalTransportAddress::TlsPrefix()) {
-      defaultPort = SIPURL::DefaultSecurePort;
-      s << 's';
-      // use default tranport=UDP
-    }
+    if (proto == OpalTransportAddress::TlsPrefix())
+      actualScheme = "sips";
     else
-#endif // OPAL_PTLIB_SSL
-    if (proto != OpalTransportAddress::UdpPrefix())
-      transProto = proto.Left(proto.GetLength()-1); // Typically "tcp"
-    // else use default UDP
-
-    s << ':';
-    if (!name.IsEmpty())
-      s << name << '@';
-    s << ip.AsString(true, true);
-
-    if (listenerPort == 0)
-      listenerPort = port;
-    if (listenerPort != 0 && listenerPort != defaultPort)
-      s << ':' << listenerPort;
-
-    if (!transProto.IsEmpty())
-      s << ";transport=" << transProto;
-
-    Parse(s);
+#endif
+      actualScheme = "sip";
   }
+
+  WORD defaultPort;
+  PString defaultProto;
+
+  if (actualScheme != "sips") {
+    defaultPort = SIPURL::DefaultPort;
+    defaultProto = OpalTransportAddress::UdpPrefix();
+  }
+  else {
+#if OPAL_PTLIB_SSL
+    defaultPort = SIPURL::DefaultSecurePort;
+    defaultProto = OpalTransportAddress::TlsPrefix();
+#else
+    PTRACE(1, "sip\tCannot use sips if do not have TLS");
+    return;
+#endif
+  }
+
+  PStringStream uri;
+  uri << actualScheme << ':';
+  if (!name.IsEmpty())
+    uri << name << '@';
+  uri << ip.AsString(true, true);
+
+  if (listenerPort == 0)
+    listenerPort = port;
+  if (listenerPort != 0 && listenerPort != defaultPort)
+    uri << ':' << listenerPort;
+
+  if (proto != defaultProto) {
+    proto.Delete(proto.Find('$'), 1); // Remove dollar
+    uri << ";transport=" << proto;
+  }
+
+  Parse(uri);
 }
 
 
@@ -407,6 +425,9 @@ PBoolean SIPURL::ReallyInternalParse(bool fromHeader, const char * cstr, const c
       m_displayName = str.Left(startBracket).Trim();
     }
   }
+
+  if (!portSupplied)
+    port = GetDefaultPort();
 
   return !IsEmpty();
 }
@@ -520,12 +541,18 @@ void SIPURL::SetHostAddress(const OpalTransportAddress & addr)
 }
 
 
+WORD SIPURL::GetDefaultPort() const
+{
+  return (paramVars("transport", scheme == "sips" ? "tls" : "udp") *= "tls")
+                            ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
+}
+
+
 void SIPURL::Sanitise(UsageContext context)
 {
   PINDEX i;
 
-  WORD defPort = (queryVars("transport", scheme == "sips" ? "tls" : "udp") *= "tls")
-                                   ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
+  WORD defPort = GetDefaultPort();
 
   // RFC3261, 19.1.1 Table 1
   static struct {
