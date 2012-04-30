@@ -685,11 +685,11 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 
     if (params.m_contactAddress.IsEmpty()) {
       if (GetState() != Refreshing || m_contactAddresses.empty()) {
-        PString userName = SIPURL(params.m_addressOfRecord).GetUserName();
+        PString userName = m_addressOfRecord.GetUserName();
         OpalTransportAddressArray interfaces = GetEndPoint().GetInterfaceAddresses(true, &trans);
         if (params.m_compatibility == SIPRegister::e_CannotRegisterMultipleContacts) {
           // If translated by STUN then only the external address of the interface is used.
-          SIPURL contact(userName, interfaces[0]);
+          SIPURL contact(userName, interfaces[0], 0, m_addressOfRecord.GetScheme());
           contact.Sanitise(SIPURL::RegContactURI);
           params.m_contactAddress += contact.AsQuotedString();
         }
@@ -702,7 +702,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
                listeners that are on the same interface. If translated by STUN
                then only the external address of the interface is used. */
             if (params.m_compatibility == SIPRegister::e_FullyCompliant || localAddress.IsEquivalent(interfaces[i], true)) {
-              SIPURL contact(userName, interfaces[i]);
+              SIPURL contact(userName, interfaces[i], 0, m_addressOfRecord.GetScheme());
               contact.Sanitise(SIPURL::RegContactURI);
               contact.GetFieldParameters().Set("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
 
