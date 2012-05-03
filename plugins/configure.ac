@@ -579,19 +579,25 @@ if test -d video/VP8-WebM ; then
                 [AC_HELP_STRING([--disable-VP8],[disable VP8 (WebM) support])],
                 [HAVE_VP8=$enableval],
                 [HAVE_VP8=yes])
-  PKG_CHECK_MODULES([VP8],
-                    [vpx],
-                    [
-                     AC_SUBST(VP8_CFLAGS)
-                     AC_SUBST(VP8_LIBS)
-                    ],
-                    [
-                     HAVE_VP8=no
-                    ])
+  PKG_CHECK_MODULES(
+      [VP8],
+      [vpx],
+      [],
+      [
+         PKG_CHECK_MODULES(
+            [VP8],
+            [libvpx],
+            [],
+            [
+               HAVE_VP8=no
+            ])
+      ])
 else
   HAVE_VP8=no
 fi
 if test "x$HAVE_VP8" = "xyes" ; then
+  AC_SUBST(VP8_CFLAGS)
+  AC_SUBST(VP8_LIBS)
   AC_CONFIG_FILES(video/VP8-WebM/Makefile)
   SUBDIRS+=" video/VP8-WebM"
 fi
