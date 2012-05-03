@@ -9410,13 +9410,71 @@ fi
 	echo "$VP8_PKG_ERRORS" >&5
 
 
-                     HAVE_VP8=no
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for VP8" >&5
+$as_echo_n "checking for VP8... " >&6; }
+
+if test -n "$VP8_CFLAGS"; then
+    pkg_cv_VP8_CFLAGS="$VP8_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libvpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libvpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_CFLAGS=`$PKG_CONFIG --cflags "libvpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$VP8_LIBS"; then
+    pkg_cv_VP8_LIBS="$VP8_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libvpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libvpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_LIBS=`$PKG_CONFIG --libs "libvpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libvpx" 2>&1`
+        else
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --print-errors "libvpx" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$VP8_PKG_ERRORS" >&5
+
+
+               HAVE_VP8=no
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-                     HAVE_VP8=no
+               HAVE_VP8=no
 
 else
 	VP8_CFLAGS=$pkg_cv_VP8_CFLAGS
@@ -9424,14 +9482,99 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
+fi
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for VP8" >&5
+$as_echo_n "checking for VP8... " >&6; }
+
+if test -n "$VP8_CFLAGS"; then
+    pkg_cv_VP8_CFLAGS="$VP8_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libvpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libvpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_CFLAGS=`$PKG_CONFIG --cflags "libvpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$VP8_LIBS"; then
+    pkg_cv_VP8_LIBS="$VP8_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libvpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libvpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_LIBS=`$PKG_CONFIG --libs "libvpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libvpx" 2>&1`
+        else
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --print-errors "libvpx" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$VP8_PKG_ERRORS" >&5
+
+
+               HAVE_VP8=no
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+               HAVE_VP8=no
+
+else
+	VP8_CFLAGS=$pkg_cv_VP8_CFLAGS
+	VP8_LIBS=$pkg_cv_VP8_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+else
+	VP8_CFLAGS=$pkg_cv_VP8_CFLAGS
+	VP8_LIBS=$pkg_cv_VP8_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 
 fi
 else
   HAVE_VP8=no
 fi
 if test "x$HAVE_VP8" = "xyes" ; then
+
+
   ac_config_files="$ac_config_files video/VP8-WebM/Makefile"
 
   SUBDIRS+=" video/VP8-WebM"
