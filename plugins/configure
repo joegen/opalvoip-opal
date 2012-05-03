@@ -596,6 +596,8 @@ SPANDSP_CFLAGS
 HAVE_VPB
 THEORA_LIBS
 THEORA_CFLAGS
+VP8_LIBS
+VP8_CFLAGS
 X264_LIB_NAME
 X264_LIBS
 X264_CFLAGS
@@ -739,6 +741,7 @@ with_libavcodec_source_dir
 enable_x264
 enable_x264_link_static
 enable_x264_licensed
+enable_VP8
 enable_theora
 enable_ixj
 enable_vpb
@@ -769,6 +772,8 @@ LIBAVUTIL_CFLAGS
 LIBAVUTIL_LIBS
 X264_CFLAGS
 X264_LIBS
+VP8_CFLAGS
+VP8_LIBS
 THEORA_CFLAGS
 THEORA_LIBS'
 
@@ -1417,6 +1422,7 @@ Optional Features:
                           Statically link x264 to the plugin. Default for
                           win32.
   --enable-x264-licensed  enable commercially licensed x264 support
+  --disable-VP8           disable VP8 (WebM) support
   --disable-theora        disable Theora support
   --enable-ixj            enable xJack cards
   --enable-vpb            enable voicetronix vpb
@@ -1463,6 +1469,8 @@ Some influential environment variables:
               linker flags for LIBAVUTIL, overriding pkg-config
   X264_CFLAGS C compiler flags for X264, overriding pkg-config
   X264_LIBS   linker flags for X264, overriding pkg-config
+  VP8_CFLAGS  C compiler flags for VP8, overriding pkg-config
+  VP8_LIBS    linker flags for VP8, overriding pkg-config
   THEORA_CFLAGS
               C compiler flags for THEORA, overriding pkg-config
   THEORA_LIBS linker flags for THEORA, overriding pkg-config
@@ -9336,6 +9344,100 @@ fi
 fi
 
 
+if test -d video/VP8-WebM ; then
+  # Check whether --enable-VP8 was given.
+if test "${enable_VP8+set}" = set; then :
+  enableval=$enable_VP8; HAVE_VP8=$enableval
+else
+  HAVE_VP8=yes
+fi
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for VP8" >&5
+$as_echo_n "checking for VP8... " >&6; }
+
+if test -n "$VP8_CFLAGS"; then
+    pkg_cv_VP8_CFLAGS="$VP8_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"vpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "vpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_CFLAGS=`$PKG_CONFIG --cflags "vpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$VP8_LIBS"; then
+    pkg_cv_VP8_LIBS="$VP8_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"vpx\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "vpx") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_VP8_LIBS=`$PKG_CONFIG --libs "vpx" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "vpx" 2>&1`
+        else
+	        VP8_PKG_ERRORS=`$PKG_CONFIG --print-errors "vpx" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$VP8_PKG_ERRORS" >&5
+
+
+                     HAVE_VP8=no
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+                     HAVE_VP8=no
+
+else
+	VP8_CFLAGS=$pkg_cv_VP8_CFLAGS
+	VP8_LIBS=$pkg_cv_VP8_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+
+
+fi
+else
+  HAVE_VP8=no
+fi
+if test "x$HAVE_VP8" = "xyes" ; then
+  ac_config_files="$ac_config_files video/VP8-WebM/Makefile"
+
+  SUBDIRS+=" video/VP8-WebM"
+fi
+
+
 if test -d video/THEORA ; then
   # Check whether --enable-theora was given.
 if test "${enable_theora+set}" = set; then :
@@ -10500,6 +10602,7 @@ do
     "video/MPEG4-ffmpeg/Makefile") CONFIG_FILES="$CONFIG_FILES video/MPEG4-ffmpeg/Makefile" ;;
     "video/H.264/Makefile") CONFIG_FILES="$CONFIG_FILES video/H.264/Makefile" ;;
     "video/H.264/gpl/Makefile") CONFIG_FILES="$CONFIG_FILES video/H.264/gpl/Makefile" ;;
+    "video/VP8-WebM/Makefile") CONFIG_FILES="$CONFIG_FILES video/VP8-WebM/Makefile" ;;
     "video/THEORA/Makefile") CONFIG_FILES="$CONFIG_FILES video/THEORA/Makefile" ;;
     "LID/IxJ/Makefile") CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
     "LID/VPB/Makefile") CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
@@ -11152,6 +11255,7 @@ else
 echo "                           H.264  :  yes (Licensed x264)"
 fi
 
+echo "                             VP8  :  ${HAVE_VP8} (WebM)"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
 if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
