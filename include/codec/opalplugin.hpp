@@ -98,6 +98,69 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+class PluginCodec_RTP
+{
+    unsigned char * m_packet;
+    unsigned        m_maxSize;
+    unsigned        m_headerSize;
+    unsigned        m_payloadSize;
+
+  public:
+    PluginCodec_RTP(const void * packet, unsigned size)
+      : m_packet((unsigned char *)packet)
+      , m_maxSize(size)
+      , m_headerSize(PluginCodec_RTP_GetHeaderLength(m_packet))
+      , m_payloadSize(size - m_headerSize)
+    {
+    }
+
+    __inline unsigned GetMaxSize() const           { return m_maxSize; }
+    __inline unsigned GetPacketSize() const        { return m_headerSize+m_payloadSize; }
+    __inline unsigned GetHeaderSize() const        { return m_headerSize; }
+    __inline unsigned GetPayloadSize() const       { return m_payloadSize; }
+    __inline bool     SetPayloadSize(unsigned size)
+    {
+      if (m_headerSize+size > m_maxSize)
+        return false;
+      m_payloadSize = size;
+      return true;
+    }
+
+    __inline unsigned GetPayloadType() const         { return PluginCodec_RTP_GetPayloadType(m_packet);        }
+    __inline void     SetPayloadType(unsigned type)  {        PluginCodec_RTP_SetPayloadType(m_packet, type);  }
+    __inline bool     GetMarker() const              { return PluginCodec_RTP_GetMarker(m_packet);             }
+    __inline void     SetMarker(bool mark)           {        PluginCodec_RTP_SetMarker(m_packet, mark);       }
+    __inline unsigned GetTimestamp() const           { return PluginCodec_RTP_GetTimestamp(m_packet);          }
+    __inline void     SetTimestamp(unsigned ts)      {        PluginCodec_RTP_SetTimestamp(m_packet, ts);      }
+    __inline unsigned GetSequenceNumber() const      { return PluginCodec_RTP_GetSequenceNumber(m_packet);     }
+    __inline void     SetSequenceNumber(unsigned sn) {        PluginCodec_RTP_SetSequenceNumber(m_packet, sn); }
+    __inline unsigned GetSSRC() const                { return PluginCodec_RTP_GetSSRC(m_packet);               }
+    __inline void     SetSSRC(unsigned ssrc)         {        PluginCodec_RTP_SetSSRC(m_packet, ssrc);         }
+
+    __inline void     SetExtended(unsigned type, unsigned sz)
+    {
+      PluginCodec_RTP_SetExtended(m_packet, type, sz);
+      m_headerSize = PluginCodec_RTP_GetHeaderLength(m_packet);
+    }
+
+    __inline unsigned char * GetPayloadPtr() const   { return m_packet + m_headerSize; }
+    __inline unsigned char & operator[](size_t offset) { return m_packet[m_headerSize + offset]; }
+    __inline unsigned const char & operator[](size_t offset) const { return m_packet[m_headerSize + offset]; }
+    __inline bool CopyPayload(const void * data, size_t size, size_t offset = 0)
+    {
+      if (!SetPayloadSize(offset + size))
+        return false;
+      memcpy(GetPayloadPtr()+offset, data, size);
+      return true;
+    }
+
+    __inline PluginCodec_Video_FrameHeader * GetVideoHeader() const { return (PluginCodec_Video_FrameHeader *)GetPayloadPtr(); }
+    __inline unsigned char * GetVideoFrameData() const { return m_packet + m_headerSize + sizeof(PluginCodec_Video_FrameHeader); }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 class PluginCodec_Utilities
 {
   public:
@@ -664,56 +727,181 @@ class PluginCodec : public PluginCodec_Utilities
 };
 
 
-class PluginCodec_RTP
+/////////////////////////////////////////////////////////////////////////////
+
+template<typename NAME>
+class PluginVideoCodec : public PluginCodec<NAME>
 {
-    unsigned char * m_packet;
-    unsigned        m_maxSize;
-    unsigned        m_headerSize;
-    unsigned        m_payloadSize;
+    typedef PluginCodec<NAME> BaseClass;
 
   public:
-    PluginCodec_RTP(const void * packet, unsigned size)
-      : m_packet((unsigned char *)packet)
-      , m_maxSize(size)
-      , m_headerSize(PluginCodec_RTP_GetHeaderLength(m_packet))
-      , m_payloadSize(size - m_headerSize)
+    enum {
+      DefaultWidth = 352, // CIF size
+      DefaultHeight = 288
+    };
+
+
+    PluginVideoCodec(const PluginCodec_Definition * defn)
+      : BaseClass(defn)
     {
     }
 
-    __inline unsigned GetMaxSize() const           { return m_maxSize; }
-    __inline unsigned GetPacketSize() const        { return m_headerSize+m_payloadSize; }
-    __inline unsigned GetHeaderSize() const        { return m_headerSize; }
-    __inline unsigned GetPayloadSize() const       { return m_payloadSize; }
-    __inline bool     SetPayloadSize(unsigned size)
+
+    virtual size_t GetRawFrameSize(unsigned width, unsigned height)
     {
-      if (m_headerSize+size > m_maxSize)
-        return false;
-      m_payloadSize = size;
+      return width*height*3/2; // YUV420P
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+template<typename NAME>
+class PluginVideoEncoder : public PluginVideoCodec<NAME>
+{
+    typedef PluginVideoCodec<NAME> BaseClass;
+
+  protected:
+    unsigned m_width;
+    unsigned m_height;
+    unsigned m_maxRTPSize;
+    unsigned m_tsto;
+    unsigned m_keyFramePeriod;
+
+  public:
+    PluginVideoEncoder(const PluginCodec_Definition * defn)
+      : BaseClass(defn)
+      , m_width(DefaultWidth)
+      , m_height(DefaultHeight)
+      , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
+      , m_tsto(31)
+      , m_keyFramePeriod(0) // Indicates auto/default
+    {
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+        return SetOptionUnsigned(m_width, optionValue, 16, MyMaxWidth);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+        return SetOptionUnsigned(m_height, optionValue, 16, MyMaxHeight);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
+        return SetOptionUnsigned(m_maxRTPSize, optionValue, 256, 8192);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
+        return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+        return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
+
+      // Base class sets bit rate and frame time
+      return BaseClass::SetOption(optionName, optionValue);
+    }
+
+
+    /// Get options that are "active" and may be different from the last SetOptions() call.
+    virtual bool GetActiveOptions(PluginCodec_OptionMap & options)
+    {
+      options.SetUnsigned(m_frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
       return true;
     }
 
-    __inline unsigned GetPayloadType() const         { return PluginCodec_RTP_GetPayloadType(m_packet);        }
-    __inline void     SetPayloadType(unsigned type)  {        PluginCodec_RTP_SetPayloadType(m_packet, type);  }
-    __inline bool     GetMarker() const              { return PluginCodec_RTP_GetMarker(m_packet);             }
-    __inline void     SetMarker(bool mark)           {        PluginCodec_RTP_SetMarker(m_packet, mark);       }
-    __inline unsigned GetTimestamp() const           { return PluginCodec_RTP_GetTimestamp(m_packet);          }
-    __inline void     SetTimestamp(unsigned ts)      {        PluginCodec_RTP_SetTimestamp(m_packet, ts);      }
-    __inline unsigned GetSequenceNumber() const      { return PluginCodec_RTP_GetSequenceNumber(m_packet);     }
-    __inline void     SetSequenceNumber(unsigned sn) {        PluginCodec_RTP_SetSequenceNumber(m_packet, sn); }
-    __inline unsigned GetSSRC() const                { return PluginCodec_RTP_GetSSRC(m_packet);               }
-    __inline void     SetSSRC(unsigned ssrc)         {        PluginCodec_RTP_SetSSRC(m_packet, ssrc);         }
 
-    __inline void     SetExtended(unsigned type, unsigned sz)
+    virtual size_t GetPacketSpace(const PluginCodec_RTP & rtp, size_t total)
     {
-      PluginCodec_RTP_SetExtended(m_packet, type, sz);
-      m_headerSize = PluginCodec_RTP_GetHeaderLength(m_packet);
+      return std::min(total, std::min(m_maxRTPSize, rtp.GetMaxSize())-rtp.GetHeaderSize());
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+template<typename NAME>
+class PluginVideoDecoder : public PluginVideoCodec<NAME>
+{
+    typedef PluginVideoCodec<NAME> BaseClass;
+
+  protected:
+    size_t m_outputSize;
+
+  public:
+    PluginVideoDecoder(const PluginCodec_Definition * defn)
+      : BaseClass(defn)
+      , m_outputSize(DefaultWidth*DefaultHeight*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
+    {
     }
 
-    __inline unsigned char * GetPayloadPtr() const   { return m_packet + m_headerSize; }
 
-    __inline PluginCodec_Video_FrameHeader * GetVideoHeader() const { return (PluginCodec_Video_FrameHeader *)GetPayloadPtr(); }
-    __inline unsigned char * GetVideoFrameData() const { return m_packet + m_headerSize + sizeof(PluginCodec_Video_FrameHeader); }
+    virtual size_t GetOutputDataSize()
+    {
+      return m_outputSize;
+    }
+
+
+    virtual bool CanOutputImage(unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
+    {
+      size_t newSize = GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader) + rtp.GetHeaderSize();
+      if (newSize > rtp.GetMaxSize() || !rtp.SetPayloadSize(newSize)) {
+        m_outputSize = newSize;
+        flags |= PluginCodec_ReturnCoderBufferTooSmall;
+        return false;
+      }
+
+      PluginCodec_Video_FrameHeader * videoHeader = rtp.GetVideoHeader();
+      videoHeader->x = 0;
+      videoHeader->y = 0;
+      videoHeader->width = width;
+      videoHeader->height = height;
+
+      flags |= PluginCodec_ReturnCoderLastFrame;
+      rtp.SetMarker(true);
+      return true;
+    }
+
+
+    virtual void OutputImage(unsigned char * planes[3], int raster[3],
+                             unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
+    {
+      if (CanOutputImage(width, height, rtp, flags)) {
+        size_t ySize = width*height;
+        size_t uvSize = ySize/4;
+        if (planes[1] == planes[0]+ySize && planes[2] == planes[1]+uvSize)
+          memcpy(rtp.GetVideoFrameData(), planes[0], ySize+uvSize*2);
+        else {
+          unsigned char * src[3] = { planes[0], planes[1], planes[2] };
+          unsigned char * dst[3] = { rtp.GetVideoFrameData(), dst[0] + ySize, dst[1] + uvSize };
+          size_t len[3] = { width, width/2, width/2 };
+
+          for (unsigned y = 0; y < height; ++y) {
+            for (unsigned plane = 0; plane < 3; ++plane) {
+              if ((y&1) == 0 || plane == 0) {
+                memcpy(dst[plane], src[plane], len[plane]);
+                src[plane] += raster[plane];
+                dst[plane] += len[plane];
+              }
+            }
+          }
+        }
+      }
+    }
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#define PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, table) \
+  extern "C" { \
+    PLUGIN_CODEC_IMPLEMENT(MY_CODEC) \
+    PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version) { \
+      if (version < PLUGIN_CODEC_VERSION_OPTIONS) return NULL; \
+      *count = sizeof(table)/sizeof(struct PluginCodec_Definition); \
+      PluginCodec_MediaFormat::AdjustAllForVersion(version, table, *count); \
+      return table; \
+    } \
+  }
 
 
 #endif // OPAL_CODEC_OPALPLUGIN_HPP
