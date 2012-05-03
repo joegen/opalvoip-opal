@@ -817,6 +817,7 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
       size_t space = rtp.GetMaxSize();
       if (space > this->m_maxRTPSize)
         space = this->m_maxRTPSize;
+      space -= rtp.GetHeaderSize();
       if (space > total)
         space = total;
       return space;
