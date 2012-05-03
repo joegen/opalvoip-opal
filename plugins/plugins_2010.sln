@@ -155,6 +155,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "x264 H.264 Video Codec", "v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MPEG4 part 2 (FFMPEG) Video Codec", "video\MPEG4-ffmpeg\mpeg_2010.vcxproj", "{D96E9539-B594-4C4B-8782-33A54D990F5F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VP8 (WebM) Video Codec", "video\VP8-WebM\vp8_webm_2010.vcxproj", "{F663F1B8-24D5-4BAA-8A3C-E76A5AC619D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -342,6 +344,8 @@ Global
 		{D96E9539-B594-4C4B-8782-33A54D990F5F}.No Trace|Win32.Build.0 = Release|Win32
 		{D96E9539-B594-4C4B-8782-33A54D990F5F}.Release|Win32.ActiveCfg = Release|Win32
 		{D96E9539-B594-4C4B-8782-33A54D990F5F}.Release|Win32.Build.0 = Release|Win32
+		{F663F1B8-24D5-4BAA-8A3C-E76A5AC619D4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F663F1B8-24D5-4BAA-8A3C-E76A5AC619D4}.Release|Win32.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
