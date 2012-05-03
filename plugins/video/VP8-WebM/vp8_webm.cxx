@@ -410,8 +410,11 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
-        if (!Unpacketise(srcRTP))
+        if (!Unpacketise(srcRTP)) {
           flags |= PluginCodec_ReturnCoderRequestIFrame;
+          return true;
+        }
+
         if (!srcRTP.GetMarker())
           return true;
 
@@ -522,11 +525,13 @@ class MyDecoderOM : public MyDecoder
 {
   protected:
     unsigned m_expectedGID;
+    bool     m_ignoreTillFirst;
 
   public:
     MyDecoderOM(const PluginCodec_Definition * defn)
       : MyDecoder(defn)
       , m_expectedGID(0)
+      , m_ignoreTillFirst(false)
     {
     }
 
@@ -539,10 +544,26 @@ class MyDecoderOM : public MyDecoder
       if (rtp.GetPayloadSize() < 3)
         return false;
 
-      size_t headerSize = (rtp[0]&0x40) == 0 ? 1 : 2;
+      bool first = (rtp[0]&0x40) != 0;
+
+      size_t headerSize = first ? 2 : 1;
       if ((rtp[0]&0x80) != 0) {
         while ((rtp[headerSize]&0x80) != 0)
           ++headerSize;
+      }
+
+      if (m_ignoreTillFirst) {
+        if (!first)
+          return false;
+        m_ignoreTillFirst =  false;
+        PTRACE(3, MY_CODEC_LOG, "Found next start of frame.");
+      }
+      else {
+        if (!first && m_fullFrame.empty()) {
+          PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next.");
+          m_ignoreTillFirst = true;
+          return false;
+        }
       }
 
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
