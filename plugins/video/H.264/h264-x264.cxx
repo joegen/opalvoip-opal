@@ -717,41 +717,29 @@ static MyPluginMediaFormat MyMediaFormatInfo_1(OptionTable_1, true );
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyEncoder : public PluginCodec<MY_CODEC>
+class MyEncoder : public PluginVideoEncoder<MY_CODEC>
 {
+    typedef PluginVideoEncoder<MY_CODEC> BaseClass;
+
   protected:
-    unsigned m_width;
-    unsigned m_height;
-    unsigned m_frameTime;
-    unsigned m_bitRate;
     unsigned m_profile;
     unsigned m_level;
     unsigned m_constraints;
     unsigned m_maxMBPS;
     unsigned m_packetisationMode;
-    unsigned m_maxRTPSize;
     unsigned m_maxNALUSize;
-    unsigned m_tsto;
-    unsigned m_keyFramePeriod;
 
     H264Encoder m_encoder;
 
   public:
     MyEncoder(const PluginCodec_Definition * defn)
-      : PluginCodec<MY_CODEC>(defn)
-      , m_width(352)
-      , m_height(288)
-      , m_frameTime(MyClockRate/15)
-      , m_bitRate(512000)
+      : BaseClass(defn)
       , m_profile(DefaultProfileInt)
       , m_level(DefaultLevelInt)
       , m_constraints(0)
       , m_maxMBPS(0)
       , m_packetisationMode(1)
-      , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
       , m_maxNALUSize(1400)
-      , m_tsto(31)
-      , m_keyFramePeriod(0)
     {
     }
 
@@ -775,29 +763,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-        return SetOptionUnsigned(m_width, optionValue, 16, MyMaxWidth);
-
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        return SetOptionUnsigned(m_height, optionValue, 16, MyMaxHeight);
-
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-        return SetOptionUnsigned(m_frameTime, optionValue, MyClockRate/MyMaxFrameRate, MyClockRate);
-
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-        return SetOptionUnsigned(m_bitRate, optionValue, 1000);
-
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
-        return SetOptionUnsigned(m_maxRTPSize, optionValue, 256, 8192);
-
       if (strcasecmp(optionName, MaxNaluSize.m_name) == 0)
         return SetOptionUnsigned(m_maxNALUSize, optionValue, 256, 8192);
-
-      if (STRCMPI(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
-        return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
-
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
-        return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
 
       if (strcasecmp(optionName, MaxMBPS.m_name) == 0)
         return SetOptionUnsigned(m_maxMBPS, optionValue, 0);
@@ -842,7 +809,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
         return SetPacketisationMode(atoi(optionValue));
 
       // Base class sets bit rate and frame time
-      return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
+      return BaseClass::SetOption(optionName, optionValue);
     }
 
 
@@ -885,15 +852,15 @@ class MyEncoder : public PluginCodec<MY_CODEC>
         PTRACE(4, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
                << " unchanged frame rate " << (MyClockRate/m_frameTime) << " <= " << (MyClockRate/minFrameTime));
 
-
+      size_t naluSize = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
       m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
       m_encoder.SetFrameWidth(m_width);
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(MyClockRate/m_frameTime);
-      m_encoder.SetTargetBitrate(m_bitRate/1000);
-      m_encoder.SetMaxRTPPayloadSize(std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize));
+      m_encoder.SetTargetBitrate(m_maxBitRate/1000);
+      m_encoder.SetMaxRTPPayloadSize(naluSize);
       m_encoder.SetTSTO(m_tsto);
-      m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
+      m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*MyClockRate/m_frameTime); // Every 10 seconds
       m_encoder.ApplyOptions();
 
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
@@ -901,8 +868,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                               "lev=" << m_level << " "
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << (MyClockRate/m_frameTime) << " "
-                              "bps=" << m_bitRate << " "
-                              "RTP=" << m_maxRTPSize << " "
+                              "bps=" << m_maxBitRate << " "
+                              "NALU=" << naluSize << " "
                               "TSTO=" << m_tsto);
       return true;
     }
@@ -932,21 +899,22 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyDecoder : public PluginCodec<MY_CODEC>
+class MyDecoder : public PluginVideoDecoder<MY_CODEC>
 {
+    typedef PluginVideoDecoder<MY_CODEC> BaseClass;
+
+  protected:
     AVCodec        * m_codec;
     AVCodecContext * m_context;
     AVFrame        * m_picture;
     H264Frame        m_fullFrame;
-    size_t           m_outputSize;
 
   public:
     MyDecoder(const PluginCodec_Definition * defn)
-      : PluginCodec<MY_CODEC>(defn)
+      : BaseClass(defn)
       , m_codec(NULL)
       , m_context(NULL)
       , m_picture(NULL)
-      , m_outputSize(352*288*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
     {
     }
 
@@ -1001,12 +969,6 @@ class MyDecoder : public PluginCodec<MY_CODEC>
     }
 
 
-    virtual size_t GetOutputDataSize()
-    {
-      return m_outputSize;
-    }
-
-
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -1016,7 +978,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (!FFMPEGLibraryInstance.IsLoaded())
         return false;
 
-      PluginCodec_RTP srcRTP((const unsigned char *)fromPtr, fromLen);
+      PluginCodec_RTP srcRTP(fromPtr, fromLen);
       if (!m_fullFrame.SetFromRTPFrame(srcRTP, flags))
         return true;
 
@@ -1067,41 +1029,13 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (m_picture->key_frame)
         flags |= PluginCodec_ReturnCoderIFrame;
 
-      PluginCodec_Video_FrameHeader * videoHeader =
-                (PluginCodec_Video_FrameHeader *)PluginCodec_RTP_GetPayloadPtr(toPtr);
-      videoHeader->width = m_context->width;
-      videoHeader->height = m_context->height;
-
       /* If we determine via toLen the output is not big enough, set flag.
          Make sure GetOutputDataSize() then returns correct larger size. */
-      size_t ySize = m_context->width * m_context->height;
-      size_t uvSize = ySize/4;
-      size_t newToLen = ySize+uvSize+uvSize+sizeof(PluginCodec_Video_FrameHeader)+PluginCodec_RTP_GetHeaderLength(toPtr);
-      if (newToLen > toLen) {
-        m_outputSize = newToLen;
-        flags |= PluginCodec_ReturnCoderBufferTooSmall;
-      }
-      else {
-        flags |= PluginCodec_ReturnCoderLastFrame;
+      PluginCodec_RTP dstRTP(toPtr, toLen);
+      OutputImage(m_picture->data, m_picture->linesize, m_context->width, m_context->height, dstRTP, flags);
 
-        uint8_t * src[3] = { m_picture->data[0], m_picture->data[1], m_picture->data[2] };
-        uint8_t * dst[3] = { OPAL_VIDEO_FRAME_DATA_PTR(videoHeader), dst[0] + ySize, dst[1] + uvSize };
-        size_t dstLineSize[3] = { m_context->width, m_context->width/2, m_context->width/2 };
+      toLen = dstRTP.GetPacketSize();
 
-        for (int y = 0; y < m_context->height; ++y) {
-          for (int plane = 0; plane < 3; ++plane) {
-            if ((y&1) == 0 || plane == 0) {
-              memcpy(dst[plane], src[plane], dstLineSize[plane]);
-              src[plane] += m_picture->linesize[plane];
-              dst[plane] += dstLineSize[plane];
-            }
-          }
-        }
-
-        PluginCodec_RTP_SetMarker(toPtr, true);
-      }
-
-      toLen = newToLen;
       return true;
     }
 };
@@ -1329,22 +1263,8 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
   }
 };
 
-static size_t const MyCodecDefinitionSize = sizeof(MyCodecDefinition)/sizeof(MyCodecDefinition[0]);
 
-extern "C"
-{
-  PLUGIN_CODEC_IMPLEMENT(MY_CODEC)
-  PLUGIN_CODEC_DLL_API
-  struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-  {
-    if (version < PLUGIN_CODEC_VERSION_OPTIONS)
-      return NULL;
+PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);
 
-    PluginCodec_MediaFormat::AdjustAllForVersion(version, MyCodecDefinition, MyCodecDefinitionSize);
-
-    *count = MyCodecDefinitionSize;
-    return MyCodecDefinition;
-  }
-};
 
 /////////////////////////////////////////////////////////////////////////////

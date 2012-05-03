@@ -572,6 +572,32 @@ fi
 
 
 dnl     ########################
+dnl     VP8
+dnl     ########################
+if test -d video/VP8-WebM ; then
+  AC_ARG_ENABLE([VP8],
+                [AC_HELP_STRING([--disable-VP8],[disable VP8 (WebM) support])],
+                [HAVE_VP8=$enableval],
+                [HAVE_VP8=yes])
+  PKG_CHECK_MODULES([VP8],
+                    [vpx],
+                    [
+                     AC_SUBST(VP8_CFLAGS)
+                     AC_SUBST(VP8_LIBS)
+                    ],
+                    [
+                     HAVE_VP8=no
+                    ])
+else
+  HAVE_VP8=no
+fi
+if test "x$HAVE_VP8" = "xyes" ; then
+  AC_CONFIG_FILES(video/VP8-WebM/Makefile)
+  SUBDIRS+=" video/VP8-WebM"
+fi
+
+
+dnl     ########################
 dnl     theora
 dnl     ########################
 if test -d video/THEORA ; then
@@ -765,6 +791,7 @@ else
 echo "                           H.264  :  yes (Licensed x264)"
 fi
 
+echo "                             VP8  :  ${HAVE_VP8} (WebM)"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 
 if test "x${HAVE_LIBAVCODEC}" = "xyes" ; then
