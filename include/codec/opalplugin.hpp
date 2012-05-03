@@ -737,7 +737,9 @@ class PluginVideoCodec : public PluginCodec<NAME>
   public:
     enum {
       DefaultWidth = 352, // CIF size
-      DefaultHeight = 288
+      DefaultHeight = 288,
+      MaxWidth = DefaultWidth*8,
+      MaxHeight = DefaultHeight*8
     };
 
 
@@ -771,8 +773,8 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
   public:
     PluginVideoEncoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
-      , m_width(DefaultWidth)
-      , m_height(DefaultHeight)
+      , m_width(BaseClass::DefaultWidth)
+      , m_height(BaseClass::DefaultHeight)
       , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
       , m_tsto(31)
       , m_keyFramePeriod(0) // Indicates auto/default
@@ -783,19 +785,19 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-        return SetOptionUnsigned(m_width, optionValue, 16, MyMaxWidth);
+        return SetOptionUnsigned(this->m_width, optionValue, 16, BaseClass::MaxWidth);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        return SetOptionUnsigned(m_height, optionValue, 16, MyMaxHeight);
+        return SetOptionUnsigned(this->m_height, optionValue, 16, BaseClass::MaxHeight);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
-        return SetOptionUnsigned(m_maxRTPSize, optionValue, 256, 8192);
+        return SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256, 8192);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
-        return SetOptionUnsigned(m_tsto, optionValue, 1, 31);
+        return SetOptionUnsigned(this->m_tsto, optionValue, 1, 31);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
-        return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
+        return SetOptionUnsigned(this->m_keyFramePeriod, optionValue, 0);
 
       // Base class sets bit rate and frame time
       return BaseClass::SetOption(optionName, optionValue);
@@ -805,14 +807,19 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     /// Get options that are "active" and may be different from the last SetOptions() call.
     virtual bool GetActiveOptions(PluginCodec_OptionMap & options)
     {
-      options.SetUnsigned(m_frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
+      options.SetUnsigned(this->m_frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
       return true;
     }
 
 
     virtual size_t GetPacketSpace(const PluginCodec_RTP & rtp, size_t total)
     {
-      return std::min(total, std::min(m_maxRTPSize, rtp.GetMaxSize())-rtp.GetHeaderSize());
+      size_t space = rtp.GetMaxSize();
+      if (space > this->m_maxRTPSize)
+        space = this->m_maxRTPSize;
+      if (space > total)
+        space = total;
+      return space;
     }
 };
 
@@ -830,7 +837,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
   public:
     PluginVideoDecoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
-      , m_outputSize(DefaultWidth*DefaultHeight*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
+      , m_outputSize(BaseClass::DefaultWidth*BaseClass::DefaultHeight*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
     {
     }
 
@@ -843,7 +850,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
 
     virtual bool CanOutputImage(unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
-      size_t newSize = GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader) + rtp.GetHeaderSize();
+      size_t newSize = this->GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader) + rtp.GetHeaderSize();
       if (newSize > rtp.GetMaxSize() || !rtp.SetPayloadSize(newSize)) {
         m_outputSize = newSize;
         flags |= PluginCodec_ReturnCoderBufferTooSmall;
