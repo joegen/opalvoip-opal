@@ -1479,7 +1479,7 @@ static struct PluginCodec_Option const customMPI =
   PluginCodec_CustomMerge,            // Merge mode
   DEFAULT_CUSTOM_MPI,                 // Initial value
   "CUSTOM",                           // FMTP option name
-  NULL,                               // FMTP default value
+  DEFAULT_CUSTOM_MPI,                 // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   NULL,                               // Minimum value
   NULL,                               // Maximum value
