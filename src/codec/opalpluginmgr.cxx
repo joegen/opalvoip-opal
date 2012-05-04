@@ -1929,12 +1929,6 @@ H323PluginCapabilityInfo::H323PluginCapabilityInfo(const PluginCodec_Definition 
 {
 }
 
-//H323PluginCapabilityInfo::H323PluginCapabilityInfo(const PString & name)
-// : m_codecDefn(NULL)
-// , m_capabilityFormatName(name)
-//{
-//}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1971,11 +1965,18 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
   }
 }
 
+
 PObject * H323CodecPluginNonStandardAudioCapability::Clone() const
-{ return new H323CodecPluginNonStandardAudioCapability(*this); }
+{
+  return new H323CodecPluginNonStandardAudioCapability(*this);
+}
+
 
 PString H323CodecPluginNonStandardAudioCapability::GetFormatName() const
-{ return H323PluginCapabilityInfo::GetFormatName();}
+{
+  return H323PluginCapabilityInfo::GetFormatName();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2042,31 +2043,6 @@ PBoolean H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap
 
 #if OPAL_VIDEO
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling most videoplugin capabilities
-//
-
-H323VideoPluginCapability::H323VideoPluginCapability(const PluginCodec_Definition * codecDefn,
-                                                     const OpalMediaFormat & mediaFormat,
-                                                     unsigned _pluginSubType)
-  : H323VideoCapability()
-  , H323PluginCapabilityInfo(codecDefn, mediaFormat)
-  , pluginSubType(_pluginSubType)
-{ 
-}
-
-PString H323VideoPluginCapability::GetFormatName() const
-{
-  return H323PluginCapabilityInfo::GetFormatName();
-}
-
-
-unsigned H323VideoPluginCapability::GetSubType() const
-{
-  return pluginSubType;
-}
-
 #define SET_OR_CREATE_PARM(option, val, op) \
   if (mediaFormat.GetOptionInteger(OpalVideoFormat::option()) op val) { \
     if (mediaFormat.FindOption(OpalVideoFormat::option()) == NULL) \
@@ -2078,7 +2054,7 @@ unsigned H323VideoPluginCapability::GetSubType() const
   } \
 
 
-bool H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
+static bool SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
 {
   SET_OR_CREATE_PARM(MaxRxFrameWidthOption, frameWidth, <);
   SET_OR_CREATE_PARM(MinRxFrameWidthOption, frameWidth, >);
@@ -2094,17 +2070,13 @@ bool H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat,
 }
 
 
-void H323VideoPluginCapability::PrintOn(std::ostream & strm) const
-{
-  H323VideoCapability::PrintOn(strm);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 H323H261PluginCapability::H323H261PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat)
-  : H323VideoPluginCapability(codecDefn, mediaFormat, H245_VideoCapability::e_h261VideoCapability)
+  : H323PluginCapabilityInfo(codecDefn, mediaFormat)
 {
 }
+
 
 PObject::Comparison H323H261PluginCapability::Compare(const PObject & obj) const
 {
@@ -2139,6 +2111,19 @@ PObject * H323H261PluginCapability::Clone() const
 { 
   return new H323H261PluginCapability(*this); 
 }
+
+
+PString H323H261PluginCapability::GetFormatName() const
+{
+  return H323PluginCapabilityInfo::GetFormatName();
+}
+
+
+unsigned H323H261PluginCapability::GetSubType() const
+{
+  return H245_VideoCapability::e_h261VideoCapability;
+}
+
 
 PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
@@ -2257,7 +2242,7 @@ H323Capability * CreateH261Cap(const PluginCodec_Definition * codecDefn,
 /////////////////////////////////////////////////////////////////////////////
 
 H323H263PluginCapability::H323H263PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat)
-  : H323VideoPluginCapability(codecDefn, mediaFormat, H245_VideoCapability::e_h263VideoCapability)
+  : H323PluginCapabilityInfo(codecDefn, mediaFormat)
 { 
 }
 
@@ -2357,7 +2342,22 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
 }
 
 PObject * H323H263PluginCapability::Clone() const
-{ return new H323H263PluginCapability(*this); }
+{
+  return new H323H263PluginCapability(*this);
+}
+
+
+PString H323H263PluginCapability::GetFormatName() const
+{
+  return H323PluginCapabilityInfo::GetFormatName();
+}
+
+
+unsigned H323H263PluginCapability::GetSubType() const
+{
+  return H245_VideoCapability::e_h263VideoCapability;
+}
+
 
 static bool SetTransmittedCap(const OpalMediaFormat & mediaFormat,
                               H245_H263VideoCapability & h263,
@@ -2529,7 +2529,7 @@ static bool SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
     if (!mediaFormat.SetOptionInteger(mpiTag, mpi))
       return false;
     if (mpi != 0) {
-      if (!H323VideoPluginCapability::SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, mpi))
+      if (!SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, mpi))
         return false;
       formatDefined = true;
     }
@@ -2607,7 +2607,7 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU, const
   if (mp.IsEmpty())
     mp = h263.HasOptionalField(H245_H263VideoCapability::e_h263Options) ? "RFC2429" : "RFC2190";
 
-  if (!H323VideoPluginCapability::IsMatch(subTypePDU, mp))
+  if (!H323VideoCapability::IsMatch(subTypePDU, mp))
     return false;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
