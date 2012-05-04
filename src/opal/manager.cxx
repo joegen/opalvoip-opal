@@ -86,7 +86,7 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H264_MODE1,  // SIP version, packetisation mode 1
   OPAL_H264_MODE0,  // SIP version, packetisation mode 0
   OPAL_MPEG4,
-  OPAL_H263,
+  OPAL_H263 "*",
   OPAL_H261,
 #endif
 #if OPAL_HAS_SIPIM
