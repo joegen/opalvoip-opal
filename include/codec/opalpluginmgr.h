@@ -575,33 +575,6 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Class for handling most audio plugin capabilities
-//
-
-class H323VideoPluginCapability : public H323VideoCapability,
-                             public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323VideoPluginCapability, H323VideoCapability);
-  public:
-    H323VideoPluginCapability(const PluginCodec_Definition * codecDefn,
-                              const OpalMediaFormat & mediaFormat,
-                              unsigned _pluginSubType);
-
-    virtual PString GetFormatName() const;
-
-    virtual unsigned GetSubType() const;
-
-    static bool SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
-
-    virtual void PrintOn(std::ostream & strm) const;
-
-  protected:
-    unsigned pluginSubType;
-    unsigned h323subType;   // only set if using capability without codec
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
 // Class for handling non standard video capabilities
 //
 
@@ -648,15 +621,19 @@ class H323CodecPluginGenericVideoCapability : public H323GenericVideoCapability,
 // Class for handling H.261 plugin capabilities
 //
 
-class H323H261PluginCapability : public H323VideoPluginCapability
+class H323H261PluginCapability : public H323VideoCapability,
+                                 public H323PluginCapabilityInfo
 {
-  PCLASSINFO(H323H261PluginCapability, H323VideoPluginCapability);
+    PCLASSINFO(H323H261PluginCapability, H323VideoCapability);
   public:
     H323H261PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat);
 
     Comparison Compare(const PObject & obj) const;
 
     virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+    virtual unsigned GetSubType() const;
 
     virtual PBoolean OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
@@ -676,15 +653,19 @@ class H323H261PluginCapability : public H323VideoPluginCapability
 // Class for handling H.263 plugin capabilities
 //
 
-class H323H263PluginCapability : public H323VideoPluginCapability
+class H323H263PluginCapability : public H323VideoCapability,
+                                 public H323PluginCapabilityInfo
 {
-  PCLASSINFO(H323H263PluginCapability, H323VideoPluginCapability);
+  PCLASSINFO(H323H263PluginCapability, H323VideoCapability);
   public:
     H323H263PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat);
 
     Comparison Compare(const PObject & obj) const;
 
     virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+    virtual unsigned GetSubType() const;
 
     virtual PBoolean OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
