@@ -926,9 +926,12 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
       stream->SetPaused(paused);
       return !paused;
     }
+    PTRACE(4, "SIP\tRe-INVITE (format change) needs to close stream " << *stream);
+  }
+  else {
+    PTRACE(4, "SIP\tRe-INVITE (address/port change) needs to close stream " << *stream);
   }
 
-  PTRACE(4, "SIP\tRe-INVITE needs to close stream " << *stream);
   stream->GetPatch()->GetSource().Close();
   stream.SetNULL();
   return false;
@@ -1250,8 +1253,11 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 #endif
   }
 
+  localMedia->SetTransportAddress(mediaSession->GetLocalMediaAddress());
+
   sdpOut.AddMediaDescription(localMedia);
 
+  PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetTransportAddress());
   return true;
 }
 
