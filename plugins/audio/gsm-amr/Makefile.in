@@ -33,8 +33,6 @@ SRCS   := amrcodec.c \
 	  sp_dec.c \
 	  sp_enc.c
 
-CFLAGS += -DIF2
-
 INSTALL_DIR := @AC_PLUGIN_DIR@
 PLUGINDIR   := @PLUGINDIR@
 include $(PLUGINDIR)/plugin-inc.mak

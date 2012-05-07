@@ -1038,7 +1038,8 @@ void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 
 PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 {
-  SIPEventPackage eventPackage(pdu.GetMIME().GetEvent());
+  const SIPMIMEInfo & mime = pdu.GetMIME();
+  SIPEventPackage eventPackage(mime.GetEvent());
 
   PTRACE(3, "SIP\tReceived NOTIFY " << eventPackage);
   
@@ -1048,9 +1049,7 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY(OpalTransport & transport, SIP_PDU & pdu)
 
   if (handler == NULL && eventPackage == SIPSubscribe::MessageSummary) {
     PTRACE(4, "SIP\tWork around Asterisk bug in message-summary event package.");
-    SIPURL url_from (pdu.GetMIME().GetFrom());
-    SIPURL url_to (pdu.GetMIME().GetTo());
-    PString to = url_to.GetUserName() + "@" + url_from.GetHostName();
+    SIPURL to(mime.GetTo().GetUserName() + "@" + mime.GetFrom().GetHostName());
     handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadWrite);
   }
 
