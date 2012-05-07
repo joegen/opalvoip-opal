@@ -1091,9 +1091,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   PStringToString subscriptionStateInfo;
   PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
   if (subscriptionState.IsEmpty()) {
-    PTRACE(2, "SIP\tNOTIFY received without Subscription-State");
-    m_previousResponse->SetInfo("No Subscription-State field");
-    return request.SendResponse(*m_transport, *m_previousResponse, &endpoint);
+    PTRACE(2, "SIP\tNOTIFY received without Subscription-State, assuming 'active'");
+    subscriptionState = "active";
   }
 
   // Check the susbscription state
