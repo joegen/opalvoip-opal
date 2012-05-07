@@ -1131,6 +1131,7 @@ void OpalRTPSession::SendReport(PTimer&, INT)
 #if OPAL_STATISTICS
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver) const
 {
+  statistics.m_startTime         = receiver ? firstPacketReceived     : firstPacketSent;
   statistics.m_totalBytes        = receiver ? GetOctetsReceived()     : GetOctetsSent();
   statistics.m_totalPackets      = receiver ? GetPacketsReceived()    : GetPacketsSent();
   statistics.m_packetsLost       = receiver ? GetPacketsLost()        : GetPacketsLostByRemote();

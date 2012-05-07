@@ -48,7 +48,8 @@
 #if OPAL_STATISTICS
 
 OpalMediaStatistics::OpalMediaStatistics()
-  : m_totalBytes(0)
+  : m_startTime(0)
+  , m_totalBytes(0)
   , m_totalPackets(0)
   , m_packetsLost(0)
   , m_packetsOutOfOrder(0)
