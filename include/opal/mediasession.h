@@ -59,6 +59,7 @@ class OpalMediaStatistics : public PObject
     OpalMediaStatistics();
 
     // General info (typicallly from RTP)
+    PTime    m_startTime;
     PUInt64  m_totalBytes;
     unsigned m_totalPackets;
     unsigned m_packetsLost;
