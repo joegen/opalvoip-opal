@@ -155,15 +155,15 @@ static int amr_codec_encoder(const struct PluginCodec_Definition * codec,
     return FALSE;
 
   byteCount = Encoder_Interface_Encode(amr->encoder_state, (enum Mode)amr->mode, (const short *)fromPtr, buffer+1, 0);
-  if (byteCount <= 1 || *toLen <= byteCount) {
+  if (byteCount <= 1 || byteCount >= *toLen) {
     *toLen = 0;
     return byteCount == 1; // Is a DTX frame
   }
 
   buffer[0] = 0xf0;  // CMR is always this for us
 
-  memcpy(toPtr, buffer, *toLen);
-  *toLen = byteCount+1;
+  *toLen = ++byteCount;
+  memcpy(toPtr, buffer, byteCount);
   *fromLen = L_FRAME*sizeof(short);
 
   return TRUE; 
@@ -179,6 +179,7 @@ static int amr_codec_decoder(const struct PluginCodec_Definition * codec,
                                                     unsigned int * flag)
 {
   unsigned char * packet;
+  unsigned byteCount;
 
   if (*toLen < L_FRAME*sizeof(short))
     return FALSE;
@@ -193,7 +194,9 @@ static int amr_codec_decoder(const struct PluginCodec_Definition * codec,
   packet = (unsigned char *)fromPtr;
   Decoder_Interface_Decode(context, packet+1, (short *)toPtr, 0); // Skip over CMR
 
-  *fromLen = block_size[packet[1] >> 3] + 1; // Actual bytes consumed
+  byteCount = block_size[(packet[1] >> 3) & 0xf];
+  if (byteCount != 0)
+    *fromLen = byteCount + 1; // Actual bytes consumed
   *toLen = L_FRAME*sizeof(short);
 
   return TRUE;
