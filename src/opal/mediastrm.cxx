@@ -151,7 +151,8 @@ bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
   // We make referenced copy of pointer so can't be deleted out from under us
   PatchPtr mediaPatch = m_mediaPatch;
 
-  return mediaPatch != NULL && mediaPatch->UpdateMediaFormat(newMediaFormat);
+  return mediaPatch != NULL ? mediaPatch->UpdateMediaFormat(newMediaFormat)
+                            : InternalUpdateMediaFormat(newMediaFormat);
 }
 
 

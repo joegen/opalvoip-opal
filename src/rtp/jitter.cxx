@@ -652,7 +652,7 @@ void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
   PTRACE(4, "Jitter\tReceive thread started: " << *this);
 
   while (m_running) {
-    RTP_DataFrame frame((PINDEX)0, m_packetSize);
+    RTP_DataFrame frame(m_packetSize);
 
     // Keep reading from the RTP transport frames
     if (!OnReadPacket(frame) || !WriteData(frame))
