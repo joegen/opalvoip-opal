@@ -2917,6 +2917,16 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
+  PINDEX outerSize = set.GetSize();
+  for (PINDEX outer = 0; outer < outerSize; outer++) {
+    PINDEX middleSize = set[outer].GetSize();
+    for (PINDEX middle = 0; middle < middleSize; middle++) {
+      PINDEX innerSize = set[outer][middle].GetSize();
+      for (PINDEX inner = 0; inner < innerSize; inner++)
+        formats += set[outer][middle][inner].GetMediaFormat();
+    }
+  }
+
   for (PINDEX i = 0; i < table.GetSize(); i++)
     formats += table[i].GetMediaFormat();
 
