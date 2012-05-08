@@ -520,6 +520,10 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
   , m_timeUnits(mediaFormat.GetTimeUnits())
+  /* No more than 1 second of "slip", reset timing if thread does not execute
+     the timeout for a whole second. Prevents too much bunching up of data
+     in "bad" conditions, that really should not happen. */
+  , m_delay(1000)
 {
   PAssert(!(m_isAudio && m_frameSize == 0), PInvalidParameter);
 }
@@ -594,6 +598,19 @@ PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX length, 
 
   if (m_isSynchronous)
     Pace(false, written, marker);
+  return true;
+}
+
+
+bool OpalNullMediaStream::SetPaused(bool pause, bool fromPatch)
+{
+  if (!OpalMediaStream::SetPaused(pause, fromPatch))
+    return false;
+
+  // If coming out of pause, restart pacing delay
+  if (!pause)
+    m_delay.Restart();
+
   return true;
 }
 
