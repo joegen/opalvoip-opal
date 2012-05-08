@@ -527,6 +527,15 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
       PINDEX & written     ///<  Length of data actually written
     );
 	
+    /**Set the paused state for stream.
+       This will stop reading/writing data from the stream.
+       Returns true if the pause state was changed
+      */
+    virtual bool SetPaused(
+      bool pause,             ///< Indicate that the stream should be paused
+      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
+    );
+
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns the value of m_isSynchronous.
       */
