@@ -2571,6 +2571,20 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
     }
   }
 
+  /* Hate special cases ... but this is ... expedient.
+     Due to an ambiguity in the TCS syntax, you cannot easily distinguish
+     between H.263 and variants such as H,263+. Thus we have to allow for
+     if we advertise H.263+ the other side may ask for baseline H.263. So
+     we basically need to include all variants of H.263 if the TCS
+     capability is there at all.
+   */
+  if (dataType.GetTag() == H245_DataType::e_videoData &&
+      ((const H245_VideoCapability &)dataType).GetTag() == H245_VideoCapability::e_h263VideoCapability) {
+    H323Capability * capability = FindCapability("*H.263*");
+    if (capability != NULL)
+      return capability;
+  }
+
 #if PTRACING
   if (PTrace::CanTrace(4)) {
     PString tagName;
