@@ -3961,13 +3961,14 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
   OpalMediaFormatList list;
 
+  list += remoteCapabilities.GetMediaFormats();
+
 #if OPAL_H239
   OpalMediaFormatList h239 = GetRemoteH239Formats();
   for (OpalMediaFormatList::iterator format = h239.begin(); format != h239.end(); ++format)
     list += *format;
 #endif
 
-  list += remoteCapabilities.GetMediaFormats();
   AdjustMediaFormats(false, NULL, list);
 
   if (  IsH245Master() &&

@@ -764,9 +764,20 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
     SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
 
   // Update actual media packetization if present
+  PString mediaPacketization;
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
-      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType) {
-    m_mediaFormat.SetMediaPacketizations(H323GetRTPPacketization(param.m_mediaPacketization));
+      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
+    mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
+  else {
+    // Super special hack-o-rama for H.263, if no explicit media packetization, set it
+    const H323Capability & capability = GetCapability();
+    if (capability.GetMainType() == H323Capability::e_Video &&
+        capability.GetSubType() == H245_VideoCapability::e_h263VideoCapability)
+      mediaPacketization = "RFC2190";
+  }
+
+  if (!mediaPacketization.IsEmpty()) {
+    m_mediaFormat.SetMediaPacketizations(mediaPacketization);
     if (m_mediaStream != NULL)
       m_mediaStream->UpdateMediaFormat(m_mediaFormat);
   }

@@ -37,6 +37,7 @@ class RFC2190Packetizer : public Packetizer
     RFC2190Packetizer();
     ~RFC2190Packetizer();
 
+    virtual const char * GetName() const { return "RFC2190"; }
     bool Reset(unsigned width, unsigned height);
     bool GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags);
     unsigned char * GetBuffer() { return m_buffer; }
@@ -75,6 +76,7 @@ class RFC2190Depacketizer : public Depacketizer
   public:
     RFC2190Depacketizer();
 
+    virtual const char * GetName() const { return "RFC2190"; }
     virtual void NewFrame();
     virtual bool AddPacket(const PluginCodec_RTP & packet);
     virtual bool IsValid();
