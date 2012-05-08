@@ -1811,10 +1811,7 @@ void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
 
 PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
-  if (!SetNATServer("STUN", server))
-    return PSTUNClient::UnknownNat;
-
-  return m_natMethod->GetNatType();
+  return SetNATServer("STUN", server) ? m_natMethod->GetNatType() : PSTUNClient::UnknownNat;
 }
 #endif
 
@@ -1846,17 +1843,12 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
     interfaceMonitor = NULL;
   }
 
-  if (natType.IsEmpty())
-    return true;
-
   m_natMethod = PNatMethod::Create(natType);
-  if (m_natMethod == NULL) {
+  if (m_natMethod == NULL)
     return false;
-  }
 
-  m_natMethod->SetServer(server);
   m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
-  if (!m_natMethod->Open(PIPSocket::GetDefaultIpAny())) {
+  if (!m_natMethod->SetServer(server) || !m_natMethod->Open(PIPSocket::GetDefaultIpAny())) {
     delete m_natMethod;
     m_natMethod = NULL;
     return false;
