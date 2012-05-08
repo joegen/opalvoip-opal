@@ -89,6 +89,7 @@ class Packetizer
     Packetizer();
     virtual ~Packetizer() { }
 
+    virtual const char * GetName() const = 0;
     virtual bool Reset(unsigned width, unsigned height) = 0;
     virtual bool GetPacket(RTPFrame & frame, unsigned int & flags) = 0;
     virtual unsigned char * GetBuffer() = 0;
@@ -164,6 +165,7 @@ class Depacketizer
 {
   public:
     virtual ~Depacketizer() { }
+    virtual const char * GetName() const = 0;
     virtual void NewFrame() = 0;
     virtual bool AddPacket(const RTPFrame & packet) = 0;
     virtual bool IsValid() = 0;
@@ -183,6 +185,8 @@ class H263_Base_DecoderContext
 
     bool OpenCodec();
     void CloseCodec();
+
+    bool SetOptions(const char * const * options);
 
     virtual bool DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
