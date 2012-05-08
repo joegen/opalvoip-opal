@@ -228,7 +228,11 @@ class SIPURL : public PURL
 class SIPURLList : public std::list<SIPURL>
 {
   public:
-    bool FromString(const PString & str, bool reversed = false);
+    bool FromString(
+      const PString & str,
+      SIPURL::UsageContext context = SIPURL::RouteURI,
+      bool reversed = false
+    );
     PString ToString() const;
 };
 
