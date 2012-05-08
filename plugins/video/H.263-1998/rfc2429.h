@@ -68,6 +68,7 @@ public:
   RFC2429Frame();
   ~RFC2429Frame();
 
+  virtual const char * GetName() const { return "RFC2429"; }
   virtual bool Reset(unsigned width, unsigned height);
   virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
   virtual BYTE * GetBuffer();

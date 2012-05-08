@@ -382,6 +382,18 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
       m_context->flags &= ~CODEC_FLAG_H263P_AIV; 
     return;
   }
+
+  if (STRCMPI(option, PLUGINCODEC_MEDIA_PACKETIZATION) == 0 ||
+      STRCMPI(option, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
+    if (strstr(value, m_packetizer->GetName()) == NULL) {
+      PTRACE(4, m_prefix, "Packetisation changed to " << value);
+      delete m_packetizer;
+      if (STRCMPI(value, "RFC2429") == 0)
+        m_packetizer = new RFC2429Frame;
+      else
+        m_packetizer = new RFC2190Packetizer;
+    }
+  }
 }
 
 
@@ -729,6 +741,24 @@ void H263_Base_DecoderContext::CloseCodec()
       PTRACE(4, m_prefix, "Closed decoder" );
     }
   }
+}
+
+bool H263_Base_DecoderContext::SetOptions(const char * const * options)
+{
+  for (const char * const * option = options; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], PLUGINCODEC_MEDIA_PACKETIZATION) == 0 ||
+        STRCMPI(option[0], PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
+      if (strstr(option[1], m_depacketizer->GetName()) == NULL) {
+        PTRACE(4, m_prefix, "Packetisation changed to " << option[1]);
+        delete m_depacketizer;
+        if (STRCMPI(option[1], "RFC2429") == 0)
+          m_depacketizer = new RFC2429Frame;
+        else
+          m_depacketizer = new RFC2190Depacketizer;
+      }
+    }
+  }
+  return true;
 }
 
 bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
@@ -1306,6 +1336,18 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
   return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
 }
 
+static int decoder_set_options(const PluginCodec_Definition *, 
+                               void * context,
+                               const char * , 
+                               void * parm, 
+                               unsigned * parmLen)
+{
+  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
+    return 0;
+
+  return ((H263_Base_DecoderContext *)context)->SetOptions((const char * const *)parm);
+}
+
 static int decoder_statistics(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
 {
   return len != NULL && *len > 1 && parm != NULL && context != NULL &&
@@ -1364,6 +1406,7 @@ static PluginCodec_ControlDefn EncoderControls[] = {
 
 static PluginCodec_ControlDefn DecoderControls[] = {
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_set_options },
   { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { PLUGINCODEC_CONTROL_GET_STATISTICS,        decoder_statistics },
   { NULL }
@@ -1465,10 +1508,10 @@ static struct PluginCodec_Option const mediaPacketization =
 static struct PluginCodec_Option const mediaPacketizationPlus =
 {
   PluginCodec_StringOption,           // Option type
-  PLUGINCODEC_MEDIA_PACKETIZATION,    // User visible name
+  PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
   true,                               // User Read/Only flag
-  PluginCodec_EqualMerge,             // Merge mode
-  "RFC2429"                           // Initial value
+  PluginCodec_IntersectionMerge,      // Merge mode
+  "RFC2429,RFC2190"                   // Initial value
 };
 
 static struct PluginCodec_Option const customMPI =

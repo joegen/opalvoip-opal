@@ -704,7 +704,7 @@ PString SIPURL::GetTag() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool SIPURLList::FromString(const PString & str, bool reversed)
+bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, bool reversed)
 {
   PStringArray lines = str.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
@@ -730,17 +730,19 @@ bool SIPURLList::FromString(const PString & str, bool reversed)
       }
 
       SIPURL uri = line(comma+1, pos-1);
-      uri.Sanitise(SIPURL::RouteURI);
+      uri.Sanitise(context);
 
-      if (reversed)
-        push_front(uri);
-      else {
+      if (context == SIPURL::RegContactURI) {
         double q = uri.GetFieldParameters().GetReal("q");
         SIPURLList::iterator it = begin();
-        while (it != end() && it->GetFieldParameters().GetReal("q") > q)
+        while (it != end() && it->GetFieldParameters().GetReal("q") >= q)
           ++it;
-        push_back(uri);
+        insert(it, uri);
       }
+      else if (reversed)
+        push_front(uri);
+      else
+        push_back(uri);
 
       comma = previousPos = pos;
     } while (comma != P_MAX_INDEX);
@@ -912,7 +914,7 @@ SIPURL SIPMIMEInfo::GetContact() const
 
 bool SIPMIMEInfo::GetContacts(SIPURLList & contacts) const
 {
-  return contacts.FromString(GetString("Contact"));
+  return contacts.FromString(GetString("Contact"), SIPURL::RegContactURI);
 }
 
 
@@ -1064,7 +1066,7 @@ PString SIPMIMEInfo::GetRoute() const
 
 bool SIPMIMEInfo::GetRoute(SIPURLList & proxies) const
 {
-  return proxies.FromString(GetRoute(), false);
+  return proxies.FromString(GetRoute());
 }
 
 
@@ -1090,7 +1092,7 @@ PString SIPMIMEInfo::GetRecordRoute() const
 
 bool SIPMIMEInfo::GetRecordRoute(SIPURLList & proxies, bool reversed) const
 {
-  return proxies.FromString(GetRecordRoute(), reversed);
+  return proxies.FromString(GetRecordRoute(), SIPURL::RouteURI, reversed);
 }
 
 
@@ -2588,7 +2590,7 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
   if (m_routeSet.empty() && mime.Has("Record-Route")) {
     // get the route set from the Record-Route response field according to 12.1.2
     // requests in a dialog do not modify the initial route set according to 12.2
-    m_routeSet.FromString(mime.GetRecordRoute(), pdu.GetMethod() == SIP_PDU::NumMethods);
+    m_routeSet.FromString(mime.GetRecordRoute(), SIPURL::RouteURI, pdu.GetMethod() == SIP_PDU::NumMethods);
     PTRACE(4, "SIP\tRoute set is " << m_routeSet.ToString());
   }
 
