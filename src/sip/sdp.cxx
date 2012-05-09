@@ -860,12 +860,12 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       << GetSDPTransportType()
       << GetSDPPortList() << "\r\n";
 
-  if (!connectString.IsEmpty())
-    str << "c=" << connectString << "\r\n";
-
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
   if (port == 0)
     return false;
+
+  if (!connectString.IsEmpty())
+    str << "c=" << connectString << "\r\n";
 
   str << m_bandwidth;
   OutputAttributes(str);
