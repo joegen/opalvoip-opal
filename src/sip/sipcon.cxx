@@ -1984,6 +1984,8 @@ void SIPConnection::UpdateRemoteAddresses()
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
     localPartyName = m_dialog.GetLocalURI().GetUserName();
+
+  ownerCall.SetPartyNames();
 }
 
 
@@ -2528,7 +2530,9 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_answerFormatList.RemoveAll();
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
-  if (!newRemotePartyID.IsEmpty() && m_ciscoRemotePartyID != newRemotePartyID) {
+  if (newRemotePartyID.IsEmpty() || m_ciscoRemotePartyID == newRemotePartyID)
+    UpdateRemoteAddresses();
+  else {
     PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
 
     m_ciscoRemotePartyID = newRemotePartyID;
