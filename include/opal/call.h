@@ -569,9 +569,9 @@ class OpalCall : public PSafeObject
 
     void InternalOnClear();
 
-  protected:
     void SetPartyNames();
 
+  protected:
     bool EnumerateConnections(
       PSafePtr<OpalConnection> & connection,
       PSafetyMode mode,
