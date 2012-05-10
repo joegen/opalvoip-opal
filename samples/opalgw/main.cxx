@@ -61,6 +61,7 @@ static const char STUNServerKey[] = "STUN Server";
 
 #if OPAL_SIP
 static const char SIPUsernameKey[] = "SIP User Name";
+static const char SIPPrackKey[] = "SIP Provisional Responses";
 static const char SIPProxyKey[] = "SIP Proxy URL";
 static const char SIPListenersKey[] = "SIP Interfaces";
 #if OPAL_PTLIB_SSL
@@ -449,6 +450,12 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
   rsrc->Add(fieldArray);
+
+  SIPConnection::PRACKMode prack = (SIPConnection::PRACKMode)cfg.GetInteger(SIPPrackKey, m_sipEP->GetDefaultPRACKMode());
+  static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
+  rsrc->Add(new PHTTPRadioField(SIPPrackKey, PARRAYSIZE(prackModes), prackModes, prack,
+            "SIP provisional responses (100rel) handling."));
+  m_sipEP->SetDefaultPRACKMode(prack);
 
   PString proxy = m_sipEP->GetProxy().AsString();
   m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
