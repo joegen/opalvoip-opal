@@ -1072,6 +1072,12 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandTy
 }
 
 
+PBoolean H323VideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
+{
+  return false;
+}
+
+
 PBoolean H323VideoCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
   mode.m_type.SetTag(H245_ModeElementType::e_videoMode);

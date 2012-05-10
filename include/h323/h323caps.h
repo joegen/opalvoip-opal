@@ -1030,7 +1030,7 @@ class H323VideoCapability : public H323RealTimeCapability
      */
     virtual PBoolean OnSendingPDU(
       H245_VideoMode & pdu  ///<  PDU to set information on
-    ) const = 0;
+    ) const;
 
     /**This function is called whenever and incoming TerminalCapabilitySet
        PDU is received on the control channel, and a new H323Capability
