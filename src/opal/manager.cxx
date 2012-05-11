@@ -1088,7 +1088,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
     return false;
   }
 
-  return OpalManager::SetMediaPassThrough(*connection1, *connection2, sessionID, bypass);
+  return OpalManager::SetMediaPassThrough(*connection1, *connection2, bypass, sessionID);
 }
 
 
