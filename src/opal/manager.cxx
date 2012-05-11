@@ -982,7 +982,7 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
   }
 
   // Note SetBypassPatch() will do PTRACE() on status.
-  return sourcePatch->SetBypassPatch(bypass ? sinkPatch : NULL);
+  return sinkPatch->SetBypassPatch(bypass ? sourcePatch : NULL);
 }
 
 
@@ -1043,7 +1043,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
     return false;
   }
 
-  return OpalManager::SetMediaPassThrough(*connection1, *connection2, sessionID, bypass);
+  return OpalManager::SetMediaPassThrough(*connection1, *connection2, bypass, sessionID);
 }
 
 
