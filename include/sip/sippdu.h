@@ -164,6 +164,9 @@ class SIPURL : public PURL
     const PStringOptions & GetFieldParameters() const { return m_fieldParameters; }
           PStringOptions & GetFieldParameters()       { return m_fieldParameters; }
 
+    /// Return the correct "transport" parameter, using correct default based on scheme
+    PCaselessString GetTransportProto() const;
+
     /**Get the host and port as a transport address.
       */
     OpalTransportAddress GetHostAddress() const;
