@@ -1532,7 +1532,7 @@ bool SIPConnection::WriteINVITE()
   if (myAddress.IsEmpty())
     myAddress = endpoint.GetDefaultLocalURL(*transport);
 
-  PString transportProtocol = m_dialog.GetRequestURI().GetParamVars()("transport");
+  PString transportProtocol = m_dialog.GetRequestURI().GetTransportProto();
   if (!transportProtocol.IsEmpty())
     myAddress.SetParamVar("transport", transportProtocol);
 

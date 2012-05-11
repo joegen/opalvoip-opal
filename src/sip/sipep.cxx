@@ -1839,25 +1839,36 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
   }
 
   if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
+    OpalTransportAddress localAddress = transport.GetLocalAddress();
+
     SIPURL contact;
     if (registrar != NULL) {
-      PIPSocket::Address ip;
-      bool transportLocal = transport.GetRemoteAddress().GetIpAddress(ip) && manager.IsLocalAddress(ip);
-
       const SIPURLList & contacts = registrar->GetContacts();
-      for (SIPURLList::const_iterator it = contacts.begin(); it != contacts.end(); ++it) {
-        OpalTransportAddress contactAddress = it->GetHostAddress();
-        if (transport.GetLocalAddress().IsCompatible(contactAddress) &&
-            contactAddress.GetIpAddress(ip) &&
-            manager.IsLocalAddress(ip) == transportLocal) {
-          contact = *it;
+      PTRACE(5, "SIP\tChecking " << localAddress << " against " << contacts.ToString());
+
+      SIPURLList::const_iterator it;
+      for (it = contacts.begin(); it != contacts.end(); ++it) {
+        if (localAddress == it->GetHostAddress())
           break;
+      }
+
+      if (it == contacts.end()) {
+        for (it = contacts.begin(); it != contacts.end(); ++it) {
+          if (localAddress.IsCompatible(it->GetHostAddress()))
+            break;
         }
+      }
+
+      if (it != contacts.end()) {
+        contact = *it;
+        PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from registration " << registrar->GetAddressOfRecord());
       }
     }
 
-    if (contact.IsEmpty())
-      contact = SIPURL(user, transport.GetLocalAddress());
+    if (contact.IsEmpty()) {
+      contact = SIPURL(user, localAddress);
+      PTRACE(4, "SIP\tUsing transport local address (" << localAddress << ") for Contact");
+    }
 
     if (connection != NULL) {
       PSafePtr<OpalConnection> other = connection->GetOtherPartyConnection();

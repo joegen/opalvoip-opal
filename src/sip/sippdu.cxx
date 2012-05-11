@@ -504,28 +504,16 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   if (IsEmpty())
     return PString::Empty();
 
+  PString maddr = paramVars("maddr");
+  if (maddr.IsEmpty()) {
+    if (hostname.IsEmpty())
+      maddr = '*';
+    else
+      maddr = hostname;
+  }
+
   PStringStream addr;
-
-#if OPAL_PTLIB_SSL
-  if (scheme *= "sips")
-    addr << OpalTransportAddress::TlsPrefix();
-  else
-#endif
-    addr << paramVars("transport", "udp") << '$';
-
-  if (paramVars.Contains("maddr"))
-    addr << paramVars["maddr"];
-  else if (!hostname.IsEmpty())
-    addr << hostname;
-  else
-    addr << "*";
-
-  addr << ':';
-  if (port > 0)
-    addr << port;
-  else
-    addr << SIPURL::DefaultPort;
-
+  addr << GetTransportProto() << '$' << maddr << ':' << (port > 0 ? port : GetDefaultPort());
   return addr;
 }
 
@@ -541,10 +529,15 @@ void SIPURL::SetHostAddress(const OpalTransportAddress & addr)
 }
 
 
+PCaselessString SIPURL::GetTransportProto() const
+{
+  return paramVars("transport", scheme == "sips" ? "tls" : "udp").ToLower();
+}
+
+
 WORD SIPURL::GetDefaultPort() const
 {
-  return (paramVars("transport", scheme == "sips" ? "tls" : "udp") *= "tls")
-                            ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
+  return GetTransportProto() == "tls" ? SIPURL::DefaultSecurePort : SIPURL::DefaultPort;
 }
 
 
@@ -657,7 +650,7 @@ PBoolean SIPURL::AdjustToDNS(PINDEX entry)
   // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
   // can use the original host name value.
   PIPSocketAddressAndPortVector addrs;
-  if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs)) {
+  if (!PDNS::LookupSRV(GetHostName(), "_sip._" + GetTransportProto(), GetPort(), addrs)) {
     PTRACE(4, "SIP\tNo SRV record found.");
     return true;
   }
