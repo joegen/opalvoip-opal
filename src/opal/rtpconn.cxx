@@ -120,7 +120,7 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecurity security)
 {
   OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
-  OpalMediaTypeList::const_iterator iterMediaType;
+  OpalMediaTypeList::iterator iterMediaType;
 
   // For maximum compatibility, make sure audio/video are first
   iterMediaType = std::find(allMediaTypes.begin(), allMediaTypes.end(), OpalMediaType::Video());
