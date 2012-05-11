@@ -1027,7 +1027,7 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
   }
 
   // Note SetBypassPatch() will do PTRACE() on status.
-  return sourcePatch->SetBypassPatch(bypass ? sinkPatch : NULL);
+  return sinkPatch->SetBypassPatch(bypass ? sourcePatch : NULL);
 }
 
 
