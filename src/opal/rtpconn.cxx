@@ -120,12 +120,25 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecurity security)
 {
   OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
+  OpalMediaTypeList::const_iterator iterMediaType;
+
+  // For maximum compatibility, make sure audio/video are first
+  iterMediaType = std::find(allMediaTypes.begin(), allMediaTypes.end(), OpalMediaType::Video());
+  if (iterMediaType != allMediaTypes.end() && iterMediaType != allMediaTypes.begin()) {
+    allMediaTypes.erase(iterMediaType);
+    allMediaTypes.insert(allMediaTypes.begin(), OpalMediaType::Video());
+  }
+  iterMediaType = std::find(allMediaTypes.begin(), allMediaTypes.end(), OpalMediaType::Audio());
+  if (iterMediaType != allMediaTypes.end() && iterMediaType != allMediaTypes.begin()) {
+    allMediaTypes.erase(iterMediaType);
+    allMediaTypes.insert(allMediaTypes.begin(), OpalMediaType::Audio());
+  }
 
   const PStringArray cryptoSuites = endpoint.GetMediaCryptoSuites();
 
   vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize());
 
-  for (OpalMediaTypeList::const_iterator iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
+  for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
     const OpalMediaType & mediaType = *iterMediaType;
     if (!PAssert(mediaType.GetDefinition() != NULL, PLogicError))
       continue;
