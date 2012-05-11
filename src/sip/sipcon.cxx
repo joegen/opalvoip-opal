@@ -1137,9 +1137,9 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     localMedia->SetCryptoKeys(keys);
   }
 
-  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType);
-
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(sessionId);
+  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
+
   if (GetPhase() < ConnectedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
     OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
@@ -1159,7 +1159,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
   if (PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged,
-                              m_holdToRemote >= eHoldOn && (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
+                              m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
   // See if we need to do a session switcharoo, but must be after stream closing
