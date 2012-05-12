@@ -44,7 +44,7 @@
 #endif
 
 
-PURL_LEGACY_SCHEME(isdn, true, false, true, true, false, true, true, false, false, false, 0)
+PURL_LEGACY_SCHEME(isdn, true, false, true, true, false, false, true, false, false, false, 0)
 
 enum {
     MaxLineCount = 30,
@@ -584,7 +584,8 @@ PSafePtr<OpalConnection> OpalCapiEndPoint::MakeConnection(OpalCall & call,
 
   stringOptions->ExtractFromURL(uri);
 
-  unsigned controller, bearer;
+  unsigned controller = uri.GetHostName().AsUnsigned();
+  unsigned bearer = uri.GetPort();
   if (GetFreeLine(controller, bearer)) {
     OpalCapiConnection * connection = CreateConnection(call, userData, options, stringOptions, controller, bearer);
     if (AddConnection(connection) != NULL) {
@@ -684,7 +685,7 @@ unsigned OpalCapiEndPoint::OpenControllers()
         continue;
 
       PTRACE(3, "CAPI\tListening to controller " << controller);
-      m_controllers[controller].m_bearerInUse.resize(profile.m_NumBChannels);
+      m_controllers[controller].m_bearerInUse.resize(profile.m_NumBChannels+1);
 
       // Start listening for incoming calls
       OpalCapiMessage message(CAPI_LISTEN, CAPI_REQ, sizeof(OpalCapiMessage::Params::ListenReq));
@@ -711,12 +712,34 @@ bool OpalCapiEndPoint::GetFreeLine(unsigned & controller, unsigned & bearer)
 {
   PWaitAndSignal mutex(m_controllerMutex);
 
+  if (controller != 0)
+    return controller < m_controllers.size() && m_controllers[controller].GetFreeLine(bearer);
+
   for (controller = 1; controller < m_controllers.size(); ++controller) {
-    for (bearer = 0; bearer < m_controllers[controller].m_bearerInUse.size(); ++bearer) {
-      if (m_controllers[controller].m_active && !m_controllers[controller].m_bearerInUse[bearer]) {
-        m_controllers[controller].m_bearerInUse[bearer] = true;
-        return true;
-      }
+    if (m_controllers[controller].GetFreeLine(bearer))
+      return true;
+  }
+
+  return false;
+}
+
+
+bool OpalCapiEndPoint::Controller::GetFreeLine(unsigned & bearer)
+{
+  if (!m_active)
+    return false;
+
+  if (bearer != 0) {
+    if (bearer >= m_bearerInUse.size() || m_bearerInUse[bearer])
+      return false;
+    m_bearerInUse[bearer] = true;
+    return true;
+  }
+
+  for (bearer = 1; bearer < m_bearerInUse.size(); ++bearer) {
+    if (!m_bearerInUse[bearer]) {
+      m_bearerInUse[bearer] = true;
+      return true;
     }
   }
 
@@ -823,7 +846,8 @@ void OpalCapiEndPoint::ProcessMessage(const OpalCapiMessage & message)
 
 void OpalCapiEndPoint::ProcessConnectInd(const OpalCapiMessage & message)
 {
-  unsigned controller, bearer;
+  unsigned controller = (message.param.connect_ind.m_PLCI&0xff);
+  unsigned bearer = 0;
   if (GetFreeLine(controller, bearer)) {
     // Get new instance of a call, abort if none created
     OpalCall * call = manager.InternalCreateCall();
