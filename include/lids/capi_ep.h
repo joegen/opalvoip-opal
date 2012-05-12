@@ -74,17 +74,11 @@ class OpalCapiEndPoint : public OpalEndPoint
 
        The general form for this party parameter is:
 
-            [proto:][alias@][transport$]address[:port]
+            isdn:number[@controller[:port]]
 
-       where the various fields will have meanings specific to the endpoint
-       type. For example, with H.323 it could be "h323:Fred@site.com" which
-       indicates a user Fred at gatekeeper size.com. Whereas for the PSTN
-       endpoint it could be "pstn:5551234" which is to call 5551234 on the
-       first available PSTN line.
-
-       The proto field is optional when passed to a specific endpoint. If it
-       is present, however, it must agree with the endpoints protocol name or
-       false is returned.
+       where number is a phone number, and controller and port are an integers
+       from 1 up to a maximum. If the latter are absent or zero, then the
+       first available controller or port is used.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
@@ -159,6 +153,8 @@ class OpalCapiEndPoint : public OpalEndPoint
 
     struct Controller {
       Controller() : m_active(false) { }
+
+      bool GetFreeLine(unsigned & bearer);
 
       bool         m_active;
       vector<bool> m_bearerInUse;
