@@ -720,6 +720,7 @@ bool OpalCapiEndPoint::GetFreeLine(unsigned & controller, unsigned & bearer)
       return true;
   }
 
+  controller = 0;
   return false;
 }
 
@@ -743,6 +744,7 @@ bool OpalCapiEndPoint::Controller::GetFreeLine(unsigned & bearer)
     }
   }
 
+  bearer = 0;
   return false;
 }
 
