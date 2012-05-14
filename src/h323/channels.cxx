@@ -453,7 +453,6 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
                                            Directions direction)
   : H323UnidirectionalChannel(connection, capability, direction)
 {
-  rtpPayloadType = capability.GetMediaFormat().GetPayloadType();
 }
 
 
@@ -632,34 +631,21 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAc
     return false;
   }
 
+  if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType)) {
+    m_mediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue());
+    if (m_mediaStream != NULL)
+      m_mediaStream->UpdateMediaFormat(m_mediaFormat);
+  }
+
   return SetSessionID(sessionID);
 }
 
 
-PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
+RTP_DataFrame::PayloadTypes H323_RealTimeChannel::GetDynamicRTPPayloadType() const
 {
-  PTRACE(4, "H323RTP\tAttempting to set dynamic RTP payload type: " << newType);
-
-  // This is "no change"
-  if (newType == -1)
-    return PTrue;
-
-  // Check for illegal type
-  if (newType < RTP_DataFrame::DynamicBase || newType >= RTP_DataFrame::IllegalPayloadType)
-    return PFalse;
-
-  // Check for overwriting "known" type
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase)
-    return PFalse;
-
-  rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
-
-  m_mediaFormat.SetPayloadType(rtpPayloadType);
-  if (m_mediaStream != NULL)
-    m_mediaStream->UpdateMediaFormat(m_mediaFormat);
-
-  PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
-  return PTrue;
+  OpalMediaFormat mediaFormat = m_mediaStream != NULL ? m_mediaStream->GetMediaFormat()
+                                                      : capability->GetMediaFormat();
+  return mediaFormat.GetPayloadType();
 }
 
 
@@ -760,27 +746,21 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
   if (!m_session.OnReceivedPDU(*this, param, errorCode))
     return false;
 
+  // Override default payload type if indicated by remote
+  RTP_DataFrame::PayloadTypes rtpPayloadType = m_mediaFormat.GetPayloadType();
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
-    SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
+    rtpPayloadType = (RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue();
 
   // Update actual media packetization if present
   PString mediaPacketization;
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
       param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
     mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
-  else {
-    // Super special hack-o-rama for H.263, if no explicit media packetization, set it
-    const H323Capability & capability = GetCapability();
-    if (capability.GetMainType() == H323Capability::e_Video &&
-        capability.GetSubType() == H245_VideoCapability::e_h263VideoCapability)
-      mediaPacketization = "RFC2190";
-  }
 
-  if (!mediaPacketization.IsEmpty()) {
-    m_mediaFormat.SetMediaPacketizations(mediaPacketization);
-    if (m_mediaStream != NULL)
-      m_mediaStream->UpdateMediaFormat(m_mediaFormat);
-  }
+  m_mediaFormat.SetPayloadType(rtpPayloadType);
+  m_mediaFormat.SetMediaPacketizations(mediaPacketization);
+  if (m_mediaStream != NULL)
+    m_mediaStream->UpdateMediaFormat(m_mediaFormat);
 
   return H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
 }
