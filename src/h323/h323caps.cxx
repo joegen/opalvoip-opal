@@ -169,8 +169,11 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString &
   if (subTypePDU.GetTag() != GetSubType())
     return false;
 
+  if (mediaPacketization.IsEmpty())
+    return true;
+
   PStringSet mediaPacketizations = GetMediaFormat().GetMediaPacketizations();
-  if (mediaPacketization.IsEmpty() && mediaPacketizations.IsEmpty())
+  if (mediaPacketizations.IsEmpty())
     return true;
 
   return mediaPacketizations.Contains(mediaPacketization);
