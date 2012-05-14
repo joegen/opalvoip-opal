@@ -382,6 +382,8 @@ class H323UnidirectionalChannel : public H323Channel
 
   /**@name Member variable access */
   //@{
+    OpalMediaFormat GetMediaFormat() const { return m_mediaFormat; }
+
     /**Get the media stream associated with this logical channel.
        The default behaviour returns m_mediaStream.
       */
@@ -545,17 +547,8 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     ) = 0;
 
-    /**Set the dynamic payload type used by this channel.
-      */
-    virtual PBoolean SetDynamicRTPPayloadType(
-      int newType  ///<  New RTP payload type number
-    );
-
-    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
+    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const;
   //@}
-
-  protected:
-    RTP_DataFrame::PayloadTypes rtpPayloadType;
 };
 
 

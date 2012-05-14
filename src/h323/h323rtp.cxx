@@ -189,13 +189,7 @@ PBoolean H323RTPSession::OnReceivedAckPDU(H323_RTPChannel & channel,
     return false;
   }
 
-  if (!ExtractTransport(param.m_mediaChannel, true, errorCode))
-    return false;
-
-  if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType))
-    channel.SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
-
-  return true;
+  return ExtractTransport(param.m_mediaChannel, true, errorCode);
 }
 
 

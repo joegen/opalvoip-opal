@@ -872,18 +872,18 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
 
       if (
 #ifdef PLUGIN_CODEC_VERSION_INTERSECT
-         strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
+          strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
 #endif
-          strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATION) == 0) {
+          strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATION ) == 0) {
         if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Interleaved) != NULL)
           return SetPacketisationMode(2);
         if (strstr(optionValue, OpalPluginCodec_Identifer_H264_NonInterleaved) != NULL)
           return SetPacketisationMode(1);
-        if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) != NULL ||
-            strstr(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != NULL)
-          return SetPacketisationMode(0);
-        PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
-        return false; // Unknown/unsupported media packetization
+        if (*optionValue != '\0' &&
+            strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL &&
+            strcmp(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != 0)
+          PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
+        return SetPacketisationMode(0);
       }
 
       if (strcasecmp(optionName, NamePacketizationMode) == 0)
