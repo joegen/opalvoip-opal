@@ -458,7 +458,6 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
                                            Directions direction)
   : H323UnidirectionalChannel(connection, capability, direction)
 {
-  rtpPayloadType = capability.GetMediaFormat().GetPayloadType();
 }
 
 
@@ -627,33 +626,11 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAc
 }
 
 
-PBoolean H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
+RTP_DataFrame::PayloadTypes H323_RealTimeChannel::GetDynamicRTPPayloadType() const
 {
-  PTRACE(4, "H323RTP\tAttempting to set dynamic RTP payload type: " << newType);
-
-  // This is "no change"
-  if (newType == -1)
-    return PTrue;
-
-  // Check for illegal type
-  if (newType < RTP_DataFrame::DynamicBase || newType >= RTP_DataFrame::IllegalPayloadType)
-    return PFalse;
-
-  // Check for overwriting "known" type
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase)
-    return PFalse;
-
-  rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
-
-  OpalMediaStream * mediaStream = GetMediaStream();
-  if (mediaStream != NULL) {
-    OpalMediaFormat adjustedMediaFormat = mediaStream->GetMediaFormat();
-    adjustedMediaFormat.SetPayloadType(rtpPayloadType);
-    mediaStream->UpdateMediaFormat(adjustedMediaFormat);
-  }
-
-  PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
-  return PTrue;
+  OpalMediaFormat mediaFormat = mediaStream != NULL ? mediaStream->GetMediaFormat()
+                                                    : capability->GetMediaFormat();
+  return mediaFormat.GetPayloadType();
 }
 
 
