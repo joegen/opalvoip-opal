@@ -558,17 +558,8 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
 
-    /**Set the dynamic payload type used by this channel.
-      */
-    virtual PBoolean SetDynamicRTPPayloadType(
-      int newType  ///<  New RTP payload type number
-    );
-
-    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
+    RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const;
   //@}
-
-  protected:
-    RTP_DataFrame::PayloadTypes rtpPayloadType;
 };
 
 
