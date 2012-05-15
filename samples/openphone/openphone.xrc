@@ -562,7 +562,7 @@
     </object>
     <object class="wxDialog" name="VideoControlDialog">
         <style>wxDEFAULT_DIALOG_STYLE</style>
-        <title>Transmit Video Control</title>
+        <title>Video Control</title>
         <object class="wxBoxSizer">
             <orient>wxVERTICAL</orient>
             <object class="sizeritem">
@@ -4998,10 +4998,13 @@
                 <object class="wxMenuItem" name="MenuSendVFU">
                     <label>Request Update</label>
                 </object>
-                <object class="wxMenuItem" name="MenuVideoControl">
-                    <label>Transmit Bandwidth</label>
+                <object class="wxMenuItem" name="MenuTxVideoControl">
+                    <label>Transmit Control</label>
                 </object>
-                <object class="wxMenuItem" name="MenuDefVidWinPos">
+               <object class="wxMenuItem" name="MenuRxVideoControl">
+                  <label>Receive Control</label>
+               </object>
+               <object class="wxMenuItem" name="MenuDefVidWinPos">
                     <label>Default Window Positions</label>
                 </object>
             </object>

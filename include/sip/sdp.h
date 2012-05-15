@@ -174,7 +174,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual bool PreEncode();
     virtual void Encode(const OpalTransportAddress & commonAddr, ostream & str) const;
-    virtual bool PrintOn(ostream & strm, const PString & str) const;
 
     virtual bool Decode(const PStringArray & tokens);
     virtual bool Decode(char key, const PString & value);
@@ -261,8 +260,13 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
+
+    void EnableFeeback() { m_enableFeedback = true; }
+
+  protected:
+    bool m_enableFeedback;
 };
 
 /////////////////////////////////////////////////////////
@@ -276,7 +280,7 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
   public:
     SDPAudioMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     bool GetOfferPTime() const { return m_offerPTime; }
@@ -285,6 +289,9 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
   protected:
     bool m_offerPTime;
 };
+
+
+#if OPAL_VIDEO
 
 /////////////////////////////////////////////////////////
 //
@@ -298,9 +305,12 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     SDPVideoMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
     virtual bool PreEncode();
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void OutputAttributes(ostream & str) const;
     void SetAttribute(const PString & attr, const PString & value);
 };
+
+#endif // OPAL_VIDEO
+
 
 /////////////////////////////////////////////////////////
 //

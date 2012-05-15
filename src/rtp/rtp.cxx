@@ -497,9 +497,9 @@ void RTP_ControlFrame::SetCount(unsigned count)
 void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
 {
   PAssert(type < 32, PInvalidParameter);
+  SetPayloadSize(fciSize);
   theArray[compoundOffset] &= 0xe0;
   theArray[compoundOffset] |= type;
-  SetPayloadSize(fciSize+8);
 }
 
 
@@ -623,6 +623,13 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
   lost[0] = (BYTE)(packets >> 16);
   lost[1] = (BYTE)(packets >> 8);
   lost[2] = (BYTE)packets;
+}
+
+
+unsigned RTP_ControlFrame::FbTMMB::GetBitRate() const
+{
+  DWORD br = bitRateAndOverhead;
+  return ((br >> 9)&0x1ffff)*(1 << (br >> 28));
 }
 
 
@@ -1879,11 +1886,33 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 #endif
 
-  #if OPAL_VIDEO
-    case RTP_ControlFrame::e_IntraFrameRequest :
-      PTRACE(4, "RTP\tSession " << sessionID << ", received RFC2032 FIR");
-      m_connection.OnRxIntraFrameRequest(*this, true);
-      break;
+      case RTP_ControlFrame::e_TransportLayerFeedBack :
+        switch (frame.GetFbType()) {
+          case RTP_ControlFrame::e_TMMBR :
+            if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
+              const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
+              m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
+            }
+            else {
+              PTRACE(2, "RTP\tSession " << sessionID << ", TMMBR packet truncated");
+            }
+            break;
+
+          case RTP_ControlFrame::e_TMMBN :
+            if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
+            }
+            else {
+              PTRACE(2, "RTP\tSession " << sessionID << ", TMMBN packet truncated");
+            }
+            break;
+        }
+        break;
+
+#if OPAL_VIDEO
+      case RTP_ControlFrame::e_IntraFrameRequest :
+        PTRACE(4, "RTP\tSession " << sessionID << ", received RFC2032 FIR");
+        m_connection.OnRxIntraFrameRequest(*this, true);
+        break;
 
       case RTP_ControlFrame::e_PayloadSpecificFeedBack :
         switch (frame.GetFbType()) {
@@ -2042,6 +2071,39 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 }
 
 
+void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
+{
+  // Create packet
+  RTP_ControlFrame request;
+  InsertReportPacket(request);
+
+  request.StartNewPacket();
+
+  request.SetPayloadType(RTP_ControlFrame::e_TransportLayerFeedBack);
+  request.SetFbType(notify ? RTP_ControlFrame::e_TMMBN : RTP_ControlFrame::e_TMMBR, sizeof(RTP_ControlFrame::FbTMMB));
+
+  RTP_ControlFrame::FbTMMB * tmmb = (RTP_ControlFrame::FbTMMB *)request.GetPayloadPtr();
+  tmmb->requestSSRC = syncSourceIn;
+
+  if (overhead == 0)
+    overhead = localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+
+  unsigned exponent = 0;
+  unsigned mantissa = maxBitRate;
+  while (maxBitRate >= 0x20000) {
+    mantissa >>= 1;
+    ++exponent;
+  }
+  tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 28);
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
+}
+
+
+#if OPAL_VIDEO
+
 void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
   PTRACE(3, "RTP\tSession " << sessionID << ", SendIntraFrameRequest using "
@@ -2065,7 +2127,7 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
   else {
     request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
     if (pictureLoss)
-      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, 0);
+      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, sizeof(RTP_ControlFrame::FbFCI));
     else {
       request.SetFbType(RTP_ControlFrame::e_FullIntraRequest, sizeof(RTP_ControlFrame::FbFIR));
       RTP_ControlFrame::FbFIR * fir = (RTP_ControlFrame::FbFIR *)request.GetPayloadPtr();
@@ -2100,6 +2162,8 @@ void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
   request.EndPacket();
   WriteControl(request);
 }
+
+#endif // OPAL_VIDEO
 
 
 void OpalRTPSession::AddFilter(const FilterNotifier & filter)

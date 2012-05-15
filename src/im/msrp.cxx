@@ -165,7 +165,7 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     }
 
     virtual void CreateSDPMediaFormats(const PStringArray &);
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
+    virtual void OutputAttributes(ostream & strm) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
@@ -213,17 +213,14 @@ void SDPMSRPMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 }
 
 
-bool SDPMSRPMediaDescription::PrintOn(ostream & str, const PString & /*connectString*/) const
+void SDPMSRPMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor. Never output the connect string, as the listening TCP sockets 
   // for the MSRP manager will always give an address of 0.0.0.0
-  if (!SDPMediaDescription::PrintOn(str, ""))
-    return false;
+  SDPMediaDescription::OutputAttributes(strm);
 
-  str << "a=accept-types:" << types << "\r\n";
-  str << "a=path:" << path << "\r\n";
-
-  return true;
+  strm << "a=accept-types:" << types << "\r\n"
+          "a=path:" << path << "\r\n";
 }
 
 void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString & value)

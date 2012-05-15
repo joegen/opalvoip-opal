@@ -210,10 +210,14 @@
                         <name>MenuSendVFU</name>
                     </item>
                     <item>
-                        <label>Transmit Bandwidth</label>
-                        <name>MenuVideoControl</name>
+                        <label>Transmit Control</label>
+                        <name>MenuTxVideoControl</name>
                     </item>
-                    <item>
+                   <item>
+                      <label>Receive Control</label>
+                      <name>MenuRxVideoControl</name>
+                   </item>
+                   <item>
                         <label>Default Window Positions</label>
                         <name>MenuDefVidWinPos</name>
                     </item>
@@ -5839,7 +5843,7 @@
     </object>
     <object class="wxDialog" name="VideoControlDialog" base="EditDialog">
         <style>wxDEFAULT_DIALOG_STYLE</style>
-        <title>Transmit Video Control</title>
+        <title>Video Control</title>
         <object class="wxBoxSizer" name="sizer_48" base="EditBoxSizer">
             <orient>wxVERTICAL</orient>
             <object class="sizeritem">
