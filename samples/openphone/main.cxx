@@ -565,7 +565,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
   EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnSendVFU)
   EVT_MENU(XRCID("MenuSendIntra"),       MyManager::OnSendIntra)
-  EVT_MENU(XRCID("MenuVideoControl"),    MyManager::OnVideoControl)
+  EVT_MENU(XRCID("MenuTxVideoControl"),  MyManager::OnTxVideoControl)
+  EVT_MENU(XRCID("MenuRxVideoControl"),  MyManager::OnRxVideoControl)
   EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
 
   EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
@@ -1622,7 +1623,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   bool hasStartVideo = false;
-  bool hasStopVideo = false;
+  bool hasTxVideo = false;
   bool hasRxVideo = false;
   wxString audioFormat, videoFormat;
 
@@ -1634,7 +1635,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       audioFormat = PwxString(stream->GetMediaFormat());
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    hasStopVideo = stream != NULL && stream->Open();
+    hasTxVideo = stream != NULL && stream->Open();
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
@@ -1661,11 +1662,12 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
-  menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
+  menubar->Enable(XRCID("MenuStopVideo"), hasTxVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
   menubar->Enable(XRCID("MenuSendIntra"), hasRxVideo);
-  menubar->Enable(XRCID("MenuVideoControl"), hasStopVideo);
-  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
+  menubar->Enable(XRCID("MenuTxVideoControl"), hasTxVideo);
+  menubar->Enable(XRCID("MenuRxVideoControl"), hasRxVideo);
+  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasTxVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
   menubar->Enable(XRCID("SubMenuConference"), !m_callsOnHold.empty());
@@ -2964,9 +2966,16 @@ void MyManager::OnSendIntra(wxCommandEvent& /*event*/)
 }
 
 
-void MyManager::OnVideoControl(wxCommandEvent& /*event*/)
+void MyManager::OnTxVideoControl(wxCommandEvent& /*event*/)
 {
-  VideoControlDialog dlg(this);
+  VideoControlDialog dlg(this, false);
+  dlg.ShowModal();
+}
+
+
+void MyManager::OnRxVideoControl(wxCommandEvent& /*event*/)
+{
+  VideoControlDialog dlg(this, true);
   dlg.ShowModal();
 }
 
@@ -6013,8 +6022,9 @@ PString AudioDevicesDialog::GetTransferAddress() const
 BEGIN_EVENT_TABLE(VideoControlDialog, wxDialog)
 END_EVENT_TABLE()
 
-VideoControlDialog::VideoControlDialog(MyManager * manager)
+VideoControlDialog::VideoControlDialog(MyManager * manager, bool remote)
   : m_manager(*manager)
+  , m_remote(remote)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("VideoControlDialog"));
 
@@ -6022,24 +6032,21 @@ VideoControlDialog::VideoControlDialog(MyManager * manager)
   m_FrameRate = FindWindowByNameAs<wxSlider>(this, wxT("FrameRate"));
   m_TSTO = FindWindowByNameAs<wxSlider>(this, wxT("TSTO"));
 
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
-  if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    if (stream != NULL) {
-      OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-      m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
-      m_TargetBitRate->SetValue(mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())/1000);
+  OpalMediaStreamPtr stream = GetStream();
+  if (stream != NULL) {
+    OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+    m_TargetBitRate->SetMax(mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())/1000);
+    m_TargetBitRate->SetValue(mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption())/1000);
 #if wxCHECK_VERSION(2,9,0)
-      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10);
+    m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10);
 #else
-      m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10, 1);
+    m_TargetBitRate->SetTickFreq(m_TargetBitRate->GetMax()/10, 1);
 #endif
 
-      m_FrameRate->SetMax(30);
-      m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
+    m_FrameRate->SetMax(30);
+    m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
 
-      m_TSTO->SetValue(mediaFormat.GetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption()));
-    }
+    m_TSTO->SetValue(mediaFormat.GetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption()));
   }
 }
 
@@ -6049,10 +6056,13 @@ bool VideoControlDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
-  if (connection != NULL) {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    if (stream != NULL) {
+  OpalMediaStreamPtr stream = GetStream();
+  if (stream != NULL) {
+    if (m_remote) {
+      stream->ExecuteCommand(OpalMediaFlowControl(m_TargetBitRate->GetValue()*1000));
+      stream->ExecuteCommand(OpalTemporalSpatialTradeOff(m_FrameRate->GetValue()));
+    }
+    else {
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_TargetBitRate->GetValue()*1000);
       mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), mediaFormat.GetClockRate()/m_FrameRate->GetValue());
@@ -6062,6 +6072,13 @@ bool VideoControlDialog::TransferDataFromWindow()
   }
 
   return true;
+}
+
+
+OpalMediaStreamPtr VideoControlDialog::GetStream() const
+{
+  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  return connection != NULL ? connection->GetMediaStream(OpalMediaType::Video(), m_remote) : NULL;
 }
 
 

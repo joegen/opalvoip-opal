@@ -834,19 +834,14 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
   PIPSocket::Address commonIP, transportIP;
   if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
     connectString = GetConnectAddressString(transportAddress);
-  PrintOn(strm, connectString);
-}
 
-
-bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
-{
   //
   // if no media formats, then do not output the media header
   // this avoids displaying an empty media header with no payload types
   // when (for example) video has been disabled
   //
   if (formats.GetSize() == 0)
-    return false;
+    return;
 
   PIPSocket::Address ip;
   WORD port = 0;
@@ -854,24 +849,23 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
   /* output media header, note the order is important according to RFC!
      Must be icbka */
-  str << "m=" 
-      << GetSDPMediaType() << ' '
-      << port << ' '
-      << GetSDPTransportType()
-      << GetSDPPortList() << "\r\n";
+  strm << "m=" 
+       << GetSDPMediaType() << ' '
+       << port << ' '
+       << GetSDPTransportType()
+       << GetSDPPortList() << "\r\n";
 
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
   if (port == 0)
-    return false;
+    return;
 
   if (!connectString.IsEmpty())
-    str << "c=" << connectString << "\r\n";
+    strm << "c=" << connectString << "\r\n";
 
-  str << m_bandwidth;
-  OutputAttributes(str);
-
-  return true;
+  strm << m_bandwidth;
+  OutputAttributes(strm);
 }
+
 
 OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 {
@@ -1134,6 +1128,7 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
+  , m_enableFeedback(false)
 {
 }
 
@@ -1141,10 +1136,10 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
 #if OPAL_SRTP
-  return m_cryptoSuites.IsEmpty() ? OpalRTPSession::RTP_AVP() : OpalSRTPSession::RTP_SAVP(); 
-#else
-  return OpalRTPSession::RTP_AVP();
+  if (!m_cryptoSuites.IsEmpty())
+    return OpalSRTPSession::RTP_SAVP(); 
 #endif
+  return m_enableFeedback ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
 }
 
 
@@ -1168,20 +1163,21 @@ PString SDPRTPAVPMediaDescription::GetSDPPortList() const
   return strm;
 }
 
-bool SDPRTPAVPMediaDescription::PrintOn(ostream & strm, const PString & connectString) const
+
+void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPMediaDescription::PrintOn(strm, connectString))
-    return false;
+  SDPMediaDescription::OutputAttributes(strm);
 
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     strm << *format;
 
+  if (m_enableFeedback)
+    strm << "a=rtcp-fb:* fir pli tmmbr\r\n";
+
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;
-
-  return true;
 }
 
 
@@ -1285,11 +1281,10 @@ PString SDPAudioMediaDescription::GetSDPMediaType() const
 }
 
 
-bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
   /* The ptime parameter is a recommendation to the remote that we want them
      to send that number of milliseconds of audio in each RTP packet. The 
@@ -1330,7 +1325,7 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
       }
     }
     if (ptime > 0)
-      str << "a=ptime:" << ptime << "\r\n";
+      strm << "a=ptime:" << ptime << "\r\n";
   }
 
   unsigned largestFrameTime = 0;
@@ -1353,10 +1348,8 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (maxptime < UINT_MAX) {
     if (maxptime < largestFrameTime)
       maxptime = largestFrameTime;
-    str << "a=maxptime:" << maxptime << "\r\n";
+    strm << "a=maxptime:" << maxptime << "\r\n";
   }
-
-  return true;
 }
 
 
@@ -1392,6 +1385,8 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
 
 //////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_VIDEO
+
 SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & address)
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Video())
 {
@@ -1407,23 +1402,18 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 static const char * const ContentRoleNames[] = { NULL, "slides", "main", "speaker", "sl" };
 
 
-bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
-#if OPAL_VIDEO
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
     PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
     if (role > 0) {
-      str << "a=content:" << ContentRoleNames[role] << "\r\n";
+      strm << "a=content:" << ContentRoleNames[role] << "\r\n";
       break;
     }
   }
-#endif
-
-  return true;
 }
 
 
@@ -1445,10 +1435,8 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
         break;
     }
 
-#if OPAL_VIDEO
     for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
       format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
-#endif
 
     return;
   }
@@ -1492,6 +1480,8 @@ bool SDPVideoMediaDescription::PreEncode()
 
   return true;
 }
+
+#endif // OPAL_VIDEO
 
 
 //////////////////////////////////////////////////////////////////////////////

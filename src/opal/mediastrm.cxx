@@ -1522,4 +1522,36 @@ void OpalUDPMediaStream::InternalClose()
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+void OpalMediaCommand::PrintOn(ostream & strm) const
+{
+  strm << GetName();
+}
+
+
+PObject::Comparison OpalMediaCommand::Compare(const PObject & obj) const
+{
+  return GetName().Compare(PDownCast(const OpalMediaCommand, &obj)->GetName());
+}
+
+
+void * OpalMediaCommand::GetPlugInData() const
+{
+  return NULL;
+}
+
+
+unsigned * OpalMediaCommand::GetPlugInSize() const
+{
+  return NULL;
+}
+
+
+PString OpalMediaFlowControl::GetName() const
+{
+  return "Flow Control";
+}
+
+
 // End of file ////////////////////////////////////////////////////////////////

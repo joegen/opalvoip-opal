@@ -1221,27 +1221,38 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
-  PSafeLockReadOnly safeLock(*this);
-  if (!safeLock.IsLocked())
+  if (!ExecuteMediaCommand(force ? OpalVideoUpdatePicture() : OpalVideoPictureLoss(), sessionID, OpalMediaType::Video()))
     return false;
 
-  if (IsReleased())
-    return false;
-
-  OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
-                                             : GetMediaStream(OpalMediaType::Video(), false);
-  if (stream == NULL) {
-    PTRACE(3, "OpalCon\tNo video stream do video update picture in connection " << *this);
-    return false;
-  }
-
-  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested in video stream " << *stream << " on " << *this);
-  if (force)
-    stream->ExecuteCommand(OpalVideoUpdatePicture());
-  else
-    stream->ExecuteCommand(OpalVideoPictureLoss());
-
+  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested on " << *this);
   return true;
+}
+
+
+class OpalVideoUpdatePictureDecoupledEvent : public OpalManager::DecoupledEvent {
+  public:
+    OpalVideoUpdatePictureDecoupledEvent(
+      const PSafePtr<OpalConnection> & connection,
+      unsigned sessionId,
+      bool force
+    ) : OpalManager::DecoupledEvent(connection)
+      , m_sessionId(sessionId)
+      , m_force(force)
+    { }
+
+    virtual void Work()
+    {
+      m_connection->SendVideoUpdatePicture(m_sessionId, m_force);
+    }
+
+  protected:
+    unsigned m_sessionId;
+    bool     m_force;
+};
+
+void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force)
+{
+  GetEndPoint().GetManager().QueueDecoupledEvent(new OpalVideoUpdatePictureDecoupledEvent(this, session.GetSessionID(), force));
 }
 
 #endif // OPAL_VIDEO
@@ -1729,35 +1740,6 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-#if OPAL_VIDEO
-class OpalVideoUpdatePictureDecoupledEvent : public OpalManager::DecoupledEvent {
-  public:
-    OpalVideoUpdatePictureDecoupledEvent(
-      const PSafePtr<OpalConnection> & connection,
-      unsigned sessionId,
-      bool force
-    ) : OpalManager::DecoupledEvent(connection)
-      , m_sessionId(sessionId)
-      , m_force(force)
-    { }
-
-    virtual void Work()
-    {
-      m_connection->SendVideoUpdatePicture(m_sessionId, m_force);
-    }
-
-  protected:
-    unsigned m_sessionId;
-    bool     m_force;
-};
-
-void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force)
-{
-  GetEndPoint().GetManager().QueueDecoupledEvent(new OpalVideoUpdatePictureDecoupledEvent(this, session.GetSessionID(), force));
-}
-#endif
-
-
 bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
   PTRACE(3, "OpalCon\tOnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
@@ -1766,6 +1748,28 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->OnMediaCommand(stream, command);
+}
+
+
+bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
+                                         unsigned sessionID,
+                                         const OpalMediaType & mediaType) const
+{
+  PSafeLockReadOnly safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
+  if (IsReleased())
+    return false;
+
+  OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
+                                             : GetMediaStream(mediaType, false);
+  if (stream == NULL) {
+    PTRACE(3, "OpalCon\tNo " << mediaType << " stream to do " << command << " in connection " << *this);
+    return false;
+  }
+
+  return stream->ExecuteCommand(command);
 }
 
 

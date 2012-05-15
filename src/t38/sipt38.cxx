@@ -120,17 +120,15 @@ PString SDPFaxMediaDescription::GetSDPPortList() const
   return str;
 }
 
-bool SDPFaxMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+
+void SDPFaxMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPMediaDescription::OutputAttributes(strm);
 
   // output options
   for (PStringToString::const_iterator it = t38Attributes.begin(); it != t38Attributes.end(); ++it)
-    str << "a=" << it->first << ":" << it->second << "\r\n";
-
-  return true;
+    strm << "a=" << it->first << ":" << it->second << "\r\n";
 }
 
 void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & value)
