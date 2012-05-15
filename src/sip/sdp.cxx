@@ -45,6 +45,7 @@
 
 #define SIP_DEFAULT_SESSION_NAME    "Opal SIP Session"
 #define SDP_MEDIA_TRANSPORT_RTPAVP  "RTP/AVP"
+#define SDP_MEDIA_TRANSPORT_RTPAVPF  "RTP/AVPF"
 
 static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 
@@ -808,19 +809,14 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
   PIPSocket::Address commonIP, transportIP;
   if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
     connectString = GetConnectAddressString(transportAddress);
-  PrintOn(strm, connectString);
-}
 
-
-bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
-{
   //
   // if no media formats, then do not output the media header
   // this avoids displaying an empty media header with no payload types
   // when (for example) video has been disabled
   //
   if (formats.GetSize() == 0)
-    return false;
+    return;
 
   PIPSocket::Address ip;
   WORD port = 0;
@@ -828,23 +824,21 @@ bool SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
   /* output media header, note the order is important according to RFC!
      Must be icbka */
-  str << "m=" 
-      << GetSDPMediaType() << ' '
-      << port << ' '
-      << GetSDPTransportType()
-      << GetSDPPortList() << "\r\n";
+  strm << "m=" 
+       << GetSDPMediaType() << ' '
+       << port << ' '
+       << GetSDPTransportType()
+       << GetSDPPortList() << "\r\n";
 
   if (!connectString.IsEmpty())
-    str << "c=" << connectString << "\r\n";
+    strm << "c=" << connectString << "\r\n";
 
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
   if (port == 0)
-    return false;
+    return;
 
-  str << m_bandwidth;
-  OutputAttributes(str);
-
-  return true;
+  strm << m_bandwidth;
+  OutputAttributes(strm);
 }
 
 OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
@@ -972,13 +966,14 @@ PString SDPDummyMediaDescription::GetSDPPortList() const
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
+  , m_enableFeedback(false)
 {
 }
 
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
-  return SDP_MEDIA_TRANSPORT_RTPAVP; 
+  return m_enableFeedback ? SDP_MEDIA_TRANSPORT_RTPAVP : SDP_MEDIA_TRANSPORT_RTPAVPF;
 }
 
 
@@ -1004,18 +999,19 @@ PString SDPRTPAVPMediaDescription::GetSDPPortList() const
   return str;
 }
 
-bool SDPRTPAVPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+
+void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPMediaDescription::OutputAttributes(strm);
 
   // output attributes for each payload type
   SDPMediaFormatList::const_iterator format;
   for (format = formats.begin(); format != formats.end(); ++format)
-    str << *format;
+    strm << *format;
 
-  return true;
+  if (m_enableFeedback)
+    strm << "a=rtcp-fb:* fir pli tmmbr\r\n";
 }
 
 
@@ -1080,11 +1076,10 @@ PString SDPAudioMediaDescription::GetSDPMediaType() const
 }
 
 
-bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
   /* The ptime parameter is a recommendation to the remote that we want them
      to send that number of milliseconds of audio in each RTP packet. The 
@@ -1125,7 +1120,7 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
       }
     }
     if (ptime > 0)
-      str << "a=ptime:" << ptime << "\r\n";
+      strm << "a=ptime:" << ptime << "\r\n";
   }
 
   unsigned largestFrameTime = 0;
@@ -1148,10 +1143,8 @@ bool SDPAudioMediaDescription::PrintOn(ostream & str, const PString & connectStr
   if (maxptime < UINT_MAX) {
     if (maxptime < largestFrameTime)
       maxptime = largestFrameTime;
-    str << "a=maxptime:" << maxptime << "\r\n";
+    strm << "a=maxptime:" << maxptime << "\r\n";
   }
-
-  return true;
 }
 
 
@@ -1187,6 +1180,8 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
 
 //////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_VIDEO
+
 SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & address)
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Video())
 {
@@ -1202,23 +1197,18 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 static const char * const ContentRoleNames[] = { NULL, "slides", "main", "speaker", "sl" };
 
 
-bool SDPVideoMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
-  if (!SDPRTPAVPMediaDescription::PrintOn(str, connectString))
-    return false;
+  SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
-#if OPAL_VIDEO
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
     PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
     if (role > 0) {
-      str << "a=content:" << ContentRoleNames[role] << "\r\n";
+      strm << "a=content:" << ContentRoleNames[role] << "\r\n";
       break;
     }
   }
-#endif
-
-  return true;
 }
 
 
@@ -1240,10 +1230,8 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
         break;
     }
 
-#if OPAL_VIDEO
     for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
       format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
-#endif
 
     return;
   }
@@ -1287,6 +1275,8 @@ bool SDPVideoMediaDescription::PreEncode()
 
   return true;
 }
+
+#endif // OPAL_VIDEO
 
 
 //////////////////////////////////////////////////////////////////////////////

@@ -186,12 +186,14 @@ class AudioDevicesDialog : public wxDialog
 class VideoControlDialog : public wxDialog
 {
   public:
-    VideoControlDialog(MyManager * manager);
+    VideoControlDialog(MyManager * manager, bool remote);
 
   private:
     bool TransferDataFromWindow();
+    OpalMediaStreamPtr GetStream() const;
 
     MyManager & m_manager;
+    bool        m_remote;
     wxSlider  * m_TargetBitRate;
     wxSlider  * m_FrameRate;
 
@@ -1010,7 +1012,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
     void OnVFU(wxCommandEvent& event);
-    void OnVideoControl(wxCommandEvent& event);
+    void OnTxVideoControl(wxCommandEvent& event);
+    void OnRxVideoControl(wxCommandEvent& event);
     void OnDefVidWinPos(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);

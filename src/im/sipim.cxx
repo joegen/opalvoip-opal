@@ -93,7 +93,6 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
     virtual PString GetSDPPortList() const;
 
     virtual void CreateSDPMediaFormats(const PStringArray &);
-    virtual bool PrintOn(ostream & str, const PString & connectString) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
@@ -165,6 +164,7 @@ SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & 
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
+
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address,
                                                    const OpalTransportAddress & transportAddr,
                                                    const PString & fromURL)
@@ -175,20 +175,12 @@ SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & 
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
+
 void SDPSIPIMMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 {
   formats.Append(new SDPMediaFormat(*this, OpalSIPIM));
 }
 
-
-bool SDPSIPIMMediaDescription::PrintOn(ostream & str, const PString & /*connectString*/) const
-{
-  // call ancestor
-  if (!SDPMediaDescription::PrintOn(str, ""))
-    return false;
-
-  return true;
-}
 
 PString SDPSIPIMMediaDescription::GetSDPPortList() const
 { 
@@ -206,9 +198,11 @@ void SDPSIPIMMediaDescription::SetAttribute(const PString & /*attr*/, const PStr
 {
 }
 
+
 void SDPSIPIMMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & /*mediaFormat*/)
 {
 }
+
 
 OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 {

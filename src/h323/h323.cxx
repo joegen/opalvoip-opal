@@ -4168,28 +4168,43 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 
 bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  bool done = OpalRTPConnection::OnMediaCommand(stream, command);
+  if (OpalRTPConnection::OnMediaCommand(stream, command))
+    return true;
+
+  H323Channel * channel = FindChannel(stream.GetSessionID(), true);
+  if (channel == NULL) {
+    PTRACE(4, "H.323\tOnMediaCommand, no channel found for session " << stream.GetSessionID());
+    return false;
+  }
+
+  const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
+  if (flow != NULL) {
+    H323ControlPDU pdu;
+    pdu.BuildFlowControlCommand(channel->GetNumber(), flow->GetMaxBitRate()/100);
+    WriteControlPDU(pdu);
+    return true;
+  }
 
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     if (m_h245FastUpdatePictureTimer.IsRunning()) {
       PTRACE(4, "H.323\tRecent H.245 VideoFastUpdatePicture was sent, not sending another");
+      return true;
     }
-    else {
-      H323Channel * video = FindChannel(stream.GetSessionID(), true);
-      if (video != NULL) {
-        video->OnMediaCommand(command);
-        m_h245FastUpdatePictureTimer.SetInterval(0, 3);
+
+    H323ControlPDU pdu;
+    pdu.BuildMiscellaneousCommand(channel->GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
+    WriteControlPDU(pdu);
+
 #if OPAL_STATISTICS
-        m_VideoUpdateRequestsSent++;
-#endif
-        done = true;
-      }
-    }
-  }
+    m_VideoUpdateRequestsSent++;
 #endif
 
-  return done;
+    return true;
+  }
+#endif // OPAL_VIDEO
+
+  return false;
 }
 
 

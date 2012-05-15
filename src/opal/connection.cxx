@@ -1216,23 +1216,17 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
-  if (IsReleased())
+  if (!ExecuteMediaCommand(force ? OpalVideoUpdatePicture() : OpalVideoPictureLoss(), sessionID, OpalMediaType::Video()))
     return false;
 
-  OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
-                                             : GetMediaStream(OpalMediaType::Video(), false);
-  if (stream == NULL) {
-    PTRACE(3, "OpalCon\tNo video stream do video update picture in connection " << *this);
-    return false;
-  }
-
-  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested in video stream " << *stream << " on " << *this);
-  if (force)
-    stream->ExecuteCommand(OpalVideoUpdatePicture());
-  else
-    stream->ExecuteCommand(OpalVideoPictureLoss());
-
+  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested on " << *this);
   return true;
+}
+
+
+void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force) const
+{
+  SendVideoUpdatePicture(session.GetSessionID(), force);
 }
 
 #endif // OPAL_VIDEO
@@ -1743,14 +1737,6 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
-#if OPAL_VIDEO
-void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force) const
-{
-  SendVideoUpdatePicture(session.GetSessionID(), force);
-}
-#endif
-
-
 bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
   PTRACE(3, "OpalCon\tOnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
@@ -1759,6 +1745,24 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->OnMediaCommand(stream, command);
+}
+
+
+bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
+                                         unsigned sessionID,
+                                         const OpalMediaType & mediaType) const
+{
+  if (IsReleased())
+    return false;
+
+  OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
+                                             : GetMediaStream(mediaType, false);
+  if (stream == NULL) {
+    PTRACE(3, "OpalCon\tNo " << mediaType << " stream to do " << command << " in connection " << *this);
+    return false;
+  }
+
+  return stream->ExecuteCommand(command);
 }
 
 

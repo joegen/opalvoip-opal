@@ -1168,7 +1168,7 @@ class OpalConnection : public PSafeObject
     );
 
     /** Callback for media commands.
-        Calls the SendIntraFrameRequest on the rtp session
+        Executes OnMediaCommand ont he other connection in call.
 
        @returns true if command is handled.
       */
@@ -1176,6 +1176,17 @@ class OpalConnection : public PSafeObject
       OpalMediaStream & stream,         ///< Stream command executed on
       const OpalMediaCommand & command  ///< Media command being executed
     );
+
+    /** Execute media commands.
+        Calls the SendIntraFrameRequest on the rtp session
+
+       @returns true if command is handled.
+      */
+    virtual bool ExecuteMediaCommand(
+      const OpalMediaCommand & command, ///< Media command to be executed
+      unsigned sessionID = 0,           ///< Session for media stream, 0 is use first \p mediaType stream
+      const OpalMediaType & mediaType = OpalMediaType() ///< Media type to search for in open streams
+    ) const;
 
 #if P_NAT
     // Get Nat Method in use

@@ -229,14 +229,8 @@ void H323Channel::OnFlowControl(long bitRateRestriction)
   PTRACE(3, "LogChan\tOnFlowControl: " << bitRateRestriction);
 
   OpalMediaStreamPtr stream = GetMediaStream();
-  if (stream != NULL) {
-    long bitsPerSecond = bitRateRestriction*100;
-    OpalMediaFormat format = stream->GetMediaFormat();
-    format.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bitsPerSecond);
-    if (format.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) > bitsPerSecond)
-      format.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bitsPerSecond);
-    stream->UpdateMediaFormat(format);
-  }
+  if (stream != NULL)
+    stream->ExecuteCommand(OpalMediaFlowControl(bitRateRestriction*100));
 }
 
 
@@ -271,20 +265,6 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
       break;
   }
 #endif
-}
-
-
-bool H323Channel::OnMediaCommand(const OpalMediaCommand & command)
-{
-#if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    H323ControlPDU pdu;
-    pdu.BuildMiscellaneousCommand(GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
-    connection.WriteControlPDU(pdu);
-    return true;
-  }
-#endif
-  return false;
 }
 
 
