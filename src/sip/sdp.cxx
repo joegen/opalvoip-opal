@@ -1133,11 +1133,21 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 }
 
 
+bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
+{
+  if (!SDPMediaDescription::Decode(tokens))
+    return false;
+
+  m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
+  return true;
+}
+
+
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
 #if OPAL_SRTP
   if (!m_cryptoSuites.IsEmpty())
-    return OpalSRTPSession::RTP_SAVP(); 
+    return m_enableFeedback ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP(); 
 #endif
   return m_enableFeedback ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
 }
