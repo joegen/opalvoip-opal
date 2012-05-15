@@ -101,8 +101,20 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 }
 
 
-PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
+PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
+  if (outputMediaFormat.IsTransportable()) {
+    const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
+    if (flow != NULL) {
+      unsigned bitsPerSecond = flow->GetMaxBitRate();
+      outputMediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bitsPerSecond);
+      if ((unsigned)outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) > bitsPerSecond)
+        outputMediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bitsPerSecond);
+      UpdateMediaFormats(OpalMediaFormat(), outputMediaFormat);
+      return true;
+    }
+  }
+
   return false;
 }
 

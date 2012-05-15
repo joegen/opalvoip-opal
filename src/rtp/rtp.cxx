@@ -485,9 +485,9 @@ void RTP_ControlFrame::SetCount(unsigned count)
 void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
 {
   PAssert(type < 32, PInvalidParameter);
+  SetPayloadSize(fciSize);
   theArray[compoundOffset] &= 0xe0;
   theArray[compoundOffset] |= type;
-  SetPayloadSize(fciSize+8);
 }
 
 
@@ -611,6 +611,13 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
   lost[0] = (BYTE)(packets >> 16);
   lost[1] = (BYTE)(packets >> 8);
   lost[2] = (BYTE)packets;
+}
+
+
+unsigned RTP_ControlFrame::FbTMMB::GetBitRate() const
+{
+  DWORD br = bitRateAndOverhead;
+  return ((br >> 9)&0x1ffff)*(1 << (br >> 28));
 }
 
 

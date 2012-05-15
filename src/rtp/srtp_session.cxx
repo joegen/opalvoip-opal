@@ -226,9 +226,11 @@ PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, PSRTPInitialiser);
 
 ///////////////////////////////////////////////////////
 
-const PCaselessString & OpalSRTPSession::RTP_SAVP() { static const PConstCaselessString s("RTP/SAVP"); return s; }
+const PCaselessString & OpalSRTPSession::RTP_SAVP () { static const PConstCaselessString s("RTP/SAVP" ); return s; }
+const PCaselessString & OpalSRTPSession::RTP_SAVPF() { static const PConstCaselessString s("RTP/SAVPF"); return s; }
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalSRTPSession, OpalSRTPSession::RTP_SAVP());
+static bool RegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalSRTPSession::RTP_SAVPF(), OpalSRTPSession::RTP_SAVP());
 
 static PConstCaselessString AES_CM_128_HMAC_SHA1_80("AES_CM_128_HMAC_SHA1_80");
 
@@ -275,11 +277,17 @@ bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 
 bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession) const
 {
-  if (mediaSession != OpalRTPSession::RTP_AVP())
-    return false;
+  if (mediaSession == OpalRTPSession::RTP_AVP()) {
+    mediaSession = OpalSRTPSession::RTP_SAVP();
+    return true;
+  }
 
-  mediaSession = OpalSRTPSession::RTP_SAVP();
-  return true;
+  if (mediaSession == OpalRTPSession::RTP_AVPF()) {
+    mediaSession = OpalSRTPSession::RTP_SAVPF();
+    return true;
+  }
+
+  return false;
 }
 
 

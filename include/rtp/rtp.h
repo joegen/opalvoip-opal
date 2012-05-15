@@ -352,6 +352,12 @@ class RTP_ControlFrame : public PBYTEArray
     unsigned GetFbType() const { return (BYTE)theArray[compoundOffset]&0x1f; }
     void     SetFbType(unsigned type, PINDEX fciSize);
 
+    enum TransportLayerFbTypes {
+      e_TransportNACK = 1,
+      e_TMMBR = 3,
+      e_TMMBN
+    };
+
     enum PayloadSpecificFbTypes {
       e_PictureLossIndication = 1,
       e_SliceLostIndication,
@@ -380,6 +386,16 @@ class RTP_ControlFrame : public PBYTEArray
       BYTE     sequenceNUmber;
       BYTE     reserver[2];
       BYTE     tradeOff;
+    };
+
+    // Same for request (e_TMMBR) and notification (e_TMMBN)
+    struct FbTMMB {
+      FbFCI    fci;
+      PUInt32b requestSSRC;
+      PUInt32b bitRateAndOverhead; // Various bit fields
+
+      unsigned GetBitRate() const;
+      unsigned GetOverhead() const { return bitRateAndOverhead & 0x1ff; }
     };
 
 #pragma pack()
