@@ -845,7 +845,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
       // ABR with bit rate tolerance = 1 is CBR...
       if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this)) {
-        PTRACE(4, MY_CODEC_LOG, "Opened encoder (SVN revision $Revision$)");
+        PTRACE(4, MY_CODEC_LOG, "Opened encoder (SVN $Revision$)");
         return true;
       }
 
@@ -1054,7 +1054,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (FFMPEGLibraryInstance.AvcodecOpen(m_context, m_codec) < 0)
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Opened decoder (SVN revision $Revision$)");
+      PTRACE(4, MY_CODEC_LOG, "Opened decoder (SVN $Revision$)");
       return true;
     }
 
