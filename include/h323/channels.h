@@ -310,8 +310,6 @@ class H323Channel : public PObject
     const H323Capability & GetCapability() const { return *capability; }
   //@}
 
-    virtual bool OnMediaCommand(const OpalMediaCommand &);
-
   protected:
     virtual void InternalClose();
 

@@ -120,9 +120,11 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 
-const PCaselessString & OpalRTPSession::RTP_AVP() { static const PConstCaselessString s("RTP/AVP"); return s; }
+const PCaselessString & OpalRTPSession::RTP_AVP () { static const PConstCaselessString s("RTP/AVP" ); return s; }
+const PCaselessString & OpalRTPSession::RTP_AVPF() { static const PConstCaselessString s("RTP/AVPF"); return s; }
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalRTPSession, OpalRTPSession::RTP_AVP());
+static bool RegisteredAVPF = OpalMediaSessionFactory::RegisterAs(OpalRTPSession::RTP_AVPF(), OpalRTPSession::RTP_AVP());
 
 #if P_CONFIG_FILE
 static PTimeInterval GetDefaultOutOfOrderWaitTime()
@@ -1177,7 +1179,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
          << frame.GetSize() << " bytes:\n" << hex << setprecision(2) << setfill('0') << frame << dec);
   do {
     BYTE * payload = frame.GetPayloadPtr();
-    PINDEX size = frame.GetPayloadSize(); 
+    size_t size = frame.GetPayloadSize(); 
     if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
       /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
                2. what's the correct exit status ? */
@@ -1187,7 +1189,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
     switch (frame.GetPayloadType()) {
       case RTP_ControlFrame::e_SenderReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))) {
+        if (size >= sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)) {
           SenderReport sender;
           sender.sourceIdentifier = *(const PUInt32b *)payload;
           const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
@@ -1212,7 +1214,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 
       case RTP_ControlFrame::e_ReceiverReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)))
+        if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))
           OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", ReceiverReport packet truncated");
@@ -1220,14 +1222,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 
       case RTP_ControlFrame::e_SourceDescription :
-        if (size >= (PINDEX)(frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription))) {
+        if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
           SourceDescriptionArray descriptions;
           const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
           PINDEX srcIdx;
           for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
             descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
             const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-            PINDEX uiSizeCurrent = 0;   /* current size of the items already parsed */
+            size_t uiSizeCurrent = 0;   /* current size of the items already parsed */
             while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
               descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
               uiSizeCurrent += item->GetLengthTotal();
@@ -1260,10 +1262,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
       case RTP_ControlFrame::e_Goodbye :
         if (size >= 4) {
           PString str;
-          PINDEX count = frame.GetCount()*4;
+          size_t count = frame.GetCount()*4;
     
           if (size > count) {
-            if (size >= (PINDEX)(payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */))
+            if (size >= payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */)
               str = PString((const char *)(payload+count+1), payload[count]);
             else {
               PTRACE(2, "RTP\tSession " << m_sessionId << ", Goodbye packet invalid");
@@ -1271,7 +1273,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           }
 
           PDWORDArray sources(count);
-          for (PINDEX i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             sources[i] = ((const PUInt32b *)payload)[i];
           OnRxGoodbye(sources, str);
         }
@@ -1298,7 +1300,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
 #if OPAL_RTCP_XR
       case RTP_ControlFrame::e_ExtendedReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport)))
+        if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport))
           OnRxExtendedReport(*(const PUInt32b *)payload, BuildExtendedReportArray(frame, sizeof(PUInt32b)));
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", ReceiverReport packet truncated");
@@ -1306,7 +1308,29 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 #endif
 
-  #if OPAL_VIDEO
+      case RTP_ControlFrame::e_TransportLayerFeedBack :
+        switch (frame.GetFbType()) {
+          case RTP_ControlFrame::e_TMMBR :
+            if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
+              const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
+              m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
+            }
+            else {
+              PTRACE(2, "RTP\tSession " << m_sessionId << ", TMMBR packet truncated");
+            }
+            break;
+
+          case RTP_ControlFrame::e_TMMBN :
+            if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
+            }
+            else {
+              PTRACE(2, "RTP\tSession " << m_sessionId << ", TMMBN packet truncated");
+            }
+            break;
+        }
+        break;
+
+#if OPAL_VIDEO
       case RTP_ControlFrame::e_IntraFrameRequest :
         PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC2032 FIR");
         m_connection.OnRxIntraFrameRequest(*this, true);
@@ -1469,6 +1493,39 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 }
 
 
+void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
+{
+  // Create packet
+  RTP_ControlFrame request;
+  InsertReportPacket(request);
+
+  request.StartNewPacket();
+
+  request.SetPayloadType(RTP_ControlFrame::e_TransportLayerFeedBack);
+  request.SetFbType(notify ? RTP_ControlFrame::e_TMMBN : RTP_ControlFrame::e_TMMBR, sizeof(RTP_ControlFrame::FbTMMB));
+
+  RTP_ControlFrame::FbTMMB * tmmb = (RTP_ControlFrame::FbTMMB *)request.GetPayloadPtr();
+  tmmb->requestSSRC = syncSourceIn;
+
+  if (overhead == 0)
+    overhead = localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+
+  unsigned exponent = 0;
+  unsigned mantissa = maxBitRate;
+  while (maxBitRate >= 0x20000) {
+    mantissa >>= 1;
+    ++exponent;
+  }
+  tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 28);
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
+}
+
+
+#if OPAL_VIDEO
+
 void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
   PTRACE(3, "RTP\tSession " << m_sessionId << ", SendIntraFrameRequest using "
@@ -1492,7 +1549,7 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
   else {
     request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
     if (pictureLoss)
-      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, 0);
+      request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, sizeof(RTP_ControlFrame::FbFCI));
     else {
       request.SetFbType(RTP_ControlFrame::e_FullIntraRequest, sizeof(RTP_ControlFrame::FbFIR));
       RTP_ControlFrame::FbFIR * fir = (RTP_ControlFrame::FbFIR *)request.GetPayloadPtr();
@@ -1527,6 +1584,8 @@ void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
   request.EndPacket();
   WriteControl(request);
 }
+
+#endif // OPAL_VIDEO
 
 
 void OpalRTPSession::AddFilter(const FilterNotifier & filter)

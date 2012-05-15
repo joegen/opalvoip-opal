@@ -50,9 +50,9 @@ class OpalMediaCommand : public PObject
        The PObject class has a << operator defined that calls this function
        polymorphically.
       */
-    void PrintOn(
+    virtual void PrintOn(
       ostream & strm    ///<  Stream to output text representation
-    ) const { strm << GetName(); }
+    ) const;
 
     /** Compare the two objects and return their relative rank. This function is
        usually overridden by descendent classes to yield the ranking according
@@ -67,7 +67,7 @@ class OpalMediaCommand : public PObject
      */
     virtual Comparison Compare(
       const PObject & obj   ///<  Object to compare against.
-    ) const { return GetName().Compare(PDownCast(const OpalMediaCommand, &obj)->GetName()); }
+    ) const;
   //@}
 
   /**@name Operations */
@@ -78,11 +78,11 @@ class OpalMediaCommand : public PObject
 
     /**Get data buffer pointer for transfer to/from codec plug-in.
       */
-    virtual void * GetPlugInData() const { return NULL; }
+    virtual void * GetPlugInData() const;
 
     /**Get data buffer size for transfer to/from codec plug-in.
       */
-    virtual unsigned * GetPlugInSize() const { return NULL; }
+    virtual unsigned * GetPlugInSize() const;
   //@}
 };
 
@@ -96,6 +96,23 @@ class OpalMediaCommand : public PObject
       virtual PString GetName() const { return name; } \
   }
 
+
+/**This indicates that the media flow (bit rate) is to be adjsuted.
+  */
+class OpalMediaFlowControl : public OpalMediaCommand
+{
+    PCLASSINFO(OpalMediaFlowControl, OpalMediaCommand);
+  public:
+    OpalMediaFlowControl(unsigned maxBitRate)
+      : m_maxBitRate(maxBitRate)  { }
+
+    virtual PString GetName() const;
+
+    unsigned GetMaxBitRate() const { return m_maxBitRate; }
+
+  protected:
+    unsigned m_maxBitRate;
+};
 
 #endif // OPAL_OPAL_MEDIACMD_H
 

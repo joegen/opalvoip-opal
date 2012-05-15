@@ -148,6 +148,7 @@ class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
   PCLASSINFO(OpalSRTPSession, OpalRTPSession);
   public:
     static const PCaselessString & RTP_SAVP();
+    static const PCaselessString & RTP_SAVPF();
 
     OpalSRTPSession(const Init & init);
     ~OpalSRTPSession();

@@ -77,6 +77,7 @@ class OpalRTPSession : public OpalMediaSession
     PCLASSINFO(OpalRTPSession, OpalMediaSession);
   public:
     static const PCaselessString & RTP_AVP();
+    static const PCaselessString & RTP_AVPF();
 
   /**@name Construction */
   //@{
@@ -512,6 +513,15 @@ class OpalRTPSession : public OpalMediaSession
 
     virtual void SetCloseOnBYE(bool v)  { closeOnBye = v; }
 
+    /**Send flow control (Temporary Maximum Media Stream Bit Rate) Request/Notification.
+      */
+    virtual void SendFlowControl(
+      unsigned maxBitRate,    ///< New temporary maximum bit rate
+      unsigned overhead = 0,  ///< Protocol overhead, defaults to IP/UDP/RTP header size
+      bool notify = false     ///< Send request/notification
+    );
+
+#if OPAL_VIDEO
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
@@ -523,6 +533,7 @@ class OpalRTPSession : public OpalMediaSession
         OpalTemporalSpatialTradeOff media command.
       */
     virtual void SendTemporalSpatialTradeOff(unsigned tradeOff);
+#endif
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 
