@@ -2901,7 +2901,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       break;
 
     case SIP_PDU::Method_REFER :
-      if (!response.GetMIME().GetBoolean("Refer-Sub")) {
+      if (!response.GetMIME().GetBoolean("Refer-Sub", true)) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "SIP\tBlind transfer accepted, without NOTIFY so ending local call.");
         m_referInProgress = false;
