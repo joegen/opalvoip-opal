@@ -639,11 +639,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   port = (WORD)portStr.AsUnsigned();
 
   // parse the transport
-  PString transport = tokens[2];
-  if (transport != GetSDPTransportType()) {
-    PTRACE(2, "SDP\tMedia session transport " << transport << " not compatible with " << GetSDPTransportType());
-    return false;
-  }
+  m_transportType = tokens[2];
 
   // check everything
   switch (port) {
@@ -717,6 +713,11 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
 bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 {
+  if (m_transportType != GetSDPTransportType()) {
+    PTRACE(2, "SDP\tMedia session transport " << m_transportType << " not compatible with " << GetSDPTransportType());
+    return false;
+  }
+
   unsigned bw = GetBandwidth(SDPSessionDescription::TransportIndependentBandwidthType());
   if (bw == 0)
     bw = GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType())*1000;
@@ -935,6 +936,8 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 3 :
       m_tokens.AppendString("127");
   }
+
+  m_transportType = m_tokens[2];
 }
 
 
@@ -973,7 +976,7 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
-  return m_enableFeedback ? SDP_MEDIA_TRANSPORT_RTPAVP : SDP_MEDIA_TRANSPORT_RTPAVPF;
+  return m_enableFeedback ? SDP_MEDIA_TRANSPORT_RTPAVPF : SDP_MEDIA_TRANSPORT_RTPAVP;
 }
 
 

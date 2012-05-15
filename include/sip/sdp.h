@@ -220,6 +220,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
     OpalTransportAddress transportAddress;
+    PString m_transportType;
     WORD port;
     WORD portCount;
     OpalMediaType mediaType;
