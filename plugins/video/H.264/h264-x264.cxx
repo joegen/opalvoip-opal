@@ -844,8 +844,10 @@ class MyEncoder : public PluginCodec<MY_CODEC>
          be done in the normal C++ constructor. */
 
       // ABR with bit rate tolerance = 1 is CBR...
-      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this))
+      if (FFMPEGLibraryInstance.Load() && m_encoder.Load(this)) {
+        PTRACE(4, MY_CODEC_LOG, "Opened encoder (SVN revision $Revision$)");
         return true;
+      }
 
       PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
       return false;
@@ -954,7 +956,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(m_frameRate);
       m_encoder.SetTargetBitrate(m_bitRate/1000);
-      m_encoder.SetMaxRTPPayloadSize(std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize));
+      unsigned maxPayloadSize = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
+      m_encoder.SetMaxRTPPayloadSize(maxPayloadSize);
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
       m_encoder.ApplyOptions();
@@ -965,7 +968,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << m_frameRate << " "
                               "bps=" << m_bitRate << " "
-                              "RTP=" << m_maxRTPSize << " "
+                              "RTP=" << maxPayloadSize << " "
                               "TSTO=" << m_tsto);
       return true;
     }
@@ -1051,6 +1054,7 @@ class MyDecoder : public PluginCodec<MY_CODEC>
       if (FFMPEGLibraryInstance.AvcodecOpen(m_context, m_codec) < 0)
         return false;
 
+      PTRACE(4, MY_CODEC_LOG, "Opened decoder (SVN revision $Revision$)");
       return true;
     }
 
