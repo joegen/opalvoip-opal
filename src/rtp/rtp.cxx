@@ -1757,7 +1757,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 {
   do {
     BYTE * payload = frame.GetPayloadPtr();
-    PINDEX size = frame.GetPayloadSize(); 
+    size_t size = frame.GetPayloadSize(); 
     if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
       /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
                2. what's the correct exit status ? */
@@ -1767,7 +1767,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
     switch (frame.GetPayloadType()) {
       case RTP_ControlFrame::e_SenderReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))) {
+        if (size >= sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)) {
           SenderReport sender;
           sender.sourceIdentifier = *(const PUInt32b *)payload;
           const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
@@ -1792,7 +1792,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 
       case RTP_ControlFrame::e_ReceiverReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)))
+        if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport))
           OnRxReceiverReport(*(const PUInt32b *)payload, BuildReceiverReportArray(frame, sizeof(PUInt32b)));
         else {
           PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
@@ -1800,14 +1800,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 
       case RTP_ControlFrame::e_SourceDescription :
-        if (size >= (PINDEX)(frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription))) {
+        if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
           SourceDescriptionArray descriptions;
           const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
           PINDEX srcIdx;
           for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
             descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
             const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-            PINDEX uiSizeCurrent = 0;   /* current size of the items already parsed */
+            size_t uiSizeCurrent = 0;   /* current size of the items already parsed */
             while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
               descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
               uiSizeCurrent += item->GetLengthTotal();
@@ -1840,10 +1840,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
       case RTP_ControlFrame::e_Goodbye :
         if (size >= 4) {
           PString str;
-          PINDEX count = frame.GetCount()*4;
+          size_t count = frame.GetCount()*4;
     
           if (size > count) {
-            if (size >= (PINDEX)(payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */))
+            if (size >= payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */)
               str = PString((const char *)(payload+count+1), payload[count]);
             else {
               PTRACE(2, "RTP\tSession " << sessionID << ", Goodbye packet invalid");
@@ -1851,7 +1851,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           }
 
           PDWORDArray sources(count);
-          for (PINDEX i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             sources[i] = ((const PUInt32b *)payload)[i];
           OnRxGoodbye(sources, str);
         }
@@ -1878,7 +1878,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
 #if OPAL_RTCP_XR
       case RTP_ControlFrame::e_ExtendedReport :
-        if (size >= (PINDEX)(sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport)))
+        if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport))
           OnRxExtendedReport(*(const PUInt32b *)payload, BuildExtendedReportArray(frame, sizeof(PUInt32b)));
         else {
           PTRACE(2, "RTP\tSession " << sessionID << ", ReceiverReport packet truncated");
