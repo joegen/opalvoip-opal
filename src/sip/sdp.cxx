@@ -974,6 +974,16 @@ SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress 
 }
 
 
+bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
+{
+  if (!SDPMediaDescription::Decode(tokens))
+    return false;
+
+  m_enableFeedback = m_transportType == SDP_MEDIA_TRANSPORT_RTPAVPF;
+  return true;
+}
+
+
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 { 
   return m_enableFeedback ? SDP_MEDIA_TRANSPORT_RTPAVPF : SDP_MEDIA_TRANSPORT_RTPAVP;

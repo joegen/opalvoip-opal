@@ -220,7 +220,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
     OpalTransportAddress transportAddress;
-    PString m_transportType;
+    PCaselessString m_transportType;
     WORD port;
     WORD portCount;
     OpalMediaType mediaType;
@@ -258,6 +258,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
   PCLASSINFO(SDPRTPAVPMediaDescription, SDPMediaDescription);
   public:
     SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType);
+    virtual bool Decode(const PStringArray & tokens);
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
