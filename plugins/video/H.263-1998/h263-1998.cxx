@@ -38,12 +38,9 @@
  *                 Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
  *
- */
-
-/*
-  Notes
-  -----
-
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
@@ -258,7 +255,7 @@ bool H263_Base_EncoderContext::Init(CodecID codecId)
     m_context->debug |= FF_DEBUG_BUGS | FF_DEBUG_BUFFERS;
 #endif
 
-  PTRACE(4, m_prefix, "Encoder created");
+  PTRACE(4, m_prefix, "Encoder created (SVN $Revision$)");
 
   return true;
 }
@@ -701,7 +698,7 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * prefix, Depacket
 
   m_depacketizer->NewFrame();
 
-  PTRACE(4, m_prefix, "Decoder created");
+  PTRACE(4, m_prefix, "Decoder created (SVN $Revision$)");
 }
 
 H263_Base_DecoderContext::~H263_Base_DecoderContext()
