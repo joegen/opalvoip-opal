@@ -311,7 +311,7 @@ void MyProcess::Main()
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : m_mediaTransferMode(MediaTransforForward)
+  : m_mediaTransferMode(MediaTransferForward)
 #if OPAL_H323
   , m_h323EP(NULL)
 #endif
