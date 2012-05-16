@@ -943,7 +943,7 @@ class OpalManager : public PObject
       MediaTransferBypass,   /**< Media bypasses this host completely. The RTP
                                   addressess of each side is passed to the
                                   other so media goes directly. */
-      MediaTransforForward,  /**< Media passed through this host but is not
+      MediaTransferForward,  /**< Media passed through this host but is not
                                   changed, RTP packets a simply forwareded
                                   to the other side. */
       MediaTransferTranscode /**< Media is passed through this host and if
@@ -960,7 +960,7 @@ class OpalManager : public PObject
        enable this feature, or for example if firewall traversal is in play,
        or Lawful Intercept, or any application defined reason.
 
-       The default behaviour returns MediaTransforForward, disallowing
+       The default behaviour returns MediaTransferForward, disallowing
        transcoding and full media bypass.
      */
     virtual MediaTransferMode GetMediaTransferMode(
