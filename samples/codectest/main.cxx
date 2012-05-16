@@ -930,7 +930,7 @@ void TranscoderThread::Main()
   // main loop
   //
 
-  RTP_DataFrame * srcFrame_ = NULL;
+  RTP_DataFrame * srcFramePtr = NULL;
 
   while ((m_running && m_framesToTranscode < 0) || (m_framesToTranscode-- > 0)) {
 
@@ -938,10 +938,9 @@ void TranscoderThread::Main()
     //
     //  acquire and format source frame
     //
-    if (srcFrame_ != NULL)
-      delete srcFrame_;
-    srcFrame_ = new RTP_DataFrame(0);
-    RTP_DataFrame & srcFrame = *srcFrame_;
+    delete srcFramePtr;
+    srcFramePtr = new RTP_DataFrame(0);
+    RTP_DataFrame & srcFrame = *srcFramePtr;
 
     {
       bool state = Read(srcFrame);
@@ -1050,8 +1049,8 @@ void TranscoderThread::Main()
       totalEncodedPacketCount += encFrames.GetSize();
 
       if (isVideo && m_calcSNR) {
-        ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
-        srcFrame_ = NULL;
+        ((VideoThread *)this)->SaveSNRFrame(srcFramePtr);
+        srcFramePtr = NULL;
       }
 
       //////////////////////////////////////////////
@@ -1200,6 +1199,8 @@ void TranscoderThread::Main()
       m_resume.Wait();
     }
   }
+
+  delete srcFramePtr;
 
   //
   //  end of main loop
