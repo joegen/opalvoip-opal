@@ -32,7 +32,7 @@
 #ifndef OPAL_H264ENC_H
 #define OPAL_H264ENC_H 1
 
-#include "../common/platform.h"
+#include "../../common/platform.h"
 
 
 #if X264_LICENSED || GPL_HELPER_APP
@@ -66,6 +66,7 @@ extern "C" {
 #define SET_MAX_KEY_FRAME_PERIOD  11
 #define SET_TSTO                  12
 #define SET_PROFILE_LEVEL         13
+#define SET_MAX_NALU_SIZE         14
 
 
 class H264Encoder
@@ -82,6 +83,7 @@ class H264Encoder
     bool SetFrameRate(unsigned rate);
     bool SetTargetBitrate(unsigned rate);
     bool SetMaxRTPPayloadSize(unsigned size);
+    bool SetMaxNALUSize(unsigned size);
     bool SetTSTO(unsigned tsto);
     bool SetMaxKeyFramePeriod(unsigned period);
 
