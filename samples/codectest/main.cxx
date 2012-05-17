@@ -117,7 +117,7 @@ void CodecTest::Main()
       PluginCodec_GetCodecFunction getCodecs;
       if (plugin.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
         unsigned count = 0;
-        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
+        const PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
         while (count > 0) {
           PString name(codecs->descr);
           if (codecNames.GetStringsIndex(name) == P_MAX_INDEX)
@@ -730,8 +730,11 @@ bool VideoThread::Initialise(PArgList & args)
 
   m_frameTime = mediaFormat.GetFrameTime();
   if (m_encoder != NULL) {
-    if (args.HasOption('p'))
-      m_encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+    if (args.HasOption('p')) {
+      unsigned bytes = args.GetOptionString('p').AsUnsigned();
+      m_encoder->SetMaxOutputSize(bytes);
+      mediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), bytes);
+    }
     m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
   }
 
@@ -927,7 +930,7 @@ void TranscoderThread::Main()
   // main loop
   //
 
-  RTP_DataFrame * srcFrame_ = NULL;
+  RTP_DataFrame * srcFramePtr = NULL;
 
   while ((m_running && m_framesToTranscode < 0) || (m_framesToTranscode-- > 0)) {
 
@@ -935,10 +938,9 @@ void TranscoderThread::Main()
     //
     //  acquire and format source frame
     //
-    if (srcFrame_ != NULL)
-      delete srcFrame_;
-    srcFrame_ = new RTP_DataFrame(0);
-    RTP_DataFrame & srcFrame = *srcFrame_;
+    delete srcFramePtr;
+    srcFramePtr = new RTP_DataFrame(0);
+    RTP_DataFrame & srcFrame = *srcFramePtr;
 
     {
       bool state = Read(srcFrame);
@@ -1047,8 +1049,8 @@ void TranscoderThread::Main()
       totalEncodedPacketCount += encFrames.GetSize();
 
       if (isVideo && m_calcSNR) {
-        ((VideoThread *)this)->SaveSNRFrame(srcFrame_);
-        srcFrame_ = NULL;
+        ((VideoThread *)this)->SaveSNRFrame(srcFramePtr);
+        srcFramePtr = NULL;
       }
 
       //////////////////////////////////////////////
@@ -1056,14 +1058,14 @@ void TranscoderThread::Main()
       //  drop encoded frames if required
       //
       if (m_dropPercent > 0) {
-        PINDEX i = 0;
-        while (i < encFrames.GetSize()) {
+        RTP_DataFrameList::iterator it = encFrames.begin();
+        while (it != encFrames.end()) {
           int n = PRandom::Number() % 100; 
           if (n >= m_dropPercent) 
-            i++;
+            ++it;
           else {
             ++totalDroppedPacketCount;
-            encFrames.RemoveAt(i);
+            encFrames.erase(it++);
           }
         }
       }
@@ -1197,6 +1199,8 @@ void TranscoderThread::Main()
       m_resume.Wait();
     }
   }
+
+  delete srcFramePtr;
 
   //
   //  end of main loop
