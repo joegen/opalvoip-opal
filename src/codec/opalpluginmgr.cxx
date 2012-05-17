@@ -2336,7 +2336,7 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   H323H263CustomSizes other_customSizes;
   GetCustomMPI(otherFormat, other_customSizes);
 
-  if (!PStringSet::Intersection(mediaFormat.GetMediaPacketizations(), otherFormat.GetMediaPacketizations()))
+  if (!PStringSet::Intersection(mediaFormat.GetMediaPacketizationSet(), otherFormat.GetMediaPacketizationSet()))
     return GreaterThan;
 
   if ((IsValidMPI( sqcifMPI) && IsValidMPI( other_sqcifMPI)) ||

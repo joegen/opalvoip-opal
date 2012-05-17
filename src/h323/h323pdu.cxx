@@ -352,11 +352,11 @@ void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
   if (h323ProductId == "NetMeeting")
     return;
 
-  PStringSet mediaPacketizations = mediaFormat.GetMediaPacketizations();
+  PStringArray mediaPacketizations = mediaFormat.GetMediaPacketizations();
   for (PINDEX i = 0; i < mediaPacketizations.GetSize(); i++) {
     rtpPacketizations.SetSize(rtpPacketizationCount+1);
     if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount],
-                                mediaPacketizations.GetKeyAt(i), mediaFormat, payloadType))
+                                mediaPacketizations[i], mediaFormat, payloadType))
       rtpPacketizationCount++;
   }
 }
@@ -370,9 +370,9 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
   if (h323ProductId == "NetMeeting")
     return PFalse;
 
-  PStringSet mediaPacketizations = mediaFormat.GetMediaPacketizations();
+  PStringArray mediaPacketizations = mediaFormat.GetMediaPacketizations();
   return !mediaPacketizations.IsEmpty() &&
-         H323SetRTPPacketization(rtpPacketization, mediaPacketizations.GetKeyAt(0), mediaFormat, payloadType);
+         H323SetRTPPacketization(rtpPacketization, mediaPacketizations[0], mediaFormat, payloadType);
 }
 
 bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
