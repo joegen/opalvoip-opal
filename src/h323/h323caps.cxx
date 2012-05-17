@@ -172,7 +172,7 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString &
   if (mediaPacketization.IsEmpty())
     return true;
 
-  PStringSet mediaPacketizations = GetMediaFormat().GetMediaPacketizations();
+  PStringSet mediaPacketizations = GetMediaFormat().GetMediaPacketizationSet();
   if (mediaPacketizations.IsEmpty())
     return true;
 
@@ -2087,7 +2087,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
             if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
               OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
               PStringSet intersection;
-              if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizations(), &intersection))
+              if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))
                 mediaFormat.SetMediaPacketizations(intersection);
             }
           }
@@ -2225,7 +2225,7 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
       capability->SetCapabilityDirection(direction); 
       capability->GetWritableMediaFormat() = mediaFormat;
       reply = SetCapability(descriptorNum, simultaneous, capability);
-      m_mediaPacketizations.Union(mediaFormat.GetMediaPacketizations());
+      m_mediaPacketizations.Union(mediaFormat.GetMediaPacketizationSet());
     }
   }
 
