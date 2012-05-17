@@ -44,6 +44,8 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\bin\plugins\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">x264plugin_helper</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">x264plugin_helper</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -61,7 +63,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>libx264.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)x264plugin_helper.exe</OutputFile>
       <AdditionalLibraryDirectories>.\x264;..\..\..\..\..\external\x264;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -92,7 +93,6 @@ if exist ..\..\..\..\..\external\x264\libx264-*.dll xcopy /y/f ..\..\..\..\..\ex
     </ClCompile>
     <Link>
       <AdditionalDependencies>libx264.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)x264plugin_helper.exe</OutputFile>
       <AdditionalLibraryDirectories>.\x264;..\..\..\..\..\external\x264;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
