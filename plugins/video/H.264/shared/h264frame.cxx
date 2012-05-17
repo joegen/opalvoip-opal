@@ -419,15 +419,14 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
   if (addHeader) 
   {
     PTRACE(6, FrameTraceName, "Adding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
-    uint8_t* NALptr = data;
     if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3)) 
     {
-      PTRACE(4, FrameTraceName, "Profile: " << (int)NALptr[0] << 
-                                " Level: "   << (int)NALptr[2] << 
-                                " Constraints: " << (NALptr[1] & 0x80 ? 1 : 0) 
-                                                 << (NALptr[1] & 0x40 ? 1 : 0) 
-                                                 << (NALptr[1] & 0x20 ? 1 : 0) 
-                                                 << (NALptr[1] & 0x10 ? 1 : 0));
+      PTRACE(4, FrameTraceName, "Profile: " << (int)data[0] << 
+                                " Level: "   << (int)data[2] << 
+                                " Constraints: " << (data[1] & 0x80 ? 1 : 0) 
+                                                 << (data[1] & 0x40 ? 1 : 0) 
+                                                 << (data[1] & 0x20 ? 1 : 0) 
+                                                 << (data[1] & 0x10 ? 1 : 0));
     }
   }
   else

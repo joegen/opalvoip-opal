@@ -36,8 +36,8 @@
 // GVX 3000 does not like STAP packets... So we waste 40 bytes per connection...
 //#define SEND_STAP_PACKETS 1
 
-#include "../common/platform.h"
-#include "../common/rtpframe.h"
+#include "../../common/platform.h"
+#include "../../common/rtpframe.h"
 
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
