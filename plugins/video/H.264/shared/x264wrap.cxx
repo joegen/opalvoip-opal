@@ -236,8 +236,14 @@ bool H264Encoder::SetTargetBitrate(unsigned rate)
 
 bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
-  m_context.i_slice_max_size = size;
   m_encapsulation.SetMaxPayloadSize(size);
+  return true;
+}
+
+
+bool H264Encoder::SetMaxNALUSize(unsigned size)
+{
+  m_context.i_slice_max_size = size;
   return true;
 }
 
@@ -658,7 +664,7 @@ bool H264Encoder::Load(void * instance)
     return false;
   }
 
-  PTRACE(4, PipeTraceName, "Successfully established communication with GPL process");
+  PTRACE(4, PipeTraceName, "Successfully established communication with GPL process version " << msg);
   m_loaded = true;
   return true;
 }
@@ -718,6 +724,12 @@ bool H264Encoder::SetTargetBitrate(unsigned rate)
 bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
   return WriteValue(SET_MAX_PAYLOAD_SIZE, size);
+}
+
+
+bool H264Encoder::SetMaxNALUSize(unsigned size)
+{
+  return WriteValue(SET_MAX_NALU_SIZE, size);
 }
 
 

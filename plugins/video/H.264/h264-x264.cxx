@@ -40,8 +40,8 @@
 #include "plugin-config.h"
 #endif
 
-#include "ffmpeg.h"
-#include "dyna.h"
+#include "../common/ffmpeg.h"
+#include "../common/dyna.h"
 
 #include "shared/h264frame.h"
 #include "shared/x264wrap.h"
@@ -355,7 +355,7 @@ static struct PluginCodec_Option const MaxNaluSize =
   "max-rcmd-nalu-size",               // FMTP option name
   STRINGIZE(H241_MAX_NALU_SIZE),      // FMTP default value
   H241_Max_NAL_unit_size,             // H.245 generic capability code and bit mask
-  STRINGIZE(UNCOMPRESSED_MB_SIZE),    // Minimum value
+  "396",                              // Minimum value - uncompressed macro block size 16*16*3+12
   "65535"                             // Maximum value
 };
 
@@ -933,15 +933,24 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
         PTRACE(4, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
                << " unchanged frame rate " << (MyClockRate/m_frameTime) << " <= " << (MyClockRate/minFrameTime));
 
-      size_t naluSize = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
       m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
       m_encoder.SetFrameWidth(m_width);
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(MyClockRate/m_frameTime);
       m_encoder.SetTargetBitrate(m_maxBitRate/1000);
-      m_encoder.SetMaxRTPPayloadSize(naluSize);
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*MyClockRate/m_frameTime); // Every 10 seconds
+
+      if (m_packetisationMode == 0) {
+        unsigned size = std::min(m_maxRTPSize, m_maxNALUSize);
+        m_encoder.SetMaxRTPPayloadSize(size);
+        m_encoder.SetMaxNALUSize(size);
+      }
+      else {
+        m_encoder.SetMaxRTPPayloadSize(m_maxRTPSize);
+        m_encoder.SetMaxNALUSize(m_maxNALUSize);
+      }
+
       m_encoder.ApplyOptions();
 
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
@@ -950,7 +959,8 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << (MyClockRate/m_frameTime) << " "
                               "bps=" << m_maxBitRate << " "
-                              "NALU=" << naluSize << " "
+                              "RTP=" << m_maxRTPSize << " "
+                              "NALU=" << m_maxNALUSize << " "
                               "TSTO=" << m_tsto);
       return true;
     }
