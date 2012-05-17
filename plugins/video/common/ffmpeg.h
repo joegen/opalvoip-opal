@@ -43,7 +43,7 @@
 #ifndef __FFMPEG_H__
 #define __FFMPEG_H__ 1
 
-#include "platform.h"
+#include "dyna.h"
 
 extern "C" {
   #include LIBAVCODEC_HEADER
@@ -83,6 +83,141 @@ extern "C" {
 #else
 #define WITH_ALIGNED_STACK(what) what
 #endif
+
+
+/////////////////////////////////////////////////////////////////
+//
+// define a class to interface to the FFMpeg library
+
+class FFMPEGLibrary 
+{
+  public:
+    FFMPEGLibrary();
+    ~FFMPEGLibrary();
+
+    bool Load();
+
+    AVCodec *AvcodecFindEncoder(enum CodecID id);
+    AVCodec *AvcodecFindDecoder(enum CodecID id);
+    AVCodecContext *AvcodecAllocContext(void);
+    AVFrame *AvcodecAllocFrame(void);
+    int AvcodecOpen(AVCodecContext *ctx, AVCodec *codec);
+    int AvcodecClose(AVCodecContext *ctx);
+    int AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
+    int AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, const BYTE *buf, int buf_size);
+    void AvcodecFree(void * ptr);
+    void AvSetDimensions(AVCodecContext *s, int width, int height);
+
+    void * AvMalloc(int size);
+    void AvFree(void * ptr);
+
+    void AvLogSetLevel(int level);
+    void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
+
+    bool IsLoaded();
+    CriticalSection processLock;
+
+  protected:
+    DynaLink m_libAvcodec;
+    DynaLink m_libAvutil;
+
+    void (*Favcodec_init)(void);
+    void (*Fav_init_packet)(AVPacket *pkt);
+
+    void (*Favcodec_register_all)(void);
+    AVCodec *(*Favcodec_find_encoder)(enum CodecID id);
+    AVCodec *(*Favcodec_find_decoder)(enum CodecID id);
+    AVCodecContext *(*Favcodec_alloc_context)(void);
+    AVFrame *(*Favcodec_alloc_frame)(void);
+    int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
+    int (*Favcodec_close)(AVCodecContext *ctx);
+    int (*Favcodec_encode_video)(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
+    int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, AVPacket *avpkt);
+    unsigned (*Favcodec_version)(void);
+    void (*Favcodec_set_dimensions)(AVCodecContext *ctx, int width, int height);
+
+    void (*Favcodec_free)(void *);
+
+    void (*FAv_log_set_level)(int level);
+    void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
+
+    bool m_isLoadedOK;
+};
+
+
+class FFMPEGCodec
+{
+  public:
+    class EncodedFrame
+    {
+      protected:
+        size_t    m_length;
+        size_t    m_maxSize;
+        uint8_t * m_buffer;
+        size_t    m_maxPayloadSize;
+
+      public:
+        EncodedFrame();
+        virtual ~EncodedFrame();
+
+        virtual const char * GetName() const { return ""; }
+
+        uint8_t * GetBuffer() const { return m_buffer; }
+        size_t GetMaxSize() const { return m_maxSize; }
+        size_t GetLength() const { return m_length; }
+        void SetMaxPayloadSize(size_t size) { m_maxPayloadSize = size; }
+
+        virtual bool SetResolution(unsigned width, unsigned height);
+        virtual bool SetMaxSize(size_t newSize);
+        virtual bool Reset(size_t len = 0);
+
+        virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
+        virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags) = 0;
+
+        virtual bool IsIntraFrame() const;
+
+        virtual void RTPCallBack(void * data, int size, int mbCount);
+
+      protected:
+        virtual bool Append(const uint8_t * data, size_t len);
+    };
+
+  protected:
+    const char     * m_prefix;
+    AVCodec        * m_codec;
+    AVCodecContext * m_context;
+    AVFrame        * m_picture;
+    uint8_t        * m_alignedInputYUV;
+    size_t           m_alignedInputSize;
+    EncodedFrame   * m_fullFrame;
+
+  public:
+    FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
+    ~FFMPEGCodec();
+
+    virtual bool InitEncoder(CodecID codecId);
+    virtual bool InitDecoder(CodecID codecId);
+
+    bool SetResolution(unsigned width, unsigned height);
+    void SetEncoderOptions(
+      unsigned frameTime,
+      unsigned maxBitRate,
+      unsigned maxRTPSize,
+      unsigned tsto,
+      unsigned keyFramePeriod
+    );
+
+    virtual bool OpenCodec();
+    virtual void CloseCodec();
+
+    bool EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags);
+    bool DecodeVideo(const PluginCodec_RTP & in, unsigned & flags);
+
+    EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
+
+  protected:
+    bool InitContext();
+};
 
 
 #endif // __FFMPEG_H__

@@ -41,7 +41,7 @@
 #ifndef __DYNA_H__
 #define __DYNA_H__ 1
 
-#include "ffmpeg.h"
+#include "platform.h"
 #include "critsect.h"
 #include <codec/opalplugin.hpp>
 
@@ -70,77 +70,12 @@ class DynaLink
     virtual void Close();
     bool GetFunction(const char * name, Function & func);
     
-    char m_codecString [32];
-
   protected:
 #if defined(_WIN32)
     HINSTANCE m_hDLL;
 #else
     void * m_hDLL;
 #endif /* _WIN32 */
-};
-
-/////////////////////////////////////////////////////////////////
-//
-// define a class to interface to the FFMpeg library
-
-
-class FFMPEGLibrary 
-{
-  public:
-    FFMPEGLibrary(CodecID codec);
-    ~FFMPEGLibrary();
-
-    bool Load();
-
-    AVCodec *AvcodecFindEncoder(enum CodecID id);
-    AVCodec *AvcodecFindDecoder(enum CodecID id);
-    AVCodecContext *AvcodecAllocContext(void);
-    AVFrame *AvcodecAllocFrame(void);
-    int AvcodecOpen(AVCodecContext *ctx, AVCodec *codec);
-    int AvcodecClose(AVCodecContext *ctx);
-    int AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
-    int AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
-    void AvcodecFree(void * ptr);
-    void AvSetDimensions(AVCodecContext *s, int width, int height);
-
-    void * AvMalloc(int size);
-    void AvFree(void * ptr);
-
-    void AvLogSetLevel(int level);
-    void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
-
-    bool IsLoaded();
-    CriticalSection processLock;
-
-  protected:
-    DynaLink m_libAvcodec;
-    DynaLink m_libAvutil;
-
-    CodecID m_codec;
-    char m_codecString[32];
-
-    void (*Favcodec_init)(void);
-    void (*Fav_init_packet)(AVPacket *pkt);
-
-    void (*Favcodec_register_all)(void);
-    AVCodec *(*Favcodec_find_encoder)(enum CodecID id);
-    AVCodec *(*Favcodec_find_decoder)(enum CodecID id);
-    AVCodecContext *(*Favcodec_alloc_context)(void);
-    AVFrame *(*Favcodec_alloc_frame)(void);
-    int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
-    int (*Favcodec_close)(AVCodecContext *ctx);
-    int (*Favcodec_encode_video)(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
-    int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, AVPacket *avpkt);
-    unsigned (*Favcodec_version)(void);
-    void (*Favcodec_set_dimensions)(AVCodecContext *ctx, int width, int height);
-
-    void (*Favcodec_free)(void *);
-
-    void (*FAv_log_set_level)(int level);
-    void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
-
-    bool m_isLoadedOK;
 };
 
 //////////////////////////////////////////////////////////////////////////////

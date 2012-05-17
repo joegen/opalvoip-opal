@@ -23,7 +23,7 @@
 #ifndef __H263PFrame_H__
 #define __H263PFrame_H__ 1
 
-#include "h263-1998.h"
+#include "../../common/ffmpeg.h"
 
 #include <vector>
 
@@ -62,32 +62,27 @@ private:
   uint8_t m_ebits;
 };
 
-class RFC2429Frame : public Packetizer, public Depacketizer
+
+class RFC2429Frame : public FFMPEGCodec::EncodedFrame
 {
 public:
   RFC2429Frame();
-  ~RFC2429Frame();
 
   virtual const char * GetName() const { return "RFC2429"; }
-  virtual bool Reset(unsigned width, unsigned height);
-  virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
-  virtual BYTE * GetBuffer();
-  virtual size_t GetMaxSize();
-  virtual bool SetLength(size_t len);
 
-  virtual void NewFrame();
-  virtual bool AddPacket(const PluginCodec_RTP & frame);
-  virtual bool IsValid();
+  virtual bool Reset(size_t len = 0);
+
+  virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
+  virtual bool AddPacket(const PluginCodec_RTP & frame, unsigned int & flags);
+
   virtual bool IsIntraFrame();
-  virtual size_t GetLength() { return m_encodedFrame.len; }
 
 private:
-  size_t parseHeader(uint8_t* headerPtr, size_t headerMaxLen);
+  size_t ParseHeader(uint8_t* headerPtr, size_t headerMaxLen);
 
-  size_t m_minPayloadSize;
-  size_t m_maxFrameSize;
+  size_t   m_packetizationOffset;
+  size_t   m_minPayloadSize;
   bool     m_customClock;
-  data_t   m_encodedFrame;
   header_data_t m_picHeader;
   std::vector<size_t> m_startCodes;
 };

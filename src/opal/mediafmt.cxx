@@ -342,6 +342,32 @@ bool OpalMediaOption::FromString(const PString & value)
 
 ///////////////////////////////////////
 
+OpalMediaOption::H245GenericInfo::H245GenericInfo()
+  : ordinal(0)
+  , mode(None)
+  , integerType(UnsignedInt)
+  , excludeTCS(false)
+  , excludeOLC(false)
+  , excludeReqMode(false)
+  , position(-1)
+{
+}
+
+
+OpalMediaOption::H245GenericInfo::H245GenericInfo(unsigned mask)
+  : ordinal(mask&PluginCodec_H245_OrdinalMask)
+  , mode((mask&PluginCodec_H245_Collapsing) != 0 ? Collapsing : ((mask&PluginCodec_H245_NonCollapsing) != 0 ? NonCollapsing : None))
+  , integerType(UnsignedInt)
+  , excludeTCS((mask&PluginCodec_H245_TCS) == 0)
+  , excludeOLC((mask&PluginCodec_H245_OLC) == 0)
+  , excludeReqMode((mask&PluginCodec_H245_ReqMode) == 0)
+  , position(-1)
+{
+}
+
+
+///////////////////////////////////////
+
 OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name, bool readOnly)
   : OpalMediaOption(name, readOnly, EqualMerge)
   , m_value(0)
@@ -1088,7 +1114,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  time_t   ts)
   : formatName(fullName), mediaType(_mediaType), forceIsTransportable(false)
 {
-  codecVersionTime = ts;
+  codecVersionTime = ts != 0 ? ts : PTime().GetTimeInSeconds();
   rtpPayloadType   = pt;
   rtpEncodingName  = en;
   m_channels       = 1;    // this is the default - it's up to descendant classes to change it

@@ -253,6 +253,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\codec\h263mf.cxx" />
+    <ClCompile Include="..\codec\h264mf.cxx" />
     <ClCompile Include="..\rtp\libsrtp\crypto\ae_xfm\xfm.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

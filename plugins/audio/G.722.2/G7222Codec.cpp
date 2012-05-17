@@ -36,8 +36,8 @@
  * Initial development by: Ted Szoczei, Nimajin Software Consulting, 09-12-31
  *
  * 06-04-03 Revise to conform to RFC 3267: use correct packet sizes, handle 
- *			missing CMR, detect use of bandwidth efficient mode, pass quality
- *			indicator to decoder. /tsz
+ *            missing CMR, detect use of bandwidth efficient mode, pass quality
+ *            indicator to decoder. /tsz
  ****************************************************************************/
  
 
@@ -52,10 +52,15 @@
 
 #include <codec/opalplugin.h>
 
+#define OPAL_PLUGIN_COMPILE 1
+#include "../../../src/codec/g7222mf.cxx"
 
-static struct PluginCodec_information AMRWBLicenseInformation = {
-  1262283223,           // version timestamp = Thu Dec 31 18:13:43 2009
 
+/////////////////////////////////////////////////////////////////////////////
+
+static const char G7222Description[]  = "G.722.2 (AMR-WB, Wideband Adaptive Multirate Codec)";
+
+PLUGINCODEC_LICENSE(
   "Ted Szoczei, Nimajin Software Consulting",                  // source code author
   "1.0",                                                       // source code version
   "ted.szoczei@nimajin.com",                                   // source code email
@@ -64,7 +69,7 @@ static struct PluginCodec_information AMRWBLicenseInformation = {
   "None",                                                      // source code license
   PluginCodec_License_None,                                    // source code license
   
-  "G.722.2 AMR-WB (Wideband Adaptive Multirate Codec)",        // codec description
+  G7222Description,                                            // codec description
   "3rd Generation Partnership Project (3GPP)",                 // codec author
   "TS 26.173 V6.0.0 2004-12",                                  // codec version
   NULL,                                                        // codec email
@@ -72,10 +77,10 @@ static struct PluginCodec_information AMRWBLicenseInformation = {
   "",                                                          // codec copyright information
   "",                                                          // codec license
   PluginCodec_License_RoyaltiesRequired                        // codec license code
-};
+);
+
 
 /////////////////////////////////////////////////////////////////////////////
-
 
 extern "C" {
 #include "AMR-WB/enc_if.h"
@@ -125,9 +130,6 @@ const UWord8 AMRWB_block_size_octet[16]= { 18, 24, 33, 37, 41, 47, 51, 59, 61, 6
 // LOST & NODATA packets have no core data, Thus the rounding-up for block size only counts for 
 // their ToC entries.
 
-// works with 320 samples per frame (20 ms)
-
-#define AMRWB_FRAME_SAMPLES 320
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -145,7 +147,7 @@ typedef struct
 } AMRWBEncoderContext;
 
 
-static void * AMRWBEncoderCreate (const struct PluginCodec_Definition * codec)
+static void * MyCreateEncoder(const struct PluginCodec_Definition * codec)
 {
   AMRWBEncoderContext * Context = (AMRWBEncoderContext *) malloc (sizeof(AMRWBEncoderContext));
   if (Context == NULL)
@@ -164,7 +166,7 @@ static void * AMRWBEncoderCreate (const struct PluginCodec_Definition * codec)
 }
 
 
-static void AMRWBEncoderDestroy (const struct PluginCodec_Definition * codec, void * context)
+static void MyDestroyEncoder(const struct PluginCodec_Definition * codec, void * context)
 {
   AMRWBEncoderContext * Context = (AMRWBEncoderContext *)context;
   E_IF_exit (Context->state);
@@ -172,24 +174,24 @@ static void AMRWBEncoderDestroy (const struct PluginCodec_Definition * codec, vo
 }
 
 
-static int AMRWBEncode (const struct PluginCodec_Definition * codec, 
-                                                       void * context,
-                                                 const void * fromPtr, 
-                                                   unsigned * fromLen,
-                                                       void * toPtr,         
-                                                   unsigned * toLen,
-                                               unsigned int * flag)
+static int MyEncodeAudio(const struct PluginCodec_Definition * codec, 
+                                                        void * context,
+                                                  const void * fromPtr, 
+                                                    unsigned * fromLen,
+                                                        void * toPtr,         
+                                                    unsigned * toLen,
+                                                unsigned int * flag)
 { 
   AMRWBEncoderContext * Context = (AMRWBEncoderContext *)context;
-  if (*fromLen != AMRWB_FRAME_SAMPLES * sizeof(short))
+  if (*fromLen != G7222_SAMPLES_PER_FRAME * sizeof(short))
   {
-	//PTRACE(2, "Codec\tAMR-WB encoder: Audio data of size " << *fromLen << " did not match expected " << AMRWB_FRAME_SAMPLES * sizeof(short));
+    //PTRACE(2, "Codec\tAMR-WB encoder: Audio data of size " << *fromLen << " did not match expected " << G7222_SAMPLES_PER_FRAME * sizeof(short));
     return 0;
   }
   if (*toLen < (unsigned) AMRWB_block_size_octet[Context->mode] + 1)
   {
-	//PTRACE(2,"Codec\tAMR-WB encoder: Output buffer of size " << *toLen << " too short for mode " << mode);
-	return 0;
+    //PTRACE(2,"Codec\tAMR-WB encoder: Output buffer of size " << *toLen << " too short for mode " << mode);
+    return 0;
   }
   // First byte is CMR (change mode request). 0xF0 means we'll take anything.
   UWord8 * Dest = (UWord8 *) toPtr;
@@ -216,13 +218,13 @@ static int AMRWBEncode (const struct PluginCodec_Definition * codec,
 // this code does not handle multiple frame packets!
 
 
-static void * AMRWBDecoderCreate (const struct PluginCodec_Definition * codec)
+static void * MyCreateDecoder(const struct PluginCodec_Definition * codec)
 {
   return D_IF_init ();
 }
 
 
-static void AMRWBDecoderDestroy (const struct PluginCodec_Definition * codec, void * context)
+static void MyDestroyDecoder(const struct PluginCodec_Definition * codec, void * context)
 {
   D_IF_exit (context);
 }
@@ -269,7 +271,21 @@ int AMRWBIsBandWidthEfficient (const unsigned short word, const unsigned int pac
 }
 
 
-static int AMRWBDecode (const struct PluginCodec_Definition * codec,
+// Effects of PluginCodec_DecodeSilence when stream detects silence:
+// Encoder
+// DecodeSilence=1: Transcode will pass us 0 for fromPtr & fromLen
+//                  Typically we will use this to fill output with comfort noise frame
+// DecodeSilence=0: Transcode will pass us input of inputBytesPerFrame 0's
+// Decoder
+// DecodeSilence=1: Transcode will pass us 0 for fromPtr & fromLen and set PluginCodec_CoderSilenceFrame flag
+//                  Typically we will use this to fill output with comfort noise
+// DecodeSilence=0: Transcode will not call us, and pass along an outputBytesPerFrame 0-filled frame
+// AMR-WB encoder supports VAD if dtx flag is set. Then encoder will send SIDs during silence.
+// But encoder requires full frame to detect silence, so leave PluginCodec_DecodeSilence off encoder.
+// AMR-WB decoder will generate something if told frame was lost, so use PluginCodec_DecodeSilence on decoder
+// to indicate lost frame with PluginCodec_CoderSilenceFrame flag.
+
+static int MyDecodeAudio(const struct PluginCodec_Definition * codec,
                                                        void * context,
                                                  const void * fromPtr,
                                                    unsigned * fromLen,
@@ -288,14 +304,14 @@ static int AMRWBDecode (const struct PluginCodec_Definition * codec,
       //PTRACE(2,"Codec\tAMR-WB decoder: No input");
       return 0;
     }
-    if (*toLen < AMRWB_FRAME_SAMPLES * sizeof(short))
+    if (*toLen < G7222_SAMPLES_PER_FRAME * sizeof(short))
     {
-      //PTRACE(2,"Codec\tAMR-WB decoder: Output buffer of size " << *toLen << " less than " << AMRWB_FRAME_SAMPLES * sizeof(short) << " required");
+      //PTRACE(2,"Codec\tAMR-WB decoder: Output buffer of size " << *toLen << " less than " << G7222_SAMPLES_PER_FRAME * sizeof(short) << " required");
       return 0;
     }
     // test the input packet
     UWord8 * Src = (UWord8 *) fromPtr;
-	int Quality = ((*(Src + 1) & 0x04) == 0)? _bad_frame : _good_frame;
+    int Quality = ((*(Src + 1) & 0x04) == 0)? _bad_frame : _good_frame;
     int Followed = (*(Src + 1) >> 7) & 0x01;
     int FrameType = AMRWBTypeGet (*(Src + 1));
     int RequestedMode = -1;
@@ -320,7 +336,7 @@ static int AMRWBDecode (const struct PluginCodec_Definition * codec,
     if (ValidPacket <= 0)
     {                                   // not a valid 2-octet header & TOC, try just ToC
       int TOCFrameType = AMRWBTypeGet (*Src);
-	  if (TOCFrameType >= 0 && *fromLen == AMRWB_block_size_octet[TOCFrameType])
+      if (TOCFrameType >= 0 && *fromLen == AMRWB_block_size_octet[TOCFrameType])
       {
         ValidPacket = 1;
         FrameType = TOCFrameType;
@@ -369,45 +385,44 @@ static int AMRWBDecode (const struct PluginCodec_Definition * codec,
     // return the number of decoded bytes to the caller
     *fromLen = AMRWB_block_size_octet[FrameType] + Input; // Actual bytes consumed
   }
-  *toLen = AMRWB_FRAME_SAMPLES * sizeof(short);
+  *toLen = G7222_SAMPLES_PER_FRAME * sizeof(short);
   return 1;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-// H.245 generic parameters; see G.722.2
-enum
-{
-    H245_G7222_MAXAL_SDUFRAMES_RX = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS,
-    H245_G7222_MAXAL_SDUFRAMES_TX = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_OLC,
-    H245_G7222_REQUEST_MODE       = 1 | PluginCodec_H245_NonCollapsing| PluginCodec_H245_ReqMode,
-    H245_G7222_OCTET_ALIGNED      = 2 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_MODE_SET           = 3 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_MODE_CHANGE_PERIOD = 4 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_MODE_CHANGE_NEIGHBOUR=5| PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_CRC                = 6 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_ROBUST_SORTING     = 7 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H245_G7222_INTERLEAVING       = 8 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-};
-
 // limit frames per packet to 1
 
-static struct PluginCodec_Option const AMRWBOptionRxFramesPerPacket =
+static struct PluginCodec_Option const OptionInitialMode =
 {
-  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
-  PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET,     // Generic (human readable) option name
+  PluginCodec_IntegerOption,          // PluginCodec_OptionTypes
+  G7222InitialModeName,     // Generic (human readable) option name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "1",                        // Initial value
-  NULL,                       // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
-  H245_G7222_MAXAL_SDUFRAMES_RX,      // H.245 generic capability code and bit mask
-  "1",                                // Minimum value
-  "1"                         // Maximum value    // Do not change!! See above.
+  STRINGIZE(G7222_MODE_INITIAL_VALUE),// Initial value
+  G7222InitialModeFMTPName,       // SIP/SDP FMTP name
+  "0",                                // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  G7222_H245_REQUEST_MODE,            // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  STRINGIZE(G7222_MAX_MODES)          // Maximum value
 };
 
-static struct PluginCodec_Option const AMRWBOptionTxFramesPerPacket =
+static struct PluginCodec_Option const OptionRxFramesPerPacket =
+{
+  PluginCodec_IntegerOption,          // PluginCodec_OptionTypes
+  PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET, // Generic (human readable) option name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "1",                                // Initial value
+  NULL,                               // SIP/SDP FMTP name
+  NULL,                               // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  G7222_H245_MAXAL_SDUFRAMES_RX,      // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "1"                                 // Maximum value    // Do not change!! See above.
+};
+
+static struct PluginCodec_Option const OptionTxFramesPerPacket =
 {
   PluginCodec_IntegerOption,          // Option type
   PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET, // User visible name
@@ -416,7 +431,7 @@ static struct PluginCodec_Option const AMRWBOptionTxFramesPerPacket =
   "1",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_MAXAL_SDUFRAMES_TX,      // H.245 generic capability code and bit mask
+  G7222_H245_MAXAL_SDUFRAMES_TX,      // H.245 generic capability code and bit mask
   "1",                                // Minimum value
   "1"                                 // Maximum value
 };
@@ -424,40 +439,40 @@ static struct PluginCodec_Option const AMRWBOptionTxFramesPerPacket =
 // this is here so FMTP always adds 'octet-align=1'
 // this option is indicated in fmtp by its presence
 
-static struct PluginCodec_Option const AMRWBOptionOctetAlign =
+static struct PluginCodec_Option const OptionOctetAlign =
 {
   PluginCodec_BoolOption,             // Option type
-  "Octet Aligned",                    // User visible name
+  G7222AlignmentOptionName,            // User visible name
   true,                               // User Read/Only flag
   PluginCodec_EqualMerge,             // Merge mode
   "1",                                // Initial value
-  "octet-align",                      // FMTP option name
+  G7222AlignmentFMTPName,              // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_OCTET_ALIGNED            // H.245 generic capability code and bit mask
+  G7222_H245_OCTET_ALIGNED            // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const ModeSetG7222 =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Mode Set",                         // User visible name
+  G7222ModeSetOptionName,         // User visible name
   true,                               // User Read/Only flag
   PluginCodec_EqualMerge,             // Merge mode
-  "0x1ff",                            // Initial value
+  STRINGIZE(G7222_MODE_SET_INITIAL_VALUE), // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_MODE_SET                 // H.245 generic capability code and bit mask
+  G7222_H245_MODE_SET                 // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const ModeChangePeriodG7222 =
 {
   PluginCodec_IntegerOption,          // Option type
-  "Mode Change Period",               // User visible name
+  G7222ModeChangePeriodOptionName, // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_MODE_CHANGE_PERIOD,      // H.245 generic capability code and bit mask
+  G7222_H245_MODE_CHANGE_PERIOD,      // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "1000"                              // Maximum value
 };
@@ -465,49 +480,49 @@ static struct PluginCodec_Option const ModeChangePeriodG7222 =
 static struct PluginCodec_Option const ModeChangeNeighbourG7222 =
 {
   PluginCodec_BoolOption,             // Option type
-  "Mode Change Neighbour",            // User visible name
+  G7222ModeChangeNeighbourOptionName, // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_MODE_CHANGE_NEIGHBOUR    // H.245 generic capability code and bit mask
+  G7222_H245_MODE_CHANGE_NEIGHBOUR    // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const CRC_G7222 =
 {
   PluginCodec_BoolOption,             // Option type
-  "CRC",                              // User visible name
+  G7222CRCOptionName,              // User visible name
   true,                               // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_CRC                      // H.245 generic capability code and bit mask
+  G7222_H245_CRC                      // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const RobustSortingG7222 =
 {
   PluginCodec_BoolOption,             // Option type
-  "Robust Sorting",                   // User visible name
+  G7222RobustSortingOptionName,   // User visible name
   true,                               // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_ROBUST_SORTING           // H.245 generic capability code and bit mask
+  G7222_H245_ROBUST_SORTING           // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const InterleavingG7222 =
 {
   PluginCodec_BoolOption,             // Option type
-  "Interleaving",                     // User visible name
+  G7222InterleavingOptionName,     // User visible name
   true,                               // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
-  H245_G7222_INTERLEAVING             // H.245 generic capability code and bit mask
+  G7222_H245_INTERLEAVING             // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const MediaPacketizationRFC3267 =
@@ -530,14 +545,15 @@ static struct PluginCodec_Option const MediaPacketizationsRFC3267 =
 };
 #endif
 
-static struct PluginCodec_Option const * const AMRWBOptionTable[] = {
-  &AMRWBOptionRxFramesPerPacket,
-  &AMRWBOptionTxFramesPerPacket,
+static struct PluginCodec_Option const * const OptionsTable[] = {
+  &OptionInitialMode,
+  &OptionRxFramesPerPacket,
+  &OptionTxFramesPerPacket,
   &MediaPacketizationRFC3267,
 #ifdef PLUGINCODEC_MEDIA_PACKETIZATIONS
   &MediaPacketizationsRFC3267,
 #endif
-  &AMRWBOptionOctetAlign,
+  &OptionOctetAlign,
   //&ModeSetG7222,
   &ModeChangePeriodG7222,
   &ModeChangeNeighbourG7222,
@@ -548,23 +564,23 @@ static struct PluginCodec_Option const * const AMRWBOptionTable[] = {
 };
 
 
-static int AMRWBOptionsGet (const struct PluginCodec_Definition * defn,
-                                                           void * context, 
-                                                     const char * name,
-                                                           void * parm,
-                                                       unsigned * parmLen)
+static int GetOptions(const struct PluginCodec_Definition * defn,
+                                                     void * context, 
+                                               const char * name,
+                                                     void * parm,
+                                                 unsigned * parmLen)
 {
   if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return 0;
 
-  *(struct PluginCodec_Option const * const * *)parm = AMRWBOptionTable;
+  *(struct PluginCodec_Option const * const * *)parm = OptionsTable;
   return 1;
 }
 
 
-static struct PluginCodec_ControlDefn AMRWBEncoderControlDefn[] =
+static struct PluginCodec_ControlDefn MyControlsTable[] =
 {
-  { "get_codec_options", AMRWBOptionsGet },
+  { "get_codec_options", GetOptions },
   { NULL }
 };
 
@@ -572,105 +588,28 @@ static struct PluginCodec_ControlDefn AMRWBEncoderControlDefn[] =
 /////////////////////////////////////////////////////////////////////////////
 
 // Ref. Table F.1/G.722.2
-static const struct PluginCodec_H323GenericCodecData AMRWBG7222Capability =
+static const struct PluginCodec_H323GenericCodecData G7222Capability =
 {
   OpalPluginCodec_Identifer_G7222,      // capability identifier
 };
-// Note: because these parameters are defined in options, they're not needed here
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-// Effects of PluginCodec_DecodeSilence when stream detects silence:
-// Encoder
-// DecodeSilence=1: Transcode will pass us 0 for fromPtr & fromLen
-//                  Typically we will use this to fill output with comfort noise frame
-// DecodeSilence=0: Transcode will pass us input of inputBytesPerFrame 0's
-// Decoder
-// DecodeSilence=1: Transcode will pass us 0 for fromPtr & fromLen and set PluginCodec_CoderSilenceFrame flag
-//                  Typically we will use this to fill output with comfort noise
-// DecodeSilence=0: Transcode will not call us, and pass along an outputBytesPerFrame 0-filled frame
-// AMR-WB encoder supports VAD if dtx flag is set. Then encoder will send SIDs during silence.
-// But encoder requires full frame to detect silence, so leave PluginCodec_DecodeSilence off encoder.
-// AMR-WB decoder will generate something if told frame was lost, so use PluginCodec_DecodeSilence on decoder
-// to indicate lost frame with PluginCodec_CoderSilenceFrame flag.
-
-
-static struct PluginCodec_Definition AMRWBCodecDefinition[] =
-{
-  { // amr-wb encoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &AMRWBLicenseInformation,               // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic,             // dynamic RTP type
-    
-    "G.722.2(AMR-WB)",                      // text decription
-    "PCM-16-16kHz",                         // source format
-    "G.722.2",                              // destination format
-    
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    AMRWB_ALIGNED_BPS (AMRWB_24k),          // raw bits per second
-    20000,                                  // microseconds per frame
-    AMRWB_FRAME_SAMPLES,                    // samples per frame
-    AMRWB_block_size_octet[AMRWB_24k] + 1,  // bytes per frame
-    
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    "AMR-WB",                               // RTP payload name
-    
-    AMRWBEncoderCreate,                     // create codec function
-    AMRWBEncoderDestroy,                    // destroy codec
-    AMRWBEncode,                            // encode/decode
-    AMRWBEncoderControlDefn,                // codec controls
-
-    PluginCodec_H323Codec_generic,          // h323CapabilityType 
-    &AMRWBG7222Capability                   // h323CapabilityData
-  },
-  { // amr-wb decoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &AMRWBLicenseInformation,               // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
-    PluginCodec_DecodeSilence,              // Can accept missing (empty) frames and generate silence
-
-    "G.722.2(AMR-WB)",                      // text decription
-    "G.722.2",                              // source format
-    "PCM-16-16kHz",                         // destination format
-
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    AMRWB_ALIGNED_BPS (AMRWB_24k),          // raw bits per second
-    20000,                                  // microseconds per frame
-    AMRWB_FRAME_SAMPLES,                    // samples per frame
-    AMRWB_block_size_octet[AMRWB_24k] + 1,  // bytes per frame
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    "AMR-WB",                               // RTP payload name
-
-    AMRWBDecoderCreate,                     // create codec function
-    AMRWBDecoderDestroy,                    // destroy codec
-    AMRWBDecode,                            // encode/decode
-    NULL,                                   // codec controls
-    
-    PluginCodec_H323Codec_generic,          // h323CapabilityType 
-    &AMRWBG7222Capability                   // h323CapabilityData
-  }
-};
+PLUGINCODEC_ONE_AUDIO_CODEC(
+  G7222FormatName,
+  G7222EncodingName,
+  G7222Description,
+  G7222_SAMPLE_RATE,
+  G7222_MAX_BIT_RATE,
+  G7222_SAMPLES_PER_FRAME,
+  1, 1, 0, 0,
+  PluginCodec_H323Codec_generic, &G7222Capability
+);
 
 extern "C"
 {
-  PLUGIN_CODEC_IMPLEMENT_ALL(AMRWB, AMRWBCodecDefinition, PLUGIN_CODEC_VERSION_OPTIONS)
+  PLUGIN_CODEC_IMPLEMENT_ALL(G7222, CodecDefinitionTable, PLUGIN_CODEC_VERSION_OPTIONS)
 };
 
 /////////////////////////////////////////////////////////////////////////////

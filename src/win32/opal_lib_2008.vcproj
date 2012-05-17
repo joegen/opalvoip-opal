@@ -1951,6 +1951,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\codec\h263mf.cxx"
+					>
+				</File>
+				<File
+					RelativePath="..\codec\h264mf.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\opalpluginmgr.cxx"
 					>
 				</File>

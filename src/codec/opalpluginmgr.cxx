@@ -1572,8 +1572,16 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
 
   // deal with codec having no info, or timestamp in future
   time_t timeStamp;
-  if (codecDefn->info == NULL || (timeStamp = codecDefn->info->timestamp) > timeNow.GetTimeInSeconds())
+  if (codecDefn->info == NULL)
     timeStamp = timeNow.GetTimeInSeconds();
+  else {
+    if (codecDefn->info->timestamp_deprecated != 0)
+      timeStamp = codecDefn->info->timestamp_deprecated;
+    else
+      timeStamp = PTime(codecDefn->info->timestamp).GetTimeInSeconds();
+    if (timeStamp > timeNow.GetTimeInSeconds())
+      timeStamp = timeNow.GetTimeInSeconds();
+  }
 
   if (existingFormat.IsTransportable() && existingFormat.GetCodecVersionTime() > timeStamp) {
     PTRACE(2, "OpalPlugin\tNewer media format " << existingFormat << " already exists");
@@ -2270,9 +2278,9 @@ H323Capability * CreateH261Cap(const PluginCodec_Definition * codecDefn,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323H263PluginCapability::H323H263PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat)
-  : H323PluginCapabilityInfo(codecDefn, mediaFormat)
-{ 
+H323H263Capability::H323H263Capability(const PString & variant)
+  : m_variant(variant)
+{
 }
 
 
@@ -2302,9 +2310,9 @@ static void GetCustomMPI(const OpalMediaFormat & mediaFormat, H323H263CustomSize
 }
 
 
-PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
+PObject::Comparison H323H263Capability::Compare(const PObject & obj) const
 {
-  if (!PIsDescendant(&obj, H323H263PluginCapability)) {
+  if (!PIsDescendant(&obj, H323H263Capability)) {
     PTRACE(5, "H.263\t" << *this << " != " << obj);
     return LessThan;
   }
@@ -2315,7 +2323,7 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
     return result;
   }
 
-  const H323H263PluginCapability & other = (const H323H263PluginCapability &)obj;
+  const H323H263Capability & other = (const H323H263Capability &)obj;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
@@ -2370,19 +2378,19 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   return GreaterThan;
 }
 
-PObject * H323H263PluginCapability::Clone() const
+PObject * H323H263Capability::Clone() const
 {
-  return new H323H263PluginCapability(*this);
+  return new H323H263Capability(*this);
 }
 
 
-PString H323H263PluginCapability::GetFormatName() const
+PString H323H263Capability::GetFormatName() const
 {
-  return H323PluginCapabilityInfo::GetFormatName();
+  return m_variant;
 }
 
 
-unsigned H323H263PluginCapability::GetSubType() const
+unsigned H323H263Capability::GetSubType() const
 {
   return H245_VideoCapability::e_h263VideoCapability;
 }
@@ -2404,7 +2412,7 @@ static bool SetTransmittedCap(const OpalMediaFormat & mediaFormat,
 }
 
 
-PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
+PBoolean H323H263Capability::OnSendingPDU(H245_VideoCapability & cap) const
 {
   cap.SetTag(H245_VideoCapability::e_h263VideoCapability);
   H245_H263VideoCapability & h263 = cap;
@@ -2481,7 +2489,7 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
 }
 
 
-PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
+PBoolean H323H263Capability::OnSendingPDU(H245_VideoMode & pdu) const
 {
   pdu.SetTag(H245_VideoMode::e_h263VideoMode);
   H245_H263VideoMode & mode = pdu;
@@ -2624,7 +2632,7 @@ static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
 }
 
 
-PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323H263Capability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
   if (subTypePDU.GetTag() != GetSubType())
     return false;
@@ -2688,7 +2696,7 @@ PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU, const
 }
 
 
-PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
+PBoolean H323H263Capability::OnReceivedPDU(const H245_VideoCapability & cap)
 {
   if (cap.GetTag() != H245_VideoCapability::e_h263VideoCapability)
     return false;

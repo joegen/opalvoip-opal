@@ -38,23 +38,18 @@
 #include "SILK_SDK/interface/SKP_Silk_SDK_API.h"
 
 
-#define MY_CODEC   silk                        // Name of codec (use C variable characters)
+#define MY_CODEC silk                        // Name of codec (use C variable characters)
 
+#define MY_CODEC_LOG  STRINGIZE(MY_CODEC)
 class MY_CODEC { };
 
-static unsigned   MyVersion = PLUGIN_CODEC_VERSION_OPTIONS; // Minimum version for codec (should never change)
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+
+
 static const char MyDescription[] = "SILK Audio Codec";     // Human readable description of codec
-static const char MyFormatName8k[] = "SILK-8";              // OpalMediaFormat name string to generate
-static const char MyFormatName16k[] = "SILK-16";            // OpalMediaFormat name string to generate
 static const char MyPayloadName[] = "SILK";                 // RTP payload name (IANA approved)
-static unsigned   MyFrameTime = 20000;                      // Frame time in microseconds
 
-static const char RawFormatName[] = "L16";                  // Raw media format
-
-
-static struct PluginCodec_information LicenseInfo = {
-  1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
-
+PLUGINCODEC_LICENSE(
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author
   "1.0",                                                        // source code version
   "robertj@voxlucida.com.au",                                   // source code email
@@ -76,10 +71,7 @@ static struct PluginCodec_information LicenseInfo = {
   "or use in any commercial product or any commercial or "
   "production use whatsoever.",                                 // codec license
   PluginCodec_License_ResearchAndDevelopmentUseOnly             // codec license code
-};
-
-
-PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,28 +136,8 @@ static struct PluginCodec_Option const * const MyOptions[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyPluginMediaFormat : public PluginCodec_MediaFormat
-{
-  public:
-    MyPluginMediaFormat()
-      : PluginCodec_MediaFormat(MyOptions)
-    {
-    }
-
-
-    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
-    {
-      return true;
-    }
-
-
-    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
-    {
-      return true;
-    }
-};
-
-static MyPluginMediaFormat MyMediaFormat;
+static PluginCodec_AudioFormat<MY_CODEC> const MyMediaFormat8k ("SILK-8",  MyPayloadName, MyDescription, 160, 50,  8000, MyOptions);
+static PluginCodec_AudioFormat<MY_CODEC> const MyMediaFormat16k("SILK-16", MyPayloadName, MyDescription, 320, 75, 16000, MyOptions);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -333,155 +305,11 @@ class MyDecoder : public PluginCodec<MY_CODEC>
 
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
-  {
-    // Encoder 8kHz
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeAudio |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    RawFormatName,                      // source format
-    MyFormatName8k,                     // destination format
-
-    &MyMediaFormat,                     // user data 
-
-    8000,                               // samples per second
-    20000,                              // raw bits per second
-    MyFrameTime,                        // microseconds per frame
-
-    {{
-      160,                              // samples per frame
-      50,                               // max bytes per frame
-      2,                                // recommended number of frames per packet
-      5,                                // maximum number of frames per packet
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadName,                      // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyEncoder>,     // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder 8kHz
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeAudio |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    MyFormatName8k,                     // source format
-    RawFormatName,                      // destination format
-
-    &MyMediaFormat,                     // user data 
-
-    8000,                               // samples per second
-    20000,                              // raw bits per second
-    MyFrameTime,                        // microseconds per frame
-
-    {{
-      160,                              // samples per frame
-      50,                               // max bytes per frame
-      2,                                // recommended number of frames per packet
-      5,                                // maximum number of frames per packet
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadName,                      // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyDecoder>,     // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  {
-    // Encoder 16kHz
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeAudio |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    RawFormatName,                      // source format
-    MyFormatName16k,                    // destination format
-
-    &MyMediaFormat,                     // user data 
-
-    16000,                              // samples per second
-    30000,                              // raw bits per second
-    MyFrameTime,                        // microseconds per frame
-
-    {{
-      320,                              // samples per frame
-      75,                               // max bytes per frame
-      2,                                // recommended number of frames per packet
-      5,                                // maximum number of frames per packet
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadName,                      // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyEncoder>,     // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder 16kHz
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeAudio |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    MyFormatName16k,                    // source format
-    RawFormatName,                      // destination format
-
-    &MyMediaFormat,                     // user data 
-
-    16000,                              // samples per second
-    30000,                              // raw bits per second
-    MyFrameTime,                        // microseconds per frame
-
-    {{
-      320,                              // samples per frame
-      75,                               // max bytes per frame
-      2,                                // recommended number of frames per packet
-      5,                                // maximum number of frames per packet
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadName,                      // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyDecoder>,     // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  }
+  PLUGINCODEC_AUDIO_CODEC_CXX(MyMediaFormat8k,  MyEncoder, MyDecoder),
+  PLUGINCODEC_AUDIO_CODEC_CXX(MyMediaFormat16k, MyEncoder, MyDecoder)
 };
 
-extern "C"
-{
-  PLUGIN_CODEC_IMPLEMENT_ALL(MY_CODEC, MyCodecDefinition, MyVersion)
-};
+PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);
+
 
 /////////////////////////////////////////////////////////////////////////////
