@@ -36,21 +36,21 @@
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_WARNINGS 1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
 #endif
 
 #include <codec/opalplugin.h>
 
+#define OPAL_PLUGIN_COMPILE 1
+#include "../../../src/codec/g7221mf.cxx"
 
-static struct PluginCodec_information licenseInfo =
-{
-  1260388706,           // version timestamp = Wed Dec 09 19:58:26 2009 UTC
 
+/////////////////////////////////////////////////////////////////////////////
+
+static const char G7221Description[] = "ITU-T G.722.1 - 7/14kHz Audio Coder";
+
+PLUGINCODEC_LICENSE(
   "Ted Szoczei, Nimajin Software Consulting",                  // source code author
   "1.0",                                                       // source code version
   "ted.szoczei@nimajin.com",                                   // source code email
@@ -59,7 +59,7 @@ static struct PluginCodec_information licenseInfo =
   "None",                                                      // source code license
   PluginCodec_License_None,                                    // source code license
     
-  "ITU-T 7/14kHz Audio Coder (G.722.1 Annex C)",               // codec description
+  G7221Description,                                            // codec description
   "Polycom, Inc.",                                             // codec author
   "2.1  2008-06-26",				                           // codec version
   NULL,                                                        // codec email
@@ -67,25 +67,13 @@ static struct PluginCodec_information licenseInfo =
   "(c) 2005 Polycom, Inc. All rights reserved.",               // codec copyright information
   "ITU-T General Public License (G.191)",                      // codec license
   PluginCodec_License_NoRoyalties                              // codec license code
-};
+);
+
 
 /////////////////////////////////////////////////////////////////////////////
 
-
 #include "G722-1/defs.h"
 
-
-#define FORMAT_NAME_G722_1_24K  "G.722.1-24k"   // text decription and mediaformat name
-#define FORMAT_NAME_G722_1_32K  "G.722.1-32k"
-#define RTP_NAME_G722_1  "G7221"                // MIME name rfc's 3047, 5577
-
-// 20 ms frame
-#define G722_1_FRAME_SAMPLES  320
-
-// required bandwidth options in bits per second
-#define G722_1_48K_FRAME_RATE 48000             // for 32k sample rate only
-#define G722_1_24K_FRAME_RATE 24000
-#define G722_1_32K_FRAME_RATE 32000
 
 // bits and bytes per 20 ms frame, depending on bitrate
 // 60 bytes for 24000, 80 for 32000
@@ -100,8 +88,8 @@ static struct PluginCodec_information licenseInfo =
 typedef struct
 {
   unsigned bitsPerSec;                  // can be changed between frames
-  Word16 history [G722_1_FRAME_SAMPLES];
-  Word16 mlt_coefs [G722_1_FRAME_SAMPLES];
+  Word16 history [G7221_SAMPLES_PER_FRAME];
+  Word16 mlt_coefs [G7221_SAMPLES_PER_FRAME];
   Word16 mag_shift;
 } G7221EncoderContext;
 
@@ -116,7 +104,7 @@ static void * G7221EncoderCreate (const struct PluginCodec_Definition * codec)
   Context->bitsPerSec = codec->bitsPerSec;
 
   // initialize the mlt history buffer
-  for (i = 0; i < G722_1_FRAME_SAMPLES; i++)
+  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
     Context->history[i] = 0;
 
   return Context;
@@ -141,20 +129,20 @@ static int G7221Encode (const struct PluginCodec_Definition * codec,
   if (Context == NULL)
     return 0;
 
-  if (*fromLen < G722_1_FRAME_SAMPLES * sizeof(Word16))
+  if (*fromLen < G7221_SAMPLES_PER_FRAME * sizeof(Word16))
     return 0;                           // Source is not a full frame
 
   if (*toLen < G722_1_FRAME_BYTES (Context->bitsPerSec))
     return 0;                           // Destination buffer not big enough
 
   // Convert input samples to rmlt coefs
-  Context->mag_shift = samples_to_rmlt_coefs ((Word16 *) fromPtr, Context->history, Context->mlt_coefs, G722_1_FRAME_SAMPLES);
+  Context->mag_shift = samples_to_rmlt_coefs ((Word16 *) fromPtr, Context->history, Context->mlt_coefs, G7221_SAMPLES_PER_FRAME);
 
   // Encode the mlt coefs
   encoder (G722_1_FRAME_BITS (Context->bitsPerSec), NUMBER_OF_REGIONS, Context->mlt_coefs, Context->mag_shift, (Word16 *) toPtr);
 
   // return the number of encoded bytes to the caller
-  *fromLen = G722_1_FRAME_SAMPLES * sizeof(Word16);
+  *fromLen = G7221_SAMPLES_PER_FRAME * sizeof(Word16);
   *toLen = G722_1_FRAME_BYTES (Context->bitsPerSec);
   return 1;
 }
@@ -169,10 +157,10 @@ typedef struct
   unsigned bitsPerSec;                  // can be changed between frames
   Bit_Obj bitobj;
   Rand_Obj randobj;
-  Word16 decoder_mlt_coefs [G722_1_FRAME_SAMPLES];
+  Word16 decoder_mlt_coefs [G7221_SAMPLES_PER_FRAME];
   Word16 mag_shift;
-  Word16 old_samples [G722_1_FRAME_SAMPLES / 2];
-  Word16 old_decoder_mlt_coefs [G722_1_FRAME_SAMPLES];
+  Word16 old_samples [G7221_SAMPLES_PER_FRAME / 2];
+  Word16 old_decoder_mlt_coefs [G7221_SAMPLES_PER_FRAME];
   Word16 old_mag_shift;
   Word16 frame_error_flag;
 } G7221DecoderContext;
@@ -191,10 +179,10 @@ static void * G7221DecoderCreate (const struct PluginCodec_Definition * codec)
   Context->frame_error_flag = 0;
 
   // initialize the coefs history
-  for (i = 0; i < G722_1_FRAME_SAMPLES; i++)
+  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
     Context->old_decoder_mlt_coefs[i] = 0;    
 
-  for (i = 0; i < (G722_1_FRAME_SAMPLES >> 1); i++)
+  for (i = 0; i < (G7221_SAMPLES_PER_FRAME >> 1); i++)
     Context->old_samples[i] = 0;
     
   // initialize the random number generator
@@ -229,7 +217,7 @@ static int G7221Decode (const struct PluginCodec_Definition * codec,
   if (*fromLen < G722_1_FRAME_BYTES (Context->bitsPerSec))
     return 0;                           // Source is not a full frame
 
-  if (*toLen < G722_1_FRAME_SAMPLES * sizeof(Word16))
+  if (*toLen < G7221_SAMPLES_PER_FRAME * sizeof(Word16))
     return 0;                           // Destination buffer not big enough
 
   // reinit the current word to point to the start of the buffer
@@ -242,15 +230,15 @@ static int G7221Decode (const struct PluginCodec_Definition * codec,
   decoder (&Context->bitobj, &Context->randobj, NUMBER_OF_REGIONS, Context->decoder_mlt_coefs, &Context->mag_shift, &Context->old_mag_shift, Context->old_decoder_mlt_coefs, Context->frame_error_flag);
   
   // convert the decoder_mlt_coefs to samples
-  rmlt_coefs_to_samples (Context->decoder_mlt_coefs, Context->old_samples, (Word16 *) toPtr, G722_1_FRAME_SAMPLES, Context->mag_shift);
+  rmlt_coefs_to_samples (Context->decoder_mlt_coefs, Context->old_samples, (Word16 *) toPtr, G7221_SAMPLES_PER_FRAME, Context->mag_shift);
 
   // For ITU testing, off the 2 lsbs.
-  for (i = 0; i < G722_1_FRAME_SAMPLES; i++)
+  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
     ((Word16 *) toPtr) [i] &= 0xFFFC;
       
   // return the number of decoded bytes to the caller
   *fromLen = G722_1_FRAME_BYTES (Context->bitsPerSec);
-  *toLen = G722_1_FRAME_SAMPLES * sizeof(Word16);
+  *toLen = G7221_SAMPLES_PER_FRAME * sizeof(Word16);
   return 1;
 }
 
@@ -258,34 +246,33 @@ static int G7221Decode (const struct PluginCodec_Definition * codec,
 /////////////////////////////////////////////////////////////////////////////
 
 // bitrate is a required SDP parameter in RFC 3047/5577
-static const char BitRateOptionName[] = "BitRate";
 
 static struct PluginCodec_Option BitRateOption24k =
 {
-  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
-  BitRateOptionName,          // Generic (human readable) option name
-  1,                          // Read Only flag
-  PluginCodec_EqualMerge,     // Merge mode
-  "24000",                    // Initial value
-  "bitrate",                  // SIP/SDP FMTP name
-  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
-  0,                          // H.245 Generic Capability number and scope bits
-  "24000",                    // Minimum value (enum values separated by ':')
-  "32000"                     // Maximum value
+  PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
+  G7221BitRateOptionName,        // Generic (human readable) option name
+  1,                                // Read Only flag
+  PluginCodec_EqualMerge,           // Merge mode
+  STRINGIZE(G7221_24K_BIT_RATE),    // Initial value
+  G7221BitRateFMTPName,          // SIP/SDP FMTP name
+  "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                                // H.245 Generic Capability number and scope bits
+  STRINGIZE(G7221_24K_BIT_RATE),    // Minimum value (enum values separated by ':')
+  STRINGIZE(G7221_24K_BIT_RATE)     // Maximum value
 };
 
 static struct PluginCodec_Option BitRateOption32k =
 {
-  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
-  BitRateOptionName,          // Generic (human readable) option name
-  1,                          // Read Only flag
-  PluginCodec_EqualMerge,     // Merge mode
-  "32000",                    // Initial value
-  "bitrate",                  // SIP/SDP FMTP name
-  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
-  0,                          // H.245 Generic Capability number and scope bits
-  "24000",                    // Minimum value (enum values separated by ':')
-  "32000"                     // Maximum value
+  PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
+  G7221BitRateOptionName,        // Generic (human readable) option name
+  1,                                // Read Only flag
+  PluginCodec_EqualMerge,           // Merge mode
+  STRINGIZE(G7221_32K_BIT_RATE),    // Initial value
+  G7221BitRateFMTPName,          // SIP/SDP FMTP name
+  "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                                // H.245 Generic Capability number and scope bits
+  STRINGIZE(G7221_32K_BIT_RATE),    // Minimum value (enum values separated by ':')
+  STRINGIZE(G7221_32K_BIT_RATE)     // Maximum value
 };
 
 static struct PluginCodec_Option const * const OptionTable24k[] =
@@ -310,7 +297,7 @@ static int get_codec_options (const struct PluginCodec_Definition * defn,
   if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return 0;
 
-  *(struct PluginCodec_Option const * const * *)parm = (defn->bitsPerSec == G722_1_24K_FRAME_RATE)? OptionTable24k : OptionTable32k;
+  *(struct PluginCodec_Option const * const * *)parm = (defn->bitsPerSec == G7221_24K_BIT_RATE)? OptionTable24k : OptionTable32k;
   *parmLen = 0;
   return 1;
 }
@@ -332,14 +319,14 @@ static struct PluginCodec_ControlDefn G7221Controls[] =
 
 static const struct PluginCodec_H323GenericCodecData G722124kCap =
 {
-  OpalPluginCodec_Identifer_G7221,// capability identifier (Ref: G.722.1 (05/2005) Table A.2)
-  24000                           // Must always be this regardless of "Max Bit Rate" option
+  OpalPluginCodec_Identifer_G7221, // capability identifier (Ref: G.722.1 (05/2005) Table A.2)
+  G7221_24K_BIT_RATE               // Must always be this regardless of "Max Bit Rate" option
 };
 
 static const struct PluginCodec_H323GenericCodecData G722132kCap =
 {
-  OpalPluginCodec_Identifer_G7221,// capability identifier (Ref: G.722.1 (05/2005) Table A.2)
-  32000                           // Must always be this regardless of "Max Bit Rate" option
+  OpalPluginCodec_Identifer_G7221, // capability identifier (Ref: G.722.1 (05/2005) Table A.2)
+  G7221_32K_BIT_RATE               // Must always be this regardless of "Max Bit Rate" option
 };
 
 
@@ -348,148 +335,36 @@ static const struct PluginCodec_H323GenericCodecData G722132kCap =
 
 static struct PluginCodec_Definition G7221CodecDefn[] =
 {
-  {
-    // G.722.1 24kHz encoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &licenseInfo,                           // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
-    PluginCodec_RTPTypeShared,              // RTP type shared with other codecs in this definition
-    
-    FORMAT_NAME_G722_1_24K,                 // text decription
-    "PCM-16-16kHz",                         // source format
-    FORMAT_NAME_G722_1_24K,                 // destination format
-    
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    G722_1_24K_FRAME_RATE,                  // raw bits per second
-    20000,                                  // microseconds per frame
-    G722_1_FRAME_SAMPLES,                   // samples per frame
-    G722_1_24K_FRAME_RATE / 400,            // bytes per frame
-    
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    RTP_NAME_G722_1,                        // RTP payload name
-    
-    G7221EncoderCreate,                     // create codec function
-    G7221EncoderDestroy,                    // destroy codec
-    G7221Encode,                            // encode/decode
-    G7221Controls,                          // codec controls
-
-    PluginCodec_H323Codec_generic,          // h323CapabilityType
-    &G722124kCap                            // h323CapabilityData
-  },
-  { 
-    // G.722.1 24kHz decoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &licenseInfo,                           // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
-    PluginCodec_RTPTypeShared,              // RTP type shared with other codecs in this definition
-
-    FORMAT_NAME_G722_1_24K,                 // text decription
-    FORMAT_NAME_G722_1_24K,                 // source format
-    "PCM-16-16kHz",                         // destination format
-
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    G722_1_24K_FRAME_RATE,                  // raw bits per second
-    20000,                                  // microseconds per frame
-    G722_1_FRAME_SAMPLES,                   // samples per frame
-    G722_1_24K_FRAME_RATE / 400,            // bytes per frame
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    RTP_NAME_G722_1,                        // RTP payload name
-
-    G7221DecoderCreate,                     // create codec function
-    G7221DecoderDestroy,                    // destroy codec
-    G7221Decode,                            // encode/decode
-    G7221Controls,                          // codec controls
-    
-    PluginCodec_H323Codec_generic,          // h323CapabilityType
-    &G722124kCap                            // h323CapabilityData
-  },
-  {
-    // G.722.1 32kHz encoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &licenseInfo,                           // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
-    PluginCodec_RTPTypeShared,              // RTP type shared with other codecs in this definition
-    
-    FORMAT_NAME_G722_1_32K,                 // text decription
-    "PCM-16-16kHz",                         // source format
-    FORMAT_NAME_G722_1_32K,                 // destination format
-    
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    G722_1_32K_FRAME_RATE,                  // raw bits per second
-    20000,                                  // microseconds per frame
-    G722_1_FRAME_SAMPLES,                   // samples per frame
-    G722_1_32K_FRAME_RATE / 400,            // bytes per frame
-    
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    RTP_NAME_G722_1,                        // RTP payload name
-    
-    G7221EncoderCreate,                     // create codec function
-    G7221EncoderDestroy,                    // destroy codec
-    G7221Encode,                            // encode/decode
-    G7221Controls,                          // codec controls
-
-    PluginCodec_H323Codec_generic,          // h323CapabilityType
-    &G722132kCap                            // h323CapabilityData
-  },
-  { 
-    // G.722.1 32kHz decoder
-    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
-    &licenseInfo,                           // license information
-
-    PluginCodec_MediaTypeAudio |            // audio codec
-    PluginCodec_InputTypeRaw |              // raw input data
-    PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
-    PluginCodec_RTPTypeShared,              // RTP type shared with other codecs in this definition
-
-    FORMAT_NAME_G722_1_32K,                 // text decription
-    FORMAT_NAME_G722_1_32K,                 // source format
-    "PCM-16-16kHz",                         // destination format
-
-    NULL,                                   // user data
-
-    16000,                                  // samples per second
-    G722_1_32K_FRAME_RATE,                  // raw bits per second
-    20000,                                  // microseconds per frame
-    G722_1_FRAME_SAMPLES,                   // samples per frame
-    G722_1_32K_FRAME_RATE / 400,            // bytes per frame
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
-    0,                                      // IANA RTP payload code
-    RTP_NAME_G722_1,                        // RTP payload name
-
-    G7221DecoderCreate,                     // create codec function
-    G7221DecoderDestroy,                    // destroy codec
-    G7221Decode,                            // encode/decode
-    G7221Controls,                          // codec controls
-    
-    PluginCodec_H323Codec_generic,          // h323CapabilityType
-    &G722132kCap                            // h323CapabilityData
-  }
+  PLUGINCODEC_AUDIO_CODEC(
+    G7221FormatName24K,
+    G7221EncodingName,
+    G7221Description,
+    G7221_SAMPLE_RATE,
+    G7221_24K_BIT_RATE,
+    G7221_SAMPLES_PER_FRAME,
+    1,1,
+    PluginCodec_RTPTypeShared,
+    0, // IANA RTP payload code -  dynamic
+    PluginCodec_H323Codec_generic, &G722124kCap,
+    G7221EncoderCreate, G7221EncoderDestroy, G7221Encode,
+    G7221DecoderCreate, G7221DecoderDestroy, G7221Decode,
+    G7221Controls
+  ),
+  PLUGINCODEC_AUDIO_CODEC(
+    G7221FormatName32K,
+    G7221EncodingName,
+    G7221Description,
+    G7221_SAMPLE_RATE,
+    G7221_32K_BIT_RATE,
+    G7221_SAMPLES_PER_FRAME,
+    1,1,
+    PluginCodec_RTPTypeShared,
+    0, // IANA RTP payload code -  dynamic
+    PluginCodec_H323Codec_generic, &G722132kCap,
+    G7221EncoderCreate, G7221EncoderDestroy, G7221Encode,
+    G7221DecoderCreate, G7221DecoderDestroy, G7221Decode,
+    G7221Controls
+  )
 };
 
 

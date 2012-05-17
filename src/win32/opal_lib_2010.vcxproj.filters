@@ -630,6 +630,12 @@
     <ClCompile Include="..\rtp\libsrtp\crypto\ae_xfm\xfm.c">
       <Filter>Source Files\RTP\libSRTP\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\codec\h263mf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codec\h264mf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">

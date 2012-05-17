@@ -115,11 +115,8 @@ static int FindGBSC(const unsigned char * base, int len, int & sbit)
 ///////////////////////////////////////////////////////////////////////////////////////3Y
 
 RFC2190Packetizer::RFC2190Packetizer()
-  : m_buffer(NULL)
-  , m_bufferSize(0)
-  , m_bufferLen(0)
-  , TR(0)
-  , frameSize(0)
+  : TR(0)
+  , m_frameSize(0)
   , iFrame(0)
   , annexD(0)
   , annexE(0)
@@ -134,13 +131,8 @@ RFC2190Packetizer::RFC2190Packetizer()
 {
 }
 
-RFC2190Packetizer::~RFC2190Packetizer()
-{
-  if (m_buffer != NULL)
-    free(m_buffer);
-}
 
-bool RFC2190Packetizer::Reset(unsigned width, unsigned height)
+bool RFC2190Packetizer::SetResolution(unsigned width, unsigned height)
 {
   m_currentMB = 0;
   m_currentBytes = 0;
@@ -149,17 +141,17 @@ bool RFC2190Packetizer::Reset(unsigned width, unsigned height)
 
   size_t newOutputSize = width*height;
 
-  if (m_buffer != NULL && m_bufferSize < newOutputSize) {
+  if (m_buffer != NULL && m_maxSize < newOutputSize) {
     free(m_buffer);
     m_buffer = NULL;
   }
 
   if (m_buffer == NULL) {
-    m_bufferSize = newOutputSize;
+    m_maxSize = newOutputSize;
 #if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&m_buffer, 64, m_bufferSize) != 0) 
+    if (posix_memalign((void **)&m_buffer, 64, m_maxSize) != 0) 
 #else
-    if ((m_buffer = (unsigned char *)malloc(m_bufferSize)) == NULL) 
+    if ((m_buffer = (unsigned char *)malloc(m_maxSize)) == NULL) 
 #endif
     {
       return false;
@@ -170,63 +162,47 @@ bool RFC2190Packetizer::Reset(unsigned width, unsigned height)
 }
 
 
-bool RFC2190Packetizer::SetLength(size_t newLen)
+bool RFC2190Packetizer::Reset(size_t len)
 {
-  m_bufferLen = newLen;
-
-  // do a sanity check on the fragment data - must be equal to maxLen
-  {
-    unsigned long len = 0;
-    FragmentListType::iterator r;
-    for (r = fragments.begin(); r != fragments.end(); ++r) 
-      len += r->length;
-
-//    if (len != maxLen) 
-//      cout << "rfc2190: mismatch between encoder length and fragment length - " << len << "/" << maxLen << endl;
-  }
-  
-  const unsigned char * data = m_buffer;
-  size_t dataLen = m_bufferSize;
-
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
-  if (dataLen < 7)
+  if (len < 7)
     return false;
 
   // ensure data starts with PSC
   //     0         1         2
   // 0000 0000 0000 0000 1000 00..
-  if (FindPSC(data, dataLen) != 0)
+  if (FindPSC(m_buffer, len) != 0)
     return false;
 
   // get TR
   //     2         3    
   // .... ..XX XXXX XX..
-  TR = ((data[2] << 6) & 0xfc) | (data[3] >> 2);
+  TR = ((m_buffer[2] << 6) & 0xfc) | (m_buffer[3] >> 2);
       
   // make sure mandatory part of PTYPE is present
   //     3    
   // .... ..10
-  if ((data[3] & 0x03) != 2)
+  if ((m_buffer[3] & 0x03) != 2)
     return false;
 
   // we don't do split screen, document indicator, full picture freeze
   //     4    
   // XXX. ....
-  if ((data[4] & 0xe0) != 0)
+  if ((m_buffer[4] & 0xe0) != 0)
     return false;
 
   // get image size
   //     4
   // ...X XX..
-  frameSize = (data[4] >> 2) & 0x7;
-  macroblocksPerGOB = MacroblocksPerGOBTable[frameSize];
+  m_frameSize = (m_buffer[4] >> 2) & 0x7;
+  macroblocksPerGOB = MacroblocksPerGOBTable[m_frameSize];
   if (macroblocksPerGOB == -1)
     return false;
 
   // get I-frame flag
   //     4
   // .... ..X.
-  iFrame = (data[4] & 2) == 0;
+  iFrame = (m_buffer[4] & 2) == 0;
 
   // get annex bits:
   //   Annex D - unrestricted motion vector mode
@@ -236,10 +212,10 @@ bool RFC2190Packetizer::SetLength(size_t newLen)
   //
   //     4         5
   // .... ...X XXX. ....
-  annexD = data[4] & 0x01;
-  annexE = data[5] & 0x80;
-  annexF = data[5] & 0x40;
-  annexG = data[5] & 0x20;
+  annexD = m_buffer[4] & 0x01;
+  annexE = m_buffer[5] & 0x80;
+  annexF = m_buffer[5] & 0x40;
+  annexG = m_buffer[5] & 0x20;
 
   // annex G not supported 
   if (annexG)
@@ -248,17 +224,17 @@ bool RFC2190Packetizer::SetLength(size_t newLen)
   // get PQUANT
   //     5
   // ...X XXXX
-  pQuant = data[5] & 0x1f;
+  pQuant = m_buffer[5] & 0x1f;
 
   // get CPM
   //     6
   // X... ....
-  cpm = (data[6] & 0x80) != 0;
+  cpm = (m_buffer[6] & 0x80) != 0;
 
   // ensure PEI is always 0
   //     6
   // .X.. ....
-  if ((data[6] & 0x40) != 0) 
+  if ((m_buffer[6] & 0x40) != 0) 
     return false;
 
 #if 0
@@ -279,7 +255,7 @@ bool RFC2190Packetizer::SetLength(size_t newLen)
   for (r = fragments.begin(); r != fragments.end(); ++r) {
     while (r->length > m_maxPayloadSize) {
       int oldLen = r->length;
-      int newLen = m_maxPayloadSize;
+      size_t newLen = m_maxPayloadSize;
       if ((oldLen - newLen) < m_maxPayloadSize)
         newLen = oldLen / 2;
       fragment oldFrag = *r;
@@ -301,13 +277,20 @@ bool RFC2190Packetizer::SetLength(size_t newLen)
   currFrag = fragments.begin();
   fragPtr = m_buffer;
 
-  return true;
+  return FFMPEGCodec::EncodedFrame::Reset(len);
 }
+
+
+bool RFC2190Packetizer::AddPacket(const PluginCodec_RTP &, unsigned &)
+{
+  return false;
+}
+
 
 bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags)
 {
   outputFrame.SetPayloadSize(0);
-  while ((fragments.size() != 0) && (currFrag != fragments.end())) {
+  while (!fragments.empty() && (currFrag != fragments.end())) {
       
     // set the timestamp
     fragment frag = *currFrag++;
@@ -340,7 +323,7 @@ bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & 
       int sBit = 0;
       int eBit = 0;
       ptr[0] = (unsigned char)(((sBit & 7) << 3) | (eBit & 7));
-      ptr[1] = (unsigned char)((frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
+      ptr[1] = (unsigned char)((m_frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
       ptr[2] = ptr[3] = 0;
     }
     else
@@ -351,7 +334,7 @@ bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & 
       int gobn = frag.mbNum / macroblocksPerGOB;
       int mba  = frag.mbNum % macroblocksPerGOB;
       ptr[0] = (unsigned char)(0x80 | ((sBit & 7) << 3) | (eBit & 7));
-      ptr[1] = (unsigned char)(frameSize << 5);
+      ptr[1] = (unsigned char)(m_frameSize << 5);
       ptr[2] = (unsigned char)(((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7));
       ptr[3] = (unsigned char)((mba << 2) & 0xfc);
       ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
@@ -404,62 +387,55 @@ void RFC2190Packetizer::RTPCallBack(void * data, int size, int mbCount)
 
 RFC2190Depacketizer::RFC2190Depacketizer()
 {
-  NewFrame();
+  Reset();
 }
 
-void RFC2190Depacketizer::NewFrame()
+void RFC2190Depacketizer::Reset()
 {
-  m_packet.resize(0);
+  RFC2190EncodedFrame::Reset();
+
   m_first               = true;
   m_skipUntilEndOfFrame = false;
   m_lastEbit            = 8;
   m_isIFrame            = false;
 }
 
-bool RFC2190Depacketizer::IsValid()
-{
-  return m_packet.size() > 2 && m_packet[0] == 0 && m_packet[1] == 0 && (m_packet[2] & 0x80) == 0x80;
-}
 
-bool RFC2190Depacketizer::IsIntraFrame()
+bool RFC2190Depacketizer::IsIntraFrame() const
 {
   return m_isIFrame;
 }
 
-bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet)
+
+bool RFC2190Depacketizer::GetPacket(PluginCodec_RTP &, unsigned &)
+{
+  return false;
+}
+
+
+bool RFC2190Depacketizer::LostSync(unsigned & flags)
+{
+  m_skipUntilEndOfFrame = true;
+  flags = PluginCodec_ReturnCoderRequestIFrame;
+  PTRACE(2, GetName(), "Error in received packet, resynchronising.");
+  return true;
+}
+
+
+bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet, unsigned & flags)
 {
   // ignore packets if required
   if (m_skipUntilEndOfFrame) {
     if (packet.GetMarker()) 
-      NewFrame();
-    return false;
-  }
-
-  // check if packet is in sequence. If not, skip til end of frame 
-  if (m_first) {
-    NewFrame();    // make sure this is called before "first = false"
-    m_first = false;
-    m_lastSequence = packet.GetSequenceNumber();
-  }
-  else {
-    ++m_lastSequence;
-    if (packet.GetSequenceNumber() != m_lastSequence) {
-      m_skipUntilEndOfFrame = true;
-      return false;
-    }
+      Reset();
+    return true;
   }
 
   unsigned payloadLen = packet.GetPayloadSize();
 
-  // Check for empty packet, this just carries the marker bit and is OK
-  if (payloadLen == 0 && packet.GetMarker())
-    return true;
-
   // payload must be at least as long as mode A header + 1 byte
-  if (payloadLen < 5) {
-    m_skipUntilEndOfFrame = true;
-    return false;
-  }
+  if (payloadLen < 5)
+    return LostSync(flags);
 
   unsigned char * payload = packet.GetPayloadPtr();
   unsigned int sbit = (payload[0] >> 3) & 0x07;
@@ -472,25 +448,12 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet)
     m_isIFrame = (payload[1] & 0x10) == 0;
     hdrLen = 4;
     mode = 'A';
-
-#if 0
-    // sanity check data
-    if (payloadLen < (hdrLen+3) ||
-        (payload[hdrLen+0] != 0x00) ||
-        (payload[hdrLen+1] != 0x00) ||
-        ((payload[hdrLen+2] & 0x80) != 0x80)
-       ) {
-      return LostSync(requestIFrame, "Mode A packet not starting with GBSC");
-    }
-#endif
   }
 
   // handle mode B frames
   else if ((payload[0] & 0x40) == 0) {
-    if (payloadLen < 9) {
-      m_skipUntilEndOfFrame = true;
-      return false;
-    }
+    if (payloadLen < 9)
+      return LostSync(flags);
     m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 8;
     mode = 'B';
@@ -498,43 +461,36 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet)
 
   // handle mode C frames
   else {
-    if (payloadLen < 13) {
-      m_skipUntilEndOfFrame = true;
-      return false;
-    }
+    if (payloadLen < 13)
+      return LostSync(flags);
     m_isIFrame = (payload[4] & 0x80) == 0;
     hdrLen = 12;
     mode = 'C';
   }
 
   // if ebit and sbit do not add up, then we have lost sync
-  if (((sbit + m_lastEbit) & 0x7) != 0) {
-    m_skipUntilEndOfFrame = true;
-    return false;
-  }
+  if (((sbit + m_lastEbit) & 0x7) != 0)
+    return LostSync(flags);
 
   unsigned char * src = payload + hdrLen;
   size_t cpyLen = payloadLen - hdrLen;
 
   // handle first partial byte
-  if ((sbit != 0) && (m_packet.size() > 0)) {
+  if ((sbit != 0) && m_length > 0) {
     
     static unsigned char smasks[7] = { 0x7f, 0x3f, 0x1f, 0x0f, 0x07, 0x03, 0x01 };
     unsigned smask = smasks[sbit-1];
-    m_packet[m_packet.size()-1] |= (*src & smask);
+    m_buffer[m_length-1] |= (*src & smask);
     --cpyLen;
     ++src;
   }
 
-  // copy whole bytes
-  if (cpyLen > 0) {
-    size_t frameSize = m_packet.size();
-    m_packet.resize(frameSize + cpyLen);
-    memcpy(&m_packet[0] + frameSize, src, cpyLen);
-  }
-
   // keep ebit for next time
   m_lastEbit = payload[0] & 0x07;
+
+  // copy whole bytes
+  if (cpyLen > 0)
+    return Append(src,cpyLen);
 
   // return 0 if no frame yet, return 1 if frame is available
   return true;

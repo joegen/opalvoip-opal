@@ -117,7 +117,8 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\common\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -135,6 +136,7 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\dyna.cxx" />
+    <ClCompile Include="..\common\ffmpeg.cxx" />
     <ClCompile Include="h263-1998.cxx" />
     <ClCompile Include="rfc2429.cxx" />
     <ClCompile Include="rfc2190.cxx" />

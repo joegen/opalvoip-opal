@@ -36,8 +36,10 @@
 // GVX 3000 does not like STAP packets... So we waste 40 bytes per connection...
 //#define SEND_STAP_PACKETS 1
 
-#include "../../common/platform.h"
+#include "../../common/ffmpeg.h"
 #include <codec/opalplugin.hpp>
+
+#include <vector>
 
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
@@ -56,54 +58,42 @@
 
 
 
-class H264Frame
+class H264Frame : public FFMPEGCodec::EncodedFrame
 {
 public:
   H264Frame();
-  ~H264Frame();
 
-  void BeginNewFrame(uint32_t numberOfNALs = 0);
+  virtual const char * GetName() const { return "RFC3984"; }
+  virtual bool Reset(size_t len = 0);
+  virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags);
+  virtual bool AddPacket(const PluginCodec_RTP & frame, unsigned & flags);
 
+
+  void Allocate(uint32_t numberOfNALs);
   void AddNALU(uint8_t type, uint32_t length, const uint8_t * payload);
 
-  void SetMaxPayloadSize (uint16_t maxPayloadSize) 
-  {
-    m_maxPayloadSize = maxPayloadSize;
-  }
   void SetTimestamp (uint32_t timestamp) 
   {
     m_timestamp = timestamp;
   }
-  bool GetRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
   bool HasRTPFrames ()
   {
     return m_currentNAL < m_numberOfNALsInFrame;
   }
 
-  bool SetFromRTPFrame (PluginCodec_RTP & frame, unsigned int & flags);
-  uint8_t* GetFramePtr ()
-  {
-    return m_encodedFrame;
-  }
-  uint32_t GetFrameSize () {
-    return m_encodedFrameLen;
-  }
   bool IsSync ();
   
 private:
   bool EncapsulateSTAP  (PluginCodec_RTP & frame, unsigned int & flags);
   bool EncapsulateFU    (PluginCodec_RTP & frame, unsigned int & flags);
 
-  bool DeencapsulateFU   (PluginCodec_RTP & frame, unsigned int & flags);
-  bool DeencapsulateSTAP (PluginCodec_RTP & frame, unsigned int & flags);
-  void AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
+  bool DeencapsulateFU   (const PluginCodec_RTP & frame);
+  bool DeencapsulateSTAP (const PluginCodec_RTP & frame);
+  bool AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
   bool IsStartCode (const uint8_t *positionInFrame);
 
     // general stuff
   uint32_t m_timestamp;
-  uint16_t m_maxPayloadSize;
-  uint8_t* m_encodedFrame;
-  uint32_t m_encodedFrameLen;
 
   struct NALU
   {
@@ -112,7 +102,7 @@ private:
     uint32_t length;
   };
 
-  NALU   * m_NALs;
+  std::vector<NALU> m_NALs;
   uint32_t m_numberOfNALsInFrame;
   uint32_t m_currentNAL; 
   uint32_t m_numberOfNALsReserved;
