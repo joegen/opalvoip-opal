@@ -1282,7 +1282,13 @@ bool MyManager::Initialise()
 
 
 #if OPAL_CAPI
-  capiEP->OpenControllers();
+  unsigned capiCount = capiEP->OpenControllers();
+  if (capiCount > 0) {
+    LogWindow << "ISDN (CAPI) detected " << capiCount << " controller";
+    if (capiCount > 1)
+      LogWindow << 's';
+    LogWindow << endl;
+  }
 #endif
 
   ////////////////////////////////////////
