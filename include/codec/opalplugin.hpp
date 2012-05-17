@@ -93,6 +93,12 @@
     #define PTRACE_CHECK(level)
     #define PTRACE(level, section, expr)
   #endif
+#else
+  // See if we are being inluded in base OPAL, not plug in, by checking for PTLib PTRACE
+  #if PTRACING
+    #undef PTRACE
+    #define PTRACE(level, module, args) PTRACE2(level, PTraceObjectInstance(), module << '\t' << args)
+  #endif
 #endif
 
 
@@ -161,6 +167,8 @@ class PluginCodec_RTP
 
 /////////////////////////////////////////////////////////////////////////////
 
+typedef std::map<std::string, std::string> PluginCodec_OptionMapBase;
+
 class PluginCodec_Utilities
 {
   public:
@@ -184,10 +192,102 @@ class PluginCodec_Utilities
       str.clear();
       AppendUnsigned2String(value,str);
     }
+
+
+    static void Change(const char * value,
+                       PluginCodec_OptionMapBase & original,
+                       PluginCodec_OptionMapBase & changed,
+                       const char * option)
+    {
+      PluginCodec_OptionMapBase::iterator it = original.find(option);
+      if (it != original.end() && it->second != value)
+        changed[option] = value;
+    }
+
+
+    static void Change(unsigned     value,
+                       PluginCodec_OptionMapBase  & original,
+                       PluginCodec_OptionMapBase  & changed,
+                       const char * option)
+    {
+      if (String2Unsigned(original[option]) != value)
+        Unsigned2String(value, changed[option]);
+    }
+
+
+    static void ClampMax(unsigned     maximum,
+                         PluginCodec_OptionMapBase  & original,
+                         PluginCodec_OptionMapBase  & changed,
+                         const char * option)
+    {
+      unsigned value = String2Unsigned(original[option]);
+      if (value > maximum)
+        Unsigned2String(maximum, changed[option]);
+    }
+
+
+    static void ClampMin(unsigned     minimum,
+                         PluginCodec_OptionMapBase  & original,
+                         PluginCodec_OptionMapBase  & changed,
+                         const char * option)
+    {
+      unsigned value = String2Unsigned(original[option]);
+      if (value < minimum)
+        Unsigned2String(minimum, changed[option]);
+    }
+
+
+    static unsigned GetMacroBlocks(unsigned width, unsigned height)
+    {
+      return ((width+15)/16) * ((height+15)/16);
+    }
+
+
+    static bool ClampResolution(
+      unsigned & width,
+      unsigned & height,
+      unsigned & maxFrameSize,
+      unsigned maxWidth,
+      unsigned maxHeight)
+    {
+      static struct {
+        unsigned m_width;
+        unsigned m_height;
+        unsigned m_macroblocks;
+      } MaxVideoResolutions[] = {
+        #define OPAL_PLUGIN_CLAMPED_RESOLUTION(width, height) { width, height, ((width+15)/16) * ((height+15)/16) }
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(2816, 2304),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1920, 1080),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1408, 1152),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1280,  720),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 704,  576),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 640,  480),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 352,  288),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 320,  240),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 176,  144),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 128,   96)
+      };
+      static size_t LastMaxVideoResolutions = sizeof(MaxVideoResolutions)/sizeof(MaxVideoResolutions[0]) - 1;
+
+      unsigned macroBlocks = GetMacroBlocks(width, height);
+      if (macroBlocks <= maxFrameSize && width <= maxWidth && height <= maxHeight)
+        return false;
+
+      size_t i = 0;
+      while (i < LastMaxVideoResolutions &&
+              (MaxVideoResolutions[i].m_macroblocks > maxFrameSize ||
+              MaxVideoResolutions[i].m_width > maxWidth ||
+              MaxVideoResolutions[i].m_height > maxHeight))
+        ++i;
+      width = MaxVideoResolutions[i].m_width;
+      height = MaxVideoResolutions[i].m_height;
+      macroBlocks = MaxVideoResolutions[i].m_macroblocks;
+      return true;
+    }
 };
 
 
-class PluginCodec_OptionMap : public std::map<std::string, std::string>, public PluginCodec_Utilities
+class PluginCodec_OptionMap : public PluginCodec_OptionMapBase, public PluginCodec_Utilities
 {
   public:
     PluginCodec_OptionMap(const char * const * * options = NULL)
@@ -230,6 +330,7 @@ class PluginCodec_OptionMap : public std::map<std::string, std::string>, public 
 };
 
 
+template<typename NAME>
 class PluginCodec_MediaFormat : public PluginCodec_Utilities
 {
   public:
@@ -237,11 +338,32 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     typedef PluginCodec_OptionMap OptionMap;
 
   protected:
+    const char * m_formatName;
+    const char * m_payloadName;
+    unsigned     m_payloadType;
+    const char * m_description;
+    unsigned     m_maxBandwidth;
+    unsigned     m_h323CapabilityType;
+    const void * m_h323CapabilityData;
+    unsigned     m_flags;
     OptionsTable m_options;
 
   protected:
-    PluginCodec_MediaFormat(OptionsTable options)
-      : m_options(options)
+    PluginCodec_MediaFormat(
+        const char * formatName,
+        const char * payloadName,
+        const char * description,
+        unsigned     maxBandwidth,
+        OptionsTable options)
+      : m_formatName(formatName)
+      , m_payloadName(payloadName)
+      , m_payloadType(0)
+      , m_description(description)
+      , m_maxBandwidth(maxBandwidth)
+      , m_h323CapabilityType(PluginCodec_H323Codec_NoH323)
+      , m_h323CapabilityData(NULL)
+      , m_flags(PluginCodec_RTPTypeDynamic)
+      , m_options(options)
     {
     }
 
@@ -251,7 +373,16 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     }
 
 
-    const void * GetOptionsTable() const { return m_options; }
+    __inline const char *  GetFormatName() const   { return m_formatName; }
+    __inline const char *  GetPayloadName() const  { return m_payloadName; }
+    __inline unsigned char GetPayloadType() const  { return (unsigned char)m_payloadType; }
+    __inline const char *  GetDescription() const  { return m_description; }
+    __inline unsigned      GetMaxBandwidth() const { return m_maxBandwidth; }
+    __inline unsigned char GetH323CapabilityType() const { return (unsigned char)m_h323CapabilityType; }
+    __inline const void *  GetH323CapabilityData() const { return m_h323CapabilityData; }
+    __inline unsigned      GetFlags() const { return m_flags; }
+    __inline const void *  GetOptionsTable() const { return m_options; }
+
 
     /// Determine if codec is valid for the specified protocol
     virtual bool IsValidForProtocol(const char * /*protocol*/)
@@ -280,53 +411,16 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
 
 
     /// Adjust normalised options calculated from codec specific options.
-    virtual bool ToNormalised(OptionMap & original, OptionMap & changed) = 0;
+    virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/)
+    {
+      return true;
+    }
 
 
     // Adjust codec specific options calculated from normalised options.
-    virtual bool ToCustomised(OptionMap & original, OptionMap & changed) = 0;
-
-
-    static void Change(const char * value,
-                       PluginCodec_OptionMap & original,
-                       PluginCodec_OptionMap & changed,
-                       const char * option)
+    virtual bool ToCustomised(OptionMap & /*original*/, OptionMap & /*changed*/)
     {
-      OptionMap::iterator it = original.find(option);
-      if (it != original.end() && it->second != value)
-        changed[option] = value;
-    }
-
-
-    static void Change(unsigned     value,
-                       OptionMap  & original,
-                       OptionMap  & changed,
-                       const char * option)
-    {
-      if (String2Unsigned(original[option]) != value)
-        Unsigned2String(value, changed[option]);
-    }
-
-
-    static void ClampMax(unsigned     maximum,
-                         OptionMap  & original,
-                         OptionMap  & changed,
-                         const char * option)
-    {
-      unsigned value = String2Unsigned(original[option]);
-      if (value > maximum)
-        Unsigned2String(maximum, changed[option]);
-    }
-
-
-    static void ClampMin(unsigned     minimum,
-                         OptionMap  & original,
-                         OptionMap  & changed,
-                         const char * option)
-    {
-      unsigned value = String2Unsigned(original[option]);
-      if (value < minimum)
-        Unsigned2String(minimum, changed[option]);
+      return true;
     }
 
 
@@ -352,6 +446,81 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
         ++definitions;
       }
     }
+};
+
+
+template<typename NAME>
+class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
+{
+  protected:
+    unsigned m_samplesPerFrame;
+    unsigned m_bytesPerFrame;
+    unsigned m_sampleRate;
+    unsigned m_recommendedFramesPerPacket;
+    unsigned m_maxFramesPerPacket;
+
+  public:
+    typedef PluginCodec_MediaFormat<NAME> Parent;
+
+    PluginCodec_AudioFormat(
+      const char * formatName,
+      const char * payloadName,
+      const char * description,
+      unsigned     samplesPerFrame,
+      unsigned     bytesPerFrame,
+      unsigned     sampleRate,
+      OptionsTable options
+    ) : Parent(formatName, payloadName, description, bytesPerFrame*8 * samplesPerFrame*1000000/sampleRate, options)
+      , m_samplesPerFrame(samplesPerFrame)
+      , m_bytesPerFrame(bytesPerFrame)
+      , m_sampleRate(sampleRate)
+      , m_recommendedFramesPerPacket((50*sampleRate)/(1000*samplesPerFrame))
+      , m_maxFramesPerPacket((120*sampleRate)/(1000*samplesPerFrame))
+    {
+      m_flags = PluginCodec_MediaTypeAudio | /* audio codec */
+                PluginCodec_InputTypeRaw |   /* raw input data */
+                PluginCodec_OutputTypeRaw;  /* raw output data */
+
+    }
+
+
+    __inline unsigned GetSamplesPerFrame() const { return m_samplesPerFrame; }
+    __inline unsigned GetBytesPerFrame() const { return m_bytesPerFrame; }
+    __inline unsigned GetSampleRate() const { return m_sampleRate; }
+    __inline unsigned GetFrameTime() const { return m_samplesPerFrame*1000000/m_sampleRate; }
+    __inline unsigned GetRecommendedFramesPerPacket() const { return m_recommendedFramesPerPacket; }
+    __inline unsigned GetMaxFramesPerPacket() const { return m_maxFramesPerPacket; }
+};
+
+
+template<typename NAME>
+class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
+{
+  protected:
+    unsigned m_maxWidth;
+    unsigned m_maxHeight;
+
+  public:
+    typedef PluginCodec_MediaFormat<NAME> Parent;
+
+    PluginCodec_VideoFormat(
+      const char * formatName,
+      const char * payloadName,
+      const char * description,
+      unsigned     maxBandwidth,
+      OptionsTable options
+    ) : Parent(formatName, payloadName, description, maxBandwidth, options)
+      , m_maxWidth(1920)
+      , m_maxHeight(1200)
+    {
+      m_flags = PluginCodec_MediaTypeVideo | /* audio codec */
+                PluginCodec_InputTypeRTP |   /* raw input data */
+                PluginCodec_OutputTypeRTP;  /* raw output data */
+    }
+
+
+    __inline unsigned GetMaxWidth() const { return m_maxWidth; }
+    __inline unsigned GetMaxHeight() const { return m_maxHeight; }
 };
 
 
@@ -463,7 +632,7 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    /// Set an individual option of teh given name.
+    /// Set an individual option of the given name.
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
@@ -574,7 +743,7 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    template <class CodecClass> static void * Create(const PluginCodec_Definition * defn)
+    template <class CodecClass> static void * Create_s(const PluginCodec_Definition * defn)
     {
       CodecClass * codec = new CodecClass(defn);
       if (codec != NULL && codec->Construct())
@@ -586,19 +755,19 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    static void Destroy(const PluginCodec_Definition * /*defn*/, void * context)
+    static void Destroy_s(const PluginCodec_Definition * /*defn*/, void * context)
     {
       delete (PluginCodec *)context;
     }
 
 
-    static int Transcode(const PluginCodec_Definition * /*defn*/,
-                                                 void * context,
-                                           const void * fromPtr,
-                                             unsigned * fromLen,
-                                                 void * toPtr,
-                                             unsigned * toLen,
-                                         unsigned int * flags)
+    static int Transcode_s(const PluginCodec_Definition * /*defn*/,
+                                                   void * context,
+                                             const void * fromPtr,
+                                               unsigned * fromLen,
+                                                   void * toPtr,
+                                               unsigned * toLen,
+                                           unsigned int * flags)
     {
       if (context != NULL && fromPtr != NULL && fromLen != NULL && toPtr != NULL && toLen != NULL && flags != NULL)
         return ((PluginCodec *)context)->Transcode(fromPtr, *fromLen, toPtr, *toLen, *flags);
@@ -608,25 +777,26 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    static int GetOutputDataSize(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
+    static int GetOutputDataSize_s(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
     {
       return context != NULL ? ((PluginCodec *)context)->GetOutputDataSize() : 0;
     }
 
+    typedef PluginCodec_MediaFormat<NAME> MediaFormat;
 
-    static int ToNormalised(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
+    static int ToNormalised_s(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
     {
-      return defn->userData != NULL ? ((PluginCodec_MediaFormat *)defn->userData)->AdjustOptions(parm, len, &PluginCodec_MediaFormat::ToNormalised) : -1;
+      return defn->userData != NULL ? ((MediaFormat *)defn->userData)->AdjustOptions(parm, len, &MediaFormat::ToNormalised) : -1;
     }
 
 
-    static int ToCustomised(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
+    static int ToCustomised_s(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
     {
-      return defn->userData != NULL ? ((PluginCodec_MediaFormat *)defn->userData)->AdjustOptions(parm, len, &PluginCodec_MediaFormat::ToCustomised) : -1;
+      return defn->userData != NULL ? ((MediaFormat *)defn->userData)->AdjustOptions(parm, len, &MediaFormat::ToCustomised) : -1;
     }
 
 
-    static int GetActiveOptions(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * parmLen)
+    static int GetActiveOptions_s(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * parmLen)
     {
       if (context == NULL || parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***)) {
         PTRACE(1, "Plugin", "Invalid parameters to GetActiveOptions.");
@@ -641,7 +811,7 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    static int FreeOptions(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len)
+    static int FreeOptions_s(const PluginCodec_Definition *, void *, const char *, void * parm, unsigned * len)
     {
       if (parm == NULL || len == NULL || *len != sizeof(char ***))
         return false;
@@ -654,45 +824,45 @@ class PluginCodec : public PluginCodec_Utilities
     }
 
 
-    static int GetOptions(const struct PluginCodec_Definition * codec, void *, const char *, void * parm, unsigned * len)
+    static int GetOptions_s(const struct PluginCodec_Definition * codec, void *, const char *, void * parm, unsigned * len)
     {
       if (parm == NULL || len == NULL || *len != sizeof(struct PluginCodec_Option **))
         return false;
 
-      *(const void **)parm = codec->userData != NULL ? ((PluginCodec_MediaFormat *)codec->userData)->GetOptionsTable() : NULL;
+      *(const void **)parm = codec->userData != NULL ? ((MediaFormat *)codec->userData)->GetOptionsTable() : NULL;
       *len = 0;
       return true;
     }
 
 
-    static int SetOptions(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+    static int SetOptions_s(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
     {
       PluginCodec * codec = (PluginCodec *)context;
       return len != NULL && *len == sizeof(const char **) && parm != NULL &&
              codec != NULL && codec->SetOptions((const char * const *)parm);
     }
 
-    static int ValidForProtocol(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
+    static int ValidForProtocol_s(const PluginCodec_Definition * defn, void *, const char *, void * parm, unsigned * len)
     {
       return len != NULL && *len == sizeof(const char *) && parm != NULL && defn->userData != NULL &&
-             ((PluginCodec_MediaFormat *)defn->userData)->IsValidForProtocol((const char *)parm);
+                              ((MediaFormat *)defn->userData)->IsValidForProtocol((const char *)parm);
     }
 
-    static int SetInstanceID(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+    static int SetInstanceID_s(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
     {
       PluginCodec * codec = (PluginCodec *)context;
       return len != NULL && parm != NULL &&
              codec != NULL && codec->SetInstanceID((const char *)parm, *len);
     }
 
-    static int GetStatistics(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
+    static int GetStatistics_s(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
     {
       PluginCodec * codec = (PluginCodec *)context;
       return len != NULL && parm != NULL &&
              codec != NULL && codec->GetStatistics((char *)parm, *len);
     }
 
-    static int Terminate(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
+    static int Terminate_s(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
     {
       PluginCodec * codec = (PluginCodec *)context;
       return codec != NULL && codec->Terminate();
@@ -701,17 +871,17 @@ class PluginCodec : public PluginCodec_Utilities
     static struct PluginCodec_ControlDefn * GetControls()
     {
       static PluginCodec_ControlDefn ControlsTable[] = {
-        { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  PluginCodec::GetOutputDataSize },
-        { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised },
-        { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, PluginCodec::ToCustomised },
-        { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions },
-        { PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS,    PluginCodec::GetActiveOptions },
-        { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions },
-        { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions },
-        { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol },
-        { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,       PluginCodec::SetInstanceID },
-        { PLUGINCODEC_CONTROL_GET_STATISTICS,        PluginCodec::GetStatistics },
-        { PLUGINCODEC_CONTROL_TERMINATE_CODEC,       PluginCodec::Terminate },
+        { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  PluginCodec::GetOutputDataSize_s },
+        { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, PluginCodec::ToNormalised_s },
+        { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, PluginCodec::ToCustomised_s },
+        { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     PluginCodec::SetOptions_s },
+        { PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS,    PluginCodec::GetActiveOptions_s },
+        { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     PluginCodec::GetOptions_s },
+        { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    PluginCodec::FreeOptions_s },
+        { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    PluginCodec::ValidForProtocol_s },
+        { PLUGINCODEC_CONTROL_SET_INSTANCE_ID,       PluginCodec::SetInstanceID_s },
+        { PLUGINCODEC_CONTROL_GET_STATISTICS,        PluginCodec::GetStatistics_s },
+        { PLUGINCODEC_CONTROL_TERMINATE_CODEC,       PluginCodec::Terminate_s },
         PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
         { NULL }
       };
@@ -870,43 +1040,104 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
     }
 
 
-    virtual void OutputImage(unsigned char * planes[3], int raster[3],
-                             unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
+    virtual unsigned OutputImage(unsigned char * planes[3], int raster[3],
+                                 unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
-      if (CanOutputImage(width, height, rtp, flags)) {
-        size_t ySize = width*height;
-        size_t uvSize = ySize/4;
-        if (planes[1] == planes[0]+ySize && planes[2] == planes[1]+uvSize)
-          memcpy(rtp.GetVideoFrameData(), planes[0], ySize+uvSize*2);
-        else {
-          unsigned char * src[3] = { planes[0], planes[1], planes[2] };
-          unsigned char * dst[3] = { rtp.GetVideoFrameData(), dst[0] + ySize, dst[1] + uvSize };
-          size_t len[3] = { width, width/2, width/2 };
+      if (!CanOutputImage(width, height, rtp, flags))
+        return 0;
 
-          for (unsigned y = 0; y < height; ++y) {
-            for (unsigned plane = 0; plane < 3; ++plane) {
-              if ((y&1) == 0 || plane == 0) {
-                memcpy(dst[plane], src[plane], len[plane]);
-                src[plane] += raster[plane];
-                dst[plane] += len[plane];
-              }
+      size_t ySize = width*height;
+      size_t uvSize = ySize/4;
+      if (planes[1] == planes[0]+ySize && planes[2] == planes[1]+uvSize)
+        memcpy(rtp.GetVideoFrameData(), planes[0], ySize+uvSize*2);
+      else {
+        unsigned char * src[3] = { planes[0], planes[1], planes[2] };
+        unsigned char * dst[3] = { rtp.GetVideoFrameData(), dst[0] + ySize, dst[1] + uvSize };
+        size_t len[3] = { width, width/2, width/2 };
+
+        for (unsigned y = 0; y < height; ++y) {
+          for (unsigned plane = 0; plane < 3; ++plane) {
+            if ((y&1) == 0 || plane == 0) {
+              memcpy(dst[plane], src[plane], len[plane]);
+              src[plane] += raster[plane];
+              dst[plane] += len[plane];
             }
           }
         }
       }
+
+      return rtp.GetPacketSize();
     }
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, table) \
+/// Declare an audio codec using C++ support classes
+#define PLUGINCODEC_AUDIO_CODEC_CXX(MediaFormat,     /**< PluginCodec_VideoFormat instance */ \
+                                    EncoderClass,    /**< Encoder class name */ \
+                                    DecoderClass     /**< Decoder class name */ \
+                                    ) \
+             PLUGINCODEC_CODEC_PAIR(MediaFormat.GetFormatName(), \
+                                    MediaFormat.GetPayloadName(), \
+                                    MediaFormat.GetDescription(), \
+                                    MediaFormat.GetSampleRate(), \
+                                    MediaFormat.GetMaxBandwidth(), \
+                                    MediaFormat.GetFrameTime(), \
+                                    MediaFormat.GetSamplesPerFrame(), \
+                                    MediaFormat.GetBytesPerFrame(), \
+                                    MediaFormat.GetRecommendedFramesPerPacket(), \
+                                    MediaFormat.GetMaxFramesPerPacket(), \
+                                    MediaFormat.GetPayloadType(), \
+                                    MediaFormat.GetH323CapabilityType(), \
+                                    MediaFormat.GetH323CapabilityData(), \
+                                    EncoderClass::Create_s<EncoderClass>, \
+                                    EncoderClass::Destroy_s, \
+                                    EncoderClass::Transcode_s, \
+                                    DecoderClass::Create_s<DecoderClass>, \
+                                    DecoderClass::Destroy_s, \
+                                    DecoderClass::Transcode_s, \
+                                    DecoderClass::GetControls(), /* Note doesn't matter if encoder or decoder */ \
+                                    MediaFormat.GetFlags(), \
+                                    PLUGINCODEC_RAW_AUDIO, \
+                                    &MediaFormat)
+
+/// Declare a video codec using C++ support classes
+#define PLUGINCODEC_VIDEO_CODEC_CXX(MediaFormat,     /**< PluginCodec_VideoFormat instance */ \
+                                    EncoderClass,    /**< Encoder class name */ \
+                                    DecoderClass     /**< Decoder class name */ \
+                                    ) \
+             PLUGINCODEC_CODEC_PAIR(MediaFormat.GetFormatName(), \
+                                    MediaFormat.GetPayloadName(), \
+                                    MediaFormat.GetDescription(), \
+                                    PLUGINCODEC_VIDEO_CLOCK, \
+                                    MediaFormat.GetMaxBandwidth(), \
+                                    1000000/PLUGINCODEC_MAX_FRAME_RATE, \
+                                    MediaFormat.GetMaxWidth(), \
+                                    MediaFormat.GetMaxHeight(), \
+                                    0,PLUGINCODEC_MAX_FRAME_RATE, \
+                                    MediaFormat.GetPayloadType(), \
+                                    MediaFormat.GetH323CapabilityType(), \
+                                    MediaFormat.GetH323CapabilityData(), \
+                                    EncoderClass::Create_s<EncoderClass>, \
+                                    EncoderClass::Destroy_s, \
+                                    EncoderClass::Transcode_s, \
+                                    DecoderClass::Create_s<DecoderClass>, \
+                                    DecoderClass::Destroy_s, \
+                                    DecoderClass::Transcode_s, \
+                                    DecoderClass::GetControls(), /* Note doesn't matter if encoder or decoder */ \
+                                    MediaFormat.GetFlags(), \
+                                    PLUGINCODEC_RAW_VIDEO, \
+                                    &MediaFormat)
+
+
+#define PLUGIN_CODEC_IMPLEMENT_CXX(NAME, table) \
   extern "C" { \
-    PLUGIN_CODEC_IMPLEMENT(MY_CODEC) \
+    PLUGIN_CODEC_IMPLEMENT(NAME) \
     PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version) { \
       if (version < PLUGIN_CODEC_VERSION_OPTIONS) return NULL; \
       *count = sizeof(table)/sizeof(struct PluginCodec_Definition); \
-      PluginCodec_MediaFormat::AdjustAllForVersion(version, table, *count); \
+      PluginCodec_MediaFormat<NAME>::AdjustAllForVersion(version, table, *count); \
       return table; \
     } \
   }

@@ -36,12 +36,6 @@
 #pragma interface
 #endif
 
-#ifdef _MSC_VER
-#if _MSC_VER < 1300   
-#pragma warning(disable:4663)
-#endif
-#endif
-
 #include <opal/buildopts.h>
 
 #include <opal/mediatype.h>
@@ -314,19 +308,21 @@ class OpalMediaOption : public PObject
 
     const PString & GetFMTPDefault() const { return m_FMTPDefault; }
     void SetFMTPDefault(const char * value) { m_FMTPDefault = value; }
+
+    void SetFMTP(const char * name, const char * dflt)
+    {
+      m_FMTPName = name;
+      m_FMTPDefault = dflt;
+    }
+#define OPAL_SET_MEDIA_OPTION_FMTP(opt, name, dflt) (opt)->SetFMTP(name, dflt)
+#else
+#define OPAL_SET_MEDIA_OPTION_FMTP(opt, name, dflt)
 #endif // OPAL_SIP
 
 #if OPAL_H323
     struct H245GenericInfo {
-      H245GenericInfo()
-        : ordinal(0)
-        , mode(None)
-        , integerType(UnsignedInt)
-        , excludeTCS(false)
-        , excludeOLC(false)
-        , excludeReqMode(false)
-        , position(-1)
-      { }
+      H245GenericInfo();
+      H245GenericInfo(unsigned mask);
 
       unsigned ordinal;
 
@@ -351,6 +347,9 @@ class OpalMediaOption : public PObject
 
     const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
     void SetH245Generic(const H245GenericInfo & genericInfo) { m_H245Generic = genericInfo; }
+#define OPAL_SET_MEDIA_OPTION_H245(opt, mask) (opt)->SetH245Generic(OpalMediaOption::H245GenericInfo(mask))
+#else
+#define OPAL_SET_MEDIA_OPTION_H245(opt, mask)
 #endif // OPAL_H323
 
   protected:
@@ -1258,7 +1257,7 @@ class OpalAudioFormatInternal : public OpalMediaFormatInternal
       unsigned txFrames,
       unsigned maxFrames,
       unsigned clockRate,
-      time_t timeStamp
+      time_t timeStamp = 0
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
@@ -1302,7 +1301,7 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
       unsigned maxFrameHeight,
       unsigned maxFrameRate,
       unsigned maxBitRate,
-      time_t timeStamp
+      time_t timeStamp = 0
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
@@ -1364,55 +1363,9 @@ class OpalVideoFormat : public OpalMediaFormat
 };
 #endif
 
-// List of known media formats
 
-#define OPAL_PCM16          "PCM-16"
-#define OPAL_PCM16S         "PCM-16S"
-#define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
-#define OPAL_PCM16S_16KHZ   "PCM-16S-16kHz"
-#define OPAL_PCM16_32KHZ    "PCM-16-32kHz"
-#define OPAL_PCM16S_32KHZ   "PCM-16S-32kHz"
-#define OPAL_PCM16_48KHZ    "PCM-16-48kHz"
-#define OPAL_PCM16S_48KHZ   "PCM-16S-48kHz"
-#define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
-#define OPAL_L16_STEREO_8KHZ "Linear-16-Stereo-8kHz"
-#define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
-#define OPAL_L16_STEREO_16KHZ "Linear-16-Stereo-16kHz"
-#define OPAL_L16_MONO_32KHZ "Linear-16-Mono-32kHz"
-#define OPAL_L16_STEREO_32KHZ "Linear-16-Stereo-32kHz"
-#define OPAL_L16_MONO_48KHZ "Linear-16-Mono-48kHz"
-#define OPAL_L16_STEREO_48KHZ "Linear-16-Stereo-48kHz"
-#define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
-#define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
-#define OPAL_G722           "G.722"
-#define OPAL_G7221          "G.722.1"
-#define OPAL_G7222          "G.722.2"
-#define OPAL_G726_40K       "G.726-40K"
-#define OPAL_G726_32K       "G.726-32K"
-#define OPAL_G726_24K       "G.726-24K"
-#define OPAL_G726_16K       "G.726-16K"
-#define OPAL_G728           "G.728"
-#define OPAL_G729           "G.729"
-#define OPAL_G729A          "G.729A"
-#define OPAL_G729B          "G.729B"
-#define OPAL_G729AB         "G.729A/B"
-#define OPAL_G7231          "G.723.1"
-#define OPAL_G7231_6k3      OPAL_G7231
-#define OPAL_G7231_5k3      "G.723.1(5.3k)"
-#define OPAL_G7231A_6k3     "G.723.1A(6.3k)"
-#define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
-#define OPAL_GSM0610        "GSM-06.10"
-#define OPAL_GSMAMR         "GSM-AMR"
-#define OPAL_iLBC           "iLBC"
-#define OPAL_H261           "H.261"
-#define OPAL_H263           "H.263"
-#define OPAL_H264           "H.264"
-#define OPAL_H264_MODE0     "H.264-0"
-#define OPAL_H264_MODE1     "H.264-1"
-#define OPAL_MPEG4          "MPEG4"
-#define OPAL_RFC2833        "UserInput/RFC2833"
-#define OPAL_CISCONSE       "NamedSignalEvent"
-#define OPAL_T38            "T.38"
+#include <codec/known.h>
+
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16S();
@@ -1433,7 +1386,8 @@ extern const OpalAudioFormat & GetOpalL16_STEREO_48KHZ();
 extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
 extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
 extern const OpalAudioFormat & GetOpalG722();
-extern const OpalAudioFormat & GetOpalG7221();
+extern const OpalAudioFormat & GetOpalG7221_24K();
+extern const OpalAudioFormat & GetOpalG7221_32K();
 extern const OpalAudioFormat & GetOpalG7222();
 extern const OpalAudioFormat & GetOpalG726_40K();
 extern const OpalAudioFormat & GetOpalG726_32K();
@@ -1451,6 +1405,16 @@ extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
+
+#if OPAL_VIDEO
+extern const OpalVideoFormat & GetOpalH261();
+extern const OpalVideoFormat & GetOpalH263();
+extern const OpalVideoFormat & GetOpalH263plus();
+extern const OpalVideoFormat & GetOpalH264();
+extern const OpalVideoFormat & GetOpalH264_MODE0();
+extern const OpalVideoFormat & GetOpalH264_MODE1();
+extern const OpalVideoFormat & GetOpalMPEG4();
+#endif // OPAL_VIDEO
 
 extern const OpalMediaFormat & GetOpalRFC2833();
 
@@ -1481,7 +1445,9 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()
 #define OpalG711_ALAW_64K  GetOpalG711_ALAW_64K()
 #define OpalG722           GetOpalG722()
-#define OpalG7221          GetOpalG7221()
+#define OpalG7221          OpalG7221_32K
+#define OpalG7221_24K      GetOpalG7221_24K()
+#define OpalG7221_32K      GetOpalG7221_32K()
 #define OpalG7222          GetOpalG7222()
 #define OpalG726_40K       GetOpalG726_40K()
 #define OpalG726_32K       GetOpalG726_32K()
@@ -1503,16 +1469,25 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
 
+#if OPAL_VIDEO
+#define OpalH261       GetOpalH261()
+#define OpalH263       GetOpalH263()
+#define OpalH263plus   GetOpalH263plus()
+#if OPAL_H323
+#define OpalH264       GetOpalH264()
+#endif
+#if OPAL_SIP
+#define OpalH264_MODE0 GetOpalH264_MODE0()
+#define OpalH264_MODE1 GetOpalH264_MODE1()
+#endif
+#define OpalMPEG4      GetOpalMPEG4()
+#endif
+
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
-#ifdef _MSC_VER
-#if _MSC_VER < 1300
-#pragma warning(default:4663)
-#endif
-#endif
 
 #endif  // OPAL_OPAL_MEDIAFMT_H
 

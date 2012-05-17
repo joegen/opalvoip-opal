@@ -112,7 +112,7 @@ uint32_t Bitstream::PeekBits(uint32_t numBits)
     uint32_t offset = m_data.pos / 8;
     uint8_t  offsetBits = (uint8_t)(m_data.pos % 8);
     if (((m_data.len << 3) - m_ebits - m_sbits) < (m_data.pos  + numBits)) {
-      PTRACE(2, "H.263-RFC2429",
+      PTRACE(2, "RFC2429",
                 "Frame too short, trying to read " << numBits << " bits at position " << m_data.pos <<
                 " when frame is only " << ((m_data.len << 3) - m_ebits - m_sbits) << " bits long");
       return 0;
@@ -175,82 +175,52 @@ uint32_t Bitstream::GetPos()
   return (m_data.pos);
 }
 
-RFC2429Frame::RFC2429Frame ()
-  : m_minPayloadSize(0)
-  , m_maxFrameSize(0)
+RFC2429Frame::RFC2429Frame()
+  : m_packetizationOffset(0)
+  , m_minPayloadSize(0)
   , m_customClock(false)
 {
-  m_encodedFrame.ptr = NULL;
 }
 
-RFC2429Frame::~RFC2429Frame ()
-{
-  if (m_encodedFrame.ptr)
-    free(m_encodedFrame.ptr);
-}
-
-bool RFC2429Frame::Reset(unsigned width, unsigned height)
-{
-  m_encodedFrame.len = 0;
-  m_encodedFrame.pos = 0;
-  m_picHeader.len = 0;
-  m_customClock = false;
-
-  size_t newOutputSize = width*height;
-
-  if (m_encodedFrame.ptr != NULL && m_maxFrameSize < newOutputSize) {
-    free(m_encodedFrame.ptr);
-    m_encodedFrame.ptr = NULL;
-  }
-
-  if (m_encodedFrame.ptr == NULL) {
-    m_maxFrameSize = newOutputSize;
-    if ((m_encodedFrame.ptr = (unsigned char *)malloc(m_maxFrameSize)) == NULL) 
-      return false;
-  }
-
-  return true;
-}
 
 bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
 {
-  if (m_encodedFrame.ptr == NULL || m_encodedFrame.pos >= m_encodedFrame.len)
+  if (m_buffer == NULL || m_packetizationOffset >= m_length)
     return false;
 
-  size_t i;
   // this is the first packet of a new frame
   // we parse the frame for SCs 
   // and later try to split into packets at these borders
-  if (m_encodedFrame.pos == 0) {   
+  if (m_packetizationOffset == 0) {   
     m_startCodes.clear();          
-    for (i=0; i < m_encodedFrame.len - 1; i++ ) {
-      if (m_encodedFrame.ptr[i] == 0 && m_encodedFrame.ptr[i+1] == 0)
+    for (size_t i = 1; i < m_length; ++i) {
+      if (m_buffer[i-1] == 0 && m_buffer[i] == 0)
         m_startCodes.push_back(i);
     }  
-    unsigned requiredPackets = (m_encodedFrame.len+m_maxPayloadSize-1)/m_maxPayloadSize;
-    if (m_encodedFrame.len > m_maxPayloadSize)
-      m_minPayloadSize = m_encodedFrame.len/requiredPackets;
+    unsigned requiredPackets = (m_length+m_maxPayloadSize-1)/m_maxPayloadSize;
+    if (m_length > m_maxPayloadSize)
+      m_minPayloadSize = m_length/requiredPackets;
     else
-      m_minPayloadSize = m_encodedFrame.len;
-    PTRACE(6, "H.263-RFC2429",
+      m_minPayloadSize = m_length;
+    PTRACE(6, GetName(),
               "Setting minimal packet size to " << m_minPayloadSize <<
               " considering " << requiredPackets << 
               " packets for this frame");
   }
 
   bool hasStartCode = false;
-  uint8_t* dataPtr = frame.GetPayloadPtr();  
+  uint8_t* payloadPtr = frame.GetPayloadPtr();  
 
   // RFC 2429 / RFC 4629 header
   // no extra header, no VRC
   // we do try to save the 2 bytes of the PSC though
-  dataPtr [0] = 0;
-  if ((m_encodedFrame.ptr[m_encodedFrame.pos] == 0) &&
-      (m_encodedFrame.ptr[m_encodedFrame.pos+1] == 0)) {
-    dataPtr[0] |= 0x04;
-    m_encodedFrame.pos +=2;
+  payloadPtr [0] = 0;
+  if ((m_buffer[m_packetizationOffset] == 0) &&
+      (m_buffer[m_packetizationOffset+1] == 0)) {
+    payloadPtr[0] |= 0x04;
+    m_packetizationOffset +=2;
   }
-  dataPtr [1] = 0;
+  payloadPtr [1] = 0;
 
   // skip all start codes below m_minPayloadSize
   while ((!m_startCodes.empty()) && (m_startCodes.front() < m_minPayloadSize)) {
@@ -261,139 +231,108 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
   // if there is a startcode between m_minPayloadSize and m_maxPayloadSize set 
   // the packet boundary there, if not, use m_maxPayloadSize
   if ((!m_startCodes.empty()) 
-   && ((m_startCodes.front() - m_encodedFrame.pos) > m_minPayloadSize)
-   && ((m_startCodes.front() - m_encodedFrame.pos) < (unsigned)(m_maxPayloadSize - 2))) {
-    frame.SetPayloadSize(m_startCodes.front() - m_encodedFrame.pos + 2);
+   && ((m_startCodes.front() - m_packetizationOffset) > m_minPayloadSize)
+   && ((m_startCodes.front() - m_packetizationOffset) < (unsigned)(m_maxPayloadSize - 2))) {
+    frame.SetPayloadSize(m_startCodes.front() - m_packetizationOffset + 2);
     m_startCodes.erase(m_startCodes.begin());
   }
   else {
-    size_t payloadSize = m_encodedFrame.len - m_encodedFrame.pos + 2;
+    size_t payloadSize = m_length - m_packetizationOffset + 2;
     if (payloadSize > m_maxPayloadSize)
       payloadSize = m_maxPayloadSize;
     frame.SetPayloadSize(payloadSize);
   }
-  PTRACE(6, "H.263-RFC2429", "Sending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << m_encodedFrame.pos);
-  memcpy(dataPtr + 2, m_encodedFrame.ptr + m_encodedFrame.pos, frame.GetPayloadSize() - 2);
-  m_encodedFrame.pos += frame.GetPayloadSize() - 2;
+  PTRACE(6, GetName(), "Sending "<< (frame.GetPayloadSize() - 2) <<" bytes at position " << m_packetizationOffset);
+  memcpy(payloadPtr + 2, m_buffer + m_packetizationOffset, frame.GetPayloadSize() - 2);
+  m_packetizationOffset += frame.GetPayloadSize() - 2;
 
-  frame.SetMarker(m_encodedFrame.len == m_encodedFrame.pos);
+  if (m_length == m_packetizationOffset)
+    flags |= PluginCodec_ReturnCoderLastFrame;
 
-  flags = 0;
-  flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;
-  flags |= IsIntraFrame() ? PluginCodec_ReturnCoderIFrame : 0;
   return true;
 }
 
-unsigned char * RFC2429Frame::GetBuffer()
-{
-  memset (m_encodedFrame.ptr + m_encodedFrame.pos,0 , FF_INPUT_BUFFER_PADDING_SIZE);
-  return (m_encodedFrame.ptr);
-}
 
-size_t RFC2429Frame::GetMaxSize()
+bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flags)
 {
-  return m_maxFrameSize;
-}
-
-bool RFC2429Frame::SetLength(size_t len)
-{
-  m_encodedFrame.len = len;
-  return true;
-}
-
-bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet)
-{
-  if (packet.GetPayloadSize() == 0)
+  size_t payloadSize = packet.GetPayloadSize();
+  if (payloadSize < 3) {
+    PTRACE(2, GetName(), "Packet too short (<3)");
+    flags = PluginCodec_ReturnCoderRequestIFrame;
     return true;
-
-  if (packet.GetPayloadSize()<3) {
-    PTRACE(2, "H.263-RFC2429", "Packet too short (<3)");
-    return false;
   }
 
-  uint8_t* dataPtr = packet.GetPayloadPtr();
-  bool headerP = (dataPtr[0] & 0x04) != 0;
-  bool headerV = (dataPtr[0] & 0x02) != 0;
-  unsigned headerPLEN = ((dataPtr[0] & 0x01) << 5) + ((dataPtr[1] & 0xF8) >> 3);
-  unsigned headerPEBITS = (dataPtr[1] & 0x07);
-  dataPtr += 2;
+  uint8_t* payloadPtr = packet.GetPayloadPtr();
+  bool headerP = (payloadPtr[0] & 0x04) != 0;
+  bool headerV = (payloadPtr[0] & 0x02) != 0;
+  unsigned headerPLEN = ((payloadPtr[0] & 0x01) << 5) + ((payloadPtr[1] & 0xF8) >> 3);
+  unsigned headerPEBITS = (payloadPtr[1] & 0x07);
+  payloadPtr += 2;
 
-  PTRACE(6, "H.263-RFC2429",
+  PTRACE(6, GetName(),
             "RFC 2429 Header: P: "     << headerP
                          << " V: "     << headerV
                          << " PLEN: "  << headerPLEN
                          << " PBITS: " << headerPEBITS);
 
   if (headerV)
-    dataPtr++; // We ignore the VRC
+    payloadPtr++; // We ignore the VRC
+
   if (headerPLEN > 0) {
-    if (packet.GetPayloadSize() < headerPLEN + (headerV ? 3U : 2U)) {
-      PTRACE(2, "H.263-RFC2429", "Packet too short (header)");
-      return false;
+    if (payloadSize < headerPLEN + (headerV ? 3U : 2U)) {
+      PTRACE(2, GetName(), "Packet too short (header)");
+      flags = PluginCodec_ReturnCoderRequestIFrame;
+      return true;
     }
     // we store the extra header for now, but dont do anything with it right now
-    memcpy(m_picHeader.buf + 2, dataPtr, headerPLEN);
+    memcpy(m_picHeader.buf + 2, payloadPtr, headerPLEN);
     m_picHeader.len = headerPLEN + 2;
     m_picHeader.pebits = headerPEBITS;
-    dataPtr += headerPLEN;
+    payloadPtr += headerPLEN;
   }
 
-  unsigned remBytes = packet.GetPayloadSize() - headerPLEN - (headerV ? 3 : 2);
-
-  if ((m_encodedFrame.pos + (headerP ? 2 : 0) + remBytes) > (m_maxFrameSize - FF_INPUT_BUFFER_PADDING_SIZE)) {
-    PTRACE(2, "H.263-RFC2429", "Trying to add " << remBytes 
-         << " bytes to frame at position " << m_encodedFrame.pos + (headerP ? 2 : 0) 
-         << " bytes while maximum frame size is  " << m_maxFrameSize << "-" << FF_INPUT_BUFFER_PADDING_SIZE << " bytes");
-    return false;
-  }
+  unsigned remBytes = payloadSize - headerPLEN - (headerV ? 3 : 2);
 
   if (headerP) {
-    PTRACE(6, "H.263-RFC2429", "Adding startcode of 2 bytes to frame of " << remBytes << " bytes");
-    memset (m_encodedFrame.ptr + m_encodedFrame.pos, 0, 2);
-    m_encodedFrame.pos +=2;
-    m_encodedFrame.len +=2;
+    PTRACE(6, GetName(), "Adding startcode of 2 bytes to frame of " << remBytes << " bytes");
+    static uint8_t startcode[2];
+    if (!Append(startcode, sizeof(startcode)))
+      return false;
   }
 
-  PTRACE(6, "H.263-RFC2429", "Adding " << remBytes << " bytes to frame of " << m_encodedFrame.pos << " bytes");
-  memcpy(m_encodedFrame.ptr + m_encodedFrame.pos, dataPtr, remBytes);
-  m_encodedFrame.pos += remBytes;
-  m_encodedFrame.len += remBytes;
+  PTRACE(6, GetName(), "Adding " << remBytes << " bytes to frame of " << m_packetizationOffset << " bytes");
+  if (!Append(payloadPtr, remBytes))
+    return false;
 
   if (packet.GetMarker())  { 
-    if (headerP && (dataPtr[0] & 0xfc) == 0x80) {
-      size_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), packet.GetPayloadSize()- 2 - (headerP ? 0 : 2));
-      PTRACE(6, "H.263-RFC2429", "Frame includes a picture header of " << hdrLen << " bits");
+    if (headerP && (payloadPtr[0] & 0xfc) == 0x80) {
+      size_t hdrLen = ParseHeader(payloadPtr + (headerP ? 0 : 2), payloadSize - 2 - (headerP ? 0 : 2));
+      PTRACE(6, GetName(), "Frame includes a picture header of " << hdrLen << " bits");
     }
     else {
-      PTRACE(3, "H.263-RFC2429", "Frame does not seem to include a picture header");
+      PTRACE(3, GetName(), "Frame does not seem to include a picture header");
     }
   }
 
   return true;
 }
 
-void RFC2429Frame::NewFrame()
+
+bool RFC2429Frame::Reset(size_t len)
 {
-  Reset(CIF16_WIDTH, CIF16_HEIGHT);
+  m_packetizationOffset = 0;
+  m_picHeader.len = 0;
+  m_customClock = false;
+  m_startCodes.clear();
+
+  return FFMPEGCodec::EncodedFrame::Reset(len);
 }
 
-bool RFC2429Frame::IsValid()
-{
-  if (m_encodedFrame.len == 0)
-    return false;
-
-  Bitstream headerBits;
-  headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
-  return (headerBits.GetBits(16) == 0) && (headerBits.GetBits(6) == 32);
-}
 
 bool RFC2429Frame::IsIntraFrame()
 {
-  if (!IsValid())
-    return false;
-
   Bitstream headerBits;
-  headerBits.SetBytes (m_encodedFrame.ptr, m_encodedFrame.len, 0, 0);
+  headerBits.SetBytes (m_buffer, m_length, 0, 0);
   headerBits.SetPos(35);
   if (headerBits.GetBits(3) == 7) { // This is the plustype
     if (headerBits.GetBits(3) == 1)
@@ -405,7 +344,8 @@ bool RFC2429Frame::IsIntraFrame()
   return headerBits.GetBits(1) == 0;
 }
 
-size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen) 
+
+size_t RFC2429Frame::ParseHeader(uint8_t* headerPtr, size_t headerMaxLen) 
 {
   Bitstream headerBits;
   headerBits.SetBytes (headerPtr, headerMaxLen, 0, 0);
@@ -424,9 +364,9 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
   bool UMV = false;
 
   headerBits.SetPos(6);
-  PTRACE(6, "H.263-RFC2429", "Header\tTR:" << headerBits.GetBits(8));                        // TR
+  PTRACE(6, GetName(), "Header\tTR:" << headerBits.GetBits(8));                        // TR
   headerBits.GetBits(2);                                                          // PTYPE, skip 1 0 bits
-  PTRACE(6, "H.263-RFC2429", "Header\tSplit Screen: "    << headerBits.GetBits(1) 
+  PTRACE(6, GetName(), "Header\tSplit Screen: "    << headerBits.GetBits(1) 
                          << " Document Camera: " << headerBits.GetBits(1)
                          << " Picture Freeze: "  << headerBits.GetBits(1));
   PTYPEFormat = headerBits.GetBits(3); 
@@ -434,11 +374,11 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
     UFEP = headerBits.GetBits(3);                                                 // PLUSPTYPE
     if (UFEP==1) {                                                                // OPPTYPE
       PLUSPTYPEFormat = headerBits.GetBits(3);
-      PTRACE(6, "H.263-RFC2429", "Header\tPicture: " << formats[PTYPEFormat] << ", "<< (plusFormats [PLUSPTYPEFormat]));
+      PTRACE(6, GetName(), "Header\tPicture: " << formats[PTYPEFormat] << ", "<< (plusFormats [PLUSPTYPEFormat]));
       PCF = headerBits.GetBits(1) != 0;
       UMV = headerBits.GetBits(1) != 0;
       m_customClock = PCF;
-      PTRACE(6, "H.263-RFC2429", "Header\tPCF: " << PCF 
+      PTRACE(6, GetName(), "Header\tPCF: " << PCF 
                              << " UMV: " << UMV 
                              << " SAC: " << headerBits.GetBits(1) 
                              << " AP: "  << headerBits.GetBits(1) 
@@ -446,7 +386,7 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
                              << " DF: "  << headerBits.GetBits(1));
       SS = headerBits.GetBits(1) != 0;
       RPS = headerBits.GetBits(1) != 0;
-      PTRACE(6, "H.263-RFC2429", "Header\tSS: "  << SS
+      PTRACE(6, GetName(), "Header\tSS: "  << SS
                           << " RPS: " << RPS
                           << " ISD: " << headerBits.GetBits(1)
                           << " AIV: " << headerBits.GetBits(1)
@@ -455,7 +395,7 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
     }
     PTCODE = headerBits.GetBits(3);
     if (PTCODE == 2) PB = true;
-    PTRACE(6, "H.263-RFC2429", "Header\tPicture: " << picTypeCodes [PTCODE]                  // MPPTYPE
+    PTRACE(6, GetName(), "Header\tPicture: " << picTypeCodes [PTCODE]                  // MPPTYPE
                            << " RPR: " << headerBits.GetBits(1) 
                            << " RRU: " << headerBits.GetBits(1) 
                         << " RTYPE: " << headerBits.GetBits(1));
@@ -463,9 +403,9 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
 
     CPM = headerBits.GetBits(1) != 0;                                                  // CPM + PSBI
     if (CPM) {
-      PTRACE(6, "H.263-RFC2429", "Header\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2));
+      PTRACE(6, GetName(), "Header\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2));
     } else {
-      PTRACE(6, "H.263-RFC2429", "Header\tCPM: " << CPM );
+      PTRACE(6, GetName(), "Header\tCPM: " << CPM );
     }
     if (UFEP == 1) {
       if (PLUSPTYPEFormat == 6) {
@@ -476,71 +416,71 @@ size_t RFC2429Frame::parseHeader(uint8_t* headerPtr, size_t headerMaxLen)
         width = (headerBits.GetBits(9) + 1) * 4;                                  // PWI
         headerBits.GetBits(1);                                                    // skip 1
         height = (headerBits.GetBits(9) + 1) * 4;                                 // PHI
-        PTRACE(6, "H.263-RFC2429", "Header\tAspect Ratio: " << (PARs [PAR]) << 
+        PTRACE(6, GetName(), "Header\tAspect Ratio: " << (PARs [PAR]) << 
                                   " Resolution: " << width << "x" <<  height);
 
         if (PAR == 15) {                                                          // EPAR
-          PTRACE(6, "H.263-RFC2429", "Header\tExtended Aspect Ratio: " 
+          PTRACE(6, GetName(), "Header\tExtended Aspect Ratio: " 
                  << headerBits.GetBits(8) << "x" <<  headerBits.GetBits(8));
         } 
       }
       if (PCF) {
-        PTRACE(6, "H.263-RFC2429", "Header\tCustom Picture Clock Frequency "
+        PTRACE(6, GetName(), "Header\tCustom Picture Clock Frequency "
 			   << (1800000 / (headerBits.GetBits(7) * (headerBits.GetBits(1) + 1000.0))));
       }
     }
 
     if (m_customClock) {
-      PTRACE(6, "H.263-RFC2429", "Header\tETR: " << headerBits.GetBits(2));
+      PTRACE(6, GetName(), "Header\tETR: " << headerBits.GetBits(2));
     }
 
     if (UFEP == 1) {
       if (UMV)  {
          if (headerBits.GetBits(1) == 1)
-           PTRACE(6, "H.263-RFC2429", "Header\tUUI: 1");
+           PTRACE(6, GetName(), "Header\tUUI: 1");
           else
-           PTRACE(6, "H.263-RFC2429", "Header\tUUI: 0" << headerBits.GetBits(1));
+           PTRACE(6, GetName(), "Header\tUUI: 0" << headerBits.GetBits(1));
       }
       if (SS) {
-        PTRACE(6, "H.263-RFC2429", "Header\tSSS:" << headerBits.GetBits(2));
+        PTRACE(6, GetName(), "Header\tSSS:" << headerBits.GetBits(2));
       }
     }
 
     if ((PTCODE==3) || (PTCODE==4) || (PTCODE==5)) {
-      PTRACE(6, "H.263-RFC2429", "Header\tELNUM: " << headerBits.GetBits(4));
+      PTRACE(6, GetName(), "Header\tELNUM: " << headerBits.GetBits(4));
       if (UFEP==1)
-        PTRACE(6, "H.263-RFC2429", "Header\tRLNUM: " << headerBits.GetBits(4));
+        PTRACE(6, GetName(), "Header\tRLNUM: " << headerBits.GetBits(4));
     }
 
     if (RPS) {
-        PTRACE(1, "H.263-RFC2429", "Header\tDecoding of RPS parameters not supported");
+        PTRACE(1, GetName(), "Header\tDecoding of RPS parameters not supported");
         return 0;
     }  
-    PTRACE(6, "H.263-RFC2429", "Header\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
+    PTRACE(6, GetName(), "Header\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
   } else {
-    PTRACE(6, "H.263-RFC2429", "Header\tPicture: " << formats[PTYPEFormat] 
+    PTRACE(6, GetName(), "Header\tPicture: " << formats[PTYPEFormat] 
                                    << ", " << (headerBits.GetBits(1) ? "P-Picture" : "I-Picture")  // still PTYPE
                                << " UMV: " << headerBits.GetBits(1) 
                                << " SAC: " << headerBits.GetBits(1) 
                                << " APC: " << headerBits.GetBits(1));
     PB = headerBits.GetBits(1) != 0;                                                      // PB
-    PTRACE(6, "H.263-RFC2429", "Header\tPB-Frames: " << PB);
-    PTRACE(6, "H.263-RFC2429", "Header\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
+    PTRACE(6, GetName(), "Header\tPB-Frames: " << PB);
+    PTRACE(6, GetName(), "Header\tPQUANT: " << headerBits.GetBits(5));                    // PQUANT
 
     CPM = headerBits.GetBits(1) != 0;
     if (CPM) {
-      PTRACE(6, "H.263-RFC2429", "Header\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2)); // CPM + PSBI
+      PTRACE(6, GetName(), "Header\tCPM: " << CPM << " PSBI: " << headerBits.GetBits(2)); // CPM + PSBI
     } else {
-      PTRACE(6, "H.263-RFC2429", "Header\tCPM: " << CPM ); 
+      PTRACE(6, GetName(), "Header\tCPM: " << CPM ); 
     }
   }	
 
   if (PB)
-    PTRACE(6, "H.263-RFC2429", "Header\tTRB: " << headerBits.GetBits (3)                     // TRB
+    PTRACE(6, GetName(), "Header\tTRB: " << headerBits.GetBits (3)                     // TRB
                     << " DBQUANT: " << headerBits.GetBits (2));                   // DQUANT
 
   while (headerBits.GetBits (1)) {                                                // PEI bit
-    PTRACE(6, "H.263-RFC2429", "Header\tPSUPP: " << headerBits.GetBits (8));                 // PSPARE bits 
+    PTRACE(6, GetName(), "Header\tPSUPP: " << headerBits.GetBits (8));                 // PSPARE bits 
   }
 
   return headerBits.GetPos();

@@ -933,6 +933,27 @@ class H323GenericAudioCapability : public H323AudioCapability,
 };
 
 
+template <const char * oid, const OpalAudioFormat & fmtFunc()>
+class H323GenericAudioCapabilityTemplate : public H323GenericAudioCapability
+{
+  public:
+    H323GenericAudioCapabilityTemplate()
+      : H323GenericAudioCapability(oid)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323GenericAudioCapabilityTemplate(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return fmtFunc();
+    }
+};
+
+
 #if OPAL_VIDEO
 
 /**This class describes the interface to a video codec used to transfer data
@@ -1281,6 +1302,27 @@ class H323GenericVideoCapability : public H323VideoCapability,
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
+};
+
+
+template <const char * oid, const OpalVideoFormat & fmtFunc()>
+class H323GenericVideoCapabilityTemplate : public H323GenericVideoCapability
+{
+  public:
+    H323GenericVideoCapabilityTemplate()
+      : H323GenericVideoCapability(oid)
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323GenericVideoCapabilityTemplate(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return fmtFunc();
+    }
 };
 
 

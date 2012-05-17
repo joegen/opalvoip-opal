@@ -657,12 +657,10 @@ class H323H261PluginCapability : public H323VideoCapability,
 // Class for handling H.263 plugin capabilities
 //
 
-class H323H263PluginCapability : public H323VideoCapability,
-                                 public H323PluginCapabilityInfo
+class H323H263Capability : public H323VideoCapability
 {
-  PCLASSINFO(H323H263PluginCapability, H323VideoCapability);
   public:
-    H323H263PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat);
+    H323H263Capability(const PString & variant);
 
     Comparison Compare(const PObject & obj) const;
 
@@ -686,6 +684,21 @@ class H323H263PluginCapability : public H323VideoCapability,
       const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
+
+  protected:
+    PString m_variant;
+};
+
+class H323H263PluginCapability : public H323H263Capability,
+                                 public H323PluginCapabilityInfo
+{
+    PCLASSINFO(H323H263PluginCapability, H323VideoCapability);
+  public:
+    H323H263PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat)
+      : H323H263Capability(mediaFormat)
+      , H323PluginCapabilityInfo(codecDefn, mediaFormat)
+    {
+    }
 };
 
 #endif // OPAL_VIDEO

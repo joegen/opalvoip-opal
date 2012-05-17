@@ -29,48 +29,125 @@
  * $Date$
  */
 
+// This is to get around the DevStudio precompiled headers rqeuirements.
+#ifdef OPAL_PLUGIN_COMPILE
+#define PTLIB_PTLIB_H
+#endif
+
 #include <ptlib.h>
-#include <opal/buildopts.h>
 
-#include <opal/mediafmt.h>
 #include <codec/opalplugin.h>
-#include <h323/h323caps.h>
+#include <codec/known.h>
 
 
-#define new PNEW
+///////////////////////////////////////////////////////////////////////////////
+
+static const char G7222FormatName[]   = OPAL_G7222;
+static const char G7222EncodingName[] = "AMR-WB";
+
+#define G7222_SAMPLES_PER_FRAME    320   // 20 ms frame
+#define G7222_SAMPLE_RATE          16000
+#define G7222_MAX_BYTES_PER_FRAME  62
+#define G7222_MAX_BIT_RATE         (G7222_MAX_BYTES_PER_FRAME*400)
+
+static const char G7222InitialModeName[]               = "Initial Mode";
+static const char G7222AlignmentOptionName[]           = "Octet Aligned";
+static const char G7222ModeSetOptionName[]             = "Mode Set";
+static const char G7222ModeChangePeriodOptionName[]    = "Mode Change Period";
+static const char G7222ModeChangeNeighbourOptionName[] = "Mode Change Neighbour";
+static const char G7222CRCOptionName[]                 = "CRC";
+static const char G7222RobustSortingOptionName[]       = "Robust Sorting";
+static const char G7222InterleavingOptionName[]        = "Interleaving";
+
+// H.245 generic parameters; see G.722.2
+enum
+{
+    G7222_H245_MAXAL_SDUFRAMES_RX    = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS,
+    G7222_H245_MAXAL_SDUFRAMES_TX    = 0 | PluginCodec_H245_Collapsing   | PluginCodec_H245_OLC,
+    G7222_H245_REQUEST_MODE          = 1 | PluginCodec_H245_NonCollapsing| PluginCodec_H245_ReqMode,
+    G7222_H245_OCTET_ALIGNED         = 2 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_MODE_SET              = 3 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_MODE_CHANGE_PERIOD    = 4 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_MODE_CHANGE_NEIGHBOUR = 5 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_CRC                   = 6 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_ROBUST_SORTING        = 7 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    G7222_H245_INTERLEAVING          = 8 | PluginCodec_H245_Collapsing   | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+};
+
+
+static const char G7222InitialModeFMTPName[] = "mode";
+static const char G7222AlignmentFMTPName[]   = "octet-align";
+
+#define G7222_MAX_MODES              8
+#define G7222_MODE_INITIAL_VALUE     7
+#define G7222_MODE_SET_INITIAL_VALUE 0x1ff
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+#ifndef OPAL_PLUGIN_COMPILE
+
+#include <opal/mediafmt.h>
+#include <h323/h323caps.h>
+
 
 class OpalG7222Format : public OpalAudioFormatInternal
 {
   public:
     OpalG7222Format()
-      : OpalAudioFormatInternal(OPAL_G7222, RTP_DataFrame::DynamicBase, "AMR-WB",  33, 160, 1, 1, 1, 8000, 0)
+      : OpalAudioFormatInternal(G7222FormatName,
+                                RTP_DataFrame::DynamicBase,
+                                G7222EncodingName,
+                                G7222_MAX_BYTES_PER_FRAME,
+                                G7222_SAMPLES_PER_FRAME,
+                                1, 1, 1,
+                                G7222_SAMPLE_RATE)
     {
-      OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
-#if OPAL_SIP
-      option->SetFMTPName("mode");
-      option->SetFMTPDefault("0");
-#endif
-#if OPAL_H323
-      OpalMediaOption::H245GenericInfo info;
-      info.ordinal = 1;
-      info.mode = OpalMediaOption::H245GenericInfo::NonCollapsing;
-      info.excludeTCS = info.excludeOLC = true;
-      option->SetH245Generic(info);
-#endif
+      OpalMediaOption * option = new OpalMediaOptionInteger(G7222InitialModeName,
+                                                            false,
+                                                            OpalMediaOption::MinMerge,
+                                                            G7222_MODE_INITIAL_VALUE,
+                                                            0, G7222_MAX_MODES);
+      OPAL_SET_MEDIA_OPTION_FMTP(option, G7222InitialModeFMTPName, "0");
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_REQUEST_MODE);
+      AddOption(option);
+
+      option = new OpalMediaOptionBoolean(G7222AlignmentOptionName, false, OpalMediaOption::AndMerge, false);
+      OPAL_SET_MEDIA_OPTION_FMTP(option, G7222AlignmentFMTPName, "0");
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_OCTET_ALIGNED);
       AddOption(option);
 
 #if OPAL_H323
       option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
-      if (option != NULL) {
-        info.ordinal = 0; // All other fields the same as for the mode
-        info.excludeTCS = false;
-        info.excludeReqMode = true;
-        option->SetH245Generic(info);
-      }
-#endif
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MAXAL_SDUFRAMES_RX);
+
+      option = FindOption(OpalAudioFormat::TxFramesPerPacketOption());
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MAXAL_SDUFRAMES_TX);
+
+      option = new OpalMediaOptionInteger(G7222ModeSetOptionName, true, OpalMediaOption::EqualMerge, G7222_MODE_SET_INITIAL_VALUE);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MODE_SET);
+      AddOption(option);
+
+      option = new OpalMediaOptionInteger(G7222ModeChangePeriodOptionName, false, OpalMediaOption::MinMerge, 0, 1000);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MODE_CHANGE_PERIOD);
+      AddOption(option);
+
+      option = new OpalMediaOptionBoolean(G7222ModeChangeNeighbourOptionName, false, OpalMediaOption::AndMerge);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MODE_CHANGE_NEIGHBOUR);
+      AddOption(option);
+
+      option = new OpalMediaOptionBoolean(G7222CRCOptionName, true, OpalMediaOption::AndMerge);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_CRC);
+      AddOption(option);
+
+      option = new OpalMediaOptionBoolean(G7222RobustSortingOptionName, true, OpalMediaOption::AndMerge);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_ROBUST_SORTING);
+      AddOption(option);
+
+      option = new OpalMediaOptionBoolean(G7222InterleavingOptionName, true, OpalMediaOption::AndMerge);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_INTERLEAVING);
+      AddOption(option);
+#endif // OPAL_H323
 
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
     }
@@ -78,39 +155,25 @@ class OpalG7222Format : public OpalAudioFormatInternal
 
 
 #if OPAL_H323
-class H323_G7222Capability : public H323GenericAudioCapability
-{
-  public:
-    H323_G7222Capability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_G7222)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_G7222Capability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpalG7222;
-    }
-};
-#endif // OPAL_H323
-
+extern const char G7222_Identifier[] = OpalPluginCodec_Identifer_G7222;
+#endif
 
 
 const OpalAudioFormat & GetOpalG7222()
 {
-  static OpalAudioFormat const G7222_Format(new OpalG7222Format);
+  static OpalAudioFormat const format(new OpalG7222Format);
 
 #if OPAL_H323
-  static H323CapabilityFactory::Worker<H323_G7222Capability> G7222_Factory(OPAL_G7222, true);
-#endif // OPAL_H323
+  static H323CapabilityFactory::Worker<
+    H323GenericAudioCapabilityTemplate<G7222_Identifier, GetOpalG7222>
+  > capability(G7222FormatName, true);
+#endif
 
-  return G7222_Format;
+  return format;
 }
 
+
+#endif // OPAL_PLUGIN_COMPILE
 
 
 // End of File ///////////////////////////////////////////////////////////////

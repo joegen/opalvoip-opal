@@ -45,29 +45,15 @@
 #include "vpx/vp8dx.h"
 
 
-#define MY_CODEC      VP8                       // Name of codec (use C variable characters)
-#define MY_CODEC_LOG "VP8"
+#define MY_CODEC VP8                       // Name of codec (use C variable characters)
 
+#define MY_CODEC_LOG  STRINGIZE(MY_CODEC)
 class MY_CODEC { };
 
-static unsigned   MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
-static const char MyDescription[] = "VP8 Video Codec";      // Human readable description of codec
-static const char FormatNameRFC[] = "VP8-WebM";             // OpalMediaFormat name string to generate
-static const char FormatNameOM[] = "VP8-OM";                // OpalMediaFormat name string to generate
-static const char MyPayloadNameRFC[] = "VP8";               // RTP payload name (IANA approved)
-static const char MyPayloadNameOM[] = "X-MX-VP8";           // RTP payload name (Open Market custom)
-static unsigned   MyClockRate = 90000;                      // RTP dictates 90000
-static unsigned   MyMaxFrameRate = 60;                      // Maximum frame rate (per second)
-static unsigned   MyMaxWidth = 2816;                        // Maximum width of frame
-static unsigned   MyMaxHeight = 2304;                       // Maximum height of frame
-static unsigned   MyMaxBitRate = 16000000;
-
-static const char YUV420PFormatName[] = "YUV420P";          // Raw media format
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 
-static struct PluginCodec_information LicenseInfo = {
-  1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
-
+PLUGINCODEC_LICENSE(
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author
   "1.0",                                                        // source code version
   "robertj@voxlucida.com.au",                                   // source code email
@@ -76,7 +62,7 @@ static struct PluginCodec_information LicenseInfo = {
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
   
-  MyDescription,                                                // codec description
+  "VP8 Video Codec",                                            // codec description
   "James Bankoski, John Koleszar, Lou Quillio, Janne Salonen, "
   "Paul Wilkins, Yaowu Xu, all from Google Inc.",               // codec author
   "8", 							        // codec version
@@ -87,10 +73,7 @@ static struct PluginCodec_information LicenseInfo = {
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec copyright information
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec license
   PluginCodec_License_BSD                                       // codec license code
-};
-
-
-PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -115,6 +98,14 @@ static struct PluginCodec_Option const * OptionTable[] = {
 };
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoRFC("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", 16000000, OptionTable);
+static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoOM("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", 16000000, OptionTable);
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 static bool IsError(vpx_codec_err_t err, const char * fn)
 {
   if (err == VPX_CODEC_OK)
@@ -125,32 +116,6 @@ static bool IsError(vpx_codec_err_t err, const char * fn)
 }
 
 #define IS_ERROR(fn, args) IsError(fn args, #fn)
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class MyPluginMediaFormat : public PluginCodec_MediaFormat
-{
-public:
-  MyPluginMediaFormat(OptionsTable options)
-    : PluginCodec_MediaFormat(options)
-  {
-  }
-
-
-  virtual bool ToNormalised(OptionMap &, OptionMap & )
-  {
-    return true;
-  }
-
-
-  virtual bool ToCustomised(OptionMap &, OptionMap &)
-  {
-    return true;
-  }
-}; 
-
-static MyPluginMediaFormat MyMediaFormatInfo(OptionTable);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,7 +162,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
       m_config.g_lag_in_frames = 0;
       m_config.rc_end_usage = VPX_CBR;
       m_config.g_timebase.num = 1;
-      m_config.g_timebase.den = MyClockRate;
+      m_config.g_timebase.den = PLUGINCODEC_VIDEO_CLOCK;
 
       if (!OnChangedOptions())
         return false;
@@ -216,7 +181,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
       else {
         m_config.kf_mode = VPX_KF_AUTO;
         m_config.kf_min_dist = 0;
-        m_config.kf_max_dist = 10*MyClockRate/m_frameTime;  // No slower than once every 10 seconds
+        m_config.kf_max_dist = 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime;  // No slower than once every 10 seconds
       }
 
       m_config.rc_target_bitrate = m_maxBitRate/1000;
@@ -582,150 +547,8 @@ class MyDecoderOM : public MyDecoder
 
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
-  {
-    // Encoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    YUV420PFormatName,                  // source format
-    FormatNameRFC,                      // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameRFC,                   // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyEncoderRFC>,  // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    FormatNameRFC,                      // source format
-    YUV420PFormatName,                  // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameRFC,                   // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyDecoderRFC>,  // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  {
-    // Encoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    YUV420PFormatName,                  // source format
-    FormatNameOM,                       // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameOM,                    // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyEncoderOM>,   // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    FormatNameOM,                       // source format
-    YUV420PFormatName,                  // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameOM,                    // IANA RTP payload name
-
-    PluginCodec<MY_CODEC>::Create<MyDecoderOM>,   // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  }
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoRFC, MyEncoderRFC, MyDecoderRFC),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoOM,  MyEncoderOM,  MyDecoderOM)
 };
 
 PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);

@@ -209,6 +209,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\ffmpeg.cxx"
+				>
+			</File>
+			<File
 				RelativePath=".\h263-1998.cxx"
 				>
 			</File>

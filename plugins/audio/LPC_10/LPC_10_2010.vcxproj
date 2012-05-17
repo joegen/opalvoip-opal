@@ -47,8 +47,8 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\bin\plugins\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LPC-10_ptplugin</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LPC-10_ptplugin</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LPC_10_ptplugin</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LPC_10_ptplugin</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -115,7 +115,6 @@
       <Culture>0x0c09</Culture>
     </ResourceCompile>
     <Link>
-      <OutputFile>$(OutDir)LPC_10_ptplugin.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
