@@ -733,8 +733,11 @@ bool VideoThread::Initialise(PArgList & args)
 
   m_frameTime = mediaFormat.GetFrameTime();
   if (m_encoder != NULL) {
-    if (args.HasOption('p'))
-      m_encoder->SetMaxOutputSize(args.GetOptionString('p').AsUnsigned());
+    if (args.HasOption('p')) {
+      unsigned bytes = args.GetOptionString('p').AsUnsigned();
+      m_encoder->SetMaxOutputSize(bytes);
+      mediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), bytes);
+    }
     m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
   }
 
