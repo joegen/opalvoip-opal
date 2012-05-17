@@ -40,10 +40,10 @@
 #include "plugin-config.h"
 #endif
 
-#include "ffmpeg.h"
-#include "dyna.h"
-
 #include <codec/opalplugin.hpp>
+
+#include "../common/ffmpeg.h"
+#include "../common/dyna.h"
 
 #include "shared/h264frame.h"
 #include "shared/x264wrap.h"
@@ -357,7 +357,7 @@ static struct PluginCodec_Option const MaxNaluSize =
   "max-rcmd-nalu-size",               // FMTP option name
   STRINGIZE(H241_MAX_NALU_SIZE),      // FMTP default value
   H241_Max_NAL_unit_size,             // H.245 generic capability code and bit mask
-  STRINGIZE(UNCOMPRESSED_MB_SIZE),    // Minimum value
+  "396",                              // Minimum value - uncompressed macro block size 16*16*3+12
   "65535"                             // Maximum value
 };
 
@@ -829,7 +829,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       , m_level(DefaultLevelInt)
       , m_constraints(0)
       , m_packetisationMode(1)
-      , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
+      , m_maxRTPSize(PluginCodec_RTP_MaxPayloadSize)
       , m_maxNALUSize(1400)
       , m_tsto(31)
       , m_keyFramePeriod(0)
@@ -956,10 +956,19 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(m_frameRate);
       m_encoder.SetTargetBitrate(m_bitRate/1000);
-      unsigned maxPayloadSize = std::min(m_maxRTPSize-PluginCodec_RTP_MinHeaderSize, m_maxNALUSize);
-      m_encoder.SetMaxRTPPayloadSize(maxPayloadSize);
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
+
+      if (m_packetisationMode == 0) {
+        unsigned size = std::min(m_maxRTPSize, m_maxNALUSize);
+        m_encoder.SetMaxRTPPayloadSize(size);
+        m_encoder.SetMaxNALUSize(size);
+      }
+      else {
+        m_encoder.SetMaxRTPPayloadSize(m_maxRTPSize);
+        m_encoder.SetMaxNALUSize(m_maxNALUSize);
+      }
+
       m_encoder.ApplyOptions();
 
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
@@ -968,7 +977,8 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << m_frameRate << " "
                               "bps=" << m_bitRate << " "
-                              "RTP=" << maxPayloadSize << " "
+                              "RTP=" << m_maxRTPSize << " "
+                              "NALU=" << m_maxNALUSize << " "
                               "TSTO=" << m_tsto);
       return true;
     }

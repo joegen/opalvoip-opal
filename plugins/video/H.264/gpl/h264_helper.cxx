@@ -19,7 +19,9 @@
  *
  */
 
+#ifndef _MSC_VER
 #include "plugin-config.h"
+#endif
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +44,8 @@
 #include "../shared/x264wrap.cxx"
 #include "../shared/h264frame.cxx"
 
+
+static const char Version[] = "$Revision: 12345$";
 
 #ifdef WIN32
 
@@ -198,6 +202,7 @@ int main(int argc, char *argv[])
 
     switch (msg) {
       case H264ENCODERCONTEXT_CREATE:
+          msg = atoi(&Version[11]);
           WritePipe(&msg, sizeof(msg)); 
         break;
       case H264ENCODERCONTEXT_DELETE:
@@ -263,14 +268,17 @@ int main(int argc, char *argv[])
         break;
       case SET_MAX_PAYLOAD_SIZE:
           ReadPipe(&val, sizeof(val));
-          x264.SetMaxRTPPayloadSize (val);
+          x264.SetMaxRTPPayloadSize(val);
           rtpSize = val+100; // Allow for standard 12 byte RTP header and a LOT of header extensions
+          WritePipe(&msg, sizeof(msg)); 
+        break;
+      case SET_MAX_NALU_SIZE:
+          ReadPipe(&val, sizeof(val));
+          x264.SetMaxNALUSize(val);
           WritePipe(&msg, sizeof(msg)); 
         break;
       default:
         break;
     }
   }
-
-  return 0;
 }
