@@ -997,7 +997,7 @@ bool OpalMediaFormat::ValidateMerge(const OpalMediaFormat & mediaFormat) const
 
 
 #if OPAL_H323
-PStringSet OpalMediaFormat::GetMediaPacketizations() const
+PStringArray OpalMediaFormat::GetMediaPacketizations() const
 {
   return GetOptionString(OpalMediaFormat::MediaPacketizationsOption(),
                          GetOptionString(OpalMediaFormat::MediaPacketizationOption())).Tokenise(",");
