@@ -47,6 +47,9 @@ class OpalCapiConnection;
 struct OpalCapiMessage;
 
 
+#define OPAL_OPT_CAPI_B_PROTO  "B-Proto"  ///< String option for B-protocol data (in hex)
+
+
 /**This class describes and endpoint that handles ISDN via CAPI.
  */
 class OpalCapiEndPoint : public OpalEndPoint
@@ -304,6 +307,9 @@ class OpalCapiConnection : public OpalConnection
       char tone,    ///<  DTMF tone code
       int duration  ///<  Duration of tone in milliseconds
     );
+
+    /// Call back for connection to act on changed string options
+    virtual void OnApplyStringOptions();
   //@}
 
   /**@name Member variable access */
@@ -321,6 +327,8 @@ class OpalCapiConnection : public OpalConnection
     DWORD              m_NCCI;
 
     PSyncPoint m_disconnected;
+
+    PBYTEArray m_Bprotocol;
 
   friend class OpalCapiEndPoint;
   friend struct OpalCapiEndPoint::IdToConnMap;

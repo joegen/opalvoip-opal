@@ -222,17 +222,6 @@ struct OpalCapiMessage
     BYTE m_Params[200]; // Space for command specific parameters
   } param;
 
-  struct Bprotocol {
-    Bprotocol() { memset(this, 0, sizeof(*this)); }
-    WORD m_B1protocol;
-    WORD m_B2protocol;
-    WORD m_B3protocol;
-    BYTE m_B1config;      // Zero length place holder
-    BYTE m_B2config;      // Zero length place holder
-    BYTE m_B3config;      // Zero length place holder
-    BYTE m_GlobalConfig;  // Zero length place holder
-  };
-
   OpalCapiMessage(unsigned command, unsigned subcommand, size_t fixedParamSize)
   {
     header.m_Length = (WORD)(sizeof(Header)+fixedParamSize);
@@ -511,6 +500,24 @@ static BYTE const ReverseBits[256] = {
 };
 
 
+static struct {
+  WORD m_B1protocol;
+  WORD m_B2protocol;
+  WORD m_B3protocol;
+  BYTE m_B1config;      // Zero length place holder
+  BYTE m_B2config;      // Zero length place holder
+  BYTE m_B3config;      // Zero length place holder
+  BYTE m_GlobalConfig;  // Zero length place holder
+} const DefaultBprotocol = {
+  1, // Physical layer: 64 kbit/s bit-transparent operation with byte framing from the network
+  1, // Data link layer: Transparent
+  0, // Network layer: Transparent
+  0, // Zero length place holder
+  0, // Zero length place holder
+  0, // Zero length place holder
+  0, // Zero length place holder
+};
+
 ///////////////////////////////////////////////////////////////////////
 
 OpalCapiEndPoint::OpalCapiEndPoint(OpalManager & manager)
@@ -622,6 +629,9 @@ OpalCapiConnection * OpalCapiEndPoint::CreateConnection(OpalCall & call,
 
 PString OpalCapiEndPoint::GetDriverInfo() const
 {
+  if (m_capi == NULL)
+    return PString::Empty();
+
   OpalCapiProfile profile;
   DWORD capiversion_min;
   DWORD capiversion_maj;
@@ -900,6 +910,7 @@ OpalCapiConnection::OpalCapiConnection(OpalCall & call,
   , m_bearer(bearer)
   , m_PLCI(0)
   , m_NCCI(0)
+  , m_Bprotocol((const BYTE *)&DefaultBprotocol, sizeof(DefaultBprotocol))
 {
 }
 
@@ -907,6 +918,16 @@ OpalCapiConnection::OpalCapiConnection(OpalCall & call,
 bool OpalCapiConnection::IsNetworkConnection() const
 {
   return true;
+}
+
+
+void OpalCapiConnection::OnApplyStringOptions()
+{
+  OpalConnection::OnApplyStringOptions();
+
+  PStringStream bProto = m_stringOptions(OPAL_OPT_CAPI_B_PROTO);
+  if (!bProto.IsEmpty())
+    bProto >> m_Bprotocol;
 }
 
 
@@ -927,11 +948,7 @@ PBoolean OpalCapiConnection::SetUpConnection()
   message.AddEmpty(); // Called party subaddress
   message.AddEmpty(); // Calling party subaddress
 
-  OpalCapiMessage::Bprotocol proto;
-  proto.m_B1protocol = 1; // Physical layer: 64 kbit/s bit-transparent operation with byte framing from the network
-  proto.m_B2protocol = 1; // Data link layer: Transparent
-  proto.m_B3protocol = 0; // Network layer: Transparent
-  message.Add(&proto, sizeof(proto)); // B protocol
+  message.Add(m_Bprotocol, m_Bprotocol.GetSize());
 
   message.AddEmpty(); // Bearer Capabilities
   message.AddEmpty(); // Low Layer Compatibility
@@ -948,11 +965,7 @@ PBoolean OpalCapiConnection::SetAlerting(const PString & /*calleeName*/, PBoolea
   OpalCapiMessage message(CAPI_ALERT, CAPI_REQ, sizeof(OpalCapiMessage::Params::AlertReq));
   message.param.alert_req.m_PLCI = m_PLCI;
 
-  OpalCapiMessage::Bprotocol proto;
-  proto.m_B1protocol = 1; // Physical layer: 64 kbit/s bit-transparent operation with byte framing from the network
-  proto.m_B2protocol = 1; // Data link layer: Transparent
-  proto.m_B3protocol = 0; // Network layer: Transparent
-  message.Add(&proto, sizeof(proto)); // B protocol
+  message.Add(m_Bprotocol, m_Bprotocol.GetSize());
 
   message.AddEmpty(); // Keypad facility
   message.AddEmpty(); // User-user data
@@ -969,11 +982,7 @@ PBoolean OpalCapiConnection::SetConnected()
   OpalCapiMessage message(CAPI_CONNECT, CAPI_RESP, sizeof(OpalCapiMessage::Params::ConnectResp));
   message.param.connect_resp.m_PLCI = m_PLCI;
   message.param.connect_resp.m_Reject = 0;
-  OpalCapiMessage::Bprotocol proto;
-  proto.m_B1protocol = 1; // Physical layer: 64 kbit/s bit-transparent operation with byte framing from the network
-  proto.m_B2protocol = 1; // Data link layer: Transparent
-  proto.m_B3protocol = 0; // Network layer: Transparent
-  message.Add(&proto, sizeof(proto)); // B protocol
+  message.Add(m_Bprotocol, m_Bprotocol.GetSize());
   message.Add(localPartyName); // Connected party number
   message.AddEmpty(); // Connected party subaddress
   message.AddEmpty(); // Low Layer Compatibility
