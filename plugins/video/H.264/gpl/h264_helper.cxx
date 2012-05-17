@@ -45,7 +45,8 @@
 #include "../shared/h264frame.cxx"
 
 
-static const char Version[] = "$Revision: 12345$";
+static const char Version[] = "$Revision$";
+
 
 #ifdef WIN32
 
