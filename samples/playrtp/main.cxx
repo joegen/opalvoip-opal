@@ -228,14 +228,14 @@ void PlayRTP::Main()
       }
     }
     else {
-      cout << "Select one of the following sessions:\n" << discoveredRTPMap << endl;
+      cout << "Select one of the following sessions (index [ format ]):\n" << discoveredRTPMap << endl;
       for (;;) {
         cout << "Select (1-" << discoveredRTPMap.size()*2 << ") ? " << flush;
-        size_t selected;
-        cin >> selected;
-        if (pcap.SetFilters(discoveredRTPMap, selected))
+        PString line;
+        cin >> line;
+        if (pcap.SetFilters(discoveredRTPMap, line.AsUnsigned(), line.Mid(line.Find(' ')).Trim()))
           break;
-        cout << "Session " << selected << " is not valid" << endl;
+        cout << "Session/format " << line << " is not valid" << endl;
       }
     }
   }
@@ -545,9 +545,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     else {
       if (m_singleStep) {
         cout << output.GetSize() << " packets" << endl;
-        char ch;
-        cin >> ch;
-        if (ch == 'c')
+        if (cin.get() == 'c')
           m_singleStep = false;
       }
 
