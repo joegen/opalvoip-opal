@@ -120,13 +120,15 @@ class OpalPCAPFile : public PFile
 
     bool DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap);
 
-    void SetFilters(
+    bool SetFilters(
       const DiscoveredRTPInfo & rtp,
-      int dir
+      int dir,
+      const PString & format = PString::Empty()
     );
     bool SetFilters(
       const DiscoveredRTPMap & rtp,
-      size_t index
+      size_t index,
+      const PString & format = PString::Empty()
     );
 
     bool SetPayloadMap(
