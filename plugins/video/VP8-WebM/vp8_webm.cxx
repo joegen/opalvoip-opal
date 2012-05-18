@@ -310,7 +310,7 @@ class MyEncoderOM : public MyEncoder
         headerSize = 2;
 
         rtp[0] = 0x40; // Start bit
-        rtp[1] = 0x40; // LANDSCAPE_UP mode
+        rtp[1] = 0x20; // LANDSCAPE_UP mode
 
         if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
           rtp[1] |= 0x80; // Indicate is golden frame
@@ -495,7 +495,7 @@ class MyDecoderOM : public MyDecoder
   public:
     MyDecoderOM(const PluginCodec_Definition * defn)
       : MyDecoder(defn)
-      , m_expectedGID(0)
+      , m_expectedGID(UINT_MAX)
       , m_ignoreTillFirst(false)
     {
     }
@@ -515,6 +515,7 @@ class MyDecoderOM : public MyDecoder
       if ((rtp[0]&0x80) != 0) {
         while ((rtp[headerSize]&0x80) != 0)
           ++headerSize;
+        ++headerSize;
       }
 
       if (m_ignoreTillFirst) {
@@ -534,11 +535,9 @@ class MyDecoderOM : public MyDecoder
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
 
       unsigned gid = rtp[0]&0x3f;
-      if (m_expectedGID == gid)
-        return true;
-
+      bool expected = m_expectedGID == UINT_MAX || m_expectedGID == gid;
       m_expectedGID = gid;
-      return false;
+      return expected || first;
     }
 };
 
