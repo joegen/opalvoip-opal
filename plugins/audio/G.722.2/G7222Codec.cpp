@@ -3,6 +3,7 @@
  * AMR-WB (ITU G.722.2) Plugin codec for OpenH323/OPAL
  *
  * Copyright (c) 2009 Nimajin Software Consulting, All Rights Reserved
+ * Copyright (C) 2010 Vox Lucida Pty. Ltd.
  *
  * Permission to copy, use, sell and distribute this file is granted
  * provided this copyright notice appears in all copies.
@@ -34,6 +35,7 @@
  * AMR-WB is patented. Use requires licence from VoiceAge.
  *
  * Initial development by: Ted Szoczei, Nimajin Software Consulting, 09-12-31
+ * Portions developed by: Robert Jongbloed, Vox Lucida Pty. Ltd.
  *
  * 06-04-03 Revise to conform to RFC 3267: use correct packet sizes, handle 
  *            missing CMR, detect use of bandwidth efficient mode, pass quality
