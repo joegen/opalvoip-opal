@@ -54,9 +54,10 @@
 
 #define MY_CODEC FF_MP4V  // Name of codec (use C variable characters)
 
-#define OPAL_PLUGIN_COMPILE 1
 #define OPAL_H323 1
 #define OPAL_SIP 1
+
+//#include "../../../src/codec/mpeg4mf_inc.cxx"
 
 #include <codec/opalplugin.hpp>
 

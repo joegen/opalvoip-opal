@@ -42,13 +42,12 @@
 
 #define MY_CODEC x264  // Name of codec (use C variable characters)
 
-#define OPAL_PLUGIN_COMPILE 1
 #define OPAL_H323 1
 #define OPAL_SIP 1
 
-#include "../../../src/codec/h264mf.cxx"
+#include "../../../src/codec/h264mf_inc.cxx"
 
-#include "ffmpeg.h"
+#include "../../common/ffmpeg.h"
 
 #include "shared/h264frame.h"
 #include "shared/x264wrap.h"
