@@ -23,7 +23,7 @@
 #ifndef __H263PFrame_H__
 #define __H263PFrame_H__ 1
 
-#include "../../common/ffmpeg.h"
+#include "../common/ffmpeg.h"
 
 #include <vector>
 

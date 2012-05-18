@@ -31,7 +31,7 @@ SRCDIR    := .
 SRCS      := h263-1998.cxx \
              rfc2429.cxx \
              rfc2190.cxx \
-             $(COMMONDIR)/mpi.cxx \
+             $(COMMONDIR)/ffmpeg.cxx \
              $(COMMONDIR)/dyna.cxx
 
 CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)

@@ -32,6 +32,8 @@
 #include <codec/opalplugin.hpp>
 #include <codec/known.h>
 
+#include <stdio.h>
+
 #undef min
 #undef max
 
