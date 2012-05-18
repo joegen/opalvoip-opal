@@ -62,7 +62,7 @@ bool DynaLink::Open(const char *name)
 #elif _WIN32
     strcpy(ptlibPath, "C:\\PTLib_Plugins");
 #else
-    strcpy(ptlibPath, "/usr/local/lib");
+    strcpy(ptlibPath, "/usr/local/lib:/opt/local/lib");
 #endif
   char * p = ::strtok(ptlibPath, DIR_TOKENISER);
   while (p != NULL) {
