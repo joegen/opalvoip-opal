@@ -925,7 +925,7 @@ void OpalCapiConnection::OnApplyStringOptions()
 {
   OpalConnection::OnApplyStringOptions();
 
-  PStringStream bProto = m_stringOptions(OPAL_OPT_CAPI_B_PROTO);
+  PStringStream bProto(m_stringOptions(OPAL_OPT_CAPI_B_PROTO));
   if (!bProto.IsEmpty())
     bProto >> m_Bprotocol;
 }

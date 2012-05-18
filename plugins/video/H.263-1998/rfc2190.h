@@ -22,7 +22,7 @@
 #ifndef _RFC2190_H_
 #define _RFC2190_H_
 
-#include "../../common/ffmpeg.h"
+#include "../common/ffmpeg.h"
 
 #include <list>
 

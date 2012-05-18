@@ -32,7 +32,8 @@ SRCDIR    := .
 SRCS    += h264-x264.cxx \
            $(SHAREDDIR)/h264frame.cxx \
            $(SHAREDDIR)/x264wrap.cxx \
-           $(COMMONDIR)/dyna.cxx \
+           $(COMMONDIR)/ffmpeg.cxx \
+           $(COMMONDIR)/dyna.cxx
 
 CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"@VC_PLUGIN_DIR@"'
 LIBS   += @DL_LIBS@

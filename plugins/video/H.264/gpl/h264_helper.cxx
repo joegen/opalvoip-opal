@@ -35,8 +35,10 @@
 
 #if PLUGINCODEC_TRACING
   unsigned TraceLevel = 1;
+  #define PTRACE_CHECK(level) (level <= TraceLevel)
   #define PTRACE(level,module,args) if (level > TraceLevel) ; else std::cerr << module << '\t' << args << std::endl
 #else
+  #define PTRACE_CHECK(level)
   #define PTRACE(level,module,args)
 #endif
 

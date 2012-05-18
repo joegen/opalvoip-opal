@@ -61,12 +61,13 @@
 
 #include <codec/opalplugin.hpp>
 
-#include "../../common/ffmpeg.h"
+#include "../common/ffmpeg.h"
 
 
 // Needed C++ headers
 #include <deque>
 #include <vector>
+
 
 using namespace std;
 
@@ -459,7 +460,7 @@ class MPEG4_EncodedFrame : public FFMPEGCodec::EncodedFrame
 {
   protected:
     // packet sizes generating in RtpCallback
-    deque<unsigned> m_packetSizes;
+    deque<size_t> m_packetSizes;
     unsigned m_fragmentationOffset;
 
   public:
