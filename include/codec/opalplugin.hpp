@@ -93,12 +93,6 @@
     #define PTRACE_CHECK(level)
     #define PTRACE(level, section, expr)
   #endif
-#else
-  // See if we are being inluded in base OPAL, not plug in, by checking for PTLib PTRACE
-  #if PTRACING
-    #undef PTRACE
-    #define PTRACE(level, module, args) PTRACE2(level, PTraceObjectInstance(), module << '\t' << args)
-  #endif
 #endif
 
 

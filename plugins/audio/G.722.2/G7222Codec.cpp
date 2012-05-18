@@ -52,8 +52,7 @@
 
 #include <codec/opalplugin.h>
 
-#define OPAL_PLUGIN_COMPILE 1
-#include "../../../src/codec/g7222mf.cxx"
+#include "../../../src/codec/g7222mf_inc.cxx"
 
 
 /////////////////////////////////////////////////////////////////////////////
