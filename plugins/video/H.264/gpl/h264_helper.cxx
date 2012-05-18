@@ -28,6 +28,10 @@
 #include <stdlib.h> 
 #include <sys/stat.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 #ifndef PLUGINCODEC_TRACING
 #define PLUGINCODEC_TRACING 0
