@@ -455,6 +455,7 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
 
   public:
     typedef PluginCodec_MediaFormat<NAME> Parent;
+    typedef typename Parent::OptionsTable OptionsTable;
 
     PluginCodec_AudioFormat(
       const char * formatName,
@@ -471,9 +472,9 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
       , m_recommendedFramesPerPacket((50*sampleRate)/(1000*samplesPerFrame))
       , m_maxFramesPerPacket((120*sampleRate)/(1000*samplesPerFrame))
     {
-      m_flags = PluginCodec_MediaTypeAudio | /* audio codec */
-                PluginCodec_InputTypeRaw |   /* raw input data */
-                PluginCodec_OutputTypeRaw;  /* raw output data */
+      this->m_flags = PluginCodec_MediaTypeAudio /* audio codec */
+                    | PluginCodec_InputTypeRaw   /* raw input data */
+                    | PluginCodec_OutputTypeRaw; /* raw output data */
 
     }
 
@@ -496,6 +497,7 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
 
   public:
     typedef PluginCodec_MediaFormat<NAME> Parent;
+    typedef typename Parent::OptionsTable OptionsTable;
 
     PluginCodec_VideoFormat(
       const char * formatName,
@@ -507,9 +509,9 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
       , m_maxWidth(1920)
       , m_maxHeight(1200)
     {
-      m_flags = PluginCodec_MediaTypeVideo | /* audio codec */
-                PluginCodec_InputTypeRTP |   /* raw input data */
-                PluginCodec_OutputTypeRTP;  /* raw output data */
+      this->m_flags = PluginCodec_MediaTypeVideo /* audio codec */
+                    | PluginCodec_InputTypeRTP   /* raw input data */
+                    | PluginCodec_OutputTypeRTP; /* raw output data */
     }
 
 

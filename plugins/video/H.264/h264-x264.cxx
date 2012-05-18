@@ -47,7 +47,7 @@
 
 #include "../../../src/codec/h264mf_inc.cxx"
 
-#include "../../common/ffmpeg.h"
+#include "../common/ffmpeg.h"
 
 #include "shared/h264frame.h"
 #include "shared/x264wrap.h"

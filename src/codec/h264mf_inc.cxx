@@ -32,6 +32,8 @@
 #include <codec/opalplugin.hpp>
 #include <codec/known.h>
 
+#include <stdio.h>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -343,7 +345,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   PluginCodec_Utilities::Change(LevelInfo[levelIndex].m_H241, original, changed, H241LevelName);
 
   // Calculate SDP parameters from the adjusted profile/level
-  char sdpProfLevel[7];
+  char sdpProfLevel[3*8*2+1];
   sprintf(sdpProfLevel, "%02x%02x%02x",
           ProfileInfo[profileIndex].m_H264,
           ProfileInfo[profileIndex].m_Constraints | LevelInfo[levelIndex].m_constraints,

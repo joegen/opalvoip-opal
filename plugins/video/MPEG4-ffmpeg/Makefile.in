@@ -28,7 +28,9 @@ BASENAME := mpeg4_ffmpeg
 
 COMMONDIR := ../common
 SRCDIR    := .
-SRCS      := mpeg4.cxx $(COMMONDIR)/dyna.cxx
+SRCS      := mpeg4.cxx \
+             $(COMMONDIR)/ffmpeg.cxx \
+             $(COMMONDIR)/dyna.cxx
 
 CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
 LIBS   += @DL_LIBS@

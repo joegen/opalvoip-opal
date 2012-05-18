@@ -33,7 +33,8 @@ OPALDIR   := ../../../../
 TARGETDIR := $(OPALDIR)/lib_@target@/plugins
 OBJDIR    := $(TARGETDIR)/h264_x264_gpl
 
-SRCS = h264_helper.cxx
+SRCS   += h264_helper.cxx
+
 
 WIN32=@WIN32@
 ifeq ($(WIN32),yes)
@@ -47,7 +48,7 @@ TARGET_PATH = $(TARGETDIR)/$(TARGET)
 CC	 	=@CC@
 CXX	 	=@CXX@
 CFLAGS  =@X264_CFLAGS@ -I.. -I$(PLUGINDIR) -I$(OPALDIR)/include -DGPL_HELPER_APP -DPLUGINCODEC_TRACING
-LDFLAGS =@LDFLAGS@ @X264_LIBS@
+LDFLAGS =@LDFLAGS@ @X264_LIBS@ @DL_LIBS@
 
 
 vpath	%.o   $(OBJDIR)
