@@ -556,51 +556,47 @@ PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   if (connection == NULL) {
     // Get new instance of a call, abort if none created
     OpalCall * call = manager.InternalCreateCall();
-    if (call != NULL)
+    if (call != NULL) {
       connection = CreateConnection(*call, token, NULL, *transport, PString::Empty(), PString::Empty(), &pdu);
-
-    if (!AddConnection(connection)) {
-      PTRACE(1, "H225\tEndpoint could not create connection, "
-                "sending release complete PDU: callRef=" << callReference);
-
-      H323SignalPDU releaseComplete;
-      Q931 &q931PDU = releaseComplete.GetQ931();
-      q931PDU.BuildReleaseComplete(callReference, PTrue);
-      releaseComplete.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
-
-      H225_ReleaseComplete_UUIE &release = releaseComplete.m_h323_uu_pdu.m_h323_message_body;
-      release.m_protocolIdentifier.SetValue(psprintf("0.0.8.2250.0.%u", H225_PROTOCOL_VERSION));
-
-      H225_Setup_UUIE &setup = pdu.m_h323_uu_pdu.m_h323_message_body;
-      if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier)) {
-        release.IncludeOptionalField(H225_Setup_UUIE::e_callIdentifier);
-        release.m_callIdentifier = setup.m_callIdentifier;
-      }
-
-      // Set the cause value
-      q931PDU.SetCause(Q931::TemporaryFailure);
-
-      // Send the PDU
-      releaseComplete.Write(*transport);
-
-      return PTrue;
+      PTRACE(3, "H323\tCreated new connection: " << token);
     }
   }
 
-  PTRACE(3, "H323\tCreated new connection: " << token);
-  connection->AttachSignalChannel(token, transport, PTrue);
+  // Make sure transport is attached before AddConnection()
+  if (connection != NULL)
+    connection->AttachSignalChannel(token, transport, PTrue);
 
-  if (connection->HandleSignalPDU(pdu)) {
+  if (AddConnection(connection) != NULL && connection->HandleSignalPDU(pdu)) {
     // All subsequent PDU's should wait forever
     transport->SetReadTimeout(PMaxTimeInterval);
     connection->HandleSignallingChannel();
-  }
-  else {
-    connection->ClearCall(H323Connection::EndedByTransportFail);
-    PTRACE(1, "H225\tSignal channel stopped on first PDU.");
+    return false;
   }
 
-  return PFalse;
+  PTRACE(1, "H225\tEndpoint could not create connection, "
+            "sending release complete PDU: callRef=" << callReference);
+
+  H323SignalPDU releaseComplete;
+  Q931 &q931PDU = releaseComplete.GetQ931();
+  q931PDU.BuildReleaseComplete(callReference, PTrue);
+  releaseComplete.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
+
+  H225_ReleaseComplete_UUIE &release = releaseComplete.m_h323_uu_pdu.m_h323_message_body;
+  release.m_protocolIdentifier.SetValue(psprintf("0.0.8.2250.0.%u", H225_PROTOCOL_VERSION));
+
+  H225_Setup_UUIE &setup = pdu.m_h323_uu_pdu.m_h323_message_body;
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier)) {
+    release.IncludeOptionalField(H225_Setup_UUIE::e_callIdentifier);
+    release.m_callIdentifier = setup.m_callIdentifier;
+  }
+
+  // Set the cause value
+  q931PDU.SetCause(Q931::TemporaryFailure);
+
+  // Send the PDU
+  releaseComplete.Write(*transport);
+
+  return true;
 }
 
 
