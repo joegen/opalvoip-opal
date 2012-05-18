@@ -16,6 +16,7 @@
  * Copyright (C) 2005 Salyens
  * Copyright (C) 2001 March Networks Corporation
  * Copyright (C) 1999-2000 Equivalence Pty. Ltd.
+ * Copyright (C) 2010 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -36,6 +37,7 @@
  *                 Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
  *                 Matthias Schneider (ma30002000@yahoo.de)
+ *                 Robert Jongbloed (robertj@voxlucida.com.au)
  *
  * NOTES:
  * Initial implementation of MPEG4 codec plugin using ffmpeg.
