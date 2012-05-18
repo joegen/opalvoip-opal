@@ -33,8 +33,13 @@ else
 endif
 
 TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
-CONFIG_FILES   := $(OPALDIR)/make/opal_defs.mak $(TOP_LEVEL_MAKE)
 CONFIGURE      := $(OPALDIR)/configure
+CONFIG_FILES   := $(TOP_LEVEL_MAKE) \
+                  $(OPALDIR)/make/opal_defs.mak \
+                  $(OPALDIR)/opal.pc \
+                  $(OPALDIR)/opal_cfg.dxy \
+                  $(OPALDIR)/include/opal/buildopts.h
+
 PLUGIN_CONFIG  := $(OPALDIR)/plugins/configure
 PLUGIN_ACLOCAL := $(OPALDIR)/plugins/aclocal.m4
 
@@ -49,7 +54,7 @@ endif
 default: $(CONFIG_FILES)
 	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(MAKECMDGOALS)
 
-$(CONFIG_FILES): $(CONFIGURE) $(PLUGIN_CONFIG)
+$(firstword $(CONFIG_FILES)): $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(CONFIG_FILES))
 	$(CONFIGURE) $(CFG_ARGS)
 
 
@@ -67,8 +72,6 @@ $(ACLOCAL).m4:
 
 $(PLUGIN_ACLOCAL):
 	( cd $(dir $@) ; $(ACLOCAL) )
-
-$(CONFIG_FILES): $(addsuffix .in, $(CONFIG_FILES))
 
 else # autoconf installed
 
