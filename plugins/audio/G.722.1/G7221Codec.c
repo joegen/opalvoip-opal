@@ -3,6 +3,7 @@
  * ITU G.722.1 wideband audio codec plugin for OpenH323/OPAL
  *
  * Copyright (C) 2009 Nimajin Software Consulting, All Rights Reserved
+ * Copyright (C) 2010 Vox Lucida Pty. Ltd.
  *
  * Permission to copy, use, sell and distribute this file is granted
  * provided this copyright notice appears in all copies.
@@ -29,7 +30,7 @@
  * http://www.polycom.com/company/about_us/technology/siren14_g7221c/faq.html
  *
  * Initial development by: Ted Szoczei, Nimajin Software Consulting, 09-12-09
- * Portions developed by: Robert Jongbloed, Vox Lucida
+ * Portions developed by: Robert Jongbloed, Vox Lucida Pty. Ltd.
  *
  ****************************************************************************/
 
