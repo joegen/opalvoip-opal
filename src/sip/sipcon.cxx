@@ -229,6 +229,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_holdFromRemote(false)
   , m_lastReceivedINVITE(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
   , m_delayedAckInviteResponse(NULL)
+  , m_delayedAckTimeout(0, 2) // 2 seconds
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
@@ -2122,7 +2123,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   }
 
   m_delayedAckInviteResponse = new SIP_PDU(response);
-  m_delayedAckTimer = 1000;
+  m_delayedAckTimer = m_delayedAckTimeout;
 
   return false; // Don't send ACK ... yet
 }
@@ -2130,17 +2131,18 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
 void SIPConnection::OnDelayedAckTimeout(PTimer&, INT)
 {
-  if (LockReadWrite()) {
-    PTRACE(4, "SIP\tDelayed ACK timeout");
-    SendDelayedACK(true);
-    UnlockReadWrite();
-  }
+  PTRACE(4, "SIP\tDelayed ACK timeout");
+  PThreadObj1Arg<SIPConnection, bool>(*this, true, &SIPConnection::SendDelayedACK, true, "SendDelayedACK");
 }
 
 
 void SIPConnection::SendDelayedACK(bool force)
 {
-  if (m_delayedAckInviteResponse == NULL)
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
+  if (m_delayedAckInviteResponse == NULL || m_lastSentAck != NULL)
     return;
 
   if (!force) {
@@ -2151,13 +2153,15 @@ void SIPConnection::SendDelayedACK(bool force)
     OpalMediaTypeList mediaTypes = otherConnection->GetMediaFormats().GetMediaTypes();
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
       OpalMediaType::AutoStartMode autoStart = GetAutoStart(*mediaType);
-      if (((autoStart&OpalMediaType::Receive) != 0 && GetMediaStream(OpalMediaType::Audio(), true) == NULL) ||
-        ((autoStart&OpalMediaType::Transmit) != 0 && GetMediaStream(OpalMediaType::Audio(), false) == NULL)) {
+      if (((autoStart&OpalMediaType::Receive) != 0 && GetMediaStream(*mediaType, true) == NULL) ||
+        ((autoStart&OpalMediaType::Transmit) != 0 && GetMediaStream(*mediaType, false) == NULL)) {
         PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
         return;
       }
     }
   }
+
+  PTRACE(3, "SIP\tSending delayed ACK");
 
   PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(m_delayedAckInviteResponse->GetTransactionID());
   if (transaction ==  NULL)
