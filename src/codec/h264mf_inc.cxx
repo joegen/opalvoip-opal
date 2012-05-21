@@ -199,8 +199,9 @@ static void ClampSizes(const LevelInfoStruct & info,
                         PluginCodec_OptionMap & original,
                         PluginCodec_OptionMap & changed)
 {
-  if (PluginCodec_Utilities::ClampResolution(maxWidth, maxHeight, maxFrameSize, info.m_MaxWidthHeight, info.m_MaxWidthHeight))
+  if (PluginCodec_Utilities::ClampResolution(maxWidth, maxHeight, maxFrameSize, info.m_MaxWidthHeight, info.m_MaxWidthHeight)) {
     PTRACE(5, MY_CODEC_LOG, "Reduced max resolution to " << maxWidth << 'x' << maxHeight);
+  }
 
   PluginCodec_Utilities::ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
   PluginCodec_Utilities::ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
