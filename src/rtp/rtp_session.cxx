@@ -1313,6 +1313,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           case RTP_ControlFrame::e_TMMBR :
             if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
               const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
+              PTRACE(4, "RTP\tSession " << m_sessionId << ", received TMMBR " << tmmb->GetBitRate());
               m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
             }
             else {
@@ -1495,6 +1496,7 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 
 void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
 {
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", SendFlowControl(" << maxBitRate << ") using TMMBR");
   // Create packet
   RTP_ControlFrame request;
   InsertReportPacket(request);
