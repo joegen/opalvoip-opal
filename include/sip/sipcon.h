@@ -765,6 +765,7 @@ class SIPConnection : public OpalRTPConnection
     SIP_PDU             * m_lastReceivedINVITE;
     SIP_PDU             * m_delayedAckInviteResponse;
     PTimer                m_delayedAckTimer;
+    PTimeInterval         m_delayedAckTimeout;
     SIP_PDU             * m_lastSentAck;
     time_t                m_sdpSessionId;
     unsigned              m_sdpVersion; // Really a sequence number
