@@ -415,7 +415,8 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
-  unsigned responseClass = response.GetStatusCode()/100;
+  m_lastResponseStatus = response.GetStatusCode();
+  unsigned responseClass = m_lastResponseStatus/100;
   if (responseClass < 2)
     return; // Don't do anything with pending responses.
 
