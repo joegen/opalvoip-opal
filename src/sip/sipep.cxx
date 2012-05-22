@@ -1227,6 +1227,28 @@ bool SIPEndPoint::UnregisterAll()
 }
 
 
+bool SIPEndPoint::GetRegistrationStatus(const PString & token, RegistrationStatus & status)
+{
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
+  if (handler == NULL)
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_REGISTER, PSafeReference);
+
+  if (handler == NULL) {
+    PTRACE(1, "SIP\tCould not find active REGISTER for " << token);
+    return false;
+  }
+
+  status.m_handler = dynamic_cast<SIPRegisterHandler *>(&*handler);
+  status.m_addressofRecord = handler->GetAddressOfRecord();
+  status.m_wasRegistering = handler->GetState() != SIPHandler::Unsubscribing;
+  status.m_reRegistering = handler->GetState() == SIPHandler::Subscribed;
+  status.m_reason = handler->GetLastResponseStatus();
+  status.m_productInfo = handler->GetProductInfo();
+  status.m_userData = NULL;
+  return true;
+}
+
+
 void SIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   OnRegistrationStatus(status.m_addressofRecord, status.m_wasRegistering, status.m_reRegistering, status.m_reason);
@@ -1405,6 +1427,34 @@ bool SIPEndPoint::UnsubcribeAll(const PString & eventPackage)
   }
 
   return atLeastOne;
+}
+
+
+bool SIPEndPoint::GetSubscriptionStatus(const PString & token, const PString & eventPackage, SubscriptionStatus & status)
+{
+  PSafePtr<SIPSubscribeHandler> handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
+                                                activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference));
+  if (handler == NULL)
+    handler = PSafePtrCast<SIPHandler, SIPSubscribeHandler>(
+          activeSIPHandlers.FindSIPHandlerByUrl(token, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReference));
+  else {
+    if (!eventPackage.IsEmpty() && handler->GetEventPackage() != eventPackage)
+      handler.SetNULL();
+  }
+
+  if (handler == NULL) {
+    PTRACE(1, "SIP\tCould not find active SUBSCRIBE of " << eventPackage << " package to " << token);
+    return false;
+  }
+
+  status.m_handler = handler;
+  status.m_addressofRecord = handler->GetAddressOfRecord();
+  status.m_wasSubscribing = handler->GetState() != SIPHandler::Unsubscribing;
+  status.m_reSubscribing = handler->GetState() == SIPHandler::Subscribed;
+  status.m_reason = handler->GetLastResponseStatus();
+  status.m_productInfo = handler->GetProductInfo();
+  status.m_userData = NULL;
+  return true;
 }
 
 

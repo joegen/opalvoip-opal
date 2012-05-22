@@ -97,6 +97,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
   , m_remoteAddress(params.m_remoteAddress)
   , m_callID(callID)
   , m_lastCseq(0)
+  , m_lastResponseStatus(SIP_PDU::Information_Trying)
   , m_currentExpireTime(params.m_expire)
   , m_originalExpireTime(params.m_expire)
   , m_offlineExpireTime(params.m_restoreTime)
@@ -599,6 +600,8 @@ void SIPHandler::OnFailed(const SIP_PDU & response)
 
 void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
+  m_lastResponseStatus = code;
+
   switch (code) {
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Local_Timeout :

@@ -130,6 +130,8 @@ public:
 
   SIPEndPoint & GetEndPoint() const { return *m_endpoint; }
 
+  SIP_PDU::StatusCodes GetLastResponseStatus() const { return m_lastResponseStatus; }
+
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
   const PString & GetUsername() const     { return m_username; }
@@ -164,6 +166,7 @@ protected:
   SIPMIMEInfo                 m_mime;
 
   unsigned                    m_lastCseq;
+  SIP_PDU::StatusCodes        m_lastResponseStatus;
   int                         m_currentExpireTime;
   int                         m_originalExpireTime;
   int                         m_offlineExpireTime;
