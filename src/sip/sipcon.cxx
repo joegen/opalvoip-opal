@@ -229,7 +229,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_holdFromRemote(false)
   , m_lastReceivedINVITE(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
   , m_delayedAckInviteResponse(NULL)
-  , m_delayedAckTimeout(0, 2) // 2 seconds
+  , m_delayedAckTimeout(0, 1) // 1 second
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
@@ -2132,7 +2132,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 void SIPConnection::OnDelayedAckTimeout(PTimer&, INT)
 {
   PTRACE(4, "SIP\tDelayed ACK timeout");
-  PThreadObj1Arg<SIPConnection, bool>(*this, true, &SIPConnection::SendDelayedACK, true, "SendDelayedACK");
+  new PThreadObj1Arg<SIPConnection, bool>(*this, true, &SIPConnection::SendDelayedACK, true, "SendDelayedACK");
 }
 
 
