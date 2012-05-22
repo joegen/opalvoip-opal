@@ -35,6 +35,7 @@
 
 PCREATE_PROCESS(MyProcess);
 
+static const char ParametersSection[] = "Parameters";
 
 const WORD DefaultHTTPPort = 1719;
 static const char UsernameKey[] = "Username";
@@ -177,7 +178,7 @@ void MyProcess::OnConfigChanged()
 
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
-  PConfig cfg("Parameters");
+  PConfig cfg(ParametersSection);
 
   // Sert log level as early as possible
   SetLogLevel((PSystemLog::Level)cfg.GetInteger(LogLevelKey, GetLogLevel()));
@@ -202,7 +203,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   PHTTPSimpleAuth authority(GetName(), username, password);
 
   // Create the parameters URL page, and start adding fields to it
-  PConfigPage * rsrc = new PConfigPage(*this, "Parameters", "Parameters", authority);
+  PConfigPage * rsrc = new PConfigPage(*this, "Parameters", ParametersSection, authority);
 
   // HTTP authentication username/password
   rsrc->Add(new PHTTPStringField(UsernameKey, 25, username,
@@ -243,16 +244,30 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
 #if OPAL_H323 | OPAL_SIP
-  httpNameSpace.AddResource(new RegistrationStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
+  RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(m_manager, authority);
+  httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
 #endif
 
-  httpNameSpace.AddResource(new CallStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
+  CallStatusPage * callStatusPage = new CallStatusPage(m_manager, authority);
+  httpNameSpace.AddResource(callStatusPage, PHTTPSpace::Overwrite);
 
 #if OPAL_H323
-  // Create the status page
-  httpNameSpace.AddResource(new GkStatusPage(m_manager, authority), PHTTPSpace::Overwrite);
+  GkStatusPage * gkStatusPage = new GkStatusPage(m_manager, authority);
+  httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
+  // Log file resource
+  PHTTPFile * fullLog = NULL;
+  PHTTPTailFile * tailLog = NULL;
+
+  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+  if (logFile != NULL) {
+    fullLog = new PHTTPFile("FullLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
+    httpNameSpace.AddResource(fullLog, PHTTPSpace::Overwrite);
+
+    tailLog = new PHTTPTailFile("TailLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
+    httpNameSpace.AddResource(tailLog, PHTTPSpace::Overwrite);
+  }
 
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
@@ -265,41 +280,29 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << GetPageGraphic()
          << PHTML::Paragraph() << "<center>"
 
-         << PHTML::HotLink("Parameters") << "Parameters" << PHTML::HotLink()
+         << PHTML::HotLink(rsrc->GetHotLink()) << "System Parameters" << PHTML::HotLink()
 #if OPAL_H323 | OPAL_SIP
          << PHTML::Paragraph()
-         << PHTML::HotLink("RegistrationStatus") << "Registration Status" << PHTML::HotLink()
+         << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
 #endif
-         << PHTML::Paragraph()
-         << PHTML::HotLink("CallStatus") << "Call Status" << PHTML::HotLink()
+         << PHTML::BreakLine()
+         << PHTML::HotLink(callStatusPage->GetHotLink()) << "Call Status" << PHTML::HotLink()
 #if OPAL_H323
-         << PHTML::Paragraph()
-         << PHTML::HotLink("GkStatus") << "Gatekeeper Status" << PHTML::HotLink()
+         << PHTML::BreakLine()
+         << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
 #endif // OPAL_H323
          << PHTML::Paragraph();
 
-    PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-    if (logFile != NULL) {
-      httpNameSpace.AddResource(new PHTTPFile("FullLog",
-                                              logFile->GetFilePath(),
-                                              PMIMEInfo::TextPlain(),
-                                              authority),
-                                PHTTPSpace::Overwrite);
-      httpNameSpace.AddResource(new PHTTPTailFile("TailLog",
-                                                  logFile->GetFilePath(),
-                                                  PMIMEInfo::TextPlain(),
-                                                  authority),
-                                PHTTPSpace::Overwrite);
-      html << PHTML::HotLink("FullLog") << "Full Log File" << PHTML::HotLink()
+    if (logFile != NULL)
+      html << PHTML::HotLink(fullLog->GetHotLink()) << "Full Log File" << PHTML::HotLink()
            << PHTML::BreakLine()
-           << PHTML::HotLink("TailLog") << "Tail Log File" << PHTML::HotLink()
+           << PHTML::HotLink(tailLog->GetHotLink()) << "Tail Log File" << PHTML::HotLink()
            << PHTML::Paragraph();
-    }
  
     html << PHTML::HRule()
          << GetCopyrightText()
          << PHTML::Body();
-    httpNameSpace.AddResource(new PServiceHTTPString("welcome.html", html), PHTTPSpace::Overwrite);
+    httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml, html), PHTTPSpace::Overwrite);
   }
 
   // set up the HTTP port for listening & start the first HTTP thread
