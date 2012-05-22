@@ -279,9 +279,22 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::Paragraph();
 
     PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-    if (logFile != NULL)
-      html << PHTML::HotLink(PURL(logFile->GetFilePath()).AsString()) << "Full Log File" << PHTML::HotLink()
+    if (logFile != NULL) {
+      httpNameSpace.AddResource(new PHTTPFile("FullLog",
+                                              logFile->GetFilePath(),
+                                              PMIMEInfo::TextPlain(),
+                                              authority),
+                                PHTTPSpace::Overwrite);
+      httpNameSpace.AddResource(new PHTTPTailFile("TailLog",
+                                                  logFile->GetFilePath(),
+                                                  PMIMEInfo::TextPlain(),
+                                                  authority),
+                                PHTTPSpace::Overwrite);
+      html << PHTML::HotLink("FullLog") << "Full Log File" << PHTML::HotLink()
+           << PHTML::BreakLine()
+           << PHTML::HotLink("TailLog") << "Tail Log File" << PHTML::HotLink()
            << PHTML::Paragraph();
+    }
  
     html << PHTML::HRule()
          << GetCopyrightText()
