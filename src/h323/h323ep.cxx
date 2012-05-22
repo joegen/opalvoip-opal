@@ -1182,11 +1182,6 @@ void H323EndPoint::OnServiceControlSession(unsigned type,
   session.OnChange(type, sessionId, *this, connection);
 }
 
-PBoolean H323EndPoint::OnConferenceInvite(const H323SignalPDU & /*setupPDU */)
-{
-  return PFalse;
-}
-
 PBoolean H323EndPoint::OnCallIndependentSupplementaryService(const H323SignalPDU & /* setupPDU */)
 {
   return PFalse;

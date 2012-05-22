@@ -815,15 +815,6 @@ class H323EndPoint : public OpalRTPEndPoint
   /**@name Additional call services */
   //@{
     /** Called when an endpoint receives a SETUP PDU with a
-        conference goal of "invite"
-      
-        The default behaviour is to return false, which will close the connection
-     */
-    virtual PBoolean OnConferenceInvite(
-      const H323SignalPDU & setupPDU
-    );
-
-    /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "callIndependentSupplementaryService"
       
         The default behaviour is to return false, which will close the connection
@@ -1452,6 +1443,7 @@ class H323EndPoint : public OpalRTPEndPoint
   private:
     P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const H323Connection &, const OpalRTPSession &) const);
+    P_REMOVE_VIRTUAL(PBoolean, OnConferenceInvite(const H323SignalPDU &), false);
 
 #if OPAL_H460
   // This is because there h323plus had

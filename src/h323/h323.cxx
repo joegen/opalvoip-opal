@@ -987,9 +987,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
     case H225_Setup_UUIE_conferenceGoal::e_invite:
       m_conferenceGoal= e_Invite;
-      if (endpoint.OnConferenceInvite(*setupPDU))
-        break;
-      return false;
+      break;
 
     case H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService:
       return endpoint.OnCallIndependentSupplementaryService(*setupPDU);
