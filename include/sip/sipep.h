@@ -477,6 +477,14 @@ class SIPEndPoint : public OpalRTPEndPoint
       void               * m_userData;          ///< User data corresponding to this registration
     };
 
+    /** Get current registration status.
+        Returns false if there is no registration that match the aor/call-id
+      */
+    bool GetRegistrationStatus(
+      const PString & token,          /// Address-of-record, or call-id
+      RegistrationStatus & status     ///< Returned status
+    );
+
     /**Callback called when a registration to a SIP registrar status.
      */
     virtual void OnRegistrationStatus(
@@ -626,6 +634,15 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /** Information provided on the subscription status. */
     typedef SIPSubscribe::SubscriptionStatus SubscriptionStatus;
+
+    /** Get current registration status.
+        Returns false if there is no registration that match the aor/call-id
+      */
+    bool GetSubscriptionStatus(
+      const PString & token,          /// Address-of-record, or call-id
+      const PString & eventPackage,   ///< Event package being unsubscribed
+      SubscriptionStatus & status     ///< Returned status
+    );
 
     /**Callback called when a subscription to a SIP UA status changes.
      */

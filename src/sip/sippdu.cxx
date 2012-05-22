@@ -93,7 +93,7 @@ ostream & operator<<(ostream & strm, SIP_PDU::Methods method)
 #endif
 
 
-const char * SIP_PDU::GetStatusCodeDescription(int code)
+PString SIP_PDU::GetStatusCodeDescription(int code)
 {
   static struct {
     int code;
@@ -172,7 +172,7 @@ const char * SIP_PDU::GetStatusCodeDescription(int code)
     if (sipErrorDescriptions[i].code == code)
       return sipErrorDescriptions[i].desc;
   }
-  return "";
+  return psprintf("Reponse code %u", code);
 }
 
 

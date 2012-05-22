@@ -322,7 +322,7 @@ class OpalManager : public PObject
     PSafePtr<OpalCall> FindCallWithLock(
       const PString & token,  ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Lock mode
-    ) { return activeCalls.FindWithLock(token, mode); }
+    ) const { return activeCalls.FindWithLock(token, mode); }
 
     /**A call back function whenever a call is completed.
        In telephony terminology a completed call is one where there is an

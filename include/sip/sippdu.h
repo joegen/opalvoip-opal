@@ -603,7 +603,7 @@ class SIP_PDU : public PSafeObject
       MaxStatusCode                       = 699
     };
 
-    static const char * GetStatusCodeDescription(int code);
+    static PString GetStatusCodeDescription(int code);
     friend ostream & operator<<(ostream & strm, StatusCodes status);
 
     SIP_PDU(
