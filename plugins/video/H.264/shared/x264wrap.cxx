@@ -34,6 +34,10 @@
 #include <codec/opalplugin.hpp>
 #include <stdio.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
