@@ -371,13 +371,10 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  if (OpalConnection::OnMediaCommand(stream, command))
-    return true; // Already handled
-
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
   if (session == NULL)
-    return false;
+    return OpalConnection::OnMediaCommand(stream, command);
 
   PCaselessString rtcp_fb = stream.GetMediaFormat().GetOptionString("RTCP-FB");
   if (rtcp_fb.IsEmpty()) {
@@ -388,56 +385,54 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 
   const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
   if (flow != NULL) {
-    if (rtcp_fb.Find("tmmbr") == P_MAX_INDEX) {
-      PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
-      return false;
+    if (rtcp_fb.Find("tmmbr") != P_MAX_INDEX) {
+      session->SendFlowControl(flow->GetMaxBitRate());
+      return true;
     }
-    session->SendFlowControl(flow->GetMaxBitRate());
-    return true;
+    PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
   }
+  else {
 
 #if OPAL_VIDEO
 
-  const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
-  if (tsto != NULL) {
-    if (rtcp_fb.Find("tstr") == P_MAX_INDEX) {
+    const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
+    if (tsto != NULL) {
+      if (rtcp_fb.Find("tstr") != P_MAX_INDEX) {
+        session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
+        return true;
+      }
       PTRACE(3, "RTPCon\tRemote not capable of Temporal/Spatial Tradoff (TSTR)");
-      return false;
     }
+    else if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+      if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
+        PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
+        return true;
+      }
 
-    session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
-    return true;
-  }
+      bool no_AVPF_PLI = rtcp_fb.Find("pli") == P_MAX_INDEX;
+      bool no_AVPF_FIR = rtcp_fb.Find("fir") == P_MAX_INDEX;
 
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
-      PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
-      return true;
-    }
+      if (no_AVPF_PLI && no_AVPF_FIR)
+        session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
+      else if (no_AVPF_PLI)
+        session->SendIntraFrameRequest(false, false); // Unusual, but possible, use RFC5104 FIR
+      else if (no_AVPF_FIR)
+        session->SendIntraFrameRequest(false, true);  // More common, use RFC4585 PLI
+      else
+        session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
 
-    bool no_AVPF_PLI = rtcp_fb.Find("pli") == P_MAX_INDEX;
-    bool no_AVPF_FIR = rtcp_fb.Find("fir") == P_MAX_INDEX;
-
-    if (no_AVPF_PLI && no_AVPF_FIR)
-      session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
-    else if (no_AVPF_PLI)
-      session->SendIntraFrameRequest(false, false); // Unusual, but possible, use RFC5104 FIR
-    else if (no_AVPF_FIR)
-      session->SendIntraFrameRequest(false, true);  // More common, use RFC4585 PLI
-    else
-      session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
-
-    m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
+      m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
 
 #if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
+      m_VideoUpdateRequestsSent++;
 #endif
 
-    return true;
-  }
+      return true;
+    }
 #endif // OPAL_VIDEO
+  }
 
-  return false;
+  return OpalConnection::OnMediaCommand(stream, command);
 }
 
 
