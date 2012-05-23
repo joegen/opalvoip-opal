@@ -333,36 +333,9 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
                     " in option \"" << option->m_name << "\" in format \"" << format << '"');
         }
 
-#if OPAL_SIP
-        newOption->SetFMTPName(option->m_FMTPName);
-        newOption->SetFMTPDefault(option->m_FMTPDefault);
-#endif // OPAL_SIP
-
-#if OPAL_H323
-        OpalMediaOption::H245GenericInfo genericInfo;
-        genericInfo.ordinal = option->m_H245Generic&PluginCodec_H245_OrdinalMask;
-        if (option->m_H245Generic&PluginCodec_H245_Collapsing)
-          genericInfo.mode = OpalMediaOption::H245GenericInfo::Collapsing;
-        else if (option->m_H245Generic&PluginCodec_H245_NonCollapsing)
-          genericInfo.mode = OpalMediaOption::H245GenericInfo::NonCollapsing;
-        else
-          genericInfo.mode = OpalMediaOption::H245GenericInfo::None;
-        if (option->m_H245Generic&PluginCodec_H245_Unsigned32)
-          genericInfo.integerType = OpalMediaOption::H245GenericInfo::Unsigned32;
-        else if (option->m_H245Generic&PluginCodec_H245_BooleanArray)
-          genericInfo.integerType = OpalMediaOption::H245GenericInfo::BooleanArray;
-        else
-          genericInfo.integerType = OpalMediaOption::H245GenericInfo::UnsignedInt;
-        genericInfo.excludeTCS = (option->m_H245Generic&PluginCodec_H245_TCS) == 0;
-        genericInfo.excludeOLC = (option->m_H245Generic&PluginCodec_H245_OLC) == 0;
-        genericInfo.excludeReqMode = (option->m_H245Generic&PluginCodec_H245_ReqMode) == 0;
-        genericInfo.position = (option->m_H245Generic&PluginCodec_H245_PositionMask) >> PluginCodec_H245_PositionShift;
-        if (genericInfo.position == 0)
-          genericInfo.position = genericInfo.ordinal;
-        if (codecDef->version >= PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM)
-          genericInfo.defaultValue = option->m_H245Default;
-        newOption->SetH245Generic(genericInfo);
-#endif // OPAL_H323
+        OPAL_SET_MEDIA_OPTION_FMTP(newOption, option->m_FMTPName, option->m_FMTPDefault);
+        OPAL_SET_MEDIA_OPTION_H245(newOption, option->m_H245Generic,
+                codecDef->version >= PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM ? option->m_H245Default : NULL);
 
         format.AddOption(newOption, true);
       }
