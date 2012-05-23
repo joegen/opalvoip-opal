@@ -98,15 +98,15 @@ class OpalH264Format : public OpalVideoFormatInternal
       AddOption(option);
 
       option = new OpalMediaOptionUnsigned(MaxMBPS_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 1966);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxMBPS));
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxMBPS, "0"));
       AddOption(option);
 
       option = new OpalMediaOptionUnsigned(MaxFS_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 144);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxFS));
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxFS, "0"));
       AddOption(option);
 
       option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 9600);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB));
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB, "0"));
       AddOption(option);
 #endif
 
