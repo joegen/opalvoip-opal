@@ -354,15 +354,18 @@ OpalMediaOption::H245GenericInfo::H245GenericInfo()
 }
 
 
-OpalMediaOption::H245GenericInfo::H245GenericInfo(unsigned mask)
+OpalMediaOption::H245GenericInfo::H245GenericInfo(unsigned mask, const char * dflt)
   : ordinal(mask&PluginCodec_H245_OrdinalMask)
   , mode((mask&PluginCodec_H245_Collapsing) != 0 ? Collapsing : ((mask&PluginCodec_H245_NonCollapsing) != 0 ? NonCollapsing : None))
-  , integerType(UnsignedInt)
+  , integerType((mask&PluginCodec_H245_Unsigned32) != 0 ? Unsigned32 : ((mask&PluginCodec_H245_BooleanArray) != 0 ? BooleanArray : UnsignedInt))
   , excludeTCS((mask&PluginCodec_H245_TCS) == 0)
   , excludeOLC((mask&PluginCodec_H245_OLC) == 0)
   , excludeReqMode((mask&PluginCodec_H245_ReqMode) == 0)
-  , position(-1)
+  , position((mask&PluginCodec_H245_PositionMask)>>PluginCodec_H245_PositionShift)
+  , defaultValue(dflt)
 {
+  if (position == 0)
+    position = ordinal;
 }
 
 

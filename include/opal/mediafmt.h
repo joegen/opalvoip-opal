@@ -322,7 +322,10 @@ class OpalMediaOption : public PObject
 #if OPAL_H323
     struct H245GenericInfo {
       H245GenericInfo();
-      H245GenericInfo(unsigned mask);
+      H245GenericInfo(
+        unsigned mask,
+        const char * dflt = NULL
+      );
 
       unsigned ordinal;
 
@@ -347,9 +350,9 @@ class OpalMediaOption : public PObject
 
     const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
     void SetH245Generic(const H245GenericInfo & genericInfo) { m_H245Generic = genericInfo; }
-#define OPAL_SET_MEDIA_OPTION_H245(opt, mask) (opt)->SetH245Generic(OpalMediaOption::H245GenericInfo(mask))
+#define OPAL_SET_MEDIA_OPTION_H245(opt, ...) (opt)->SetH245Generic(OpalMediaOption::H245GenericInfo(__VA_ARGS__))
 #else
-#define OPAL_SET_MEDIA_OPTION_H245(opt, mask)
+#define OPAL_SET_MEDIA_OPTION_H245(opt, ...)
 #endif // OPAL_H323
 
   protected:
