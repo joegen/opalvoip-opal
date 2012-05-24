@@ -121,11 +121,13 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories=".\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg;..\..\..\..\include"
 				PreprocessorDefinitions="GPL_HELPER_APP;WIN32;_CONSOLE;NDEBUG"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
@@ -146,7 +148,7 @@
 				AdditionalLibraryDirectories=".\x264;..\..\..\..\..\external\x264"
 				GenerateDebugInformation="true"
 				SubSystem="1"
-				OptimizeReferences="2"
+				OptimizeReferences="1"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>
