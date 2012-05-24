@@ -192,6 +192,7 @@ static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
   { OpalConnection::EndedByOutOfService,         "Call cleared because the line is out of service" },
   { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" },
   { OpalConnection::EndedByGkAdmissionFailed,    "Call cleared because gatekeeper admission request failed." },
+  { OpalConnection::EndedByMediaFailed,          "Call cleared due to loss of media flow." },
 };
 
 static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInitialiser), CallEndReasonStringsInitialiser);
@@ -1737,6 +1738,12 @@ void OpalConnection::OnStartMediaPatch(OpalMediaPatch & patch)
 void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 {
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
+}
+
+
+bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
+{
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
 }
 
 
