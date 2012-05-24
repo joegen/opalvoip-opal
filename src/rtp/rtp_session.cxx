@@ -52,9 +52,6 @@
 
 #include <h323/h323con.h>
 
-#define BAD_TRANSMIT_PKT_MAX 5      // Number of consecutive bad tx packet in below number of seconds
-#define BAD_TRANSMIT_TIME_MAX 10    //  maximum of seconds of transmit fails before session is killed
-
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
 #define RTP_VIDEO_RX_BUFFER_SIZE 0x100000 // 1Mb
@@ -142,6 +139,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_timeUnits(isAudio ? 8 : 90)
   , canonicalName(PProcess::Current().GetUserName())
   , toolName(PProcess::Current().GetName())
+  , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
+  , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
@@ -151,6 +150,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , remoteAddress(0)
   , remoteTransmitAddress(0)
   , remoteIsNAT(false)
+  , m_noTransmitErrors(0)
 {
   ignorePayloadTypeChanges = true;
   syncSourceOut = PRandom::Number();
@@ -190,7 +190,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   controlSocket     = NULL;
   appliedQOS        = false;
   localHasNAT       = false;
-  badTransmitCounter = 0;
 
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
 }
@@ -1980,7 +1979,7 @@ void OpalRTPSession::Restart(bool reading)
   else
     shutdownWrite = false;
 
-  badTransmitCounter = 0;
+  m_noTransmitErrors = 0;
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " reopened for " << (reading ? "reading" : "writing"));
@@ -2059,7 +2058,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFram
   if (PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
     return e_AbortTransport;
 
-  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, PMaxTimeInterval);
+  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_maxNoReceiveTime);
 
   {
     PWaitAndSignal mutex(dataMutex);
@@ -2153,46 +2152,49 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", "
              << channelName << " PDU from incorrect host, "
                 " is " << addr << " should be " << remoteTransmitAddress);
-      return OpalRTPSession::e_IgnorePacket;
+      return e_IgnorePacket;
     }
 
     if (remoteAddress.IsValid() && !appliedQOS) 
       ApplyQOS(remoteAddress);
 
-    badTransmitCounter = 0;
+    m_noTransmitErrors = 0;
 
-    return OpalRTPSession::e_ProcessPacket;
+    return e_ProcessPacket;
   }
 
   switch (socket.GetErrorNumber(PChannel::LastReadError)) {
     case ECONNRESET :
     case ECONNREFUSED :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << " port on remote not ready.");
-      if (++badTransmitCounter == 1) 
-        badTransmitStart = PTime();
+      if (++m_noTransmitErrors == 1)
+        m_noTransmitTimer = m_maxNoTransmitTime;
       else {
-        if (badTransmitCounter <= BAD_TRANSMIT_PKT_MAX || (PTime()- badTransmitStart).GetSeconds() < BAD_TRANSMIT_TIME_MAX)
-          return OpalRTPSession::e_IgnorePacket;
-        PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << " " << BAD_TRANSMIT_TIME_MAX << " seconds of transmit fails - informing connection");
+        if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
+          return e_IgnorePacket;
+        PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << ' '
+               << m_maxNoTransmitTime << " seconds of transmit fails - informing connection");
+        if (m_connection.OnMediaFailed(m_sessionId, false))
+          return e_AbortTransport;
       }
-      return OpalRTPSession::e_IgnorePacket;
+      return e_IgnorePacket;
 
     case EMSGSIZE :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read packet too large for buffer of " << frameSize << " bytes.");
-      return OpalRTPSession::e_IgnorePacket;
+      return e_IgnorePacket;
 
     case EAGAIN :
       PTRACE(4, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read packet interrupted.");
       // Shouldn't happen, but it does.
-      return OpalRTPSession::e_IgnorePacket;
+      return e_IgnorePacket;
 
     default:
       PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
-      return OpalRTPSession::e_AbortTransport;
+      return e_AbortTransport;
   }
 }
 
@@ -2210,6 +2212,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & /*frame*/)
 {
+  if (m_connection.OnMediaFailed(m_sessionId, true))
+    return e_AbortTransport;
+
   return e_IgnorePacket;
 }
 

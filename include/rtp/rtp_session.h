@@ -341,6 +341,26 @@ class OpalRTPSession : public OpalMediaSession
       bool ignore   ///<  Flag to ignore payload type changes
     ) { ignorePayloadTypeChanges = ignore; }
 
+    /**Get the maximum time we wait for packets from remote.
+      */
+    const PTimeInterval & GetMaxNoReceiveTime() { return m_maxNoReceiveTime; }
+
+    /**Set the maximum time we wait for packets from remote.
+      */
+    void SetMaxNoReceiveTime(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    )  { m_maxNoReceiveTime = interval; }
+
+    /**Get the maximum time we wait for remote to start accepting out packets.
+      */
+    const PTimeInterval & GetMaxNoTransmitTime() { return m_maxNoTransmitTime; }
+
+    /**Set the maximum time we wait for remote to start accepting out packets.
+      */
+    void SetMaxNoTransmitTime(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    )  { m_maxNoTransmitTime = interval; }
+
     /**Get the time interval for sending RTCP reports in the session.
       */
     const PTimeInterval & GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
@@ -587,6 +607,8 @@ class OpalRTPSession : public OpalMediaSession
     PString             canonicalName;
     PString             toolName;
     RTPExtensionHeaders m_extensionHeaders;
+    PTimeInterval       m_maxNoReceiveTime;
+    PTimeInterval       m_maxNoTransmitTime;
 
     typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
@@ -698,8 +720,9 @@ class OpalRTPSession : public OpalMediaSession
     bool remoteIsNAT;
     bool localHasNAT;
     bool m_firstControl;
-    int  badTransmitCounter;
-    PTime badTransmitStart;
+
+    DWORD        m_noTransmitErrors;
+    PSimpleTimer m_noTransmitTimer;
 
   private:
     OpalRTPSession(const OpalRTPSession &);

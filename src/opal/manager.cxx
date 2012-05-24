@@ -1189,6 +1189,13 @@ void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPat
 #endif
 
 
+bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, bool)
+{
+  connection.Release(OpalConnection::EndedByConnectFail);
+  return true;
+}
+
+
 void OpalManager::OnUserInputString(OpalConnection & connection,
                                     const PString & value)
 {
