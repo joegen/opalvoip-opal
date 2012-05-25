@@ -45,7 +45,6 @@
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/pnat.h>
-#include <rtp/metrics.h>
 #include <ptclib/url.h>
 
 #include <list>
@@ -53,6 +52,7 @@
 
 class OpalJitterBuffer;
 class PNatMethod;
+class RTCP_XR_Metrics;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -280,9 +280,13 @@ class OpalRTPSession : public OpalMediaSession
     };
     PARRAY(ExtendedReportArray, ExtendedReport);
 
-    virtual void OnRxExtendedReport(DWORD src,
-                                    const ExtendedReportArray & reports);                             
-#endif
+    virtual void OnRxExtendedReport(
+      DWORD src,
+      const ExtendedReportArray & reports
+    );
+
+    RTCP_XR_Metrics * GetExtendedMetrics() const { return m_metrics; }
+#endif // OPAL_RTCP_XR
   //@}
 
   /**@name Member variable access */
@@ -565,25 +569,16 @@ class OpalRTPSession : public OpalMediaSession
 
     void AddFilter(const FilterNotifier & filter);
 
-#if OPAL_RTCP_XR
-    const RTCP_XR_Metrics & GetMetrics() const { return m_metrics; }
-          RTCP_XR_Metrics & GetMetrics()       { return m_metrics; }
-#endif
-
     virtual void SendBYE();
 
   protected:
+    ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     bool InsertReportPacket(RTP_ControlFrame & report);
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
-#if OPAL_RTCP_XR
-    void InsertExtendedReportPacket(RTP_ControlFrame & report);
-    void OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset);    
-#endif
-
     bool InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort);
     virtual void ApplyQOS(const PIPSocket::Address & addr);
     virtual bool InternalReadData(RTP_DataFrame & frame);
@@ -677,7 +672,8 @@ class OpalRTPSession : public OpalMediaSession
     
 #if OPAL_RTCP_XR
     // Calculate the VoIP Metrics for RTCP-XR
-    RTCP_XR_Metrics m_metrics;
+    RTCP_XR_Metrics * m_metrics;
+    friend class RTCP_XR_Metrics;
 #endif
 
     DWORD    averageSendTimeAccum;
