@@ -1009,7 +1009,8 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
   PINDEX start = args.deviceName.Find("TITLE=\"");
   if (start != P_MAX_INDEX) {
     start += 7;
-    args.deviceName.Splice(preview ? "Local Preview" : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
+    static PConstString const LocalPreview("Local Preview");
+    args.deviceName.Splice(preview ? LocalPreview : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
   }
 
   autoDelete = true;
