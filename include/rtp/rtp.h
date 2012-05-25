@@ -45,11 +45,11 @@
 
 #include <list>
 
-#include <rtp/metrics.h>
 
 class RTP_JitterBuffer;
 class PNatMethod;
 class OpalSecurityMode;
+class RTCP_XR_Metrics;
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
@@ -720,9 +720,13 @@ class RTP_Session : public PObject
     };
     PARRAY(ExtendedReportArray, ExtendedReport);
 
-    virtual void OnRxExtendedReport(DWORD src,
-                                    const ExtendedReportArray & reports);                             
-#endif
+    virtual void OnRxExtendedReport(
+      DWORD src,
+      const ExtendedReportArray & reports
+    );
+
+    RTCP_XR_Metrics * GetExtendedMetrics() const { return m_metrics; }
+#endif // OPAL_RTCP_XR
   //@}
 
   /**@name Member variable access */
@@ -978,23 +982,14 @@ class RTP_Session : public PObject
 
     void AddFilter(const FilterNotifier & filter);
 
-#if OPAL_RTCP_XR
-    const RTCP_XR_Metrics & GetMetrics() const { return m_metrics; }
-          RTCP_XR_Metrics & GetMetrics()       { return m_metrics; }
-#endif
-
     virtual void SendBYE();
 
   protected:
+    RTP_Session::ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
     
-#if OPAL_RTCP_XR
-    void InsertExtendedReportPacket(RTP_ControlFrame & report);
-    void OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset);    
-#endif
-
     PString             m_encoding;
     PMutex              m_encodingMutex;
     RTP_Encoding      * m_encodingHandler;
@@ -1071,7 +1066,8 @@ class RTP_Session : public PObject
     
 #if OPAL_RTCP_XR
     // Calculate the VoIP Metrics for RTCP-XR
-    RTCP_XR_Metrics m_metrics;
+    RTCP_XR_Metrics * m_metrics;
+    friend class RTCP_XR_Metrics;
 #endif
 
     DWORD    averageSendTimeAccum;
