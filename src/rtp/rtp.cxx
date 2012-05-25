@@ -946,18 +946,20 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
+  DWORD frameTimestamp = frame.GetTimestamp();
+
   // special handling for first packet
   if (packetsSent == 0) {
 
     // establish timestamp offset
     if (oobTimeStampBaseEstablished)  {
-      timeStampOffs = oobTimeStampOutBase - frame.GetTimestamp() + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8);
-      frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+      timeStampOffs = oobTimeStampOutBase - frameTimestamp + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * m_timeUnits);
+      frameTimestamp += timeStampOffs;
     }
     else {
       oobTimeStampBaseEstablished = true;
       timeStampOffs               = 0;
-      oobTimeStampOutBase         = frame.GetTimestamp();
+      oobTimeStampOutBase         = frameTimestamp;
       oobTimeStampBase            = PTimer::Tick();
     }
 
@@ -971,19 +973,18 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
            << " m=" << frame.GetMarker()
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
-           << " ts=" << frame.GetTimestamp()
+           << " ts=" << frameTimestamp
            << " src=" << hex << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount() << dec);
   }
 
   else {
     // set timestamp
-    DWORD ts = frame.GetTimestamp() + timeStampOffs;
-    frame.SetTimestamp(ts);
+    frameTimestamp += timeStampOffs;
 
     // reset OOB timestamp every marker bit
     if (frame.GetMarker()) {
-      oobTimeStampOutBase = ts;
+      oobTimeStampOutBase = frameTimestamp;
       oobTimeStampBase    = PTimer::Tick();
     }
 
@@ -1000,6 +1001,8 @@ RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & 
     }
   }
 
+  frame.SetTimestamp(frameTimestamp);
+  lastSentTimestamp = frameTimestamp;
   lastSentPacketTime = tick;
 
   octetsSent += frame.GetPayloadSize();
