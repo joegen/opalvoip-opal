@@ -41,6 +41,8 @@
 
 #include <rtp/jitter.h>
 
+#include <rtp/metrics.h>
+
 
 const unsigned JitterRoundingGuardBits = 4;
 
@@ -691,7 +693,9 @@ PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame)
     return false;
 
 #if OPAL_RTCP_XR
-  m_session.GetMetrics().SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
+  RTCP_XR_Metrics * metrics = m_session.GetExtendedMetrics();
+  if (metrics != NULL)
+    metrics->SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
 #endif
 
   PTRACE(6, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
