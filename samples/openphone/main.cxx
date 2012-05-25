@@ -461,8 +461,10 @@ class TextCtrlChannel : public PChannel
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
       theEvent.SetEventObject(m_frame);
-      theEvent.SetString(wxString::FromUTF8((const char *)buf, (size_t)len));
+      PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len));
+      theEvent.SetString(str);
       m_frame->GetEventHandler()->AddPendingEvent(theEvent);
+      PTRACE(3, "OpenPhone\t" << str);
       return true;
     }
 
