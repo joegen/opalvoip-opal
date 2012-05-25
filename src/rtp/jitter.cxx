@@ -41,6 +41,8 @@
 
 #include <rtp/jitter.h>
 
+#include <rtp/metrics.h>
+
 
 const unsigned JitterRoundingGuardBits = 4;
 

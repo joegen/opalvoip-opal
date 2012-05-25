@@ -100,7 +100,9 @@ public:
         return false;
 
 #if OPAL_RTCP_XR
-      m_session.GetMetrics().SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
+      RTCP_XR_Metrics * metrics = m_session.GetExtendedMetrics();
+      if (metrics != NULL)
+        metrics->SetJitterDelay(GetCurrentJitterDelay()/GetTimeUnits());
 #endif
 
       PTRACE(6, "Jitter\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
@@ -146,6 +148,9 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
+#if OPAL_RTCP_XR
+  , m_metrics(NULL)
+#endif
   , m_reportTimer(0, 12)  // Seconds
   , remoteAddress(0)
   , remoteTransmitAddress(0)
@@ -204,6 +209,10 @@ OpalRTPSession::OpalRTPSession(const OpalRTPSession & other)
 OpalRTPSession::~OpalRTPSession()
 {
   Close();
+
+#if OPAL_RTCP_XR
+  delete m_metrics;
+#endif
 
 #if PTRACING
   PTime now;
@@ -540,142 +549,6 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 } 
 
 
-#if OPAL_RTCP_XR
-
-void OpalRTPSession::InsertExtendedReportPacket(RTP_ControlFrame & report)
-{
-  report.StartNewPacket();
-  report.SetPayloadType(RTP_ControlFrame::e_ExtendedReport);
-  report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ExtendedReport));  // length is SSRC of packet sender plus XR
-  report.SetCount(1);
-  BYTE * payload = report.GetPayloadPtr();
-
-  // add the SSRC to the start of the payload
-  *(PUInt32b *)payload = syncSourceOut;
-  
-  RTP_ControlFrame::ExtendedReport & xr = *(RTP_ControlFrame::ExtendedReport *)(payload+4);
-  
-  xr.bt = 0x07;
-  xr.type_specific = 0x00;
-  xr.length = 0x08;
-  xr.ssrc = syncSourceOut;
-  
-  xr.loss_rate = m_metrics.GetLossRate();
-  xr.discard_rate = m_metrics.GetDiscardRate();
-  xr.burst_density = m_metrics.GetBurstDensity();
-  xr.gap_density = m_metrics.GetGapDensity();
-  xr.burst_duration = m_metrics.GetBurstDuration();
-  xr.gap_duration = m_metrics.GetGapDuration();
-  xr.round_trip_delay = m_metrics.GetRoundTripDelay();
-  xr.end_system_delay = m_metrics.GetEndSystemDelay();
-  xr.signal_level = 0x7F;
-  xr.noise_level = 0x7F;
-  xr.rerl = 0x7F;    
-  xr.gmin = 16;
-  xr.r_factor = m_metrics.RFactor();
-  xr.ext_r_factor = 0x7F;
-  xr.mos_lq = m_metrics.MOS_LQ();
-  xr.mos_cq = m_metrics.MOS_CQ();
-  xr.rx_config = 0x00;
-  xr.reserved = 0x00;
-
-  JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count in case gets deleted out from under us
-  if (jitter != NULL) {
-    xr.jb_nominal = (WORD)(jitter->GetMinJitterDelay()/jitter->GetTimeUnits());
-    xr.jb_maximum = (WORD)(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
-    xr.jb_absolute = (WORD)(jitter->GetMaxJitterDelay()/jitter->GetTimeUnits());
-  }
-  
-  report.EndPacket();
-  
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", SentExtendedReport:"
-            " ssrc=" << xr.ssrc
-         << " loss_rate=" << (PUInt32b) xr.loss_rate
-         << " discard_rate=" << (PUInt32b) xr.discard_rate
-         << " burst_density=" << (PUInt32b) xr.burst_density
-         << " gap_density=" << (PUInt32b) xr.gap_density
-         << " burst_duration=" << xr.burst_duration
-         << " gap_duration=" << xr.gap_duration
-         << " round_trip_delay="<< xr.round_trip_delay
-         << " end_system_delay="<< xr.end_system_delay
-         << " gmin="<< (PUInt32b) xr.gmin
-         << " r_factor="<< (PUInt32b) xr.r_factor
-         << " mos_lq="<< (PUInt32b) xr.mos_lq
-         << " mos_cq="<< (PUInt32b) xr.mos_cq
-         << " jb_nominal_delay="<< xr.jb_nominal
-         << " jb_maximum_delay="<< xr.jb_maximum
-         << " jb_absolute_delay="<< xr.jb_absolute);
-
-}
-
-static OpalRTPSession::ExtendedReportArray
-BuildExtendedReportArray(const RTP_ControlFrame & frame, PINDEX offset)
-{
-  OpalRTPSession::ExtendedReportArray reports(frame.GetCount());
-
-  const RTP_ControlFrame::ExtendedReport * rr = (const RTP_ControlFrame::ExtendedReport *)(frame.GetPayloadPtr()+offset);
-  for (PINDEX repIdx = 0; repIdx < (PINDEX)frame.GetCount(); repIdx++) {
-    OpalRTPSession::ExtendedReport * report = new OpalRTPSession::ExtendedReport;
-    report->sourceIdentifier = rr->ssrc;
-    report->lossRate = rr->loss_rate;
-    report->discardRate = rr->discard_rate;
-    report->burstDensity = rr->burst_density;
-    report->gapDensity = rr->gap_density;
-    report->roundTripDelay = rr->round_trip_delay;
-    report->RFactor = rr->r_factor;
-    report->mosLQ = rr->mos_lq;
-    report->mosCQ = rr->mos_cq;
-    report->jbNominal = rr->jb_nominal;
-    report->jbMaximum = rr->jb_maximum;
-    report->jbAbsolute = rr->jb_absolute;
-    reports.SetAt(repIdx, report);
-    rr++;
-  }
-  return reports;
-}
-
-
-void OpalRTPSession::OnRxSenderReportToMetrics(const RTP_ControlFrame & frame, PINDEX offset)
-{
-  const RTP_ControlFrame::ReceiverReport * rr = (const RTP_ControlFrame::ReceiverReport *)(frame.GetPayloadPtr()+offset);
-  for (unsigned repIdx = 0; repIdx < frame.GetCount(); repIdx++, rr++)
-    m_metrics.OnRxSenderReport(rr->lsr, rr->dlsr);
-}
-
-
-void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedReportArray & PTRACE_PARAM(reports))
-{
-#if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__, this);
-    strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << src << '\n';
-    for (PINDEX i = 0; i < reports.GetSize(); i++)
-      strm << "  XR: " << reports[i] << '\n';
-    strm << PTrace::End;
-  }
-#endif
-}
-
-
-void OpalRTPSession::ExtendedReport::PrintOn(ostream & strm) const
-{
-  strm << "ssrc=" << sourceIdentifier
-       << " loss_rate=" << lossRate
-       << " discard_rate=" << discardRate
-       << " burst_density=" << burstDensity
-       << " gap_density=" << gapDensity
-       << " round_trip_delay=" << roundTripDelay
-       << " r_factor=" << RFactor
-       << " mos_lq=" << mosLQ
-       << " mos_cq=" << mosCQ
-       << " jb_nominal=" << jbNominal
-       << " jb_maximum=" << jbMaximum
-       << " jb_absolute=" << jbAbsolute;
-}
-
-#endif
-
-
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame)
 {
   PWaitAndSignal mutex(dataMutex);
@@ -685,18 +558,20 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
+  DWORD frameTimestamp = frame.GetTimestamp();
+
   // special handling for first packet
   if (packetsSent == 0) {
 
     // establish timestamp offset
     if (oobTimeStampBaseEstablished)  {
-      timeStampOffs = oobTimeStampOutBase - frame.GetTimestamp() + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8);
-      frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+      timeStampOffs = oobTimeStampOutBase - frameTimestamp + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * m_timeUnits);
+      frameTimestamp += timeStampOffs;
     }
     else {
       oobTimeStampBaseEstablished = true;
       timeStampOffs               = 0;
-      oobTimeStampOutBase         = frame.GetTimestamp();
+      oobTimeStampOutBase         = frameTimestamp;
       oobTimeStampBase            = PTimer::Tick();
     }
 
@@ -710,7 +585,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
            << " m=" << frame.GetMarker()
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
-           << " ts=" << frame.GetTimestamp()
+           << " ts=" << frameTimestamp
            << " src=" << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount()
            << ' ' << GetRemoteMediaAddress());
@@ -718,12 +593,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 
   else {
     // set timestamp
-    DWORD ts = frame.GetTimestamp() + timeStampOffs;
-    frame.SetTimestamp(ts);
+    frameTimestamp += timeStampOffs;
 
     // reset OOB timestamp every marker bit
     if (frame.GetMarker()) {
-      oobTimeStampOutBase = ts;
+      oobTimeStampOutBase = frameTimestamp;
       oobTimeStampBase    = PTimer::Tick();
     }
 
@@ -740,6 +614,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     }
   }
 
+  frame.SetTimestamp(frameTimestamp);
+  lastSentTimestamp = frameTimestamp;
   lastSentPacketTime = tick;
 
   octetsSent += frame.GetPayloadSize();
@@ -821,7 +697,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
            << " ccnt=" << frame.GetContribSrcCount() << dec);
 
 #if OPAL_RTCP_XR
-    m_metrics.SetPayloadInfo(frame);
+    delete m_metrics; // Should be NULL, but just in case ...
+    m_metrics = RTCP_XR_Metrics::Create(frame);
 #endif
 
     if ((frame.GetPayloadType() == RTP_DataFrame::T38) &&
@@ -898,7 +775,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     }
     else if (sequenceNumber < expectedSequenceNumber) {
 #if OPAL_RTCP_XR
-      m_metrics.OnPacketDiscarded();
+      if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
 #endif
 
       // Check for Cisco bug where sequence numbers suddenly start incrementing
@@ -960,7 +837,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
 #if OPAL_RTCP_XR
-      m_metrics.OnPacketLost(dropped);
+      if (m_metrics != NULL) m_metrics->OnPacketLost(dropped);
 #endif
     }
   }
@@ -974,7 +851,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     frame.SetAbsoluteTime(m_syncRealTime + PTimeInterval((frame.GetTimestamp() - m_syncTimestamp)/m_timeUnits));
 
 #if OPAL_RTCP_XR
-  m_metrics.OnPacketReceived();
+  if (m_metrics != NULL) m_metrics->OnPacketReceived();
 #endif
 
   if (rxStatisticsCount >= rxStatisticsInterval) {
@@ -1122,7 +999,7 @@ void OpalRTPSession::SendReport(PTimer&, INT)
   
 #if OPAL_RTCP_XR
   //Generate and send RTCP-XR packet
-  InsertExtendedReportPacket(report);
+  if (m_metrics != NULL) m_metrics->InsertExtendedReportPacket(m_sessionId, syncSourceOut, m_jitterBuffer, report);
 #endif
 
   WriteControl(report);
@@ -1149,8 +1026,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
 #endif
 
 
-static OpalRTPSession::ReceiverReportArray
-BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset)
+OpalRTPSession::ReceiverReportArray
+OpalRTPSession::BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset)
 {
   OpalRTPSession::ReceiverReportArray reports;
 
@@ -1165,6 +1042,9 @@ BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset)
     report->lastTimestamp = (PInt64)(DWORD)rr->lsr;
     report->delay = ((PInt64)rr->dlsr << 16)/1000;
     reports.SetAt(repIdx, report);
+#if OPAL_RTCP_XR
+    if (m_metrics != NULL) m_metrics->OnRxSenderReport(rr->lsr, rr->dlsr);
+#endif
     rr++;
   }
 
@@ -1202,9 +1082,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           sender.rtpTimestamp = sr.rtp_ts;
           sender.packetsSent = sr.psent;
           sender.octetsSent = sr.osent;
-#if OPAL_RTCP_XR
-          OnRxSenderReportToMetrics(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport));
-#endif
           OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)));
         }
         else {
@@ -1300,7 +1177,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 #if OPAL_RTCP_XR
       case RTP_ControlFrame::e_ExtendedReport :
         if (size >= sizeof(PUInt32b)+frame.GetCount()*sizeof(RTP_ControlFrame::ExtendedReport))
-          OnRxExtendedReport(*(const PUInt32b *)payload, BuildExtendedReportArray(frame, sizeof(PUInt32b)));
+          OnRxExtendedReport(*(const PUInt32b *)payload, RTCP_XR_Metrics::BuildExtendedReportArray(frame, sizeof(PUInt32b)));
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", ReceiverReport packet truncated");
         }
