@@ -171,7 +171,7 @@ protected:
   int                         m_originalExpireTime;
   int                         m_offlineExpireTime;
   State                       m_state;
-  queue<State>                m_stateQueue;
+  std::queue<State>           m_stateQueue;
   bool                        m_receivedResponse;
   PTimer                      m_expireTimer; 
   SIPURL                      m_proxy;

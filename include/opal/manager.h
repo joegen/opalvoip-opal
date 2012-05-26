@@ -55,6 +55,7 @@
 #include <ptlib/videoio.h>
 #endif
 
+
 class OpalEndPoint;
 class OpalMediaPatch;
 class PSSLCertificate;
@@ -1873,6 +1874,7 @@ class OpalManager : public PObject
       DecoupledEvent(
         const PSafePtr<OpalConnection> & connection
       ) : m_connection(connection) { }
+      virtual ~DecoupledEvent() { }
       virtual void Work() = 0;
     protected:
       PSafePtr<OpalConnection> m_connection;
@@ -1890,7 +1892,7 @@ class OpalManager : public PObject
     PString       defaultDisplayName;
 
     BYTE                     m_defaultMediaTypeOfService;
-    map<OpalMediaType, BYTE> m_mediaTypeOfService;
+    std::map<OpalMediaType, BYTE> m_mediaTypeOfService;
 
     PINDEX        rtpPayloadSizeMax;
     PINDEX        rtpPacketSizeMax;

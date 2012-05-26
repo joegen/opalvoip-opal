@@ -134,6 +134,8 @@ class SDPCommonAttributes
       : m_direction(Undefined)
     { }
 
+    virtual ~SDPCommonAttributes() { }
+
     virtual void SetDirection(const Direction & d) { m_direction = d; }
     virtual Direction GetDirection() const { return m_direction; }
 
