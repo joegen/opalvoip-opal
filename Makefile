@@ -47,12 +47,16 @@ AUTOCONF       := autoconf
 ACLOCAL        := aclocal
 
 
-ifneq (,$(MAKECMDGOALS))
+ifneq ($(MAKECMDGOALS),config)
   $(MAKECMDGOALS): default
 endif
 
 default: $(CONFIG_FILES)
 	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(MAKECMDGOALS)
+
+.PHONY:config
+config:
+	$(CONFIGURE) $(CFG_ARGS)
 
 $(firstword $(CONFIG_FILES)): $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(CONFIG_FILES))
 	$(CONFIGURE) $(CFG_ARGS)
@@ -60,6 +64,7 @@ $(firstword $(CONFIG_FILES)): $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(C
 
 ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))
+ifneq (,$(shell which $(ACLOCAL)))
 
 $(CONFIGURE): $(CONFIGURE).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
 	$(AUTOCONF)
@@ -82,6 +87,7 @@ $(CONFIGURE): $(CONFIGURE).ac
 	@echo touch $@
 	@echo ---------------------------------------------------------------------
 
+endif # aclocal installed
 endif # autoconf installed
 endif # autoconf enabled
 
