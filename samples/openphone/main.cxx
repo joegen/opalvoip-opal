@@ -4353,12 +4353,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
 OptionsDialog::~OptionsDialog()
 {
-  if (m_TestVideoThread != NULL) {
-    m_TestVideoGrabber->Close();
-    m_TestVideoDisplay->Close();
-    m_TestVideoThread->WaitForTermination();
-    delete m_TestVideoThread;
-  }
+  StopTestVideo();
 
   long i;
   for (i = 0; i < m_Presentities->GetItemCount(); ++i)
@@ -5121,14 +5116,30 @@ void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 }
 
 
+void OptionsDialog::StopTestVideo()
+{
+  if (m_TestVideoThread == NULL)
+    return;
+
+  m_TestVideoGrabber->Close();
+  m_TestVideoDisplay->Close();
+  m_TestVideoThread->WaitForTermination();
+
+  delete m_TestVideoThread;
+  m_TestVideoThread = NULL;
+
+  delete m_TestVideoDisplay;
+  m_TestVideoDisplay = NULL;
+
+  delete m_TestVideoGrabber;
+  m_TestVideoGrabber = NULL;
+}
+
+
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
   if (m_TestVideoThread != NULL) {
-    m_TestVideoGrabber->Close();
-    m_TestVideoDisplay->Close();
-    m_TestVideoThread->WaitForTermination();
-    delete m_TestVideoThread;
-    m_TestVideoThread = NULL;
+    StopTestVideo();
     m_TestVideoCapture->SetLabel(wxT("Test Video"));
     return;
   }
@@ -5187,12 +5198,6 @@ void OptionsDialog::TestVideoThreadMain()
                                           m_TestVideoGrabber->GetFrameHeight(),
                                           frame))
     frameCount++;
-
-  delete m_TestVideoDisplay;
-  m_TestVideoDisplay = NULL;
-
-  delete m_TestVideoGrabber;
-  m_TestVideoGrabber = NULL;
 }
 
 
