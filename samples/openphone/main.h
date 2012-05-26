@@ -683,6 +683,7 @@ class OptionsDialog : public wxDialog
     void ChangeVideoGrabDevice(wxCommandEvent & event);
     void TestVideoCapture(wxCommandEvent & event);
     void TestVideoThreadMain();
+    void StopTestVideo();
 
     ////////////////////////////////////////
     // Fax fields
