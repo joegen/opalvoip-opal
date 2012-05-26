@@ -416,6 +416,10 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
 #define PLUGINCODEC_SQCIF_HEIGHT   96
 
 
+#ifndef __TIMESTAMP__
+#define __TIMESTAMP__ "0"
+#endif
+
 #define PLUGINCODEC_LICENSE(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15) \
   static struct PluginCodec_information MyLicenseInfo = { 0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,__TIMESTAMP__ }
 

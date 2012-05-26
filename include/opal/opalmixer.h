@@ -154,7 +154,7 @@ class OpalBaseMixer : public PObject
     struct Stream {
       virtual ~Stream() { }
       virtual void QueuePacket(const RTP_DataFrame & rtp) = 0;
-      queue<RTP_DataFrame> m_queue;
+      std::queue<RTP_DataFrame> m_queue;
     };
     typedef std::map<Key_T, Stream *> StreamMap_T;
 

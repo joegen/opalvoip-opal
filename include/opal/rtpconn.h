@@ -288,8 +288,9 @@ class OpalRTPConnection : public OpalConnection
     );
   //@}
 
-    class SessionMap : public map<unsigned, OpalMediaSession *>
+    class SessionMap : public std::map<unsigned, OpalMediaSession *>
     {
+      typedef std::map<unsigned, OpalMediaSession *> BaseClass;
       public:
         SessionMap();
         ~SessionMap();
@@ -297,7 +298,7 @@ class OpalRTPConnection : public OpalConnection
       protected:
         bool m_deleteSessions;
       private:
-        SessionMap(const SessionMap & obj) : map<unsigned, OpalMediaSession *>(obj) { }
+        SessionMap(const SessionMap & obj) : BaseClass(obj) { }
         void operator=(const SessionMap &) { }
     };
 
