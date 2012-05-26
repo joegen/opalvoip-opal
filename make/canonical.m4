@@ -10,6 +10,10 @@ dnl
 AC_DEFUN([MY_CANONICAL_TARGET], [
    AC_CANONICAL_TARGET()
 
+   # reset flags after AC_CANONICAL_TARGET which sets them to undesirable values.
+   CFLAGS=""
+   CXXFLAGS=""
+
    AC_ARG_ENABLE([ios], [AS_HELP_STRING([--enable-ios=iphone|simulator],[enable iOS support])])
 
    if test "$enable_ios" = "iphone" ; then
