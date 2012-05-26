@@ -71,7 +71,7 @@ WIN32=no
 LDSO=
 case "$target_os" in
        solaris )
-          CFLAGS="$CFLAGS -KPIC"
+          CFLAGS="$CFLAGS -fPIC"
           LDSO='-Bdynamic -G -h $@'
           PLUGINEXT=so
           AC_CHECK_HEADERS([sys/time.h sys/file.h netinet/in.h])
