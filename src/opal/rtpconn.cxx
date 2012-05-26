@@ -553,7 +553,7 @@ OpalRTPConnection::SessionMap::~SessionMap()
 
 void OpalRTPConnection::SessionMap::Assign(SessionMap & other, bool move)
 {
-  map<unsigned, OpalMediaSession *>::operator=(other);
+  BaseClass::operator=(other);
   m_deleteSessions = move;
   if (move)
     other.clear();

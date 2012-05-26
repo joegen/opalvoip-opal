@@ -1977,7 +1977,7 @@ WORD OpalManager::GetRtpIpPortPair()
 
 BYTE OpalManager::GetMediaTypeOfService(const OpalMediaType & type) const
 {
-  map<OpalMediaType, BYTE>::const_iterator it = m_mediaTypeOfService.find(type);
+  std::map<OpalMediaType, BYTE>::const_iterator it = m_mediaTypeOfService.find(type);
   return it != m_mediaTypeOfService.end() ? it->second : m_defaultMediaTypeOfService;
 }
 

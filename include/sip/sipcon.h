@@ -786,7 +786,7 @@ class SIPConnection : public OpalRTPConnection
     PRACKMode      m_prackMode;
     bool           m_prackEnabled;
     unsigned       m_prackSequenceNumber;
-    queue<SIP_PDU> m_responsePackets;
+    std::queue<SIP_PDU> m_responsePackets;
     PTimer         m_responseFailTimer;
     PTimer         m_responseRetryTimer;
     unsigned       m_responseRetryCount;

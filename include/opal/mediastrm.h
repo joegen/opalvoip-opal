@@ -409,10 +409,11 @@ class OpalMediaStream : public PSafeObject
 #endif
   //@}
 
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
+
   protected:
     void IncrementTimestamp(PINDEX size);
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
-    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
