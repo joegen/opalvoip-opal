@@ -3707,6 +3707,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+   # reset flags after AC_CANONICAL_TARGET which sets them to undesirable values.
+   CFLAGS=""
+   CXXFLAGS=""
+
    # Check whether --enable-ios was given.
 if test "${enable_ios+set}" = set; then :
   enableval=$enable_ios;
