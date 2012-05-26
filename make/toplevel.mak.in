@@ -534,18 +534,8 @@ SRC_OBJS := $(SRC_OBJS:.cpp=.o)
 OBJS	 := $(EXTERNALOBJS) $(patsubst %.o, $(OPAL_OBJDIR)/%.o, $(notdir $(SRC_OBJS) $(OBJS)))
 
 #
-# create list of dependency files 
-#
-SRC_DEPS := $(SOURCES:.c=.dep)
-SRC_DEPS := $(SRC_DEPS:.cxx=.dep)
-SRC_DEPS := $(SRC_DEPS:.cpp=.dep)
-DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
-
-#
 # define rule for .cxx, .cpp and .c files
 #
-
-
 $(OPAL_OBJDIR)/%.o : %.cxx
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
 	$(Q_CC)$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -554,18 +544,27 @@ $(OPAL_OBJDIR)/%.o :  %.c
 	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
 	$(Q_CC)$(CC) $(CFLAGS) -c $< -o $@
 
+
+#
+# create list of dependency files 
+#
+SRC_DEPS := $(SOURCES:.c=.dep)
+SRC_DEPS := $(SRC_DEPS:.cxx=.dep)
+SRC_DEPS := $(SRC_DEPS:.cpp=.dep)
+DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
+
 #
 # define rule for .dep files
 #
 $(OPAL_DEPDIR)/%.dep : %.cxx 
 	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(Q_DEP)$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
+	$(Q_DEP)$(CXX) $(subst $(DEBUG_CFLAGS),,$(CXXFLAGS)) -M $< >> $@
 
 $(OPAL_DEPDIR)/%.dep : %.c 
 	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(Q_DEP)$(CC) $(CFLAGS:-g=) -M $< >> $@
+	$(Q_DEP)$(CC) $(subst $(DEBUG_CFLAGS),,$(CFLAGS)) -M $< >> $@
 
 
 #####################################################################
