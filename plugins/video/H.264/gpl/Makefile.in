@@ -74,7 +74,7 @@ $(TARGET_PATH): $(OBJECTS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	install $(TARGET_PATH) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
+	$(INSTALL) $(TARGET_PATH) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(TARGET)

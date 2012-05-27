@@ -76,7 +76,7 @@ $(PLUGIN): $(OBJECTS)
 
 install:
 	mkdir -p $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
-	install  $(PLUGIN) $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
+	$(INSTALL)  $(PLUGIN) $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(libdir)/$(LID_PLUGIN_DIR)/$(PLUGIN)
