@@ -30,6 +30,7 @@ libdir        := @libdir@
 
 CC            := @CC@
 CXX           := @CXX@
+INSTALL       := @INSTALL@
 CFLAGS        += @CFLAGS@ -I@prefix@/include -I$(PLUGINDIR)/../include -I$(PLUGINDIR)
 LDFLAGS       += @LDFLAGS@ @LDSO@
 PLUGINEXT     :=@PLUGINEXT@
@@ -84,7 +85,7 @@ endif
 install:
 	@$(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) install; fi ; )
 	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
-	install $(PLUGIN_PATH) $(DESTDIR)$(libdir)/$(INSTALL_DIR)
+	$(INSTALL) $(PLUGIN_PATH) $(DESTDIR)$(libdir)/$(INSTALL_DIR)
 
 uninstall:
 	@$(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) uninstall; fi ; )
