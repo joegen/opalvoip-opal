@@ -61,6 +61,7 @@ class OpalH264Format : public OpalVideoFormatInternal
     OpalH264Format(const char * formatName, SubType subType)
       : OpalVideoFormatInternal(formatName, RTP_DataFrame::DynamicBase, H264EncodingName,
                                 PVideoFrameInfo::MaxWidth, PVideoFrameInfo::MaxHeight, 30, 16000000)
+      , m_subType(subType)
     {
       OpalMediaOption * option;
 #if OPAL_H323
