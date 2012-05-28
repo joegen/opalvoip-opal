@@ -157,7 +157,7 @@ class OpalH264Format : public OpalVideoFormatInternal
 
     bool IsValidForProtocol(const PString & protocol) const
     {
-      return protocol == (m_subType == H323 ? "H.323" : "SIP");
+      return (protocol *= "SIP") == (m_subType != H323);
     }
 
     void GetOriginalOptions(PluginCodec_OptionMap & original)
