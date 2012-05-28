@@ -52,9 +52,9 @@ class OpalG7221Format : public OpalAudioFormatInternal
     {
 #if OPAL_SIP
       OpalMediaOption * option = new OpalMediaOptionInteger(G7221BitRateOptionName,
-                                                            false,
+                                                            true,
                                                             OpalMediaOption::EqualMerge,
-                                                            rate, rate, rate);
+                                                            rate, G7221_24K_BIT_RATE, G7221_32K_BIT_RATE);
       option->SetFMTP(G7221BitRateFMTPName, "0");
       AddOption(option);
 #endif
