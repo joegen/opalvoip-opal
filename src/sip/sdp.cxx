@@ -415,6 +415,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
     encodingName = m_mediaFormat.GetEncodingName();
 
   if (m_mediaFormat.IsEmpty()) {
+    PTRACE(5, "SDP\tMatching \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
     for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip");
          iterFormat != mediaFormats.end();
          iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip", iterFormat)) {
@@ -422,17 +423,16 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
       SetMediaFormatOptions(adjustedFormat);
       // skip formats whose fmtp don't match options
       if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "SIP\tRTP payload type " << encodingName << " matched to codec " << *iterFormat);
+        PTRACE(3, "SDP\tMatched \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate << " to " << *iterFormat);
         m_mediaFormat = adjustedFormat;
         break;
       }
 
-      PTRACE(4, "SIP\tRTP payload type " << encodingName << " not matched to codec " << *iterFormat);
+      PTRACE(4, "SDP\tDid not match\"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate << " to " << *iterFormat);
     }
 
     if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "SDP\tCould not find media format for \""
-             << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
+      PTRACE(2, "SDP\tCould not find media format for \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
       return false;
     }
   }
@@ -876,7 +876,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
     if (mediaFormat.IsValid())
       list += mediaFormat;
     else {
-      PTRACE(2, "SIP\tRTP payload type " << format->GetPayloadType() 
+      PTRACE(2, "SDP\tRTP payload type " << format->GetPayloadType() 
              << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
     }
   }
@@ -1399,6 +1399,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
 
 SDPVideoMediaDescription::SDPVideoMediaDescription(const OpalTransportAddress & address)
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Video())
+  , m_content(0)
 {
 }
 
@@ -1417,13 +1418,8 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
   // call ancestor
   SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
-    PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
-    if (role > 0) {
-      strm << "a=content:" << ContentRoleNames[role] << "\r\n";
-      break;
-    }
-  }
+  if (m_content > 0 && m_content < PARRAYSIZE(ContentRoleNames))
+    strm << "a=content:" << ContentRoleNames[m_content] << "\r\n";
 }
 
 
@@ -1434,26 +1430,34 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
            until PostDecode() */
 
   if (attr *= "content") {
-    PINDEX role = 0;
+    m_content = 0;
     PStringArray tokens = value.Tokenise(',');
     for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-      for (role = PARRAYSIZE(ContentRoleNames)-1; role > 0; --role) {
-        if (tokens[i] *= ContentRoleNames[role])
+      for (m_content = PARRAYSIZE(ContentRoleNames)-1; m_content > 0; --m_content) {
+        if (tokens[i] *= ContentRoleNames[m_content])
           break;
       }
-      if (role > 0)
+      if (m_content > 0)
         break;
     }
-
-    for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
-      format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
-
+    PTRACE(4, "SDP\tContent Role set to " << m_content << " from \"" << value << '"');
     return;
   }
 
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }
 
+
+bool SDPVideoMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
+{
+  if (!SDPRTPAVPMediaDescription::PostDecode(mediaFormats))
+    return false;
+
+  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
+    format->GetWritableMediaFormat().SetOptionEnum(OpalVideoFormat::ContentRoleOption(), m_content);
+
+  return true;
+}
 
 
 bool SDPVideoMediaDescription::PreEncode()
@@ -1486,6 +1490,9 @@ bool SDPVideoMediaDescription::PreEncode()
     unsigned bw = mediaFormat.GetBandwidth();
     m_bandwidth.SetMax(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
     m_bandwidth.SetMax(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
+
+    if (m_content == 0)
+      m_content = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
   }
 
   return true;

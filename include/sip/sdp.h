@@ -351,7 +351,11 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     virtual PString GetSDPMediaType() const;
     virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
+
+  protected:
+    PINDEX m_content;
 };
 
 #endif // OPAL_VIDEO
