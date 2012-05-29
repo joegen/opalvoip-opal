@@ -156,10 +156,17 @@ class OpalH264Format : public OpalVideoFormatInternal
 #endif
     }
 
+
+    virtual PObject * Clone() const
+    {
+      return new OpalH264Format(*this);
+    }
+
     bool IsValidForProtocol(const PString & protocol) const
     {
       return (protocol *= "SIP") == (m_subType != H323);
     }
+
 
     void GetOriginalOptions(PluginCodec_OptionMap & original)
     {

@@ -59,6 +59,12 @@ class OpalG7221Format : public OpalAudioFormatInternal
       AddOption(option);
 #endif
     }
+
+
+    virtual PObject * Clone() const
+    {
+      return new OpalG7221Format(*this);
+    }
 };
 
 
