@@ -41,6 +41,13 @@
 #define new PNEW
 
 
+enum
+{
+    H241_RxFramesPerPacket = 0 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H241_PreferredMode     = 1 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 static char PreferredMode[] = "Preferred Mode";
@@ -52,24 +59,13 @@ class OpaliLBCFormat : public OpalAudioFormatInternal
       : OpalAudioFormatInternal(OPAL_iLBC, RTP_DataFrame::DynamicBase, "iLBC",  50, 160, 1, 1, 1, 8000, 0)
     {
       OpalMediaOption * option = new OpalMediaOptionInteger(PreferredMode, false, OpalMediaOption::MaxMerge, 7);
-#if OPAL_SIP
-      option->SetFMTPName("mode");
-      option->SetFMTPDefault("0");
-#endif
-#if OPAL_H323
-      OpalMediaOption::H245GenericInfo info;
-      info.ordinal = 1;
-      info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
-      option->SetH245Generic(info);
-#endif
+      OPAL_SET_MEDIA_OPTION_FMTP(option, "mode", "0");
+      OPAL_SET_MEDIA_OPTION_H245(option, H241_PreferredMode);
       AddOption(option);
 
 #if OPAL_H323
-      option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
-      if (option != NULL) {
-        info.ordinal = 0; // All other fields the same as for the mode
-        option->SetH245Generic(info);
-      }
+      if ((option = FindOption(OpalAudioFormat::RxFramesPerPacketOption())) != NULL)
+        OPAL_SET_MEDIA_OPTION_H245(option, H241_RxFramesPerPacket);
 #endif
 
       FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
@@ -117,24 +113,7 @@ class OpaliLBCFormat : public OpalAudioFormatInternal
 
 
 #if OPAL_H323
-class H323_iLBCCapability : public H323GenericAudioCapability
-{
-  public:
-    H323_iLBCCapability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_iLBC)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_iLBCCapability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpaliLBC;
-    }
-};
+extern const char iLBC_Identifier[] = OpalPluginCodec_Identifer_iLBC;
 #endif // OPAL_H323
 
 
@@ -143,7 +122,9 @@ const OpalAudioFormat & GetOpaliLBC()
   static OpalAudioFormat const iLBC_Format(new OpaliLBCFormat);
 
 #if OPAL_H323
-  static H323CapabilityFactory::Worker<H323_iLBCCapability> iLBC_Factory(OPAL_iLBC, true);
+  static H323CapabilityFactory::Worker<
+    H323GenericAudioCapabilityTemplate<iLBC_Identifier, GetOpaliLBC>
+  > capability(OPAL_iLBC, true);
 #endif // OPAL_H323
 
   return iLBC_Format;

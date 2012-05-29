@@ -505,7 +505,7 @@ class H323GenericCapabilityInfo
 
 
     PString  m_identifier;
-    unsigned maxBitRate;
+    unsigned m_maxBitRate;
 };
 
 /**This class describes the interface to a codec that has channels based on
@@ -859,7 +859,7 @@ class H323GenericAudioCapability : public H323AudioCapability,
       */
     H323GenericAudioCapability(
       const PString & capabilityId,    ///< generic codec identifier
-      PINDEX maxBitRate = 0               ///< maxBitRate parameter for the GenericCapability
+      unsigned fixedBitRate            ///< Fixed bit rate for audio
     );
   //@}
 
@@ -930,15 +930,18 @@ class H323GenericAudioCapability : public H323AudioCapability,
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
+
+  protected:
+    bool m_fixedBitRate;
 };
 
 
-template <const char * oid, const OpalAudioFormat & fmtFunc()>
+template <const char * oid, const OpalAudioFormat & fmtFunc(), unsigned fixedBitRate = 0>
 class H323GenericAudioCapabilityTemplate : public H323GenericAudioCapability
 {
   public:
     H323GenericAudioCapabilityTemplate()
-      : H323GenericAudioCapability(oid)
+      : H323GenericAudioCapability(oid, fixedBitRate)
     {
     }
 
