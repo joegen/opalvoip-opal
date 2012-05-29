@@ -575,11 +575,12 @@ bool OpalMediaPatch::OnStartMediaPatch()
 }
 
 
-bool OpalMediaPatch::EnableJitterBuffer()
+bool OpalMediaPatch::EnableJitterBuffer(bool enab)
 {
   PSafeLockReadOnly mutex(*this);
 
-  bool enab = m_bypassToPatch == NULL;
+  if (m_bypassToPatch != NULL)
+    enab = false;
 
   PList<Sink>::iterator s;
   for (s = sinks.begin(); s != sinks.end(); ++s) {
