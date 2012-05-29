@@ -35,92 +35,46 @@
 #include <opal/mediafmt.h>
 #include <h323/h323caps.h>
 #include <asn/h245.h>
+#include <codec/opalplugin.h>
 
 
 #define new PNEW
 
 
-enum G726SubTypes {
-  G726_40K = 0,
-  G726_32K = 1,
-  G726_24K = 2,
-  G726_16K = 3
-};
-
-static const char * const G726Name[4] = {
-  OPAL_G726_40K,
-  OPAL_G726_32K,
-  OPAL_G726_24K,
-  OPAL_G726_16K
-};
-
-static const char * const G726IANA[4] = {
-  "G726-40",
-  "G726-32",
-  "G726-24",
-  "G726-16"
-};
-
-static unsigned const G726Bits[4] = {
-  5,
-  4,
-  3,
-  2
-};
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H323
+#define IDENTIFIER(rate) extern const char G726_##rate##K_Identifier[] = "0.0.7.726.1.0." #rate;
 
-static const char * const G726OID[4] = {
-  "0.0.7.726.1.0.40",
-  "0.0.7.726.1.0.32",
-  "0.0.7.726.1.0.24",
-  "0.0.7.726.1.0.16"
-};
-
-template <G726SubTypes subtype>
-class H323_G726Capability : public H323GenericAudioCapability
-{
-  public:
-    H323_G726Capability()
-      : H323GenericAudioCapability(G726OID[subtype])
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_G726Capability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return G726Name[subtype];
-    }
-};
-
-#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G726Capability<type> > type##_Factory(G726Name[type], true);
+#define CAPABILITY(rate) \
+  static H323CapabilityFactory::Worker< \
+  H323GenericAudioCapabilityTemplate<G726_##rate##K_Identifier, GetOpalG726_##rate##K, rate##000> \
+  > capability(G726_##rate##K_FormatName, true)
 
 #else
-#define CAPABILITY(t)
+#define IDENTIFIER(rate)
+#define CAPABILITY(rate)
 #endif // OPAL_H323
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define FORMAT(type) \
-  const OpalAudioFormat & GetOpal##type() \
+#define FORMAT(rate, bits) \
+  IDENTIFIER(rate) \
+  static const char G726_##rate##K_FormatName[] = OPAL_G726_##rate##K; \
+  static const char G726_##rate##K_EncodingName[] = "G726-" #rate; \
+  const OpalAudioFormat & GetOpalG726_##rate##K() \
   { \
-    static const OpalAudioFormat type##_Format(G726Name[type], RTP_DataFrame::DynamicBase,  G726IANA[type], G726Bits[type], 8, 240, 30, 256, 8000); \
-    CAPABILITY(type); \
-    return type##_Format; \
+    static const OpalAudioFormat format(G726_##rate##K_FormatName, RTP_DataFrame::DynamicBase, \
+                                        G726_##rate##K_EncodingName, bits, 8, 240, 30, 256, 8000); \
+    CAPABILITY(rate); \
+    return format; \
   }
 
-FORMAT(G726_40K);
-FORMAT(G726_32K);
-FORMAT(G726_24K);
-FORMAT(G726_16K);
+FORMAT(40, 5);
+FORMAT(32, 4);
+FORMAT(24, 3);
+FORMAT(16, 2);
 
 
 // End of File ///////////////////////////////////////////////////////////////

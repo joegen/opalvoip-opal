@@ -79,7 +79,7 @@ const OpalAudioFormat & GetOpalG7221_24K()
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_24K>
+    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_24K, G7221_24K_BIT_RATE>
   > capability(G7221FormatName24K, true);
 #endif
 
@@ -93,7 +93,7 @@ const OpalAudioFormat & GetOpalG7221_32K()
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_32K>
+    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_32K, G7221_32K_BIT_RATE>
   > capability(G7221FormatName32K, true);
 #endif
 
