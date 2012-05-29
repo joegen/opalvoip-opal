@@ -40,6 +40,14 @@
 #define new PNEW
 
 
+enum
+{
+    H241_RxFramesPerPacket = 0 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC,
+    H241_InitialMode       = 1 | PluginCodec_H245_NonCollapsing | PluginCodec_H245_ReqMode,
+    H241_VAD               = 2 | PluginCodec_H245_Collapsing    | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 class OpalGSMAMRFormat : public OpalAudioFormatInternal
@@ -49,63 +57,27 @@ class OpalGSMAMRFormat : public OpalAudioFormatInternal
       : OpalAudioFormatInternal(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000, 0)
     {
       OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
-#if OPAL_SIP
-      option->SetFMTPName("mode");
-      option->SetFMTPDefault("0");
-#endif
-#if OPAL_H323
-      OpalMediaOption::H245GenericInfo info;
-      info.ordinal = 1;
-      info.mode = OpalMediaOption::H245GenericInfo::NonCollapsing;
-      info.excludeTCS = info.excludeOLC = true;
-      option->SetH245Generic(info);
-#endif
+      OPAL_SET_MEDIA_OPTION_FMTP(option, "mode", "0");
+      OPAL_SET_MEDIA_OPTION_H245(option, H241_InitialMode);
       AddOption(option);
 
       option = new OpalMediaOptionBoolean("VAD", false, OpalMediaOption::AndMerge, true);
-#if OPAL_H323
-      info.ordinal = 2;
-      info.mode = OpalMediaOption::H245GenericInfo::Collapsing;
-      info.excludeOLC = false;
-      option->SetH245Generic(info);
-#endif
+      OPAL_SET_MEDIA_OPTION_H245(option, H241_VAD);
       AddOption(option);
 
 #if OPAL_H323
-      option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
-      if (option != NULL) {
-        info.ordinal = 0; // All other fields the same as for the mode
-        info.excludeTCS = false;
-        info.excludeReqMode = true;
-        option->SetH245Generic(info);
-      }
-#endif
+      if ((option = FindOption(OpalAudioFormat::RxFramesPerPacketOption())) != NULL)
+        OPAL_SET_MEDIA_OPTION_H245(option, H241_RxFramesPerPacket);
 
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
+#endif
     }
 };
 
 
 #if OPAL_H323
-class H323_GSMAMRCapability : public H323GenericAudioCapability
-{
-  public:
-    H323_GSMAMRCapability()
-      : H323GenericAudioCapability(OpalPluginCodec_Identifer_AMR)
-    {
-    }
-
-    virtual PObject * Clone() const
-    {
-      return new H323_GSMAMRCapability(*this);
-    }
-
-    virtual PString GetFormatName() const
-    {
-      return OpalGSMAMR;
-    }
-};
-#endif // OPAL_H323
+extern const char GSM_AMR_Identifier[] = OpalPluginCodec_Identifer_AMR;
+#endif
 
 
 const OpalAudioFormat & GetOpalGSMAMR()
@@ -113,7 +85,9 @@ const OpalAudioFormat & GetOpalGSMAMR()
   static OpalAudioFormat const GSMAMR_Format(new OpalGSMAMRFormat);
 
 #if OPAL_H323
-  static H323CapabilityFactory::Worker<H323_GSMAMRCapability> GSMAMR_Factory(OPAL_GSMAMR, true);
+  static H323CapabilityFactory::Worker<
+    H323GenericAudioCapabilityTemplate<GSM_AMR_Identifier, GetOpalGSMAMR>
+  > capability(OPAL_GSMAMR, true);
 #endif // OPAL_H323
 
   return GSMAMR_Format;

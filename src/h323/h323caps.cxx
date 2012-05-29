@@ -497,7 +497,7 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 
 H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate)
   : m_identifier(standardId)
-  , maxBitRate(bitRate)
+  , m_maxBitRate(bitRate)
 {
 }
 
@@ -516,7 +516,7 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
 {
   H323SetCapabilityIdentifier(m_identifier, pdu.m_capabilityIdentifier);
 
-  unsigned bitRate = maxBitRate != 0 ? maxBitRate : ((mediaFormat.GetBandwidth()+99)/100);
+  unsigned bitRate = m_maxBitRate != 0 ? m_maxBitRate : ((mediaFormat.GetBandwidth()+99)/100);
   if (bitRate != 0) {
     pdu.IncludeOptionalField(H245_GenericCapability::e_maxBitRate);
     pdu.m_maxBitRate = bitRate;
@@ -601,8 +601,8 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
     return false;
 
   if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
-    maxBitRate = pdu.m_maxBitRate;
-    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate*100);
+    m_maxBitRate = pdu.m_maxBitRate;
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate*100);
   }
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -696,9 +696,6 @@ PBoolean H323GenericCapabilityInfo::IsMatch(const H245_GenericCapability & param
 
 PObject::Comparison H323GenericCapabilityInfo::CompareInfo(const H323GenericCapabilityInfo & obj) const
 {
-  if (maxBitRate != 0 && obj.maxBitRate != 0 && maxBitRate != obj.maxBitRate)
-    return maxBitRate < obj.maxBitRate ? PObject::LessThan : PObject::GreaterThan;
-
   return m_identifier.Compare(obj.m_identifier);
 }
 
@@ -895,9 +892,10 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId, PINDEX maxBitRate)
-  : H323AudioCapability(),
-    H323GenericCapabilityInfo(standardId, maxBitRate)
+H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId, unsigned fixedBitRate)
+  : H323AudioCapability()
+  , H323GenericCapabilityInfo(standardId, fixedBitRate)
+  , m_fixedBitRate(fixedBitRate != 0)
 {
 }
 
@@ -906,7 +904,11 @@ PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) con
   if (!PIsDescendant(&obj, H323GenericAudioCapability))
     return LessThan;
 
-  return CompareInfo((const H323GenericAudioCapability &)obj);
+  const H323GenericAudioCapability & other = (const H323GenericAudioCapability &)obj;
+  if (m_fixedBitRate && m_maxBitRate != other.m_maxBitRate)
+    return m_maxBitRate < other.m_maxBitRate ? PObject::LessThan : PObject::GreaterThan;
+
+  return CompareInfo(other);
 }
 
 
