@@ -316,6 +316,9 @@ void OpalLocalConnection::AlertingIncoming()
 
 void OpalLocalConnection::AcceptIncoming()
 {
+  // Make sure connection doesn't disappear before thread starts
+  SafeReference();
+
   // Defer this a teency amount so get don't block processing for too long
   new ::PThreadObj<OpalLocalConnection>(*this, &OpalLocalConnection::InternalAcceptIncoming, true, "LocalAccept");
 }
@@ -324,12 +327,15 @@ void OpalLocalConnection::AcceptIncoming()
 void OpalLocalConnection::InternalAcceptIncoming()
 {
   PThread::Sleep(100);
+
   if (LockReadWrite()) {
     AlertingIncoming();
     OnConnectedInternal();
     AutoStartMediaStreams();
     UnlockReadWrite();
   }
+
+  SafeDereference();
 }
 
 
