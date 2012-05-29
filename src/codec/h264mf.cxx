@@ -52,16 +52,15 @@
 class OpalH264Format : public OpalVideoFormatInternal
 {
   public:
-    enum SubType {
-      SIP0,
-      SIP1,
-      H323
+    enum PacketizationMode {
+      Aligned,
+      NonInterleaved,
+      Interleaved // Unused as yet
     };
 
-    OpalH264Format(const char * formatName, SubType subType)
+    OpalH264Format(const char * formatName, PacketizationMode mode)
       : OpalVideoFormatInternal(formatName, RTP_DataFrame::DynamicBase, H264EncodingName,
                                 PVideoFrameInfo::MaxWidth, PVideoFrameInfo::MaxHeight, 30, 16000000)
-      , m_subType(subType)
     {
       OpalMediaOption * option;
 #if OPAL_H323
@@ -115,6 +114,14 @@ class OpalH264Format : public OpalVideoFormatInternal
       option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 9600);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB, "0"));
       AddOption(option);
+
+      static const char * const PacketizationModes[] = {
+        OpalPluginCodec_Identifer_H264_Aligned","OpalPluginCodec_Identifer_H264_Truncated // Some stupid endpoints (e.g. Polycom) use this, one zero short!
+        OpalPluginCodec_Identifer_H264_NonInterleaved","OpalPluginCodec_Identifer_H264_Aligned","OpalPluginCodec_Identifer_H264_Truncated,
+        OpalPluginCodec_Identifer_H264_Interleaved","OpalPluginCodec_Identifer_H264_NonInterleaved","
+            OpalPluginCodec_Identifer_H264_Aligned","OpalPluginCodec_Identifer_H264_Truncated,
+      };
+      AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, false, PacketizationModes[mode]));
 #endif
 
 #if OPAL_SIP
@@ -134,37 +141,22 @@ class OpalH264Format : public OpalVideoFormatInternal
       option = new OpalMediaOptionUnsigned(MaxBR_SDP_Name, true, OpalMediaOption::MinMerge, 0, 0, 240000);
       option->SetFMTP(MaxBR_FMTPName, "0");
       AddOption(option);
+
+      option = new OpalMediaOptionUnsigned(PacketizationModeName, true, OpalMediaOption::EqualMerge, mode, 0, 2);
+      option->SetFMTP(PacketizationFMTPName, "0");
+      AddOption(option);
 #endif
 
       option = new OpalMediaOptionUnsigned(MaxNALUSizeName, false, OpalMediaOption::MinMerge, H241_MAX_NALU_SIZE, 256, 240000);
       OPAL_SET_MEDIA_OPTION_H245(option, H241_Max_NAL_unit_size);
       OPAL_SET_MEDIA_OPTION_FMTP(option, MaxNALUSizeFMTPName, STRINGIZE(H241_MAX_NALU_SIZE));
       AddOption(option);
-
-      if (subType == H323)
-        AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, false,
-                                            OpalPluginCodec_Identifer_H264_Aligned","
-                                            OpalPluginCodec_Identifer_H264_NonInterleaved","
-                                            OpalPluginCodec_Identifer_H264_Truncated // Some stupid endpoints (e.g. Polycom) use this, one zero short!
-                                           ));
-#if OPAL_SIP
-      else {
-        option = new OpalMediaOptionUnsigned(PacketizationModeName, true, OpalMediaOption::EqualMerge, subType, 0, 2);
-        option->SetFMTP(PacketizationFMTPName, "0");
-        AddOption(option);
-      }
-#endif
     }
 
 
     virtual PObject * Clone() const
     {
       return new OpalH264Format(*this);
-    }
-
-    bool IsValidForProtocol(const PString & protocol) const
-    {
-      return (protocol *= "SIP") == (m_subType != H323);
     }
 
 
@@ -200,9 +192,6 @@ class OpalH264Format : public OpalVideoFormatInternal
       SetChangedOptions(changed);
       return OpalVideoFormatInternal::ToCustomisedOptions();
     }
-
-  protected:
-    SubType m_subType;
 };
 
 
@@ -212,34 +201,32 @@ extern const char H264_Identifer[] = OpalPluginCodec_Identifer_H264_Generic;
 
 
 
-#if OPAL_H323
-const OpalVideoFormat & GetOpalH264()
-{
-  static OpalVideoFormat const format(new OpalH264Format(H264FormatName, OpalH264Format::H323));
-
-  static H323CapabilityFactory::Worker<
-    H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264>
-  > capability(H264FormatName, true);
-
-  return format;
-}
-#endif // OPAL_H323
-
-
-#if OPAL_SIP
 const OpalVideoFormat & GetOpalH264_MODE0()
 {
-  static OpalVideoFormat const format(new OpalH264Format(H2640FormatName, OpalH264Format::SIP0));
+  static OpalVideoFormat const format(new OpalH264Format(H264_Mode0_FormatName, OpalH264Format::Aligned));
+
+#if OPAL_H323
+  static H323CapabilityFactory::Worker<
+    H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE0>
+  > capability(H264_Mode0_FormatName, true);
+#endif // OPAL_H323
+
   return format;
 }
 
 
 const OpalVideoFormat & GetOpalH264_MODE1()
 {
-  static OpalVideoFormat const format(new OpalH264Format(H2641FormatName, OpalH264Format::SIP1));
+  static OpalVideoFormat const format(new OpalH264Format(H264_Mode1_FormatName, OpalH264Format::NonInterleaved));
+
+#if OPAL_H323
+  static H323CapabilityFactory::Worker<
+    H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE1>
+  > capability(H264_Mode1_FormatName, true);
+#endif // OPAL_H323
+
   return format;
 }
-#endif // OPAL_SIP
 
 
 // End of File ///////////////////////////////////////////////////////////////

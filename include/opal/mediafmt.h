@@ -1413,7 +1413,6 @@ extern const OpalAudioFormat & GetOpaliLBC();
 extern const OpalVideoFormat & GetOpalH261();
 extern const OpalVideoFormat & GetOpalH263();
 extern const OpalVideoFormat & GetOpalH263plus();
-extern const OpalVideoFormat & GetOpalH264();
 extern const OpalVideoFormat & GetOpalH264_MODE0();
 extern const OpalVideoFormat & GetOpalH264_MODE1();
 extern const OpalVideoFormat & GetOpalMPEG4();
@@ -1476,13 +1475,9 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalH261       GetOpalH261()
 #define OpalH263       GetOpalH263()
 #define OpalH263plus   GetOpalH263plus()
-#if OPAL_H323
-#define OpalH264       GetOpalH264()
-#endif
-#if OPAL_SIP
+#define OpalH264       GetOpalH264_MODE1()
 #define OpalH264_MODE0 GetOpalH264_MODE0()
 #define OpalH264_MODE1 GetOpalH264_MODE1()
-#endif
 #define OpalMPEG4      GetOpalMPEG4()
 #endif
 

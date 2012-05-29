@@ -288,8 +288,17 @@ static struct PluginCodec_Option const MaxNaluSize =
   "65535"                             // Maximum value
 };
 
-#ifdef PLUGIN_CODEC_VERSION_INTERSECT
-static struct PluginCodec_Option const MediaPacketizations =
+static struct PluginCodec_Option const MediaPacketizationsH323_0 =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_IntersectionMerge,      // Merge mode
+  OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
+  OpalPluginCodec_Identifer_H264_Truncated
+};
+
+static struct PluginCodec_Option const MediaPacketizationsH323_1 =
 {
   PluginCodec_StringOption,           // Option type
   PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
@@ -299,9 +308,8 @@ static struct PluginCodec_Option const MediaPacketizations =
   OpalPluginCodec_Identifer_H264_NonInterleaved ","
   OpalPluginCodec_Identifer_H264_Truncated
 };
-#endif
 
-static struct PluginCodec_Option const PacketizationMode_0 =
+static struct PluginCodec_Option const PacketizationModeSDP_0 =
 {
   PluginCodec_IntegerOption,          // Option type
   PacketizationModeName,              // User visible name
@@ -315,7 +323,7 @@ static struct PluginCodec_Option const PacketizationMode_0 =
   "2"                                 // Maximum value
 };
 
-static struct PluginCodec_Option const PacketizationMode_1 =
+static struct PluginCodec_Option const PacketizationModeSDP_1 =
 {
   PluginCodec_IntegerOption,          // Option type
   PacketizationModeName,              // User visible name
@@ -352,48 +360,43 @@ static struct PluginCodec_Option const SendAccessUnitDelimiters =
   STRINGIZE(DefaultSendAccessUnitDelimiters)      // Initial value
 };
 
-static struct PluginCodec_Option const * MyOptionTable[] = {
+static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &Profile,
   &Level,
   &H241Profiles,
   &H241Level,
-  &MaxNaluSize,
-  &MaxMBPS_H241,
-  &MaxFS_H241,
-  &MaxBR_H241,
-  &TemporalSpatialTradeOff,
-  &SendAccessUnitDelimiters,
-#ifdef PLUGIN_CODEC_VERSION_INTERSECT
-  &MediaPacketizations,  // Note: must be last entry
-#endif
-  NULL
-};
-
-static struct PluginCodec_Option const * const MyOptionTable_0[] = {
-  &Profile,
-  &Level,
   &SDPProfileAndLevel,
-  &MaxNaluSize,
+  &MaxMBPS_H241,
   &MaxMBPS_SDP,
+  &MaxFS_H241,
   &MaxFS_SDP,
+  &MaxBR_H241,
   &MaxBR_SDP,
-  &PacketizationMode_0,
+  &MaxNaluSize,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
+  &PacketizationModeSDP_0,
+  &MediaPacketizationsH323_0,  // Note: must be last entry
   NULL
 };
 
 static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &Profile,
   &Level,
+  &H241Profiles,
+  &H241Level,
   &SDPProfileAndLevel,
-  &MaxNaluSize,
+  &MaxMBPS_H241,
   &MaxMBPS_SDP,
+  &MaxFS_H241,
   &MaxFS_SDP,
+  &MaxBR_H241,
   &MaxBR_SDP,
-  &PacketizationMode_1,
+  &MaxNaluSize,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
+  &PacketizationModeSDP_1,
+  &MediaPacketizationsH323_1,  // Note: must be last entry
   NULL
 };
 
@@ -407,19 +410,14 @@ static struct PluginCodec_H323GenericCodecData MyH323GenericData = {
 
 class H264_PluginMediaFormat : public PluginCodec_VideoFormat<MY_CODEC>
 {
-  bool m_sipOnly;
-
 public:
   typedef PluginCodec_VideoFormat<MY_CODEC> BaseClass;
 
-  H264_PluginMediaFormat(const char * formatName, OptionsTable options, bool sipOnly)
+  H264_PluginMediaFormat(const char * formatName, OptionsTable options)
     : BaseClass(formatName, H264EncodingName, MyDescription, LevelInfo[sizeof(LevelInfo)/sizeof(LevelInfo[0])-1].m_MaxBitRate, options)
-    , m_sipOnly(sipOnly)
   {
-    if (!m_sipOnly) {
-      m_h323CapabilityType = PluginCodec_H323Codec_generic;
-      m_h323CapabilityData = &MyH323GenericData;
-    }
+    m_h323CapabilityType = PluginCodec_H323Codec_generic;
+    m_h323CapabilityData = &MyH323GenericData;
   }
 
 
@@ -433,19 +431,12 @@ public:
   {
     return MyToCustomised(original, changed);
   }
-
-
-  virtual bool IsValidForProtocol(const char * protocol)
-  {
-    return (strcasecmp(protocol, "SIP") == 0) == m_sipOnly;
-  }
 }; 
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat MyMediaFormatInfo  (H264FormatName,  MyOptionTable,   false);
-static H264_PluginMediaFormat MyMediaFormatInfo_0(H2640FormatName, MyOptionTable_0, true );
-static H264_PluginMediaFormat MyMediaFormatInfo_1(H2641FormatName, MyOptionTable_1, true );
+static H264_PluginMediaFormat MyMediaFormatInfo_0(H264_Mode0_FormatName, MyOptionTable_0);
+static H264_PluginMediaFormat MyMediaFormatInfo_1(H264_Mode1_FormatName, MyOptionTable_1);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -459,8 +450,10 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     unsigned m_level;
     unsigned m_constraints;
     unsigned m_maxMBPS;
-    unsigned m_packetisationMode;
     unsigned m_maxNALUSize;
+    unsigned m_packetisationModeSDP;
+    unsigned m_packetisationModeH323;
+    bool     m_isH323;
 
     H264Encoder m_encoder;
 
@@ -471,8 +464,10 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_level(DefaultLevelInt)
       , m_constraints(0)
       , m_maxMBPS(0)
-      , m_packetisationMode(1)
       , m_maxNALUSize(1400)
+      , m_packetisationModeSDP(1)
+      , m_packetisationModeH323(1)
+      , m_isH323(false)
     {
       PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
     }
@@ -501,20 +496,22 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, MaxMBPS_SDP.m_name) == 0)
         return SetOptionUnsigned(m_maxMBPS, optionValue, 0);
 
-      if (strcasecmp(optionName, Level.m_name) == 0) {
-        for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
-          if (strcasecmp(optionValue, LevelInfo[i].m_Name) == 0) {
-            m_level = LevelInfo[i].m_H264;
+      if (strcasecmp(optionName, Profile.m_name) == 0) {
+        for (size_t i = 0; i < sizeof(ProfileInfo)/sizeof(ProfileInfo[0]); ++i) {
+          if (strcasecmp(optionValue, ProfileInfo[i].m_Name) == 0) {
+            m_profile = ProfileInfo[i].m_H264;
+            m_optionsSame = false;
             return true;
           }
         }
         return false;
       }
 
-      if (strcasecmp(optionName, Profile.m_name) == 0) {
-        for (size_t i = 0; i < sizeof(ProfileInfo)/sizeof(ProfileInfo[0]); ++i) {
-          if (strcasecmp(optionValue, ProfileInfo[i].m_Name) == 0) {
-            m_profile = ProfileInfo[i].m_H264;
+      if (strcasecmp(optionName, Level.m_name) == 0) {
+        for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
+          if (strcasecmp(optionValue, LevelInfo[i].m_Name) == 0) {
+            m_level = LevelInfo[i].m_H264;
+            m_optionsSame = false;
             return true;
           }
         }
@@ -526,38 +523,41 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0 ||
 #endif
           strcasecmp(optionName, PLUGINCODEC_MEDIA_PACKETIZATION ) == 0) {
-        if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Interleaved) != NULL)
-          return SetPacketisationMode(2);
-        if (strstr(optionValue, OpalPluginCodec_Identifer_H264_NonInterleaved) != NULL)
-          return SetPacketisationMode(1);
+        if (strstr(optionValue, OpalPluginCodec_Identifer_H264_Interleaved) != NULL) {
+          m_packetisationModeH323 = 2;
+          m_optionsSame = false;
+          return true;
+        }
+
+        if (strstr(optionValue, OpalPluginCodec_Identifer_H264_NonInterleaved) != NULL) {
+          m_packetisationModeH323 = 1;
+          m_optionsSame = false;
+          return true;
+        }
+
         if (*optionValue != '\0' &&
             strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL &&
             strcmp(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != 0)
           PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
-        return SetPacketisationMode(0);
+
+        m_packetisationModeH323 = 0;
+        m_optionsSame = false;
+        return true;
       }
 
-      if (strcasecmp(optionName, PacketizationModeName) == 0)
-        return SetPacketisationMode(atoi(optionValue));
+      if (strcasecmp(optionName, PacketizationModeName) == 0) {
+        m_packetisationModeSDP = atoi(optionValue);
+        m_optionsSame = false;
+        return true;
+      }
+
+      if (strcasecmp(optionName, "Protocol") == 0) {
+        m_isH323 = strstr(optionValue, "323") != NULL;
+        return true;
+      }
 
       // Base class sets bit rate and frame time
       return BaseClass::SetOption(optionName, optionValue);
-    }
-
-
-    bool SetPacketisationMode(unsigned mode)
-    {
-      PTRACE(4, MY_CODEC_LOG, "Setting NALU " << (mode == 0 ? "aligned" : "fragmentation") << " mode.");
-
-      if (mode > 2) // Or 3 if support interleaved mode
-        return false; // Unknown/unsupported packetization mode
-
-      if (m_packetisationMode != mode) {
-        m_packetisationMode = mode;
-        m_optionsSame = false;
-      }
-
-      return true;
     }
 
 
@@ -592,7 +592,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime); // Every 10 seconds
 
-      if (m_packetisationMode == 0) {
+      unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
+      if (mode == 0) {
         unsigned size = std::min(m_maxRTPSize, m_maxNALUSize);
         m_encoder.SetMaxRTPPayloadSize(size);
         m_encoder.SetMaxNALUSize(size);
@@ -612,7 +613,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                               "bps=" << m_maxBitRate << " "
                               "RTP=" << m_maxRTPSize << " "
                               "NALU=" << m_maxNALUSize << " "
-                              "TSTO=" << m_tsto);
+                              "TSTO=" << m_tsto << " "
+                              "Mode=" << mode);
       return true;
     }
 
@@ -698,7 +700,6 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
 static struct PluginCodec_Definition CodecDefinition[] =
 {
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo,   H264_Encoder, H264_Decoder),
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_0, H264_Encoder, H264_Decoder),
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_1, H264_Encoder, H264_Decoder)
 };

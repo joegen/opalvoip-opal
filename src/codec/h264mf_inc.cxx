@@ -40,12 +40,11 @@
 #ifdef MY_CODEC
   #define MY_CODEC_LOG STRINGIZE(MY_CODEC)
 #else
-  #define MY_CODEC_LOG OPAL_H264
+  #define MY_CODEC_LOG "H.264"
 #endif
 
-static const char H264FormatName[]  = OPAL_H264;
-static const char H2640FormatName[] = OPAL_H264_MODE0;
-static const char H2641FormatName[] = OPAL_H264_MODE1;
+static const char H264_Mode0_FormatName[] = OPAL_H264_MODE0;
+static const char H264_Mode1_FormatName[] = OPAL_H264_MODE1;
 
 static const char H264EncodingName[] = "H264";
 
