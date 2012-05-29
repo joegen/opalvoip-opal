@@ -111,6 +111,12 @@ class OpalG729Format : public OpalAudioFormat
 #endif
       AddOption(option);
     }
+
+
+    virtual PObject * Clone() const
+    {
+      return new OpalG729Format(*this);
+    }
 };
 
 

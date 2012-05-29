@@ -107,6 +107,12 @@ class OpalG723Format : public OpalAudioFormat
 #endif
       AddOption(option);
     }
+
+
+    virtual PObject * Clone() const
+    {
+      return new OpalG723Format(*this);
+    }
 };
 
 #define FORMAT(name) \

@@ -182,6 +182,13 @@ class OpalH263Format : public OpalVideoFormatInternal
       }
     }
 
+
+    virtual PObject * Clone() const
+    {
+      return new OpalH263Format(*this);
+    }
+
+
     void GetOriginalOptions(PluginCodec_OptionMap & original)
     {
       PWaitAndSignal m1(media_format_mutex);

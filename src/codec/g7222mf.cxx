@@ -97,6 +97,12 @@ class OpalG7222Format : public OpalAudioFormatInternal
 
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
     }
+
+
+    virtual PObject * Clone() const
+    {
+      return new OpalG7222Format(*this);
+    }
 };
 
 
