@@ -229,6 +229,7 @@ class OpalMediaPatch : public PSafeObject
     virtual void UnLockSinkTranscoder() const;
 
     virtual bool ResetTranscoders();
+    bool EnableJitterBuffer(bool enab = true);
 
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromSink) const;
@@ -243,7 +244,6 @@ class OpalMediaPatch : public PSafeObject
     virtual void Main();
     void StopThread();
     bool DispatchFrame(RTP_DataFrame & frame);
-    bool EnableJitterBuffer();
 
     OpalMediaStream & source;
 
