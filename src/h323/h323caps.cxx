@@ -696,6 +696,9 @@ PBoolean H323GenericCapabilityInfo::IsMatch(const H245_GenericCapability & param
 
 PObject::Comparison H323GenericCapabilityInfo::CompareInfo(const H323GenericCapabilityInfo & obj) const
 {
+  if (maxBitRate != 0 && obj.maxBitRate != 0 && maxBitRate != obj.maxBitRate)
+    return maxBitRate < obj.maxBitRate ? PObject::LessThan : PObject::GreaterThan;
+
   return m_identifier.Compare(obj.m_identifier);
 }
 
@@ -2219,17 +2222,22 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
 {
   PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
-  if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) == NULL) {
-    H323Capability * capability = H323Capability::Create(mediaFormat);
-    if (capability != NULL) {
-      capability->SetCapabilityDirection(direction); 
-      capability->GetWritableMediaFormat() = mediaFormat;
-      reply = SetCapability(descriptorNum, simultaneous, capability);
-      m_mediaPacketizations.Union(mediaFormat.GetMediaPacketizationSet());
-    }
-  }
+  if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) != NULL)
+    return reply;
 
-  return reply;
+  H323Capability * capability = H323Capability::Create(mediaFormat);
+  if (capability == NULL)
+    return reply;
+
+  H323Capability * existingCapability = FindCapability(*capability);
+  if (existingCapability != NULL)
+    return reply;
+
+  capability->SetCapabilityDirection(direction); 
+  capability->GetWritableMediaFormat() = mediaFormat;
+  m_mediaPacketizations.Union(mediaFormat.GetMediaPacketizationSet());
+
+  return SetCapability(descriptorNum, simultaneous, capability);
 }
 
 
