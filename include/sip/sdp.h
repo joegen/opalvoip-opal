@@ -218,8 +218,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
-    unsigned GetPTime () const { return ptime; }
-    unsigned GetMaxPTime () const { return maxptime; }
+    virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
 
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
@@ -231,8 +230,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     OpalMediaType mediaType;
 
     SDPMediaFormatList  formats;
-    unsigned            ptime;
-    unsigned            maxptime;
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
@@ -327,12 +324,15 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     virtual PString GetSDPMediaType() const;
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
     bool GetOfferPTime() const { return m_offerPTime; }
     void SetOfferPTime(bool value) { m_offerPTime = value; }
 
   protected:
-    bool m_offerPTime;
+    unsigned m_PTime;
+    unsigned m_maxPTime;
+    bool     m_offerPTime;
 };
 
 
@@ -353,9 +353,11 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
+    virtual OpalVideoFormat::ContentRole GetContentRole() const { return m_contentRole; }
 
   protected:
-    PINDEX m_content;
+    OpalVideoFormat::ContentRole m_contentRole;
+    unsigned                     m_contentMask;
 };
 
 #endif // OPAL_VIDEO
