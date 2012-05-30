@@ -414,9 +414,10 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
   if (transport == NULL) {
     OpalTransportAddressArray interfaces = GetInterfaceAddresses();
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-      if (interfaces[i].IsCompatible(gkAddress))
+      if (interfaces[i].IsCompatible(gkAddress)) {
         transport = new H323TransportUDP(*this, interfaces[i]);
         break;
+      }
     }
     if (transport == NULL) {
       PTRACE(2, "H323\tCannot find a compatible listener for \"" << gkAddress << '"');
