@@ -1357,29 +1357,22 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
 
   unsigned roleMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
 
-  H323Capabilities allVideoCapabilities;
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
-
-  for (H323CapabilityFactory::KeyList_T::const_iterator iterCap = stdCaps.begin(); iterCap != stdCaps.end(); ++iterCap) {
-    H323Capability * capability = H323Capability::Create(*iterCap);
-    if (capability->GetMainType() == H323Capability::e_Video)
-      allVideoCapabilities.Add(capability);
-    else
-      delete capability;
-  }
 
   m_videoFormats.RemoveAll();
 
   for (i = 0; i < extcap.m_videoCapability.GetSize(); ++i) {
     const H245_VideoCapability & vidCap = extcap.m_videoCapability[i];
-    for (PINDEX c = 0; c < allVideoCapabilities.GetSize(); c++) {
-      H323VideoCapability & capability = (H323VideoCapability &)allVideoCapabilities[c];
-      if (capability.IsMatch(vidCap, PString::Empty()) && capability.OnReceivedPDU(vidCap, type)) {
-        OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+    for (H323CapabilityFactory::KeyList_T::const_iterator iterCap = stdCaps.begin(); iterCap != stdCaps.end(); ++iterCap) {
+      H323Capability * capability = H323Capability::Create(*iterCap);
+      if (capability->GetMainType() == H323Capability::e_Video &&
+          capability->IsMatch(vidCap, PString::Empty()) &&
+          dynamic_cast<H323VideoCapability*>(capability)->OnReceivedPDU(vidCap, type)) {
+        OpalMediaFormat mediaFormat = capability->GetMediaFormat();
         mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
-        if (mediaFormat.ToNormalisedOptions())
-          m_videoFormats += mediaFormat;
+        m_videoFormats += mediaFormat;
       }
+      delete capability;
     }
   }
 
@@ -1493,7 +1486,14 @@ PObject::Comparison H323H239VideoCapability::Compare(const PObject & obj) const
   if (comparison != EqualTo)
     return comparison;
 
-  return GetMediaFormat().Compare(((H323Capability &)obj).GetMediaFormat());
+  OpalMediaFormat otherFormat = ((H323Capability &)obj).GetMediaFormat();
+  for (PINDEX i = 0; i < m_videoFormats.GetSize(); ++i) {
+    if (m_videoFormats[i] == otherFormat) {
+      const_cast<H323H239VideoCapability *>(this)->GetWritableMediaFormat() = m_videoFormats[i];
+      return EqualTo;
+    }
+  }
+  return GetMediaFormat().Compare(otherFormat);
 }
 
 
@@ -1548,7 +1548,8 @@ PBoolean H323H239VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu
   if (!H323ExtendedVideoCapability::OnReceivedPDU(pdu, type))
     return false;
 
-  GetWritableMediaFormat() = m_videoFormats[0];
+  if (!m_videoFormats.HasFormat(GetMediaFormat()))
+    GetWritableMediaFormat() = m_videoFormats.front();
   return true;
 }
 
@@ -2235,8 +2236,10 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
     return reply;
 
   H323Capability * existingCapability = FindCapability(*capability);
-  if (existingCapability != NULL)
+  if (existingCapability != NULL) {
+    delete capability;
     return reply;
+  }
 
   capability->SetCapabilityDirection(direction); 
   capability->GetWritableMediaFormat() = mediaFormat;
@@ -2728,7 +2731,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
 
   H245_H2250Capability & h225_0 = pdu.m_multiplexCapability;
-  PINDEX rtpPacketizationCount = 0;
+  PStringSet mediaPacketizations;
 
   // encode the capabilities
   PINDEX count = 0;
@@ -2742,18 +2745,15 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.GetWritableMediaFormat().ToCustomisedOptions();
       if (capability.OnSendingPDU(entry.m_capability))
-        H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType, rtpPacketizationCount,
-                                capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType);
+        mediaPacketizations.Union(capability.GetMediaFormat().GetMediaPacketizationSet());
       else
         pdu.m_capabilityTable.SetSize(count);
     }
   }
 
   // Have some mediaPacketizations to include.
-  if (rtpPacketizationCount > 0) {
-    h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount);
+  if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType, mediaPacketizations))
     h225_0.m_mediaPacketizationCapability.IncludeOptionalField(H245_MediaPacketizationCapability::e_rtpPayloadType);
-  }
 
   // Set the sets of compatible capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityDescriptors);

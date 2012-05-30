@@ -342,42 +342,33 @@ void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations,
-                             PINDEX & rtpPacketizationCount,
-                             const OpalMediaFormat & mediaFormat,
-                             RTP_DataFrame::PayloadTypes payloadType)
+bool H323SetRTPPacketization(H245_ArrayOf_RTPPayloadType & rtpPacketizations, const PStringSet & mediaPacketizations)
 {
-  // Special case handling by Product Id
-  PString h323ProductId = mediaFormat.GetOptionString("h323ProductId");
-  if (h323ProductId == "NetMeeting")
-    return;
+  PINDEX rtpPacketizationCount = 0;
 
-  PStringArray mediaPacketizations = mediaFormat.GetMediaPacketizations();
-  for (PINDEX i = 0; i < mediaPacketizations.GetSize(); i++) {
+  for (PStringSet::const_iterator it = mediaPacketizations.begin(); it != mediaPacketizations.end(); ++it) {
     rtpPacketizations.SetSize(rtpPacketizationCount+1);
-    if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount],
-                                mediaPacketizations[i], mediaFormat, payloadType))
+    if (H323SetRTPPacketization(rtpPacketizations[rtpPacketizationCount], *it, RTP_DataFrame::IllegalPayloadType))
       rtpPacketizationCount++;
   }
+
+  return rtpPacketizationCount > 0;
 }
 
 bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  // Special case handling by Product Id
-  PString h323ProductId = mediaFormat.GetOptionString("h323ProductId");
-  if (h323ProductId == "NetMeeting")
-    return PFalse;
+  if (payloadType == RTP_DataFrame::IllegalPayloadType)
+    payloadType = mediaFormat.GetPayloadType();
 
   PStringArray mediaPacketizations = mediaFormat.GetMediaPacketizations();
   return !mediaPacketizations.IsEmpty() &&
-         H323SetRTPPacketization(rtpPacketization, mediaPacketizations[0], mediaFormat, payloadType);
+         H323SetRTPPacketization(rtpPacketization, mediaPacketizations[0], payloadType);
 }
 
 bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
                              const PString & packetizationString,
-                             const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
   if (packetizationString.NumCompare("RFC") == PObject::EqualTo) {
@@ -399,11 +390,10 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
     nonstd.m_data = packetizationString;
   }
 
-  if (payloadType == RTP_DataFrame::IllegalPayloadType)
-    payloadType = mediaFormat.GetPayloadType();
-
-  rtpPacketization.IncludeOptionalField(H245_RTPPayloadType::e_payloadType);
-  rtpPacketization.m_payloadType = payloadType;
+  if (payloadType != RTP_DataFrame::IllegalPayloadType) {
+    rtpPacketization.IncludeOptionalField(H245_RTPPayloadType::e_payloadType);
+    rtpPacketization.m_payloadType = payloadType;
+  }
 
   return PTrue;
 }
