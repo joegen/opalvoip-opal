@@ -1078,10 +1078,11 @@ class OpalMediaFormat : public PContainer
        enumeration list. The default value is returned if the option is not
        present.
       */
-    PINDEX GetOptionEnum(
+    template <typename Enum>
+    Enum GetOptionEnum(
       const PString & name,   ///<  Option name
-      PINDEX dflt = 0         ///<  Default value if option not present
-    ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? dflt : m_info->GetOptionEnum(name, dflt); }
+      Enum dflt = (Enum)0     ///<  Default value if option not present
+    ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? dflt : (Enum)m_info->GetOptionEnum(name, dflt); }
 
     /**Set the option value of the specified name as an index into an enumeration.
        Note the option will not be added if it does not exist, the option
@@ -1089,9 +1090,10 @@ class OpalMediaFormat : public PContainer
 
        Returns false of the option is not present or is not of the same type.
       */
+    template <typename Enum>
     bool SetOptionEnum(
       const PString & name,   ///<  Option name
-      PINDEX value            ///<  New value for option
+      Enum value              ///<  New value for option
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionEnum(name, value); }
 
     /**Get the option value of the specified name as a string. The default
@@ -1359,6 +1361,9 @@ class OpalVideoFormat : public OpalMediaFormat
       eSignLanguage,
       eNumRoles
     };
+    __inline friend ContentRole operator++(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole+1)); }
+    __inline friend ContentRole operator--(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole-1)); }
+
     enum { ContentRoleMask = 15 };
     __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }
     static const PString & ContentRoleOption();

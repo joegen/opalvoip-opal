@@ -1175,7 +1175,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
-      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId)) {
+      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole())) {
         sendStream = GetMediaStream(sessionId, false);
 
         if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
@@ -1191,7 +1191,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
     if (recvStream == NULL) {
       PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
-      if (ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId)) {
+      if (ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole())) {
         recvStream = GetMediaStream(sessionId, true);
         if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
           newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
@@ -3393,7 +3393,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // If already open then update to new parameters/payload type
 
   if (recvStream == NULL &&
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId) &&
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), mediaDescription->GetContentRole()) &&
       (recvStream = GetMediaStream(sessionId, true)) != NULL) {
     recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
     recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
@@ -3402,7 +3402,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL &&
-        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId) &&
+        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), mediaDescription->GetContentRole()) &&
         (sendStream = GetMediaStream(sessionId, false)) != NULL)
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
   }
