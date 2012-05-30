@@ -493,11 +493,9 @@ Q931::CauseValues H323TranslateFromCallEndReason(
 
 void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
 
-void H323SetRTPPacketization(
+bool H323SetRTPPacketization(
   H245_ArrayOf_RTPPayloadType & rtpPacketizations,
-  PINDEX & packetizationsCount,
-  const OpalMediaFormat & mediaFormat,
-  RTP_DataFrame::PayloadTypes payloadType
+  const PStringSet & mediaPacketizations
 );
 bool H323SetRTPPacketization(
   H245_RTPPayloadType & rtpPacketization,
@@ -507,7 +505,6 @@ bool H323SetRTPPacketization(
 bool H323SetRTPPacketization(
   H245_RTPPayloadType & rtpPacketization,
   const PString & mediaPacketizationString,
-  const OpalMediaFormat & mediaFormat,
   RTP_DataFrame::PayloadTypes payloadType
 );
 PString H323GetRTPPacketization(
