@@ -64,9 +64,11 @@ class OpalG7221Format : public OpalAudioFormatInternal
 #if OPAL_H323
       OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), G7221_H241_RxFramesPerPacket);
 
-      option = new OpalMediaOptionUnsigned(G7221ExtendedModesOptionName, true, OpalMediaOption::IntersectionMerge, 0x70, 0, 255);
-      OPAL_SET_MEDIA_OPTION_H245(option, G7221_H241_ExtendedModes);
-      AddOption(option);
+      if (rate == G7221_48K_BIT_RATE) {
+        option = new OpalMediaOptionUnsigned(G7221ExtendedModesOptionName, true, OpalMediaOption::IntersectionMerge, 0x70, 0, 255);
+        OPAL_SET_MEDIA_OPTION_H245(option, G7221_H241_ExtendedModes);
+        AddOption(option);
+      }
 #endif
     }
 
