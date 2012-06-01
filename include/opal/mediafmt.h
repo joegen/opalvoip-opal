@@ -1396,6 +1396,7 @@ extern const OpalAudioFormat & GetOpalG711_ALAW_64K();
 extern const OpalAudioFormat & GetOpalG722();
 extern const OpalAudioFormat & GetOpalG7221_24K();
 extern const OpalAudioFormat & GetOpalG7221_32K();
+extern const OpalAudioFormat & GetOpalG7221_48K();
 extern const OpalAudioFormat & GetOpalG7222();
 extern const OpalAudioFormat & GetOpalG726_40K();
 extern const OpalAudioFormat & GetOpalG726_32K();
@@ -1455,6 +1456,7 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalG7221          OpalG7221_32K
 #define OpalG7221_24K      GetOpalG7221_24K()
 #define OpalG7221_32K      GetOpalG7221_32K()
+#define OpalG7221_48K      GetOpalG7221_48K()
 #define OpalG7222          GetOpalG7222()
 #define OpalG726_40K       GetOpalG726_40K()
 #define OpalG726_32K       GetOpalG726_32K()
