@@ -56,6 +56,7 @@
 #define OPAL_G7221          OPAL_G7221_32K
 #define OPAL_G7221_24K      "G.722.1-24K"
 #define OPAL_G7221_32K      "G.722.1-32K"
+#define OPAL_G7221_48K      "G.722.1-48K"
 #define OPAL_G7222          "G.722.2"
 #define OPAL_G726_40K       "G.726-40K"
 #define OPAL_G726_32K       "G.726-32K"
