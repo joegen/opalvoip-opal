@@ -112,7 +112,7 @@ class MyH323EndPoint : public H323EndPoint
     MyH323EndPoint(MyManager & manager);
 
   private:
-    virtual void OnRegistrationConfirm();
+    virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons);
 
     MyManager & m_manager;
 };

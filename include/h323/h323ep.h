@@ -49,6 +49,7 @@
 #include <h323/h323con.h>
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
+#include <h323/gkclient.h>
 #include <asn/h225.h>
 
 #if OPAL_H460
@@ -410,21 +411,11 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     virtual H235Authenticators CreateAuthenticators();
 
-    /**Called when the gatekeeper sends a GatekeeperConfirm
+    /**Called when the gatekeeper status changes.
       */
-    virtual void  OnGatekeeperConfirm();
-
-    /**Called when the gatekeeper sends a GatekeeperReject
-      */
-    virtual void  OnGatekeeperReject();
-
-    /**Called when the gatekeeper sends a RegistrationConfirm
-      */
-    virtual void OnRegistrationConfirm();
-
-    /**Called when the gatekeeper sends a RegistrationReject
-      */
-    virtual void  OnRegistrationReject();
+    virtual void OnGatekeeperStatus(
+      H323Gatekeeper::RegistrationFailReasons status
+    );
   //@}
 
   /**@name Connection management */
@@ -1444,6 +1435,10 @@ class H323EndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const H323Connection &, const OpalRTPSession &) const);
     P_REMOVE_VIRTUAL(PBoolean, OnConferenceInvite(const H323SignalPDU &), false);
+    P_REMOVE_VIRTUAL_VOID(OnGatekeeperConfirm());
+    P_REMOVE_VIRTUAL_VOID(OnGatekeeperReject());
+    P_REMOVE_VIRTUAL_VOID(OnRegistrationConfirm());
+    P_REMOVE_VIRTUAL_VOID(OnRegistrationReject());
 
 #if OPAL_H460
   // This is because there h323plus had

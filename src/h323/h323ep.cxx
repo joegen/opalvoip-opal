@@ -481,21 +481,12 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString
   }
 }
 
-void H323EndPoint::OnGatekeeperConfirm()
+
+void H323EndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons)
 {
 }
 
-void H323EndPoint::OnGatekeeperReject()
-{
-}
 
-void H323EndPoint::OnRegistrationConfirm()
-{
-}
-
-void H323EndPoint::OnRegistrationReject()
-{
-}
 
 H235Authenticators H323EndPoint::CreateAuthenticators()
 {
