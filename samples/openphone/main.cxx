@@ -444,42 +444,36 @@ static void FillAudioDeviceComboBox(wxItemContainer * list, PSoundChannel::Direc
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static wxFrame * TextCtrlChannelFrame;
+
 class TextCtrlChannel : public PChannel
 {
     PCLASSINFO(TextCtrlChannel, PChannel)
   public:
     TextCtrlChannel()
-      : m_frame(NULL)
       { }
 
     virtual PBoolean Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
     ) {
-      if (m_frame == NULL)
+      if (TextCtrlChannelFrame == NULL)
         return false;
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
-      theEvent.SetEventObject(m_frame);
+      theEvent.SetEventObject(TextCtrlChannelFrame);
       PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len));
       theEvent.SetString(str);
-      m_frame->GetEventHandler()->AddPendingEvent(theEvent);
+      TextCtrlChannelFrame->GetEventHandler()->AddPendingEvent(theEvent);
       PTRACE(3, "OpenPhone\t" << str);
       return true;
     }
 
-    void SetFrame(
-      wxFrame * frame
-    ) { m_frame = frame; }
-
     static TextCtrlChannel & Instance()
     {
-      static TextCtrlChannel instance;
-      return instance;
+      static PThreadLocalStorage<TextCtrlChannel> instance;
+      return *instance;
     }
-
-  protected:
-    wxFrame * m_frame;
 };
 
 #define LogWindow TextCtrlChannel::Instance()
@@ -658,13 +652,13 @@ MyManager::MyManager()
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
   m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
 
-  LogWindow.SetFrame(this);
+  TextCtrlChannelFrame = this;
 }
 
 
 MyManager::~MyManager()
 {
-  LogWindow.SetFrame(NULL);
+  TextCtrlChannelFrame = NULL;
 
   ShutDownEndpoints();
 
@@ -7393,9 +7387,9 @@ MyH323EndPoint::MyH323EndPoint(MyManager & manager)
 }
 
 
-void MyH323EndPoint::OnRegistrationConfirm()
+void MyH323EndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
 {
-  LogWindow << "H.323 registration successful." << endl;
+  LogWindow << "H.323 registration: " << status << endl;
 }
 
 #endif

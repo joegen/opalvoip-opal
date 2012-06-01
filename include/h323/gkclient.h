@@ -242,7 +242,7 @@ class H323Gatekeeper : public H225_RAS
 
     /**Determine if the endpoint is registered with the gatekeeper.
       */
-    PBoolean IsRegistered() const { return registrationFailReason == RegistrationSuccessful; }
+    PBoolean IsRegistered() const { return m_registrationFailReason == RegistrationSuccessful; }
 
     enum RegistrationFailReasons {
       RegistrationSuccessful,
@@ -254,14 +254,16 @@ class H323Gatekeeper : public H225_RAS
       SecurityDenied,
       TransportError,
       NumRegistrationFailReasons,
-      RegistrationRejectReasonMask = 0x8000
+      GatekeeperRejectReasonMask = 0x4000,
+      RegistrationRejectReasonMask = 0x8000,
+      UnregistrationRejectReasonMask = 0x10000
     };
     static PString GetRegistrationFailReasonString(RegistrationFailReasons reason);
     friend ostream & operator<<(ostream & strm, RegistrationFailReasons reason) { return strm << GetRegistrationFailReasonString(reason); }
 
     /**Get the registration fail reason.
      */
-    RegistrationFailReasons GetRegistrationFailReason() const { return registrationFailReason; }
+    RegistrationFailReasons GetRegistrationFailReason() const { return m_registrationFailReason; }
 
     /**Get the gatekeeper name.
        The gets the name of the gatekeeper. It will be of the form id@address
@@ -342,9 +344,11 @@ class H323Gatekeeper : public H225_RAS
     bool SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu);
 
     // Gatekeeper registration state variables
-    PBoolean     discoveryComplete;
+    bool     discoveryComplete;
     PString  endpointIdentifier;
-    RegistrationFailReasons registrationFailReason;
+    RegistrationFailReasons m_registrationFailReason;
+    void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
+    void SetRegistrationFailReason(RegistrationFailReasons reason);
     
     enum {
       HighPriority = 80,
@@ -391,7 +395,7 @@ class H323Gatekeeper : public H225_RAS
         AlternateInfo & operator=(const AlternateInfo &) { return *this; }
     };
     PSortedList<AlternateInfo> alternates;
-    PBoolean               alternatePermanent;
+    bool               alternatePermanent;
     PSemaphore         requestMutex;
     H235Authenticators authenticators;
 
@@ -403,14 +407,14 @@ class H323Gatekeeper : public H225_RAS
     H323TransportAddress gkRouteAddress;
 
     // Gatekeeper operation variables
-    PBoolean       autoReregister;
-    PBoolean       reregisterNow;
+    bool       autoReregister;
+    bool       reregisterNow;
     PTimer     timeToLive;
-    PBoolean       requiresDiscovery;
+    bool       requiresDiscovery;
     PTimer     infoRequestRate;
-    PBoolean       willRespondToIRR;
+    bool       willRespondToIRR;
     PThread  * monitor;
-    PBoolean       monitorStop;
+    bool       monitorStop;
     PSyncPoint monitorTickle;
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;

@@ -190,19 +190,8 @@ void H323Transactor::PrintOn(ostream & strm) const
 {
   if (transport == NULL)
     strm << "<<no-transport>>";
-  else {
-    H323TransportAddress addr = transport->GetRemoteAddress();
-
-    PIPSocket::Address ip;
-    WORD port;
-    if (addr.GetIpAndPort(ip, port)) {
-      strm << PIPSocket::GetHostName(ip);
-      if (port != defaultRemotePort)
-        strm << ':' << port;
-    }
-    else
-      strm << addr;
-  }
+  else
+    strm << transport->GetRemoteAddress();
 }
 
 
