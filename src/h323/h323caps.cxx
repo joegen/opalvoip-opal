@@ -943,8 +943,17 @@ PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & 
 
 PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
 {
-  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
-         H323GenericCapabilityInfo::IsMatch((const H245_GenericCapability &)subTypePDU.GetObject());
+  if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
+    return false;
+
+  const H245_GenericCapability & genericCap = (const H245_GenericCapability &)subTypePDU.GetObject();
+  if (!H323GenericCapabilityInfo::IsMatch(genericCap))
+    return false;
+
+  if (m_fixedBitRate)
+    return m_maxBitRate == genericCap.m_maxBitRate;
+
+  return true;
 }
 
 
