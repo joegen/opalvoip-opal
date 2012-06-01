@@ -50,12 +50,23 @@ class OpalG7221Format : public OpalAudioFormatInternal
                                 1, 1, 1,
                                 G7221_SAMPLE_RATE)
     {
+      OpalMediaOption * option;
+
 #if OPAL_SIP
-      OpalMediaOption * option = new OpalMediaOptionInteger(G7221BitRateOptionName,
-                                                            true,
-                                                            OpalMediaOption::EqualMerge,
-                                                            rate, G7221_24K_BIT_RATE, G7221_32K_BIT_RATE);
+      option = new OpalMediaOptionInteger(G7221BitRateOptionName,
+                                          true,
+                                          OpalMediaOption::EqualMerge,
+                                          rate, G7221_24K_BIT_RATE, G7221_48K_BIT_RATE);
       option->SetFMTP(G7221BitRateFMTPName, "0");
+      AddOption(option);
+#endif
+
+#if OPAL_H323
+      option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
+      OPAL_SET_MEDIA_OPTION_H245(option, G7221_H241_RxFramesPerPacket);
+
+      option = new OpalMediaOptionInteger(G7221ExtendedModesOptionName, true, OpalMediaOption::IntersectionMerge, 0x70, 0, 255);
+      OPAL_SET_MEDIA_OPTION_H245(option, G7221_H241_ExtendedModes);
       AddOption(option);
 #endif
     }
@@ -69,36 +80,31 @@ class OpalG7221Format : public OpalAudioFormatInternal
 
 
 #if OPAL_H323
-extern const char G7221_Identifier[] = OpalPluginCodec_Identifer_G7221;
+  extern const char G7221_24K_Identifier[] = OpalPluginCodec_Identifer_G7221;
+  extern const char G7221_32K_Identifier[] = OpalPluginCodec_Identifer_G7221;
+  extern const char G7221_48K_Identifier[] = OpalPluginCodec_Identifer_G7221ext;
+
+  #define CAPABILITY(rate) \
+    static H323CapabilityFactory::Worker< \
+      H323GenericAudioCapabilityTemplate<G7221_##rate##K_Identifier, GetOpalG7221_##rate##K, G7221_##rate##K_BIT_RATE> \
+    > capability(G7221FormatName##rate##K, true)
+#else
+#define CAPABILITY(rate)
 #endif
 
 
-const OpalAudioFormat & GetOpalG7221_24K()
-{
-  static OpalAudioFormat const format(new OpalG7221Format(G7221FormatName24K, G7221_24K_BIT_RATE));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_24K, G7221_24K_BIT_RATE>
-  > capability(G7221FormatName24K, true);
-#endif
-
-  return format;
+#define FORMAT(rate) \
+  const OpalAudioFormat & GetOpalG7221_##rate##K() \
+  { \
+  static OpalAudioFormat const format(new OpalG7221Format(G7221FormatName##rate##K, G7221_##rate##K_BIT_RATE)); \
+  CAPABILITY(rate); \
+  return format; \
 }
 
 
-const OpalAudioFormat & GetOpalG7221_32K()
-{
-  static OpalAudioFormat const format(new OpalG7221Format(G7221FormatName32K, G7221_32K_BIT_RATE));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericAudioCapabilityTemplate<G7221_Identifier, GetOpalG7221_32K, G7221_32K_BIT_RATE>
-  > capability(G7221FormatName32K, true);
-#endif
-
-  return format;
-}
+FORMAT(24);
+FORMAT(32);
+FORMAT(48);
 
 
 // End of File ///////////////////////////////////////////////////////////////
