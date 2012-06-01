@@ -126,6 +126,10 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   m_h46018enabled = true;
 #endif
 
+  m_compatibility[H323Connection::e_NoMultipleTunnelledH245] = "Cisco IOS";
+  m_compatibility[H323Connection::e_BadMasterSlaveConflict] = "NetMeeting|HDX 9004";
+  m_compatibility[H323Connection::e_NoUserInputCapability] = "AltiServ-ITG";
+
   PTRACE(4, "H323\tCreated endpoint.");
 }
 
@@ -1380,6 +1384,24 @@ void H323EndPoint::LoadBaseFeatureSet()
 bool H323EndPoint::OnFeatureInstance(int /*instType*/, const PString & /*identifer*/)
 {
   return true;
+}
+
+
+void H323EndPoint::SetCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
+{
+  PRegularExpression re;
+  if (re.Compile(regex))
+    m_compatibility[issue] = re;
+}
+
+
+bool H323EndPoint::HasCompatibilityIssue(H323Connection::CompatibilityIssues issue, const OpalProductInfo & productInfo) const
+{
+  CompatibilityEndpoints::const_iterator it = m_compatibility.find(issue);
+  if (it == m_compatibility.end())
+    false;
+
+  return productInfo.AsString().FindRegEx(it->second) != P_MAX_INDEX;
 }
 
 

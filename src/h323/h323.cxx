@@ -729,8 +729,8 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   else {
     /* Compensate for Cisco bug. IOS cannot seem to accept multiple tunnelled
        H.245 PDUs insode the same facility message */
-    if (GetRemoteApplication().Find("Cisco IOS") == P_MAX_INDEX) {
-      // Not Cisco, so OK to tunnel multiple PDUs
+    if (!HasCompatibilityIssue(e_NoMultipleTunnelledH245)) {
+      // Not Cisco et al, so OK to tunnel multiple PDUs
       localTunnelPDU.BuildFacility(*this, true);
       h245TunnelTxPDU = &localTunnelPDU;
     }
@@ -4480,9 +4480,9 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
     return true; // Is symmetric, all OK!
 
   /* The correct protocol thing to do is reject the channel if we are the
-     master. However, NetMeeting will not then re-open a channel, so we act
+     master. However, some systems will not then re-open a channel, so we act
      like we are a slave and close our end instead. */
-  if (IsH245Master() && GetRemoteApplication().Find("NetMeeting") == P_MAX_INDEX) {
+  if (IsH245Master() && !HasCompatibilityIssue(e_BadMasterSlaveConflict)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict;
     return false;
   }
@@ -4707,7 +4707,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
 
   // Must be slave and conflict from something we are sending, so try starting a
   // new channel using the master endpoints transmitter codec.
-  logicalChannels->Open(conflictingChannel.GetCapability(), session, number);
+  logicalChannels->Open(conflictingChannel.GetCapability(), session);
   return true;
 }
 
@@ -5552,6 +5552,13 @@ const PString & H323Connection::SessionInformation::GetCUI()
 {
   return m_CUI;
 }
+
+
+bool H323Connection::HasCompatibilityIssue(CompatibilityIssues issue) const
+{
+  return endpoint.HasCompatibilityIssue(issue, GetProductInfo());
+}
+
 
 #endif // OPAL_H460_NAT
 

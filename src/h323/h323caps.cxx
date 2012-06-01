@@ -1961,7 +1961,7 @@ PBoolean H323_UserInputCapability::IsUsable(const H323Connection & connection) c
   if (connection.GetControlVersion() >= 7)
     return PTrue;
 
-  if (connection.GetRemoteApplication().Find("AltiServ-ITG") != P_MAX_INDEX)
+  if (connection.HasCompatibilityIssue(H323Connection::e_NoUserInputCapability))
     return PFalse;
 
   return subType != SignalToneRFC2833;

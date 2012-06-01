@@ -2167,6 +2167,19 @@ class H323Connection : public OpalRTPConnection
       const OpalMediaCommand & command  ///< Media command being executed
     );
 
+    /**Compatibility workarounds.
+      */
+    enum CompatibilityIssues {
+      e_NoMultipleTunnelledH245, ///< Cannot have more than one tunnelled H.245 message
+      e_BadMasterSlaveConflict,  ///< Endpoint does not repropose on OLC master/slave conflict refect
+      e_NoUserInputCapability    ///< Endpoint ignores TCS if has User Input Capability
+    };
+
+    /// Determine if we must compensate for remote endpoint.
+    bool HasCompatibilityIssue(
+      CompatibilityIssues issue
+    ) const;
+
     PBoolean StartHandleControlChannel();
     virtual PBoolean OnStartHandleControlChannel();
     void EndHandleControlChannel();

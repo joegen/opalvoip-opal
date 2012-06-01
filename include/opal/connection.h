@@ -299,8 +299,10 @@ OpalConnection, OpalCall and Manager classes.
     control) have fully terminated.
 */
 
-/** Class for carying vendor/product
-    information.
+/** Class for carying vendor/product information.
+    This consists of a vendor, a product name, a product version and addition
+    comments. Some of these fields may not be present as there is very little
+    standardisation in protocols and implementions.
   */
 class OpalProductInfo
 {
@@ -310,6 +312,10 @@ class OpalProductInfo
     static OpalProductInfo & Default();
 
     friend ostream & operator<<(ostream & strm, const OpalProductInfo & info);
+
+    /**Get product info as a single string.
+       This outputs name \\t version \\t T.35 codes (if present) \\t vendor
+      */
     PCaselessString AsString() const;
 
     PCaselessString vendor;
