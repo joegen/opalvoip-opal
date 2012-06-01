@@ -66,8 +66,7 @@ class OpalGSMAMRFormat : public OpalAudioFormatInternal
       AddOption(option);
 
 #if OPAL_H323
-      if ((option = FindOption(OpalAudioFormat::RxFramesPerPacketOption())) != NULL)
-        OPAL_SET_MEDIA_OPTION_H245(option, H241_RxFramesPerPacket);
+      OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), H241_RxFramesPerPacket);
 
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, true, "RFC3267,RFC4867"));
 #endif
