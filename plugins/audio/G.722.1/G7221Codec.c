@@ -250,11 +250,11 @@ static int G7221Decode (const struct PluginCodec_Definition * codec,
 static struct PluginCodec_Option BitRateOption24k =
 {
   PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
-  G7221BitRateOptionName,        // Generic (human readable) option name
+  G7221BitRateOptionName,           // Generic (human readable) option name
   1,                                // Read Only flag
   PluginCodec_EqualMerge,           // Merge mode
   STRINGIZE(G7221_24K_BIT_RATE),    // Initial value
-  G7221BitRateFMTPName,          // SIP/SDP FMTP name
+  G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
   STRINGIZE(G7221_24K_BIT_RATE),    // Minimum value (enum values separated by ':')
@@ -264,26 +264,42 @@ static struct PluginCodec_Option BitRateOption24k =
 static struct PluginCodec_Option BitRateOption32k =
 {
   PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
-  G7221BitRateOptionName,        // Generic (human readable) option name
+  G7221BitRateOptionName,           // Generic (human readable) option name
   1,                                // Read Only flag
   PluginCodec_EqualMerge,           // Merge mode
   STRINGIZE(G7221_32K_BIT_RATE),    // Initial value
-  G7221BitRateFMTPName,          // SIP/SDP FMTP name
+  G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
   STRINGIZE(G7221_32K_BIT_RATE),    // Minimum value (enum values separated by ':')
   STRINGIZE(G7221_32K_BIT_RATE)     // Maximum value
 };
 
+static struct PluginCodec_Option RxFramesPerPacket =
+{
+  PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
+  PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET, // Generic (human readable) option name
+  0,                                // Read Only flag
+  PluginCodec_MinMerge,             // Merge mode
+  "2",                              // Initial value
+  NULL,                             // SIP/SDP FMTP name
+  NULL,                             // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  G7221_H241_RxFramesPerPacket,     // H.245 Generic Capability number and scope bits
+  "1",                              // Minimum value (enum values separated by ':')
+  "8"                               // Maximum value
+};
+
 static struct PluginCodec_Option const * const OptionTable24k[] =
 {
   &BitRateOption24k,
+  &RxFramesPerPacket,
   NULL
 };
 
 static struct PluginCodec_Option const * const OptionTable32k[] =
 {
   &BitRateOption32k,
+  &RxFramesPerPacket,
   NULL
 };
 
