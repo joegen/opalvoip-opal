@@ -1332,6 +1332,18 @@ class H323EndPoint : public OpalRTPEndPoint
 #endif
 
     PString GetDefaultTransport() const;
+
+    /// Indicate a compatibility issue with remote endpoint product type.
+    void SetCompatibility(
+      H323Connection::CompatibilityIssues issue,    ///< Issue being worked around
+      const PString & regex         ///< Regular expression for endpoint matching, see OpalProductInfo::AsString()
+    );
+
+    /// Determine if we must compensate for remote endpoint.
+    bool HasCompatibilityIssue(
+      H323Connection::CompatibilityIssues issue,            ///< Issue being worked around
+      const OpalProductInfo & productInfo   ///< Product into for check for issue
+    ) const;
   //@}
 
   protected:
@@ -1430,6 +1442,9 @@ class H323EndPoint : public OpalRTPEndPoint
     H460_FeatureSet features;
     bool m_h46018enabled;
 #endif
+
+    typedef map<H323Connection::CompatibilityIssues, PRegularExpression> CompatibilityEndpoints;
+    CompatibilityEndpoints m_compatibility;
 
   private:
     P_REMOVE_VIRTUAL_VOID(OnConnectionCleared(H323Connection &, const PString &));
