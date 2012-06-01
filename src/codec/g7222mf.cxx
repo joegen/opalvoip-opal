@@ -64,8 +64,7 @@ class OpalG7222Format : public OpalAudioFormatInternal
       AddOption(option);
 
 #if OPAL_H323
-      option = FindOption(OpalAudioFormat::RxFramesPerPacketOption());
-      OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MAXAL_SDUFRAMES_RX);
+      OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), G7222_H245_MAXAL_SDUFRAMES_RX);
 
       option = FindOption(OpalAudioFormat::TxFramesPerPacketOption());
       OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MAXAL_SDUFRAMES_TX);

@@ -63,10 +63,7 @@ class OpaliLBCFormat : public OpalAudioFormatInternal
       OPAL_SET_MEDIA_OPTION_H245(option, H241_PreferredMode);
       AddOption(option);
 
-#if OPAL_H323
-      if ((option = FindOption(OpalAudioFormat::RxFramesPerPacketOption())) != NULL)
-        OPAL_SET_MEDIA_OPTION_H245(option, H241_RxFramesPerPacket);
-#endif
+      OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), H241_RxFramesPerPacket);
 
       FindOption(OpalMediaFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
     }
