@@ -290,75 +290,66 @@ bool RFC2190Packetizer::AddPacket(const PluginCodec_RTP &, unsigned &)
 bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags)
 {
   outputFrame.SetPayloadSize(0);
-  while (!fragments.empty() && (currFrag != fragments.end())) {
+  if (fragments.empty() || currFrag == fragments.end())
+    return false;
       
-    // set the timestamp
-    fragment frag = *currFrag++;
+  fragment frag = *currFrag++;
 
+  // if this fragment starts with a GBSC, then output as Mode A else output as Mode B
+  bool modeA = ((frag.length >= 3) &&
+                (fragPtr[0] == 0x00) &&
+                (fragPtr[1] == 0x00) &&
+                ((fragPtr[2] & 0x80) == 0x80));
 
-    // if this fragment starts with a GBSC, then output as Mode A else output as Mode B
-    bool modeA = ((frag.length >= 3) &&
-                  (fragPtr[0] == 0x00) &&
-                  (fragPtr[1] == 0x00) &&
-                  ((fragPtr[2] & 0x80) == 0x80));
+  // offset of the data
+  size_t headerSize = modeA ? 4 : 8;
 
-    size_t payloadRemaining = outputFrame.GetMaxSize() - outputFrame.GetPayloadSize();
-
-    // offset of the data
-    size_t offs = modeA ? 4 : 8;
-
-    // make sure RTP storage is sufficient
-    if ((frag.length + offs) > payloadRemaining) {
-      //std::cout << "no room for Mode " << (modeA ? 'A' : 'B') << " frame - " << (frag.length+offs) << " > " << payloadRemaining << std::endl;
-      continue;
-    }
-
-    // set size of final frame
-    outputFrame.SetPayloadSize(offs + frag.length);
-
-    // get ptr to payload that is about to be created
-    unsigned char * ptr = outputFrame.GetPayloadPtr();
-
-    if (modeA) {
-      int sBit = 0;
-      int eBit = 0;
-      ptr[0] = (unsigned char)(((sBit & 7) << 3) | (eBit & 7));
-      ptr[1] = (unsigned char)((m_frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
-      ptr[2] = ptr[3] = 0;
-    }
-    else
-    {
-      // create the Mode B header
-      int sBit = 0;
-      int eBit = 0;
-      int gobn = frag.mbNum / macroblocksPerGOB;
-      int mba  = frag.mbNum % macroblocksPerGOB;
-      ptr[0] = (unsigned char)(0x80 | ((sBit & 7) << 3) | (eBit & 7));
-      ptr[1] = (unsigned char)(m_frameSize << 5);
-      ptr[2] = (unsigned char)(((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7));
-      ptr[3] = (unsigned char)((mba << 2) & 0xfc);
-      ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
-      ptr[5] = ptr[6] = ptr[7] = 0;
-    }
-
-    // copy the data
-    memcpy(ptr + offs, fragPtr, frag.length);
-
-    fragPtr += frag.length;
-
-    // set marker bit
-    flags = 0;
-    if (currFrag == fragments.end()) {
-      flags |= PluginCodec_ReturnCoderLastFrame;
-      outputFrame.SetMarker(1);
-    }
-    if (iFrame)
-      flags |= PluginCodec_ReturnCoderIFrame;
-
-    return true;
+  // make sure RTP storage is sufficient
+  size_t payloadRequired = headerSize + frag.length;
+  if (!outputFrame.SetPayloadSize(payloadRequired)) {
+    size_t payloadRemaining = outputFrame.GetMaxSize() - outputFrame.GetHeaderSize();
+    PTRACE(2, "RFC2190", "Possible truncation of packet: " << payloadRequired << " > " << payloadRemaining);
+    frag.length = payloadRemaining - headerSize;
   }
 
-  return false;
+  // get ptr to payload that is about to be created
+  unsigned char * ptr = outputFrame.GetPayloadPtr();
+
+  int sBit = 0;
+  int eBit = 0;
+  if (modeA) {
+    ptr[0] = (unsigned char)(((sBit & 7) << 3) | (eBit & 7));
+    ptr[1] = (unsigned char)((m_frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
+    ptr[2] = ptr[3] = 0;
+  }
+  else
+  {
+    // create the Mode B header
+    int gobn = frag.mbNum / macroblocksPerGOB;
+    int mba  = frag.mbNum % macroblocksPerGOB;
+    ptr[0] = (unsigned char)(0x80 | ((sBit & 7) << 3) | (eBit & 7));
+    ptr[1] = (unsigned char)(m_frameSize << 5);
+    ptr[2] = (unsigned char)(((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7));
+    ptr[3] = (unsigned char)((mba << 2) & 0xfc);
+    ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
+    ptr[5] = ptr[6] = ptr[7] = 0;
+  }
+
+  // copy the data
+  memcpy(ptr + headerSize, fragPtr, frag.length);
+
+  fragPtr += frag.length;
+
+  // set marker bit
+  flags = 0;
+  if (currFrag == fragments.end()) {
+    flags |= PluginCodec_ReturnCoderLastFrame;
+    outputFrame.SetMarker(1);
+  }
+  if (iFrame)
+    flags |= PluginCodec_ReturnCoderIFrame;
+
+  return true;
 }
 
 
