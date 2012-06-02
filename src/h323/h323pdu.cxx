@@ -410,8 +410,12 @@ PString H323GetRTPPacketization(const H245_RTPPayloadType & rtpPacketization)
 
     case H245_RTPPayloadType_payloadDescriptor::e_oid :
       mediaPacketization = ((const PASN_ObjectId &)rtpPacketization.m_payloadDescriptor).AsString();
-      if (mediaPacketization.IsEmpty()) {
-        PTRACE(1, "RTP_UDP\tInvalid OID in packetization type.");
+      PTRACE_IF(1, mediaPacketization.IsEmpty(), "RTP_UDP\tInvalid OID in packetization type.");
+
+      // Some stupid endpoints (e.g. Polycom) use this, one zero short!
+      if (mediaPacketization == "0.0.8.241.0.0.0") {
+        mediaPacketization    = "0.0.8.241.0.0.0.0";
+        PTRACE(4, "RTP_UDP\tDetected bogus H.264 OID in packetization type, compensating");
       }
       break;
     case H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier :
