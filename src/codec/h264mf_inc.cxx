@@ -99,8 +99,6 @@ enum
     H241_AdditionalDisplayCapabilities = 12 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray,
 };
 
-#define OpalPluginCodec_Identifer_H264_Truncated "0.0.8.241.0.0.0" // Some stupid endpoints (e.g. Polycom) use this, one zero short!
-
 
 static char const ProfileName[] = "Profile";
 static char const LevelName[] = "Level";

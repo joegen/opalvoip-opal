@@ -294,8 +294,7 @@ static struct PluginCodec_Option const MediaPacketizationsH323_0 =
   PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
   false,                              // User Read/Only flag
   PluginCodec_IntersectionMerge,      // Merge mode
-  OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
-  OpalPluginCodec_Identifer_H264_Truncated
+  OpalPluginCodec_Identifer_H264_Aligned // Initial value
 };
 
 static struct PluginCodec_Option const MediaPacketizationsH323_1 =
@@ -305,8 +304,7 @@ static struct PluginCodec_Option const MediaPacketizationsH323_1 =
   false,                              // User Read/Only flag
   PluginCodec_IntersectionMerge,      // Merge mode
   OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
-  OpalPluginCodec_Identifer_H264_NonInterleaved ","
-  OpalPluginCodec_Identifer_H264_Truncated
+  OpalPluginCodec_Identifer_H264_NonInterleaved
 };
 
 static struct PluginCodec_Option const PacketizationModeSDP_0 =
@@ -535,9 +533,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           return true;
         }
 
-        if (*optionValue != '\0' &&
-            strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL &&
-            strcmp(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != 0)
+        if (*optionValue != '\0' && strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL)
           PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
 
         m_packetisationModeH323 = 0;
