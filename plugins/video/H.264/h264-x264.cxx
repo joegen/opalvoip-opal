@@ -361,8 +361,6 @@ static struct PluginCodec_Option const MaxNaluSize =
   "65535"                             // Maximum value
 };
 
-#define OpalPluginCodec_Identifer_H264_Truncated "0.0.8.241.0.0.0" // Some stupid endpoints (e.g. Polycom) use this, one zero short!
-
 #ifdef PLUGIN_CODEC_VERSION_INTERSECT
 static struct PluginCodec_Option const MediaPacketizations =
 {
@@ -371,8 +369,7 @@ static struct PluginCodec_Option const MediaPacketizations =
   false,                              // User Read/Only flag
   PluginCodec_IntersectionMerge,      // Merge mode
   OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
-  OpalPluginCodec_Identifer_H264_NonInterleaved ","
-  OpalPluginCodec_Identifer_H264_Truncated
+  OpalPluginCodec_Identifer_H264_NonInterleaved
 };
 #endif
 
@@ -914,9 +911,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
           return SetPacketisationMode(2);
         if (strstr(optionValue, OpalPluginCodec_Identifer_H264_NonInterleaved) != NULL)
           return SetPacketisationMode(1);
-        if (*optionValue != '\0' &&
-            strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL &&
-            strcmp(optionValue, OpalPluginCodec_Identifer_H264_Truncated) != 0)
+        if (*optionValue != '\0' && strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL)
           PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
         return SetPacketisationMode(0);
       }
