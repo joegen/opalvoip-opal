@@ -116,17 +116,14 @@ class OpalH264Format : public OpalVideoFormatInternal
       AddOption(option);
 
       static const char * const PacketizationModes[] = {
-        OpalPluginCodec_Identifer_H264_Aligned","
-        OpalPluginCodec_Identifer_H264_Truncated, // Some stupid endpoints (e.g. Polycom) use this, one zero short!
+        OpalPluginCodec_Identifer_H264_Aligned,
 
         OpalPluginCodec_Identifer_H264_NonInterleaved","
-        OpalPluginCodec_Identifer_H264_Aligned","
-        OpalPluginCodec_Identifer_H264_Truncated,
+        OpalPluginCodec_Identifer_H264_Aligned,
 
         OpalPluginCodec_Identifer_H264_Interleaved","
         OpalPluginCodec_Identifer_H264_NonInterleaved","
-        OpalPluginCodec_Identifer_H264_Aligned","
-        OpalPluginCodec_Identifer_H264_Truncated,
+        OpalPluginCodec_Identifer_H264_Aligned
       };
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, false, PacketizationModes[mode]));
 #endif
