@@ -126,9 +126,10 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   m_h46018enabled = true;
 #endif
 
-  m_compatibility[H323Connection::e_NoMultipleTunnelledH245] = "Cisco IOS";
-  m_compatibility[H323Connection::e_BadMasterSlaveConflict] = "NetMeeting|HDX 9004";
-  m_compatibility[H323Connection::e_NoUserInputCapability] = "AltiServ-ITG";
+  SetCompatibility(H323Connection::e_NoMultipleTunnelledH245, "Cisco IOS");
+  SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting");
+  AddCompatibility(H323Connection::e_BadMasterSlaveConflict,  "HDX 9004");
+  SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
 
   PTRACE(4, "H323\tCreated endpoint.");
 }
@@ -1387,24 +1388,43 @@ bool H323EndPoint::OnFeatureInstance(int /*instType*/, const PString & /*identif
 }
 
 
-void H323EndPoint::AddCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
+PString H323EndPoint::GetCompatibility(H323Connection::CompatibilityIssues issue) const
 {
-  CompatibilityEndpoints::iterator it = m_compatibility.find(issue);
+  CompatibilityEndpoints::const_iterator it = m_compatibility.find(issue);
+  return it != m_compatibility.end() ? it->second.GetPattern() : PString::Empty();
+}
 
+
+bool H323EndPoint::SetCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
+{
   if (regex.IsEmpty()) {
-    if (it != m_compatibility.end())
-      m_compatibility.erase(it);
+    m_compatibility.erase(issue);
+    return true;
   }
-  else {
-    PString pattern;
-    if (it != m_compatibility.end())
-      pattern = it->second.GetPattern() + '|';
-    pattern += regex;
 
-    PRegularExpression re;
-    if (re.Compile(pattern, PRegularExpression::Extended|PRegularExpression::IgnoreCase))
-      m_compatibility[issue] = re;
-  }
+  PRegularExpression re;
+  if (!re.Compile(regex, PRegularExpression::Extended|PRegularExpression::IgnoreCase))
+    return false;
+
+  m_compatibility[issue] = re;
+  return true;
+}
+
+
+bool H323EndPoint::AddCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
+{
+  if (!PAssert(!regex, PInvalidParameter))
+    return false;
+
+  PString pattern;
+
+  CompatibilityEndpoints::iterator it = m_compatibility.find(issue);
+  if (it != m_compatibility.end())
+    pattern = it->second.GetPattern() + '|';
+
+  pattern += regex;
+
+  return SetCompatibility(issue, pattern);
 }
 
 

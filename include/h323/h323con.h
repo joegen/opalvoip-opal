@@ -2172,7 +2172,8 @@ class H323Connection : public OpalRTPConnection
     enum CompatibilityIssues {
       e_NoMultipleTunnelledH245, ///< Cannot have more than one tunnelled H.245 message
       e_BadMasterSlaveConflict,  ///< Endpoint does not repropose on OLC master/slave conflict refect
-      e_NoUserInputCapability    ///< Endpoint ignores TCS if has User Input Capability
+      e_NoUserInputCapability,   ///< Endpoint ignores TCS if has User Input Capability
+      NumCompatibilityIssues
     };
 
     /// Determine if we must compensate for remote endpoint.
