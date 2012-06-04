@@ -5556,7 +5556,7 @@ const PString & H323Connection::SessionInformation::GetCUI()
 
 bool H323Connection::HasCompatibilityIssue(CompatibilityIssues issue) const
 {
-  return endpoint.HasCompatibilityIssue(issue, GetProductInfo());
+  return endpoint.HasCompatibilityIssue(issue, GetRemoteProductInfo());
 }
 
 
