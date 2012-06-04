@@ -1387,21 +1387,39 @@ bool H323EndPoint::OnFeatureInstance(int /*instType*/, const PString & /*identif
 }
 
 
-void H323EndPoint::SetCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
+void H323EndPoint::AddCompatibility(H323Connection::CompatibilityIssues issue, const PString & regex)
 {
-  PRegularExpression re;
-  if (re.Compile(regex))
-    m_compatibility[issue] = re;
+  CompatibilityEndpoints::iterator it = m_compatibility.find(issue);
+
+  if (regex.IsEmpty()) {
+    if (it != m_compatibility.end())
+      m_compatibility.erase(it);
+  }
+  else {
+    PString pattern;
+    if (it != m_compatibility.end())
+      pattern = it->second.GetPattern() + '|';
+    pattern += regex;
+
+    PRegularExpression re;
+    if (re.Compile(pattern, PRegularExpression::Extended|PRegularExpression::IgnoreCase))
+      m_compatibility[issue] = re;
+  }
 }
 
 
 bool H323EndPoint::HasCompatibilityIssue(H323Connection::CompatibilityIssues issue, const OpalProductInfo & productInfo) const
 {
+  bool found = false;
   CompatibilityEndpoints::const_iterator it = m_compatibility.find(issue);
-  if (it == m_compatibility.end())
-    false;
+  if (it != m_compatibility.end())
+    found = productInfo.AsString().FindRegEx(it->second) != P_MAX_INDEX;
 
-  return productInfo.AsString().FindRegEx(it->second) != P_MAX_INDEX;
+  PTRACE(4, "H.323\tChecking compatibility issue " << issue << ", "
+            "product=\"" << productInfo << "\", "
+            "re=\"" << (it != m_compatibility.end() ? it->second.GetPattern() : PString::Empty()) << "\", "
+            "found=" << found);
+  return found;
 }
 
 
