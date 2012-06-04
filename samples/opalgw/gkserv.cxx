@@ -76,6 +76,12 @@ static const char OSPServerKeyFileKey[] = "OSP Server Key";
 #define ROUTES_SECTION "Route Maps"
 #define ROUTES_KEY     "Mapping"
 
+static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues] = {
+  "No Multiple Tunnelled H245",
+  "Bad Master Slave Conflict",
+  "No User Input Capability"
+};
+
 
 #define new PNEW
 
@@ -129,7 +135,15 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
   SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, GetInitialBandwidth()/10)*10);
   rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, GetInitialBandwidth()/10,
             "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls"));
-  
+
+  for (PINDEX i = 0; i < H323Connection::NumCompatibilityIssues; ++i) {
+    H323Connection::CompatibilityIssues issue = (H323Connection::CompatibilityIssues)i;
+    PString key = PAssertNULL(CompatibilityIssueKey[issue]);
+    SetCompatibility(issue, cfg.GetString(key, GetCompatibility(issue)));
+    rsrc->Add(new PHTTPStringField(key, 25, GetCompatibility(issue),
+              "Compatibility issue work around, product name/version regular expression"));
+  }
+
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25,
                                    "", "Local network interfaces to listen for H.323, blank means all"), false);
   if (!StartListeners(fieldArray->GetStrings(cfg))) {
