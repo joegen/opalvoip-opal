@@ -1333,8 +1333,15 @@ class H323EndPoint : public OpalRTPEndPoint
 
     PString GetDefaultTransport() const;
 
-    /// Indicate a compatibility issue with remote endpoint product type.
-    void SetCompatibility(
+    /** Indicate a compatibility issue with remote endpoint product type.
+        THis will add to the regular expression for the issue a new value to
+        try and match. It effectively adds "|" + regex to the existing regular
+        expression.
+
+        If \p regex is an empty string, then the matching regular expression is
+        set to empty and the issue will not match anything.
+      */
+    void AddCompatibility(
       H323Connection::CompatibilityIssues issue,    ///< Issue being worked around
       const PString & regex         ///< Regular expression for endpoint matching, see OpalProductInfo::AsString()
     );
