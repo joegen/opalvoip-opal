@@ -181,7 +181,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   PConfig cfg(ParametersSection);
 
   // Sert log level as early as possible
-  SetLogLevel((PSystemLog::Level)cfg.GetInteger(LogLevelKey, GetLogLevel()));
+  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
 #if PTRACING
   PTrace::SetLevel(GetLogLevel());
   PTrace::ClearOptions(PTrace::Timestamp);
@@ -392,7 +392,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   // General parameters for all endpoint types
-  m_mediaTransferMode = (MediaTransferMode)cfg.GetInteger(MediaTransferModeKey, m_mediaTransferMode);
+  m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
   static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
   rsrc->Add(new PHTTPRadioField(MediaTransferModeKey,
@@ -467,7 +467,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
   rsrc->Add(fieldArray);
 
-  SIPConnection::PRACKMode prack = (SIPConnection::PRACKMode)cfg.GetInteger(SIPPrackKey, m_sipEP->GetDefaultPRACKMode());
+  SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, m_sipEP->GetDefaultPRACKMode());
   static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
   rsrc->Add(new PHTTPRadioField(SIPPrackKey, PARRAYSIZE(prackModes), prackModes, prack,
             "SIP provisional responses (100rel) handling."));
