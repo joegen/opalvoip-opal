@@ -1223,6 +1223,14 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
   connectPDU->BuildConnect(*this);
+
+  // Make sure we set our bearer caps to whatever they said
+  Q931::InformationTransferCapability bearerCap;
+  unsigned transferRate, codingStandard, userInfoLayer1;
+  if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate, &codingStandard, &userInfoLayer1)) {
+    connectPDU->GetQ931().SetBearerCapabilities(bearerCap, transferRate, codingStandard, userInfoLayer1);
+    SetBandwidthAvailable(transferRate*640);
+  }
   
   progressPDU = new H323SignalPDU;
   progressPDU->BuildProgress(*this);
@@ -5008,6 +5016,8 @@ PBoolean H323Connection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean f
   }
 
   bandwidthAvailable = newBandwidth - used;
+  PTRACE(3, "H323\tBandwidth available set to: "
+         << bandwidthAvailable/10 << '.' << bandwidthAvailable%10 << "kb/s");
   return true;
 }
 
