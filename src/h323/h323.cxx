@@ -75,10 +75,10 @@
 static const char h323_rtp_session_type[] = "rtp/h323";
 static OpalMediaSessionFactory::Worker<H323RTPSession> h323_rtp_session(h323_rtp_session_type);
 
-const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
+const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
 
 #if OPAL_H239
-static const PString & H239MessageOID = "0.0.8.239.2";
+  static PConstString const H239MessageOID("0.0.8.239.2");
 #endif
 
 #define new PNEW
