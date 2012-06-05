@@ -134,7 +134,7 @@ Q931::Q931()
 {
   protocolDiscriminator = 8;  // Q931 always has 00001000
   messageType = NationalEscapeMsg;
-  fromDestination = PFalse;
+  fromDestination = false;
   callReference = 0;
 }
 
@@ -236,7 +236,7 @@ void Q931::BuildSetup(int callRef)
     callReference = GenerateCallReference();
   else
     callReference = callRef;
-  fromDestination = PFalse;
+  fromDestination = false;
   informationElements.RemoveAll();
   SetBearerCapabilities(TransferSpeech, 1);
 }
@@ -288,12 +288,12 @@ PBoolean Q931::Decode(const PBYTEArray & data)
   informationElements.RemoveAll();
 
   if (data.GetSize() < 5) // Packet too short
-    return PFalse;
+    return false;
 
   protocolDiscriminator = data[0];
 
   if (data[1] != 2) // Call reference must be 2 bytes long
-    return PFalse;
+    return false;
 
   callReference = ((data[2]&0x7f) << 8) | data[3];
   fromDestination = (data[2]&0x80) != 0;
@@ -322,14 +322,14 @@ PBoolean Q931::Decode(const PBYTEArray & data)
 
 	// before decrementing the length, make sure it is not zero
 	if (len == 0)
-          return PFalse;
+          return false;
 
         // adjust for protocol discriminator
         len--;
       }
 
       if (offset + len > data.GetSize())
-        return PFalse;
+        return false;
 
       SetIE(discriminator, PBYTEArray((const BYTE *)data+offset, len), TRUE);
 
@@ -358,7 +358,7 @@ PBoolean Q931::Encode(PBYTEArray & data) const
   }
 
   if (!data.SetMinSize(totalBytes))
-    return PFalse;
+    return false;
 
   // Put in Q931 header
   PAssert(protocolDiscriminator < 256, PInvalidParameter);
@@ -664,13 +664,13 @@ PBoolean Q931::GetBearerCapabilities(InformationTransferCapability & capability,
                                  unsigned * userInfoLayer1)
 {
   if (!HasIE(BearerCapabilityIE))
-    return PFalse;
+    return false;
 
   PBYTEArray data = GetIE(BearerCapabilityIE);
   if (data.GetSize() < 2)
-    return PFalse;
+    return false;
 
-  capability = (InformationTransferCapability)data[0];
+  capability = (InformationTransferCapability)(data[0]&0x1f);
   if (codingStandard != NULL)
     *codingStandard = (data[0] >> 5)&3;
 
@@ -693,12 +693,12 @@ PBoolean Q931::GetBearerCapabilities(InformationTransferCapability & capability,
       break;
     case 0x18 :
       if (data.GetSize() < 3)
-        return PFalse;
+        return false;
       transferRate = data[2]&0x7f;
       nextByte = 3;
       break;
     default :
-      return PFalse;
+      return false;
   }
 
   if (userInfoLayer1 != NULL)
@@ -827,11 +827,11 @@ PBoolean Q931::GetProgressIndicator(unsigned & description,
                                 unsigned * location) const
 {
   if (!HasIE(ProgressIndicatorIE))
-    return PFalse;
+    return false;
 
   PBYTEArray data = GetIE(ProgressIndicatorIE);
   if (data.GetSize() < 2)
-    return PFalse;
+    return false;
 
   if (codingStandard != NULL)
     *codingStandard = (data[0]>>5)&0x03;
@@ -925,7 +925,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
   number = PString();
 
   if (bytes.IsEmpty())
-    return PFalse;
+    return false;
 
   if (plan != NULL)
     *plan = bytes[0]&15;
@@ -945,7 +945,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
   }
   else {
     if (bytes.GetSize() < 2)
-      return PFalse;
+      return false;
 
     if (presentation != NULL)
       *presentation = (bytes[1]>>5)&3;
@@ -961,7 +961,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
     }
     else {
       if (bytes.GetSize() < 3)
-        return PFalse;
+        return false;
 
       if (reason != NULL)
         *reason = bytes[2]&15;
@@ -971,7 +971,7 @@ static PBoolean GetNumberIE(const PBYTEArray & bytes,
   }
 
   if (bytes.GetSize() < offset)
-    return PFalse;
+    return false;
 
   PINDEX len = bytes.GetSize()-offset;
 
@@ -1129,11 +1129,11 @@ PBoolean Q931::GetChannelIdentification(unsigned * interfaceType,
                                     int      * channelNumber) const
 {
   if (!HasIE(ChannelIdentificationIE))
-    return PFalse;
+    return false;
 
   PBYTEArray bytes = GetIE(ChannelIdentificationIE);
   if (bytes.GetSize() < 1)
-    return PFalse;
+    return false;
 
   *interfaceType        = (bytes[0]>>5) & 0x01;
   *preferredOrExclusive = (bytes[0]>>3) & 0x01;
@@ -1162,10 +1162,10 @@ PBoolean Q931::GetChannelIdentification(unsigned * interfaceType,
       }
       else { // B Channel
         if (bytes.GetSize() < 3)
-          return PFalse;
+          return false;
 
         if (bytes[1] != 0x83)
-          return PFalse;
+          return false;
 
         *channelNumber = bytes[2] & 0x7f;
       }
