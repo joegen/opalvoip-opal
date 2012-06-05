@@ -44,15 +44,27 @@
 #endif
 
 
-H264Frame::H264Frame ()
+H264Frame::H264Frame()
+  : m_profile(0)
+  , m_level(0)
+  , m_constraint_set0(false)
+  , m_constraint_set1(false)
+  , m_constraint_set2(false)
+  , m_constraint_set3(false)
+  , m_timestamp(0)
+  , m_maxPayloadSize(1400)
+  , m_encodedFrame((uint8_t*)malloc(MAX_FRAME_SIZE))
+  , m_encodedFrameLen(MAX_FRAME_SIZE)
+  , m_NALs(NULL)
+  , m_numberOfNALsInFrame(0)
+  , m_currentNAL(0)
+  , m_numberOfNALsReserved(0)
+  , m_currentNALFURemainingLen(0)
+  , m_currentNALFURemainingDataPtr(NULL)
+  , m_currentNALFUHeader0(0)
+  , m_currentNALFUHeader1(0)
+  , m_currentFU(0)
 {
-  m_timestamp = 0;
-  m_maxPayloadSize = 1400;
-  m_encodedFrame = (uint8_t*)malloc(MAX_FRAME_SIZE);
-  m_NALs = NULL;
-  m_numberOfNALsReserved = 0;
-
-  BeginNewFrame(0);
 }
 
 
@@ -94,14 +106,8 @@ void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
   m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
   memcpy(m_encodedFrame+m_encodedFrameLen, payload, length);
 
-  if (type == H264_NAL_TYPE_SEQ_PARAM) {
-    PTRACE(4, FrameTraceName, "Profile: "      << (unsigned)payload[1] << 
-                              " Level: "       << (unsigned)payload[3] << 
-                              " Constraints: " << (payload[2] & 0x80 ? 1 : 0) 
-                                               << (payload[2] & 0x40 ? 1 : 0) 
-                                               << (payload[2] & 0x20 ? 1 : 0) 
-                                               << (payload[2] & 0x10 ? 1 : 0));
-  }
+  if (type == H264_NAL_TYPE_SEQ_PARAM)
+    SetSPS(payload+1);
 
   m_numberOfNALsInFrame++;
   m_encodedFrameLen += length;
@@ -110,8 +116,8 @@ void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 
 bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
-  flags = 0;
-  flags |= (IsSync()) ? PluginCodec_ReturnCoderIFrame : 0;
+  flags = (IsSync()) ? PluginCodec_ReturnCoderIFrame : 0;
+
   if (m_currentNAL < m_numberOfNALsInFrame) 
   { 
     uint32_t curNALLen = m_NALs[m_currentNAL].length;
@@ -411,6 +417,25 @@ bool H264Frame::DeencapsulateFU (RTPFrame & frame, unsigned int & /*flags*/) {
   return true;
 }
 
+
+void H264Frame::SetSPS(const uint8_t * payload)
+{
+  m_profile = payload[0];
+  m_constraint_set0 = (payload[1] & 0x80) != 0;
+  m_constraint_set1 = (payload[1] & 0x40) != 0;
+  m_constraint_set2 = (payload[1] & 0x20) != 0;
+  m_constraint_set3 = (payload[1] & 0x10) != 0;
+  m_level = payload[2];
+
+  PTRACE(4, FrameTraceName, "Profile: " << m_profile << 
+                            " Level: "   << m_level << 
+                            " Constraints: 0=" << m_constraint_set0 <<
+                                         " 1=" << m_constraint_set1 <<
+                                         " 2=" << m_constraint_set2 <<
+                                         " 3=" << m_constraint_set3);
+}
+
+
 void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader)
 {
   uint8_t headerLen= addHeader ? 5 : 0;
@@ -419,15 +444,8 @@ void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t 
   if (addHeader) 
   {
     PTRACE(6, FrameTraceName, "Adding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
-    if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3)) 
-    {
-      PTRACE(4, FrameTraceName, "Profile: " << (int)data[0] << 
-                                " Level: "   << (int)data[2] << 
-                                " Constraints: " << (data[1] & 0x80 ? 1 : 0) 
-                                                 << (data[1] & 0x40 ? 1 : 0) 
-                                                 << (data[1] & 0x20 ? 1 : 0) 
-                                                 << (data[1] & 0x10 ? 1 : 0));
-    }
+    if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3))
+      SetSPS(data);
   }
   else
     PTRACE(6, FrameTraceName, "Adding a NAL unit of " << dataLen << " bytes to buffer");
