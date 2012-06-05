@@ -613,7 +613,7 @@ class MPEG4_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCodec
                              unsigned & flags)
     {
       PluginCodec_RTP dstRTP(toPtr, toLen);
-      if (!EncodeVideo(PluginCodec_RTP(fromPtr, fromLen), dstRTP, flags))
+      if (!EncodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), dstRTP, flags))
         return false;
 
       toLen = dstRTP.GetHeaderSize() + dstRTP.GetPayloadSize();
@@ -683,7 +683,7 @@ class MPEG4_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      if (!DecodeVideo(PluginCodec_RTP(fromPtr, fromLen), flags))
+      if (!DecodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), flags))
         return false;
 
       if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)

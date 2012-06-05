@@ -50,7 +50,7 @@ static const char H264EncodingName[] = "H264";
 
 // Level 3 allows 4CIF at 25fps
 #define DefaultProfileStr          H264_PROFILE_STR_BASELINE
-#define DefaultProfileInt          66
+#define DefaultProfileInt          H264_PROFILE_INT_BASELINE
 #define DefaultProfileH241         64
 #define DefaultLevelStr            H264_LEVEL_STR_3
 #define DefaultLevelInt            30
@@ -64,6 +64,10 @@ static const char H264EncodingName[] = "H264";
 #define H264_PROFILE_STR_BASELINE  "Baseline"
 #define H264_PROFILE_STR_MAIN      "Main"
 #define H264_PROFILE_STR_EXTENDED  "Extended"
+
+#define H264_PROFILE_INT_BASELINE  66
+#define H264_PROFILE_INT_MAIN      77
+#define H264_PROFILE_INT_EXTENDED  88
 
 #define H264_LEVEL_STR_1    "1"
 #define H264_LEVEL_STR_1_b  "1.b"
@@ -130,9 +134,9 @@ static struct {
   unsigned m_H241;
   unsigned m_Constraints;
 } const ProfileInfo[] = {
-  { H264_PROFILE_STR_BASELINE, 66, 64, 0x80 },
-  { H264_PROFILE_STR_MAIN,     77, 32, 0x40 },
-  { H264_PROFILE_STR_EXTENDED, 88, 16, 0x20 }
+  { H264_PROFILE_STR_BASELINE, H264_PROFILE_INT_BASELINE, 64, 0x80 },
+  { H264_PROFILE_STR_MAIN,     H264_PROFILE_INT_MAIN,     32, 0x40 },
+  { H264_PROFILE_STR_EXTENDED, H264_PROFILE_INT_EXTENDED, 16, 0x20 }
 };
 
 static struct LevelInfoStruct {

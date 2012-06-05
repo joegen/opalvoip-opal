@@ -213,8 +213,11 @@ class FFMPEGCodec
     virtual bool OpenCodec();
     virtual void CloseCodec();
 
-    bool EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags);
-    bool DecodeVideo(const PluginCodec_RTP & in, unsigned & flags);
+    virtual bool EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags);
+    virtual bool DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags);
+
+    virtual int EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags);
+    virtual bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags);
 
     EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
 
