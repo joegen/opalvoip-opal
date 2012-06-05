@@ -3838,6 +3838,11 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
     return false;
   }
 
+  if (m_handlingINVITE) {
+    PTRACE(2, "SIP\tCan't send OPTIONS message while handling INVITE.");
+    return false;
+  }
+
   PSafePtr<SIPTransaction> transaction = new SIPOptions(*this, params);
   if (reply == NULL)
     return transaction->Start();
@@ -3852,6 +3857,11 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 {
   if ((m_allowedMethods&(1<<SIP_PDU::Method_INFO)) == 0) {
     PTRACE(2, "SIP\tRemote does not allow INFO message.");
+    return false;
+  }
+
+  if (m_handlingINVITE) {
+    PTRACE(2, "SIP\tCan't send INFO message while handling INVITE.");
     return false;
   }
 
