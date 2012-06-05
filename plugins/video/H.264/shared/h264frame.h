@@ -89,7 +89,14 @@ public:
     return m_encodedFrameLen;
   }
   bool IsSync ();
-  
+
+  unsigned GetProfile() const { return m_profile; }
+  unsigned GetLevel() const { return m_level; }
+  bool GetConstraintSet0() const { return m_constraint_set0; }
+  bool GetConstraintSet1() const { return m_constraint_set1; }
+  bool GetConstraintSet2() const { return m_constraint_set2; }
+  bool GetConstraintSet3() const { return m_constraint_set3; }
+
 private:
   bool EncapsulateSTAP  (RTPFrame & frame, unsigned int & flags);
   bool EncapsulateFU    (RTPFrame & frame, unsigned int & flags);
@@ -98,8 +105,15 @@ private:
   bool DeencapsulateSTAP (RTPFrame & frame, unsigned int & flags);
   void AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
   bool IsStartCode (const uint8_t *positionInFrame);
+  void SetSPS(const uint8_t * payload);
 
     // general stuff
+  unsigned m_profile;
+  unsigned m_level;
+  bool     m_constraint_set0;
+  bool     m_constraint_set1;
+  bool     m_constraint_set2;
+  bool     m_constraint_set3;
   uint32_t m_timestamp;
   uint16_t m_maxPayloadSize;
   uint8_t* m_encodedFrame;
