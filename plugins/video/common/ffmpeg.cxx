@@ -527,6 +527,12 @@ void FFMPEGCodec::CloseCodec()
 
 bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
 {
+  bool wasOpen = m_context->codec != NULL;
+  if (wasOpen) {
+    PTRACE(3, m_prefix, "Resolution has changed - reopening codec");
+    CloseCodec();
+  }
+
   if (m_context != NULL) {
     if (width > 352)
       m_context->flags &= ~CODEC_FLAG_EMU_EDGE; // Totally bizarre! FFMPEG crashes if on for CIF4
@@ -540,7 +546,19 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     m_picture->linesize[1] = m_picture->linesize[2] = width/2;
   }
 
-  return m_fullFrame == NULL || m_fullFrame->SetResolution(width, height);
+  if (m_fullFrame != NULL && !m_fullFrame->SetResolution(width, height)) {
+    PTRACE(1, m_prefix, "Frame handler SetResolution failed");
+    return false;
+  }
+
+
+  if (wasOpen && !OpenCodec()) {
+    PTRACE(1, m_prefix, "Reopening codec failed");
+    return false;
+  }
+
+  PTRACE(5, m_prefix, "Resolution set to " << width << 'x' << height);
+  return true;
 }
 
 
@@ -617,7 +635,7 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
 }
 
 
-bool FFMPEGCodec::EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags)
+bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags)
 {
   if (m_codec == NULL) {
     PTRACE(1, m_prefix, "Encoder did not open");
@@ -636,19 +654,10 @@ bool FFMPEGCodec::EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out,
   }
 
   // if this is the first frame, or the frame size has changed, deal wth it
-  if (m_context->width !=  (int)header->width || m_context->height != (int)header->height) {
-    PTRACE(3, m_prefix, "Resolution has changed - reopening codec");
-    CloseCodec();
-
-    if (!SetResolution(header->width, header->height)) {
-      PTRACE(3, m_prefix, "Could not adjust output buffer to " << header->width << 'x' << header->height);
-      return false;
-    }
-
-    if (!OpenCodec()) {
-      PTRACE(1, m_prefix, "Reopening codec failed");
-      return false;
-    }
+  if ((m_context->width !=  (int)header->width || m_context->height != (int)header->height) &&
+                                                !SetResolution(header->width, header->height)) {
+    PTRACE(3, m_prefix, "Could not adjust output buffer to " << header->width << 'x' << header->height);
+    return false;
   }
 
   size_t planeSize = m_context->width*m_context->height;
@@ -691,18 +700,25 @@ bool FFMPEGCodec::EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out,
   m_picture->pict_type = (flags & PluginCodec_CoderForceIFrame) != 0 ? FF_I_TYPE : AV_PICTURE_TYPE_NONE;
   m_picture->key_frame = 0;
 
-  int result;
   if (m_fullFrame == NULL)
-    result = FFMPEGLibraryInstance.AvcodecEncodeVideo(m_context, out.GetPayloadPtr(), out.GetMaxSize()-out.GetHeaderSize(), m_picture);
-  else {
-    result = FFMPEGLibraryInstance.AvcodecEncodeVideo(m_context, m_fullFrame->GetBuffer(), m_fullFrame->GetMaxSize(), m_picture);
-    if (result >= 0)
-      m_fullFrame->Reset(result);
-  }
+    return EncodeVideoFrame(out.GetPayloadPtr(), out.GetMaxSize()-out.GetHeaderSize(), flags) >= 0;
+
+  int result = EncodeVideoFrame(m_fullFrame->GetBuffer(), m_fullFrame->GetMaxSize(), flags);
+  if (result < 0)
+    return false;
+
+  m_fullFrame->Reset(result);
+  return m_fullFrame->GetPacket(out, flags);
+}
+
+
+int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags)
+{
+  int result = FFMPEGLibraryInstance.AvcodecEncodeVideo(m_context, frame, length, m_picture);
 
   if (result < 0) {
     PTRACE(1, m_prefix, "Encoder failed");
-    return false;
+    return result;
   }
 
   if (m_picture->key_frame || (m_fullFrame != NULL && m_fullFrame->IsIntraFrame()))
@@ -711,53 +727,47 @@ bool FFMPEGCodec::EncodeVideo(const PluginCodec_RTP & in, PluginCodec_RTP & out,
   if (result == 0) {
     PTRACE(3, m_prefix, "Encoder returned no data");
     flags |= PluginCodec_ReturnCoderLastFrame;
-    return true;
   }
 
-  return m_fullFrame == NULL || m_fullFrame->GetPacket(out, flags);
+  return result;
 }
 
 
-bool FFMPEGCodec::DecodeVideo(const PluginCodec_RTP & in, unsigned & flags)
+bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags)
 {
   if (m_codec == NULL) {
     PTRACE(1, m_prefix, "Decoder did not open");
     return false;
   }
 
-  size_t length;
   if (m_fullFrame == NULL)
-    length = in.GetPayloadSize();
-  else {
-    if (in.GetMarker())
-      flags |= PluginCodec_ReturnCoderLastFrame;
+    return DecodeVideoFrame(in.GetPayloadPtr(), in.GetPayloadSize(), flags);
 
-    if (in.GetPayloadSize() > 0) {
-      if (!m_fullFrame->AddPacket(in, flags))
-        return false;
-    }
+  if (in.GetMarker())
+    flags |= PluginCodec_ReturnCoderLastFrame;
 
-    if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
-      return true;
+  if (in.GetPayloadSize() > 0 && !m_fullFrame->AddPacket(in, flags))
+    return false;
 
-    length = m_fullFrame->GetLength();
-  }
+  if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
+    return true;
 
-  PTRACE(5, m_prefix, "Decoding " << in.GetPayloadSize() << " bytes");
+  bool result = DecodeVideoFrame(m_fullFrame->GetBuffer(), m_fullFrame->GetLength(), flags);
+  m_fullFrame->Reset();
+  return result;
+}
 
+
+bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags)
+{
+  PTRACE(5, m_prefix, "Decoding " << length << " bytes");
 
 #if FFMPEG_HAS_DECODE_ERROR_COUNT
   unsigned error_before = m_context->decode_error_count;
 #endif
 
   int gotPicture = 0;
-  int bytesDecoded;
-  if (m_fullFrame == NULL)
-    bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, in.GetPayloadPtr(), length);
-  else {
-    bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, m_fullFrame->GetBuffer(), length);
-    m_fullFrame->Reset();
-  }
+  int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, frame, length);
 
   if (bytesDecoded < 0
 #if FFMPEG_HAS_DECODE_ERROR_COUNT

@@ -678,7 +678,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      if (!DecodeVideo(PluginCodec_RTP(fromPtr, fromLen), flags))
+      if (!DecodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), flags))
         return false;
 
       if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
@@ -688,6 +688,17 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
       toLen = OutputImage(m_picture->data, m_picture->linesize, m_context->width, m_context->height, out, flags);
 
       return true;
+    }
+
+
+    bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags)
+    {
+      if (((H264Frame *)m_fullFrame)->GetProfile() == H264_PROFILE_INT_BASELINE && m_context->has_b_frames > 0) {
+        PTRACE(5, MY_CODEC_LOG, "Resetting B-Frame count to zero as Baseline profile");
+        m_context->has_b_frames = 0;
+      }
+
+      return FFMPEGCodec::DecodeVideoFrame(frame, length, flags);
     }
 };
 
