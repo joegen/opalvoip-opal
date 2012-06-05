@@ -68,10 +68,10 @@
 #include <h460/h4601.h>
 #endif
 
-const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
+const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
 
 #if OPAL_H239
-static const PString & H239MessageOID = "0.0.8.239.2";
+  static PConstString const H239MessageOID("0.0.8.239.2");
 #endif
 
 #define new PNEW
