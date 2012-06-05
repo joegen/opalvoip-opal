@@ -1059,6 +1059,15 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
   
+  // Make sure we clamp our bandwidth to whatever they said
+  Q931::InformationTransferCapability bearerCap;
+  unsigned transferRate;
+  if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
+    unsigned newBandwidth = transferRate*640;
+    if (GetBandwidthAvailable() > newBandwidth)
+      SetBandwidthAvailable(newBandwidth);
+  }
+
 #if OPAL_H460
   ReceiveSetupFeatureSet(this, setup);
 #endif
@@ -1224,14 +1233,6 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   connectPDU = new H323SignalPDU;
   connectPDU->BuildConnect(*this);
 
-  // Make sure we set our bearer caps to whatever they said
-  Q931::InformationTransferCapability bearerCap;
-  unsigned transferRate, codingStandard, userInfoLayer1;
-  if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate, &codingStandard, &userInfoLayer1)) {
-    connectPDU->GetQ931().SetBearerCapabilities(bearerCap, transferRate, codingStandard, userInfoLayer1);
-    SetBandwidthAvailable(transferRate*640);
-  }
-  
   progressPDU = new H323SignalPDU;
   progressPDU->BuildProgress(*this);
 
@@ -2028,16 +2029,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
   }
 
-  // Search the capability set and see if we have video capability
-  const char * bearerCaps = "Speech,1"; // TransferSpeech, 1 x 64k bearer
-  for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
-    if (!PIsDescendant(&localCapabilities[i], H323AudioCapability) &&
-        !PIsDescendant(&localCapabilities[i], H323_UserInputCapability)) {
-      bearerCaps = "Digital,6"; // Unrestricted digital, 384 kbps (6 bearers)
-      break;
-    }
-  }
-  setupPDU.GetQ931().SetBearerCapabilities(m_stringOptions(OPAL_OPT_Q931_BEARER_CAPS, bearerCaps));
+  SetBearerCapabilities(setupPDU);
 
   if (!OnSendSignalSetup(setupPDU))
     return EndedByNoAccept;
@@ -2090,6 +2082,33 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   connectionState = AwaitingSignalConnect;
 
   return NumCallEndReasons;
+}
+
+
+void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
+{
+  PString bearerCaps = m_stringOptions(OPAL_OPT_Q931_BEARER_CAPS);
+
+  if (bearerCaps.IsEmpty()) {
+    // Search the capability set and see if we have video capability
+    for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
+      if (!PIsDescendant(&localCapabilities[i], H323AudioCapability) &&
+          !PIsDescendant(&localCapabilities[i], H323_UserInputCapability)) {
+        bearerCaps = "Digital"; // Unrestricted digital, video or other
+        break;
+      }
+    }
+
+    if (bearerCaps.IsEmpty())
+      bearerCaps = "Speech";
+
+    unsigned transferRate = (GetBandwidthAvailable()+639)/640;
+    if (transferRate > 127)
+      transferRate = 127;
+    bearerCaps.sprintf(",%u", transferRate);
+  }
+
+  pdu.GetQ931().SetBearerCapabilities(bearerCaps);
 }
 
 
@@ -2226,6 +2245,9 @@ PBoolean H323Connection::SetConnected()
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
 
+  // Must be after OnSetLocalCapabilities
+  SetBearerCapabilities(*connectPDU);
+  
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
 
   // Now ask the application to select which channels to start
