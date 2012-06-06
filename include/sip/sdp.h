@@ -47,14 +47,15 @@
 
 /////////////////////////////////////////////////////////
 
-class SDPBandwidth : public std::map<PCaselessString, unsigned>
+class SDPBandwidth : public std::map<PCaselessString, OpalBandwidth>
 {
+  typedef std::map<PCaselessString, OpalBandwidth> BaseClass;
   public:
-    unsigned & operator[](const PCaselessString & type);
-    unsigned operator[](const PCaselessString & type) const;
+    OpalBandwidth & operator[](const PCaselessString & type);
+    OpalBandwidth operator[](const PCaselessString & type) const;
     friend ostream & operator<<(ostream & out, const SDPBandwidth & bw);
     bool Parse(const PString & param);
-    void SetMax(const PCaselessString & type, unsigned value);
+    void SetMax(const PCaselessString & type, OpalBandwidth value);
 };
 
 /////////////////////////////////////////////////////////
@@ -139,8 +140,8 @@ class SDPCommonAttributes
     virtual void SetDirection(const Direction & d) { m_direction = d; }
     virtual Direction GetDirection() const { return m_direction; }
 
-    virtual unsigned GetBandwidth(const PString & type) const { return m_bandwidth[type]; }
-    virtual void SetBandwidth(const PString & type, unsigned value) { m_bandwidth[type] = value; }
+    virtual OpalBandwidth GetBandwidth(const PString & type) const { return m_bandwidth[type]; }
+    virtual void SetBandwidth(const PString & type, OpalBandwidth value) { m_bandwidth[type] = value; }
 
     virtual const SDPBandwidth & GetBandwidth() const { return m_bandwidth; }
 

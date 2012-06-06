@@ -230,6 +230,49 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
 
 /////////////////////////////////////////////////////////////////////////////
 
+std::ostream & operator<<(std::ostream & strm, OpalBandwidth::Direction dir)
+{
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      return strm << "rx";
+    case OpalBandwidth::Tx :
+      return strm << "tx";
+    default :
+      return strm << "rx/tx";
+  }
+}
+
+
+std::ostream & operator<<(std::ostream & strm, const OpalBandwidth & bw)
+{
+  return strm << PString(PString::ScaleSI, bw.m_bps) << "b/s";
+}
+
+
+std::istream & operator>>(std::istream & strm, OpalBandwidth & bw)
+{
+  strm >> bw.m_bps;
+  if (strm.good()) {
+    switch (strm.peek()) {
+      case 'k' :
+        bw.m_bps *= 1000;
+        strm.ignore(1);
+        break;
+      case 'M' :
+        bw.m_bps *= 1000000;
+        strm.ignore(1);
+        break;
+      case 'G' :
+        bw.m_bps *= 1000000000;
+        strm.ignore(1);
+        break;
+    }
+  }
+  return strm;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 OpalMediaOption::OpalMediaOption(const PString & name)
   : m_name(name)
   , m_readOnly(false)
@@ -793,7 +836,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes pt,
                                  const char * en,
                                  PBoolean     nj,
-                                 unsigned bw,
+                                 OpalBandwidth bw,
                                  PINDEX   fs,
                                  unsigned ft,
                                  unsigned cr,
@@ -1110,7 +1153,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  RTP_DataFrame::PayloadTypes pt,
                                                  const char * en,
                                                  PBoolean     nj,
-                                                 unsigned bw,
+                                                 OpalBandwidth bw,
                                                  PINDEX   fs,
                                                  unsigned ft,
                                                  unsigned cr,

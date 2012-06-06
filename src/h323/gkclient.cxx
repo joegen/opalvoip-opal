@@ -65,6 +65,27 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+OpalBandwidth::OpalBandwidth(const H225_BandWidth & bw)
+  : m_bps(bw.GetValue()*100)
+{
+}
+
+
+OpalBandwidth & OpalBandwidth::operator=(const H225_BandWidth & bw)
+{
+  m_bps = bw.GetValue()*100;
+  return *this;
+}
+
+
+void OpalBandwidth::SetH225(H225_BandWidth & bw) const
+{
+  bw = (m_bps+99)/100;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
@@ -996,7 +1017,7 @@ struct AdmissionRequestResponseInfo {
 
   H323Gatekeeper::AdmissionResponse & param;
   H323Connection & connection;
-  unsigned allocatedBandwidth;
+  OpalBandwidth allocatedBandwidth;
   unsigned uuiesRequested;
   PString      accessTokenOID1;
   PString      accessTokenOID2;
@@ -1084,7 +1105,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  arq.m_bandWidth = connection.GetBandwidthAvailable();
+  connection.GetBandwidthAvailable(OpalBandwidth::RxTx).SetH225(arq.m_bandWidth);
   arq.m_callReferenceValue = connection.GetCallReference();
   arq.m_conferenceID = connection.GetConferenceIdentifier();
   arq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
@@ -1181,7 +1202,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  connection.SetBandwidthAvailable(info.allocatedBandwidth);
+  connection.SetBandwidthAvailable(OpalBandwidth::RxTx, info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
 
   return true;
@@ -1411,8 +1432,7 @@ PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest &
 }
 
 
-PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection,
-                                      unsigned requestedBandwidth)
+PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandwidth requestedBandwidth)
 {
   H323RasPDU pdu;
   H225_BandwidthRequest & brq = pdu.BuildBandwidthRequest(GetNextSequenceNumber());
@@ -1421,19 +1441,19 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection,
   brq.m_conferenceID = connection.GetConferenceIdentifier();
   brq.m_callReferenceValue = connection.GetCallReference();
   brq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
-  brq.m_bandWidth = requestedBandwidth;
+  requestedBandwidth.SetH225(brq.m_bandWidth);
   brq.IncludeOptionalField(H225_BandwidthRequest::e_usageInformation);
   SetRasUsageInformation(connection, brq.m_usageInformation);
 
   Request request(brq.m_requestSeqNum, pdu);
   
-  unsigned allocatedBandwidth;
+  OpalBandwidth allocatedBandwidth;
   request.responseInfo = &allocatedBandwidth;
 
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
     return false;
 
-  connection.SetBandwidthAvailable(allocatedBandwidth);
+  connection.SetBandwidthAvailable(OpalBandwidth::RxTx, allocatedBandwidth);
   return true;
 }
 
@@ -1444,7 +1464,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm &
     return false;
 
   if (lastRequest->responseInfo != NULL)
-    *(unsigned *)lastRequest->responseInfo = bcf.m_bandWidth;
+    *(OpalBandwidth *)lastRequest->responseInfo = bcf.m_bandWidth;
 
   return true;
 }
@@ -1460,15 +1480,11 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
 
   H323RasPDU response(authenticators);
   if (connection == NULL)
-    response.BuildBandwidthReject(brq.m_requestSeqNum,
-                                  H225_BandRejectReason::e_invalidConferenceID);
-  else {
-    if (connection->SetBandwidthAvailable(brq.m_bandWidth))
-      response.BuildBandwidthConfirm(brq.m_requestSeqNum, brq.m_bandWidth);
-    else
-      response.BuildBandwidthReject(brq.m_requestSeqNum,
-                                    H225_BandRejectReason::e_insufficientResources);
-  }
+    response.BuildBandwidthReject(brq.m_requestSeqNum, H225_BandRejectReason::e_invalidConferenceID);
+  else if (connection->SetBandwidthAvailable(OpalBandwidth::RxTx, OpalBandwidth(brq.m_bandWidth)))
+    response.BuildBandwidthConfirm(brq.m_requestSeqNum, brq.m_bandWidth);
+  else
+    response.BuildBandwidthReject(brq.m_requestSeqNum, H225_BandRejectReason::e_invalidPermission);
 
   return WritePDU(response);
 }
@@ -1581,7 +1597,7 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   address.SetPDU(info.m_h245.m_recvAddress);
 
   info.m_callType.SetTag(H225_CallType::e_pointToPoint);
-  info.m_bandWidth = connection.GetBandwidthUsed();
+  connection.GetBandwidthUsed(OpalBandwidth::RxTx).SetH225(info.m_bandWidth);
   info.m_callModel.SetTag(connection.IsGatekeeperRouted() ? H225_CallModel::e_gatekeeperRouted
                                                           : H225_CallModel::e_direct);
 

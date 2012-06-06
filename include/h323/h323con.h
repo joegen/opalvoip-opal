@@ -1613,20 +1613,13 @@ class H323Connection : public OpalRTPConnection
 
   /**@name Bandwidth Management */
   //@{
-    /**Set the available bandwidth in 100's of bits/sec.
-       Note if the force parameter is true this function will close down
-       active logical channels to meet the new bandwidth requirement.
+    /**Get the rx and/or tx bandwidth currently used.
+       This totals the bandwidth used by open logical channels and returns that
+       bandwidth used in bits/sec
       */
-    virtual PBoolean SetBandwidthAvailable(
-      unsigned newBandwidth,    ///<  New bandwidth limit
-      PBoolean force = false        ///<  Force bandwidth limit
-    );
-
-    /**Get the bandwidth currently used.
-       This totals the open channels and returns the total bandwidth used in
-       100's of bits/sec
-      */
-    virtual unsigned GetBandwidthUsed() const;
+    virtual OpalBandwidth GetBandwidthUsed(
+      OpalBandwidth::Direction dir   ///< Bandwidth direction
+    ) const;
   //@}
 
   /**@name Indications */

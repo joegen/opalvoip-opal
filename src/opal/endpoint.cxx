@@ -42,11 +42,7 @@
 #include <opal/call.h>
 #include <rtp/rtp_session.h>
 
-//
-// TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
-// Set the bandwidth to 10Mbits, as setting the bandwith to UINT_MAX causes problems with cisco gatekeepers 
-//
-#define BANDWITH_DEFAULT_INITIAL 100000
+static const OpalBandwidth DefaultInitialBandwidth = 4000000; // 4Mb/s
 
 #define new PNEW
 
@@ -64,7 +60,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   , productInfo(mgr.GetProductInfo())
   , defaultLocalPartyName(manager.GetDefaultUserName())
   , defaultDisplayName(manager.GetDefaultDisplayName())
-  , initialBandwidth(BANDWITH_DEFAULT_INITIAL)
+  , m_initialRxBandwidth(DefaultInitialBandwidth)
+  , m_initialTxBandwidth(DefaultInitialBandwidth)
   , defaultSendUserInputMode(OpalConnection::SendUserInputAsProtocolDefault)
 {
   manager.AttachEndPoint(this);

@@ -1063,9 +1063,11 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   Q931::InformationTransferCapability bearerCap;
   unsigned transferRate;
   if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
-    unsigned newBandwidth = transferRate*640;
-    if (GetBandwidthAvailable() > newBandwidth)
-      SetBandwidthAvailable(newBandwidth);
+    OpalBandwidth newBandwidth = transferRate*64000;
+    if (GetBandwidthAvailable(OpalBandwidth::Rx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Rx, newBandwidth);
+    if (GetBandwidthAvailable(OpalBandwidth::Tx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Tx, newBandwidth);
   }
 
 #if OPAL_H460
@@ -2102,7 +2104,7 @@ void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
     if (bearerCaps.IsEmpty())
       bearerCaps = "Speech";
 
-    unsigned transferRate = (GetBandwidthAvailable()+639)/640;
+    unsigned transferRate = (GetBandwidthAvailable(OpalBandwidth::RxTx)+63999)/64000;
     if (transferRate > 127)
       transferRate = 127;
     bearerCaps.sprintf(",%u", transferRate);
@@ -4999,48 +5001,36 @@ void H323Connection::OnLogicalChannelJitter(H323Channel * channel,
 }
 
 
-unsigned H323Connection::GetBandwidthUsed() const
+OpalBandwidth H323Connection::GetBandwidthUsed(OpalBandwidth::Direction dir) const
 {
   PSafeLockReadOnly mutex(*this);
-  unsigned used = 0;
+  OpalBandwidth used = 0;
 
   for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
                                         it != logicalChannels->GetChannels().end(); ++it) {
     H323Channel * channel = it->second.GetChannel();
-    if (channel != NULL)
-      used += channel->GetBandwidthUsed();
-  }
+    if (channel != NULL) {
+      switch (dir) {
+        case OpalBandwidth::Rx :
+          if (channel->GetDirection() == H323Channel::IsReceiver)
+            used += channel->GetBandwidthUsed();
+          break;
 
-  PTRACE(3, "H323\tBandwidth used: " << used);
+        case OpalBandwidth::Tx :
+          if (channel->GetDirection() == H323Channel::IsTransmitter)
+            used += channel->GetBandwidthUsed();
+          break;
 
-  return used;
-}
-
-
-PBoolean H323Connection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean force)
-{
-  PSafeLockReadWrite mutex(*this);
-
-  unsigned used = GetBandwidthUsed();
-  if (used > newBandwidth) {
-    if (!force)
-      return false;
-
-    // Go through logical channels and close down some.
-    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
-                                          it != logicalChannels->GetChannels().end() && used > newBandwidth ; ++it) {
-      H323Channel * channel = it->second.GetChannel();
-      if (channel != NULL) {
-        used -= channel->GetBandwidthUsed();
-        CloseLogicalChannelNumber(channel->GetNumber());
+        default :
+          used += channel->GetBandwidthUsed();
+          break;
       }
     }
   }
 
-  bandwidthAvailable = newBandwidth - used;
-  PTRACE(3, "H323\tBandwidth available set to: "
-         << bandwidthAvailable/10 << '.' << bandwidthAvailable%10 << "kb/s");
-  return true;
+  PTRACE(4, "H323\tUsing " << dir << " bandwidth of " << used << " for " << *this);
+
+  return used;
 }
 
 

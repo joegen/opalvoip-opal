@@ -47,14 +47,51 @@
 
 #include <limits>
 
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
 
 class OpalMediaFormat;
+class H225_BandWidth;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Type for bandwidth (bitrate) specification.
+    Currently 32 bit unsigned, but could be set to 64 bit if we ever need
+    more than 4Gb/s
+  */
+class OpalBandwidth {
+  public:
+    enum Direction {
+      Rx = 1,
+      Tx,
+      RxTx,
+      TxRx = RxTx
+    };
+    friend std::ostream & operator<<(std::ostream & strm, OpalBandwidth::Direction dir);
+
+    typedef unsigned int_type;
+
+    __inline OpalBandwidth(int_type bps = 0) : m_bps(bps) { }
+    __inline OpalBandwidth & operator=(int_type bps) { m_bps = bps; return *this; }
+    __inline operator int_type() const { return m_bps; }
+
+    __inline OpalBandwidth & operator+=(const OpalBandwidth & bw) { m_bps += bw.m_bps; return *this; }
+    __inline OpalBandwidth & operator-=(const OpalBandwidth & bw) { m_bps += bw.m_bps; return *this; }
+    __inline OpalBandwidth & operator&=(const OpalBandwidth & bw) { m_bps &= bw.m_bps; return *this; }
+    __inline OpalBandwidth & operator+=(int_type bps) { m_bps += bps; return *this; }
+    __inline OpalBandwidth & operator-=(int_type bps) { m_bps += bps; return *this; }
+
+    friend std::ostream & operator<<(std::ostream & strm, const OpalBandwidth & bw);
+    friend std::istream & operator>>(std::istream & strm, OpalBandwidth & bw);
+
+#if OPAL_H323
+    OpalBandwidth(const H225_BandWidth & bw);
+    OpalBandwidth & operator=(const H225_BandWidth & bw);
+    void SetH225(H225_BandWidth & bw) const;
+#endif
+
+  protected:
+    int_type m_bps;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -652,16 +689,16 @@ class OpalMediaFormatInternal : public PObject
     PCLASSINFO(OpalMediaFormatInternal, PObject);
   public:
     OpalMediaFormatInternal(
-      const char * fullName,
+      const char  * fullName,
       const OpalMediaType & mediaType,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
-      const char * encodingName,
-      PBoolean     needsJitter,
-      unsigned bandwidth,
-      PINDEX   frameSize,
-      unsigned frameTime,
-      unsigned clockRate,
-      time_t timeStamp
+      const char  * encodingName,
+      bool          needsJitter,
+      OpalBandwidth bandwidth,
+      PINDEX        frameSize,
+      unsigned      frameTime,
+      unsigned      clockRate,
+      time_t        timeStamp
     );
 
     const PCaselessString & GetName() const { return formatName; }
@@ -766,7 +803,7 @@ class OpalMediaFormat : public PContainer
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,                  ///<  RTP encoding name
       PBoolean     needsJitter,                   ///<  Indicate format requires a jitter buffer
-      unsigned bandwidth,                         ///<  Bandwidth in bits/second
+      OpalBandwidth bandwidth,                    ///<  Bandwidth in bits/second
       PINDEX   frameSize,                         ///<  Size of frame in bytes (if applicable)
       unsigned frameTime,                         ///<  Time for frame in RTP units (if applicable)
       unsigned clockRate,                         ///<  Clock rate for data (if applicable)
@@ -932,26 +969,30 @@ class OpalMediaFormat : public PContainer
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), false); }
+    bool NeedsJitterBuffer() const { return GetOptionBoolean(NeedsJitterOption()); }
     static const PString & NeedsJitterOption();
 
-    /**Get the average bandwidth used in bits/second.
+    /**Get the maximum bandwidth used in bits/second.
       */
-    unsigned GetBandwidth() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxBitRateOption(), 0); }
+    OpalBandwidth GetMaxBandwidth() const { return GetOptionInteger(MaxBitRateOption()); }
     static const PString & MaxBitRateOption();
+
+    /**Get the used bandwidth used in bits/second.
+      */
+    OpalBandwidth GetUsedBandwidth() const { return GetOptionInteger(TargetBitRateOption(), GetOptionInteger(MaxBitRateOption())); }
     static const PString & TargetBitRateOption();
 
     /**Get the maximum frame size in bytes. If this returns zero then the
        media format has no intrinsic maximum frame size, eg a video format
        would return zero but G.723.1 would return 24.
       */
-    PINDEX GetFrameSize() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
+    PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption()); }
     static const PString & MaxFrameSizeOption();
 
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
       */
-    unsigned GetFrameTime() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(FrameTimeOption(), 0); }
+    unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption()); }
     static const PString & FrameTimeOption();
 
     /**Get the number of RTP timestamp units per millisecond.
@@ -965,7 +1006,7 @@ class OpalMediaFormat : public PContainer
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
+    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption(), AudioClockRate); }
     static const PString & ClockRateOption();
 
     /**Get the name of the OpalMediaOption indicating the protocol the format is being used on.

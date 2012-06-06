@@ -434,7 +434,8 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
      levels to assure that a max bit rate is not exceeded. */
   for (SDPBandwidth::const_iterator r = m_parent.GetBandwidth().begin(); r != m_parent.GetBandwidth().end(); ++r) {
     if (r->second > 0)
-      m_mediaFormat.AddOption(new OpalMediaOptionString(SDPBandwidthPrefix + r->first, false, r->second), true);
+      m_mediaFormat.AddOption(new OpalMediaOptionValue<OpalBandwidth>(SDPBandwidthPrefix + r->first,
+                                                  false, OpalMediaOption::MinMerge, r->second), true);
   }
 
   if (bandwidth > 1000 && bandwidth < (unsigned)m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
@@ -453,13 +454,13 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
 
 //////////////////////////////////////////////////////////////////////////////
 
-unsigned & SDPBandwidth::operator[](const PCaselessString & type)
+OpalBandwidth & SDPBandwidth::operator[](const PCaselessString & type)
 {
-  return std::map<PCaselessString, unsigned>::operator[](type);
+  return BaseClass::operator[](type);
 }
 
 
-unsigned SDPBandwidth::operator[](const PCaselessString & type) const
+OpalBandwidth SDPBandwidth::operator[](const PCaselessString & type) const
 {
   const_iterator it = find(type);
   return it != end() ? it->second : UINT_MAX;
@@ -487,7 +488,7 @@ bool SDPBandwidth::Parse(const PString & param)
 }
 
 
-void SDPBandwidth::SetMax(const PCaselessString & type, unsigned value)
+void SDPBandwidth::SetMax(const PCaselessString & type, OpalBandwidth value)
 {
   iterator it = find(type);
   if (it == end())
@@ -1507,7 +1508,7 @@ bool SDPVideoMediaDescription::PreEncode()
        And individual format may be able to further retrict the bandwidth in it's
        FMTP line, e.g. H.264 can use a max-br=XXX option.
       */
-    unsigned bw = mediaFormat.GetBandwidth();
+    OpalBandwidth bw = mediaFormat.GetMaxBandwidth();
     m_bandwidth.SetMax(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
     m_bandwidth.SetMax(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
 

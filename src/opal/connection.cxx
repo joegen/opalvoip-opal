@@ -225,6 +225,10 @@ OpalConnection::OpalConnection(OpalCall & call,
   , echoCanceler(NULL)
 #endif
 #if OPAL_PTLIB_DTMF
+  , m_minAudioJitterDelay(endpoint.GetManager().GetMinAudioJitterDelay())
+  , m_maxAudioJitterDelay(endpoint.GetManager().GetMaxAudioJitterDelay())
+  , m_rxBandwidthAvailable(endpoint.GetInitialRxBandwidth())
+  , m_txBandwidthAvailable(endpoint.GetInitialTxBandwidth())
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))
@@ -257,10 +261,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   if (stringOptions != NULL)
     m_stringOptions = *stringOptions;
-
-  minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
-  maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
-  bandwidthAvailable = endpoint.GetInitialBandwidth();
 
 #if OPAL_PTLIB_DTMF
   switch (options&DetectInBandDTMFOptionMask) {
@@ -1275,82 +1275,104 @@ unsigned OpalConnection::GetAudioSignalLevel(PBoolean /*source*/)
     return UINT_MAX;
 }
 
-PBoolean OpalConnection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean force)
+
+OpalBandwidth OpalConnection::GetBandwidthAvailable(OpalBandwidth::Direction dir) const
 {
-  PTRACE(3, "OpalCon\tSetting bandwidth to " << newBandwidth << "00b/s on connection " << *this);
-
-  unsigned used = GetBandwidthUsed();
-  if (used > newBandwidth) {
-    if (!force)
-      return PFalse;
-
-#if 0
-    // Go through media channels and close down some.
-    PINDEX chanIdx = GetmediaStreams->GetSize();
-    while (used > newBandwidth && chanIdx-- > 0) {
-      OpalChannel * channel = logicalChannels->GetChannelAt(chanIdx);
-      if (channel != NULL) {
-        used -= channel->GetBandwidthUsed();
-        const H323ChannelNumber & number = channel->GetNumber();
-        CloseLogicalChannel(number, number.IsFromRemote());
-      }
-    }
-#endif
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      return m_rxBandwidthAvailable;
+    case OpalBandwidth::Tx :
+      return m_txBandwidthAvailable;
+    default :
+      return m_rxBandwidthAvailable+m_txBandwidthAvailable;
   }
-
-  bandwidthAvailable = newBandwidth - used;
-  return PTrue;
 }
 
 
-unsigned OpalConnection::GetBandwidthUsed() const
+bool OpalConnection::SetBandwidthAvailable(OpalBandwidth::Direction dir, OpalBandwidth newBandwidth)
 {
-  unsigned used = 0;
-
-#if 0
-  for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
-    OpalChannel * channel = logicalChannels->GetChannelAt(i);
-    if (channel != NULL)
-      used += channel->GetBandwidthUsed();
+  OpalBandwidth used = GetBandwidthUsed(dir);
+  if (used > newBandwidth) {
+    PTRACE(2, "OpalCon\tCannot set " << dir << " bandwidth to " << newBandwidth
+           << ", currently using " << used << " on connection " << *this);
+    return false;
   }
-#endif
 
-  PTRACE(3, "OpalCon\tBandwidth used is "
-         << used << "00b/s for " << *this);
+  PTRACE(3, "OpalCon\tSetting " << dir << " bandwidth to " << newBandwidth << " on connection " << *this);
+
+  OpalBandwidth available = newBandwidth - used;
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      m_rxBandwidthAvailable = available;
+      break;
+
+    case OpalBandwidth::Tx :
+      m_txBandwidthAvailable = available;
+      break;
+
+    default :
+      OpalBandwidth rx = (PUInt64)(unsigned)available*m_rxBandwidthAvailable/(m_rxBandwidthAvailable+m_txBandwidthAvailable);
+      OpalBandwidth tx = (PUInt64)(unsigned)available*m_txBandwidthAvailable/(m_rxBandwidthAvailable+m_txBandwidthAvailable);
+      m_rxBandwidthAvailable = rx;
+      m_txBandwidthAvailable = tx;
+  }
+
+  return true;
+}
+
+
+OpalBandwidth OpalConnection::GetBandwidthUsed(OpalBandwidth::Direction dir) const
+{
+  OpalBandwidth used = 0;
+  OpalMediaStreamPtr stream;
+
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      for (stream = GetMediaStream(PString::Empty(), true); stream != NULL; ++stream)
+        used += stream->GetMediaFormat().GetUsedBandwidth();
+      break;
+
+    case OpalBandwidth::Tx :
+      for (stream = GetMediaStream(PString::Empty(), false); stream != NULL; ++stream)
+        used += stream->GetMediaFormat().GetUsedBandwidth();
+      break;
+
+    default :
+      for (stream = GetMediaStream(PString::Empty(), true); stream != NULL; ++stream)
+        used += stream->GetMediaFormat().GetUsedBandwidth();
+      for (stream = GetMediaStream(PString::Empty(), false); stream != NULL; ++stream)
+        used += stream->GetMediaFormat().GetUsedBandwidth();
+  }
+
+  PTRACE(4, "OpalCon\tUsing " << dir << " bandwidth of " << used << " for " << *this);
 
   return used;
 }
 
 
-PBoolean OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
-                                      unsigned requiredBandwidth)
+bool OpalConnection::SetBandwidthUsed(OpalBandwidth::Direction dir,
+                                      OpalBandwidth releasedBandwidth,
+                                      OpalBandwidth requiredBandwidth)
 {
-  PTRACE_IF(3, releasedBandwidth > 0, "OpalCon\tBandwidth release of "
-            << releasedBandwidth/10 << '.' << releasedBandwidth%10 << "kb/s");
+  PTRACE_IF(3, releasedBandwidth > 0, "OpalCon\tReleasing " << dir << " bandwidth of " << releasedBandwidth);
+
+  OpalBandwidth bandwidthAvailable = GetBandwidthAvailable(dir);
 
   bandwidthAvailable += releasedBandwidth;
 
-  PTRACE_IF(3, requiredBandwidth > 0, "OpalCon\tBandwidth request of "
-            << requiredBandwidth/10 << '.' << requiredBandwidth%10
-            << "kb/s, available: "
-            << bandwidthAvailable/10 << '.' << bandwidthAvailable%10
-            << "kb/s");
+  PTRACE_IF(3, requiredBandwidth > 0, "OpalCon\tRequesting " << dir << " bandwidth of "
+            << requiredBandwidth << ", available: " << bandwidthAvailable);
 
-  if (requiredBandwidth > bandwidthAvailable) {
-    PTRACE(2, "OpalCon\tAvailable bandwidth exceeded on " << *this);
-    return PFalse;
-  }
-
-  bandwidthAvailable -= requiredBandwidth;
-
-  return PTrue;
+  return SetBandwidthAvailable(dir, bandwidthAvailable);
 }
+
 
 void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
 {
   PTRACE(3, "OPAL\tSetting default User Input send mode to " << mode);
   sendUserInputMode = mode;
 }
+
 
 PBoolean OpalConnection::SendUserInputString(const PString & value)
 {
@@ -1597,14 +1619,13 @@ bool OpalConnection::GetConferenceState(OpalConferenceState *) const
 
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
-  maxDelay = PMAX(10, PMIN(maxDelay, 999));
-  minDelay = PMAX(10, PMIN(minDelay, 999));
+  if (minDelay != 0 || maxDelay != 0) {
+    minDelay = std::max(10U, std::min(minDelay, 999U));
+    maxDelay = std::max(minDelay, std::min(maxDelay, 999U));
+  }
 
-  if (maxDelay < minDelay)
-    maxDelay = minDelay;
-
-  minAudioJitterDelay = minDelay;
-  maxAudioJitterDelay = maxDelay;
+  m_minAudioJitterDelay = minDelay;
+  m_maxAudioJitterDelay = maxDelay;
 }
 
 
@@ -1695,11 +1716,10 @@ void OpalConnection::OnApplyStringOptions()
     m_autoStartInfo.Initialise(m_stringOptions);
 
     if (m_stringOptions.GetBoolean(OPAL_OPT_DISABLE_JITTER))
-      maxAudioJitterDelay = minAudioJitterDelay = 0;
-    else {
-      maxAudioJitterDelay = m_stringOptions.GetInteger(OPAL_OPT_MAX_JITTER, maxAudioJitterDelay);
-      minAudioJitterDelay = m_stringOptions.GetInteger(OPAL_OPT_MIN_JITTER, minAudioJitterDelay);
-    }
+      SetAudioJitterDelay(0, 0);
+    else
+      SetAudioJitterDelay(m_stringOptions.GetInteger(OPAL_OPT_MIN_JITTER, GetMinAudioJitterDelay()),
+                          m_stringOptions.GetInteger(OPAL_OPT_MAX_JITTER, GetMaxAudioJitterDelay()));
 
 #if OPAL_HAS_MIXER
     if (m_stringOptions.Contains(OPAL_OPT_RECORD_AUDIO))
