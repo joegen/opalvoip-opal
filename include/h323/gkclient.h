@@ -42,6 +42,7 @@
 
 #if OPAL_H323
 
+#include <opal/mediafmt.h>
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
 
@@ -201,7 +202,7 @@ class H323Gatekeeper : public H225_RAS
      */
     PBoolean BandwidthRequest(
       H323Connection & connection,    ///<  Connection we wish to change.
-      unsigned requestedBandwidth     ///<  New bandwidth wanted in 0.1kbps
+      OpalBandwidth requestedBandwidth     ///<  New bandwidth wanted in bps
     );
 
     /**Send an unsolicited info response to the gatekeeper.
