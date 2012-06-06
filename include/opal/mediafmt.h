@@ -89,6 +89,8 @@ class OpalBandwidth {
     void SetH225(H225_BandWidth & bw) const;
 #endif
 
+    static OpalBandwidth Max() { return OpalBandwidth(UINT_MAX); }
+
   protected:
     int_type m_bps;
 };
