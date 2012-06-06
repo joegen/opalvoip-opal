@@ -145,6 +145,8 @@ DEF_FIELD(CurrentSIPConnection);
 
 static const wxChar NetworkingGroup[] = wxT("/Networking");
 DEF_FIELD(Bandwidth);
+DEF_FIELD(RxBandwidth);
+DEF_FIELD(TxBandwidth);
 DEF_FIELD(RTPTOS);
 DEF_FIELD(MaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
@@ -894,8 +896,16 @@ bool MyManager::Initialise()
 
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
-  if (config->Read(BandwidthKey, &value1))
-    h323EP->SetInitialBandwidth(value1);
+  double float1;
+  if (config->Read(RxBandwidthKey, &float1))
+    h323EP->SetInitialRxBandwidth((unsigned)(float1*1000));
+  else if (config->Read(BandwidthKey, &value1))
+    h323EP->SetInitialRxBandwidth(value1);
+
+  if (config->Read(TxBandwidthKey, &float1))
+    h323EP->SetInitialTxBandwidth((unsigned)(float1*1000));
+  else if (config->Read(BandwidthKey, &value1))
+    h323EP->SetInitialTxBandwidth(value1);
 #endif
   if (config->Read(RTPTOSKey, &value1))
     SetMediaTypeOfService(value1);
@@ -3865,25 +3875,31 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Networking fields
 #if OPAL_H323
-  int bandwidth = m_manager.h323EP->GetInitialBandwidth();
-  if (bandwidth%10 == 0)
-    m_Bandwidth.sprintf(wxT("%u"), bandwidth/10);
-  else
-    m_Bandwidth.sprintf(wxT("%u.%u"), bandwidth/10, bandwidth%10);
-  FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
+  OpalBandwidth rxBandwidth = m_manager.h323EP->GetInitialRxBandwidth();
+  m_RxBandwidth.sprintf(wxT("%.1f"), rxBandwidth/1000.0);
+  FindWindowByName(RxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_RxBandwidth));
+
+  OpalBandwidth txBandwidth = m_manager.h323EP->GetInitialTxBandwidth();
+  m_TxBandwidth.sprintf(wxT("%.1f"), txBandwidth/1000.0);
+  FindWindowByName(TxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_TxBandwidth));
+
   int bandwidthClass;
-  if (bandwidth <= 144)
+  if (rxBandwidth <= 33600 && txBandwidth <= 33600)
     bandwidthClass = 0;
-  else if (bandwidth <= 288)
+  else if (rxBandwidth <= 64000 && txBandwidth <= 64000)
     bandwidthClass = 1;
-  else if (bandwidth <= 640)
+  else if (rxBandwidth <= 128000 && txBandwidth <= 128000)
     bandwidthClass = 2;
-  else if (bandwidth <= 1280)
+  else if (rxBandwidth <= 1500000 && txBandwidth <= 128000)
     bandwidthClass = 3;
-  else if (bandwidth <= 15000)
+  else if (rxBandwidth <= 4000000 && txBandwidth <= 512000)
     bandwidthClass = 4;
-  else
+  else if (rxBandwidth <= 1472000 && txBandwidth <= 1472000)
     bandwidthClass = 5;
+  else if (rxBandwidth <= 1920000 && txBandwidth <= 1920000)
+    bandwidthClass = 6;
+  else
+    bandwidthClass = 7;
   FindWindowByNameAs<wxChoice>(this, wxT("BandwidthClass"))->SetSelection(bandwidthClass);
 #endif
 
@@ -4405,8 +4421,12 @@ bool OptionsDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
-  double floatBandwidth;
-  if (!m_Bandwidth.ToDouble(&floatBandwidth) || floatBandwidth < 10)
+  double floatRxBandwidth;
+  if (!m_RxBandwidth.ToDouble(&floatRxBandwidth) || floatRxBandwidth < 10)
+    return false;
+
+  double floatTxBandwidth;
+  if (!m_TxBandwidth.ToDouble(&floatTxBandwidth) || floatTxBandwidth < 10)
     return false;
 
   ::wxBeginBusyCursor();
@@ -4444,11 +4464,13 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Networking fields
   config->SetPath(NetworkingGroup);
-  int adjustedBandwidth = (int)(floatBandwidth*10);
 #if OPAL_H323
-  m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
+  m_manager.h323EP->SetInitialRxBandwidth((unsigned)(floatRxBandwidth*1000));
+  m_manager.h323EP->SetInitialTxBandwidth((unsigned)(floatTxBandwidth*1000));
 #endif
-  config->Write(BandwidthKey, adjustedBandwidth);
+  config->Write(RxBandwidthKey, floatRxBandwidth);
+  config->Write(TxBandwidthKey, floatTxBandwidth);
+
   SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
   SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
@@ -4855,11 +4877,15 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 
 void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 {
-  static const wxChar * bandwidthClasses[] = {
-    wxT("14.4"), wxT("28.8"), wxT("64.0"), wxT("128"), wxT("1500"), wxT("10000")
+  static const wxChar * rxBandwidthClasses[] = {
+    wxT("33.6"), wxT("64"), wxT("128"), wxT("1500"), wxT("4000"), wxT("1472"), wxT("1920"), wxT("10000")
+  };
+  static const wxChar * txBandwidthClasses[] = {
+    wxT("33.6"), wxT("64"), wxT("128"), wxT("128"), wxT("512"), wxT("1472"), wxT("1920"), wxT("10000")
   };
 
-  m_Bandwidth = bandwidthClasses[event.GetSelection()];
+  m_RxBandwidth = rxBandwidthClasses[event.GetSelection()];
+  m_TxBandwidth = txBandwidthClasses[event.GetSelection()];
   TransferDataToWindow();
 }
 

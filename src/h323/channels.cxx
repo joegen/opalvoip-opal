@@ -140,19 +140,17 @@ H323ChannelNumber & H323ChannelNumber::operator++(int)
 /////////////////////////////////////////////////////////////////////////////
 
 H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
-  : endpoint(conn.GetEndPoint()),
-    connection(conn)
+  : endpoint(conn.GetEndPoint())
+  , connection(conn)
+  , capability((H323Capability *)cap.Clone())
+  , opened(false)
+  , m_bandwidthUsed(0)
 {
-  capability = (H323Capability *)cap.Clone();
-  bandwidthUsed = 0;
-  opened = PFalse;
 }
 
 
 H323Channel::~H323Channel()
 {
-  connection.SetBandwidthUsed(bandwidthUsed, 0);
-
   delete capability;
 }
 
@@ -193,6 +191,8 @@ void H323Channel::InternalClose()
 {
   // Signal to the connection that this channel is on the way out
   connection.OnClosedLogicalChannel(*this);
+
+  connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, 0);
 
   PTRACE(4, "LogChan\tCleaned up " << number);
 }
@@ -290,18 +290,15 @@ void H323Channel::OnJitterIndication(DWORD PTRACE_PARAM(jitter),
 }
 
 
-PBoolean H323Channel::SetBandwidthUsed(unsigned bandwidth)
+PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
 {
-  PTRACE(3, "LogChan\tBandwidth requested/used = "
-         << bandwidth/10 << '.' << bandwidth%10 << '/'
-         << bandwidthUsed/10 << '.' << bandwidthUsed%10
-         << " kb/s");
-  if (!connection.SetBandwidthUsed(bandwidthUsed, bandwidth)) {
-    bandwidthUsed = 0;
+  PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", used=" << m_bandwidthUsed);
+  if (!connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, bandwidth)) {
+    m_bandwidthUsed = 0;
     return PFalse;
   }
 
-  bandwidthUsed = bandwidth;
+  m_bandwidthUsed = bandwidth;
   return PTrue;
 }
 

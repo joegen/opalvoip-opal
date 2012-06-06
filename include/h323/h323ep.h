@@ -1045,14 +1045,6 @@ class H323EndPoint : public OpalRTPEndPoint
       unsigned maxDelay    ///<  New maximum jitter buffer delay in milliseconds
     ) { manager.SetAudioJitterDelay(minDelay, maxDelay); }
 
-    /**Get the initial bandwidth parameter.
-     */
-    unsigned GetInitialBandwidth() const { return initialBandwidth; }
-
-    /**Get the initial bandwidth parameter.
-     */
-    void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
-
 #if OPAL_H239
     /**Get the default H.239 control capability.
      */

@@ -297,12 +297,12 @@ class H323Channel : public PObject
 
     /**Get the bandwidth used by the channel in 100's of bits/sec.
      */
-    unsigned GetBandwidthUsed() const { return bandwidthUsed; }
+    OpalBandwidth GetBandwidthUsed() const { return m_bandwidthUsed; }
 
     /**Get the bandwidth used by the channel in 100's of bits/sec.
      */
-    PBoolean SetBandwidthUsed(
-      unsigned bandwidth  ///<  New bandwidth
+    bool SetBandwidthUsed(
+      OpalBandwidth bandwidth  ///<  New bandwidth
     );
 
     /**Get the capability that created this channel.
@@ -322,7 +322,7 @@ class H323Channel : public PObject
     PAtomicInteger         m_terminating;
 
   private:
-    unsigned bandwidthUsed;
+    OpalBandwidth m_bandwidthUsed;
 };
 
 

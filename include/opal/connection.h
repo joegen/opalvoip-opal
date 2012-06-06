@@ -1299,26 +1299,29 @@ class OpalConnection : public PSafeObject
 
   /**@name Bandwidth Management */
   //@{
-    /**Get the available bandwidth in 100's of bits/sec.
+    /**Get the available rx and/or tx bandwidth in bits/sec.
       */
-    unsigned GetBandwidthAvailable() const { return bandwidthAvailable; }
+    OpalBandwidth GetBandwidthAvailable(
+      OpalBandwidth::Direction dir   ///< Bandwidth direction
+    ) const;
 
-    /**Set the available bandwidth in 100's of bits/sec.
-       Note if the force parameter is true this function will close down
-       active media streams to meet the new bandwidth requirement.
+    /**Set the available rx and/or tx bandwidth in bits/sec.
+       @return false if more bandwidth is in use at the moment than the requested total.
       */
-    virtual PBoolean SetBandwidthAvailable(
-      unsigned newBandwidth,    ///<  New bandwidth limit
-      PBoolean force = false        ///<  Force bandwidth limit
+    virtual bool SetBandwidthAvailable(
+      OpalBandwidth::Direction dir,  ///< Bandwidth direction
+      OpalBandwidth newBandwidth     ///< New bandwidth limit
     );
 
-    /**Get the bandwidth currently used.
-       This totals the bandwidth used by open streams and returns the total
-       bandwidth used in 100's of bits/sec
+    /**Get the rx and/or tx bandwidth currently used.
+       This totals the bandwidth used by open streams and returns that
+       bandwidth used in bits/sec
       */
-    virtual unsigned GetBandwidthUsed() const;
+    virtual OpalBandwidth GetBandwidthUsed(
+      OpalBandwidth::Direction dir   ///< Bandwidth direction
+    ) const;
 
-    /**Set the used bandwidth in 100's of bits/sec.
+    /**Set the used rx and/or tx bandwidth in bits/sec.
        This is an internal function used by the OpalMediaStream bandwidth
        management code.
 
@@ -1326,9 +1329,10 @@ class OpalConnection : public PSafeObject
        sufficient bandwidth is available, then true is returned and the amount
        of available bandwidth is reduced by the specified amount.
       */
-    virtual PBoolean SetBandwidthUsed(
-      unsigned releasedBandwidth,   ///<  Bandwidth to release
-      unsigned requiredBandwidth    ///<  Bandwidth required
+    virtual bool SetBandwidthUsed(
+      OpalBandwidth::Direction dir,     ///< Bandwidth direction
+      OpalBandwidth releasedBandwidth,  ///< Bandwidth to release
+      OpalBandwidth requiredBandwidth   ///< Bandwidth required
     );
   //@}
 
@@ -1695,12 +1699,12 @@ class OpalConnection : public PSafeObject
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
-    unsigned GetMinAudioJitterDelay() const { return minAudioJitterDelay; }
+    unsigned GetMinAudioJitterDelay() const { return m_minAudioJitterDelay; }
 
     /**Get the default maximum audio delay jitter parameter.
        Defaults to 250ms.
      */
-    unsigned GetMaxAudioJitterDelay() const { return maxAudioJitterDelay; }
+    unsigned GetMaxAudioJitterDelay() const { return m_maxAudioJitterDelay; }
 
     /**Set the maximum audio delay jitter parameter.
      */
@@ -1815,9 +1819,10 @@ class OpalConnection : public PSafeObject
     OpalMediaFormatList        m_localMediaFormats;
     PSafeList<OpalMediaStream> mediaStreams;
 
-    unsigned            minAudioJitterDelay;
-    unsigned            maxAudioJitterDelay;
-    unsigned            bandwidthAvailable;
+    unsigned            m_minAudioJitterDelay;
+    unsigned            m_maxAudioJitterDelay;
+    OpalBandwidth       m_rxBandwidthAvailable;
+    OpalBandwidth       m_txBandwidthAvailable;
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
@@ -1919,7 +1924,9 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(unsigned) const, false);
     P_REMOVE_VIRTUAL(bool, OnTransferNotify(const PStringToString &), false);
     P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(unsigned, const OpalMediaType &), NULL);
-
+    P_REMOVE_VIRTUAL(PBoolean, SetBandwidthAvailable(unsigned, PBoolean), false);
+    P_REMOVE_VIRTUAL(unsigned, GetBandwidthUsed() const, 0);
+    P_REMOVE_VIRTUAL(PBoolean, SetBandwidthUsed(unsigned, unsigned), false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

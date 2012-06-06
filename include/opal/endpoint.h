@@ -871,13 +871,21 @@ class OpalEndPoint : public PObject
       */
     void SetDefaultDisplayName(const PString & name) { defaultDisplayName = name; }
 
-    /**Get the initial bandwidth parameter.
+    /**Get the initial receive bandwidth parameter for a connection.
      */
-    unsigned GetInitialBandwidth() const { return initialBandwidth; }
+    OpalBandwidth GetInitialRxBandwidth() const { return m_initialRxBandwidth; }
 
-    /**Get the initial bandwidth parameter.
+    /**Get the initial transmit bandwidth parameter for a connection.
      */
-    void SetInitialBandwidth(unsigned bandwidth) { initialBandwidth = bandwidth; }
+    OpalBandwidth GetInitialTxBandwidth() const { return m_initialTxBandwidth; }
+
+    /**Set the initial receive bandwidth parameter for a connection.
+     */
+    void SetInitialRxBandwidth(OpalBandwidth bandwidth) { m_initialRxBandwidth = bandwidth; }
+
+    /**Set the initial transmit bandwidth parameter for a connection.
+     */
+    void SetInitialTxBandwidth(OpalBandwidth bandwidth) { m_initialTxBandwidth = bandwidth; }
 
     /**Get the set of listeners (incoming call transports) for this endpoint.
      */
@@ -915,7 +923,8 @@ class OpalEndPoint : public PObject
     PString         defaultDisplayName;
     PStringArray    m_mediaCryptoSuites;
 
-    unsigned initialBandwidth;  // in 100s of bits/sev
+    OpalBandwidth m_initialRxBandwidth;
+    OpalBandwidth m_initialTxBandwidth;
     OpalConnection::StringOptions      m_defaultStringOptions;
     OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
