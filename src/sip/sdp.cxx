@@ -463,7 +463,7 @@ OpalBandwidth & SDPBandwidth::operator[](const PCaselessString & type)
 OpalBandwidth SDPBandwidth::operator[](const PCaselessString & type) const
 {
   const_iterator it = find(type);
-  return it != end() ? it->second : UINT_MAX;
+  return it != end() ? it->second : OpalBandwidth::Max();
 }
 
 
