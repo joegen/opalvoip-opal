@@ -488,7 +488,7 @@ void OpalRTPSession::FlushData()
 
 void OpalRTPSession::SetTxStatisticsInterval(unsigned packets)
 {
-  txStatisticsInterval = PMAX(packets, 2);
+  txStatisticsInterval = std::max(packets, 2U);
   txStatisticsCount = 0;
   averageSendTimeAccum = 0;
   maximumSendTimeAccum = 0;
@@ -498,7 +498,7 @@ void OpalRTPSession::SetTxStatisticsInterval(unsigned packets)
 
 void OpalRTPSession::SetRxStatisticsInterval(unsigned packets)
 {
-  rxStatisticsInterval = PMAX(packets, 2);
+  rxStatisticsInterval = std::max(packets, 2U);
   rxStatisticsCount = 0;
   averageReceiveTimeAccum = 0;
   maximumReceiveTimeAccum = 0;
