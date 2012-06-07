@@ -470,7 +470,7 @@ OpalBandwidth SDPBandwidth::operator[](const PCaselessString & type) const
 ostream & operator<<(ostream & out, const SDPBandwidth & bw)
 {
   for (SDPBandwidth::const_iterator iter = bw.begin(); iter != bw.end(); ++iter)
-    out << "b=" << iter->first << ':' << iter->second << "\r\n";
+    out << "b=" << iter->first << ':' << (unsigned)iter->second << "\r\n";
   return out;
 }
 
