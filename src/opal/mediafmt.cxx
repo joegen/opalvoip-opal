@@ -39,7 +39,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
-#include <codec/opalplugin.h>
+#include <codec/opalplugin.hpp>
 #include <codec/opalwavfile.h>
 #include <ptlib/videoio.h>
 #include <ptclib/cypher.h>
@@ -1551,6 +1551,38 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
     return !rtpEncodingName.IsEmpty() || forceIsTransportable;
+
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::AdjustByOptionMaps(PTRACE_PARAM(const char * operation,)
+                  bool (*adjuster)(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed))
+{
+  PWaitAndSignal m(media_format_mutex);
+
+#if PTRACING
+  if (PTrace::CanTrace(5))
+    PTRACE(5, "OpalPlugin\t" << operation << ":\n" << setw(-1) << *this);
+  else
+    PTRACE(4, "OpalPlugin\t" << operation << ": " << *this);
+#endif
+
+  PluginCodec_OptionMap original;
+  for (PINDEX i = 0; i < options.GetSize(); i++)
+    original[options[i].GetName()] = options[i].AsString().GetPointer();
+
+  PluginCodec_OptionMap changed;
+  if (!adjuster(original, changed))
+    return false;
+
+  for (PluginCodec_OptionMap::const_iterator it = changed.begin(); it != changed.end(); ++it) {
+    PString oldValue;
+    if (GetOptionValue(it->first, oldValue) && oldValue != it->second.c_str()) {
+      PTRACE(3, "MediaFormat\tChanged option \"" << it->first << "\" from \"" << oldValue << "\" to \"" << it->second << '"');
+      SetOptionValue(it->first, it->second);
+    }
+  }
 
   return true;
 }
