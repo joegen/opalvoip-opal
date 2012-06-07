@@ -204,6 +204,7 @@ PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
     for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection) {
       PSafePtr<SIPConnection> sipConnection = PSafePtrCast<OpalConnection, SIPConnection>(connection);
       if (&sipConnection->GetTransport() == transport && sipConnection->LockReadWrite()) {
+        PTRACE(3, "SIP\tDisconnecting transport " << *transport << " from " << *sipConnection);
         sipConnection->SetTransport(SIPURL());
         sipConnection->UnlockReadWrite();
       }
