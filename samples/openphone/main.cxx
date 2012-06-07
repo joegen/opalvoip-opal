@@ -896,16 +896,15 @@ bool MyManager::Initialise()
 
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
+  if (config->Read(BandwidthKey, &value1))
+    h323EP->SetInitialBandwidth(OpalBandwidth::RxTx, value1);
+
   double float1;
   if (config->Read(RxBandwidthKey, &float1))
-    h323EP->SetInitialRxBandwidth((unsigned)(float1*1000));
-  else if (config->Read(BandwidthKey, &value1))
-    h323EP->SetInitialRxBandwidth(value1);
+    h323EP->SetInitialBandwidth(OpalBandwidth::Rx, (unsigned)(float1*1000));
 
   if (config->Read(TxBandwidthKey, &float1))
-    h323EP->SetInitialTxBandwidth((unsigned)(float1*1000));
-  else if (config->Read(BandwidthKey, &value1))
-    h323EP->SetInitialTxBandwidth(value1);
+    h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(float1*1000));
 #endif
   if (config->Read(RTPTOSKey, &value1))
     SetMediaTypeOfService(value1);
@@ -3875,11 +3874,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Networking fields
 #if OPAL_H323
-  OpalBandwidth rxBandwidth = m_manager.h323EP->GetInitialRxBandwidth();
+  OpalBandwidth rxBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Rx);
   m_RxBandwidth.sprintf(wxT("%.1f"), rxBandwidth/1000.0);
   FindWindowByName(RxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_RxBandwidth));
 
-  OpalBandwidth txBandwidth = m_manager.h323EP->GetInitialTxBandwidth();
+  OpalBandwidth txBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Tx);
   m_TxBandwidth.sprintf(wxT("%.1f"), txBandwidth/1000.0);
   FindWindowByName(TxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_TxBandwidth));
 
@@ -4465,8 +4464,8 @@ bool OptionsDialog::TransferDataFromWindow()
   // Networking fields
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
-  m_manager.h323EP->SetInitialRxBandwidth((unsigned)(floatRxBandwidth*1000));
-  m_manager.h323EP->SetInitialTxBandwidth((unsigned)(floatTxBandwidth*1000));
+  m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Rx, (unsigned)(floatRxBandwidth*1000));
+  m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(floatTxBandwidth*1000));
 #endif
   config->Write(RxBandwidthKey, floatRxBandwidth);
   config->Write(TxBandwidthKey, floatTxBandwidth);
