@@ -1363,7 +1363,7 @@ bool OpalConnection::SetBandwidthUsed(OpalBandwidth::Direction dir,
   PTRACE_IF(3, requiredBandwidth > 0, "OpalCon\tRequesting " << dir << " bandwidth of "
             << requiredBandwidth << ", available: " << bandwidthAvailable);
 
-  return SetBandwidthAvailable(dir, bandwidthAvailable);
+  return SetBandwidthAvailable(dir, OpalBandwidth(bandwidthAvailable - requiredBandwidth));
 }
 
 
