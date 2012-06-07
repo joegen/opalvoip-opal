@@ -193,6 +193,8 @@ PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
   if (transport->IsReliable()) {
     PTRACE(2, "SIP\tListening thread started.");
 
+    transport->SetKeepAlive(m_keepAliveTimeout, m_keepAliveData);
+
     do {
       HandlePDU(*transport);
     } while (transport->IsOpen() && !transport->bad() && !transport->eof());
