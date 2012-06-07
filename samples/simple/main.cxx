@@ -999,12 +999,12 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
   }
 
   if (args.HasOption('b')) {
-    unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
+    OpalBandwidth initialBandwidth = args.GetOptionString('b').AsUnsigned();
     if (initialBandwidth == 0) {
       cerr << "Illegal bandwidth specified." << endl;
       return PFalse;
     }
-    h323EP->SetInitialBandwidth(initialBandwidth);
+    h323EP->SetInitialBandwidth(OpalBandwidth::RxTx, initialBandwidth);
   }
 
   h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));

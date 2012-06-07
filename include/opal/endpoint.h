@@ -871,21 +871,18 @@ class OpalEndPoint : public PObject
       */
     void SetDefaultDisplayName(const PString & name) { defaultDisplayName = name; }
 
-    /**Get the initial receive bandwidth parameter for a connection.
+    /**Get the initial bandwidth parameter for a connection.
      */
-    OpalBandwidth GetInitialRxBandwidth() const { return m_initialRxBandwidth; }
+    OpalBandwidth GetInitialBandwidth(
+      OpalBandwidth::Direction dir   ///< Bandwidth direction
+    ) const;
 
-    /**Get the initial transmit bandwidth parameter for a connection.
+    /**Set the initial bandwidth parameter for a connection.
      */
-    OpalBandwidth GetInitialTxBandwidth() const { return m_initialTxBandwidth; }
-
-    /**Set the initial receive bandwidth parameter for a connection.
-     */
-    void SetInitialRxBandwidth(OpalBandwidth bandwidth) { m_initialRxBandwidth = bandwidth; }
-
-    /**Set the initial transmit bandwidth parameter for a connection.
-     */
-    void SetInitialTxBandwidth(OpalBandwidth bandwidth) { m_initialTxBandwidth = bandwidth; }
+    void SetInitialBandwidth(
+      OpalBandwidth::Direction dir,   ///< Bandwidth direction
+      OpalBandwidth bandwidth         ///< New bandwidth
+    );
 
     /**Get the set of listeners (incoming call transports) for this endpoint.
      */
