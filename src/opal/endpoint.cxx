@@ -94,6 +94,39 @@ void OpalEndPoint::PrintOn(ostream & strm) const
 }
 
 
+OpalBandwidth OpalEndPoint::GetInitialBandwidth(OpalBandwidth::Direction dir) const
+{
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      return m_initialRxBandwidth;
+    case OpalBandwidth::Tx :
+      return m_initialTxBandwidth;
+    default :
+      return m_initialRxBandwidth+m_initialTxBandwidth;
+  }
+}
+
+
+void OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwidth bandwidth)
+{
+  switch (dir) {
+    case OpalBandwidth::Rx :
+      m_initialRxBandwidth = bandwidth;
+      break;
+
+    case OpalBandwidth::Tx :
+      m_initialTxBandwidth = bandwidth;
+      break;
+
+    default :
+      OpalBandwidth rx = (PUInt64)(unsigned)bandwidth*m_initialRxBandwidth/(m_initialRxBandwidth+m_initialTxBandwidth);
+      OpalBandwidth tx = (PUInt64)(unsigned)bandwidth*m_initialTxBandwidth/(m_initialRxBandwidth+m_initialTxBandwidth);
+      m_initialRxBandwidth = rx;
+      m_initialTxBandwidth = tx;
+  }
+}
+
+
 PBoolean OpalEndPoint::GarbageCollection()
 {
   for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection)

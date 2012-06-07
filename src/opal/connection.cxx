@@ -227,8 +227,8 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_PTLIB_DTMF
   , m_minAudioJitterDelay(endpoint.GetManager().GetMinAudioJitterDelay())
   , m_maxAudioJitterDelay(endpoint.GetManager().GetMaxAudioJitterDelay())
-  , m_rxBandwidthAvailable(endpoint.GetInitialRxBandwidth())
-  , m_txBandwidthAvailable(endpoint.GetInitialTxBandwidth())
+  , m_rxBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Rx))
+  , m_txBandwidthAvailable(endpoint.GetInitialBandwidth(OpalBandwidth::Tx))
   , m_dtmfScaleMultiplier(1)
   , m_dtmfScaleDivisor(1)
   , m_dtmfDetectNotifier(PCREATE_NOTIFIER(OnDetectInBandDTMF))

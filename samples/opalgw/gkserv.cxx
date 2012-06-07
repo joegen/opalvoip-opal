@@ -132,8 +132,9 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPBooleanField(DisableH245inSetupKey,  IsH245inSetupDisabled(),
             "Disable sending initial tunneled H.245 PDU in SETUP PDU"));
 
-  SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, GetInitialBandwidth()/10)*10);
-  rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, GetInitialBandwidth()/10,
+  OpalBandwidth bandwidth = cfg.GetInteger(H323BandwidthKey, GetInitialBandwidth(OpalBandwidth::RxTx)/1000);
+  SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth*1000);
+  rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, OpalBandwidth::Max()/1000, bandwidth,
             "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls"));
 
   for (PINDEX i = 0; i < H323Connection::NumCompatibilityIssues; ++i) {
