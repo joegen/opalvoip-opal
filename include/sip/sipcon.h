@@ -604,7 +604,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
-    OpalTransport & GetTransport() const { return *transport; }
+    OpalTransport & GetTransport() const;
     bool SetTransport(const SIPURL & destination);
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
@@ -743,8 +743,8 @@ class SIPConnection : public OpalRTPConnection
 
     // Member variables
     SIPEndPoint         & endpoint;
-    OpalTransport       * transport;
-    bool                  deleteTransport;
+    OpalTransport       * m_transport;
+    bool                  m_deleteTransport;
     unsigned              m_allowedMethods;
     PStringSet            m_allowedEvents;
 
