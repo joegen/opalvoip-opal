@@ -1067,10 +1067,15 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
 void OpalTransport::KeepAlive(PTimer &, INT)
 {
   channelPointerMutex.StartRead();
+#if PTRACING
+  bool ok =
+#endif
   Write(m_keepAliveData, m_keepAliveData.GetSize());
   channelPointerMutex.EndRead();
 
-  PTRACE(5, "Opal\tTransport keep alive sent: " << GetLastWriteCount() << " bytes");
+  PTRACE(ok ? 5 : 2, "Opal\tTransport keep alive "
+         << (ok ? "send to " : "failed on ")
+         << *this << ": " << GetLastWriteCount() << " bytes");
 }
 
 
