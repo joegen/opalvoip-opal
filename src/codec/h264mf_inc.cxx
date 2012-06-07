@@ -150,6 +150,7 @@ static struct LevelInfoStruct {
   unsigned m_MaxBitRate;
 } const LevelInfo[] = {
   // Table A-1 from H.264 specification
+  //                     Lev  Con  H241    FS   W/H    MBPS         BR
   { H264_LEVEL_STR_1,    10, 0x00,  15,    99,  448,   1485,     64000 },
   { H264_LEVEL_STR_1_b,  11, 0x10,  19,    99,  448,   1485,    128000 },
   { H264_LEVEL_STR_1_1,  11, 0x00,  22,   396,  896,   3000,    192000 },
@@ -237,6 +238,10 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     maxMBPS = original.GetUnsigned(MaxMBPS_H241_Name)*500;
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_H241_Name)*256;
     maxBitRate = original.GetUnsigned(MaxBR_H241_Name)*25000;
+
+    PluginCodec_Utilities::Change(maxMBPS, original, changed, MaxMBPS_SDP_Name); 
+    PluginCodec_Utilities::Change(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name); 
+    PluginCodec_Utilities::Change((maxBitRate+999)/1000, original, changed, MaxBR_SDP_Name); 
   }
   else {
     std::string sdpProfLevel = original[SDPProfileAndLevelName];
@@ -273,6 +278,10 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     maxMBPS = original.GetUnsigned(MaxMBPS_SDP_Name);
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_SDP_Name);
     maxBitRate = original.GetUnsigned(MaxBR_SDP_Name)*1000;
+
+    PluginCodec_Utilities::Change((maxMBPS+499)/500, original, changed, MaxMBPS_H241_Name); 
+    PluginCodec_Utilities::Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name); 
+    PluginCodec_Utilities::Change((maxBitRate+24999)/25000, original, changed, MaxBR_H241_Name); 
   }
 
   PluginCodec_Utilities::Change(ProfileInfo[profileIndex].m_Name, original, changed, ProfileName); 
