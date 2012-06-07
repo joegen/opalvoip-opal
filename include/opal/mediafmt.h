@@ -48,6 +48,7 @@
 #include <limits>
 
 
+class PluginCodec_OptionMap;
 class OpalMediaFormat;
 class H225_BandWidth;
 
@@ -739,6 +740,11 @@ class OpalMediaFormatInternal : public PObject
     virtual bool IsValidForProtocol(const PString & protocol) const;
 
   protected:
+    bool AdjustByOptionMaps(
+      PTRACE_PARAM(const char * operation,)
+      bool (*adjuster)(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
+    );
+
     PCaselessString              formatName;
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     PString                      rtpEncodingName;
