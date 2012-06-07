@@ -31,19 +31,7 @@
 
 #include <ptlib.h>
 
-#if PTRACING
-  // Tracing macro different in plug ins
-  #undef PTRACE
-  #define PTRACE(level, module, args) PTRACE2(level, PTraceObjectInstance(), module << '\t' << args)
-#endif
-
 #include "h264mf_inc.cxx"
-
-#if PTRACING
-  // Now put the tracing  back again
-  #undef PTRACE
-  #define PTRACE(level, args) PTRACE2(level, PTraceObjectInstance(), args)
-#endif
 
 #include <opal/mediafmt.h>
 #include <h323/h323caps.h>
@@ -164,37 +152,14 @@ class OpalH264Format : public OpalVideoFormatInternal
     }
 
 
-    void GetOriginalOptions(PluginCodec_OptionMap & original)
-    {
-      PWaitAndSignal m1(media_format_mutex);
-      for (PINDEX i = 0; i < options.GetSize(); i++)
-        original[options[i].GetName()] = options[i].AsString().GetPointer();
-    }
-
-    void SetChangedOptions(const PluginCodec_OptionMap & changed)
-    {
-      for (PluginCodec_OptionMap::const_iterator it = changed.begin(); it != changed.end(); ++it)
-        SetOptionValue(it->first, it->second);
-    }
-
     virtual bool ToNormalisedOptions()
     {
-      PluginCodec_OptionMap original, changed;
-      GetOriginalOptions(original);
-      if (!MyToNormalised(original, changed))
-        return false;
-      SetChangedOptions(changed);
-      return OpalVideoFormatInternal::ToNormalisedOptions();
+      return AdjustByOptionMaps(PTRACE_PARAM("ToNormalised",) MyToNormalised) && OpalVideoFormatInternal::ToNormalisedOptions();
     }
 
     virtual bool ToCustomisedOptions()
     {
-      PluginCodec_OptionMap original, changed;
-      GetOriginalOptions(original);
-      if (!MyToCustomised(original, changed))
-        return false;
-      SetChangedOptions(changed);
-      return OpalVideoFormatInternal::ToCustomisedOptions();
+      return AdjustByOptionMaps(PTRACE_PARAM("ToCustomised",) MyToCustomised) && OpalVideoFormatInternal::ToCustomisedOptions();
     }
 };
 
