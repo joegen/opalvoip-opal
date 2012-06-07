@@ -694,7 +694,7 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
 }
 
 
-void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned sessionID,
+void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID),
                                                  DWORD syncSourceOut,
                                                  OpalRTPSession::JitterBufferPtr jitter,
                                                  RTP_ControlFrame & report)
