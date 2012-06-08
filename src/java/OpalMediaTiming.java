@@ -12,6 +12,7 @@ public final class OpalMediaTiming {
   public final static OpalMediaTiming OpalMediaTimingNoChange = new OpalMediaTiming("OpalMediaTimingNoChange");
   public final static OpalMediaTiming OpalMediaTimingSynchronous = new OpalMediaTiming("OpalMediaTimingSynchronous");
   public final static OpalMediaTiming OpalMediaTimingAsynchronous = new OpalMediaTiming("OpalMediaTimingAsynchronous");
+  public final static OpalMediaTiming OpalMediaTimingSimulated = new OpalMediaTiming("OpalMediaTimingSimulated");
 
   public final int swigValue() {
     return swigValue;
@@ -47,7 +48,7 @@ public final class OpalMediaTiming {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalMediaTiming[] swigValues = { OpalMediaTimingNoChange, OpalMediaTimingSynchronous, OpalMediaTimingAsynchronous };
+  private static OpalMediaTiming[] swigValues = { OpalMediaTimingNoChange, OpalMediaTimingSynchronous, OpalMediaTimingAsynchronous, OpalMediaTimingSimulated };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

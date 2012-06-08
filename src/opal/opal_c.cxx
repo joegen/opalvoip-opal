@@ -163,12 +163,10 @@ class OpalLocalEndPoint_C : public OpalLocalEndPoint
     virtual bool OnWriteMediaFrame(const OpalLocalConnection &, const OpalMediaStream &, RTP_DataFrame & frame);
     virtual bool OnReadMediaData(const OpalLocalConnection &, const OpalMediaStream &, void *, PINDEX, PINDEX &);
     virtual bool OnWriteMediaData(const OpalLocalConnection &, const OpalMediaStream &, const void *, PINDEX, PINDEX &);
-    virtual bool IsSynchronous() const;
 
     OpalMediaDataFunction m_mediaReadData;
     OpalMediaDataFunction m_mediaWriteData;
     OpalMediaDataType     m_mediaDataHeader;
-    OpalMediaTiming       m_mediaTiming;
 
   private:
     OpalManager_C & m_manager;
@@ -439,7 +437,6 @@ OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   , m_mediaReadData(NULL)
   , m_mediaWriteData(NULL)
   , m_mediaDataHeader(OpalMediaDataPayloadOnly)
-  , m_mediaTiming(OpalMediaTimingSynchronous)
   , m_manager(mgr)
 {
 }
@@ -619,12 +616,6 @@ bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connectio
 
   written = result;
   return true;
-}
-
-
-bool OpalLocalEndPoint_C::IsSynchronous() const
-{
-  return m_mediaTiming == OpalMediaTimingSynchronous;
 }
 
 
@@ -1250,9 +1241,14 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       m_localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
 
     if (m_apiVersion >= 20) {
-      response->m_param.m_general.m_mediaTiming = m_localEP->m_mediaTiming;
+      response->m_param.m_general.m_mediaTiming = (OpalMediaTiming)(m_localEP->GetDefaultAudioSynchronicity()+1);
       if (command.m_param.m_general.m_mediaTiming != 0)
-        m_localEP->m_mediaTiming = command.m_param.m_general.m_mediaTiming;
+        m_localEP->SetDefaultAudioSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_mediaTiming-1));
+      if (m_apiVersion >= 27) {
+        response->m_param.m_general.m_videoSourceTiming = (OpalMediaTiming)(m_localEP->GetDefaultVideoSourceSynchronicity()+1);
+        if (command.m_param.m_general.m_mediaTiming != 0)
+          m_localEP->SetDefaultVideoSourceSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_videoSourceTiming-1));
+      }
     }
   }
 
