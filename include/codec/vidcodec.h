@@ -203,9 +203,10 @@ class OpalVideoPictureLoss : public OpalVideoUpdatePicture
 /**This is an indication to the video encoder to change the way it is to
    encode the video stream.
 
-   The trade off integer is a value that trade spatial quality (blockiness)
-   for temparaly quality (frame rate). A value of zero is maxium spatial
-   quality and a value fo 31 is maximum frame rate.
+   The trade off integer is a value that trade spatial quality (blocky-ness)
+   for temporal quality (frame rate). A value of zero will maximise spatial
+   quality, sacrificing frame rate and a value of 31 will maximize frame rate
+   and sacrifice 
   */
 class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {
@@ -215,10 +216,15 @@ class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 
     virtual PString GetName() const;
 
-    int GetTradeOff() const { return m_tradeOff; }
+    enum {
+      MaximiseSpatial = 0,
+      MaximiseTemporal = 31
+    };
+
+    unsigned GetTradeOff() const { return m_tradeOff; }
 
   protected:
-    int m_tradeOff;
+    unsigned m_tradeOff;
 };
 
 
