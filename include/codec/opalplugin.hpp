@@ -241,9 +241,7 @@ class PluginCodec_Utilities
     static bool ClampResolution(
       unsigned & width,
       unsigned & height,
-      unsigned & maxFrameSize,
-      unsigned maxWidth,
-      unsigned maxHeight)
+      unsigned & maxFrameSize)
     {
       static struct {
         unsigned m_width;
@@ -262,10 +260,18 @@ class PluginCodec_Utilities
         OPAL_PLUGIN_CLAMPED_RESOLUTION( 176,  144),
         OPAL_PLUGIN_CLAMPED_RESOLUTION( 128,   96)
       };
-      static size_t LastMaxVideoResolutions = sizeof(MaxVideoResolutions)/sizeof(MaxVideoResolutions[0]) - 1;
+      static size_t const LastMaxVideoResolutions = sizeof(MaxVideoResolutions)/sizeof(MaxVideoResolutions[0]) - 1;
+      static unsigned const MinWidth = 4*16;  // Four macroblocks wide
+      static unsigned const MinHeight = 3*16; // Three macroblocks high
 
+      unsigned maxWidth  = maxFrameSize*16*16/MinHeight;
+      unsigned maxHeight = maxFrameSize*16*16/MinWidth;
+
+      // Check if total frame size below threshold total of macroblocks.
       unsigned macroBlocks = GetMacroBlocks(width, height);
-      if (macroBlocks <= maxFrameSize && width <= maxWidth && height <= maxHeight)
+      if (macroBlocks <= maxFrameSize &&
+          width  >= MinWidth  && width  <= maxWidth &&
+          height >= MinHeight && height <= maxHeight)
         return false;
 
       size_t i = 0;

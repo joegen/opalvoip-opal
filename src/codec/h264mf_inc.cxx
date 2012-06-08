@@ -194,14 +194,13 @@ static unsigned hexbyte(const char * hex)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static void ClampSizes(const LevelInfoStruct & info,
-                        unsigned maxWidth,
-                        unsigned maxHeight,
-                        unsigned & maxFrameSize,
-                        PluginCodec_OptionMap & original,
-                        PluginCodec_OptionMap & changed)
+static void ClampSizes(unsigned maxWidth,
+                       unsigned maxHeight,
+                       unsigned & maxFrameSize,
+                       PluginCodec_OptionMap & original,
+                       PluginCodec_OptionMap & changed)
 {
-  if (PluginCodec_Utilities::ClampResolution(maxWidth, maxHeight, maxFrameSize, info.m_MaxWidthHeight, info.m_MaxWidthHeight)) {
+  if (PluginCodec_Utilities::ClampResolution(maxWidth, maxHeight, maxFrameSize)) {
     PTRACE(5, MY_CODEC_LOG, "Reduced max resolution to " << maxWidth << 'x' << maxHeight);
   }
 
@@ -289,11 +288,10 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 
   if (maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
     maxFrameSizeInMB = LevelInfo[levelIndex].m_MaxFrameSize;
-  ClampSizes(LevelInfo[levelIndex],
-              original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
-              original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
-              maxFrameSizeInMB,
-              original, changed);
+  ClampSizes(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
+             maxFrameSizeInMB,
+             original, changed);
 
   // Frame rate
   if (maxMBPS < LevelInfo[levelIndex].m_MaxMBPS)
@@ -364,7 +362,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   PluginCodec_Utilities::Change(sdpProfLevel, original, changed, SDPProfileAndLevelName);
 
   // Clamp other variables (width/height etc) according to the adjusted profile/level
-  ClampSizes(LevelInfo[levelIndex], maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
+  ClampSizes(maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
 
   // Do this afer the clamping, maxFrameSizeInMB may change
   if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize) {
