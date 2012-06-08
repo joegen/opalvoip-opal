@@ -49,6 +49,8 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
   , m_deferredAlerting(false)
   , m_deferredAnswer(false)
+  , m_defaultAudioSynchronicity(e_Synchronous)
+  , m_defaultVideoSourceSynchronicity(e_Synchronous)
 {
   PTRACE(3, "LocalEP\tCreated endpoint.");
 }
@@ -187,9 +189,17 @@ bool OpalLocalEndPoint::OnWriteMediaData(const OpalLocalConnection & /*connectio
 }
 
 
-bool OpalLocalEndPoint::IsSynchronous() const
+OpalLocalEndPoint::Synchronicity
+OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
+                                    bool isSource) const
 {
-  return true;
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    return m_defaultAudioSynchronicity;
+
+  if (isSource && mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    return m_defaultVideoSourceSynchronicity;
+
+  return e_Asynchronous;
 }
 
 
@@ -295,7 +305,8 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
                                                          unsigned sessionID,
                                                          PBoolean isSource)
 {
-  return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource, endpoint.IsSynchronous());
+  return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource,
+                                  endpoint.GetSynchronicity(mediaFormat, isSource));
 }
 
 
@@ -351,10 +362,10 @@ OpalLocalMediaStream::OpalLocalMediaStream(OpalLocalConnection & connection,
                                            const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
                                            bool isSource,
-                                           bool isSynchronous)
+                                           OpalLocalEndPoint::Synchronicity synchronicity)
   : OpalMediaStream(connection, mediaFormat, sessionID, isSource)
   , OpalMediaStreamPacing(mediaFormat)
-  , m_isSynchronous(isSynchronous)
+  , m_synchronicity(synchronicity)
 {
 }
 
@@ -394,7 +405,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (!ep.OnReadMediaData(conn, *this, data, size, length))
     return false;
 
-  if (!m_isSynchronous)
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
     Pace(true, size, marker);
   return true;
 }
@@ -407,7 +418,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   if (!ep.OnWriteMediaData(conn, *this, data, length, written))
     return false;
 
-  if (!m_isSynchronous)
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
     Pace(false, written, marker);
   return true;
 }
@@ -415,7 +426,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
 
 PBoolean OpalLocalMediaStream::IsSynchronous() const
 {
-  return m_isSynchronous;
+  return m_synchronicity != OpalLocalEndPoint::e_Asynchronous;
 }
 
 
