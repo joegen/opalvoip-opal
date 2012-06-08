@@ -101,6 +101,8 @@ class OPALJNI {
   public final static native long OpalParamGeneral_m_manualAlerting_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_m_mediaTiming_set(long jarg1, OpalParamGeneral jarg1_, int jarg2);
   public final static native int OpalParamGeneral_m_mediaTiming_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_m_videoSourceTiming_set(long jarg1, OpalParamGeneral jarg1_, int jarg2);
+  public final static native int OpalParamGeneral_m_videoSourceTiming_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native long new_OpalParamGeneral();
   public final static native void delete_OpalParamGeneral(long jarg1);
   public final static native void OpalProductDescription_m_vendor_set(long jarg1, OpalProductDescription jarg1_, String jarg2);
