@@ -75,15 +75,55 @@ H264Encoder::H264Encoder()
   // Default
   x264_param_default_preset(&m_context, "veryfast", "fastdecode,zerolatency");
 
-  m_context.b_annexb = false;  // Do not do markers, we are RTP so don't need them
+  SetProfileLevel(66, 30, 0xc0);
+  SetTargetBitrate(768000);
 
-  // ABR with bit rate tolerance = 1 is CBR...
-  m_context.rc.i_rc_method = X264_RC_ABR;
-  m_context.rc.f_rate_tolerance = 1;
+  // default size, will likely get reset later
+  m_context.i_width = 352;
+  m_context.i_height = 288;
 
   // No aspect ratio correction
   m_context.vui.i_sar_width = 0;
   m_context.vui.i_sar_height = 0;
+
+  // default frame rate, will likely get reset later
+  m_context.i_fps_num = 15000;
+  m_context.i_fps_den = 1000;
+
+  // frames between key frames
+  m_context.i_keyint_max = 132;
+
+  // Auto detect number of CPUs
+  m_context.i_threads = 0;
+
+  // Do not do markers, we are RTP so don't need them
+  m_context.b_annexb = false;
+
+  /* As Jason said it keeps us from one frame encoding latency,
+     allowing to achieve zero frame latency on single core encoding. */
+  m_context.b_vfr_input = 0;
+
+  /* Compatibility with some Polycom and Tandberg codecs since those
+     two can't decode frames with long vectors going beyound this limit */
+  m_context.analyse.i_mv_range = 128;
+
+  // At least Polycom HDX 4000 is incompatible unless have this
+  m_context.i_frame_reference = 1;
+
+  /* Judging by Jason proud posts it's a kickass uber feature for
+     Telepresence, allow you to stay away from big periodic I-Frames.
+     Encoder always keep a wave of I-type macro blocks which refresh
+     picture and keeps more stable frame sizes on output. And if
+     picture is broken full I-frame introduced thanks to
+     videoFastUpdatePicture PDU. Probably */
+  m_context.b_intra_refresh = 1;
+
+  // Always good to put some noise reduction and this filter must be very fast.
+  m_context.analyse.i_noise_reduction = 1000;
+
+  // ABR with bit rate tolerance = 1 is CBR...
+  m_context.rc.i_rc_method = X264_RC_ABR;
+  m_context.rc.f_rate_tolerance = 1;
 
 #if PLUGINCODEC_TRACING
   // Enable logging
@@ -91,20 +131,6 @@ H264Encoder::H264Encoder()
   m_context.i_log_level = X264_LOG_DEBUG;
   m_context.p_log_private = NULL;
 #endif
-
-  // Auto detect number of CPUs
-  m_context.i_threads = 0;  
-
-  SetProfileLevel(66, 30, 0xc0);
-  m_context.i_width = 352;
-  m_context.i_height = 288;
-  m_context.i_fps_num = 15000;
-  m_context.i_fps_den = 1000;
-  m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = 768000;
-  m_context.rc.i_qp_min = 10;
-  m_context.rc.i_qp_max = 51;
-  m_context.rc.i_qp_step = 4;	    
-  m_context.i_keyint_max = 132;
 }
 
 
@@ -147,6 +173,58 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
 
   m_context.i_level_idc = level;
 
+  SetTargetBitrate(m_context.rc.i_bitrate);
+  return true;
+}
+
+
+bool H264Encoder::SetFrameWidth(unsigned width)
+{
+  m_context.i_width = width;
+  return true;
+}
+
+
+bool H264Encoder::SetFrameHeight(unsigned height)
+{
+  m_context.i_height = height;
+  return true;
+}
+
+
+unsigned H264Encoder::GetWidth() const
+{
+  return m_context.i_width;
+}
+
+
+unsigned H264Encoder::GetHeight() const
+{
+  return m_context.i_height;
+}
+
+
+bool H264Encoder::SetFrameRate(unsigned rate)
+{
+  m_context.i_fps_num = rate*1000;
+  return true;
+}
+
+
+bool H264Encoder::SetTargetBitrate(unsigned rate)
+{
+  /* That's how CBR should looks like. Much more stable bitrate output
+     but quality degrade on dynamic scenes.  Other case it's ABR. */
+  m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = rate;
+
+/* Original code did the below, not sure why and if Alexander Sbitnev
+   suggestion to just set it to rate is correct. For example the H.263
+   FFMPEG encoder sets what seems to be a similar value
+   (rc_buffer_size) to rate*4, I am guessing that there should be
+   a multiplication factor based on level. */
+#if 1
+  m_context.rc.i_vbv_buffer_size = rate;
+#else
   switch (level) {
     case 9 :
     case 10 :
@@ -196,47 +274,8 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
     case 51 :
       m_context.rc.i_vbv_buffer_size = 70778880;
   };
+#endif
 
-  return true;
-}
-
-
-bool H264Encoder::SetFrameWidth(unsigned width)
-{
-  m_context.i_width = width;
-  return true;
-}
-
-
-bool H264Encoder::SetFrameHeight(unsigned height)
-{
-  m_context.i_height = height;
-  return true;
-}
-
-
-unsigned H264Encoder::GetWidth() const
-{
-  return m_context.i_width;
-}
-
-
-unsigned H264Encoder::GetHeight() const
-{
-  return m_context.i_height;
-}
-
-
-bool H264Encoder::SetFrameRate(unsigned rate)
-{
-  m_context.i_fps_num = rate*1000;
-  return true;
-}
-
-
-bool H264Encoder::SetTargetBitrate(unsigned rate)
-{
-  m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = rate;
   return true;
 }
 
