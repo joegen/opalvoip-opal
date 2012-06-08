@@ -326,6 +326,14 @@ public class OpalParamGeneral {
     return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_m_mediaTiming_get(swigCPtr, this));
   }
 
+  public void setM_videoSourceTiming(OpalMediaTiming value) {
+    OPALJNI.OpalParamGeneral_m_videoSourceTiming_set(swigCPtr, this, value.swigValue());
+  }
+
+  public OpalMediaTiming getM_videoSourceTiming() {
+    return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_m_videoSourceTiming_get(swigCPtr, this));
+  }
+
   public OpalParamGeneral() {
     this(OPALJNI.new_OpalParamGeneral(), true);
   }

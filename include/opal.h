@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 26
+#define OPAL_C_API_VERSION 27
 
 
 ///////////////////////////////////////
@@ -524,8 +524,11 @@ typedef enum OpalMediaTiming {
   OpalMediaTimingNoChange,      /**< No change to the media data type. */
   OpalMediaTimingSynchronous,   /**< Indicate the read/write function is going to handle
                                      all real time aspects of the media flow. */
-  OpalMediaTimingAsynchronous   /**< Indicate the read/write function does not handle
-                                     the real time aspects of the media flow. */
+  OpalMediaTimingAsynchronous,  /**< Indicate the read/write function does not require
+                                     real time aspects of the media flow. */
+  OpalMediaTimingSimulated      /**< Indicate the read/write function does not handle
+                                     the real time aspects of the media flow and they
+                                     must be simulated by the OPAL library. */
 } OpalMediaTiming;
 
 
@@ -655,9 +658,13 @@ typedef struct OpalParamGeneral {
                                            to the application to send a OpalCmdAlerting message to
                                            indicate to the remote system that we are "ringing".
                                            If zero then no change is made. */
-  OpalMediaTiming m_mediaTiming;      /**< Indicate that the media read/write callback function
+  OpalMediaTiming m_mediaTiming;      /**< Indicate how the media read/write callback function
                                            handles the real time aspects of the media flow.
-                                           0=no change, 1=synchronous, 2=asynchronous. */
+                                           0=no change, 1=synchronous, 2=asynchronous,
+                                           3=simulate synchronous. */
+  OpalMediaTiming m_videoSourceTiming;/**< Indicate that the video read callback function
+                                           handles the real time aspects of the media flow.
+                                           This can override the m_mediaTiming. */
 } OpalParamGeneral;
 
 
