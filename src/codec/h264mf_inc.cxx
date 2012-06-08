@@ -368,22 +368,34 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 
   // Do this afer the clamping, maxFrameSizeInMB may change
   if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize) {
-    PluginCodec_Utilities::Change(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name);
-    PluginCodec_Utilities::Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name);
+    PluginCodec_Utilities::ClampMax(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name, true);
+  }
+  else {
+    PluginCodec_Utilities::Change(0U, original, changed, MaxFS_SDP_Name);
+    PluginCodec_Utilities::Change(0U, original, changed, MaxFS_H241_Name);
   }
 
   // Set exception to bit rate if necessary
   unsigned bitRate = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   if (bitRate > LevelInfo[levelIndex].m_MaxBitRate) {
-    PluginCodec_Utilities::Change((bitRate+999)/1000, original, changed, MaxBR_SDP_Name);
-    PluginCodec_Utilities::Change((bitRate+24999)/25000, original, changed, MaxBR_H241_Name);
+    PluginCodec_Utilities::ClampMax((bitRate+999)/1000, original, changed, MaxBR_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((bitRate+24999)/25000, original, changed, MaxBR_H241_Name, true);
+  }
+  else {
+    PluginCodec_Utilities::Change(0U, original, changed, MaxBR_SDP_Name);
+    PluginCodec_Utilities::Change(0U, original, changed, MaxBR_H241_Name);
   }
 
   // Set exception to frame rate if necessary
   unsigned mbps = maxFrameSizeInMB*PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME);
   if (mbps > LevelInfo[levelIndex].m_MaxMBPS) {
-    PluginCodec_Utilities::Change(mbps, original, changed, MaxMBPS_SDP_Name);
-    PluginCodec_Utilities::Change((mbps+499)/500, original, changed, MaxMBPS_H241_Name);
+    PluginCodec_Utilities::ClampMax(mbps, original, changed, MaxMBPS_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((mbps+499)/500, original, changed, MaxMBPS_H241_Name, true);
+  }
+  else {
+    PluginCodec_Utilities::Change(0U, original, changed, MaxMBPS_SDP_Name);
+    PluginCodec_Utilities::Change(0U, original, changed, MaxMBPS_H241_Name);
   }
 
   return true;

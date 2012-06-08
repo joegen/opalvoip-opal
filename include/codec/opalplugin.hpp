@@ -212,10 +212,11 @@ class PluginCodec_Utilities
     static void ClampMax(unsigned     maximum,
                          PluginCodec_OptionMapBase  & original,
                          PluginCodec_OptionMapBase  & changed,
-                         const char * option)
+                         const char * option,
+                         bool forceIfZero = false)
     {
       unsigned value = String2Unsigned(original[option]);
-      if (value > maximum)
+      if (value > maximum || (forceIfZero && value == 0))
         Unsigned2String(maximum, changed[option]);
     }
 
