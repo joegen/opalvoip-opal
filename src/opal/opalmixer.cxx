@@ -1454,7 +1454,11 @@ public:
     return "application/conference-info+xml";
   }
 
-  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
+  virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & 
+#if P_EXPAT
+    notifyInfo
+#endif
+    )
   {
     PTRACE(4, "SIP\tProcessing conference NOTIFY");
 
