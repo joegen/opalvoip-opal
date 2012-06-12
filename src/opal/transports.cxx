@@ -1333,7 +1333,9 @@ OpalTransportAddress OpalTransportUDP::GetLocalAddress(bool allowNAT) const
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL) {
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
-    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, allowNAT && !manager.IsLocalAddress(remoteAddress));
+    if (!socket->GetLocal(thisWritable->localAddress, thisWritable->localPort,
+                          allowNAT && !manager.IsLocalAddress(remoteAddress)))
+      return OpalTransportAddress();
   }
 
   return OpalTransportIP::GetLocalAddress(allowNAT);
