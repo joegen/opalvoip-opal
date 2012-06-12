@@ -1043,6 +1043,24 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
     }
 
 
+    struct OutputImagePlaneInfo
+    {
+      unsigned        m_width;
+      unsigned        m_height;
+      unsigned        m_raster;
+      unsigned char * m_source;
+      unsigned char * m_destination;
+
+      void Copy()
+      {
+        for (unsigned y = 0; y < m_height; ++y) {
+          memcpy(m_destination, m_source, m_width);
+          m_source += m_raster;
+          m_destination += m_width;
+        }
+      }
+    };
+
     virtual unsigned OutputImage(unsigned char * planes[3], int raster[3],
                                  unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
@@ -1054,19 +1072,14 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
       if (planes[1] == planes[0]+ySize && planes[2] == planes[1]+uvSize)
         memcpy(rtp.GetVideoFrameData(), planes[0], ySize+uvSize*2);
       else {
-        unsigned char * src[3] = { planes[0], planes[1], planes[2] };
-        unsigned char * dst[3] = { rtp.GetVideoFrameData(), dst[0] + ySize, dst[1] + uvSize };
-        size_t len[3] = { width, width/2, width/2 };
+        OutputImagePlaneInfo planeInfo[3] = {
+          { width,   height,   raster[0], planes[0], rtp.GetVideoFrameData()     },
+          { width/2, height/2, raster[1], planes[1], planeInfo[0].m_destination + ySize  },
+          { width/2, height/2, raster[2], planes[2], planeInfo[1].m_destination + uvSize }
+        };
 
-        for (unsigned y = 0; y < height; ++y) {
-          for (unsigned plane = 0; plane < 3; ++plane) {
-            if ((y&1) == 0 || plane == 0) {
-              memcpy(dst[plane], src[plane], len[plane]);
-              src[plane] += raster[plane];
-              dst[plane] += len[plane];
-            }
-          }
-        }
+        for (unsigned plane = 0; plane < 3; ++plane)
+          planeInfo[plane].Copy();
       }
 
       return rtp.GetPacketSize();

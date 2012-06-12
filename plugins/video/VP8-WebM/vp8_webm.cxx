@@ -47,6 +47,8 @@
 
 #define MY_CODEC VP8                       // Name of codec (use C variable characters)
 
+#define INCLUDE_OM_CUSTOM_PACKETIZATION 1
+
 #define MY_CODEC_LOG  STRINGIZE(MY_CODEC)
 class MY_CODEC { };
 
@@ -101,7 +103,9 @@ static struct PluginCodec_Option const * OptionTable[] = {
 ///////////////////////////////////////////////////////////////////////////////
 
 static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoRFC("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", 16000000, OptionTable);
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
 static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoOM("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", 16000000, OptionTable);
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,6 +120,15 @@ static bool IsError(vpx_codec_err_t err, const char * fn)
 }
 
 #define IS_ERROR(fn, args) IsError(fn args, #fn)
+
+
+enum Orientation {
+  PortraitLeft  = 0x00,
+  LandscapeUp   = 0x20,
+  PortraitRight = 0x40,
+  LandscapeDown = 0x60,
+  OrientationMask = 0x60
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -288,6 +301,8 @@ class MyEncoderRFC : public MyEncoder
 };
 
 
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+
 class MyEncoderOM : public MyEncoder
 {
   protected:
@@ -310,7 +325,7 @@ class MyEncoderOM : public MyEncoder
         headerSize = 2;
 
         rtp[0] = 0x40; // Start bit
-        rtp[1] = 0x20; // LANDSCAPE_UP mode
+        rtp[1] = LandscapeUp;
 
         if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
           rtp[1] |= 0x80; // Indicate is golden frame
@@ -325,6 +340,8 @@ class MyEncoderOM : public MyEncoder
       m_offset += fragmentSize;
     }
 };
+
+#endif //INCLUDE_OM_CUSTOM_PACKETIZATION
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -486,18 +503,121 @@ class MyDecoderRFC : public MyDecoder
 };
 
 
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+
 class MyDecoderOM : public MyDecoder
 {
   protected:
     unsigned m_expectedGID;
     bool     m_ignoreTillFirst;
+    Orientation m_orientation;
 
   public:
     MyDecoderOM(const PluginCodec_Definition * defn)
       : MyDecoder(defn)
       , m_expectedGID(UINT_MAX)
       , m_ignoreTillFirst(false)
+      , m_orientation(LandscapeUp)
     {
+    }
+
+
+    struct RotatePlaneInfo : public OutputImagePlaneInfo
+    {
+      RotatePlaneInfo(unsigned width, unsigned height, int raster, unsigned char * src, unsigned char * dst)
+      {
+        m_width = width;
+        m_height = height;
+        m_raster = raster;
+        m_source = src;
+        m_destination = dst;
+      }
+
+      void CopyPortraitLeft()
+      {
+        for (int y = m_height-1; y >= 0; --y) {
+          unsigned char * src = m_source;
+          unsigned char * dst = m_destination + y;
+          for (int x = m_width; x > 0; --x) {
+            *dst = *src++;
+            dst += m_height;
+          }
+          m_source += m_raster;
+        }
+      }
+
+      void CopyPortraitRight()
+      {
+        m_destination += m_width*m_height;
+        for (int y = m_height; y > 0; --y) {
+          unsigned char * src = m_source;
+          unsigned char * dst = m_destination - y;
+          for (int x = m_width; x > 0; --x) {
+            *dst = *src++;
+            dst -= m_height;
+          }
+          m_source += m_raster;
+        }
+      }
+
+      void CopyLandscapeDown()
+      {
+        m_destination += m_width*(m_height-1);
+        for (int y = m_height; y > 0; --y) {
+          memcpy(m_destination, m_source, m_width);
+          m_source += m_raster;
+          m_destination -= m_width;
+        }
+      }
+    };
+
+    virtual unsigned OutputImage(unsigned char * planes[3], int raster[3],
+                                 unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
+    {
+      switch (m_orientation) {
+        case PortraitLeft :
+        case PortraitRight :
+          if (CanOutputImage(height, width, rtp, flags))
+            break;
+          return 0;
+
+        case LandscapeUp :
+        case LandscapeDown :
+          if (CanOutputImage(width, height, rtp, flags))
+            break;
+          return 0;
+
+        default :
+          return 0;
+      }
+
+      RotatePlaneInfo planeInfo[3] = {
+        RotatePlaneInfo(width,   height,   raster[0], planes[0], rtp.GetVideoFrameData()),
+        RotatePlaneInfo(width/2, height/2, raster[1], planes[1], planeInfo[0].m_destination + width*height),
+        RotatePlaneInfo(width/2, height/2, raster[2], planes[2], planeInfo[1].m_destination + width*height/4)
+      };
+
+      for (unsigned p = 0; p < 3; ++p) {
+        switch (m_orientation) {
+          case PortraitLeft :
+            planeInfo[p].CopyPortraitLeft();
+            break;
+
+          case LandscapeUp :
+            planeInfo[p].Copy();
+            break;
+
+          case PortraitRight :
+            planeInfo[p].CopyPortraitRight();
+            break;
+
+          case LandscapeDown :
+            planeInfo[p].CopyLandscapeDown();
+            break;
+        }
+      }
+
+      return rtp.GetPacketSize();
     }
 
 
@@ -510,6 +630,8 @@ class MyDecoderOM : public MyDecoder
         return false;
 
       bool first = (rtp[0]&0x40) != 0;
+      if (first)
+        m_orientation = (Orientation)(rtp[1]&OrientationMask);
 
       size_t headerSize = first ? 2 : 1;
       if ((rtp[0]&0x80) != 0) {
@@ -541,13 +663,17 @@ class MyDecoderOM : public MyDecoder
     }
 };
 
+#endif //INCLUDE_OM_CUSTOM_PACKETIZATION
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Definition MyCodecDefinition[] =
 {
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoRFC, MyEncoderRFC, MyDecoderRFC),
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoOM,  MyEncoderOM,  MyDecoderOM)
+#endif
 };
 
 PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);
