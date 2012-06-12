@@ -44,7 +44,6 @@ H264Frame::H264Frame()
   , m_constraint_set2(false)
   , m_constraint_set3(false)
   , m_timestamp(0)
-  , m_numberOfNALsReserved(0)
 {
   m_maxPayloadSize = 1400;
   SetResolution(PLUGINCODEC_CIF_WIDTH, PLUGINCODEC_CIF_HEIGHT);
@@ -74,18 +73,25 @@ void H264Frame::Allocate(uint32_t numberOfNALs)
 }
 
 
-void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
+bool H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 {
+  if (m_numberOfNALsInFrame + 1 >= m_NALs.size())
+    m_NALs.resize(m_numberOfNALsInFrame + 1);
+
   m_NALs[m_numberOfNALsInFrame].type = type;
   m_NALs[m_numberOfNALsInFrame].length = length;
   m_NALs[m_numberOfNALsInFrame].offset = m_length;
-  memcpy(m_buffer+m_length, payload, length);
+  ++m_numberOfNALsInFrame;
 
-  if (type == H264_NAL_TYPE_SEQ_PARAM)
-    SetSPS(payload+1);
+  if (payload != NULL) {
+    if (!Append(payload, length))
+      return false;
 
-  m_numberOfNALsInFrame++;
-  m_length += length;
+    if (type == H264_NAL_TYPE_SEQ_PARAM)
+      SetSPS(payload+1);
+  }
+
+  return true;
 }
 
 
@@ -419,50 +425,30 @@ void H264Frame::SetSPS(const uint8_t * payload)
 }
 
 
-bool H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader)
+bool H264Frame::AddDataToEncodedFrame(uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader)
 {
-  uint8_t headerLen= addHeader ? 5 : 0;
-  uint8_t* currentPositionInFrame = m_buffer + m_length;
-
   if (addHeader) 
   {
     PTRACE(6, GetName(), "Adding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
     if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3))
       SetSPS(data);
+
+    // add 00 00 01 [headerbyte] header
+    static uint8_t const marker[] = { 0, 0, 0, 1 };
+    if (!Append(marker, sizeof(marker)) ||
+        !AddNALU(header & 0x1f, dataLen + 1, NULL) ||
+        !Append(&header, 1))
+      return false;
   }
-  else
+  else {
     PTRACE(6, GetName(), "Adding a NAL unit of " << dataLen << " bytes to buffer");
-
-  if (!SetMaxSize(m_length + dataLen + headerLen))
-    return false;
-
-  // add 00 00 01 [headerbyte] header
-  if (addHeader)
-  {
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 1;
-
-    if (m_numberOfNALsInFrame + 1 >(m_numberOfNALsReserved))
-      m_NALs.resize(++m_numberOfNALsReserved);
-
-    m_NALs[m_numberOfNALsInFrame].offset = m_length + 4;
-    m_NALs[m_numberOfNALsInFrame].length = dataLen + 1;
-    m_NALs[m_numberOfNALsInFrame].type = header & 0x1f;
-    m_numberOfNALsInFrame++;
-
-    *currentPositionInFrame++ = header;
-  }
-  else
     m_NALs[m_numberOfNALsInFrame - 1].length += dataLen;
+  }
 
-  PTRACE(6, GetName(), "Reserved memory for  " << m_numberOfNALsReserved <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
+  PTRACE(6, GetName(), "Reserved memory for  " << m_NALs.size() <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
     << m_NALs[m_numberOfNALsInFrame-1].offset << " Length: "<< m_NALs[m_numberOfNALsInFrame-1].length << " Type: "<< (int)(m_NALs[m_numberOfNALsInFrame-1].type));
 
-  memcpy(currentPositionInFrame, data, dataLen);
-  m_length += dataLen + headerLen;
-  return true;
+  return Append(data, dataLen);
 }
 
 

@@ -70,12 +70,13 @@ public:
 
 
   void Allocate(uint32_t numberOfNALs);
-  void AddNALU(uint8_t type, uint32_t length, const uint8_t * payload);
+  bool AddNALU(uint8_t type, uint32_t length, const uint8_t * payload);
 
   void SetTimestamp (uint32_t timestamp) 
   {
     m_timestamp = timestamp;
   }
+
   bool HasRTPFrames ()
   {
     return m_currentNAL < m_numberOfNALsInFrame;
@@ -117,9 +118,8 @@ private:
   };
 
   std::vector<NALU> m_NALs;
-  uint32_t m_numberOfNALsInFrame;
-  uint32_t m_currentNAL; 
-  uint32_t m_numberOfNALsReserved;
+  size_t m_numberOfNALsInFrame;
+  size_t m_currentNAL; 
   
   // for encapsulation
   uint32_t m_currentNALFURemainingLen;
