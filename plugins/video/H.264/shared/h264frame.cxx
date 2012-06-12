@@ -36,9 +36,6 @@
 #include <memory.h>
 
 
-#define MAX_FRAME_SIZE 128 * 1024
-
-
 #if PLUGINCODEC_TRACING
   static char const FrameTraceName[] = "x264-frame";
 #endif
@@ -53,12 +50,10 @@ H264Frame::H264Frame()
   , m_constraint_set3(false)
   , m_timestamp(0)
   , m_maxPayloadSize(1400)
-  , m_encodedFrame((uint8_t*)malloc(MAX_FRAME_SIZE))
+  , m_encodedFrame(2048)
   , m_encodedFrameLen(0)
-  , m_NALs(NULL)
   , m_numberOfNALsInFrame(0)
   , m_currentNAL(0)
-  , m_numberOfNALsReserved(0)
   , m_currentNALFURemainingLen(0)
   , m_currentNALFURemainingDataPtr(NULL)
   , m_currentNALFUHeader0(0)
@@ -82,35 +77,27 @@ void H264Frame::BeginNewFrame(uint32_t numberOfNALs)
 
   m_currentFU = 0;
 
-  if (numberOfNALs > 0) {
-    if (m_NALs)
-      free(m_NALs);
-    m_NALs = (NALU *)malloc(numberOfNALs * sizeof(NALU));
-  }
-}
-
-
-H264Frame::~H264Frame ()
-{
-  if (m_encodedFrame)
-    free(m_encodedFrame);
-  if (m_NALs)
-    free(m_NALs);
+  if (numberOfNALs > 0)
+    m_NALs.resize(numberOfNALs);
 }
 
 
 void H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 {
+  if (m_numberOfNALsInFrame + 1 > m_NALs.size())
+    m_NALs.resize(m_numberOfNALsInFrame + 1);
+
   m_NALs[m_numberOfNALsInFrame].type = type;
   m_NALs[m_numberOfNALsInFrame].length = length;
   m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen;
-  memcpy(m_encodedFrame+m_encodedFrameLen, payload, length);
+  ++m_numberOfNALsInFrame;
 
-  if (type == H264_NAL_TYPE_SEQ_PARAM)
-    SetSPS(payload+1);
+  if (payload != NULL) {
+    AddDataToEncodedFrame(payload, length);
 
-  m_numberOfNALsInFrame++;
-  m_encodedFrameLen += length;
+    if (type == H264_NAL_TYPE_SEQ_PARAM)
+      SetSPS(payload+1);
+  }
 }
 
 
@@ -121,7 +108,7 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
   if (m_currentNAL < m_numberOfNALsInFrame) 
   { 
     uint32_t curNALLen = m_NALs[m_currentNAL].length;
-    const uint8_t *curNALPtr = m_encodedFrame + m_NALs[m_currentNAL].offset;
+    const uint8_t *curNALPtr = &m_encodedFrame[m_NALs[m_currentNAL].offset];
     /*
      * We have 3 types of packets we can send:
      * fragmentation units - if the NAL is > max_payload_size
@@ -197,7 +184,7 @@ bool H264Frame::EncapsulateSTAP (RTPFrame & frame, unsigned int & flags) {
   uint8_t  maxNRI = 0;
   while (m_currentNAL < highestNALNumberInSTAP) {
     curNALLen = m_NALs[m_currentNAL].length;
-    curNALPtr = m_encodedFrame + m_NALs[m_currentNAL].offset;
+    curNALPtr = &m_encodedFrame[m_NALs[m_currentNAL].offset];
 
     // store the nal length information
     frame.SetPayloadSize(frame.GetPayloadSize() + 2);
@@ -232,7 +219,7 @@ bool H264Frame::EncapsulateFU(RTPFrame & frame, unsigned int & flags) {
   if ((m_currentNALFURemainingLen==0) || (m_currentNALFURemainingDataPtr==NULL))
   {
     m_currentNALFURemainingLen = m_NALs[m_currentNAL].length;
-    m_currentNALFURemainingDataPtr = m_encodedFrame + m_NALs[m_currentNAL].offset;
+    m_currentNALFURemainingDataPtr = &m_encodedFrame[m_NALs[m_currentNAL].offset];
     m_currentNALFUHeader0 = (*m_currentNALFURemainingDataPtr & 0x60) | 28;
     m_currentNALFUHeader1 = *m_currentNALFURemainingDataPtr & 0x1f;
     header[0] = m_currentNALFUHeader0;
@@ -438,60 +425,31 @@ void H264Frame::SetSPS(const uint8_t * payload)
 
 void H264Frame::AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader)
 {
-  uint8_t headerLen= addHeader ? 5 : 0;
-  uint8_t* currentPositionInFrame = m_encodedFrame + m_encodedFrameLen;
-
   if (addHeader) 
   {
     PTRACE(6, FrameTraceName, "Adding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
     if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3))
       SetSPS(data);
+
+    // add 00 00 00 01 [headerbyte] header
+    AddDataToEncodedFrame('\x00');
+    AddDataToEncodedFrame('\x00');
+    AddDataToEncodedFrame('\x00');
+    AddDataToEncodedFrame('\x01');
+    AddNALU(header & 0x1f, dataLen + 1, NULL);
+    AddDataToEncodedFrame(header);
   }
-  else
+  else {
     PTRACE(6, FrameTraceName, "Adding a NAL unit of " << dataLen << " bytes to buffer");
-
-  if (m_encodedFrameLen + dataLen + headerLen > MAX_FRAME_SIZE) {
-    PTRACE(2, FrameTraceName, "Frame too big (" << m_encodedFrameLen + dataLen + headerLen << ">" << MAX_FRAME_SIZE << ")");
-    return;
+    m_NALs[m_numberOfNALsInFrame - 1].length += dataLen;
   }
 
-  // add 00 00 01 [headerbyte] header
-  if (addHeader)
-  {
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 0;
-    *currentPositionInFrame++ = 1;
-
-    if (m_numberOfNALsInFrame + 1 >(m_numberOfNALsReserved))
-    {
-      m_NALs = (NALU *)realloc(m_NALs, (m_numberOfNALsReserved + 1) * sizeof(NALU));
-      m_numberOfNALsReserved++;
-    }
-    if (m_NALs)
-    {
-      m_NALs[m_numberOfNALsInFrame].offset = m_encodedFrameLen + 4;
-      m_NALs[m_numberOfNALsInFrame].length = dataLen + 1;
-      m_NALs[m_numberOfNALsInFrame].type = header & 0x1f;
-
-
-      m_numberOfNALsInFrame++;
-    }
-
-    *currentPositionInFrame++ = header;
-  }
-  else
-  {
-    if (m_NALs)
-      m_NALs[m_numberOfNALsInFrame - 1].length += dataLen;
-  }
-
-  PTRACE(6, FrameTraceName, "Reserved memory for  " << m_numberOfNALsReserved <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
+  PTRACE(6, FrameTraceName, "Reserved memory for  " << m_NALs.size() <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
     << m_NALs[m_numberOfNALsInFrame-1].offset << " Length: "<< m_NALs[m_numberOfNALsInFrame-1].length << " Type: "<< (int)(m_NALs[m_numberOfNALsInFrame-1].type));
 
-  memcpy(currentPositionInFrame, data, dataLen);
-  m_encodedFrameLen += dataLen + headerLen;
+  AddDataToEncodedFrame(data, dataLen);
 }
+
 
 bool H264Frame::IsStartCode (const uint8_t *positionInFrame)
 {
@@ -504,3 +462,14 @@ bool H264Frame::IsStartCode (const uint8_t *positionInFrame)
   }
   return false;
 }
+
+
+void H264Frame::AddDataToEncodedFrame(const uint8_t * data, size_t len)
+{
+  if (m_encodedFrameLen+len >= m_encodedFrame.size())
+    m_encodedFrame.resize(m_encodedFrame.size()+len+1000);
+
+  memcpy(&m_encodedFrame[m_encodedFrameLen], data, len);
+  m_encodedFrameLen += len;
+}
+
