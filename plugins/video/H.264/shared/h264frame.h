@@ -39,6 +39,8 @@
 #include "../../common/platform.h"
 #include "../../common/rtpframe.h"
 
+#include <vector>
+
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
 #define H264_NAL_TYPE_DP_A_SLICE 2
@@ -60,35 +62,40 @@ class H264Frame
 {
 public:
   H264Frame();
-  ~H264Frame();
 
   void BeginNewFrame(uint32_t numberOfNALs = 0);
 
   void AddNALU(uint8_t type, uint32_t length, const uint8_t * payload);
 
-  void SetMaxPayloadSize (uint16_t maxPayloadSize) 
+  void SetMaxPayloadSize(size_t maxPayloadSize) 
   {
     m_maxPayloadSize = maxPayloadSize;
   }
-  void SetTimestamp (uint32_t timestamp) 
+
+  void SetTimestamp(uint32_t timestamp) 
   {
     m_timestamp = timestamp;
   }
+
   bool GetRTPFrame (RTPFrame & frame, unsigned int & flags);
-  bool HasRTPFrames ()
+
+  bool HasRTPFrames()
   {
     return m_currentNAL < m_numberOfNALsInFrame;
   }
 
   bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
-  uint8_t* GetFramePtr ()
+
+  uint8_t* GetFramePtr()
   {
-    return m_encodedFrame;
+    return &m_encodedFrame[0];
   }
-  uint32_t GetFrameSize () {
+
+  uint32_t GetFrameSize() {
     return m_encodedFrameLen;
   }
-  bool IsSync ();
+
+  bool IsSync();
 
   unsigned GetProfile() const { return m_profile; }
   unsigned GetLevel() const { return m_level; }
@@ -107,6 +114,9 @@ private:
   bool IsStartCode (const uint8_t *positionInFrame);
   void SetSPS(const uint8_t * payload);
 
+  void AddDataToEncodedFrame(uint8_t one) { AddDataToEncodedFrame(&one, 1); }
+  void AddDataToEncodedFrame(const uint8_t * data, size_t len);
+
     // general stuff
   unsigned m_profile;
   unsigned m_level;
@@ -115,8 +125,8 @@ private:
   bool     m_constraint_set2;
   bool     m_constraint_set3;
   uint32_t m_timestamp;
-  uint16_t m_maxPayloadSize;
-  uint8_t* m_encodedFrame;
+  size_t   m_maxPayloadSize;
+  std::vector<uint8_t> m_encodedFrame;
   uint32_t m_encodedFrameLen;
 
   struct NALU
@@ -126,10 +136,9 @@ private:
     uint32_t length;
   };
 
-  NALU   * m_NALs;
-  uint32_t m_numberOfNALsInFrame;
-  uint32_t m_currentNAL; 
-  uint32_t m_numberOfNALsReserved;
+  std::vector<NALU> m_NALs;
+  size_t m_numberOfNALsInFrame;
+  size_t m_currentNAL; 
   
   // for encapsulation
   uint32_t m_currentNALFURemainingLen;
