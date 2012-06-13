@@ -862,9 +862,9 @@ SIPURL SIPMIMEInfo::GetFrom() const
 }
 
 
-void SIPMIMEInfo::SetFrom(const PString & v)
+void SIPMIMEInfo::SetFrom(const SIPURL & uri)
 {
-  SetAt("From",  v);
+  SetAt("From", uri.AsQuotedString());
 }
 
 SIPURL SIPMIMEInfo::GetPAssertedIdentity() const
@@ -935,9 +935,9 @@ SIPURL SIPMIMEInfo::GetTo() const
 }
 
 
-void SIPMIMEInfo::SetTo(const PString & v)
+void SIPMIMEInfo::SetTo(const SIPURL & uri)
 {
-  SetAt("To",  v);
+  SetAt("To", uri.AsQuotedString());
 }
 
 
@@ -1859,11 +1859,11 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 
   SIPURL tmp = to;
   tmp.Sanitise(SIPURL::ToURI);
-  m_mime.SetTo(tmp.AsQuotedString());
+  m_mime.SetTo(tmp);
 
   tmp = from;
   tmp.Sanitise(SIPURL::FromURI);
-  m_mime.SetFrom(tmp.AsQuotedString());
+  m_mime.SetFrom(tmp);
 
   /* This is as per EBNF in RFC 3261
        Call-ID  =  ( "Call-ID" / "i" ) HCOLON callid
@@ -1910,8 +1910,8 @@ void SIP_PDU::InitialiseHeaders(SIPDialogContext & dialog, const PString & via, 
 {
   // Assume the dialog URI's are already sanitised.
   m_uri = dialog.GetRequestURI();
-  m_mime.SetTo(dialog.GetRemoteURI().AsQuotedString());
-  m_mime.SetFrom(dialog.GetLocalURI().AsQuotedString());
+  m_mime.SetTo(dialog.GetRemoteURI());
+  m_mime.SetFrom(dialog.GetLocalURI());
   m_mime.SetCallID(dialog.GetCallID());
   m_mime.SetCSeq(PString(cseq != 0 ? cseq : dialog.GetNextCSeq()) & MethodNames[m_method]);
   m_mime.SetMaxForwards(70);
