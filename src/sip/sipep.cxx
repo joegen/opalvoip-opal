@@ -1958,7 +1958,7 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
 
     // For many registrars From address must be address-of-record
     PStringToString fieldParams = from.GetFieldParameters();
-    from = registrar->GetAddressOfRecord().GetUserName();
+    from = registrar->GetAddressOfRecord();
     from.GetFieldParameters() = fieldParams;
     mime.SetFrom(from.AsQuotedString());
   }
