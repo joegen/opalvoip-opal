@@ -845,7 +845,7 @@ PBoolean SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & p
     if (handlerTransport != NULL)
       handlerTransport->SetInterface(transport.GetInterface());
 
-    mime.SetTo(dialog->GetLocalURI().AsQuotedString());
+    mime.SetTo(dialog->GetLocalURI());
   }
 
   // Update expiry time
@@ -1875,7 +1875,8 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
     domain = from.GetHostName();
     if (connection != NULL && to.GetDisplayName() != connection->GetDisplayName()) {
       to.SetDisplayName(connection->GetDisplayName());
-      mime.SetTo(to.AsQuotedString());
+      to.Sanitise(SIPURL::ToURI);
+      mime.SetTo(to);
     }
   }
 
@@ -1960,7 +1961,8 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu,
     PStringToString fieldParams = from.GetFieldParameters();
     from = registrar->GetAddressOfRecord();
     from.GetFieldParameters() = fieldParams;
-    mime.SetFrom(from.AsQuotedString());
+    from.Sanitise(SIPURL::FromURI);
+    mime.SetFrom(from);
   }
 }
 
