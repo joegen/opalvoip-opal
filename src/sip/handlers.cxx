@@ -1242,8 +1242,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
                   PXMLElement * name = resource->GetElement("name");
                   if (name != NULL)
                     uri.SetDisplayName(name->GetData());
-                  pduMIME.SetFrom(uri.AsQuotedString());
-                  pduMIME.SetTo(uri.AsQuotedString());
+                  pduMIME.SetFrom(uri);
+                  pduMIME.SetTo(uri);
                   break;
                 }
               }

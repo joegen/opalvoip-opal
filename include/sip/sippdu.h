@@ -306,7 +306,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetContentEncoding(const PString & v);
 
     SIPURL GetFrom() const;
-    void SetFrom(const PString & v);
+    void SetFrom(const SIPURL & v);
 
     SIPURL GetPAssertedIdentity() const;
     void SetPAssertedIdentity(const PString & v);
@@ -338,7 +338,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetSubject(const PString & v);
 
     SIPURL GetTo() const;
-    void SetTo(const PString & v);
+    void SetTo(const SIPURL & v);
 
     PString GetVia() const;
     void SetVia(const PString & v);

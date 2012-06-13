@@ -1649,7 +1649,8 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     SIPURL from = mime.GetFrom();
     if (!from.GetDisplayName(false).IsEmpty())
       from.SetDisplayName("Anonymous");
-    mime.SetFrom(from.AsQuotedString());
+    from.Sanitise(SIPURL::FromURI);
+    mime.SetFrom(from);
   }
 
   SIPURL redir(m_stringOptions(OPAL_OPT_REDIRECTING_PARTY, m_redirectingParty));
@@ -2595,7 +2596,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   m_contactAddress = request.GetURI();
 
-  mime.SetTo(m_dialog.GetLocalURI().AsQuotedString());
+  mime.SetTo(m_dialog.GetLocalURI());
 
   // get the called destination number and name
   m_calledPartyName = request.GetURI().GetUserName();
@@ -3022,7 +3023,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
   PTRACE(3, "SIP\tCancel received for " << *this);
 
   SIP_PDU response(request, SIP_PDU::Successful_OK);
-  response.GetMIME().SetTo(m_dialog.GetLocalURI().AsQuotedString());
+  response.GetMIME().SetTo(m_dialog.GetLocalURI());
   request.SendResponse(GetTransport(), response);
   
   if (!IsOriginating())
