@@ -221,6 +221,7 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   size_t levelIndex = 0;
   size_t profileIndex = sizeof(ProfileInfo)/sizeof(ProfileInfo[0]);
   unsigned maxMBPS;
+  unsigned maxSMBPS;
   unsigned maxFrameSizeInMB;
   unsigned maxBitRate;
 
@@ -238,10 +239,12 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     }
 
     maxMBPS = original.GetUnsigned(MaxMBPS_H241_Name)*500;
+    maxSMBPS = original.GetUnsigned(MaxSMBPS_H241_Name)*500;
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_H241_Name)*256;
     maxBitRate = original.GetUnsigned(MaxBR_H241_Name)*25000;
 
     PluginCodec_Utilities::Change(maxMBPS, original, changed, MaxMBPS_SDP_Name); 
+    PluginCodec_Utilities::Change(maxSMBPS, original, changed, MaxSMBPS_SDP_Name); 
     PluginCodec_Utilities::Change(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name); 
     PluginCodec_Utilities::Change((maxBitRate+999)/1000, original, changed, MaxBR_SDP_Name); 
   }
@@ -278,10 +281,12 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     }
 
     maxMBPS = original.GetUnsigned(MaxMBPS_SDP_Name);
+    maxSMBPS = original.GetUnsigned(MaxSMBPS_SDP_Name);
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_SDP_Name);
     maxBitRate = original.GetUnsigned(MaxBR_SDP_Name)*1000;
 
     PluginCodec_Utilities::Change((maxMBPS+499)/500, original, changed, MaxMBPS_H241_Name); 
+    PluginCodec_Utilities::Change((maxSMBPS+499)/500, original, changed, MaxSMBPS_H241_Name); 
     PluginCodec_Utilities::Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name); 
     PluginCodec_Utilities::Change((maxBitRate+24999)/25000, original, changed, MaxBR_H241_Name); 
   }
