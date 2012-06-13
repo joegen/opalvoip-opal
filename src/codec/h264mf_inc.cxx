@@ -95,7 +95,7 @@ enum
     H241_CustomMaxFS                   =  4 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_CustomMaxDPB                  =  5 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_CustomMaxBRandCPB             =  6 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
-    H241_MaxStaticMBPS                 =  7 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H241_CustomMaxSMBPS                =  7 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_Max_RCMD_NALU_size            =  8 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_Max_NAL_unit_size             =  9 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_SampleAspectRatiosSupported   = 10 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
@@ -111,6 +111,7 @@ static char const MaxNALUSizeName[] = "Max NALU Size";
 static char const H241ProfilesName[] = "H.241 Profile Mask";
 static char const H241LevelName[] = "H.241 Level";
 static char const MaxMBPS_H241_Name[] = "H.241 Max MBPS";
+static char const MaxSMBPS_H241_Name[] = "H.241 Max SMBPS";
 static char const MaxFS_H241_Name[] = "H.241 Max FS";
 static char const MaxBR_H241_Name[] = "H.241 Max BR";
 
@@ -119,6 +120,8 @@ static char const SDPProfileAndLevelFMTPName[] = "profile-level-id";
 static char const SDPProfileAndLevelFMTPDflt[] = "42800A";
 static char const MaxMBPS_SDP_Name[] = "SIP/SDP Max MBPS";
 static char const MaxMBPS_FMTPName[] = "max-mbps";
+static char const MaxSMBPS_SDP_Name[] = "SIP/SDP Max SMBPS";
+static char const MaxSMBPS_FMTPName[] = "max-smbps";
 static char const MaxFS_SDP_Name[] = "SIP/SDP Max FS";
 static char const MaxFS_FMTPName[] = "max-fs";
 static char const MaxBR_SDP_Name[] = "SIP/SDP Max BR";

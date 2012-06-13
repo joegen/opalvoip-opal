@@ -206,6 +206,40 @@ static struct PluginCodec_Option const MaxMBPS_H241 =
 #endif
 };
 
+static struct PluginCodec_Option const MaxSMBPS_SDP =
+{
+  PluginCodec_IntegerOption,          // Option type
+  MaxSMBPS_SDP_Name,                  // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  MaxSMBPS_FMTPName,                  // FMTP option name
+  "0",                                // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "983040"                            // Maximum value
+};
+
+static struct PluginCodec_Option const MaxSMBPS_H241 =
+{
+  PluginCodec_IntegerOption,          // Option type
+  MaxSMBPS_H241_Name,                 // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H241_CustomMaxSMBPS,                // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "1966"                              // Maximum value
+#ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
+  ,
+  NULL,
+  NULL,
+  "0"                                 // H.245 default value
+#endif
+};
+
 static struct PluginCodec_Option const MaxFS_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
@@ -286,6 +320,12 @@ static struct PluginCodec_Option const MaxNaluSize =
   H241_Max_NAL_unit_size,             // H.245 generic capability code and bit mask
   "396",                              // Minimum value - uncompressed macro block size 16*16*3+12
   "65535"                             // Maximum value
+#ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
+  ,
+  NULL,
+  NULL,
+  STRINGIZE(H241_MAX_NALU_SIZE)       // H.245 default value
+#endif
 };
 
 static struct PluginCodec_Option const MediaPacketizationsH323_0 =
@@ -366,6 +406,8 @@ static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &SDPProfileAndLevel,
   &MaxMBPS_H241,
   &MaxMBPS_SDP,
+  &MaxSMBPS_H241,
+  &MaxSMBPS_SDP,
   &MaxFS_H241,
   &MaxFS_SDP,
   &MaxBR_H241,
@@ -386,6 +428,8 @@ static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &SDPProfileAndLevel,
   &MaxMBPS_H241,
   &MaxMBPS_SDP,
+  &MaxSMBPS_H241,
+  &MaxSMBPS_SDP,
   &MaxFS_H241,
   &MaxFS_SDP,
   &MaxBR_H241,
@@ -462,7 +506,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_level(DefaultLevelInt)
       , m_constraints(0)
       , m_maxMBPS(0)
-      , m_maxNALUSize(1400)
+      , m_maxNALUSize(H241_MAX_NALU_SIZE)
       , m_packetisationModeSDP(1)
       , m_packetisationModeH323(1)
       , m_isH323(false)
