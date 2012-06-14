@@ -545,8 +545,6 @@ void SIPURL::Sanitise(UsageContext context)
 {
   PINDEX i;
 
-  WORD defPort = GetDefaultPort();
-
   // RFC3261, 19.1.1 Table 1
   static struct {
     const char * name;
@@ -586,6 +584,8 @@ void SIPURL::Sanitise(UsageContext context)
     queryVars.MakeUnique();
     queryVars.RemoveAll();
   }
+
+  WORD defPort = GetDefaultPort();
 
   switch (context) {
     case RequestURI :
