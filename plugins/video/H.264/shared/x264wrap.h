@@ -67,6 +67,7 @@ extern "C" {
 #define SET_TSTO                  12
 #define SET_PROFILE_LEVEL         13
 #define SET_MAX_NALU_SIZE         14
+#define SET_RATE_CONTROL_PERIOD   15
 
 
 class H264Encoder
@@ -82,6 +83,7 @@ class H264Encoder
     bool SetFrameHeight(unsigned height);
     bool SetFrameRate(unsigned rate);
     bool SetTargetBitrate(unsigned rate);
+    bool SetRateControlPeriod(unsigned period);
     bool SetMaxRTPPayloadSize(unsigned size);
     bool SetMaxNALUSize(unsigned size);
     bool SetTSTO(unsigned tsto);

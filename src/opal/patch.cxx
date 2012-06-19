@@ -809,8 +809,6 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
   if ((mediaFormat.GetMediaType() == OpalMediaType::Video()) && mediaFormat != OpalYUV420P) {
     rateController = NULL;
     PString rc = mediaFormat.GetOptionString(OpalVideoFormat::RateControllerOption());
-    if (rc.IsEmpty() && mediaFormat.GetOptionBoolean(OpalVideoFormat::RateControlEnableOption()))
-      rc = "Standard";
     if (!rc.IsEmpty()) {
       rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
       if (rateController != NULL) {   
