@@ -680,7 +680,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
   if (m_yuvFile.IsOpen())
     cout <<   "Written file   : " << m_yuvFile.GetFilePath() << '\n';
 
-  cout <<     "Payload Type   : " << rtpStreamPayloadType << " (" << m_transcoder->GetInputFormat() << ")\n"
+  cout <<     "Payload Type   : " << rtpStreamPayloadType;
+  if (m_transcoder != NULL)
+    cout <<   " (" << m_transcoder->GetInputFormat() << ')';
+  cout <<     "\n"
               "Source         : " << pcap.GetFilterSrcIP() << ':' << pcap.GetFilterSrcPort() << "\n"
               "Destination    : " << pcap.GetFilterDstIP() << ':' << pcap.GetFilterDstPort() << "\n"
               "Total packets  : " << m_packetCount << "\n"
