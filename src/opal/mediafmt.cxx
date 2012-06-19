@@ -1657,7 +1657,7 @@ const PString & OpalVideoFormat::MaxRxFrameWidthOption()          { static const
 const PString & OpalVideoFormat::MaxRxFrameHeightOption()         { static const PConstString s(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);       return s; }
 const PString & OpalVideoFormat::TemporalSpatialTradeOffOption()  { static const PConstString s(PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF);return s; }
 const PString & OpalVideoFormat::TxKeyFramePeriodOption()         { static const PConstString s(PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD);       return s; }
-const PString & OpalVideoFormat::RateControlEnableOption()        { static const PConstString s("Rate Control Enable");                        return s; }
+const PString & OpalVideoFormat::RateControlPeriodOption()        { static const PConstString s(PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD);       return s; }
 const PString & OpalVideoFormat::RateControllerOption()           { static const PConstString s("Rate Controller");                            return s; }
 const PString & OpalVideoFormat::ContentRoleOption()              { static const PConstString s("Content Role");                               return s; }
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
@@ -1709,7 +1709,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),         false, OpalMediaOption::MinMerge,    maxFrameHeight,              16,  32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),            false, OpalMediaOption::AlwaysMerge, maxBitRate,                  1000      ));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,    1000));
-  AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
 

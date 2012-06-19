@@ -219,7 +219,12 @@ int main(int argc, char *argv[])
         break;
       case SET_TARGET_BITRATE:
           ReadPipe(&val, sizeof(val));
-          x264.SetTargetBitrate (val);
+          x264.SetTargetBitrate(val);
+          WritePipe(&msg, sizeof(msg)); 
+        break;
+      case SET_RATE_CONTROL_PERIOD:
+          ReadPipe(&val, sizeof(val));
+          x264.SetRateControlPeriod(val);
           WritePipe(&msg, sizeof(msg)); 
         break;
       case SET_FRAME_RATE:
