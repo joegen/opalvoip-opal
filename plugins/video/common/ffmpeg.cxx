@@ -44,11 +44,8 @@
 
 
 #if PLUGINCODEC_TRACING
-static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list arg)
+static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_list arg)
 {
-  if (v == NULL)
-    return;
-
   int level;
   if (severity <= AV_LOG_FATAL)
     level = 0;
@@ -62,6 +59,17 @@ static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list a
     level = 4;
   else
     level = 5;
+
+#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
+  if (level < 2 && avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0) {
+    AVCodecContext * context = (AVCodecContext *)avcl;
+
+    // It is claimed this is only used by encoders for "Simulates errors
+    // in the bitstream to test error concealment." So, we repurpose it
+    // as a count of decode errors.
+    ++context->error_rate;
+  }
+#endif
 
   if (PTRACE_CHECK(level)) {
     char buffer[512];
@@ -762,21 +770,20 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 {
   PTRACE(5, m_prefix, "Decoding " << length << " bytes");
 
-#if FFMPEG_HAS_DECODE_ERROR_COUNT
-  unsigned error_before = m_context->decode_error_count;
+#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
+  // We have re-purposed this variable as a count of decode errors
+  // detected by the FFMPEG logging intercept.
+  #define  decode_error_count  error_rate
 #endif
+
+  int error_before = m_context->decode_error_count;
 
   int gotPicture = 0;
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, frame, length);
 
-  if (bytesDecoded < 0
-#if FFMPEG_HAS_DECODE_ERROR_COUNT
-          || error_before != m_context->decode_error_count
-#endif
-      ) {
+  // if error occurred, tell the other end to send another I-frame and hopefully we can resync
+  if (error_before != m_context->decode_error_count)
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return true;
-  }
 
   if (gotPicture) {
     if (m_picture->key_frame || (m_fullFrame != NULL && m_fullFrame->IsIntraFrame()))
