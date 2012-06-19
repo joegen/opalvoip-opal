@@ -496,6 +496,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     unsigned m_packetisationModeSDP;
     unsigned m_packetisationModeH323;
     bool     m_isH323;
+    unsigned m_rateControlPeriod;
 
     H264Encoder m_encoder;
 
@@ -510,6 +511,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_packetisationModeSDP(1)
       , m_packetisationModeH323(1)
       , m_isH323(false)
+      , m_rateControlPeriod(1000)
     {
       PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
     }
@@ -532,6 +534,9 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD) == 0)
+        return SetOptionUnsigned(m_rateControlPeriod, optionValue, 100, 60000);
+
       if (strcasecmp(optionName, MaxNaluSize.m_name) == 0)
         return SetOptionUnsigned(m_maxNALUSize, optionValue, 256, 8192);
 
@@ -629,6 +634,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(PLUGINCODEC_VIDEO_CLOCK/m_frameTime);
       m_encoder.SetTargetBitrate(m_maxBitRate/1000);
+      m_encoder.SetRateControlPeriod(m_rateControlPeriod);
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime); // Every 10 seconds
 
@@ -651,6 +657,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime) << " "
                               "bps=" << m_maxBitRate << " "
+                              "period=" << m_rateControlPeriod << " "
                               "RTP=" << m_maxRTPSize << " "
                               "NALU=" << m_maxNALUSize << " "
                               "TSTO=" << m_tsto << " "
