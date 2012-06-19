@@ -179,11 +179,8 @@ bool DynaLink::GetFunction(const char * name, Function & func)
 
 
 #if PLUGINCODEC_TRACING
-static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list arg)
+static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_list arg)
 {
-  if (v == NULL)
-    return;
-
   int level;
   if (severity <= AV_LOG_FATAL)
     level = 0;
@@ -207,8 +204,18 @@ static void logCallbackFFMPEG(void* v, int severity, const char* fmt , va_list a
       if (buffer[len] == '\n')
         buffer[len] = '\0';
       // Check for bogus errors, everything works so what does this mean?
-      if (strstr(buffer, "Too many slices") == 0 && strstr(buffer, "Frame num gap") == 0)
+      if (strstr(buffer, "Too many slices") == 0 && strstr(buffer, "Frame num gap") == 0) {
+#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
+        if (level < 2 && avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0) {
+          AVCodecContext * context = (AVCodecContext *)avcl;
+          // It is claimed this is only used by encoders for "Simulates errors
+          // in the bitstream to test error concealment." So, we repurpose it
+          // as a count of decode errors.
+          ++context->error_rate;
+        }
+#endif
         PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "FFMPEG", buffer);
+      }
     }
   }
 }

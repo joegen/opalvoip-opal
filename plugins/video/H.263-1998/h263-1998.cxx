@@ -776,9 +776,13 @@ bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
   if (m_depacketizer->IsIntraFrame())
     flags |= PluginCodec_ReturnCoderIFrame;
 
-#if FFMPEG_HAS_DECODE_ERROR_COUNT
-  unsigned error_before = m_context->decode_error_count;
+#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
+  // We have repuposed this variable as a count of decode errors
+  // detected by the FFMPEG logging intercept.
+  #define  decode_error_count  error_rate
 #endif
+
+  int error_before = m_context->decode_error_count;
 
   PTRACE(5, m_prefix, "Decoding " << m_depacketizer->GetLength()  << " bytes");
   int gotPicture = 0;
@@ -791,21 +795,15 @@ bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
   m_depacketizer->NewFrame();
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
-  if (bytesDecoded < 0
-#if FFMPEG_HAS_DECODE_ERROR_COUNT
-      || error_before != m_context->decode_error_count
-#endif
-  ) {
+  if (error_before != m_context->decode_error_count)
     flags = PluginCodec_ReturnCoderRequestIFrame;
-    return true;
-  }
 
-  if (!gotPicture || bytesDecoded == 0) {
+  if (!gotPicture) {
     PTRACE(3, m_prefix, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
     return true;
   }
 
-  PTRACE(5, m_prefix, "Decoded " << bytesDecoded << " bytes"<< ", Resolution: " << m_context->width << "x" << m_context->height);
+  PTRACE(5, m_prefix, "Decoded " << bytesDecoded << " bytes" << ", Resolution: " << m_context->width << "x" << m_context->height);
 
   // if decoded frame size is not legal, request an I-Frame
   if (m_context->width <= 0 || m_context->height <= 0) {
