@@ -1377,7 +1377,7 @@ void OpalMixerNode::BroadcastUserInput(const OpalConnection * connection, const 
 void OpalMixerNode::GetConferenceState(OpalConferenceState & state) const
 {
   state.m_internalURI = m_manager.CreateInternalURI(m_guid);
-  state.m_displayText = m_info->m_displayText.IsEmpty() ? m_names.GetKeyAt(0) : m_info->m_displayText;
+  state.m_displayText = m_info->m_displayText.IsEmpty() ? m_info->m_name : m_info->m_displayText;
   state.m_subject     = m_info->m_subject;
   state.m_notes       = m_info->m_notes;
   state.m_keywords    = m_info->m_keywords;
