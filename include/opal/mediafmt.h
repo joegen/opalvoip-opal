@@ -1329,9 +1329,8 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & MaxRxFrameHeightOption();
     static const PString & TemporalSpatialTradeOffOption();
     static const PString & TxKeyFramePeriodOption();
-    static const PString & RateControlEnableOption();
-    static const PString & RateControllerOption();
-    static const PString & RateControllerBitRateScalerOption();
+    static const PString & RateControlPeriodOption(); // Period over which the rate controller maintains the target bit rate.
+    static const PString & RateControllerOption(); // String for controller algorithm. Empty is none.
 
     /**The "role" of the content in the video stream based on this media
        format. This is based on RFC4796 and H.239 semantics and is an

@@ -76,7 +76,6 @@ H264Encoder::H264Encoder()
   x264_param_default_preset(&m_context, "veryfast", "fastdecode,zerolatency");
 
   SetProfileLevel(66, 30, 0xc0);
-  SetTargetBitrate(768000);
 
   // default size, will likely get reset later
   m_context.i_width = 352;
@@ -124,6 +123,8 @@ H264Encoder::H264Encoder()
   // ABR with bit rate tolerance = 1 is CBR...
   m_context.rc.i_rc_method = X264_RC_ABR;
   m_context.rc.f_rate_tolerance = 1;
+  // 768kbps and 1 second rate control period
+  m_context.rc.i_vbv_buffer_size = m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = 768;
 
 #if PLUGINCODEC_TRACING
   // Enable logging
@@ -172,8 +173,6 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
   x264_param_apply_profile(&m_context, x264_profile_names[profileIndex]);
 
   m_context.i_level_idc = level;
-
-  SetTargetBitrate(m_context.rc.i_bitrate);
   return true;
 }
 
@@ -213,68 +212,21 @@ bool H264Encoder::SetFrameRate(unsigned rate)
 
 bool H264Encoder::SetTargetBitrate(unsigned rate)
 {
+  unsigned period = m_context.rc.i_vbv_buffer_size*1000/m_context.rc.i_bitrate;
+
   /* That's how CBR should looks like. Much more stable bitrate output
      but quality degrade on dynamic scenes.  Other case it's ABR. */
   m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = rate;
 
-/* Original code did the below, not sure why and if Alexander Sbitnev
-   suggestion to just set it to rate is correct. For example the H.263
-   FFMPEG encoder sets what seems to be a similar value
-   (rc_buffer_size) to rate*4, I am guessing that there should be
-   a multiplication factor based on level. */
-#if 1
-  m_context.rc.i_vbv_buffer_size = rate;
-#else
-  switch (level) {
-    case 9 :
-    case 10 :
-      m_context.rc.i_vbv_buffer_size = 152064;
-      break;
+  return SetRateControlPeriod(period);
+}
 
-    case 11 :
-      m_context.rc.i_vbv_buffer_size = 345600;
-      break;
 
-    case 12 :
-    case 13 :
-    case 20 :
-      m_context.rc.i_vbv_buffer_size = 912384;
-      break;
-
-    case 21 :
-      m_context.rc.i_vbv_buffer_size = 1824768;
-      break;
-
-    case 22 :
-    case 30 :
-      m_context.rc.i_vbv_buffer_size = 3110400;
-      break;
-
-    case 31 :
-      m_context.rc.i_vbv_buffer_size = 6912000;
-      break;
-
-    case 32 :
-      m_context.rc.i_vbv_buffer_size = 7864320;
-      break;
-
-    case 40 :
-    case 41 :
-      m_context.rc.i_vbv_buffer_size = 12582912;
-      break;
-
-    case 42 :
-      m_context.rc.i_vbv_buffer_size = 13369344;
-      break;
-
-    case 50 :
-      m_context.rc.i_vbv_buffer_size = 42393600;
-      break;
-
-    case 51 :
-      m_context.rc.i_vbv_buffer_size = 70778880;
-  };
-#endif
+bool H264Encoder::SetRateControlPeriod(unsigned period)
+{
+  // This averages the instantaneous bandwidth over a period, this effectively
+  // controls the "tightness" of rate control.
+  m_context.rc.i_vbv_buffer_size = m_context.rc.i_bitrate*period/1000;
 
   return true;
 }
@@ -764,6 +716,12 @@ bool H264Encoder::SetFrameRate(unsigned rate)
 bool H264Encoder::SetTargetBitrate(unsigned rate)
 {
   return WriteValue(SET_TARGET_BITRATE, rate);
+}
+
+
+bool H264Encoder::SetRateControlPeriod(unsigned period)
+{
+  return WriteValue(SET_RATE_CONTROL_PERIOD, period);
 }
 
 

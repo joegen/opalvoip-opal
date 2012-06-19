@@ -816,6 +816,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
     unsigned m_maxNALUSize;
     unsigned m_tsto;
     unsigned m_keyFramePeriod;
+    unsigned m_rateControlPeriod;
 
     H264Encoder m_encoder;
 
@@ -834,6 +835,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       , m_maxNALUSize(1400)
       , m_tsto(31)
       , m_keyFramePeriod(0)
+      , m_rateControlPeriod(1000)
     {
     }
 
@@ -885,6 +887,9 @@ class MyEncoder : public PluginCodec<MY_CODEC>
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
         return SetOptionUnsigned(m_keyFramePeriod, optionValue, 0);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD) == 0)
+        return SetOptionUnsigned(m_rateControlPeriod, optionValue, 100, 60000);
 
       if (strcasecmp(optionName, Level.m_name) == 0) {
         for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
@@ -955,6 +960,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
       m_encoder.SetFrameHeight(m_height);
       m_encoder.SetFrameRate(m_frameRate);
       m_encoder.SetTargetBitrate(m_bitRate/1000);
+      m_encoder.SetRateControlPeriod(m_rateControlPeriod);
       m_encoder.SetTSTO(m_tsto);
       m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod);
 
@@ -976,6 +982,7 @@ class MyEncoder : public PluginCodec<MY_CODEC>
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << m_frameRate << " "
                               "bps=" << m_bitRate << " "
+                              "period=" << m_rateControlPeriod << " "
                               "RTP=" << m_maxRTPSize << " "
                               "NALU=" << m_maxNALUSize << " "
                               "TSTO=" << m_tsto);
