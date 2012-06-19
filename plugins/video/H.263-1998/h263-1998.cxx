@@ -310,6 +310,10 @@ public:
   H263_PluginMediaFormat(const char * formatName, const char * encodingName, OptionsTable options)
     : BaseClass(formatName, encodingName, MyDescription, H263_BITRATE, options)
   {
+    if (options == OptionTable_RFC2190) {
+      m_payloadType = 34;
+      m_flags |= PluginCodec_RTPTypeExplicit;
+    }
     m_h323CapabilityType = PluginCodec_H323VideoCodec_h263;
   }
 
