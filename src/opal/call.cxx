@@ -121,7 +121,7 @@ void OpalCall::SetCallEndReason(OpalConnection::CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == OpalConnection::NumCallEndReasons &&
-     (callEndReason != OpalConnection::EndedByCallForwarded || connectionsActive.GetSize() <= 1))
+     (reason != OpalConnection::EndedByCallForwarded || connectionsActive.GetSize() <= 1))
     callEndReason = reason;
 }
 
