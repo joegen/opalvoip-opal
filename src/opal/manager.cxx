@@ -245,7 +245,7 @@ OpalManager::OpalManager()
   , defaultUserName(PProcess::Current().GetUserName())
   , defaultDisplayName(defaultUserName)
   , m_defaultMediaTypeOfService(0xb8)  // New DiffServ value for Expedited Forwarding as per RFC3246
-  , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
+  , rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
   , rtpPacketSizeMax(10*1024)
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
