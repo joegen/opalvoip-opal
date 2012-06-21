@@ -131,6 +131,18 @@ SUBDIRS=""
 AC_SUBST(SUBDIRS)
 
 
+AC_MSG_CHECKING([if linker accepts -Wl,--no-as-needed])
+AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[]])])
+$CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $LDFLAGS -Wl,--no-as-needed conftest.$ac_ext > /dev/null 2>&1
+if test $? = 0 ; then
+   AC_MSG_RESULT(yes)
+   NO_AS_NEEDED_LDFLAG="-Wl,--no-as-needed"
+else
+   AC_MSG_RESULT(no)
+fi
+
+
+
 dnl ########################################################################
 dnl Audio Codecs
 dnl ########################################################################
