@@ -153,15 +153,15 @@
             </Component>
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
-                    Name='libx264-102.dll'
-                    Source='$(var.PluginDir)\libx264-102.dll'
+                    Name='libx264-124.dll'
+                    Source='$(var.PluginDir)\libx264-124.dll'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
             <Component Id='x264_helper' Guid='*'>
               <File Id='x264_EXE'
                     Name='x264plugin_helper.exe'
-                    Source='$(var.PluginDir)\x264plugin_helper.exe'
+                    Source='$(var.OPALDir)\bin\plugins\Release\x264plugin_helper.exe'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
