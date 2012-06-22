@@ -155,7 +155,7 @@ class OpalJitterBuffer : public PSafeObject
     PINDEX   m_packetSize;
     DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
     DWORD    m_maxJitterDelay;      ///< Maximum jitter delay in timestamp units
-    int      m_jitterGrowTime;      ///< Amaint to increase jitter delay by when get "late" packet
+    int      m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
     DWORD    m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
                                     ///< consistently filled before shrinking
     int      m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
@@ -170,6 +170,8 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_maxConsecutiveMarkerBits;
     DWORD    m_consecutiveLatePackets;
 
+    DWORD    m_frameTimeSum;
+    unsigned m_frameTimeCount;
     DWORD    m_averageFrameTime;
     DWORD    m_lastTimestamp;
     DWORD    m_lastSyncSource;
