@@ -45,6 +45,7 @@
 
 
 const unsigned JitterRoundingGuardBits = 4;
+const unsigned AverageFrameTimePackets = 8;
 
 
 #if !PTRACING && !defined(NO_ANALYSER)
@@ -274,6 +275,8 @@ void OpalJitterBuffer::Reset()
   m_bufferMutex.Wait();
 
   m_averageFrameTime  = 0;
+  m_frameTimeSum      = 0;
+  m_frameTimeCount    = 0;
   m_lastTimestamp     = UINT_MAX;
   m_bufferFilledTime  = 0;
   m_bufferLowTime     = 0;
@@ -339,25 +342,33 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     twice as big (or more) as we should be. The smallest distance between
     consecutive packets will be the frame time interval. */
   if (m_lastTimestamp != UINT_MAX) {
-    int newFrameTime = timestamp - m_lastTimestamp;
+    int delta = timestamp - m_lastTimestamp;
 
     /* Check for naughty systems that have discontinuous timestamps, that is
        time has gone backwards or it has been 10 minutes since last packet,
        or an out of order packet was hanging in a router for 2 seconds.
        Neither likely! */
-    if (newFrameTime < -16000 || newFrameTime > (m_averageFrameTime == 0 ? 4000 : 4800000)) {
+    if (delta < -16000 || delta > (m_averageFrameTime == 0 ? 4000 : 4800000)) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
       Reset();
     }
-    else if (m_averageFrameTime == 0 || m_averageFrameTime > (DWORD)newFrameTime) {
-      m_averageFrameTime = newFrameTime;
-      PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms)");
-      AdjustCurrentJitterDelay(0);
+    else {
+      m_frameTimeSum += delta;
+      if (++m_frameTimeCount >= AverageFrameTimePackets) {
+        DWORD newFrameTime = m_frameTimeSum/m_frameTimeCount;
+        m_frameTimeSum = 0;
+        m_frameTimeCount = 0;
+
+        if (m_averageFrameTime == 0 || m_averageFrameTime > (DWORD)newFrameTime) {
+          m_averageFrameTime = newFrameTime;
+          PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms)");
+          AdjustCurrentJitterDelay(0);
+        }
+      }
     }
   }
   m_lastTimestamp = timestamp;
-
 
 
   if (frame.GetSyncSource() != m_lastSyncSource) {
