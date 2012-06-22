@@ -285,6 +285,7 @@ void OpalRTPSession::ClearStatistics()
   minimumReceiveTimeAccum = 0xffffffff;
   packetsLostSinceLastRR = 0;
   lastTransitTime = 0;
+  m_lastReceivedStatisticTimestamp = 0;
 }
 
 
@@ -372,6 +373,7 @@ void OpalRTPSession::SetCanonicalName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
   canonicalName = name;
+  canonicalName.MakeUnique();
 }
 
 
@@ -388,6 +390,7 @@ void OpalRTPSession::SetToolName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
   toolName = name;
+  toolName.MakeUnique();
 }
 
 
@@ -601,8 +604,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
       oobTimeStampBase    = PTimer::Tick();
     }
 
-    // Only do statistics on subsequent packets
-    if ( ! (isAudio && frame.GetMarker()) ) {
+    /* For audio we do not do statistics on start of talk burst as that
+       could be a substantial time and is not useful, so we only calculate
+       when the marker bit os off.
+
+       For video we measure jitter between whole video frames which is
+       indicated by the marker bit being on.
+    */
+    if (isAudio  != frame.GetMarker()) {
       DWORD diff = (tick - lastSentPacketTime).GetInterval();
 
       averageSendTimeAccum += diff;
@@ -741,8 +750,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
         packetsOutOfOrder++;
       }
 
-      // Only do statistics on packets after first received in talk burst
-      if ( ! (isAudio && frame.GetMarker()) ) {
+      /* For audio we do not do statistics on start of talk burst as that
+         could be a substantial time and is not useful, so we only calculate
+         when the marker bit os off.
+
+         For video we measure jitter between whole video frames which is
+         normally indicated by the marker bit being on, but this is unreliable,
+         many endpoints not sending it correctly, so use a change in timestamp
+         as most reliable method. */
+      if (isAudio ? !frame.GetMarker() : (m_lastReceivedStatisticTimestamp != frame.GetTimestamp())) {
+        m_lastReceivedStatisticTimestamp = frame.GetTimestamp();
+
         DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
 
         averageReceiveTimeAccum += diff;

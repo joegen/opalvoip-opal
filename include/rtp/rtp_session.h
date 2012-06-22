@@ -684,6 +684,7 @@ class OpalRTPSession : public OpalMediaSession
     DWORD    minimumReceiveTimeAccum;
     DWORD    packetsLostSinceLastRR;
     DWORD    lastTransitTime;
+    DWORD    m_lastReceivedStatisticTimestamp;
     
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
     bool ignorePayloadTypeChanges;
