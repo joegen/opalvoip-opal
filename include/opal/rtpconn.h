@@ -40,7 +40,7 @@
 #include <opal/connection.h>
 #include <opal/mediatype.h>
 #include <opal/mediasession.h>
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 class OpalRTPEndPoint;
 

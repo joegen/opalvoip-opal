@@ -110,6 +110,7 @@ class H4507Handler;
 class H45011Handler;
 
 class OpalCall;
+class RTP_QOS;
 
 #if OPAL_H460
 class H460_FeatureSet;

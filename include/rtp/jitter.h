@@ -41,10 +41,12 @@
 #include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
+#include <ptlib/safecoll.h>
 
 
 class RTP_JitterBuffer;
 class RTP_JitterBufferAnalyser;
+class OpalRTPSession;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -237,36 +239,6 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     bool      m_running;
 };
 
-
-/////////////////////////////////////////////////////////////////////////////
-/**A descendant of the OpalJitterBuffer that reads RTP_DataFrame instances
-   from the RTP_Sessions
-  */
-class RTP_JitterBuffer : public OpalJitterBufferThread
-{
-    PCLASSINFO(RTP_JitterBuffer, OpalJitterBufferThread);
- public:
-    RTP_JitterBuffer(
-      OpalRTPSession & session, ///<  Associated RTP session for data to be read from
-      unsigned minJitterDelay,  ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay,  ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,   ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048  ///<  Max RTP packet size
-    );
-    ~RTP_JitterBuffer();
-
-    /**This class instance collects data from the outside world in this
-       method.
-
-       @return true on successful read, false on faulty read. */
-    virtual PBoolean OnReadPacket(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
-    );
-
- protected:
-   /**This class extracts data from the outside world by reading from this session variable */
-   OpalRTPSession & m_session;
-};
 
 #endif // OPAL_RTP_JITTER_H
 

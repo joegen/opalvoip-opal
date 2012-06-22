@@ -486,6 +486,7 @@
     <ClCompile Include="..\rtp\metrics.cxx" />
     <ClCompile Include="..\rtp\pcapfile.cxx" />
     <ClCompile Include="..\rtp\rtp.cxx" />
+    <ClCompile Include="..\rtp\rtp_session.cxx" />
     <ClCompile Include="..\rtp\srtp.cxx" />
     <ClCompile Include="..\rtp\zrtpudp.cxx" />
     <ClCompile Include="..\sip\handlers.cxx" />
@@ -638,6 +639,7 @@
     <ClInclude Include="..\..\include\rtp\metrics.h" />
     <ClInclude Include="..\..\include\rtp\pcapfile.h" />
     <ClInclude Include="..\..\include\rtp\rtp.h" />
+    <ClInclude Include="..\..\include\rtp\rtp_session.h" />
     <ClInclude Include="..\..\include\rtp\srtp.h" />
     <ClInclude Include="..\..\include\rtp\zrtpudp.h" />
     <ClInclude Include="..\..\include\sip\handlers.h" />
@@ -717,12 +719,24 @@ configure --no-search --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLI
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Checking SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Checking SVN revision include file.</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Checking SVN revision include file.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">del %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">del %(RootDir)%(Directory)%(Filename)
+SubWCRev $(ProjectDir)..\.. %(FullPath) %(RootDir)%(Directory)%(Filename)
+if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)%(Filename)</Command>
     </CustomBuild>
     <None Include="..\asn\gcc.asn" />
     <None Include="..\asn\h225.asn" />

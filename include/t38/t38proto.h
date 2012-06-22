@@ -41,6 +41,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <opal/localep.h>
 
 

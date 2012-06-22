@@ -1077,6 +1077,27 @@ class OpalManager : public PObject
       OpalConnection & connection,  ///< Connection patch is in
       OpalMediaPatch & patch        ///< Media Patch being stopped
     );
+
+    /**Call back when media stops unexpectedly.
+       This allows the application to take some action when a "no media"
+       condition is detected. For example clear the call.
+
+       The \p source indicates if the media is in a source OpalMediaStream of
+       the conenction, for example on RTP connections (SIP/H.323) true
+       indicates incoming media, fals indicates transmitted media.
+
+       The SetNoMediaTimeout() can be used to set the default time for a
+       source stream (e.g. received RTP) to call this function.
+
+       Default behaviour releases the connection.
+
+       @Return true if the specific media session is to be aborted.
+      */
+    virtual bool OnMediaFailed(
+      OpalConnection & connection,  ///< Connection session is in
+      unsigned sessionId,           ///< Session ID of media that stopped.
+      bool source                   ///< Indicates the direction of stream.
+    );
   //@}
 
 

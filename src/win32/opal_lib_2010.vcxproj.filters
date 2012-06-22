@@ -552,6 +552,9 @@
     <ClCompile Include="..\opal\transcoders.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\rtp\rtp_session.cxx">
+      <Filter>Source Files\RTP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -988,6 +991,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\h460\h460_std18.h">
       <Filter>Header Files\H.460</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\rtp\rtp_session.h">
+      <Filter>Header Files\RTP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -42,7 +42,7 @@
 
 #if OPAL_H323
 
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 
 class H225_RTPSession;
