@@ -385,6 +385,7 @@ class OpalConnection : public PSafeObject
       EndedByOutOfService,         /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
       EndedByGkAdmissionFailed,    /// Call cleared because gatekeeper admission request failed.
+      EndedByMediaFailed,          /// Call cleared due to loss of media flow.
       NumCallEndReasons
     };
 
@@ -1156,15 +1157,39 @@ class OpalConnection : public PSafeObject
     );
 
     /**Call back when media stream patch thread starts.
+
+       Default behaviour calls OpalManager function of same name.
       */
     virtual void OnStartMediaPatch(
       OpalMediaPatch & patch    ///< Patch being started
     );
 
     /**Call back when media stream patch thread stops.
+
+       Default behaviour calls OpalManager function of same name.
       */
     virtual void OnStopMediaPatch(
       OpalMediaPatch & patch    ///< Patch being stopped
+    );
+
+    /**Call back when media stops unexpectedly.
+       This allows the application to take some action when a "no media"
+       condition is detected. For example clear the call.
+
+       The \p source indicates if the media is in a source OpalMediaStream of
+       the conenction, for example on RTP connections (SIP/H.323) true
+       indicates incoming media, fals indicates transmitted media.
+
+       The SetNoMediaTimeout() can be used to set the default time for a
+       source stream (e.g. received RTP) to call this function.
+
+       Default behaviour releases the connection.
+
+       @Return true if the specific media session is to be aborted.
+      */
+    virtual bool OnMediaFailed(
+      unsigned sessionId,  ///< Session ID of media that stopped.
+      bool source          ///< Indicates the direction of stream.
     );
 
     /** Callback for media commands.

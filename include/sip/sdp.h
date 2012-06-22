@@ -43,7 +43,7 @@
 #include <opal/transports.h>
 #include <opal/mediatype.h>
 #include <opal/mediafmt.h>
-#include <rtp/rtp.h>
+#include <rtp/rtp_session.h>
 
 /////////////////////////////////////////////////////////
 

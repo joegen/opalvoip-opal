@@ -40,6 +40,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <opal/mediasession.h>
 
 #include <rtp/rtp.h>
 

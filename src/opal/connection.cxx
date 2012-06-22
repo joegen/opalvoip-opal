@@ -192,6 +192,7 @@ static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
   { OpalConnection::EndedByOutOfService,         "Call cleared because the line is out of service" },
   { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" },
   { OpalConnection::EndedByGkAdmissionFailed,    "Call cleared because gatekeeper admission request failed." },
+  { OpalConnection::EndedByMediaFailed,          "Call cleared due to loss of media flow." },
 };
 
 static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInitialiser), CallEndReasonStringsInitialiser);
@@ -1570,11 +1571,10 @@ bool OpalConnection::GetConferenceState(OpalConferenceState *) const
 
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
-  maxDelay = PMAX(10, PMIN(maxDelay, 999));
-  minDelay = PMAX(10, PMIN(minDelay, 999));
-
-  if (maxDelay < minDelay)
-    maxDelay = minDelay;
+  if (minDelay != 0 || maxDelay != 0) {
+    minDelay = std::max(10U, std::min(minDelay, 999U));
+    maxDelay = std::max(minDelay, std::min(maxDelay, 999U));
+  }
 
   minAudioJitterDelay = minDelay;
   maxAudioJitterDelay = maxDelay;
@@ -1734,6 +1734,12 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
   m_lua.CallLuaFunction("OnStopMediaPatch");
 #endif
   GetEndPoint().GetManager().OnStopMediaPatch(*this, patch);
+}
+
+
+bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
+{
+  return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
 }
 
 
