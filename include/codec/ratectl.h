@@ -41,6 +41,8 @@
 #if OPAL_VIDEO
 
 #include <rtp/rtp.h>
+#include <deque>
+
 
 extern double OpalCalcSNR(const BYTE * src1, const BYTE * src2, PINDEX dataLen);
 
