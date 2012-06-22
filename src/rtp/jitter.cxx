@@ -46,6 +46,7 @@
 
 const unsigned JitterRoundingGuardBits = 4;
 const unsigned AverageFrameTimePackets = 8;
+const int      AverageFrameTimeDeadband = 16;
 
 
 #if !PTRACING && !defined(NO_ANALYSER)
@@ -360,7 +361,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
         m_frameTimeSum = 0;
         m_frameTimeCount = 0;
 
-        if (m_averageFrameTime == 0 || m_averageFrameTime > (DWORD)newFrameTime) {
+        if (m_averageFrameTime == 0 || std::abs((int)m_averageFrameTime - (int)newFrameTime) > AverageFrameTimeDeadband)  {
           m_averageFrameTime = newFrameTime;
           PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms)");
           AdjustCurrentJitterDelay(0);
