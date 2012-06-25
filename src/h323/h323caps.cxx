@@ -1388,7 +1388,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
         OpalMediaFormat mediaFormat = capability->GetMediaFormat();
         mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
         if (type != e_TCS)
-          mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleOption(), role);
+          mediaFormat.SetOptionEnum(OpalVideoFormat::ContentRoleOption(), role);
         m_videoFormats += mediaFormat;
       }
       delete capability;
