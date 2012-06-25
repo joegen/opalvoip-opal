@@ -1916,12 +1916,6 @@ class H323Connection : public OpalRTPConnection
       const H225_EndpointType & pdu ///<  PDU from which to extract application info.
     );
     
-    /**Get the remote party address.
-       This will return the "best guess" at an address to use in a
-       to call the user again later.
-      */
-    PString GetRemotePartyURL() const;
-    
     /**Get the remotes capability table for this connection.
      */
     const H323Capabilities & GetLocalCapabilities() const { return localCapabilities; }

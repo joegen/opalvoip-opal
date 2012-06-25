@@ -188,11 +188,14 @@ H323Connection::H323Connection(OpalCall & call,
 #endif
 {
   if (alias.IsEmpty())
-    remotePartyName = remotePartyAddress = address;
+    remotePartyName = remotePartyAddress = address.GetHostName(true);
   else {
     remotePartyName = alias;
-    remotePartyAddress = alias + '@' + address;
+    remotePartyAddress = alias + '@' + address.GetHostName(true);
   }
+
+  if (OpalIsE164(remotePartyName))
+    remotePartyNumber = remotePartyName;
 
   /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
   localAliasNames = ep.GetAliasNames();
@@ -984,29 +987,9 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   SetRemoteApplication(setup.m_sourceInfo);
 
   // Determine the remote parties name/number/address as best we can
-  if (!setupPDU->GetQ931().GetCallingPartyNumber(remotePartyNumber))
-    remotePartyNumber = H323GetAliasAddressE164(setup.m_sourceAddress);
-  remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
-
-  // get the destination number and name, just in case we are a gateway
-  setupPDU->GetQ931().GetCalledPartyNumber(m_calledPartyNumber);
-  if (m_calledPartyNumber.IsEmpty())
-    m_calledPartyNumber = H323GetAliasAddressE164(setup.m_destinationAddress);
-
-  for (PINDEX i = 0; i < setup.m_destinationAddress.GetSize(); ++i) {
-    PString addr = H323GetAliasAddressString(setup.m_destinationAddress[i]);
-    if (addr != m_calledPartyNumber) {
-      m_calledPartyName = addr;
-      break;
-    }
-  }
+  SetRemotePartyInfo(*setupPDU);
 
   setupPDU->GetQ931().GetRedirectingNumber(m_redirectingParty);
-
-  // get the peer address
-  remotePartyAddress = signallingChannel->GetRemoteAddress();
-  if (setup.m_sourceAddress.GetSize() > 0)
-    remotePartyAddress = H323GetAliasAddressString(setup.m_sourceAddress[0]) + '@' + signallingChannel->GetRemoteAddress();
 
   // compare the source call signalling address
   if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
@@ -1228,18 +1211,58 @@ void H323Connection::SetLocalPartyName(const PString & name)
 
 void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
 {
-  PString newNumber;
-  if (pdu.GetQ931().GetCalledPartyNumber(newNumber))
-    remotePartyNumber = newNumber;
+  const Q931 & q931 = pdu.GetQ931();
 
-  PString remoteHostName = signallingChannel->GetRemoteAddress().GetHostName();
+  q931.GetCalledPartyNumber(m_calledPartyNumber);
 
-  PString newRemotePartyName = pdu.GetQ931().GetDisplayName();
-  if (newRemotePartyName.IsEmpty() || newRemotePartyName == remoteHostName)
-    remotePartyName = remoteHostName;
-  else
-    remotePartyName = newRemotePartyName + " [" + remoteHostName + ']';
+  if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
+    remotePartyNumber = m_calledPartyName = m_calledPartyNumber;
+  else {
+    const H225_Setup_UUIE & setup = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+    if (m_calledPartyNumber.IsEmpty())
+      m_calledPartyNumber = H323GetAliasAddressE164(setup.m_destinationAddress);
+
+    for (PINDEX i = 0; i < setup.m_destinationAddress.GetSize(); ++i) {
+      PString addr = H323GetAliasAddressString(setup.m_destinationAddress[i]);
+      if (addr != m_calledPartyNumber) {
+        m_calledPartyName = addr;
+        break;
+      }
+    }
+
+    if (!q931.GetCallingPartyNumber(remotePartyNumber))
+      remotePartyNumber = H323GetAliasAddressE164(setup.m_sourceAddress);
+
+    if (setup.m_sourceAddress.GetSize() > 0)
+      remotePartyAddress = H323GetAliasAddressString(setup.m_sourceAddress[0]);
+  }
+
+  if (remotePartyAddress.IsEmpty())
+    remotePartyAddress = remotePartyNumber;
+
+  remotePartyURL = GetPrefixName() + ':';
+
+  H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+  if (gatekeeperRouted && gatekeeper != NULL) {
+    PString gkName = gatekeeper->GetName();
+    PINDEX at = gkName.Find('@');
+    remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation)
+                   + '@' + gkName.Mid(at != P_MAX_INDEX ? at+1 : 0) + ";type=gk";
+  }
+  else {
+    PString remoteHostName = signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
+    if (remotePartyAddress.IsEmpty()) {
+      remotePartyAddress = remoteHostName;
+      remotePartyURL += remoteHostName;
+    }
+    else if (remotePartyAddress == remoteHostName || remotePartyAddress.Find('@') != P_MAX_INDEX)
+      remotePartyURL += remotePartyAddress;
+    else
+      remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation) + '@' + remoteHostName;
+  }
+
+  remotePartyName = pdu.GetSourceAliases(signallingChannel);
   PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << '"');
 }
 
@@ -1250,38 +1273,6 @@ void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
     H323GetApplicationInfo(remoteProductInfo, pdu.m_vendor);
     PTRACE(3, "H225\tSet remote application name: \"" << GetRemoteApplication() << '"');
   }
-}
-
-
-PString H323Connection::GetRemotePartyURL() const
-{
-  PString remote;
-  PINDEX j;
-  
-  if (IsGatekeeperRouted()) {
-
-    remote = GetRemotePartyNumber();
-  }
-  
-  if (remote.IsEmpty() && signallingChannel) {
-  
-    remote = signallingChannel->GetRemoteAddress();
-
-    /* The address is formated the H.323 way */
-    j = remote.FindLast("$");
-    if (j != P_MAX_INDEX)
-      remote = remote.Mid (j+1);
-    j = remote.FindLast(":");
-    if (j != P_MAX_INDEX)
-      remote = remote.Left (j);
-
-    if (!GetRemotePartyNumber().IsEmpty())
-      remote = GetRemotePartyNumber() + "@" + remote;
-  }
-
-  remote = GetPrefixName() + ":" + remote;
-
-  return remote;
 }
 
 
@@ -1734,6 +1725,10 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
 PString H323Connection::GetPrefixName() const
 {
+#if OPAL_PTLIB_SSL
+  if (signallingChannel != NULL && strchr(signallingChannel->GetProtoPrefix(), 's') != NULL)
+    return OpalConnection::GetPrefixName()+'s';
+#endif
   return OpalConnection::GetPrefixName();
 }
 

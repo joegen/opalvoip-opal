@@ -206,7 +206,9 @@ class OpalTransportAddress : public PCaselessString
     /**Translate the transport address to a more human readable form.
        Returns the hostname if using IP.
       */
-    virtual PString GetHostName() const;
+    virtual PString GetHostName(
+      bool includeService = false
+    ) const;
 
     enum BindOptions {
       NoBinding,
@@ -1231,7 +1233,8 @@ class OpalInternalTransport : public PObject
     PCLASSINFO(OpalInternalTransport, PObject);
   public:
     virtual PString GetHostName(
-      const OpalTransportAddress & address
+      const OpalTransportAddress & address,
+      bool includeService
     ) const;
 
     virtual PBoolean GetIpAndPort(
@@ -1261,7 +1264,8 @@ class OpalInternalIPTransport : public OpalInternalTransport
     PCLASSINFO(OpalInternalIPTransport, OpalInternalTransport);
   public:
     virtual PString GetHostName(
-      const OpalTransportAddress & address
+      const OpalTransportAddress & address,
+      bool includeService
     ) const;
     virtual PBoolean GetIpAndPort(
       const OpalTransportAddress & address,
