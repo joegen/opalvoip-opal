@@ -101,12 +101,12 @@ OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD
 }
 
 
-PString OpalTransportAddress::GetHostName() const
+PString OpalTransportAddress::GetHostName(bool includeService) const
 {
   if (m_transport == NULL)
     return *this;
 
-  return m_transport->GetHostName(*this);
+  return m_transport->GetHostName(*this, includeService);
 }
 
 
@@ -283,7 +283,7 @@ void OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
 
 /////////////////////////////////////////////////////////////////
 
-PString OpalInternalTransport::GetHostName(const OpalTransportAddress & address) const
+PString OpalInternalTransport::GetHostName(const OpalTransportAddress & address, bool) const
 {
   // skip transport identifier
   PINDEX pos = address.Find('$');
@@ -403,20 +403,23 @@ bool OpalInternalIPTransport::Parse(OpalTransportAddress & address, WORD port) c
 }
 
 
-PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & address) const
+PString OpalInternalIPTransport::GetHostName(const OpalTransportAddress & address, bool includeService) const
 {
   PString host, device, service;
   if (!SplitAddress(address, host, device, service))
     return address;
 
-  if (!device.IsEmpty())
-    return host+device;
+  PString hostname = host+device;
 
-  PIPSocket::Address ip;
-  if (ip.FromString(host))
-    return ip.AsString(true);
+  if (device.IsEmpty()) {
+    PIPSocket::Address ip;
+    if (ip.FromString(host))
+      hostname = ip.AsString(true);
+  }
 
-  return host;
+  if (includeService)
+    hostname += ':' + service;
+  return hostname;
 }
 
 
