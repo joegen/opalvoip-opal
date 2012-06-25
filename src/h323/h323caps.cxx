@@ -1308,7 +1308,11 @@ PBoolean H323ExtendedVideoCapability::OnSendingPDU(H245_VideoCapability & pdu, C
           PINDEX size = extcap.m_videoCapability.GetSize();
           extcap.m_videoCapability.SetSize(size+1);
           extcap.m_videoCapability[size] = h245Cap;
-          roleMask &= videoFormat->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
+          if (type != e_TCS)
+            roleMask = OpalVideoFormat::ContentRoleBit(videoFormat->GetOptionEnum(
+                                    OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eMainRole));
+          else
+            roleMask &= videoFormat->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
         }
         delete capability;
       }
@@ -1366,6 +1370,10 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
 
   unsigned roleMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
 
+  OpalVideoFormat::ContentRole role = OpalVideoFormat::eNumRoles;
+  while (--role > OpalVideoFormat::eNoRole && (OpalVideoFormat::ContentRoleBit(role)&roleMask) == 0)
+     ;
+
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
 
   m_videoFormats.RemoveAll();
@@ -1379,6 +1387,8 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
           dynamic_cast<H323VideoCapability*>(capability)->OnReceivedPDU(vidCap, type)) {
         OpalMediaFormat mediaFormat = capability->GetMediaFormat();
         mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
+        if (type != e_TCS)
+          mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleOption(), role);
         m_videoFormats += mediaFormat;
       }
       delete capability;
