@@ -2041,7 +2041,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   UpdateRemoteAddresses();
 
   if (reInvite)
-    return true;
+    return statusCode >= 200;
 
   bool collapseForks = statusCode >= 200;
 
