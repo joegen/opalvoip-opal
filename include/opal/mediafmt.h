@@ -46,6 +46,7 @@
 
 #include <opal/mediatype.h>
 #include <rtp/rtp.h>
+#include <ptlib/bitwise_enum.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -53,12 +54,6 @@
 
 #include <limits>
 
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
 
 class OpalMediaFormat;
 
@@ -1055,23 +1050,31 @@ class OpalMediaFormat : public PContainer
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionReal(name, value); }
 
     /**Get the option value of the specified name as an index into an
-       enumeration list. The default value is returned if the option is not
-       present.
+       enumeration list.
+       If the merge mode is IntersectionMerge, then the enum is assume to be a
+       PBitwiseEnum and the multiple names separated by spaces can be used.
+
+       The default value is returned if the option is not present.
       */
-    PINDEX GetOptionEnum(
+    template <typename Enum>
+    Enum GetOptionEnum(
       const PString & name,   ///<  Option name
-      PINDEX dflt = 0         ///<  Default value if option not present
-    ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? dflt : m_info->GetOptionEnum(name, dflt); }
+      Enum dflt = (Enum)0     ///<  Default value if option not present
+    ) const { PWaitAndSignal m(m_mutex); return m_info == NULL ? dflt : (Enum)m_info->GetOptionEnum(name, dflt); }
 
     /**Set the option value of the specified name as an index into an enumeration.
+       If the merge mode is IntersectionMerge, then the enum is assume to be a
+       PBitwiseEnum and the multiple names separated by spaces can be used.
+
        Note the option will not be added if it does not exist, the option
        must be explicitly added using AddOption().
 
        Returns false of the option is not present or is not of the same type.
       */
+    template <typename Enum>
     bool SetOptionEnum(
       const PString & name,   ///<  Option name
-      PINDEX value            ///<  New value for option
+      Enum value              ///<  New value for option
     ) { PWaitAndSignal m(m_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionEnum(name, value); }
 
     /**Get the option value of the specified name as a string. The default
@@ -1340,6 +1343,23 @@ class OpalVideoFormat : public OpalMediaFormat
     __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }
     static const PString & ContentRoleOption();
     static const PString & ContentRoleMaskOption();
+
+    /// RTP/RTCP Feedback options
+    P_DECLARE_STREAMABLE_BITWISE_ENUM_EX(
+      RTCPFeedback,
+      5,
+      (
+        e_NoRTCPFb,
+        e_PLI,      ///< Picture Loss Indication
+        e_FIR,      ///< Full Intra-frame Request
+        e_TMMBR,    ///< Temporary Maximum Media Stream Bit Rate Request
+        e_TSTR,     ///< Temporal/Spatial Tradeoff Request
+        e_VBCM      ///< Video Back Channel Messages
+      ),
+      "", "pli", "fir", "tmmbr", "tstr", "vcbm"
+    );
+    /// RTP/RTCP Feedback options
+    static const PString & RTCPFeedbackOption();
 };
 #endif
 

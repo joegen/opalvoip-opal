@@ -1029,8 +1029,8 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & /*pdu*/) const
 PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType type) const
 {
 #if OPAL_H239
-  PINDEX role = 0;
-  if (type != e_OLC || (role = GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption())) == 0)
+  OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole;
+  if (type != e_OLC || (role = GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole)) == OpalVideoFormat::eNoRole)
     return OnSendingPDU(pdu);
 
   H323H239VideoCapability h239(GetMediaFormat());

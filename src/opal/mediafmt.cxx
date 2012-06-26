@@ -372,15 +372,27 @@ PObject * OpalMediaOptionEnum::Clone() const
 
 void OpalMediaOptionEnum::PrintOn(ostream & strm) const
 {
-  if (m_value < m_enumerations.GetSize())
+  if (m_merge == IntersectionMerge) {
+    char ** arr = m_enumerations.ToCharArray();
+    PPrintBitwiseEnum(strm, m_value, arr);
+    free(arr);
+  }
+  else if (m_value < m_enumerations.GetSize())
     strm << m_enumerations[m_value];
   else
-    strm << psprintf("<%u>", m_value); // Don't output direct to stream so width() works correctly
+    strm << psprintf("<%u>", m_value); // Don't output direct to stream or width() is on '<' only
 }
 
 
 void OpalMediaOptionEnum::ReadFrom(istream & strm)
 {
+  if (m_merge == IntersectionMerge) {
+    char ** arr = m_enumerations.ToCharArray();
+    m_value = PReadBitwiseEnum(strm, arr);
+    free(arr);
+    return;
+  }
+
   m_value = m_enumerations.GetSize();
 
   PINDEX longestMatch = 0;
@@ -440,10 +452,11 @@ void OpalMediaOptionEnum::Assign(const OpalMediaOption & option)
 
 void OpalMediaOptionEnum::SetValue(PINDEX value)
 {
-  if (value < m_enumerations.GetSize())
+  int maxEnum = m_merge != IntersectionMerge ? m_enumerations.GetSize() : (1 << m_enumerations.GetSize());
+  if (value >=0 && value < maxEnum)
     m_value = value;
   else {
-    m_value = m_enumerations.GetSize();
+    m_value = maxEnum;
     PTRACE(1, "MediaFormat\tIllegal value (" << value << ") for OpalMediaOptionEnum");
   }
 }
@@ -725,6 +738,7 @@ const PString & OpalMediaFormat::MediaPacketizationsOption() { static const PCon
 
 const PString & OpalMediaFormat::ProtocolOption()        { static const PConstString s("Protocol"); return s; }
 const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static const PConstString s(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE); return s; }
+
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
   : m_info(NULL)
@@ -1637,6 +1651,7 @@ const PString & OpalVideoFormat::RateControlEnableOption()        { static const
 const PString & OpalVideoFormat::RateControllerOption()           { static const PConstString s("Rate Controller");                            return s; }
 const PString & OpalVideoFormat::ContentRoleOption()              { static const PConstString s("Content Role");                               return s; }
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
+const PString & OpalVideoFormat::RTCPFeedbackOption()             { static const PConstString s("RTCP Feedback"); return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1688,6 +1703,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX, OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_NoRTCPFb));
 
 
   static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {

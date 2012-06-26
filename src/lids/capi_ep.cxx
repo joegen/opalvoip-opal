@@ -703,9 +703,7 @@ void OpalCapiEndPoint::ProcessMessages(PThread &, INT)
 
       case CapiNoError :
         PTRACE(pMessage->header.m_Command == CAPI_DATA_B3 ? 6 : 4, "CAPI\tGot message " << *pMessage);
-        inUseFlag.Wait();
         ProcessMessage(*pMessage);
-        inUseFlag.Signal();
         break;
 
       default:
