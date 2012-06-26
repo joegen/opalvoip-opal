@@ -51,11 +51,6 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 
 #define new PNEW
 
-//
-// uncommment this to output a=fmtp lines before a=rtpmap lines. Useful for testing
-//
-//#define FMTP_BEFORE_RTPMAP 1
-
 #define SDP_MIN_PTIME 10
 
 
@@ -188,6 +183,7 @@ SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, const OpalMediaForm
     parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
 }
 
+
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
   m_fmtp = str;
@@ -239,33 +235,20 @@ PString SDPMediaFormat::GetFMTP() const
 
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
-  PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty");
+  if (!PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty"))
+    return;
 
-  PINDEX i;
-  for (i = 0; i < 2; ++i) {
-    switch (i) {
-#ifdef FMTP_BEFORE_RTPMAP
-      case 1:
-#else
-      case 0:
-#endif
-        strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
-        if (!parameters.IsEmpty())
-          strm << '/' << parameters;
-        strm << "\r\n";
-        break;
-#ifdef FMTP_BEFORE_RTPMAP
-      case 0:
-#else
-      case 1:
-#endif
-        {
-          PString fmtpString = GetFMTP();
-          if (!fmtpString.IsEmpty())
-            strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
-        }
-    }
-  }
+  strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
+  if (!parameters.IsEmpty())
+    strm << '/' << parameters;
+  strm << "\r\n";
+
+  PString fmtpString = GetFMTP();
+  if (!fmtpString.IsEmpty())
+    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
+
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
+    strm << "a=rtcp-fb:" << (int)payloadType << ' ' << m_rtcp_fb << "\r\n";
 }
 
 
@@ -312,8 +295,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   }
 
   // Save the RTCP feedback (RFC4585) capability.
-  if (!m_rtcp_fb.IsEmpty())
-    mediaFormat.AddOption(new OpalMediaOptionString("RTCP-FB", false, m_rtcp_fb), true);
+  mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
   // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
@@ -1216,8 +1198,8 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
   SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
-    PINDEX role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption());
-    if (role > 0) {
+    OpalVideoFormat::ContentRole role = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+    if (role > OpalVideoFormat::eNoRole) {
       strm << "a=content:" << ContentRoleNames[role] << "\r\n";
       break;
     }

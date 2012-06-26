@@ -90,7 +90,7 @@ class SDPMediaFormat : public PObject
     void SetClockRate(unsigned  v)                     { clockRate = v; }
 
     void SetParameters(const PString & v) { parameters = v; }
-    void SetRTCP_FB(const PString & v) { m_rtcp_fb = v; }
+    void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
 
     const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
     OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
@@ -109,7 +109,7 @@ class SDPMediaFormat : public PObject
     PCaselessString encodingName;
     PString parameters;
     PString m_fmtp;
-    PString m_rtcp_fb; // RFC4585
+    OpalVideoFormat::RTCPFeedback m_rtcp_fb; // RFC4585
 };
 
 typedef PList<SDPMediaFormat> SDPMediaFormatList;
@@ -289,7 +289,7 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     void SetOfferPTime(bool value) { m_offerPTime = value; }
 
   protected:
-    bool m_offerPTime;
+    bool     m_offerPTime;
 };
 
 
