@@ -83,7 +83,7 @@ AC_DEFUN([OPAL_GET_LIBNAME],
          [
           AC_MSG_CHECKING(filename of $2 library)
           AC_LANG_CONFTEST([AC_LANG_PROGRAM([[]],[[]])])
-          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $3 $NO_AS_NEEDED_LDFLAG $LDFLAGS conftest.$ac_ext $LIBS>&AS_MESSAGE_LOG_FD
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $NO_AS_NEEDED_LDFLAG $3 $LDFLAGS conftest.$ac_ext $LIBS>&AS_MESSAGE_LOG_FD
           if test \! -x conftest$ac_exeext ; then
             AC_MSG_RESULT(cannot determine - using defaults)
           else
