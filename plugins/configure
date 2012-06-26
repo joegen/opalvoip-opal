@@ -9446,7 +9446,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $LIBAVCODEC_LIBS $NO_AS_NEEDED_LDFLAG $LDFLAGS conftest.$ac_ext $LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $NO_AS_NEEDED_LDFLAG $LIBAVCODEC_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
@@ -9653,7 +9653,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $LIBAVUTIL_LIBS $NO_AS_NEEDED_LDFLAG $LDFLAGS conftest.$ac_ext $LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $NO_AS_NEEDED_LDFLAG $LIBAVUTIL_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
@@ -9886,7 +9886,7 @@ main ()
   return 0;
 }
 _ACEOF
-          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $X264_LIBS $NO_AS_NEEDED_LDFLAG $LDFLAGS conftest.$ac_ext $LIBS>&5
+          $CC -o conftest$ac_exeext $CPPFLAGS $CFLAGS $NO_AS_NEEDED_LDFLAG $X264_LIBS $LDFLAGS conftest.$ac_ext $LIBS>&5
           if test \! -x conftest$ac_exeext ; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: cannot determine - using defaults" >&5
 $as_echo "cannot determine - using defaults" >&6; }
