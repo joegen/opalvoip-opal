@@ -4168,43 +4168,40 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 
 bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  if (OpalRTPConnection::OnMediaCommand(stream, command))
-    return true;
-
   H323Channel * channel = FindChannel(stream.GetSessionID(), true);
   if (channel == NULL) {
     PTRACE(4, "H.323\tOnMediaCommand, no channel found for session " << stream.GetSessionID());
-    return false;
   }
-
-  const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
-  if (flow != NULL) {
-    H323ControlPDU pdu;
-    pdu.BuildFlowControlCommand(channel->GetNumber(), flow->GetMaxBitRate()/100);
-    WriteControlPDU(pdu);
-    return true;
-  }
-
-#if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    if (m_h245FastUpdatePictureTimer.IsRunning()) {
-      PTRACE(4, "H.323\tRecent H.245 VideoFastUpdatePicture was sent, not sending another");
+  else {
+    const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
+    if (flow != NULL) {
+      H323ControlPDU pdu;
+      pdu.BuildFlowControlCommand(channel->GetNumber(), flow->GetMaxBitRate()/100);
+      WriteControlPDU(pdu);
       return true;
     }
 
-    H323ControlPDU pdu;
-    pdu.BuildMiscellaneousCommand(channel->GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
-    WriteControlPDU(pdu);
+#if OPAL_VIDEO
+    if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+      if (m_h245FastUpdatePictureTimer.IsRunning()) {
+        PTRACE(4, "H.323\tRecent H.245 VideoFastUpdatePicture was sent, not sending another");
+        return true;
+      }
+
+      H323ControlPDU pdu;
+      pdu.BuildMiscellaneousCommand(channel->GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
+      WriteControlPDU(pdu);
 
 #if OPAL_STATISTICS
-    m_VideoUpdateRequestsSent++;
+      m_VideoUpdateRequestsSent++;
 #endif
 
-    return true;
-  }
+      return true;
+    }
 #endif // OPAL_VIDEO
+  }
 
-  return false;
+  return OpalRTPConnection::OnMediaCommand(stream, command);
 }
 
 
@@ -4617,6 +4614,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
   unsigned session = conflictingChannel.GetSessionID();
   PTRACE(2, "H323\tLogical channel " << conflictingChannel
          << " conflict on session " << session
+         << ", we are " << (IsH245Master() ? "master" : " slave")
          << ", codec: " << conflictingChannel.GetCapability());
 
   /* Matrix of conflicts:

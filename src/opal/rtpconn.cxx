@@ -322,13 +322,10 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  if (OpalConnection::OnMediaCommand(stream, command))
-    return true; // Already handled
-
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
   if (session == NULL)
-    return false;
+    return OpalConnection::OnMediaCommand(stream, command);
 
   OpalVideoFormat::RTCPFeedback rtcp_fb = stream.GetMediaFormat().GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
                                                                                 OpalVideoFormat::e_NoRTCPFb);
@@ -345,7 +342,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
       return true;
     }
     PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
-    return false;
+    return OpalConnection::OnMediaCommand(stream, command);
   }
 
 #if OPAL_VIDEO
@@ -357,12 +354,12 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
       return true;
     }
     PTRACE(3, "RTPCon\tRemote not capable of Temporal/Spatial Tradeoff (TSTR)");
-    return false;
+    return OpalConnection::OnMediaCommand(stream, command);
   }
 
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
-      PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
+      PTRACE(4, "RTPCon\tRecent RTCP Intra-Frame Request was sent, not sending another");
       return true;
     }
 
@@ -388,7 +385,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   }
 #endif // OPAL_VIDEO
 
-  return false;
+  return OpalConnection::OnMediaCommand(stream, command);
 }
 
 
