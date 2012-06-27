@@ -295,7 +295,7 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
       return false;
 
     BYTE * hdr = (BYTE *)&theArray[headerBase];
-    *(PUInt16b *)hdr = (WORD)type;
+    *(PUInt16b *)hdr = (WORD)id;
     dataPtr = hdr += 4;
   }
   else {
@@ -349,9 +349,12 @@ PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
 
 bool RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
 {
+  PINDEX oldHeaderSize = m_headerSize;
   m_headerSize = MinHeaderSize + 4*GetContribSrcCount() + (sz+1)*4;
   if (!SetMinSize(m_headerSize+m_payloadSize+m_paddingSize))
     return false;
+
+  memmove(&theArray[m_headerSize], &theArray[oldHeaderSize], m_payloadSize);
 
   SetExtension(true);
   *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2] = (WORD)sz;
