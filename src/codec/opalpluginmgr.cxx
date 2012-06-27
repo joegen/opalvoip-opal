@@ -859,6 +859,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   : OpalVideoTranscoder(codecDefn->sourceFormat, codecDefn->destFormat)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
+  , m_lastSequenceNumber(UINT_MAX)
   , m_lastDecodedTimestamp(UINT_MAX)
   , m_lastMarkerTimestamp(UINT_MAX)
   , m_badMarkers(false)
@@ -1096,11 +1097,16 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     }
   }
 
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
+  DWORD sequenceNumber = src.GetSequenceNumber();
+
+  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 ||
+          (m_lastSequenceNumber != UINT_MAX && (m_lastSequenceNumber+1) != sequenceNumber)) {
     // Don't send lots of consecutive OpalVideoPictureLoss commands
     PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << src.GetSequenceNumber());
     NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
   }
+
+  m_lastSequenceNumber = sequenceNumber;
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
     lastFrameWasIFrame = true;
