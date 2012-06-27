@@ -984,7 +984,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
   }
 
   if (args.HasOption('b')) {
-    unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
+    unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()/100;
     if (initialBandwidth == 0) {
       cerr << "Illegal bandwidth specified." << endl;
       return PFalse;
