@@ -27,6 +27,7 @@ VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
+INSTALL:=@INSTALL@
 
 PLUGINDIR := ../../../
 OPALDIR   := ../../../../
