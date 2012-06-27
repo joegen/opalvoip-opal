@@ -199,7 +199,8 @@ enum PluginCodec_Flags {
 
 enum PluginCodec_CoderFlags {
   PluginCodec_CoderSilenceFrame      = 1,    // request audio codec to create silence frame
-  PluginCodec_CoderForceIFrame       = 2     // request video codec to force I frame
+  PluginCodec_CoderForceIFrame       = 2,    // request video codec to force I frame
+  PluginCodec_CoderPacketLoss        = 4     // indicate to video codec packets were lost
 };
 
 enum PluginCodec_ReturnCoderFlags {
@@ -877,9 +878,6 @@ enum {
 #define PluginCodec_RTP_GetSSRC(ptr)               PluginCodec_RTP_GetDWORD(ptr, 8)
 #define PluginCodec_RTP_SetSSRC(ptr, ssrc)         PluginCodec_RTP_SetDWORD(ptr, 8, ssrc)
 
-#define PluginCodec_RTP_SetExtended(ptr, type, sz) ((((unsigned char*)(ptr))[0] |= 0x10), \
-                                                    PluginCodec_RTP_SetWORD(ptr, PluginCodec_RTP_GetCSRCHdrLength(ptr), type), \
-                                                    PluginCodec_RTP_SetWORD(ptr, PluginCodec_RTP_GetCSRCHdrLength(ptr)+2, sz))
 
 
 /////////////////

@@ -1037,10 +1037,15 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
 bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
+  // Detect packet loss
+  DWORD sequenceNumber = src.GetSequenceNumber();
+  bool packetsLost = (m_lastSequenceNumber != UINT_MAX && (m_lastSequenceNumber+1) != sequenceNumber);
+  m_lastSequenceNumber = sequenceNumber;
+
   // call the codec function
   unsigned fromLen = src.GetHeaderSize() + src.GetPayloadSize();
   unsigned toLen = m_bufferRTP->GetSize();
-  unsigned flags = 0;
+  unsigned flags = packetsLost ? PluginCodec_CoderPacketLoss : 0;
 
   m_bufferRTP->SetPayloadSize(0);
   m_bufferRTP->CopyHeader(src);
@@ -1069,16 +1074,11 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     }
   }
 
-  DWORD sequenceNumber = src.GetSequenceNumber();
-
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 ||
-          (m_lastSequenceNumber != UINT_MAX && (m_lastSequenceNumber+1) != sequenceNumber)) {
+  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 || packetsLost) {
     // Don't send lots of consecutive OpalVideoPictureLoss commands
-    PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << src.GetSequenceNumber());
-    NotifyCommand(OpalVideoPictureLoss(src.GetSequenceNumber(), src.GetTimestamp()));
+    PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
+    NotifyCommand(OpalVideoPictureLoss(sequenceNumber, src.GetTimestamp()));
   }
-
-  m_lastSequenceNumber = sequenceNumber;
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
     lastFrameWasIFrame = true;
@@ -1122,7 +1122,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   PTRACE(5, "OpalPlugin\tVideo decoder returned "
          << (lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
          << videoHeader->width << 'x' << videoHeader->height
-         << ", sn=" << src.GetSequenceNumber()
+         << ", sn=" << sequenceNumber
          << ", ts=" << src.GetTimestamp());
 
   return true;
