@@ -358,7 +358,28 @@ class MyEncoderOM : public MyEncoder
         headerSize = 2;
 
         rtp[0] = 0x40; // Start bit
-        rtp[1] = LandscapeUp;
+
+        unsigned type;
+        size_t len;
+        unsigned char * ext = rtp.GetExtendedHeader(type, len);
+        if (ext == NULL || type != 0x10001)
+          rtp[1] = LandscapeUp;
+        else {
+          switch (*ext >> 4) {
+            case 0 : // Portrait left
+              rtp[1] = PortraitLeft;
+              break;
+            case 1 : // Landscape up
+              rtp[1] = LandscapeUp;
+              break;
+            case 2 : // Portrait right
+              rtp[1] = PortraitRight;
+              break;
+            case 3 : // Landscape down
+              rtp[1] = LandscapeDown;
+              break;
+          }
+        }
 
         if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
           rtp[1] |= 0x80; // Indicate is golden frame
@@ -387,11 +408,13 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
     vpx_codec_ctx_t      m_codec;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
+    bool                 m_ignoreTillKeyFrame;
 
   public:
     MyDecoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_iterator(NULL)
+      , m_ignoreTillKeyFrame(false)
     {
       memset(&m_codec, 0, sizeof(m_codec));
       m_fullFrame.reserve(10000);
@@ -424,13 +447,16 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
+        if ((flags&PluginCodec_CoderPacketLoss) != 0)
+          m_ignoreTillKeyFrame = true;
+
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         if (!Unpacketise(srcRTP)) {
           flags |= PluginCodec_ReturnCoderRequestIFrame;
           return true;
         }
 
-        if (!srcRTP.GetMarker())
+        if (!srcRTP.GetMarker() || m_fullFrame.empty())
           return true;
 
         vpx_codec_err_t err = vpx_codec_decode(&m_codec, &m_fullFrame[0], m_fullFrame.size(), NULL, 0);
@@ -542,14 +568,12 @@ class MyDecoderOM : public MyDecoder
 {
   protected:
     unsigned m_expectedGID;
-    bool     m_ignoreTillFirst;
     Orientation m_orientation;
 
   public:
     MyDecoderOM(const PluginCodec_Definition * defn)
       : MyDecoder(defn)
       , m_expectedGID(UINT_MAX)
-      , m_ignoreTillFirst(false)
       , m_orientation(LandscapeUp)
     {
     }
@@ -673,16 +697,16 @@ class MyDecoderOM : public MyDecoder
         ++headerSize;
       }
 
-      if (m_ignoreTillFirst) {
-        if (!first)
+      if (m_ignoreTillKeyFrame) {
+        if (!first || (rtp[headerSize]&1) != 0)
           return false;
-        m_ignoreTillFirst =  false;
-        PTRACE(3, MY_CODEC_LOG, "Found next start of frame.");
+        m_ignoreTillKeyFrame =  false;
+        PTRACE(3, MY_CODEC_LOG, "Found next start of key frame.");
       }
       else {
         if (!first && m_fullFrame.empty()) {
-          PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next.");
-          m_ignoreTillFirst = true;
+          PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
+          m_ignoreTillKeyFrame = true;
           return false;
         }
       }

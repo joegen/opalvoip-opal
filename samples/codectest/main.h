@@ -97,6 +97,7 @@ class TranscoderThread : public PThread
     int  m_framesToTranscode;
     int  m_frameTime;
     bool m_calcSNR;
+    BYTE m_extensionHeader;
     int  m_dropPercent;
 };
 
