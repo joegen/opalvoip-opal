@@ -137,10 +137,59 @@ class PluginCodec_RTP
     __inline unsigned GetSSRC() const                { return PluginCodec_RTP_GetSSRC(m_packet);               }
     __inline void     SetSSRC(unsigned ssrc)         {        PluginCodec_RTP_SetSSRC(m_packet, ssrc);         }
 
-    __inline void     SetExtended(unsigned type, unsigned sz)
+    __inline unsigned char * SetExtended(unsigned id, unsigned len)
     {
-      PluginCodec_RTP_SetExtended(m_packet, type, sz);
+      m_packet[0] |= 0x10;
+
+      unsigned char * ptr = m_packet + PluginCodec_RTP_GetCSRCHdrLength(m_packet);
+      switch (id >> 16) {
+        case 0 :
+          PluginCodec_RTP_SetWORD(ptr, 0, id);
+          PluginCodec_RTP_SetWORD(ptr, 2, (len+3)/4);
+          ptr += 4;
+          break;
+
+        case 1 :
+          *ptr++ = 0xbe;
+          *ptr++ = 0xde;
+          PluginCodec_RTP_SetWORD(ptr, 0, (len+7)/4); ptr += 2;
+          *ptr++ = (unsigned char)(((id&0xf) << 4)|(len-1));
+          break;
+
+        case 2 :
+          *ptr++ = 0x10;
+          *ptr++ = 0x00;
+          PluginCodec_RTP_SetWORD(ptr, 0, (len+8)/4); ptr += 2;
+          *ptr++ = (unsigned char)(id&0xff);
+          *ptr++ = (unsigned char)(len&0xff);
+      }
+
       m_headerSize = PluginCodec_RTP_GetHeaderLength(m_packet);
+      return ptr;
+    }
+
+    __inline unsigned char * GetExtendedHeader(unsigned & id, size_t & len) const
+    {
+      if ((m_packet[0]&0x10) == 0)
+        return NULL;
+
+      unsigned char * ptr = m_packet + PluginCodec_RTP_GetCSRCHdrLength(m_packet);
+      id = PluginCodec_RTP_GetWORD(ptr, 0);
+
+      if (id == 0xbede) {
+        id = (0x10000|(ptr[4] >> 4));
+        len = (ptr[4] & 0xf)+1;
+        return ptr + 5;
+      }
+
+      if ((id&0xfff0) == 0x1000) {
+        id = 0x20000 | ptr[4];
+        len = ptr[5];
+        return ptr + 6;
+      }
+
+      len = PluginCodec_RTP_GetWORD(ptr, 2)*4;
+      return ptr + 4;
     }
 
     __inline unsigned char * GetPayloadPtr() const   { return m_packet + m_headerSize; }
