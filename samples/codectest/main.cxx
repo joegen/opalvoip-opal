@@ -88,6 +88,7 @@ void CodecTest::Main()
              "r-frame-rate:"
              "R-record-device:"
              "-record-driver:"
+             "-ext-hdr:"
              "s-frame-size:"
              "-single-step."
              "S-simultaneous:"
@@ -164,6 +165,7 @@ void CodecTest::Main()
               "  -r --frame-rate size    : video frame rate (frames/second)\n"
               "  -b --bit-rate size      : video bit rate (bits/second)\n"
               "  -O --option opt=val     : set media format option to value\n"
+              "  --ext-hdr n             : Set RTP extension header (RFC5285 one byte value)\n"
               "  --single-step           : video single frame at a time mode\n"
               "  -c --crop               : crop rather than scale if resizing\n"
               "  -m --suppress-marker    : suppress marker bits to decoder\n"
@@ -334,6 +336,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
     m_framesToTranscode = s.AsInteger();
 
   m_calcSNR = args.HasOption("snr");
+  m_extensionHeader = (BYTE)args.GetOptionString("ext-hdr", "255").AsUnsigned();
 
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     OpalMediaFormat mediaFormat = args[i];
@@ -994,6 +997,9 @@ void TranscoderThread::Main()
           if (m_forceIFrame || rateControlForceIFrame)
             ((OpalVideoTranscoder *)m_encoder)->ForceIFrame();
         }
+
+        if (m_extensionHeader != 255)
+          srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
 
         bool state = m_encoder->ConvertFrames(srcFrame, encFrames);
         if (oldEncState != state) {
