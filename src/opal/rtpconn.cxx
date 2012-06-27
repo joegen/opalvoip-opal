@@ -376,61 +376,63 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   if (session == NULL)
     return OpalConnection::OnMediaCommand(stream, command);
 
-  PCaselessString rtcp_fb = stream.GetMediaFormat().GetOptionString("RTCP-FB");
-  if (rtcp_fb.IsEmpty()) {
+  OpalVideoFormat::RTCPFeedback rtcp_fb = stream.GetMediaFormat().GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
+                                                                                OpalVideoFormat::e_NoRTCPFb);
+  if (rtcp_fb == OpalVideoFormat::e_NoRTCPFb) {
     OpalMediaStreamPtr source = GetMediaStream(sessionID, true);
     if (source != NULL)
-      rtcp_fb = source->GetMediaFormat().GetOptionString("RTCP-FB");
+      rtcp_fb = source->GetMediaFormat().GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
   }
 
   const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
   if (flow != NULL) {
-    if (rtcp_fb.Find("tmmbr") != P_MAX_INDEX) {
+    if (rtcp_fb & OpalVideoFormat::e_TMMBR) {
       session->SendFlowControl(flow->GetMaxBitRate());
       return true;
     }
     PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
+    return OpalConnection::OnMediaCommand(stream, command);
   }
-  else {
 
 #if OPAL_VIDEO
 
-    const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
-    if (tsto != NULL) {
-      if (rtcp_fb.Find("tstr") != P_MAX_INDEX) {
-        session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
-        return true;
-      }
-      PTRACE(3, "RTPCon\tRemote not capable of Temporal/Spatial Tradoff (TSTR)");
-    }
-    else if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-      if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
-        PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
-        return true;
-      }
-
-      bool no_AVPF_PLI = rtcp_fb.Find("pli") == P_MAX_INDEX;
-      bool no_AVPF_FIR = rtcp_fb.Find("fir") == P_MAX_INDEX;
-
-      if (no_AVPF_PLI && no_AVPF_FIR)
-        session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
-      else if (no_AVPF_PLI)
-        session->SendIntraFrameRequest(false, false); // Unusual, but possible, use RFC5104 FIR
-      else if (no_AVPF_FIR)
-        session->SendIntraFrameRequest(false, true);  // More common, use RFC4585 PLI
-      else
-        session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
-
-      m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
-
-#if OPAL_STATISTICS
-      m_VideoUpdateRequestsSent++;
-#endif
-
+  const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
+  if (tsto != NULL) {
+    if (rtcp_fb & OpalVideoFormat::e_TSTR) {
+      session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
       return true;
     }
-#endif // OPAL_VIDEO
+    PTRACE(3, "RTPCon\tRemote not capable of Temporal/Spatial Tradeoff (TSTR)");
+    return OpalConnection::OnMediaCommand(stream, command);
   }
+
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
+      PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
+      return true;
+    }
+
+    bool has_AVPF_PLI = rtcp_fb & OpalVideoFormat::e_PLI;
+    bool has_AVPF_FIR = rtcp_fb & OpalVideoFormat::e_FIR;
+
+    if (has_AVPF_PLI && has_AVPF_FIR)
+      session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
+    else if (has_AVPF_PLI)
+      session->SendIntraFrameRequest(false, true);  // More common, use RFC4585 PLI
+    else if (has_AVPF_PLI)
+      session->SendIntraFrameRequest(false, false); // Unusual, but possible, use RFC5104 FIR
+    else
+      session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
+
+    m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
+
+#if OPAL_STATISTICS
+    m_VideoUpdateRequestsSent++;
+#endif
+
+    return true;
+  }
+#endif // OPAL_VIDEO
 
   return OpalConnection::OnMediaCommand(stream, command);
 }

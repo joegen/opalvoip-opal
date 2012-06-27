@@ -2110,7 +2110,6 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (sdp == NULL || transaction.GetSDP() != NULL)
     return true;
 
-  // 
   /* As we did an empty INVITE, we now have the remotes capabilities on their 200
      and we can flow though to OnReceivedOK, and it does an OnConnected
      causing the the OpalCall (and other connection) to do media selection and
@@ -2154,8 +2153,8 @@ void SIPConnection::SendDelayedACK(bool force)
     OpalMediaTypeList mediaTypes = otherConnection->GetMediaFormats().GetMediaTypes();
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
       OpalMediaType::AutoStartMode autoStart = GetAutoStart(*mediaType);
-      if (((autoStart&OpalMediaType::Receive) != 0 && GetMediaStream(*mediaType, true) == NULL) ||
-        ((autoStart&OpalMediaType::Transmit) != 0 && GetMediaStream(*mediaType, false) == NULL)) {
+      if (((autoStart&OpalMediaType::Receive ) != 0 && GetMediaStream(*mediaType, true ) == NULL) ||
+          ((autoStart&OpalMediaType::Transmit) != 0 && GetMediaStream(*mediaType, false) == NULL)) {
         PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
         return;
       }
@@ -3264,12 +3263,16 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
 void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * transaction)
 {
-  if (transaction != NULL && transaction->GetSDP() == NULL)
+  if (transaction != NULL && transaction->GetSDP() == NULL) {
+    PTRACE(4, "SIP", "No offer made, processing remote offer in delayed ACK");
     return;
+  }
 
   SDPSessionDescription * sdp = response.GetSDP();
-  if (sdp == NULL)
+  if (sdp == NULL) {
+    PTRACE(5, "SIP", "Response has no SDP");
     return;
+  }
 
   m_answerFormatList = sdp->GetMediaFormats();
   AdjustMediaFormats(false, NULL, m_answerFormatList);
