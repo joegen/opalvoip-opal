@@ -524,7 +524,8 @@ void OpalMediaStream::OnStartMediaPatch()
   // We make referenced copy of pointer so can't be deleted out from under us
   PatchPtr mediaPatch = m_mediaPatch;
 
-  connection.OnStartMediaPatch(*mediaPatch);
+  if (mediaPatch != NULL)
+    connection.OnStartMediaPatch(*mediaPatch);
 }
 
 
