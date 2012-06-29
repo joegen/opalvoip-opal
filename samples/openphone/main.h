@@ -306,24 +306,24 @@ class CallPanelBase : public wxPanel
   protected:
     CallPanelBase(
       MyManager & manager,
-      const PwxString & token,
+      const PSafePtr<OpalCall> & call,
       wxWindow * parent,
       const wxChar * resource
     );
 
   public:
-    const PwxString & GetToken() const { return m_token; }
+    PwxString GetToken() const { return m_call->GetToken(); }
 
   protected:
     MyManager & m_manager;
-    PwxString   m_token;
+    PSafePtr<OpalCall> m_call;
 };
 
 
 class CallingPanel : public CallPanelBase
 {
   public:
-    CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -335,7 +335,7 @@ class CallingPanel : public CallPanelBase
 class AnswerPanel : public CallPanelBase
 {
   public:
-    AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    AnswerPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
 
     void SetPartyNames(const PwxString & calling, const PwxString & called);
 
@@ -417,7 +417,7 @@ class StatisticsPage
 class InCallPanel : public CallPanelBase
 {
   public:
-    InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
     virtual bool Show(bool show = true);
 
     void OnStreamsChanged();
