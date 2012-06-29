@@ -1295,26 +1295,30 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
   if (remotePartyAddress.IsEmpty())
     remotePartyAddress = remotePartyNumber;
 
-  remotePartyURL = GetPrefixName() + ':';
-
+  PString remoteHostName;
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
-  if (gatekeeperRouted && gatekeeper != NULL) {
-    PString gkName = gatekeeper->GetName();
-    PINDEX at = gkName.Find('@');
-    remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation)
-                   + '@' + gkName.Mid(at != P_MAX_INDEX ? at+1 : 0) + ";type=gk";
-  }
+  if (!gatekeeperRouted || gatekeeper == NULL)
+    remoteHostName = signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
   else {
-    PString remoteHostName = signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
-    if (remotePartyAddress.IsEmpty()) {
-      remotePartyAddress = remoteHostName;
-      remotePartyURL += remoteHostName;
-    }
-    else if (remotePartyAddress == remoteHostName || remotePartyAddress.Find('@') != P_MAX_INDEX)
-      remotePartyURL += remotePartyAddress;
+    PString gkId, gkHost;
+    if (gatekeeper->GetName().Split('@', gkId, gkHost))
+      remoteHostName = gkHost;
     else
-      remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation) + '@' + remoteHostName;
+      remoteHostName = gatekeeper->GetName();
+    remoteHostName += ";type=gk";
   }
+
+  remotePartyURL = GetPrefixName() + ':';
+  if (remotePartyAddress.IsEmpty()) {
+    remotePartyAddress = remoteHostName;
+    remotePartyURL += remoteHostName;
+  }
+  else if (remotePartyAddress == remoteHostName || remotePartyAddress.Find('@') != P_MAX_INDEX)
+    remotePartyURL += remotePartyAddress;
+  else if (remotePartyNumber.IsEmpty())
+    remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation) + '@' + remoteHostName;
+  else
+    remotePartyURL += remotePartyNumber + '@' + remoteHostName;
 
   remotePartyName = pdu.GetSourceAliases(signallingChannel);
   PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << '"');
