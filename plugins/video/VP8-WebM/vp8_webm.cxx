@@ -329,24 +329,10 @@ class MyEncoderOM : public MyEncoder
         unsigned type;
         size_t len;
         unsigned char * ext = rtp.GetExtendedHeader(type, len);
-        if (ext == NULL || type != 0x10001)
+        if (ext != NULL || type == 0x10001)
+          rtp[1] = *ext;
+        else
           rtp[1] = LandscapeUp;
-        else {
-          switch (*ext >> 4) {
-            case 0 : // Portrait left
-              rtp[1] = PortraitLeft;
-              break;
-            case 1 : // Landscape up
-              rtp[1] = LandscapeUp;
-              break;
-            case 2 : // Portrait right
-              rtp[1] = PortraitRight;
-              break;
-            case 3 : // Landscape down
-              rtp[1] = LandscapeDown;
-              break;
-          }
-        }
 
         if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
           rtp[1] |= 0x80; // Indicate is golden frame
@@ -598,6 +584,14 @@ class MyDecoderOM : public MyDecoder
     virtual unsigned OutputImage(unsigned char * planes[3], int raster[3],
                                  unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
+      unsigned type;
+      size_t len;
+      unsigned char * ext = rtp.GetExtendedHeader(type, len);
+      if (ext != NULL && type == 0x10001) {
+        *ext = (unsigned char)m_orientation;
+        return MyDecoder::OutputImage(planes, raster, width, height, rtp, flags);
+      }
+
       switch (m_orientation) {
         case PortraitLeft :
         case PortraitRight :
