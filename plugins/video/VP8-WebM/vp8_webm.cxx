@@ -131,11 +131,14 @@ static bool IsError(vpx_codec_err_t err, const char * fn)
 
 
 enum Orientation {
-  PortraitLeft  = 0x00,
-  LandscapeUp   = 0x20,
-  PortraitRight = 0x40,
-  LandscapeDown = 0x60,
-  OrientationMask = 0x60
+  PortraitLeft,
+  LandscapeUp,
+  PortraitRight,
+  LandscapeDown,
+  OrientationMask = 3,
+
+  OrientationExtHdrShift = 4,
+  OrientationPktHdrShift = 5
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -359,13 +362,11 @@ class MyEncoderOM : public MyEncoder
 
         rtp[0] = 0x40; // Start bit
 
-        unsigned type;
+        unsigned type = UINT_MAX;
         size_t len;
         unsigned char * ext = rtp.GetExtendedHeader(type, len);
-        if (ext != NULL || type == 0x10001)
-          rtp[1] = *ext;
-        else
-          rtp[1] = LandscapeUp;
+        Orientation orientation = type == 0x10001 ? (Orientation)(*ext >> OrientationExtHdrShift) : LandscapeUp;
+        rtp[1] = (unsigned char)(orientation << OrientationPktHdrShift);
 
         if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
           rtp[1] |= 0x80; // Indicate is golden frame
@@ -621,7 +622,7 @@ class MyDecoderOM : public MyDecoder
       size_t len;
       unsigned char * ext = rtp.GetExtendedHeader(type, len);
       if (ext != NULL && type == 0x10001) {
-        *ext = (unsigned char)m_orientation;
+        *ext = (unsigned char)(m_orientation << OrientationExtHdrShift);
         return MyDecoder::OutputImage(planes, raster, width, height, rtp, flags);
       }
 
@@ -682,7 +683,7 @@ class MyDecoderOM : public MyDecoder
 
       bool first = (rtp[0]&0x40) != 0;
       if (first)
-        m_orientation = (Orientation)(rtp[1]&OrientationMask);
+        m_orientation = (Orientation)((rtp[1] >> OrientationPktHdrShift) & OrientationMask);
 
       size_t headerSize = first ? 2 : 1;
       if ((rtp[0]&0x80) != 0) {
