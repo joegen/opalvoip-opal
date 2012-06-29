@@ -2122,7 +2122,7 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
     LogWindow << "Could not call \"" << address << '"' << endl;
   else {
     LogWindow << "Calling \"" << address << '"' << endl;
-    m_tabs->AddPage(new CallingPanel(*this, m_activeCall->GetToken(), m_tabs), wxT("Calling"), true);
+    m_tabs->AddPage(new CallingPanel(*this, m_activeCall, m_tabs), wxT("Calling"), true);
   }
 }
 
@@ -2132,9 +2132,10 @@ void MyManager::AnswerCall()
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
 
-    m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
+    PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
+    if (call != NULL && pcssEP->AcceptIncomingConnection(m_incomingToken))
+      m_tabs->AddPage(new CallingPanel(*this, call, m_tabs), wxT("Answering"), true);
 
-    pcssEP->AcceptIncomingConnection(m_incomingToken);
     m_incomingToken.clear();
   }
 }
@@ -2162,9 +2163,9 @@ void MyManager::HangUpCall()
 void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 {
   m_incomingToken = theEvent.GetString();
-  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadOnly);
-  if (!PAssert(call != NULL, PLogicError))
-    return;
+  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
+  if (call == NULL)
+    return; // Call disappeared before we could get to it
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   if (!PAssert(connection != NULL, PLogicError))
@@ -2202,13 +2203,13 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 
   if ((m_autoAnswer && m_activeCall == NULL) || connection->GetStringOptions().Contains("Auto-Answer")) {
     m_currentAnswerMode = m_defaultAnswerMode;
-    m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
+    m_tabs->AddPage(new CallingPanel(*this, call, m_tabs), wxT("Answering"), true);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
     m_incomingToken.clear();
   }
   else {
-    AnswerPanel * answerPanel = new AnswerPanel(*this, m_incomingToken, m_tabs);
+    AnswerPanel * answerPanel = new AnswerPanel(*this, call, m_tabs);
 
     // Want the network side connection to get calling and called party names.
     answerPanel->SetPartyNames(call->GetPartyA(), call->GetPartyB());
@@ -2250,7 +2251,7 @@ PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned o
 
   if (usingHandset) {
     m_activeCall = &connection.GetCall();
-    PostEvent(wxEvtRinging, ID_RINGING, connection.GetCall().GetToken());
+    PostEvent(wxEvtRinging, ID_RINGING, m_activeCall->GetToken());
   }
 
   return true;
@@ -2301,7 +2302,7 @@ void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
     }
     if (createInCallPanel) {
       PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
-      m_tabs->AddPage(new InCallPanel(*this, token, m_tabs), title, true);
+      m_tabs->AddPage(new InCallPanel(*this, m_activeCall, m_tabs), title, true);
     }
     else
       RemoveCallOnHold(token);
@@ -2584,7 +2585,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
   OnHoldChanged(call.GetToken(), true);
 
   if (!m_switchHoldToken.IsEmpty()) {
-    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReadWrite);
+    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReference);
     if (call != NULL)
       call->Retrieve();
     m_switchHoldToken.clear();
@@ -2692,7 +2693,7 @@ void MyManager::SwitchToFax()
 
 void MyManager::OnRequestHold(wxCommandEvent& /*event*/)
 {
-  PSafePtr<OpalCall> call = GetCall(PSafeReadWrite);
+  PSafePtr<OpalCall> call = GetCall(PSafeReference);
   if (call != NULL)
     call->Hold();
 }
@@ -2788,7 +2789,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
   if (connection == NULL)
     return;
 
@@ -2820,10 +2821,10 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 
 void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
   if (connection != NULL) {
     AudioDevicesDialog dlg(this, *connection);
-    if (dlg.ShowModal() == wxID_OK && connection.SetSafetyMode(PSafeReadWrite))
+    if (dlg.ShowModal() == wxID_OK)
       m_activeCall->Transfer(dlg.GetTransferAddress(), connection);
   }
 }
@@ -3103,7 +3104,7 @@ void MyManager::OnForwardingTimeout(PTimer &, INT)
     return;
 
   // Transfer the incoming call to the forwarding address
-  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
   if (call == NULL)
     return;
 
@@ -6275,11 +6276,11 @@ void CallIMDialog::OnChanged(wxCommandEvent & WXUNUSED(event))
 ///////////////////////////////////////////////////////////////////////////////
 
 CallPanelBase::CallPanelBase(MyManager & manager,
-                             const PwxString & token,
+                             const PSafePtr<OpalCall> & call,
                              wxWindow * parent,
                              const wxChar * resource)
   : m_manager(manager)
-  , m_token(token)
+  , m_call(call)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, resource);
 }
@@ -6293,8 +6294,8 @@ BEGIN_EVENT_TABLE(AnswerPanel, CallPanelBase)
   EVT_RADIOBOX(XRCID("AnswerAs"), AnswerPanel::OnChangeAnswerMode)
 END_EVENT_TABLE()
 
-AnswerPanel::AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("AnswerPanel"))
+AnswerPanel::AnswerPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("AnswerPanel"))
 {
 }
 
@@ -6331,8 +6332,8 @@ BEGIN_EVENT_TABLE(CallingPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUpCall"), CallingPanel::OnHangUp)
 END_EVENT_TABLE()
 
-CallingPanel::CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("CallingPanel"))
+CallingPanel::CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("CallingPanel"))
 {
 }
 
@@ -6374,8 +6375,8 @@ BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
 END_EVENT_TABLE()
 
 
-InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("InCallPanel"))
+InCallPanel::InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
 {
@@ -6449,21 +6450,16 @@ void InCallPanel::OnStreamsChanged()
 
 void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> activeCall = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
-  if (PAssertNULL(activeCall) != NULL) {
-    LogWindow << "Hanging up \"" << *activeCall << '"' << endl;
-    activeCall->Clear();
+  if (m_call->GetCallEndReason() != OpalConnection::NumCallEndReasons) {
+    LogWindow << "Hanging up \"" << *m_call << '"' << endl;
+    m_call->Clear();
   }
 }
 
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
-  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
-  if (PAssertNULL(call) == NULL)
-    return;
-
-  bool notConferenced = call->GetConnectionAs<OpalMixerConnection>() == NULL;
+  bool notConferenced = m_call->GetConnectionAs<OpalMixerConnection>() == NULL;
 
   m_Hold->SetLabel(onHold ? wxT("Retrieve") : wxT("Hold"));
   m_Hold->Enable(notConferenced);
@@ -6473,24 +6469,20 @@ void InCallPanel::OnHoldChanged(bool onHold)
 
 void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadWrite);
-  if (PAssertNULL(call) == NULL)
-    return;
-
-  if (call->IsOnHold()) {
-    PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReadWrite);
+  if (m_call->IsOnHold()) {
+    PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReference);
     if (activeCall == NULL) {
-      if (!call->Retrieve())
+      if (!m_call->Retrieve())
         return;
     }
     else {
-      m_manager.m_switchHoldToken = m_token;
+      m_manager.m_switchHoldToken = m_call->GetToken();
       if (!activeCall->Hold())
         return;
     }
   }
   else {
-    if (!call->Hold())
+    if (!m_call->Hold())
       return;
   }
 
@@ -6501,7 +6493,7 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnConference(wxCommandEvent & /*event*/)
 {
-  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken()) {
+  if (m_call == m_manager.m_activeCall) {
     m_manager.AddToConference(*m_manager.m_callsOnHold.front().m_call);
     m_Conference->Enable(false);
     m_Hold->Enable(false);
