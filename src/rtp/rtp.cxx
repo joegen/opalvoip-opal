@@ -133,24 +133,6 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
 }
 
 
-void RTP_DataFrame::SetExtension(bool ext)
-{
-  bool oldState = GetExtension();
-  if (ext) {
-    theArray[0] |= 0x10;
-    if (!oldState) {
-      *(DWORD *)(&theArray[m_headerSize]) = 0;
-      m_headerSize += 4;
-    }
-  }
-  else {
-    theArray[0] &= 0xef;
-    if (oldState)
-      m_headerSize = MinHeaderSize + 4*GetContribSrcCount();
-  }
-}
-
-
 void RTP_DataFrame::SetMarker(bool m)
 {
   if (m)
@@ -206,6 +188,51 @@ void RTP_DataFrame::CopyHeader(const RTP_DataFrame & other)
 }
 
 
+void RTP_DataFrame::SetExtension(bool ext)
+{
+  bool oldState = GetExtension();
+  if (ext) {
+    if (!oldState && SetExtensionSizeDWORDs(0))
+      *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount()] = 0;
+  }
+  else {
+    theArray[0] &= 0xef;
+    if (oldState) {
+      PINDEX baseHeader = MinHeaderSize + 4*GetContribSrcCount();
+      if (m_payloadSize > 0)
+        memmove(&theArray[baseHeader], &theArray[m_headerSize], m_payloadSize);
+      m_headerSize = baseHeader;
+    }
+  }
+}
+
+
+PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
+{
+  if (GetExtension())
+    return *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2];
+
+  return 0;
+}
+
+
+bool RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
+{
+  PINDEX extHdrOffset = MinHeaderSize + 4*GetContribSrcCount();
+  PINDEX oldHeaderSize = m_headerSize;
+  m_headerSize = extHdrOffset + (sz+1)*4;
+  if (!SetMinSize(m_headerSize+m_payloadSize+m_paddingSize))
+    return false;
+
+  if (m_headerSize != oldHeaderSize && m_payloadSize > 0)
+    memmove(&theArray[m_headerSize], &theArray[oldHeaderSize], m_payloadSize);
+
+  theArray[0] |= 0x10;
+  *(PUInt16b *)&theArray[extHdrOffset + 2] = (WORD)sz;
+  return true;
+}
+
+
 BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx) const
 {
   if (!GetExtension())
@@ -225,22 +252,20 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
   if (id == 0xbede) {
     // RFC 5285 one byte format
     while (idx-- > 0) {
-      switch (*ptr & 0xf) {
+      int len;
+      switch (*ptr >> 4) {
         case 0 :
-          ++ptr;
-          --extensionSize;
+          len = 1;
           break;
-
         case 15 :
           return NULL;
-
         default :
-          int len = (*ptr >> 4)+2;
-          ptr += len;
-          extensionSize -= len;
+          len = (*ptr & 0xf)+2;
       }
-      if (extensionSize <= 0)
+      if (extensionSize <= len)
         return NULL;
+      extensionSize -= len;
+      ptr += len;
     }
 
     id = *ptr >> 4;
@@ -253,6 +278,8 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
     while (idx-- > 0) {
       if (*ptr++ != 0) {
         int len = *ptr + 1;
+        if (extensionSize <= len)
+          return NULL;
         ptr += len;
         extensionSize -= len;
       }
@@ -261,6 +288,71 @@ BYTE * RTP_DataFrame::GetHeaderExtension(unsigned & id, PINDEX & length, int idx
     id = *ptr++;
     length = *ptr++;
     return ptr;
+  }
+
+  return NULL;
+}
+
+
+BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idToFind, PINDEX & length) const
+{
+  if (!GetExtension())
+    return NULL;
+
+  BYTE * ptr = (BYTE *)&theArray[MinHeaderSize + 4*GetContribSrcCount()];
+  unsigned idPresent = *(PUInt16b *)ptr;
+  int extensionSize = *(PUInt16b *)(ptr += 2) * 4;
+  ptr += 2;
+
+  switch (type) {
+    case RFC3550 :
+      if (idPresent != idToFind)
+        return NULL;
+      length = extensionSize;
+      return ptr + 2;
+
+    case RFC5285_OneByte :
+      if (idPresent != 0xbede)
+        return NULL;
+
+      for (;;) {
+        idPresent = *ptr >> 4;
+        length = (*ptr & 0xf)+1;
+        if (idPresent == idToFind)
+          return ptr+1;
+
+        switch (idPresent) {
+          case 0 :
+            break;
+          case 15 :
+            return NULL;
+          default :
+            ++length;
+        }
+        if (extensionSize <= length)
+          return NULL;
+
+        extensionSize -= length;
+        ptr += length;
+      }
+
+    case RFC5285_TwoByte :
+      if ((idPresent&0xfff0) != 0x1000)
+        return NULL;
+
+      for (;;) {
+        idPresent = ptr[0];
+        length = ptr[1];
+        if (idPresent == idToFind)
+          return ptr+2;
+
+        if (extensionSize <= length)
+          return NULL;
+        extensionSize -= length;
+      }
+
+    default :
+      break;
   }
 
   return NULL;
@@ -288,9 +380,6 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
   }
 
   if (type == RFC3550) {
-    if (GetExtension())
-      SetExtension(false);
-
     if (!SetExtensionSizeDWORDs((length+3)/4))
       return false;
 
@@ -299,23 +388,31 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
     dataPtr = hdr += 4;
   }
   else {
-    PINDEX oldSize;
+    PINDEX oldSize = 0;
     if (GetExtension()) {
       BYTE * hdr = (BYTE *)&theArray[headerBase];
-      if (*(PUInt16b *)hdr != (type == RFC5285_OneByte ? 0xbede : 0x1000))
-        return false;
-
-      oldSize = GetExtensionSizeDWORDs();
-      if (!SetExtensionSizeDWORDs(oldSize + (length + (type == RFC5285_OneByte ? 4 : 5))/4))
-        return false;
+      unsigned oldId = *(PUInt16b *)hdr;
+      if (type == RFC5285_OneByte ? (oldId != 0xbede) : ((oldId&0xfff0) != 0x1000))
+        SetExtension(false);
+      else {
+        PINDEX previousLen;
+        BYTE * previous = GetHeaderExtension(type, id, previousLen);
+        if (previous != NULL) {
+          if (data != NULL && length > 0)
+            memcpy(previous, data, std::min(length, previousLen));
+          return true;
+        }
+        oldSize = GetExtensionSizeDWORDs();
+        if (!SetExtensionSizeDWORDs(oldSize + (length + (type == RFC5285_OneByte ? 1 : 2) + 3)/4))
+          return false;
+      }
     }
-    else {
+
+    if (!GetExtension()) {
       if (!SetHeaderExtension(type == RFC5285_OneByte ? 0xbede : 0x1000,
                               length + (type == RFC5285_OneByte ? 1 : 2),
                               NULL, RFC3550))
         return false;
-
-      oldSize = 0;;
     }
 
     BYTE * hdr = (BYTE *)&theArray[headerBase+4+oldSize*4];;
@@ -333,31 +430,6 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
   if (dataPtr != NULL && data != NULL && length > 0)
     memcpy(dataPtr, data, length);
 
-  return true;
-}
-
-
-PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
-{
-  if (GetExtension())
-    return *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2];
-
-  return 0;
-}
-
-
-bool RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
-{
-  PINDEX extHdrOffset = MinHeaderSize + 4*GetContribSrcCount();
-  PINDEX oldHeaderSize = m_headerSize;
-  m_headerSize = extHdrOffset + (sz+1)*4;
-  if (!SetMinSize(m_headerSize+m_payloadSize+m_paddingSize))
-    return false;
-
-  memmove(&theArray[m_headerSize], &theArray[oldHeaderSize], m_payloadSize);
-
-  theArray[0] |= 0x10;
-  *(PUInt16b *)&theArray[extHdrOffset + 2] = (WORD)sz;
   return true;
 }
 
