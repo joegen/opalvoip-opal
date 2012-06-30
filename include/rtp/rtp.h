@@ -151,11 +151,21 @@ class RTP_DataFrame : public PBYTEArray
       int idx = -1        ///< Index of extension
     ) const;
 
+    /// Extension header types
     enum HeaderExtensionType {
       RFC3550,
       RFC5285_OneByte,
       RFC5285_TwoByte
     };
+
+    /**Get header extension by specified id.
+       @returns NULL if no extension of that id and type is present.
+      */
+    BYTE * GetHeaderExtension(
+      HeaderExtensionType type, ///< Type of extension to get
+      unsigned id,              ///< Identifier for extension
+      PINDEX & length           ///< Length of extension in bytes
+    ) const;
 
     /**Set header extension.
        Note when RFC 5285 formats are used, the extension is appened to ones
