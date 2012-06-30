@@ -94,8 +94,53 @@ static struct PluginCodec_Option const TemporalSpatialTradeOff =
   "31"                                // Maximum value
 };
 
+static struct PluginCodec_Option const SpatialResampling =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Spatial Resampling",               // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "0",                                // Initial value
+  "dynres",                           // FMTP option name
+  "0",                                // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "100"                               // Maximum value
+};
+
+static struct PluginCodec_Option const SpatialResamplingUp =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "Spatial Resampling Up",            // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "100",                              // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "100"                               // Maximum value
+};
+
+static struct PluginCodec_Option const SpatialResamplingDown =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "Spatial Resampling Down",          // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "100"                               // Maximum value
+};
+
 static struct PluginCodec_Option const * OptionTable[] = {
   &TemporalSpatialTradeOff,
+  &SpatialResampling,
+  &SpatialResamplingUp,
+  &SpatialResamplingDown,
   NULL
 };
 
@@ -185,6 +230,21 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
 
       PTRACE(4, MY_CODEC_LOG, "Encoder opened: " << vpx_codec_version_str());
       return true;
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, SpatialResampling.m_name) == 0)
+        return SetOptionBoolean(m_config.rc_resize_allowed, optionValue);
+
+      if (strcasecmp(optionName, SpatialResamplingUp.m_name) == 0)
+        return SetOptionUnsigned(m_config.rc_resize_up_thresh, optionValue, 0, 100);
+
+      if (strcasecmp(optionName, SpatialResamplingDown.m_name) == 0)
+        return SetOptionUnsigned(m_config.rc_resize_down_thresh, optionValue, 0, 100);
+
+      return BaseClass::SetOption(optionName, optionValue);
     }
 
 
