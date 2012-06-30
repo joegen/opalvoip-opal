@@ -302,6 +302,14 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * video = srcRTP.GetVideoHeader();
 
+        if (m_width != video->width || m_height != video->height) {
+          PTRACE(4, MY_CODEC_LOG, "Changing resolution from " <<
+                 m_width << 'x' << m_height << " to " << video->width << 'x' << video->height);
+          m_width = video->width;
+          m_height = video->height;
+          OnChangedOptions();
+        }
+
         vpx_image_t image;
         vpx_img_wrap(&image, VPX_IMG_FMT_I420, video->width, video->height, 4, srcRTP.GetVideoFrameData());
 
