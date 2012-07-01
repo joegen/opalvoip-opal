@@ -6717,10 +6717,11 @@ void InCallPanel::OnStreamsChanged()
 
 void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
-  if (m_call->GetCallEndReason() != OpalConnection::NumCallEndReasons) {
-    LogWindow << "Hanging up \"" << *m_call << '"' << endl;
-    m_call->Clear();
-  }
+  LogWindow << "Hanging up \"" << *m_call << '"' << endl;
+  m_call->Clear();
+  FindWindowByNameAs<wxButton>(this, wxT("HangUp"))->Disable();
+  m_Hold->Disable();
+  m_Conference->Disable();
 }
 
 
