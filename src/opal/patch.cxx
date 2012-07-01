@@ -1026,12 +1026,17 @@ OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
 
 OpalPassiveMediaPatch::OpalPassiveMediaPatch(OpalMediaStream & source)
   : OpalMediaPatch(source)
+  , m_started(false)
 {
 }
 
 
 void OpalPassiveMediaPatch::Start()
 {
+  if (m_started)
+    return;
+
+  m_started = true;
   OnStartMediaPatch();
 }
 
