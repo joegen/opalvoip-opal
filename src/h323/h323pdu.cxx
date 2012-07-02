@@ -77,7 +77,7 @@ void H323TraceDumpPDU(const char * proto,
   if (!PTrace::CanTrace(3))
     return;
 
-  ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+  ostream & trace = PTrace::Begin(PTrace::CanTrace(4) ? 4 : 3, __FILE__, __LINE__);
   trace << proto << '\t' << (writing ? "Send" : "Receiv") << "ing PDU:";
 
   if (PTrace::CanTrace(4)) {
