@@ -1201,19 +1201,17 @@ bool MyManager::Initialise()
 #endif
 
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
-  if (m_gatekeeperMode > 0) {
-    if (config->Read(GatekeeperTTLKey, &value1))
-      h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
+  if (config->Read(GatekeeperTTLKey, &value1))
+    h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
 
-    config->Read(GatekeeperLoginKey, &username, wxT(""));
-    config->Read(GatekeeperPasswordKey, &password, wxT(""));
-    h323EP->SetGatekeeperPassword(password, username);
+  config->Read(GatekeeperLoginKey, &username, wxEmptyString);
+  config->Read(GatekeeperPasswordKey, &password, wxEmptyString);
+  h323EP->SetGatekeeperPassword(password, username);
 
-    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxT(""));
-    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxT(""));
-    if (!StartGatekeeper())
-      return false;
-  }
+  config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxEmptyString);
+  config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxEmptyString);
+  if (!StartGatekeeper())
+    return false;
 #endif
 
 #if OPAL_SIP
@@ -4850,7 +4848,7 @@ bool OptionsDialog::TransferDataFromWindow()
 void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 {
   wxString newFile = wxFileSelector(wxT("Sound file to play on incoming calls"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_RingSoundFileName,
                                     wxT(".wav"),
                                     wxT("WAV files (*.wav)|*.wav"),
@@ -4893,7 +4891,7 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for Certificate Authority"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_CertificateAuthority,
                                     wxT(".cer"),
                                     wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
@@ -4908,7 +4906,7 @@ void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 void OptionsDialog::FindLocalCertificate(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for local Certificate"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_LocalCertificate,
                                     wxT(".cer"),
                                     wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
@@ -4923,7 +4921,7 @@ void OptionsDialog::FindLocalCertificate(wxCommandEvent &)
 void OptionsDialog::FindPrivateKey(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for private key"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_PrivateKey,
                                     wxT(".key"),
                                     wxT("KEY files (*.key)|*.key|PEM files (*.pem)|*.pem"),
@@ -5039,8 +5037,8 @@ void OptionsDialog::ChangedSoundPlayer(wxCommandEvent & /*event*/)
     return;
 
  device = wxFileSelector(wxT("Select Sound File"),
-                          wxT(""),
-                          wxT(""),
+                          wxEmptyString,
+                          wxEmptyString,
                           device.Mid(1),
                           device,
                           wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
@@ -5058,8 +5056,8 @@ void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
     return;
 
  device = wxFileSelector(wxT("Select Sound File"),
-                          wxT(""),
-                          wxT(""),
+                          wxEmptyString,
+                          wxEmptyString,
                           device.Mid(1),
                           device,
                           wxFD_OPEN|wxFD_FILE_MUST_EXIST);
@@ -5104,8 +5102,8 @@ void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
   PwxString device = newDevice;
   if (newDevice[0] == '*') {
     device = wxFileSelector(wxT("Select Video File"),
-                            wxT(""),
-                            wxT(""),
+                            wxEmptyString,
+                            wxEmptyString,
                             device.Mid(1),
                             device,
                             wxFD_OPEN|wxFD_FILE_MUST_EXIST);
@@ -5383,8 +5381,8 @@ void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
     wxString value = m_allCodecs->GetString(sourceSelection);
     void * data = m_allCodecs->GetClientData(sourceSelection);
     value.Remove(0, value.Find(':')+2);
-    value.Replace(SIPonly, wxT(""));
-    value.Replace(H323only, wxT(""));
+    value.Replace(SIPonly, wxEmptyString);
+    value.Replace(H323only, wxEmptyString);
     if (m_selectedCodecs->FindString(value) < 0) {
       if (insertionPoint < 0)
         m_selectedCodecs->Append(value, data);
@@ -5460,7 +5458,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_MoveDownCodec->Enable(count == 1 && selections[0] < (int)m_selectedCodecs->GetCount()-1);
 
   m_codecOptions->DeleteAllItems();
-  m_codecOptionValue->SetValue(wxT(""));
+  m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 
@@ -5497,7 +5495,7 @@ void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
 
 void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 {
-  m_codecOptionValue->SetValue(wxT(""));
+  m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 }
@@ -5937,7 +5935,7 @@ void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
 void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 {
   wxString newFile = wxFileSelector(wxT("Trace log file"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_TraceFileName,
                                     wxT(".log"),
                                     wxT("Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||"),
@@ -6386,7 +6384,7 @@ void IMDialog::OnText(wxCommandEvent & WXUNUSED(event))
 void IMDialog::SendCurrentText()
 {
   PwxString text = m_enteredText->GetValue();
-  m_enteredText->SetValue(wxT(""));
+  m_enteredText->SetValue(wxEmptyString);
   AddTextToScreen(text, true);
 
   OpalIM * im = new OpalIM;
@@ -6419,7 +6417,7 @@ void IMDialog::OnCompositionIndication(OpalIMContext &, OpalIMContext::Compositi
   if (info.m_state == OpalIMContext::CompositionIndicationActive())
     m_compositionIndication->SetLabel(PwxString(m_context.GetRemoteName()) + wxT(" is typing"));
   else
-    m_compositionIndication->SetLabel(wxT(""));
+    m_compositionIndication->SetLabel(wxEmptyString);
 }
 
 
