@@ -143,58 +143,56 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , toolName(PProcess::Current().GetName())
   , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+  , syncSourceOut(PRandom::Number())
+  , syncSourceIn(0)
+  , lastSentTimestamp(0)  // should be calculated, but we'll settle for initialising it)
+  , allowAnySyncSource(true)
+  , allowOneSyncSourceChange(false)
+  , allowRemoteTransmitAddressChange(false)
+  , allowSequenceChange(false)
+  , txStatisticsInterval(100)
+  , rxStatisticsInterval(100)
+  , lastSentSequenceNumber((WORD)PRandom::Number())
+  , expectedSequenceNumber(0)
+  , lastSentPacketTime(PTimer::Tick())
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
+  , lastRRSequenceNumber(0)
+  , resequenceOutOfOrderPackets(true)
+  , consecutiveOutOfOrderPackets(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
+  , timeStampOffs(0)
+  , oobTimeStampBaseEstablished(false)
+  , oobTimeStampOutBase(0)
   , firstPacketSent(0)
   , firstPacketReceived(0)
+  , senderReportsReceived(0)
 #if OPAL_RTCP_XR
   , m_metrics(NULL)
 #endif
   , m_reportTimer(0, 12)  // Seconds
+  , lastReceivedPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , ignorePayloadTypeChanges(true)
+  , closeOnBye(false)
+  , byeSent(false)
+  , localAddress(0)
+  , localDataPort(0)
+  , localControlPort(0)
   , remoteAddress(0)
+  , remoteDataPort(0)
+  , remoteControlPort(0)
   , remoteTransmitAddress(0)
+  , dataSocket(NULL)
+  , controlSocket(NULL)
+  , shutdownRead(false)
+  , shutdownWrite(false)
+  , appliedQOS(false)
   , remoteIsNAT(false)
+  , localHasNAT(false)
   , m_noTransmitErrors(0)
 {
-  ignorePayloadTypeChanges = true;
-  syncSourceOut = PRandom::Number();
-
-  timeStampOffs = 0;
-  oobTimeStampBaseEstablished = false;
-  lastSentPacketTime = PTimer::Tick();
-
-  syncSourceIn = 0;
-  allowAnySyncSource = true;
-  allowOneSyncSourceChange = false;
-  allowRemoteTransmitAddressChange = false;
-  allowSequenceChange = false;
-  txStatisticsInterval = 100;  // Number of data packets between tx reports
-  rxStatisticsInterval = 100;  // Number of data packets between rx reports
-  lastSentSequenceNumber = (WORD)PRandom::Number();
-  expectedSequenceNumber = 0;
-  lastRRSequenceNumber = 0;
-  resequenceOutOfOrderPackets = true;
-  senderReportsReceived = 0;
-  consecutiveOutOfOrderPackets = 0;
-
   ClearStatistics();
 
-  lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
-
-  closeOnBye = false;
-  byeSent    = false;
-
-  lastSentTimestamp = 0;  // should be calculated, but we'll settle for initialising it
-
-  remoteDataPort    = 0;
-  remoteControlPort = 0;
-  shutdownRead      = false;
-  shutdownWrite     = false;
-  dataSocket        = NULL;
-  controlSocket     = NULL;
-  appliedQOS        = false;
-  localHasNAT       = false;
 
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
 }
@@ -1815,6 +1813,11 @@ bool OpalRTPSession::Close()
 
   delete controlSocket;
   controlSocket = NULL;
+
+  localAddress = PIPSocket::GetInvalidAddress();
+  localDataPort = localControlPort = 0;
+  remoteAddress = PIPSocket::GetInvalidAddress();
+  remoteDataPort = remoteControlPort = 0;
 
   return ok;
 }

@@ -49,20 +49,48 @@
 
 /////////////////////////////////////////////////////////////////////////
 
-OPAL_INSTANTIATE_MEDIATYPE(h224, OpalH224MediaType);
+OPAL_INSTANTIATE_MEDIATYPE(OpalH224MediaType);
+
+const char * OpalH224MediaType::Name()
+{
+  return "H.224";
+}
+
 
 OpalH224MediaType::OpalH224MediaType()
-  : OpalRTPAVPMediaType("h224", "application|RTP/") // Matches RTP/AVP and RTP/SAVP
+  : OpalRTPAVPMediaType(Name())
 {
 }
 
+
 const OpalMediaType & OpalH224MediaType::MediaType()
 {
-  static const OpalMediaType type = "h224";
+  static const OpalMediaType type = Name();
   return type;
 }
 
 #if OPAL_SIP
+
+const PCaselessString & OpalH224MediaType::GetSDPMediaType() { static PConstCaselessString const s("application"); return s; }
+
+bool OpalH224MediaType::MatchesSDP(const PCaselessString & sdpMediaType,
+                                   const PCaselessString & sdpTransport,
+                                   const PStringArray & sdpLines,
+                                   PINDEX index)
+{
+  if (sdpMediaType != GetSDPMediaType() || sdpTransport.NumCompare("RTP/") != PObject::EqualTo)
+    return false;
+
+  while (++index < sdpLines.GetSize() && sdpLines[index][0] != 'm') {
+    PCaselessString line(sdpLines[index]);
+    if (line.NumCompare("a=rtpmap:") == PObject::EqualTo &&
+        line.Find(GetOpalH224_HDLCTunneling().GetEncodingName()) != P_MAX_INDEX)
+      return true;
+  }
+
+  return false;
+}
+
 
 class SDPH224MediaDescription : public SDPRTPAVPMediaDescription
 {
@@ -75,12 +103,11 @@ class SDPH224MediaDescription : public SDPRTPAVPMediaDescription
 
     virtual PString GetSDPMediaType() const
     {
-      return "application";
+      return OpalH224MediaType::GetSDPMediaType();
     }
 };
 
-SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
-                                                                   OpalMediaSession * /*session*/) const
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
 {
   return new SDPH224MediaDescription(localAddress);
 }

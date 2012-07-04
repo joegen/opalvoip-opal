@@ -602,6 +602,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     if (contentRole == OpalVideoFormat::eNoRole && preselectedFormat.IsValid())
       contentRole = preselectedFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
     if (contentRole != OpalVideoFormat::eNoRole) {
+      PTRACE(4, "Call\tContent Role " << contentRole << traceText);
       // Remove all media formats no supporting the role
       OpalMediaFormatList * lists[2] = { &sourceMediaFormats, &sinkMediaFormats };
       for (PINDEX i = 0; i < 2; i++) {

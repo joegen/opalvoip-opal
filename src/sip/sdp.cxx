@@ -59,45 +59,59 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 //  the following functions bind the media type factory to the SDP format types
 //
 
-static OpalMediaType GetMediaTypeFromSDPType(const std::string & sdpType)
+bool OpalMediaTypeDefinition::MatchesSDP(const PCaselessString & sdpMediaType,
+                                         const PCaselessString & /*sdpTransport*/,
+                                         const PStringArray & /*sdpLines*/,
+                                         PINDEX /*index*/)
+{
+  return sdpMediaType == m_mediaType.c_str();
+}
+
+
+SDPMediaDescription * OpalMediaTypeDefinition::CreateSDPMediaDescription(const OpalTransportAddress &) const
+{
+  return NULL;
+}
+
+
+bool OpalRTPAVPMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
+                                              const PCaselessString & sdpTransport,
+                                              const PStringArray & /*sdpLines*/,
+                                              PINDEX /*index*/)
+{
+  return sdpMediaType == m_mediaType.c_str() &&
+         sdpTransport.NumCompare("RTP/") == PObject::EqualTo &&
+         sdpTransport.Find("AVP") != P_MAX_INDEX;
+}
+
+
+SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+{
+  return new SDPAudioMediaDescription(localAddress);
+}
+
+
+#if OPAL_VIDEO
+SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+{
+  return new SDPVideoMediaDescription(localAddress);
+}
+#endif
+
+
+static OpalMediaType GetMediaTypeFromSDP(const PCaselessString & sdpMediaType,
+                                         const PCaselessString & sdpTransport,
+                                         const PStringArray & sdpLines,
+                                         PINDEX index)
 {
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeList::iterator iterMediaType = mediaTypes.begin(); iterMediaType != mediaTypes.end(); ++iterMediaType) {
-    if (iterMediaType->GetDefinition()->GetSDPType() == sdpType)
+    if (iterMediaType->GetDefinition()->MatchesSDP(sdpMediaType, sdpTransport, sdpLines, index))
       return *iterMediaType;
   }
 
   return OpalMediaType();
 }
-
-OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp, const std::string & transport)
-{
-  OpalMediaType mediaType = GetMediaTypeFromSDPType(sdp);
-  if (mediaType.empty()) {
-    mediaType = GetMediaTypeFromSDPType(sdp + '|' + transport);
-    if (mediaType.empty()) {
-      size_t slash = transport.find('/');
-      if (slash != string::npos)
-        mediaType = GetMediaTypeFromSDPType(sdp + '|' + transport.substr(0, slash));
-    }
-  }
-
-  return mediaType;
-}
-
-SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
-                                                                    OpalMediaSession * /*session*/) const
-{
-  return new SDPAudioMediaDescription(localAddress);
-}
-
-#if OPAL_VIDEO
-SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
-                                                                    OpalMediaSession * /*session*/) const
-{
-  return new SDPVideoMediaDescription(localAddress);
-}
-#endif
 
 
 /////////////////////////////////////////////////////////
@@ -562,23 +576,25 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 //////////////////////////////////////////////////////////////////////////////
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
-  : transportAddress(address)
-  , mediaType(type)
+  : m_transportAddress(address)
+  , m_mediaType(type)
+  , m_port(0)
+  , m_portCount(1)
 {
-  port      = 0;
-  portCount = 0;
+  PIPSocket::Address ip;
+  m_transportAddress.GetIpAndPort(ip, m_port);
 }
 
 
-PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
+PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress & newAddress)
 {
   PIPSocket::Address ip;
-  WORD port = 0;
-  if (transportAddress.GetIpAndPort(ip, port)) {
-    transportAddress = OpalTransportAddress(t, port, OpalTransportAddress::UdpPrefix());
-    return PTrue;
-  }
-  return PFalse;
+  WORD port = m_port;
+  if (!newAddress.GetIpAndPort(ip, port))
+    return false;
+
+  m_transportAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  return true;
 }
 
 
@@ -589,51 +605,39 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
     return false;
   }
 
-  // parse the media type
-  mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2]);
-  if (mediaType.empty()) {
-    PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
-    return false;
-  }
-  OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
-  if (defn == NULL) {
-    PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);
-    return false;
-  }
-
   // parse the port and port count
-  PString portStr  = tokens[1];
+  PString portStr = tokens[1];
   PINDEX pos = portStr.Find('/');
   if (pos == P_MAX_INDEX) 
-    portCount = 1;
+    m_portCount = 1;
   else {
     PTRACE(3, "SDP\tMedia header contains port count - " << portStr);
-    portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
-    portStr   = portStr.Left(pos);
+    m_portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
+    portStr = portStr.Left(pos);
   }
-  port = (WORD)portStr.AsUnsigned();
+  m_port = (WORD)portStr.AsUnsigned();
 
   // parse the transport
   m_transportType = tokens[2];
 
   // check everything
-  switch (port) {
+  switch (m_port) {
     case 0 :
-      PTRACE(3, "SDP\tIgnoring media session " << mediaType << " with port=0");
+      PTRACE(3, "SDP\tIgnoring media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
       break;
 
     case 65535 :
-      PTRACE(2, "SDP\tIllegal port=65535 in media session " << mediaType << ", trying to continue.");
-      port = 65534;
+      PTRACE(2, "SDP\tIllegal port=65535 in media session " << m_mediaType << ", trying to continue.");
+      m_port = 65534;
       // Do next case
 
     default :
-      PTRACE(4, "SDP\tMedia session port=" << port);
+      PTRACE(4, "SDP\tMedia session port=" << m_port);
 
       PIPSocket::Address ip;
-      if (transportAddress.GetIpAddress(ip))
-        transportAddress = OpalTransportAddress(ip, (WORD)port, OpalTransportAddress::UdpPrefix());
+      if (m_transportAddress.GetIpAddress(ip))
+        m_transportAddress = OpalTransportAddress(ip, (WORD)m_port, OpalTransportAddress::UdpPrefix());
   }
 
   CreateSDPMediaFormats(tokens);
@@ -671,7 +675,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       break;
       
     case 'c' : // connection information - optional if included at session-level
-      SetTransportAddress(ParseConnectAddress(value, port));
+      SetTransportAddress(ParseConnectAddress(value, m_port));
       break;
 
     case 'a' : // zero or more media attribute lines
@@ -797,32 +801,33 @@ bool SDPMediaDescription::PreEncode()
 void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostream & strm) const
 {
   PString connectString;
-  PIPSocket::Address commonIP, transportIP;
-  if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
-    connectString = GetConnectAddressString(transportAddress);
-
-  //
-  // if no media formats, then do not output the media header
-  // this avoids displaying an empty media header with no payload types
-  // when (for example) video has been disabled
-  //
-  if (formats.GetSize() == 0)
-    return;
-
-  PIPSocket::Address ip;
-  WORD port = 0;
-  transportAddress.GetIpAndPort(ip, port);
+  {
+    PIPSocket::Address commonIP, transportIP;
+    if (m_transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
+      connectString = GetConnectAddressString(m_transportAddress);
+  }
 
   /* output media header, note the order is important according to RFC!
      Must be icbka */
   strm << "m=" 
        << GetSDPMediaType() << ' '
-       << port << ' '
-       << GetSDPTransportType()
-       << GetSDPPortList() << "\r\n";
+       << m_port;
+  if (m_portCount > 1)
+    strm << '/' << m_portCount;
+
+  strm << ' ' << GetSDPTransportType();
+
+  PString portList = GetSDPPortList();
+  if (portList.IsEmpty())
+    strm << " *";
+  else if (portList[0] == ' ')
+    strm << portList;
+  else
+    strm << ' ' << portList;
+  strm << "\r\n";
 
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
-  if (port == 0)
+  if (m_port == 0)
     return;
 
   if (!connectString.IsEmpty())
@@ -853,7 +858,8 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 
 void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
-  formats.Append(sdpMediaFormat);
+  if (sdpMediaFormat != NULL)
+    formats.Append(sdpMediaFormat);
 }
 
 
@@ -911,6 +917,27 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 }
 
 
+PString SDPMediaDescription::GetSDPPortList() const
+{
+  PStringStream strm;
+
+  // output encoding names for non RTP
+  SDPMediaFormatList::const_iterator format;
+  for (format = formats.begin(); format != formats.end(); ++format)
+    strm << ' ' << format->GetEncodingName();
+
+  return strm;
+}
+
+
+void SDPMediaDescription::Copy(SDPMediaDescription & desc)
+{
+  SDPMediaFormatList::iterator format;
+  for (format = desc.formats.begin(); format != desc.formats.end(); ++format)
+    AddSDPMediaFormat(format->CloneAs<SDPMediaFormat>());
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens)
@@ -952,7 +979,54 @@ SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat(const PString & 
 
 PString SDPDummyMediaDescription::GetSDPPortList() const
 {
-  return ' ' + m_tokens[3];
+  return m_tokens[3];
+}
+
+
+void SDPDummyMediaDescription::Copy(SDPMediaDescription & from)
+{
+  m_tokens.SetSize(4);
+  m_tokens[0] = from.GetSDPMediaType();
+  m_tokens[1] = '0';
+  m_tokens[2] = m_transportType = from.GetSDPTransportType();
+  m_tokens[3] = from.GetSDPPortList();
+
+  m_port = 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+static OpalMediaSessionFactory::Worker<SDPDummySession> dummy_session(SDPDummySession::SessionType());
+
+SDPDummySession::SDPDummySession(const Init & init)
+  : OpalMediaSession(init)
+{
+}
+
+
+const PCaselessString & SDPDummySession::SessionType()
+{
+  static PConstCaselessString const s("dummy");
+  return s;
+}
+
+
+const PCaselessString & SDPDummySession::GetSessionType() const
+{
+  return SessionType();
+}
+
+
+SDPMediaDescription * SDPDummySession::CreateSDPMediaDescription()
+{
+  return new SDPDummyMediaDescription(GetLocalMediaAddress(), m_tokens);
+}
+
+
+OpalMediaStream * SDPDummySession::CreateMediaStream(const OpalMediaFormat &, unsigned, bool)
+{
+  return NULL;
 }
 
 
@@ -1128,7 +1202,7 @@ SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat(const PString &
 PString SDPRTPAVPMediaDescription::GetSDPPortList() const
 {
   if (formats.IsEmpty())
-    return " 127"; // Have to have SOMETHING
+    return "127"; // Have to have SOMETHING
 
   PStringStream strm;
 
@@ -1456,6 +1530,7 @@ bool SDPVideoMediaDescription::PostDecode(const OpalMediaFormatList & mediaForma
   for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
     OpalMediaFormat & mediaFormat = format->GetWritableMediaFormat();
     mediaFormat.SetOptionEnum(OpalVideoFormat::ContentRoleOption(), m_contentRole);
+    m_contentMask |= mediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
     mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), m_contentMask);
   }
 
@@ -1529,21 +1604,6 @@ SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PStr
   return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
 }
 
-
-PString SDPApplicationMediaDescription::GetSDPPortList() const
-{
-  if (formats.IsEmpty())
-    return " na"; // Have to have SOMETHING
-
-  PStringStream str;
-
-  // output encoding names for non RTP
-  SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
-    str << ' ' << format->GetEncodingName();
-
-  return str;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1675,14 +1735,14 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
             if (tokens.GetSize() < 4) {
               PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
             }
-            else if ((mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0], tokens[2])).empty()) {
-              PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0] << '|' << tokens[2]);
+            else if ((mediaType = GetMediaTypeFromSDP(tokens[0], tokens[2], lines, i)).empty()) {
+              PTRACE(1, "SDP\tUnknown SDP media type parsing \"" << lines[i] << '"');
             }
             else if ((defn = mediaType.GetDefinition()) == NULL) {
-              PTRACE(1, "SDP\tNo definition for SDP media type " << tokens[0]);
+              PTRACE(1, "SDP\tNo definition for media type " << mediaType << " parsing \"" << lines[i] << '"');
             }
-            else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress, NULL)) == NULL) {
-              PTRACE(1, "SDP\tCould not create SDP media description for SDP media type " << tokens[0]);
+            else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress)) == NULL) {
+              PTRACE(1, "SDP\tCould not create SDP media description for media type " << mediaType << " parsing \"" << lines[i] << '"');
             }
             else {
               PTRACE_CONTEXT_ID_TO(currentMedia);

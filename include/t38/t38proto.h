@@ -289,10 +289,7 @@ class OpalFaxSession : public OpalMediaSession
     OpalFaxSession(const Init & init);
     ~OpalFaxSession();
 
-    virtual bool Open(const PString & localInterface);
     virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
-    virtual OpalTransportAddress GetLocalMediaAddress() const;
-    virtual OpalTransportAddress GetRemoteMediaAddress() const;
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();

@@ -147,6 +147,12 @@ OpalMediaSession::OpalMediaSession(const Init & init)
 }
 
 
+bool OpalMediaSession::Open(const PString &)
+{
+  return true;
+}
+
+
 bool OpalMediaSession::IsOpen() const
 {
   return true;
@@ -156,6 +162,18 @@ bool OpalMediaSession::IsOpen() const
 bool OpalMediaSession::Close()
 {
   return true;
+}
+
+
+OpalTransportAddress OpalMediaSession::GetLocalMediaAddress() const
+{
+  return OpalTransportAddress();
+}
+
+
+OpalTransportAddress OpalMediaSession::GetRemoteMediaAddress() const
+{
+  return OpalTransportAddress();
 }
 
 
@@ -194,6 +212,13 @@ void OpalMediaSession::SetExternalTransport(const OpalTransportAddressArray & PT
   m_isExternalTransport = true;
 }
 
+
+#if OPAL_SIP
+SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
+{
+  return m_mediaType->CreateSDPMediaDescription(GetLocalMediaAddress());
+}
+#endif
 
 #if OPAL_STATISTICS
 void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const

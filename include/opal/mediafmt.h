@@ -1418,6 +1418,7 @@ class OpalVideoFormat : public OpalMediaFormat
     };
     __inline friend ContentRole operator++(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole+1)); }
     __inline friend ContentRole operator--(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole-1)); }
+    friend std::ostream & operator<<(std::ostream & strm, ContentRole role);
 
     enum { ContentRoleMask = 15 };
     __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }

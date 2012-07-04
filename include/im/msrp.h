@@ -280,6 +280,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual SDPMediaDescription * CreateSDPMediaDescription();
 
     PURL GetLocalURL() const { return m_localUrl; }
     PURL GetRemoteURL() const { return m_remoteUrl; }
