@@ -197,24 +197,6 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 }
 
 
-bool OpalFaxSession::Open(const PString &)
-{
-  return true;
-}
-
-
-OpalTransportAddress OpalFaxSession::GetLocalMediaAddress() const
-{
-  return "";
-}
-
-
-OpalTransportAddress OpalFaxSession::GetRemoteMediaAddress() const
-{
-  return "";
-}
-
-
 void OpalFaxSession::AttachTransport(Transport & transport)
 {
   m_savedTransport = transport;

@@ -205,11 +205,11 @@ class OpalMediaSession : public PObject
 
   public:
     virtual const PCaselessString & GetSessionType() const = 0;
-    virtual bool Open(const PString & localInterface) = 0;
+    virtual bool Open(const PString & localInterface);
     virtual bool IsOpen() const;
     virtual bool Close();
-    virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
-    virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
+    virtual OpalTransportAddress GetLocalMediaAddress() const;
+    virtual OpalTransportAddress GetRemoteMediaAddress() const;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
     virtual OpalTransportAddress GetRemoteControlAddress() const;
     virtual bool SetRemoteControlAddress(const OpalTransportAddress &);
@@ -220,6 +220,10 @@ class OpalMediaSession : public PObject
 
     bool IsExternalTransport() const { return m_isExternalTransport; }
     virtual void SetExternalTransport(const OpalTransportAddressArray & transports);
+
+#if OPAL_SIP
+    virtual SDPMediaDescription * CreateSDPMediaDescription();
+#endif
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 

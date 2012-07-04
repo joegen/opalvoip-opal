@@ -59,13 +59,28 @@ Either, or both, can be used in a call
 
 #include <t38/sipt38.h>
 
+
 #if OPAL_SIP
 #if OPAL_T38_CAPABILITY
 
+#include <t38/t38proto.h>
+
+
 /////////////////////////////////////////////////////////////////////////////
 
-SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress,
-                                                                  OpalMediaSession * /*session*/) const
+const PCaselessString & OpalFaxMediaType::GetSDPMediaType() { static PConstCaselessString const s("image"); return s; }
+const PString & OpalFaxMediaType::GetSDPTransportType() { return OpalFaxMediaType::GetSDPMediaType(); }
+
+bool OpalFaxMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
+                                  const PCaselessString & sdpTransport,
+                                  const PStringArray & /*sdpLines*/,
+                                  PINDEX /*index*/)
+{
+  return sdpMediaType == GetSDPMediaType() && sdpTransport == OpalFaxSession::UDPTL();
+}
+
+
+SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
 {
   return new SDPFaxMediaDescription(localAddress);
 }
@@ -83,12 +98,12 @@ SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & addr
 
 PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
 { 
-  return "udptl";
+  return OpalFaxMediaType::GetSDPTransportType();
 }
 
 PString SDPFaxMediaDescription::GetSDPMediaType() const 
 { 
-  return "image"; 
+  return OpalFaxMediaType::GetSDPMediaType(); 
 }
 
 SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
@@ -108,16 +123,9 @@ SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & po
 PString SDPFaxMediaDescription::GetSDPPortList() const
 {
   if (formats.IsEmpty())
-    return " t38"; // Have to have SOMETHING
+    return OpalT38.GetEncodingName(); // Have to have SOMETHING
 
-  PStringStream str;
-
-  // output encoding names for non RTP
-  SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
-    str << ' ' << format->GetEncodingName();
-
-  return str;
+  return SDPMediaDescription::GetSDPPortList();
 }
 
 
@@ -133,7 +141,7 @@ void SDPFaxMediaDescription::OutputAttributes(ostream & strm) const
 
 void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
-  if (attr.Left(3) *= "t38") {
+  if (attr.Left(3) *= OpalT38.GetEncodingName()) {
     t38Attributes.SetAt(attr, value);
     return;
   }
@@ -146,7 +154,7 @@ void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/,
   if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
-      if (option.GetName().Left(3) *= "t38") {
+      if (option.GetName().Left(3) *= OpalT38.GetEncodingName()) {
         PString value = option.AsString();
         if (value != option.GetFMTPDefault())
           t38Attributes.SetAt(option.GetName(), option.AsString());

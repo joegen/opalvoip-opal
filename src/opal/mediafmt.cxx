@@ -1781,6 +1781,24 @@ const PString & OpalVideoFormat::ContentRoleOption()              { static const
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
 const PString & OpalVideoFormat::RTCPFeedbackOption()             { static const PConstString s("RTCP Feedback"); return s; }
 
+static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {
+  "No Role",
+  "Presentation",
+  "Main",
+  "Speaker",
+  "Sign Language"
+};
+
+std::ostream & operator<<(std::ostream & strm, OpalVideoFormat::ContentRole role)
+{
+  if (role < PARRAYSIZE(RoleEnumerations) && RoleEnumerations[role] != NULL)
+    strm << RoleEnumerations[role];
+  else
+    strm << '<' << (unsigned)role << '>';
+  return strm;
+}
+
+
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                  const char * encodingName,
@@ -1833,14 +1851,6 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
   AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX, OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_NoRTCPFb));
 
-
-  static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {
-    "No Role",
-    "Presentation",
-    "Main",
-    "Speaker",
-    "Sign Language"
-  };
   AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
                                     RoleEnumerations, PARRAYSIZE(RoleEnumerations),
                                     OpalMediaOption::NoMerge));

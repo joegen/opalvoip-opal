@@ -47,10 +47,32 @@
 
 #if OPAL_HAS_SIPIM
 
-const char SIP_IM_MediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"sip"; // RFC 3428
-
 static PConstCaselessString const ComposingMimeType("application/im-iscomposing+xml");
 static PConstCaselessString const DispositionMimeType("message/imdn+xml");
+
+
+class OpalSIPIMMediaType : public OpalRTPAVPMediaType
+{
+  public:
+    static const char * Name() { return OPAL_IM_MEDIA_TYPE_PREFIX"sip"; } // RFC 3428
+
+    OpalSIPIMMediaType()
+      : OpalRTPAVPMediaType(Name())
+    {
+    }
+
+    static const PCaselessString & OpalSIPIMMediaType::GetSDPMediaType();
+    static const PCaselessString & OpalSIPIMMediaType::GetSDPTransportType();
+    virtual bool MatchesSDP(
+      const PCaselessString & sdpMediaType,
+      const PCaselessString & sdpTransport,
+      const PStringArray & /*sdpLines*/,
+      PINDEX /*index*/
+    );
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const;
+};
+
+OPAL_INSTANTIATE_MEDIATYPE(OpalSIPIMMediaType);
 
 
 /////////////////////////////////////////////////////////
@@ -77,7 +99,7 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
     PCaselessString GetSDPTransportType() const
     {
-      return "sip";
+      return OpalSIPIMMediaType::GetSDPTransportType();
     }
 
     virtual SDPMediaDescription * CreateEmpty() const
@@ -87,7 +109,7 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
     virtual PString GetSDPMediaType() const 
     {
-      return "message";
+      return OpalSIPIMMediaType::GetSDPMediaType();
     }
 
     virtual PString GetSDPPortList() const;
@@ -113,22 +135,21 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
 ////////////////////////////////////////////////////////////////////////////
 
-class OpalSIPIMMediaType : public OpalRTPAVPMediaType 
+const PCaselessString & OpalSIPIMMediaType::GetSDPMediaType()     { static PConstCaselessString const s("message"); return s; }
+const PCaselessString & OpalSIPIMMediaType::GetSDPTransportType() { static PConstCaselessString const s("sip"); return s; }
+
+bool OpalSIPIMMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
+                                    const PCaselessString & sdpTransport,
+                                    const PStringArray & /*sdpLines*/,
+                                    PINDEX /*index*/)
 {
-  public:
-    OpalSIPIMMediaType()
-      : OpalRTPAVPMediaType(SIP_IM_MediaType, "message")
-    {
-    }
+  return sdpMediaType == GetSDPMediaType() && sdpTransport == GetSDPTransportType();
+}
 
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress, OpalMediaSession *) const
-    {
-      return new SDPSIPIMMediaDescription(localAddress);
-    }
-};
-
-OPAL_INSTANTIATE_MEDIATYPE2(sipim, SIP_IM_MediaType, OpalSIPIMMediaType);
-
+SDPMediaDescription * OpalSIPIMMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+{
+  return new SDPSIPIMMediaDescription(localAddress);
+}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -138,7 +159,7 @@ const OpalMediaFormat & GetOpalSIPIM()
     public: 
       IMSIPMediaFormat() 
         : OpalMediaFormat(OPAL_SIPIM, 
-                          SIP_IM_MediaType,
+                          OpalSIPIMMediaType::Name(),
                           RTP_DataFrame::MaxPayloadType, 
                           "+", 
                           false,  
@@ -159,7 +180,7 @@ const OpalMediaFormat & GetOpalSIPIM()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, SIP_IM_MediaType)
+  : SDPMediaDescription(address, OpalSIPIMMediaType::Name())
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
@@ -168,7 +189,7 @@ SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & 
 SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & address,
                                                    const OpalTransportAddress & transportAddr,
                                                    const PString & fromURL)
-  : SDPMediaDescription(address, SIP_IM_MediaType)
+  : SDPMediaDescription(address, OpalSIPIMMediaType::Name())
   , m_transportAddress(transportAddr)
   , m_fromURL(fromURL)
 {
@@ -184,12 +205,9 @@ void SDPSIPIMMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 
 PString SDPSIPIMMediaDescription::GetSDPPortList() const
 { 
-  PIPSocket::Address addr; WORD port;
-  m_transportAddress.GetIpAndPort(addr, port);
-
-  PStringStream str;
-  str << ' ' << m_fromURL << '@' << addr << ':' << port;
-
+  PString str = m_fromURL;
+  if (str.Find('@') == P_MAX_INDEX)
+    str += '@' + m_transportAddress.GetHostName(true);
   return str;
 }
 
@@ -218,7 +236,7 @@ OpalMediaFormatList SDPSIPIMMediaDescription::GetMediaFormats() const
 
 void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != SIP_IM_MediaType) {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != OpalSIPIMMediaType::Name()) {
     PTRACE(4, "SIPIM\tSDP not including " << mediaFormat << " as it is not a valid SIPIM format");
     return;
   }
