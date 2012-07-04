@@ -577,9 +577,9 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
   : m_transportAddress(address)
-  , m_mediaType(type)
   , m_port(0)
   , m_portCount(1)
+  , m_mediaType(type)
 {
   PIPSocket::Address ip;
   m_transportAddress.GetIpAndPort(ip, m_port);
