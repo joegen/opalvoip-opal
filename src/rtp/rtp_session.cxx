@@ -170,9 +170,9 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 #if OPAL_RTCP_XR
   , m_metrics(NULL)
 #endif
-  , m_reportTimer(0, 12)  // Seconds
   , lastReceivedPayloadType(RTP_DataFrame::IllegalPayloadType)
   , ignorePayloadTypeChanges(true)
+  , m_reportTimer(0, 12)  // Seconds
   , closeOnBye(false)
   , byeSent(false)
   , localAddress(0)

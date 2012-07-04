@@ -61,14 +61,16 @@ class OpalSIPIMMediaType : public OpalRTPAVPMediaType
     {
     }
 
-    static const PCaselessString & OpalSIPIMMediaType::GetSDPMediaType();
-    static const PCaselessString & OpalSIPIMMediaType::GetSDPTransportType();
+    static const PCaselessString & GetSDPMediaType();
+    static const PCaselessString & GetSDPTransportType();
+
     virtual bool MatchesSDP(
       const PCaselessString & sdpMediaType,
       const PCaselessString & sdpTransport,
       const PStringArray & /*sdpLines*/,
       PINDEX /*index*/
     );
+
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const;
 };
 
