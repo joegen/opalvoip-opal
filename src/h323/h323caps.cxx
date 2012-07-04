@@ -1478,19 +1478,7 @@ H323Channel * H323GenericControlCapability::CreateChannel(H323Connection &,
 
 /////////////////////////////////////////////////////////////////////////////
 
-const char H239MediaType[] = "H.239";
-
-class OpalH239MediaType : public OpalMediaTypeDefinition 
-{
-  public:
-    OpalH239MediaType()
-      : OpalMediaTypeDefinition(H239MediaType, NULL, NULL)
-    { }
-};
-
-OPAL_INSTANTIATE_MEDIATYPE2(H239, H239MediaType, OpalH239MediaType);
-
-
+OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(OpalH239MediaType, "H.239");
 
 H323H239VideoCapability::H323H239VideoCapability(const OpalMediaFormat & mediaFormat)
   : H323ExtendedVideoCapability("0.0.8.239.1.2")
@@ -1534,7 +1522,7 @@ PString H323H239VideoCapability::GetFormatName() const
   static class H239VideoMediaFormat : public OpalMediaFormat { 
     public: 
       H239VideoMediaFormat() 
-        : OpalMediaFormat("H.239-Video", H239MediaType, RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
+        : OpalMediaFormat("H.239-Video", OpalH239MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
       {
         OpalMediaOption * option = new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
                                                                true, OpalMediaOption::IntersectionMerge, 1, 1, 3);
@@ -1589,7 +1577,7 @@ PObject * H323H239ControlCapability::Clone() const
 
 PString H323H239ControlCapability::GetFormatName() const
 {
-  static const OpalMediaFormat name("H.239-Control", H239MediaType, RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  static const OpalMediaFormat name("H.239-Control", OpalH239MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
   return name;
 }
 

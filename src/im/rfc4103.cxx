@@ -47,8 +47,27 @@
 #endif
 
 
-const char T140MediaType[] = OPAL_IM_MEDIA_TYPE_PREFIX"t140";
+class OpalT140MediaType : public OpalRTPAVPMediaType
+{
+  public:
+    static const char * Name() { return OPAL_IM_MEDIA_TYPE_PREFIX"t140"; }
 
+    OpalT140MediaType()
+      : OpalRTPAVPMediaType(Name())
+    {
+    }
+  
+#if OPAL_SIP
+    static const PCaselessString & GetSDPMediaType();
+    virtual bool MatchesSDP(const PCaselessString &, const PCaselessString &, const PStringArray &, PINDEX);
+    virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
+#endif
+};
+
+OPAL_INSTANTIATE_MEDIATYPE(OpalT140MediaType);
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_SIP
 
@@ -62,38 +81,34 @@ class OpalT140MediaDescription : public SDPRTPAVPMediaDescription
   PCLASSINFO(OpalT140MediaDescription, SDPRTPAVPMediaDescription);
   public:
     OpalT140MediaDescription(const OpalTransportAddress & address)
-      : SDPRTPAVPMediaDescription(address, T140MediaType)
+      : SDPRTPAVPMediaDescription(address, OpalT140MediaType::Name())
     {
     }
 
     virtual PString GetSDPMediaType() const
     {
-      return "text";
+      return OpalT140MediaType::GetSDPMediaType();
     }
 };
 
-#endif
 
+const PCaselessString & OpalT140MediaType::GetSDPMediaType() { static PConstCaselessString const s("text"); return s; }
 
-/////////////////////////////////////////////////////////////////////////////
-
-class OpalT140MediaType : public OpalRTPAVPMediaType 
+bool OpalT140MediaType::MatchesSDP(const PCaselessString & sdpMediaType,
+                                   const PCaselessString & /*sdpTransport*/,
+                                   const PStringArray & /*sdpLines*/,
+                                   PINDEX /*index*/)
 {
-  public:
-    OpalT140MediaType()
-      : OpalRTPAVPMediaType(T140MediaType, "text")
-    {
-    }
-  
-#if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress, OpalMediaSession *) const
-    {
-      return new OpalT140MediaDescription(localAddress);
-    }
-#endif
-};
+  return sdpMediaType == GetSDPMediaType();
+}
 
-OPAL_INSTANTIATE_MEDIATYPE2(im_t140, T140MediaType, OpalT140MediaType);
+
+SDPMediaDescription * OpalT140MediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+{
+  return new OpalT140MediaDescription(localAddress);
+}
+
+#endif // OPAL_SIP
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -104,7 +119,7 @@ const OpalMediaFormat & GetOpalT140()
     public: 
       T140MediaFormat() 
         : OpalMediaFormat(OPAL_T140, 
-                          T140MediaType, 
+                          OpalT140MediaType::Name(), 
                           RTP_DataFrame::DynamicBase, 
                           "t140", 
                           false,  

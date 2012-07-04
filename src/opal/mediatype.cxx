@@ -49,13 +49,13 @@
 #include <algorithm>
 
 
-OPAL_INSTANTIATE_MEDIATYPE(audio, OpalAudioMediaType);
+OPAL_INSTANTIATE_MEDIATYPE(OpalAudioMediaType);
 
 #if OPAL_VIDEO
-OPAL_INSTANTIATE_MEDIATYPE(video, OpalVideoMediaType);
+OPAL_INSTANTIATE_MEDIATYPE(OpalVideoMediaType);
 #endif
 
-OPAL_INSTANTIATE_SIMPLE_MEDIATYPE_NO_SDP(userinput); 
+OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(UserInputMediaType, "userinput");
 
 
 typedef std::map<unsigned, OpalMediaTypeDefinition *> SessionIDToMediaTypeMap_T;
@@ -75,10 +75,10 @@ static PMutex & GetMapMutex()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = "audio";     return type; }
-const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = "video";     return type; }
-const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = "fax";       return type; };
-const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = "userinput"; return type; };
+const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = OpalAudioMediaType::Name(); return type; }
+const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = OpalVideoMediaType::Name(); return type; }
+const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = OpalFaxMediaType::Name();   return type; };
+const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = UserInputMediaType::Name(); return type; };
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -124,20 +124,12 @@ OpalMediaTypeList OpalMediaType::GetList()
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType,
-#if OPAL_SIP
-                                                 const char * sdpType,
-#else
-                                                 const char *,
-#endif
                                                  const char * mediaSession,
                                                  unsigned requiredSessionId,
                                                  OpalMediaType::AutoStartMode autoStart)
   : m_mediaType(mediaType)
   , m_mediaSessionType(mediaSession)
   , m_autoStart(autoStart)
-#if OPAL_SIP
-  , m_sdpType(sdpType != NULL ? sdpType : "")
-#endif
 {
   PWaitAndSignal mutex(GetMapMutex());
 
@@ -164,29 +156,22 @@ OpalMediaTypeDefinition::~OpalMediaTypeDefinition()
 }
 
 
-#if OPAL_SIP
-SDPMediaDescription * OpalMediaTypeDefinition::CreateSDPMediaDescription(const OpalTransportAddress &, OpalMediaSession *) const
-{
-  return NULL;
-}
-#endif
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType,
-                                         const char * sdpType,
                                          unsigned requiredSessionId,
                                          OpalMediaType::AutoStartMode autoStart)
-  : OpalMediaTypeDefinition(mediaType, sdpType, OpalRTPSession::RTP_AVP(), requiredSessionId, autoStart)
+  : OpalMediaTypeDefinition(mediaType, OpalRTPSession::RTP_AVP(), requiredSessionId, autoStart)
 {
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const char * OpalAudioMediaType::Name() { return "audio"; }
+
 OpalAudioMediaType::OpalAudioMediaType()
-  : OpalRTPAVPMediaType("audio", "audio", 1, OpalMediaType::ReceiveTransmit)
+  : OpalRTPAVPMediaType(Name(), 1, OpalMediaType::ReceiveTransmit)
 {
 }
 
@@ -195,8 +180,10 @@ OpalAudioMediaType::OpalAudioMediaType()
 
 #if OPAL_VIDEO
 
+const char * OpalVideoMediaType::Name() { return "video"; }
+
 OpalVideoMediaType::OpalVideoMediaType()
-  : OpalRTPAVPMediaType("video", "video", 2)
+  : OpalRTPAVPMediaType(Name(), 2)
 { }
 
 #endif // OPAL_VIDEO

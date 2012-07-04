@@ -203,34 +203,36 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 
-    virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : m_direction; }
+    virtual Direction GetDirection() const { return m_transportAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
+    virtual const OpalTransportAddress & GetTransportAddress() const { return m_transportAddress; }
     virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
 
-    virtual WORD GetPort() const { return port; }
+    virtual WORD GetPort() const { return m_port; }
 
-    virtual OpalMediaType GetMediaType() const { return mediaType; }
+    virtual OpalMediaType GetMediaType() const { return m_mediaType; }
 
     virtual void CreateSDPMediaFormats(const PStringArray & tokens);
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString) = 0;
 
-    virtual PString GetSDPPortList() const = 0;
+    virtual PString GetSDPPortList() const;
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
 
+    virtual void Copy(SDPMediaDescription & mediaDescription);
+
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
-    OpalTransportAddress transportAddress;
-    PCaselessString m_transportType;
-    WORD port;
-    WORD portCount;
-    OpalMediaType mediaType;
+    OpalTransportAddress m_transportAddress;
+    PCaselessString      m_transportType;
+    WORD                 m_port;
+    WORD                 m_portCount;
+    OpalMediaType        m_mediaType;
 
-    SDPMediaFormatList  formats;
+    SDPMediaFormatList   formats;
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
@@ -238,13 +240,29 @@ PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
 
 class SDPDummyMediaDescription : public SDPMediaDescription
 {
-  PCLASSINFO(SDPDummyMediaDescription, SDPMediaDescription);
+    PCLASSINFO(SDPDummyMediaDescription, SDPMediaDescription);
   public:
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
+    virtual void Copy(SDPMediaDescription & mediaDescription);
+
+  private:
+    PStringArray m_tokens;
+};
+
+
+class SDPDummySession : public OpalMediaSession
+{
+    PCLASSINFO(SDPDummySession, OpalMediaSession)
+  public:
+    SDPDummySession(const Init & init);
+    static const PCaselessString & SessionType();
+    virtual const PCaselessString & GetSessionType() const;
+    virtual SDPMediaDescription * CreateSDPMediaDescription();
+    virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);
 
   private:
     PStringArray m_tokens;
@@ -253,6 +271,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
 
 class SDPCryptoSuite : public PObject
 {
+    PCLASSINFO(SDPCryptoSuite, PObject)
   public:
     SDPCryptoSuite(unsigned tag);
 
@@ -377,7 +396,6 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPMediaType() const;
-    virtual PString GetSDPPortList() const;
 };
 
 /////////////////////////////////////////////////////////
@@ -406,7 +424,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
-    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
+    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;

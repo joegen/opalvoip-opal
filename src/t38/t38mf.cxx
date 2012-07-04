@@ -45,9 +45,9 @@
 
 #include <rtp/rtp.h>
 
-OPAL_INSTANTIATE_MEDIATYPE(fax, OpalFaxMediaType);
+OPAL_INSTANTIATE_MEDIATYPE(OpalFaxMediaType);
 
-const PCaselessString & OpalFaxSession::UDPTL() { static const PConstCaselessString s("UDPTL"); return s; }
+const PCaselessString & OpalFaxSession::UDPTL() { static const PConstCaselessString s("udptl"); return s; }
 
 static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxSession::UDPTL());
 
@@ -60,7 +60,7 @@ const OpalMediaFormat & GetOpalT38()
     public:
       T38MediaFormat()
         : OpalMediaFormat(OPAL_T38,
-                          "fax",
+                          OpalFaxMediaType::Name(),
                           RTP_DataFrame::T38,
                           "t38",
                           false, // No jitter for data
@@ -89,8 +89,10 @@ const OpalMediaFormat & GetOpalT38()
 
 /////////////////////////////////////////////////////////////////////////////
 
+const char * OpalFaxMediaType::Name() { return "fax"; }
+
 OpalFaxMediaType::OpalFaxMediaType()
-  : OpalMediaTypeDefinition("fax", "image", OpalFaxSession::UDPTL(), 3) // Must be 3 for H.323 operation
+  : OpalMediaTypeDefinition(Name(), OpalFaxSession::UDPTL(), 3) // Must be 3 for H.323 operation
 {
 }
 

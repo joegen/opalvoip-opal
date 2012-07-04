@@ -47,19 +47,29 @@
 //  declare a media type for H.224
 //
 
-class OpalH224MediaType : public OpalRTPAVPMediaType 
+class OpalH224MediaType : public OpalRTPAVPMediaType
 {
   public:
+    static const char * Name();
+
     OpalH224MediaType();
   
     static const OpalMediaType & MediaType();
 
 #if OPAL_SIP
-    SDPMediaDescription * CreateSDPMediaDescription(
-      const OpalTransportAddress & localAddress,
-      OpalMediaSession * session
+    static const PCaselessString & GetSDPMediaType();
+
+    virtual bool MatchesSDP(
+      const PCaselessString & sdpMediaType,
+      const PCaselessString & sdpTransport,
+      const PStringArray & sdpLines,
+      PINDEX index
+    );
+
+    virtual SDPMediaDescription * CreateSDPMediaDescription(
+      const OpalTransportAddress & localAddress
     ) const;
-#endif
+#endif // OPAL_SIP
 };
 
 ///////////////////////////////////////////////////////////////////////////////

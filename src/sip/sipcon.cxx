@@ -777,15 +777,11 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
   if (offerCurrentOnly && !mediaStreams.IsEmpty()) {
     PTRACE(4, "SIP\tOffering only current media streams in Re-INVITE");
-    std::vector<bool> sessions;
-    for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
-      std::vector<bool>::size_type session = stream->GetSessionID();
-      sessions.resize(std::max(sessions.size(),session+1));
-      if (!sessions[session]) {
-        sessions[session] = true;
-        if (OnSendOfferSDPSession(session, sdpOut, true))
-          sdpOK = true;
-      }
+    for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+      if (OnSendOfferSDPSession(it->first, sdpOut, true))
+        sdpOK = true;
+      else
+        sdpOut.AddMediaDescription(it->second->CreateSDPMediaDescription());
     }
   }
   else {
@@ -824,27 +820,24 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   }
 
   OpalMediaType mediaType = mediaSession->GetMediaType();
+  if (!m_localMediaFormats.HasType(mediaType)) {
+    PTRACE(2, "SIP\tNo formats of type " << mediaType << " for RTP session " << sessionId);
+    return false;
+  }
 
   if (!mediaSession->Open(GetTransport().GetInterface())) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
     return false;
   }
 
-  OpalTransportAddress sdpContactAddress = mediaSession->GetLocalMediaAddress();
-
-  if (sdpContactAddress.IsEmpty()) {
-    PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << sessionId << " with no transport address");
-    return false;
-  }
-
-  SDPMediaDescription * localMedia = mediaType->CreateSDPMediaDescription(sdpContactAddress, mediaSession);
+  SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
   if (localMedia == NULL) {
     PTRACE(2, "SIP\tCan't create SDP media description for media type " << mediaType);
     return false;
   }
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
-    sdp.SetDefaultConnectAddress(sdpContactAddress);
+    sdp.SetDefaultConnectAddress(mediaSession->GetLocalMediaAddress());
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
@@ -1005,31 +998,29 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
 
   vector<bool> goodSession(sessionCount+1);
   bool gotNothing = true;
-  size_t session;
+  size_t sessionId;
 
-  for (session = 1; session <= sessionCount; ++session) {
-    if (OnSendAnswerSDPSession(sdpOffer, session, sdpOut)) {
+  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+    if (OnSendAnswerSDPSession(sdpOffer, sessionId, sdpOut)) {
       gotNothing = false;
-      goodSession[session] = true;
+      goodSession[sessionId] = true;
     }
     else {
-      SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(session);
-      if (PAssert(incomingMedia != NULL, "SDP Media description list changed")) {
-        SDPMediaDescription * outgoingMedia = NULL;
-        SDPDummyMediaDescription * dummy = dynamic_cast<SDPDummyMediaDescription *>(incomingMedia);
-        if (dummy != NULL)
-          outgoingMedia = new SDPDummyMediaDescription(*dummy);
-        else {
-          OpalMediaTypeDefinition * def = incomingMedia->GetMediaType().GetDefinition();
-          if (def != NULL)
-            outgoingMedia = def->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
-        }
-        if (PAssert(outgoingMedia != NULL, "SDP Media description clone failed")) {
-          if (incomingMedia->GetSDPMediaFormats().IsEmpty())
-            outgoingMedia->AddSDPMediaFormat(new SDPMediaFormat(*incomingMedia, OpalG711_ULAW_64K));
-          else
-            outgoingMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
-          sdpOut.AddMediaDescription(outgoingMedia);
+      SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+      if (PAssert(incomingMedia != NULL, PLogicError)) {
+        OpalMediaType mediaType = incomingMedia->GetMediaType();
+        OpalMediaSession * mediaSession = NULL;
+        if (!mediaType.empty())
+          mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
+        if (mediaSession == NULL)
+          mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
+        if (PAssert(mediaSession != NULL, PLogicError)) {
+          mediaSession->Close();
+          SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
+          if (PAssert(outgoingMedia != NULL, PLogicError)) {
+            outgoingMedia->Copy(*incomingMedia);
+            sdpOut.AddMediaDescription(outgoingMedia);
+          }
         }
       }
     }
@@ -1107,7 +1098,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   }
 
   // construct a new media session list 
-  SDPMediaDescription * localMedia = mediaType->CreateSDPMediaDescription(localAddress, mediaSession);
+  SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
   if (localMedia == NULL) {
     if (replaceSession)
       delete mediaSession; // Still born so can delete, not used anywhere
@@ -1178,13 +1169,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
-      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole())) {
-        sendStream = GetMediaStream(sessionId, false);
+      if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole()))
+        return false;
 
-        if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
-          newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
-                                                                       : SDPMediaDescription::SendOnly;
-      }
+      sendStream = GetMediaStream(sessionId, false);
+      if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
+        newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
+                                                                     : SDPMediaDescription::SendOnly;
     }
 
     if (sendStream != NULL) {
@@ -1194,12 +1185,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
     if (recvStream == NULL) {
       PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
-      if (ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole())) {
-        recvStream = GetMediaStream(sessionId, true);
-        if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
-          newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
-                                                                       : SDPMediaDescription::RecvOnly;
-      }
+      if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole()))
+        return false;
+
+      recvStream = GetMediaStream(sessionId, true);
+      if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+        newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
+                                                                     : SDPMediaDescription::RecvOnly;
     }
 
     if (recvStream != NULL) {
@@ -1662,7 +1654,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
   PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
   if (!externalSDP.IsEmpty())
     request.SetEntityBody(externalSDP);
-  else if (m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true) && !m_localMediaFormats.IsEmpty()) {
+  else if ((m_needReINVITE || m_stringOptions.GetBoolean(OPAL_OPT_INITIAL_OFFER, true)) && !m_localMediaFormats.IsEmpty()) {
     if (m_needReINVITE)
       ++m_sdpVersion;
 
@@ -1895,6 +1887,24 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   // All invitations failed, die now, with correct code
   if (allFailed && GetPhase() < ConnectedPhase)
     Release(GetCallEndReasonFromResponse(transaction));
+  else {
+    switch (m_holdToRemote) {
+      case eHoldInProgress :
+        PTRACE(4, "SIP\tHold request failed on " << *this);
+        m_holdToRemote = eHoldOff;  // Did not go into hold
+        OnHold(false, false);   // Signal the manager that there is no more hold
+        break;
+
+      case eRetrieveInProgress :
+        PTRACE(4, "SIP\tRetrieve request failed on " << *this);
+        m_holdToRemote = eHoldOn;  // Did not go out of hold
+        OnHold(false, true);   // Signal the manager that hold is still active
+        break;
+
+      default :
+        break;
+    }
+  }
 }
 
 
@@ -2180,6 +2190,8 @@ void SIPConnection::SendDelayedACK(bool force)
     else {
       if (!transaction->SendPDU(*m_lastSentAck))
         Release(EndedByCapabilityExchange);
+      else
+        StartMediaStreams();
     }
   }
 
