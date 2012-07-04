@@ -148,8 +148,8 @@ OpalH224MediaFormat::OpalH224MediaFormat(
       const char * fullName,                      ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType  ///<  RTP payload type code
   ) 
-  : OpalMediaFormat(fullName, 
-                    "h224", 
+  : OpalMediaFormat(fullName,
+                    OpalH224MediaType::MediaType(),
                     rtpPayloadType,
                     "h224",
                     PFalse,
