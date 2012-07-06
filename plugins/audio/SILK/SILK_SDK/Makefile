@@ -35,7 +35,7 @@ LDFLAGS += $(call ldflags-from-ldlibdirs,$(LDLIBDIRS))
 LDLIBS  += $(call ldlibs-from-libs,$(LIBS))
 
 COMPILE.c.cmdline   = $(CC) -c $(CFLAGS) -o $@ $<
-LINK.o.cmdline      = $(LINK.o) -lm $^ $(LDLIBS) -o $@$(EXESUFFIX) 
+LINK.o.cmdline      = $(LINK.o) $^ -lm $(LDLIBS) -o $@$(EXESUFFIX) 
 ARCHIVE.cmdline     = $(AR) $(ARFLAGS) $@ $^ && $(RANLIB) $@
 
 %$(OBJSUFFIX):%.c
