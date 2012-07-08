@@ -385,6 +385,7 @@ bool OpalMediaOption::FromString(const PString & value)
 
 ///////////////////////////////////////
 
+#if OPAL_H323
 OpalMediaOption::H245GenericInfo::H245GenericInfo()
   : ordinal(0)
   , mode(None)
@@ -410,6 +411,7 @@ OpalMediaOption::H245GenericInfo::H245GenericInfo(unsigned mask, const char * df
   if (position == 0)
     position = ordinal;
 }
+#endif
 
 
 ///////////////////////////////////////

@@ -75,8 +75,12 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
       : std::string((const char *)str) { }
 
     static const OpalMediaType & Audio();
+#if OPAL_VIDEO
     static const OpalMediaType & Video();
+#endif
+#if OPAL_T38_CAPABILITY
     static const OpalMediaType & Fax();
+#endif
     static const OpalMediaType & UserInput();
 
     OpalMediaTypeDefinition * operator->() const { return GetDefinition(); }
