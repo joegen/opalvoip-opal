@@ -76,8 +76,12 @@ static PMutex & GetMapMutex()
 ///////////////////////////////////////////////////////////////////////////////
 
 const OpalMediaType & OpalMediaType::Audio()     { static const OpalMediaType type = OpalAudioMediaType::Name(); return type; }
+#if OPAL_VIDEO
 const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType type = OpalVideoMediaType::Name(); return type; }
+#endif
+#if OPAL_T38_CAPABILITY
 const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = OpalFaxMediaType::Name();   return type; };
+#endif
 const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = UserInputMediaType::Name(); return type; };
 
 
