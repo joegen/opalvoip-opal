@@ -794,7 +794,7 @@ void RTP_Session::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedRepo
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
     strm << "RTP\tSession " << sessionID << ", OnExtendedReport: ssrc=" << src << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  XR: " << reports[i] << '\n';
