@@ -44,16 +44,40 @@
 #if OPAL_SIP
 
 #include <opal/pres_ent.h>
-#include <opal/connection.h>
 #include <sip/sippdu.h>
+
+
+/// Separate base class to allow searching sorted list
+class SIPHandlerBase : public PSafeObject 
+{
+    PCLASSINFO(SIPHandlerBase, PSafeObject);
+
+  protected:
+    SIPHandlerBase(const PString & callID) : m_callID(callID) { }
+
+  public:
+    const PString & GetCallID() const
+      { return m_callID; }
+
+  protected:
+    const PString m_callID;
+
+    // Keep a copy of the keys used for easy removal on destruction
+    typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
+    std::pair<IndexMap::iterator, bool> m_byAorAndPackage;
+    std::pair<IndexMap::iterator, bool> m_byAuthIdAndRealm;
+    std::pair<IndexMap::iterator, bool> m_byAorUserAndRealm;
+
+  friend class SIPHandlersList;
+};
 
 
 /* Class to handle SIP REGISTER, SUBSCRIBE, MESSAGE, and renew
  * the 'bindings' before they expire.
  */
-class SIPHandler : public PSafeObject 
+class SIPHandler : public SIPHandlerBase 
 {
-  PCLASSINFO(SIPHandler, PSafeObject);
+  PCLASSINFO(SIPHandler, SIPHandlerBase);
 
 protected:
   SIPHandler(
@@ -62,10 +86,6 @@ protected:
     const SIPParameters & params,
     const PString & callID = SIPTransaction::GenerateCallID()
   );
-
-private:
-  // This ctor is only used for searching
-  SIPHandler(const PString & callID);
 
 public:
   ~SIPHandler();
@@ -103,9 +123,6 @@ public:
   virtual int GetExpire() const
     { return m_currentExpireTime; }
 
-  const PString & GetCallID() const
-    { return m_callID; }
-
   virtual void SetBody(const PString & /*body*/) { }
 
   virtual bool IsDuplicateCSeq(unsigned ) { return false; }
@@ -128,7 +145,7 @@ public:
   bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
-  SIPEndPoint & GetEndPoint() const { return *m_endpoint; }
+  SIPEndPoint & GetEndPoint() const { return m_endpoint; }
 
   SIP_PDU::StatusCodes GetLastResponseStatus() const { return m_lastResponseStatus; }
 
@@ -145,11 +162,11 @@ public:
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void RetryLater(unsigned after);
-  PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
+  void OnExpireTimeout();
   static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
   virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
 
-  SIPEndPoint               * m_endpoint;
+  SIPEndPoint               & m_endpoint;
 
   SIPAuthentication         * authentication;
   PString                     m_username;
@@ -162,7 +179,6 @@ protected:
   const SIP_PDU::Methods      m_method;
   const SIPURL                m_addressOfRecord;
   SIPURL                      m_remoteAddress;
-  const PString               m_callID;
   SIPMIMEInfo                 m_mime;
 
   unsigned                    m_lastCseq;
@@ -173,17 +189,9 @@ protected:
   State                       m_state;
   std::queue<State>           m_stateQueue;
   bool                        m_receivedResponse;
-  PTimer                      m_expireTimer; 
+  SIPPoolTimer<SIPHandler>    m_expireTimer; 
   SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
-
-  // Keep a copy of the keys used for easy removal on destruction
-  typedef std::map<PString, PSafePtr<SIPHandler> > IndexMap;
-  std::pair<IndexMap::iterator, bool> m_byAorAndPackage;
-  std::pair<IndexMap::iterator, bool> m_byAuthIdAndRealm;
-  std::pair<IndexMap::iterator, bool> m_byAorUserAndRealm;
-
-  friend class SIPHandlersList;
 };
 
 #if PTRACING
@@ -442,7 +450,7 @@ class SIPHandlersList
   protected:
     void RemoveIndexes(SIPHandler * handler);
 
-    PSafeSortedList<SIPHandler> m_handlersList;
+    PSafeSortedList<SIPHandlerBase> m_handlersList;
 
     typedef SIPHandler::IndexMap IndexMap;
     PSafePtr<SIPHandler> FindBy(IndexMap & by, const PString & key, PSafetyMode m);

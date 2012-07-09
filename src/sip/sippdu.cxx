@@ -39,16 +39,11 @@
 
 #include <sip/sippdu.h>
 
+#include <ptclib/pdns.h>
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
-#include <opal/call.h>
-#include <opal/manager.h>
-#include <opal/connection.h>
-#include <opal/transports.h>
+#include <sip/sdp.h>
 #include <codec/opalplugin.h>
-
-#include <ptclib/cypher.h>
-#include <ptclib/pdns.h>
 
 
 #define  SIP_VER_MAJOR  2
@@ -60,7 +55,7 @@
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end);
 
 static PConstCaselessString const TagStr("tag");
-
+static PConstString const TransactionPrefix("z9hG4bK");
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -1789,6 +1784,7 @@ SIP_PDU::SIP_PDU(Methods meth)
   , m_versionMajor(SIP_VER_MAJOR)
   , m_versionMinor(SIP_VER_MINOR)
   , m_SDP(NULL)
+  , m_transactionID(TransactionPrefix + OpalGloballyUniqueID().AsString())
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
 }
@@ -1888,8 +1884,6 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 
 PString SIP_PDU::CreateVia(const OpalTransport & transport)
 {
-  m_transactionID = "z9hG4bK" + OpalGloballyUniqueID().AsString();
-
   OpalTransportAddress via = transport.GetLocalAddress();
 
   PCaselessString proto = via.GetProtoPrefix();
@@ -2267,7 +2261,31 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   }
 #endif
 
-  return truncated ? SIP_PDU::Failure_MessageTooLarge : SIP_PDU::Successful_OK;
+  if (truncated)
+    return SIP_PDU::Failure_MessageTooLarge;
+  
+  /* RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the
+      branch paranmeter in the top most Via and CSeq. We do NOT include the
+      CSeq in our id as we want the CANCEL messages directed at out
+      transaction structure.
+    */
+  m_transactionID = SIPMIMEInfo::ExtractFieldParameter(m_mime.GetFirstVia(), "branch");
+  if (m_transactionID.NumCompare(TransactionPrefix) != EqualTo) {
+    PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has "
+            << (m_transactionID.IsEmpty() ? "no" : "RFC2543") << " branch parameter!");
+
+    SIPURL to(m_mime.GetTo());
+    to.Sanitise(SIPURL::ToURI);
+
+    SIPURL from(m_mime.GetFrom());
+    from.Sanitise(SIPURL::FromURI);
+
+    PStringStream strm;
+    strm << to << from << m_mime.GetCallID() << m_mime.GetCSeq();
+    m_transactionID += strm;
+  }
+
+  return SIP_PDU::Successful_OK;
 }
 
 
@@ -2385,35 +2403,6 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 
   pduStr = strm;
   pduLen = strm.GetLength();
-}
-
-
-PString SIP_PDU::GetTransactionID() const
-{
-  if (m_transactionID.IsEmpty()) {
-    /* RFC3261 Sections 8.1.1.7 & 17.1.3 transactions are identified by the
-       branch paranmeter in the top most Via and CSeq. We do NOT include the
-       CSeq in our id as we want the CANCEL messages directed at out
-       transaction structure.
-     */
-    m_transactionID = SIPMIMEInfo::ExtractFieldParameter(m_mime.GetFirstVia(), "branch");
-    if (m_transactionID.NumCompare("z9hG4bK") != EqualTo) {
-      PTRACE(2, "SIP\tTransaction " << m_mime.GetCSeq() << " has "
-             << (m_transactionID.IsEmpty() ? "no" : "RFC2543") << " branch parameter!");
-
-      SIPURL to(m_mime.GetTo());
-      to.Sanitise(SIPURL::ToURI);
-
-      SIPURL from(m_mime.GetFrom());
-      from.Sanitise(SIPURL::FromURI);
-
-      PStringStream strm;
-      strm << to << from << m_mime.GetCallID() << m_mime.GetCSeq();
-      m_transactionID += strm;
-    }
-  }
-
-  return m_transactionID;
 }
 
 
@@ -2700,11 +2689,10 @@ SIPTransaction::SIPTransaction(Methods method, SIPEndPoint & ep, OpalTransport &
   , m_retryTimeoutMax(ep.GetRetryTimeoutMax())
   , m_state(NotStarted)
   , m_retry(1)
+  , m_retryTimer(ep.GetThreadPool(), ep, GetTransactionID(), &SIPTransaction::OnRetry)
+  , m_completionTimer(ep.GetThreadPool(), ep, GetTransactionID(), &SIPTransaction::OnTimeout)
 {
   PTRACE_CONTEXT_ID_FROM(&trans);
-
-  m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
-  m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
   m_mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
 
@@ -2721,14 +2709,13 @@ SIPTransaction::SIPTransaction(Methods meth, SIPConnection & conn)
   , m_retryTimeoutMax(m_endpoint.GetRetryTimeoutMax())
   , m_state(NotStarted)
   , m_retry(1)
+  , m_retryTimer(conn.GetEndPoint().GetThreadPool(), conn.GetEndPoint(), GetTransactionID(), &SIPTransaction::OnRetry)
+  , m_completionTimer(conn.GetEndPoint().GetThreadPool(), conn.GetEndPoint(), GetTransactionID(), &SIPTransaction::OnTimeout)
   , m_remoteAddress(conn.GetDialog().GetRemoteTransportAddress())
 {
   PTRACE_CONTEXT_ID_FROM(conn);
 
   PAssert(m_connection != NULL, "Transaction created on connection pending deletion.");
-
-  m_retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
-  m_completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
   InitialiseHeaders(conn, m_transport);
   m_mime.SetProductInfo(m_endpoint.GetUserAgent(), conn.GetProductInfo());
@@ -2991,15 +2978,13 @@ PBoolean SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 }
 
 
-void SIPTransaction::OnRetry(PTimer &, INT)
+void SIPTransaction::OnRetry()
 {
   // Can do this outside mutex as never changes from this state
   if (IsTerminated())
     return;
 
-  PSafeLockReadWrite lock(*this);
-
-  if (!lock.IsLocked() || m_state > Cancelling || (m_state == Proceeding && m_method == Method_INVITE))
+  if (m_state > Cancelling || (m_state == Proceeding && m_method == Method_INVITE))
     return;
 
   m_retry++;
@@ -3028,42 +3013,38 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 }
 
 
-void SIPTransaction::OnTimeout(PTimer &, INT)
+void SIPTransaction::OnTimeout()
 {
   // Can do this outside mutex as never changes from this state
   if (IsTerminated())
     return;
 
-  PSafeLockReadWrite lock(*this);
+  switch (m_state) {
+    case Trying :
+      // Sent initial command and got nothin'
+      SetTerminated(Terminated_Timeout);
+      break;
 
-  if (lock.IsLocked()) {
-    switch (m_state) {
-      case Trying :
-        // Sent initial command and got nothin'
-        SetTerminated(Terminated_Timeout);
-        break;
+    case Proceeding :
+      /* Got a 100 response and then nothing, give up with a CANCEL
+          just in case the other side is still there, and in particular
+          in the case of an INVITE where nobody answers */
+      Cancel();
+      break;
 
-      case Proceeding :
-        /* Got a 100 response and then nothing, give up with a CANCEL
-           just in case the other side is still there, and in particular
-           in the case of an INVITE where nobody answers */
-        Cancel();
-        break;
+    case Cancelling :
+      // We cancelled and finished waiting for retries
+      SetTerminated(Terminated_Cancelled);
+      break;
 
-      case Cancelling :
-        // We cancelled and finished waiting for retries
-        SetTerminated(Terminated_Cancelled);
-        break;
+    case Completed :
+      // We completed and finished waiting for retries
+      SetTerminated(Terminated_Success);
+      break;
 
-      case Completed :
-        // We completed and finished waiting for retries
-        SetTerminated(Terminated_Success);
-        break;
-
-      default :
-        // Already terminated in some way
-        break;
-    }
+    default :
+      // Already terminated in some way
+      break;
   }
 }
 
@@ -3912,6 +3893,67 @@ SIPPrack::SIPPrack(SIPConnection & conn,
 SIPTransaction * SIPPrack::CreateDuplicate() const
 {
   return new SIPPrack(*this);
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+
+SIPWorkItem::SIPWorkItem(SIPEndPoint & ep, const PString & token)
+  : m_endpoint(ep)
+  , m_token(token)
+{
+  PAssert(!token, PInvalidParameter);
+}
+
+
+bool SIPWorkItem::GetTarget(PSafePtr<SIPTransaction> & transaction)
+{
+  if (m_token.IsEmpty())
+    return false;
+
+  transaction = m_endpoint.GetTransaction(m_token, PSafeReadWrite);
+  if (transaction == NULL) {
+    PTRACE(2, "SIP\tCannot find transaction for timeout using id=" << m_token);
+    return false;
+  }
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*transaction);
+  PTRACE(3, "SIP\tHandling timeout for transaction using id=" << m_token);
+  return true;
+}
+
+
+bool SIPWorkItem::GetTarget(PSafePtr<SIPConnection> & connection)
+{
+  if (m_token.IsEmpty())
+    return false;
+
+  connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
+  if (connection == NULL) {
+    PTRACE(2, "SIP\tCannot find connection for timeout using token=" << m_token);
+    return false;
+  }
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
+  PTRACE(3, "SIP\tHandling timeout for connection using token=" << m_token);
+  return true;
+}
+
+
+bool SIPWorkItem::GetTarget(PSafePtr<SIPHandler> & handler)
+{
+  if (m_token.IsEmpty())
+    return false;
+
+  handler = m_endpoint.FindSIPHandlerByCallID(m_token, PSafeReadWrite);
+  if (handler == NULL) {
+    PTRACE(2, "SIP\tCannot find handler for timeout using token=" << m_token);
+    return false;
+  }
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(*handler);
+  PTRACE(3, "SIP\tHandling timeout for handler using token=" << m_token);
+  return true;
 }
 
 

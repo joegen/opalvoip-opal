@@ -44,12 +44,19 @@
 #include <sip/sipep.h>
 
 #include <ptclib/enum.h>
-#include <sip/sippdu.h>
-#include <sip/sipcon.h>
-#include <opal/manager.h>
-#include <opal/call.h>
-#include <sip/handlers.h>
+#include <im/sipim.h>
 
+
+class SIP_PDU_Work : public SIPWorkItem
+{
+  public:
+    SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu);
+    virtual ~SIP_PDU_Work();
+
+    virtual void Work();
+
+    SIP_PDU * m_pdu;
+};
 
 #define new PNEW
 
@@ -59,9 +66,7 @@ static BYTE DefaultKeepAliveData[] = { '\r', '\n', '\r', '\n' };
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::SIPEndPoint(OpalManager & mgr,
-                         unsigned maxConnectionThreads,
-                         unsigned maxHandlerThreads)
+SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   : OpalRTPEndPoint(mgr, "sip", CanTerminateCall|SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , retryTimeoutMin(500)             // 0.5 seconds
@@ -79,8 +84,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr,
   , m_registeredUserMode(false)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
-  , m_connectionThreadPool(maxConnectionThreads, "SIPCon Pool")
-  , m_handlerThreadPool(maxHandlerThreads, "SIPHandler Pool")
+  , m_threadPool(maxThreads, "SIP Pool")
 
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
@@ -652,7 +656,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       token = m_receivedConnectionTokens(mime.GetCallID());
       m_receivedConnectionMutex.Signal();
       if (!token.IsEmpty()) {
-        m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
+        new SIP_PDU_Work(*this, token, pdu);
         return true;
       }
       break;
@@ -675,7 +679,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
                 return true;
 
               case SIPConnection::IsReINVITE : // Pass on to worker thread if re-INVITE
-                m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
+                new SIP_PDU_Work(*this, token, pdu);
                 return true;
 
               case SIPConnection::IsLoopedINVITE : // Send back error if looped INVITE
@@ -719,7 +723,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
-  m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
+  new SIP_PDU_Work(*this, token, pdu);
   return true;
 }
 
@@ -728,8 +732,10 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
 {
   if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
     PString id = pdu->GetTransactionID();
-    if (GetTransaction(id, PSafeReference) != NULL) {
-      m_handlerThreadPool.AddWork(new SIP_Work(*this, pdu, id), id);
+    PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReadOnly);
+    if (transaction != NULL) {
+      SIPConnection * connection = transaction->GetConnection();
+      new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : PString::Empty(), pdu);
       return true;
     }
 
@@ -1029,7 +1035,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   m_receivedConnectionTokens.SetAt(mime.GetCallID(), token);
 
   // Get the connection to handle the rest of the INVITE in the thread pool
-  m_connectionThreadPool.AddWork(new SIP_Work(*this, request, token), token);
+  new SIP_PDU_Work(*this, token, request);
 
   return PTrue;
 }
@@ -1987,26 +1993,28 @@ PSafePtr<SIPHandler> SIPEndPoint::FindHandlerByPDU(const SIP_PDU & pdu, PSafetyM
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::SIP_Work::SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token)
-  : m_endpoint(ep)
+SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pdu)
+  : SIPWorkItem(ep, token)
   , m_pdu(pdu)
-  , m_token(token)
 {
   PTRACE(4, "SIP\tQueueing PDU \"" << *m_pdu << "\", transaction="
          << m_pdu->GetTransactionID() << ", token=" << m_token);
 }
 
 
-SIPEndPoint::SIP_Work::~SIP_Work()
+SIP_PDU_Work::~SIP_PDU_Work()
 {
   delete m_pdu;
 }
 
 
-void SIPEndPoint::SIP_Work::Work()
+void SIP_PDU_Work::Work()
 {
   if (PAssertNULL(m_pdu) == NULL)
     return;
+
+  PSafePtr<SIPConnection> connection;
+  bool hasConnection = GetTarget(connection);
 
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
     PString transactionID = m_pdu->GetTransactionID();
@@ -2022,17 +2030,11 @@ void SIPEndPoint::SIP_Work::Work()
     }
   }
 
-  else if (PAssert(!m_token.IsEmpty(), PInvalidParameter)) {
-    PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReference);
-    if (connection != NULL) {
-      PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
-      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
-      connection->OnReceivedPDU(*m_pdu);
-      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
-    }
-    else {
-      PTRACE(2, "SIP\tCannot find connection for PDU \"" << *m_pdu << "\" using token=" << m_token);
-    }
+  else if (hasConnection) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
+    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
+    connection->OnReceivedPDU(*m_pdu);
+    PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
   }
 }
 

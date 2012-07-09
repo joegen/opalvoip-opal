@@ -44,40 +44,15 @@
 
 #if OPAL_SIP
 
-#include <ptclib/threadpool.h>
 #include <opal/rtpep.h>
 #include <sip/sipcon.h>
-#include <sip/sippdu.h>
 #include <sip/handlers.h> 
-
-#if OPAL_HAS_SIPIM
-#include <im/sipim.h>
-#endif
-
-class SIPRegisterHandler;
 
 
 //
 //  provide flag so applications know if presence is available
 //
 #define OPAL_HAS_SIP_PRESENCE   1
-
-/////////////////////////////////////////////////////////////////////////
-
-/** Class to hold authentication information 
-  */
-
-class SIPAuthInfo : public PObject
-{
-  public:
-    SIPAuthInfo()
-    { }
-
-    SIPAuthInfo(const PString & u, const PString & p)
-    { username = u; password = p; }
-    PString username;
-    PString password;
-};
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -94,8 +69,7 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     SIPEndPoint(
       OpalManager & manager,
-      unsigned maxConnectionThreads = 10,
-      unsigned maxHandlerThreads = 5
+      unsigned maxThreads = 15
     );
 
     /**Destroy endpoint.
@@ -991,7 +965,16 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     virtual void OnStartTransaction(SIPConnection & conn, SIPTransaction & transaction);
 
-    void UpdateHandlerIndexes(SIPHandler * handler) { activeSIPHandlers.Update(handler); }
+
+    PSafePtr<SIPHandler> FindSIPHandlerByCallID(const PString & callID, PSafetyMode m)
+      { return activeSIPHandlers.FindSIPHandlerByCallID(callID, m); }
+
+    void UpdateHandlerIndexes(SIPHandler * handler)
+      { activeSIPHandlers.Update(handler); }
+
+
+    SIPThreadPool & GetThreadPool() { return m_threadPool; }
+
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
@@ -1046,27 +1029,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     ConferenceMap m_conferenceAOR;
 
     // Thread pooling
-    class SIP_Work : public PObject
-    {
-      public:
-        SIP_Work(SIPEndPoint & ep, SIP_PDU * pdu, const PString & token);
-        virtual ~SIP_Work();
-
-        virtual void Work();
-
-        SIPEndPoint & m_endpoint;
-        SIP_PDU     * m_pdu;
-        PString       m_token;
-    };
-
-    class WorkThreadPool : public PQueuedThreadPool<SIP_Work>
-    {
-      public:
-        WorkThreadPool(unsigned maxWorkers, const char * threadName)
-          : PQueuedThreadPool<SIP_Work>(maxWorkers, 0, threadName, PThread::HighPriority)
-        { }
-    } m_connectionThreadPool, m_handlerThreadPool;
-
+    SIPThreadPool m_threadPool;
 
     // Network interface checking
     enum {

@@ -40,23 +40,12 @@
 
 #if OPAL_SIP
 
-#include <opal/buildopts.h>
 #include <opal/rtpconn.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
 
-#if OPAL_VIDEO
-#include <opal/pcss.h>                  // for OpalPCSSConnection
-#include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
-#endif
 
-#if OPAL_HAS_IM
-#include <im/sipim.h>
-#include <im/rfc4103.h>
-#endif
-
-class OpalCall;
-class SIPEndPoint;
+class OpalSIPIMContext;
 
 
 /**OpalConnection::StringOption key to a boolean indicating the SDP ptime
@@ -125,7 +114,7 @@ class SIPEndPoint;
 
 class SIPConnection : public OpalRTPConnection
 {
-  PCLASSINFO(SIPConnection, OpalRTPConnection);
+    PCLASSINFO(SIPConnection, OpalRTPConnection);
   public:
 
   /**@name Construction */
@@ -667,9 +656,10 @@ class SIPConnection : public OpalRTPConnection
 
   protected:
     virtual bool GarbageCollection();
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnSessionTimeout);
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseTimeout);
+    typedef SIPPoolTimer<SIPConnection> PoolTimer;
+    void OnSessionTimeout();
+    void OnInviteResponseRetry();
+    void OnInviteResponseTimeout();
 
     virtual bool OnSendOfferSDP(
       SDPSessionDescription & sdpOut,
@@ -720,7 +710,7 @@ class SIPConnection : public OpalRTPConnection
     bool WriteINVITE();
 
     virtual void SendDelayedACK(bool force);
-    PDECLARE_NOTIFIER(PTimer, SIPConnection, OnDelayedAckTimeout);
+    void OnDelayedAckTimeout();
 
     virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
@@ -764,7 +754,7 @@ class SIPConnection : public OpalRTPConnection
 
     SIP_PDU             * m_lastReceivedINVITE;
     SIP_PDU             * m_delayedAckInviteResponse;
-    PTimer                m_delayedAckTimer;
+    PoolTimer             m_delayedAckTimer;
     PTimeInterval         m_delayedAckTimeout;
     SIP_PDU             * m_lastSentAck;
     time_t                m_sdpSessionId;
@@ -779,7 +769,7 @@ class SIPConnection : public OpalRTPConnection
     PString               m_alertInfo;
     SIPAuthentication   * m_authentication;
     unsigned              m_authenticatedCseq;
-    PTimer                sessionTimer;
+    PoolTimer             m_sessionTimer;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
 
@@ -787,8 +777,8 @@ class SIPConnection : public OpalRTPConnection
     bool           m_prackEnabled;
     unsigned       m_prackSequenceNumber;
     std::queue<SIP_PDU> m_responsePackets;
-    PTimer         m_responseFailTimer;
-    PTimer         m_responseRetryTimer;
+    PoolTimer      m_responseFailTimer;
+    PoolTimer      m_responseRetryTimer;
     unsigned       m_responseRetryCount;
 
     bool                      m_referInProgress;
