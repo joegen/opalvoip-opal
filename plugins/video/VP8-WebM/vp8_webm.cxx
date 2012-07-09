@@ -45,13 +45,10 @@
 #include "vpx/vp8dx.h"
 
 
-#define MY_CODEC      VP8                       // Name of codec (use C variable characters)
-
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
 
-#define MY_CODEC_LOG  STRINGIZE(MY_CODEC)
-
-class MY_CODEC { };
+#define MY_CODEC_LOG "VP8"
+class VP8_CODEC { };
 
 static unsigned   MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
 static const char MyDescription[] = "VP8 Video Codec";      // Human readable description of codec
@@ -98,6 +95,19 @@ PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const unsigned MaxBitRate = 16000000;
+
+static struct PluginCodec_Option const MaxFrameSize =
+{
+  PluginCodec_StringOption,           // Option type
+  "SIP/SDP Max Frame Size",           // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "",                                 // Initial value
+  "x-mx-max-size",                    // FMTP option name
+  ""                                  // FMTP default value (as per RFC)
+};
+
 static struct PluginCodec_Option const TemporalSpatialTradeOff =
 {
   PluginCodec_IntegerOption,          // Option type
@@ -119,7 +129,7 @@ static struct PluginCodec_Option const SpatialResampling =
   false,                              // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
-  "dynres",                           // FMTP option name
+  "dynamicres",                       // FMTP option name
   "0",                                // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
@@ -155,6 +165,7 @@ static struct PluginCodec_Option const SpatialResamplingDown =
 };
 
 static struct PluginCodec_Option const * OptionTable[] = {
+  &MaxFrameSize,
   &TemporalSpatialTradeOff,
   &SpatialResampling,
   &SpatialResamplingUp,
@@ -197,14 +208,32 @@ public:
   }
 
 
-  virtual bool ToNormalised(OptionMap &, OptionMap & )
+  virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
   {
+    OptionMap::iterator it = original.find(MaxFrameSize.m_name);
+    if (it != original.end() && !it->second.empty()) {
+      std::stringstream strm(it->second);
+      unsigned maxWidth, maxHeight;
+      char x;
+      strm >> maxWidth >> x >> maxHeight;
+      if (maxWidth < 32 || maxHeight < 32) {
+        PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSize.m_name << ", was \"" << it->second << '"');
+        return false;
+      }
+      ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+      ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+    }
     return true;
   }
 
 
-  virtual bool ToCustomised(OptionMap &, OptionMap &)
+  virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
   {
+    unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+    unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+    std::stringstream strm;
+    strm << maxWidth << 'x' << maxHeight;
+    Change(strm.str().c_str(), original, changed, MaxFrameSize.m_name);
     return true;
   }
 }; 
@@ -214,9 +243,9 @@ static MyPluginMediaFormat MyMediaFormatInfo(OptionTable);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyEncoder : public PluginVideoEncoder<MY_CODEC>
+class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 {
-    typedef PluginVideoEncoder<MY_CODEC> BaseClass;
+    typedef PluginVideoEncoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_enc_cfg_t        m_config;
@@ -226,7 +255,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
     size_t                     m_offset;
 
   public:
-    MyEncoder(const PluginCodec_Definition * defn)
+    VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_iterator(NULL)
       , m_packet(NULL)
@@ -236,7 +265,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
     }
 
 
-    ~MyEncoder()
+    ~VP8Encoder()
     {
       vpx_codec_destroy(&m_codec);
     }
@@ -375,11 +404,11 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
 };
 
 
-class MyEncoderRFC : public MyEncoder
+class VP8EncoderRFC : public VP8Encoder
 {
   public:
-    MyEncoderRFC(const PluginCodec_Definition * defn)
-      : MyEncoder(defn)
+    VP8EncoderRFC(const PluginCodec_Definition * defn)
+      : VP8Encoder(defn)
     {
     }
 
@@ -407,14 +436,14 @@ class MyEncoderRFC : public MyEncoder
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
 
-class MyEncoderOM : public MyEncoder
+class VP8EncoderOM : public VP8Encoder
 {
   protected:
     unsigned m_currentGID;
 
   public:
-    MyEncoderOM(const PluginCodec_Definition * defn)
-      : MyEncoder(defn)
+    VP8EncoderOM(const PluginCodec_Definition * defn)
+      : VP8Encoder(defn)
       , m_currentGID(0)
     {
     }
@@ -455,9 +484,9 @@ class MyEncoderOM : public MyEncoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyDecoder : public PluginVideoDecoder<MY_CODEC>
+class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 {
-    typedef PluginVideoDecoder<MY_CODEC> BaseClass;
+    typedef PluginVideoDecoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_ctx_t      m_codec;
@@ -466,7 +495,7 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
     bool                 m_ignoreTillKeyFrame;
 
   public:
-    MyDecoder(const PluginCodec_Definition * defn)
+    VP8Decoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_iterator(NULL)
       , m_ignoreTillKeyFrame(false)
@@ -476,7 +505,7 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
     }
 
 
-    ~MyDecoder()
+    ~VP8Decoder()
     {
       vpx_codec_destroy(&m_codec);
     }
@@ -581,11 +610,11 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
 };
 
 
-class MyDecoderRFC : public MyDecoder
+class VP8DecoderRFC : public VP8Decoder
 {
   public:
-    MyDecoderRFC(const PluginCodec_Definition * defn)
-      : MyDecoder(defn)
+    VP8DecoderRFC(const PluginCodec_Definition * defn)
+      : VP8Decoder(defn)
     {
     }
 
@@ -619,15 +648,15 @@ class MyDecoderRFC : public MyDecoder
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
 
-class MyDecoderOM : public MyDecoder
+class VP8DecoderOM : public VP8Decoder
 {
   protected:
     unsigned m_expectedGID;
     Orientation m_orientation;
 
   public:
-    MyDecoderOM(const PluginCodec_Definition * defn)
-      : MyDecoder(defn)
+    VP8DecoderOM(const PluginCodec_Definition * defn)
+      : VP8Decoder(defn)
       , m_expectedGID(UINT_MAX)
       , m_orientation(LandscapeUp)
     {
@@ -691,7 +720,7 @@ class MyDecoderOM : public MyDecoder
       unsigned char * ext = rtp.GetExtendedHeader(type, len);
       if (ext != NULL && type == 0x10001) {
         *ext = (unsigned char)(m_orientation << OrientationExtHdrShift);
-        return MyDecoder::OutputImage(planes, raster, width, height, rtp, flags);
+        return VP8Decoder::OutputImage(planes, raster, width, height, rtp, flags);
       }
 
       switch (m_orientation) {
@@ -788,7 +817,7 @@ class MyDecoderOM : public MyDecoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Definition MyCodecDefinition[] =
+static struct PluginCodec_Definition VP8CodecDefinition[] =
 {
   {
     // Encoder
@@ -818,10 +847,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadNameRFC,                   // IANA RTP payload name
 
-    PluginCodec<MY_CODEC>::Create<MyEncoderRFC>,  // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
+    PluginCodec<VP8_CODEC>::Create<VP8EncoderRFC>,  // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -854,10 +883,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadNameRFC,                   // IANA RTP payload name
 
-    PluginCodec<MY_CODEC>::Create<MyDecoderRFC>,  // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
+    PluginCodec<VP8_CODEC>::Create<VP8DecoderRFC>,  // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -890,10 +919,10 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadNameOM,                    // IANA RTP payload name
 
-    PluginCodec<MY_CODEC>::Create<MyEncoderOM>,   // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
+    PluginCodec<VP8_CODEC>::Create<VP8EncoderOM>,   // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
@@ -926,17 +955,17 @@ static struct PluginCodec_Definition MyCodecDefinition[] =
     0,                                  // IANA RTP payload code
     MyPayloadNameOM,                    // IANA RTP payload name
 
-    PluginCodec<MY_CODEC>::Create<MyDecoderOM>,   // create codec function
-    PluginCodec<MY_CODEC>::Destroy,               // destroy codec
-    PluginCodec<MY_CODEC>::Transcode,             // encode/decode
-    PluginCodec<MY_CODEC>::GetControls(),         // codec controls
+    PluginCodec<VP8_CODEC>::Create<VP8DecoderOM>,   // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
 
     PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
     NULL                                // h323CapabilityData
   }
 };
 
-PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);
+PLUGIN_CODEC_IMPLEMENT_CXX(VP8_CODEC, VP8CodecDefinition);
 
 
 /////////////////////////////////////////////////////////////////////////////
