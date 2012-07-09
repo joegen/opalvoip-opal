@@ -39,25 +39,17 @@
 
 #include <sip/sipcon.h>
 
-#include <sip/sipep.h>
-#include <codec/rfc2833.h>
-#include <opal/manager.h>
-#include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/transcoders.h>
-#include <ptclib/random.h>              // for local dialog tag
-#include <ptclib/pdns.h>
-#include <ptclib/pxml.h>
+#include <sip/sipep.h>
+#include <sip/sdp.h>
 #include <h323/q931.h>
 #include <rtp/srtp_session.h>
+#include <codec/vidcodec.h>
+#include <codec/rfc2833.h>
+#include <im/sipim.h>
+#include <ptclib/random.h>              // for local dialog tag
 
-#if OPAL_HAS_H224
-#include <h224/h224.h>
-#endif
-
-#if OPAL_HAS_IM
-#include <im/msrp.h>
-#endif
 
 #define new PNEW
 
@@ -65,8 +57,6 @@
 //  uncomment this to force pause ReINVITES to have c=0.0.0.0
 //
 //#define PAUSE_WITH_EMPTY_ADDRESS  1
-
-typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
 static const PConstCaselessString HeaderPrefix(SIP_HEADER_PREFIX);
 static const PConstCaselessString RemotePartyID("Remote-Party-ID");
@@ -229,6 +219,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_holdFromRemote(false)
   , m_lastReceivedINVITE(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
   , m_delayedAckInviteResponse(NULL)
+  , m_delayedAckTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnDelayedAckTimeout)
   , m_delayedAckTimeout(0, 1) // 1 second
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
@@ -240,9 +231,12 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
+  , m_sessionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnSessionTimeout)
   , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
+  , m_responseFailTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseTimeout)
+  , m_responseRetryTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
   , m_referInProgress(false)
 #if OPAL_FAX
@@ -295,12 +289,6 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   forkedInvitations.DisallowDeleteObjects();
   pendingInvitations.DisallowDeleteObjects();
   m_pendingTransactions.DisallowDeleteObjects();
-
-  m_responseFailTimer.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseTimeout));
-  m_responseRetryTimer.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
-  m_delayedAckTimer.SetNotifier(PCREATE_NOTIFIER(OnDelayedAckTimeout));
-
-  sessionTimer.SetNotifier(PCREATE_NOTIFIER(OnSessionTimeout));
 
   PTRACE(4, "SIP\tCreated connection.");
 }
@@ -643,7 +631,7 @@ PBoolean SIPConnection::SetConnected()
   }
 
   releaseMethod = ReleaseWithBYE;
-  sessionTimer = 10000;
+  m_sessionTimer = 10000;
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
@@ -2139,19 +2127,15 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 }
 
 
-void SIPConnection::OnDelayedAckTimeout(PTimer&, INT)
+void SIPConnection::OnDelayedAckTimeout()
 {
   PTRACE(4, "SIP\tDelayed ACK timeout");
-  new PThreadObj1Arg<SIPConnection, bool>(*this, true, &SIPConnection::SendDelayedACK, true, "SendDelayedACK");
+  SendDelayedACK(true);
 }
 
 
 void SIPConnection::SendDelayedACK(bool force)
 {
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return;
-
   if (m_delayedAckInviteResponse == NULL || m_lastSentAck != NULL)
     return;
 
@@ -3228,7 +3212,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   PTRACE(3, "SIP\tReceived INVITE OK response for " << transaction.GetMethod());
   releaseMethod = ReleaseWithBYE;
-  sessionTimer = 10000;
+  m_sessionTimer = 10000;
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
@@ -3555,45 +3539,45 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
+void SIPConnection::OnInviteResponseRetry()
 {
-  PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked() && m_lastReceivedINVITE != NULL && !m_responsePackets.empty()) {
-    PTRACE(3, "SIP\t" << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
-           << " not received yet, retry " << m_responseRetryCount << " sending response for " << *this);
+  if (m_lastReceivedINVITE == NULL || m_responsePackets.empty())
+    return;
 
-    PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++m_responseRetryCount);
-    if (timeout > endpoint.GetRetryTimeoutMax())
-      timeout = endpoint.GetRetryTimeoutMax();
-    m_responseRetryTimer = timeout;
+  PTRACE(3, "SIP\t" << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
+         << " not received yet, retry " << m_responseRetryCount << " sending response for " << *this);
 
-    m_lastReceivedINVITE->SendResponse(GetTransport(), m_responsePackets.front()); // Not really a resonse but the function will work  }
-  }
+  PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1 << ++m_responseRetryCount);
+  if (timeout > endpoint.GetRetryTimeoutMax())
+    timeout = endpoint.GetRetryTimeoutMax();
+  m_responseRetryTimer = timeout;
+
+  m_lastReceivedINVITE->SendResponse(GetTransport(), m_responsePackets.front()); // Not really a resonse but the function will work  }
 }
 
 
-void SIPConnection::OnInviteResponseTimeout(PTimer &, INT)
+void SIPConnection::OnInviteResponseTimeout()
 {
-  PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked() && !m_responsePackets.empty()) {
-    PTRACE(1, "SIP\tFailed to receive "
-           << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
-           << " for " << *this);
+  if (m_responsePackets.empty())
+    return;
 
-    m_responseRetryTimer.Stop(false);
+  PTRACE(1, "SIP\tFailed to receive "
+         << (m_responsePackets.front().GetStatusCode() < 200 ? "PRACK" : "ACK")
+         << " for " << *this);
 
-    if (IsReleased()) {
-      // Clear out pending responses if we are releasing, just die now.
-      while (!m_responsePackets.empty())
-        m_responsePackets.pop();
-    }
+  m_responseRetryTimer.Stop(false);
+
+  if (IsReleased()) {
+    // Clear out pending responses if we are releasing, just die now.
+    while (!m_responsePackets.empty())
+      m_responsePackets.pop();
+  }
+  else {
+    if (m_responsePackets.front().GetStatusCode() < 200)
+      SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
     else {
-      if (m_responsePackets.front().GetStatusCode() < 200)
-        SendInviteResponse(SIP_PDU::Failure_ServerTimeout);
-      else {
-        releaseMethod = ReleaseWithBYE;
-        Release(EndedByTemporaryFailure);
-      }
+      releaseMethod = ReleaseWithBYE;
+      Release(EndedByTemporaryFailure);
     }
   }
 }
@@ -3981,7 +3965,7 @@ unsigned SIPConnection::GetAllowedMethods() const
 }
 
 
-void SIPConnection::OnSessionTimeout(PTimer &, INT)
+void SIPConnection::OnSessionTimeout()
 {
   //SIPTransaction * invite = new SIPInvite(*this, GetTransport(), rtpSessions);  
   //invite->Start();  

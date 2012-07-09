@@ -43,6 +43,7 @@
 #include <im/t140.h>
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
+#include <sip/sdp.h>
 
 
 #if OPAL_HAS_SIPIM

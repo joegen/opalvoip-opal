@@ -44,20 +44,23 @@
 #include <ptclib/url.h>
 #include <ptclib/http.h>
 #include <ptclib/pxml.h>
-#include <sip/sdp.h>
+#include <ptclib/threadpool.h>
+#include <opal/transports.h>
 #include <opal/rtpconn.h>
 
  
-class OpalTransport;
-class OpalTransportAddress;
+class OpalMediaFormatList;
 class OpalProductInfo;
 
 class SIPEndPoint;
 class SIPConnection;
+class SIPHandler;
 class SIP_PDU;
 class SIPSubscribeHandler;
 class SIPDialogContext;
 class SIPMIMEInfo;
+class SIPTransaction;
+class SDPSessionDescription;
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -700,7 +703,7 @@ class SIP_PDU : public PSafeObject
       */
     void Build(PString & pduStr, PINDEX & pduLen);
 
-    PString GetTransactionID() const;
+    const PString & GetTransactionID() const { return m_transactionID; }
 
     Methods GetMethod() const                { return m_method; }
     StatusCodes GetStatusCode () const       { return m_statusCode; }
@@ -733,7 +736,7 @@ class SIP_PDU : public PSafeObject
 
     SDPSessionDescription * m_SDP;
 
-    mutable PString m_transactionID;
+    PString m_transactionID;
 };
 
 
@@ -857,6 +860,88 @@ ostream & operator<<(ostream & strm, const SIPParameters & params);
 
 
 /////////////////////////////////////////////////////////////////////////
+// Thread pooling stuff
+//
+// Timer call back mechanism using PNOTIFIER is too prone to deadlocks, we
+// want to use the existing thread pool for handling incoming PDUs.
+
+class SIPWorkItem : public PObject
+{
+    PCLASSINFO(SIPWorkItem, PObject);
+  public:
+    SIPWorkItem(SIPEndPoint & ep, const PString & token);
+
+    virtual void Work() = 0;
+
+    bool GetTarget(PSafePtr<SIPTransaction> & transaction);
+    bool GetTarget(PSafePtr<SIPConnection> & connection);
+    bool GetTarget(PSafePtr<SIPHandler> & handler);
+
+  protected:
+    SIPEndPoint & m_endpoint;
+    PString       m_token;
+};
+
+
+class SIPThreadPool : public PQueuedThreadPool<SIPWorkItem>
+{
+    typedef PQueuedThreadPool<SIPWorkItem> BaseClass;
+    PCLASSINFO(SIPThreadPool, BaseClass);
+  public:
+    SIPThreadPool(unsigned maxWorkers, const char * threadName)
+      : BaseClass(maxWorkers, 0, threadName, PThread::HighPriority)
+    {
+    }
+};
+
+
+template <class Target_T>
+class SIPTimeoutWorkItem : public SIPWorkItem
+{
+    PCLASSINFO(SIPTimeoutWorkItem, SIPWorkItem);
+  public:
+    typedef void (Target_T::* Callback)();
+
+    SIPTimeoutWorkItem(SIPEndPoint & ep, const PString & token, Callback callback)
+      : SIPWorkItem(ep, token)
+      , m_callback(callback)
+    {
+    }
+
+    virtual void Work()
+    {
+      PSafePtr<Target_T> target;
+      if (GetTarget(target)) {
+        (target->*m_callback)();
+        PTRACE(4, "SIP\tHandled timeout");
+      }
+    }
+
+  protected:
+    Callback m_callback;
+};
+
+
+template <class Target_T>
+class SIPPoolTimer : public PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>,
+                                           SIPEndPoint &,
+                                           PString,
+                                           void (Target_T::*)(),
+                                           SIPWorkItem>
+{
+    typedef PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>, SIPEndPoint &, PString, void (Target_T::*)(), SIPWorkItem> BaseClass;
+    PCLASSINFO(SIPPoolTimer, BaseClass);
+  public:
+    SIPPoolTimer(SIPThreadPool & pool, SIPEndPoint & ep, const PString & token, void (Target_T::* callback)())
+      : BaseClass(pool, ep, token, callback)
+    {
+    }
+
+    PTIMER_OPERATORS(SIPPoolTimer);
+};
+
+
+/////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
 class SIPTransactionBase : public SIP_PDU
@@ -938,8 +1023,10 @@ class SIPTransaction : public SIPTransactionBase
     bool ResendCANCEL();
     void SetParameters(const SIPParameters & params);
 
-    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
-    PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
+    typedef SIPPoolTimer<SIPTransaction> PoolTimer;
+
+    void OnRetry();
+    void OnTimeout();
 
     enum States {
       NotStarted,
@@ -965,8 +1052,8 @@ class SIPTransaction : public SIPTransactionBase
 
     States     m_state;
     unsigned   m_retry;
-    PTimer     m_retryTimer;
-    PTimer     m_completionTimer;
+    PoolTimer  m_retryTimer;
+    PoolTimer  m_completionTimer;
     PSyncPoint m_completed;
 
     PString              m_localInterface;
