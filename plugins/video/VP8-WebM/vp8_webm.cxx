@@ -45,12 +45,10 @@
 #include "vpx/vp8dx.h"
 
 
-#define MY_CODEC VP8                       // Name of codec (use C variable characters)
-
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
 
-#define MY_CODEC_LOG  STRINGIZE(MY_CODEC)
-class MY_CODEC { };
+#define MY_CODEC_LOG "VP8"
+class VP8_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
@@ -79,6 +77,19 @@ PLUGINCODEC_LICENSE(
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+const unsigned MaxBitRate = 16000000;
+
+static struct PluginCodec_Option const MaxFrameSize =
+{
+  PluginCodec_StringOption,           // Option type
+  "SIP/SDP Max Frame Size",           // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "",                                 // Initial value
+  "x-mx-max-size",                    // FMTP option name
+  ""                                  // FMTP default value (as per RFC)
+};
 
 static struct PluginCodec_Option const TemporalSpatialTradeOff =
 {
@@ -137,6 +148,7 @@ static struct PluginCodec_Option const SpatialResamplingDown =
 };
 
 static struct PluginCodec_Option const * OptionTable[] = {
+  &MaxFrameSize,
   &TemporalSpatialTradeOff,
   &SpatialResampling,
   &SpatialResamplingUp,
@@ -147,9 +159,50 @@ static struct PluginCodec_Option const * OptionTable[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoRFC("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", 16000000, OptionTable);
+class VP8FormatOM : public PluginCodec_VideoFormat<VP8_CODEC>
+{
+    typedef PluginCodec_VideoFormat<VP8_CODEC> BaseClass;
+
+  public:
+    VP8FormatOM()
+      : BaseClass("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", MaxBitRate, OptionTable)
+    {
+    }
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    {
+      OptionMap::iterator it = original.find(MaxFrameSize.m_name);
+      if (it != original.end() && !it->second.empty()) {
+        std::stringstream strm(it->second);
+        unsigned maxWidth, maxHeight;
+        char x;
+        strm >> maxWidth >> x >> maxHeight;
+        if (maxWidth < 32 || maxHeight < 32) {
+          PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSize.m_name << ", was \"" << it->second << '"');
+          return false;
+        }
+        ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+        ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+      }
+      return true;
+    }
+
+
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    {
+      unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+      unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+      std::stringstream strm;
+      strm << maxWidth << 'x' << maxHeight;
+      Change(strm.str().c_str(), original, changed, MaxFrameSize.m_name);
+      return true;
+    }
+};
+
+static PluginCodec_VideoFormat<VP8_CODEC> VP8MediaFormatInfoRFC("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", MaxBitRate, OptionTable);
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
-static PluginCodec_VideoFormat<MY_CODEC> MyMediaFormatInfoOM("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", 16000000, OptionTable);
+static VP8FormatOM VP8MediaFormatInfoOM;
 #endif
 
 
@@ -181,9 +234,9 @@ enum Orientation {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyEncoder : public PluginVideoEncoder<MY_CODEC>
+class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 {
-    typedef PluginVideoEncoder<MY_CODEC> BaseClass;
+    typedef PluginVideoEncoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_enc_cfg_t        m_config;
@@ -193,7 +246,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
     size_t                     m_offset;
 
   public:
-    MyEncoder(const PluginCodec_Definition * defn)
+    VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_iterator(NULL)
       , m_packet(NULL)
@@ -203,7 +256,7 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
     }
 
 
-    ~MyEncoder()
+    ~VP8Encoder()
     {
       vpx_codec_destroy(&m_codec);
     }
@@ -342,11 +395,11 @@ class MyEncoder : public PluginVideoEncoder<MY_CODEC>
 };
 
 
-class MyEncoderRFC : public MyEncoder
+class VP8EncoderRFC : public VP8Encoder
 {
   public:
-    MyEncoderRFC(const PluginCodec_Definition * defn)
-      : MyEncoder(defn)
+    VP8EncoderRFC(const PluginCodec_Definition * defn)
+      : VP8Encoder(defn)
     {
     }
 
@@ -374,14 +427,14 @@ class MyEncoderRFC : public MyEncoder
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
 
-class MyEncoderOM : public MyEncoder
+class VP8EncoderOM : public VP8Encoder
 {
   protected:
     unsigned m_currentGID;
 
   public:
-    MyEncoderOM(const PluginCodec_Definition * defn)
-      : MyEncoder(defn)
+    VP8EncoderOM(const PluginCodec_Definition * defn)
+      : VP8Encoder(defn)
       , m_currentGID(0)
     {
     }
@@ -422,9 +475,9 @@ class MyEncoderOM : public MyEncoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyDecoder : public PluginVideoDecoder<MY_CODEC>
+class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 {
-    typedef PluginVideoDecoder<MY_CODEC> BaseClass;
+    typedef PluginVideoDecoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_ctx_t      m_codec;
@@ -433,7 +486,7 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
     bool                 m_ignoreTillKeyFrame;
 
   public:
-    MyDecoder(const PluginCodec_Definition * defn)
+    VP8Decoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
       , m_iterator(NULL)
       , m_ignoreTillKeyFrame(false)
@@ -443,7 +496,7 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
     }
 
 
-    ~MyDecoder()
+    ~VP8Decoder()
     {
       vpx_codec_destroy(&m_codec);
     }
@@ -548,11 +601,11 @@ class MyDecoder : public PluginVideoDecoder<MY_CODEC>
 };
 
 
-class MyDecoderRFC : public MyDecoder
+class VP8DecoderRFC : public VP8Decoder
 {
   public:
-    MyDecoderRFC(const PluginCodec_Definition * defn)
-      : MyDecoder(defn)
+    VP8DecoderRFC(const PluginCodec_Definition * defn)
+      : VP8Decoder(defn)
     {
     }
 
@@ -586,15 +639,15 @@ class MyDecoderRFC : public MyDecoder
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
 
-class MyDecoderOM : public MyDecoder
+class VP8DecoderOM : public VP8Decoder
 {
   protected:
     unsigned m_expectedGID;
     Orientation m_orientation;
 
   public:
-    MyDecoderOM(const PluginCodec_Definition * defn)
-      : MyDecoder(defn)
+    VP8DecoderOM(const PluginCodec_Definition * defn)
+      : VP8Decoder(defn)
       , m_expectedGID(UINT_MAX)
       , m_orientation(LandscapeUp)
     {
@@ -658,7 +711,7 @@ class MyDecoderOM : public MyDecoder
       unsigned char * ext = rtp.GetExtendedHeader(type, len);
       if (ext != NULL && type == 0x10001) {
         *ext = (unsigned char)(m_orientation << OrientationExtHdrShift);
-        return MyDecoder::OutputImage(planes, raster, width, height, rtp, flags);
+        return VP8Decoder::OutputImage(planes, raster, width, height, rtp, flags);
       }
 
       switch (m_orientation) {
@@ -755,15 +808,15 @@ class MyDecoderOM : public MyDecoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Definition MyCodecDefinition[] =
+static struct PluginCodec_Definition VP8CodecDefinition[] =
 {
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoRFC, MyEncoderRFC, MyDecoderRFC),
+  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoRFC, VP8EncoderRFC, VP8DecoderRFC),
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfoOM,  MyEncoderOM,  MyDecoderOM)
+  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoOM,  VP8EncoderOM,  VP8DecoderOM)
 #endif
 };
 
-PLUGIN_CODEC_IMPLEMENT_CXX(MY_CODEC, MyCodecDefinition);
+PLUGIN_CODEC_IMPLEMENT_CXX(VP8_CODEC, VP8CodecDefinition);
 
 
 /////////////////////////////////////////////////////////////////////////////
