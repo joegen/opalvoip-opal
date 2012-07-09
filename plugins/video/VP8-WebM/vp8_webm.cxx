@@ -101,7 +101,7 @@ static struct PluginCodec_Option const SpatialResampling =
   false,                              // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
   "0",                                // Initial value
-  "dynres",                           // FMTP option name
+  "dynamicres",                       // FMTP option name
   "0",                                // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
