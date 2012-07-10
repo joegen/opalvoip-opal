@@ -91,12 +91,9 @@ OpalMediaStream::~OpalMediaStream()
 
 void OpalMediaStream::PrintOn(ostream & strm) const
 {
-  strm << GetClass() << '-';
-  if (isSource)
-    strm << "Source";
-  else
-    strm << "Sink";
-  strm << '-' << mediaFormat;
+  strm << GetClass() << '[' << this << "]-"
+       << (isSource ? "Source" : "Sink")
+       << '-' << mediaFormat;
 }
 
 
@@ -190,7 +187,7 @@ PBoolean OpalMediaStream::Close()
 
   // Allow for race condition where it is closed in another thread during the above wait
   if (!isOpen) {
-    PTRACE(4, "Media\tAlrady closed stream " << *this);
+    PTRACE(4, "Media\tAlready closed stream " << *this);
     UnlockReadWrite();
     return false;
   }
