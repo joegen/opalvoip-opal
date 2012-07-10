@@ -2041,10 +2041,11 @@ bool RTP_UDP::Close(PBoolean reading)
 
       if (dataSocket != NULL && controlSocket != NULL) {
         PIPSocket::Address addr;
-        controlSocket->GetLocalAddress(addr);
+        WORD port;
+        controlSocket->PUDPSocket::GetLocalAddress(addr, port);
         if (addr.IsAny())
           PIPSocket::GetHostAddress(addr);
-        dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
+        dataSocket->WriteTo("", 1, addr, port);
       }
     }
 
