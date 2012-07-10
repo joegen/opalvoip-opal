@@ -2062,7 +2062,7 @@ class H323Connection : public OpalRTPConnection
 
     H323TransportAddress m_remoteConnectAddress;
     int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
-    PBoolean                 gatekeeperRouted;
+    bool                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
     unsigned             m_progressIndicator;
@@ -2076,16 +2076,15 @@ class H323Connection : public OpalRTPConnection
     H323Capabilities   remoteCapabilities; // Capabilities remote system supports
     unsigned           remoteMaxAudioDelayJitter;
     PTimer             roundTripDelayTimer;
-    WORD               maxAudioDelayJitter;
     unsigned           uuiesRequested;
     PString            gkAccessTokenOID;
     PBYTEArray         gkAccessTokenData;
-    PBoolean               addAccessTokenToSetup;
+    bool               addAccessTokenToSetup;
 
     H323Transport * signallingChannel;
     H323Transport * controlChannel;
     OpalListener  * controlListener;
-    PBoolean            h245Tunneling;
+    bool            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;
     H323SignalPDU * h245TunnelTxPDU;
     H323SignalPDU * setupPDU;
@@ -2107,27 +2106,27 @@ class H323Connection : public OpalRTPConnection
 
     unsigned   h225version;
     unsigned   h245version;
-    PBoolean       h245versionSet;
-    PBoolean doH245inSETUP;
-    PBoolean lastPDUWasH245inSETUP;
+    bool       h245versionSet;
+    bool       doH245inSETUP;
+    bool       lastPDUWasH245inSETUP;
 
-    PBoolean mustSendDRQ;
-    PBoolean mediaWaitForConnect;
-    PBoolean transmitterSidePaused;
-    bool     remoteTransmitPaused;
-    PBoolean earlyStart;
+    bool       mustSendDRQ;
+    bool       mediaWaitForConnect;
+    bool       transmitterSidePaused;
+    bool       remoteTransmitPaused;
+    bool       earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
-    PBoolean       endSessionNeeded;
+    bool       endSessionNeeded;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
 
     // Used as part of a local call hold operation involving MOH
     PChannel * holdMediaChannel;
-    PBoolean       isConsultationTransfer;
+    bool       isConsultationTransfer;
 
     /** Call Intrusion flag and parameters */
-    PBoolean     isCallIntrusion;
+    bool     isCallIntrusion;
     unsigned callIntrusionProtectionLevel;
 
     enum FastStartStates {
