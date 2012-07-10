@@ -2191,7 +2191,7 @@ class H323Connection : public OpalRTPConnection
 
     H323TransportAddress m_remoteConnectAddress;
     int                  remoteCallWaiting; // Number of call's waiting at the remote endpoint
-    PBoolean                 gatekeeperRouted;
+    bool                 gatekeeperRouted;
     unsigned             distinctiveRing;
     unsigned             callReference;
     unsigned             m_progressIndicator;

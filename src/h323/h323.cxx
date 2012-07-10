@@ -201,6 +201,7 @@ H323Connection::H323Connection(OpalCall & call,
   , distinctiveRing(0)
   , callReference(token.Mid(token.Find('/')+1).AsUnsigned())
   , m_progressIndicator(0)
+  , localAliasNames(ep.GetAliasNames())
   , remoteMaxAudioDelayJitter(0)
   , uuiesRequested(0) // Empty set
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
@@ -239,6 +240,9 @@ H323Connection::H323Connection(OpalCall & call,
   , features(ep.GetFeatureSet())
 #endif
 {
+  localAliasNames.MakeUnique();
+  gkAccessTokenOID.MakeUnique();
+
   if (alias.IsEmpty())
     remotePartyName = remotePartyAddress = address.GetHostName(true);
   else {
@@ -249,9 +253,6 @@ H323Connection::H323Connection(OpalCall & call,
   if (OpalIsE164(remotePartyName))
     remotePartyNumber = remotePartyName;
 
-  /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
-  localAliasNames = ep.GetAliasNames();
-  
   switch (options&H245TunnelingOptionMask) {
     case H245TunnelingOptionDisable :
       h245Tunneling = false;
