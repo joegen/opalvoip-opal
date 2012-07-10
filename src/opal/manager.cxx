@@ -494,20 +494,14 @@ PBoolean OpalManager::ClearCall(const PString & token,
     The real work is done in the OpalGarbageCollector thread.
    */
 
-  {
-    // Find the call by token, callid or conferenceid
-    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
-    if (call == NULL) {
-      PTRACE(2, "OpalMan\tCould not find/lock call token \"" << token << '"');
-      return false;
-    }
-
-    call->Clear(reason, sync);
+  // Find the call by token, callid or conferenceid
+  PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
+  if (call == NULL) {
+    PTRACE(2, "OpalMan\tCould not find/lock call token \"" << token << '"');
+    return false;
   }
 
-  if (sync != NULL)
-    sync->Wait();
-
+  call->Clear(reason, sync);
   return true;
 }
 
@@ -516,7 +510,11 @@ PBoolean OpalManager::ClearCallSynchronous(const PString & token,
                                        OpalConnection::CallEndReason reason)
 {
   PSyncPoint wait;
-  return ClearCall(token, reason, &wait);
+  if (!ClearCall(token, reason, &wait))
+    return false;
+
+  wait.Wait();
+  return false;
 }
 
 

@@ -604,7 +604,7 @@ class OpalCall : public PSafeObject
     bool    isClearing;
 
     OpalConnection::CallEndReason callEndReason;
-    PSyncPoint                  * endCallSyncPoint;
+    std::list<PSyncPoint *> m_endCallSyncPoint;
 
     PSafeList<OpalConnection> connectionsActive;
 
