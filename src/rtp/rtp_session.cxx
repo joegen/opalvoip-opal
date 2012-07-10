@@ -442,6 +442,9 @@ unsigned OpalRTPSession::GetJitterBufferSize() const
 
 bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 {
+  if (shutdownRead)
+    return false;
+
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   if (jitter != NULL)
     return jitter->ReadData(frame);
@@ -1840,11 +1843,11 @@ bool OpalRTPSession::Shutdown(bool reading)
       shutdownRead = true;
 
       if (dataSocket != NULL && controlSocket != NULL) {
-        PIPSocket::Address addr;
-        controlSocket->GetLocalAddress(addr);
-        if (addr.IsAny())
-          PIPSocket::GetHostAddress(addr);
-        dataSocket->WriteTo("", 1, addr, controlSocket->GetPort());
+        PIPSocketAddressAndPort addrAndPort;
+        controlSocket->PUDPSocket::InternalGetLocalAddress(addrAndPort);
+        if (!addrAndPort.IsValid())
+          addrAndPort.SetAddress(PIPSocket::GetHostName());
+        dataSocket->WriteTo("", 1, addrAndPort);
       }
     }
 
@@ -1872,10 +1875,16 @@ void OpalRTPSession::Restart(bool reading)
 {
   PWaitAndSignal mutex(dataMutex);
 
-  if (reading)
+  if (reading) {
+    if (!shutdownRead)
+      return;
     shutdownRead = false;
-  else
+  }
+  else {
+    if (!shutdownWrite)
+      return;
     shutdownWrite = false;
+  }
 
   m_noTransmitErrors = 0;
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
@@ -1944,67 +1953,32 @@ bool OpalRTPSession::InternalSetRemoteAddress(PIPSocket::Address address, WORD p
 
 bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status;
-  while ((status = InternalReadData2(frame)) == e_IgnorePacket)
-    ;
-  return status == e_ProcessPacket;
-}
+  SendReceiveStatus receiveStatus = e_IgnorePacket;
+  while (receiveStatus == e_IgnorePacket) {
+    if (shutdownRead || PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
+      return false;
 
+    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_maxNoReceiveTime);
+    if (shutdownRead)
+      return false;
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData2(RTP_DataFrame & frame)
-{
-  if (PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
-    return e_AbortTransport;
-
-  int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_maxNoReceiveTime);
-
-  {
-    PWaitAndSignal mutex(dataMutex);
-    if (shutdownRead) {
-      PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", Read shutdown.");
-      return e_AbortTransport;
+    if (selectStatus > 0) {
+      PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", Select error: "
+              << PChannel::GetErrorText((PChannel::Errors)selectStatus));
+      return false;
     }
+
+    if (selectStatus == 0)
+      receiveStatus = OnReadTimeout(frame);
+
+    if ((-selectStatus & 2) != 0)
+      receiveStatus = ReadControlPDU();
+
+    if ((-selectStatus & 1) != 0)
+      receiveStatus = ReadDataPDU(frame);
   }
 
-  switch (selectStatus) {
-    case -2 :
-      switch (ReadControlPDU()) {
-        case e_ProcessPacket :
-          return shutdownRead ? e_AbortTransport : e_IgnorePacket;
-        case e_AbortTransport :
-          return e_AbortTransport;
-        case e_IgnorePacket :
-          return e_IgnorePacket;
-      }
-      break;
-
-    case -3 :
-      if (ReadControlPDU() == e_AbortTransport)
-        return e_AbortTransport;
-      // Then do -1 case
-
-    case -1 :
-      switch (ReadDataPDU(frame)) {
-        case e_ProcessPacket :
-          return shutdownRead ? e_AbortTransport : OnReceiveData(frame);
-        case e_IgnorePacket :
-          return e_IgnorePacket ;
-        case e_AbortTransport :
-          return e_AbortTransport;
-      }
-      break;
-
-    case 0 :
-      return OnReadTimeout(frame);
-
-    case PSocket::Interrupted:
-      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", Interrupted.");
-      return e_AbortTransport;
-  }
-
-  PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", Select error: "
-          << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-  return e_AbortTransport;
+  return receiveStatus == e_ProcessPacket;
 }
 
 int OpalRTPSession::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
@@ -2104,7 +2078,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
     return status;
 
   // Check received PDU is big enough
-  return frame.SetPacketSize(dataSocket->GetLastReadCount()) ? e_ProcessPacket : e_IgnorePacket;
+  if (frame.SetPacketSize(dataSocket->GetLastReadCount()))
+    return OnReceiveData(frame);
+
+  return e_IgnorePacket;
 }
 
 
