@@ -586,12 +586,17 @@ class OpalConnection : public PSafeObject
 
        Note that this function will return quickly as the release and
        disposal of the connections is done by another thread.
+
+       If \p sync is not NULL then it is signalled when the calls are cleared.
       */
     void ClearCall(
-      CallEndReason reason = EndedByLocalUser ///<  Reason for call clearing
+      CallEndReason reason = EndedByLocalUser, ///<  Reason for call clearing
+      PSyncPoint * sync = NULL
     );
 
     /**Clear a current connection, synchronously.
+       This hangs up the connection to a remote endpoint. Note that this function
+       is always synchronous. If \p sync is NULL then a local PSyncPoint is used.
       */
     virtual void ClearCallSynchronous(
       PSyncPoint * sync,                       ///<  Synchronisation object to signal

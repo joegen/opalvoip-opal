@@ -222,6 +222,8 @@ class OpalManager : public PObject
        call are disposed of. Note that this function returns quickly and the
        disposal happens at some later time in a background thread. It is safe
        to call this function from anywhere.
+
+       If \p sync is not NULL then it is signalled when the calls are cleared.
       */
     virtual PBoolean ClearCall(
       const PString & token,    ///<  Token for identifying connection
