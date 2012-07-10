@@ -125,9 +125,8 @@ SIPHandler::~SIPHandler()
 
 PObject::Comparison SIPHandler::Compare(const PObject & obj) const
 {
-  PAssert(PIsDescendant(&obj, SIPHandler), PInvalidCast);
-  const SIPHandler * other = dynamic_cast<const SIPHandler *>(&obj);
-  return other != NULL ? GetCallID().Compare(other->GetCallID()) : GreaterThan;
+  const SIPHandlerBase * other = dynamic_cast<const SIPHandlerBase *>(&obj);
+  return PAssert(other != NULL, PInvalidCast) ? GetCallID().Compare(other->GetCallID()) : GreaterThan;
 }
 
 
