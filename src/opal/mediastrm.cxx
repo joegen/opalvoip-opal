@@ -92,12 +92,9 @@ OpalMediaStream::~OpalMediaStream()
 
 void OpalMediaStream::PrintOn(ostream & strm) const
 {
-  strm << GetClass() << '-';
-  if (IsSource())
-    strm << "Source";
-  else
-    strm << "Sink";
-  strm << '-' << mediaFormat;
+  strm << GetClass() << '[' << this << "]-"
+       << (IsSource() ? "Source" : "Sink")
+       << '-' << mediaFormat;
 }
 
 

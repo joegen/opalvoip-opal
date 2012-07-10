@@ -334,7 +334,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
   if (PAssertNULL(stream) == NULL)
     return;
 
-  PTRACE(3, "Patch\tRemoving media stream sink " << *stream);
+  PTRACE(3, "Patch\tRemoving sink " << *stream << " from " << *this);
 
   bool closeSource = false;
 
@@ -344,7 +344,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->stream == stream) {
       sinks.erase(s);
-      PTRACE(5, "Patch\tRemoved media stream sink " << *stream);
+      PTRACE(5, "Patch\tRemoved sink " << *stream << " from " << *this);
       break;
     }
   }
