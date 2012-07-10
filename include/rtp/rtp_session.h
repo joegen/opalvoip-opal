@@ -582,7 +582,6 @@ class OpalRTPSession : public OpalMediaSession
     bool InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort);
     virtual void ApplyQOS(const PIPSocket::Address & addr);
     virtual bool InternalReadData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus InternalReadData2(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
       BYTE * framePtr,
