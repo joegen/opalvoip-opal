@@ -1585,12 +1585,12 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       audioFormat = PwxString(stream->GetMediaFormat());
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    hasStopVideo = stream != NULL && stream->Open();
+    hasStopVideo = stream != NULL && stream->IsOpen();
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
       videoFormat = PwxString(stream->GetMediaFormat());
-      hasRxVideo = stream->Open();
+      hasRxVideo = stream->IsOpen();
     }
 
     // Determine if video is startable
@@ -7003,7 +7003,7 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
     m_isActive = false;
   else {
     OpalMediaStreamPtr stream = connection->GetMediaStream(m_mediaType, m_receiver);
-    m_isActive = stream != NULL && stream->Open();
+    m_isActive = stream != NULL && stream->IsOpen();
     if (m_isActive) {
       OpalMediaStatistics statistics;
       stream->GetStatistics(statistics);
