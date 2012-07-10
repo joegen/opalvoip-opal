@@ -735,7 +735,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU
     PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReadOnly);
     if (transaction != NULL) {
       SIPConnection * connection = transaction->GetConnection();
-      new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : PString::Empty(), pdu);
+      new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : id, pdu);
       return true;
     }
 
@@ -1999,6 +1999,7 @@ SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pd
 {
   PTRACE(4, "SIP\tQueueing PDU \"" << *m_pdu << "\", transaction="
          << m_pdu->GetTransactionID() << ", token=" << m_token);
+  ep.GetThreadPool().AddWork(this);
 }
 
 
