@@ -61,7 +61,6 @@ OpalCall::OpalCall(OpalManager & mgr)
   , m_isEstablished(false)
   , m_isClearing(false)
   , callEndReason(OpalConnection::NumCallEndReasons)
-  , endCallSyncPoint(NULL)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
 #endif
@@ -132,59 +131,74 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   PTRACE(3, "Call\tClearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
 
-  if (!LockReadWrite())
-    return;
+  {
+    PSafeLockReadWrite lock(*this);
+    if (!lock.IsLocked() || m_isClearing) {
+      if (sync != NULL)
+        sync->Signal();
+      return;
+    }
 
   m_isClearing = true;
 
-  SetCallEndReason(reason);
+    SetCallEndReason(reason);
 
-  if (sync != NULL && !connectionsActive.IsEmpty()) {
-    // only set the sync point if it is NULL
-    if (endCallSyncPoint == NULL)
-      endCallSyncPoint = sync;
-    else {
-      PAssertAlways("Can only have one thread doing ClearCallSynchronous");
+    if (sync != NULL)
+      m_endCallSyncPoint.push_back(sync);
+
+    switch (connectionsActive.GetSize()) {
+      case 0 :
+        break;
+
+      case 1 :
+        {
+          PSafePtr<OpalConnection> connection = connectionsActive.GetAt(0, PSafeReference);
+          if (connection != NULL)
+            connection->Release(reason);
+        }
+        break;
+
+      default :
+        // Release all but A-Party, it gets done in the B-Party OnReleased thread.
+        for (PINDEX i = 1; i < connectionsActive.GetSize(); ++i) {
+          PSafePtr<OpalConnection> connection = connectionsActive.GetAt(i, PSafeReference);
+          if (connection != NULL)
+            connection->Release(reason);
+        }
     }
   }
 
-  switch (connectionsActive.GetSize()) {
-    case 0 :
-      break;
-
-    case 1 :
-      connectionsActive.GetAt(0, PSafeReference)->Release(reason);
-      break;
-
-    default :
-      // Release all but A-Party, it gets done in the B-Party OnReleased thread.
-      for (PINDEX i = 1; i < connectionsActive.GetSize(); ++i)
-        connectionsActive.GetAt(i, PSafeReference)->Release(reason);
-  }
-
-  UnlockReadWrite();
-
+  // Outside of lock
   InternalOnClear();
+}
+
+
+void OpalCall::InternalOnClear()
+{
+  if (connectionsActive.IsEmpty() && manager.activeCalls.Contains(GetToken())) {
+    OnCleared();
+
+#if OPAL_HAS_MIXER
+    StopRecording();
+#endif
+
+    if (LockReadWrite()) {
+      while (!m_endCallSyncPoint.empty()) {
+        PTRACE(5, "Call\tSignalling end call.");
+        m_endCallSyncPoint.front()->Signal();
+        m_endCallSyncPoint.pop_front();
+      }
+      UnlockReadWrite();
+    }
+
+    manager.activeCalls.RemoveAt(GetToken());
+  }
 }
 
 
 void OpalCall::OnCleared()
 {
   manager.OnClearedCall(*this);
-
-#if OPAL_HAS_MIXER
-  StopRecording();
-#endif
-
-  if (!LockReadWrite())
-    return;
-
-  if (endCallSyncPoint != NULL) {
-    endCallSyncPoint->Signal();
-    endCallSyncPoint = NULL;
-  }
-
-  UnlockReadWrite();
 }
 
 
@@ -779,15 +793,6 @@ void OpalCall::OnReleased(OpalConnection & connection)
   }
 
   InternalOnClear();
-}
-
-
-void OpalCall::InternalOnClear()
-{
-  if (connectionsActive.IsEmpty() && manager.activeCalls.Contains(GetToken())) {
-    OnCleared();
-    manager.activeCalls.RemoveAt(GetToken());
-  }
 }
 
 

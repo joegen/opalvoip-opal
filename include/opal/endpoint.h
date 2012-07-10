@@ -491,6 +491,8 @@ class OpalEndPoint : public PObject
        call disposed of. Note that this function returns quickly and the
        disposal happens at some later time by a background thread. This it is
        safe to call this function from anywhere.
+
+       If \p sync is not NULL then it is signalled when the calls are cleared.
       */
     virtual PBoolean ClearCall(
       const PString & token,    ///<  Token for identifying connection
@@ -499,8 +501,8 @@ class OpalEndPoint : public PObject
     );
 
     /**Clear a current connection.
-       This hangs up the connection to a remote endpoint. Note that these functions
-       are synchronous
+       This hangs up the connection to a remote endpoint. Note that this function
+       is always synchronous. If \p sync is NULL then a local PSyncPoint is used.
       */
     virtual PBoolean ClearCallSynchronous(
       const PString & token,    ///<  Token for identifying connection
