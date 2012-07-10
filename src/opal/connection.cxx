@@ -394,6 +394,8 @@ void OpalConnection::SetCallEndReasonText(CallEndReasonCodes reasonCode, const P
 
 void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
+  PWaitAndSignal mutex(m_phaseMutex);
+
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
     PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
@@ -403,19 +405,25 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 }
 
 
-void OpalConnection::ClearCall(CallEndReason reason)
+void OpalConnection::ClearCall(CallEndReason reason, PSyncPoint * sync)
 {
-  // Now set reason for the connection close
   SetCallEndReason(reason);
-  ownerCall.Clear(reason);
+  ownerCall.Clear(reason, sync);
 }
 
 
 void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reason)
 {
-  // Now set reason for the connection close
   SetCallEndReason(reason);
-  ownerCall.Clear(reason, sync);
+
+  PSyncPoint syncPoint;
+  if (sync == NULL)
+    sync = &syncPoint;
+
+  ClearCall(reason, sync);
+
+  PTRACE(5, "OpalCon\tSynchronous wait for " << *this);
+  sync->Wait();
 }
 
 
@@ -439,17 +447,7 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
   }
 
   if (synchronous) {
-    if (!LockReadWrite()) {
-      PTRACE(2, "OpalCon\tAlready released " << *this);
-      return;
-    }
-
-    PTRACE(3, "OpalCon\tReleasing " << *this);
-
-    // Now set reason for the connection close
-
-    UnlockReadWrite();
-
+    PTRACE(3, "OpalCon\tReleasing synchronously " << *this);
     OnReleased();
     return;
   }
@@ -458,21 +456,15 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
 
   // Add a reference for the thread we are about to start
   SafeReference();
-  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), reason.AsInteger(),
+  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
                   PThread::AutoDeleteThread,
                   PThread::NormalPriority,
                   "OnRelease");
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread &, INT reason)
+void OpalConnection::OnReleaseThreadMain(PThread &, INT)
 {
-  if (LockReadWrite()) {
-    // Now set reason for the connection close
-    SetCallEndReason(CallEndReason(reason));
-    UnlockReadWrite();
-  }
-
   OnReleased();
 
   PTRACE(4, "OpalCon\tOnRelease thread completed for " << *this);

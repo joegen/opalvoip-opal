@@ -60,7 +60,6 @@ OpalCall::OpalCall(OpalManager & mgr)
   , isEstablished(PFalse)
   , isClearing(PFalse)
   , callEndReason(OpalConnection::NumCallEndReasons)
-  , endCallSyncPoint(NULL)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
 #endif
@@ -113,20 +112,21 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
   PTRACE(3, "Call\tClearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
 
-  if (!LockReadWrite())
+  if (!LockReadWrite()) {
+    if (sync != NULL)
+      sync->Signal();
     return;
+  }
 
   isClearing = PTrue;
 
   SetCallEndReason(reason);
 
-  if (sync != NULL && !connectionsActive.IsEmpty()) {
-    // only set the sync point if it is NULL
-    if (endCallSyncPoint == NULL)
-      endCallSyncPoint = sync;
-    else {
-      PAssertAlways("Can only have one thread doing ClearCallSynchronous");
-    }
+  if (sync != NULL) {
+    if (connectionsActive.IsEmpty())
+      sync->Signal();
+    else
+      m_endCallSyncPoint.push_back(sync);
   }
 
   switch (connectionsActive.GetSize()) {
@@ -134,7 +134,8 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
       break;
 
     case 1 :
-      connectionsActive.GetAt(0, PSafeReference)->Release(reason);
+      if (!connectionsActive.IsEmpty())
+        connectionsActive.GetAt(0, PSafeReference)->Release(reason);
       break;
 
     default :
@@ -160,9 +161,9 @@ void OpalCall::OnCleared()
   if (!LockReadWrite())
     return;
 
-  if (endCallSyncPoint != NULL) {
-    endCallSyncPoint->Signal();
-    endCallSyncPoint = NULL;
+  while (!m_endCallSyncPoint.empty()) {
+    m_endCallSyncPoint.front()->Signal();
+    m_endCallSyncPoint.pop_front();
   }
 
   UnlockReadWrite();
