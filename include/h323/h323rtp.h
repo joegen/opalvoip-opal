@@ -65,6 +65,8 @@ class H245_TransportCapability;
 class H323SessionPDUHandler
 {
   public:
+    virtual ~H323SessionPDUHandler() { }
+
   /**@name Operations */
   //@{
     /**Get the session ID
