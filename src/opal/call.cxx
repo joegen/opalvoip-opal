@@ -163,16 +163,16 @@ void OpalCall::InternalOnClear()
     StopRecording();
 #endif
 
-    manager.activeCalls.RemoveAt(GetToken());
-  }
-
-  if (connectionsActive.IsEmpty() && LockReadWrite()) {
-    while (!m_endCallSyncPoint.empty()) {
-      PTRACE(5, "Call\tSignaling end call.");
-      m_endCallSyncPoint.front()->Signal();
-      m_endCallSyncPoint.pop_front();
+    if (LockReadWrite()) {
+      while (!m_endCallSyncPoint.empty()) {
+        PTRACE(5, "Call\tSignalling end call.");
+        m_endCallSyncPoint.front()->Signal();
+        m_endCallSyncPoint.pop_front();
+      }
+      UnlockReadWrite();
     }
-    UnlockReadWrite();
+
+    manager.activeCalls.RemoveAt(GetToken());
   }
 }
 
