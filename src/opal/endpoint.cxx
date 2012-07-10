@@ -596,13 +596,19 @@ PBoolean OpalEndPoint::ClearCall(const PString & token,
 
 
 PBoolean OpalEndPoint::ClearCallSynchronous(const PString & token,
-                                        OpalConnection::CallEndReason reason,
-                                        PSyncPoint * sync)
+                                            OpalConnection::CallEndReason reason,
+                                            PSyncPoint * sync)
 {
   PSyncPoint syncPoint;
   if (sync == NULL)
     sync = &syncPoint;
-  return manager.ClearCall(token, reason, sync);
+
+  if (!ClearCall(token, reason, sync))
+    return false;
+
+  PTRACE(5, "OpalCon\tSynchronous wait for " << token);
+  sync->Wait();
+  return true;
 }
 
 
