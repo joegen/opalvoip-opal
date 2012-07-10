@@ -178,8 +178,42 @@ H323Connection::H323Connection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , m_remoteConnectAddress(address)
+  , remoteCallWaiting(-1)
+  , gatekeeperRouted(false)
+  , distinctiveRing(0)
+  , callReference(token.Mid(token.Find('/')+1).AsUnsigned())
   , m_progressIndicator(0)
+  , localAliasNames(ep.GetAliasNames())
+  , remoteMaxAudioDelayJitter(0)
+  , uuiesRequested(0) // Empty set
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
+  , addAccessTokenToSetup(true) // Automatic inclusion of ACF access token in SETUP
+  , signallingChannel(NULL)
+  , controlChannel(NULL)
+  , controlListener(NULL)
+  , h245TunnelRxPDU(NULL)
+  , h245TunnelTxPDU(NULL)
+  , setupPDU(NULL)
+  , alertingPDU(NULL)
+  , connectPDU(NULL)
+  , progressPDU(NULL)
+  , connectionState(NoConnectionActive)
+  , h225version(H225_PROTOCOL_VERSION)
+  , h245version(H245_PROTOCOL_VERSION)
+  , h245versionSet(false)
+  , lastPDUWasH245inSETUP(false)
+  , mustSendDRQ(false)
+  , mediaWaitForConnect(false)
+  , transmitterSidePaused(false)
+  , remoteTransmitPaused(false)
+  , earlyStart(false)
+  , endSessionNeeded(false)
+  , holdMediaChannel(NULL)
+  , isConsultationTransfer(false)
+  , isCallIntrusion(false)
+#if OPAL_H450
+  , callIntrusionProtectionLevel(endpoint.GetCallIntrusionProtectionLevel())
+#endif
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
 #endif
@@ -187,6 +221,9 @@ H323Connection::H323Connection(OpalCall & call,
   , features(ep.GetFeatureSet())
 #endif
 {
+  localAliasNames.MakeUnique();
+  gkAccessTokenOID.MakeUnique();
+
   if (alias.IsEmpty())
     remotePartyName = remotePartyAddress = address.GetHostName(true);
   else {
@@ -196,28 +233,6 @@ H323Connection::H323Connection(OpalCall & call,
 
   if (OpalIsE164(remotePartyName))
     remotePartyNumber = remotePartyName;
-
-  /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
-  localAliasNames = ep.GetAliasNames();
-  
-  gatekeeperRouted = PFalse;
-  distinctiveRing = 0;
-  callReference = token.Mid(token.Find('/')+1).AsUnsigned();
-  remoteCallWaiting = -1;
-
-  h225version = H225_PROTOCOL_VERSION;
-  h245version = H245_PROTOCOL_VERSION;
-  h245versionSet = PFalse;
-
-  signallingChannel = NULL;
-  controlChannel = NULL;
-  controlListener = NULL;
-  holdMediaChannel = NULL;
-  isConsultationTransfer = PFalse;
-  isCallIntrusion = PFalse;
-#if OPAL_H450
-  callIntrusionProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
-#endif
 
   switch (options&H245TunnelingOptionMask) {
     case H245TunnelingOptionDisable :
@@ -233,23 +248,6 @@ H323Connection::H323Connection(OpalCall & call,
       break;
   }
 
-  h245TunnelTxPDU = NULL;
-  h245TunnelRxPDU = NULL;
-  setupPDU    = NULL;
-  alertingPDU = NULL;
-  connectPDU = NULL;
-
-  progressPDU = NULL;
-  
-  connectionState = NoConnectionActive;
-
-  uuiesRequested = 0; // Empty set
-  addAccessTokenToSetup = PTrue; // Automatic inclusion of ACF access token in SETUP
-
-  mediaWaitForConnect = PFalse;
-  transmitterSidePaused = PFalse;
-  remoteTransmitPaused = false;
-
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
       fastStartState = FastStartDisabled;
@@ -264,12 +262,6 @@ H323Connection::H323Connection(OpalCall & call,
       break;
   }
 
-  mustSendDRQ = PFalse;
-  earlyStart = PFalse;
-
-  lastPDUWasH245inSETUP = PFalse;
-  endSessionNeeded = PFalse;
-
   switch (options&H245inSetupOptionMask) {
     case H245inSetupOptionDisable :
       doH245inSETUP = PFalse;
@@ -283,8 +275,6 @@ H323Connection::H323Connection(OpalCall & call,
       doH245inSETUP = !ep.IsH245inSetupDisabled();
       break;
   }
-
-  remoteMaxAudioDelayJitter = 0;
 
   masterSlaveDeterminationProcedure = new H245NegMasterSlaveDetermination(endpoint, *this);
   capabilityExchangeProcedure = new H245NegTerminalCapabilitySet(endpoint, *this);
