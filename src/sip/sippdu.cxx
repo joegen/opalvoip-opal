@@ -2124,8 +2124,18 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   *stream >> cmd >> m_mime;
 
   if (!stream->good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
-    PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-              << " - " << pdu.GetSize() << " bytes.\n" << hex << setprecision(2) << pdu << dec);
+#if PTRACING
+    if (stream->good() && cmd.IsEmpty() && m_mime.IsEmpty())
+      PTRACE(5, "SIP\tProbable keep-alive from " << transport.GetLastReceivedAddress());
+    else if (!pdu.IsEmpty())
+      PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
+                << " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
+    else if (!cmd.IsEmpty())
+      PTRACE(1, "SIP\tInvalid message from " << transport.GetLastReceivedAddress()
+             << ", request \"" << cmd << "\", mime:\n" << m_mime);
+    else if (transport.IsOpen())
+      PTRACE(1, "SIP\tLost transport to " << transport.GetLastReceivedAddress());
+#endif
     return SIP_PDU::Failure_BadRequest;
   }
 
