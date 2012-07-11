@@ -561,7 +561,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
                 break;
 
               case SIPConnection::IsDuplicateINVITE : // Completely ignore duplicate INVITE
-                return true;
+                return false;
 
               case SIPConnection::IsReINVITE : // Pass on to worker thread if re-INVITE
                 m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
@@ -571,7 +571,7 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
                 SIP_PDU response(*pdu, SIP_PDU::Failure_LoopDetected);
                 response.GetMIME().SetProductInfo(GetUserAgent(), connection->GetProductInfo());
                 pdu->SendResponse(transport, response);
-                return true;
+                return false;
             }
           }
         }
