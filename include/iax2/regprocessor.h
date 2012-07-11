@@ -84,7 +84,7 @@ class IAX2RegProcessor : public IAX2Processor
   PString userName;
   PString password;
   
-  INT registrationRefreshTime;
+  unsigned registrationRefreshTime;
   
   /** bit mask of the different flags to indicate call status*/
   enum RegistrationState {
