@@ -1451,7 +1451,7 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 }
 
 
-void SIPConnection::StartPendingReINVITE()
+bool SIPConnection::StartPendingReINVITE()
 {
   while (!pendingInvitations.IsEmpty()) {
     PSafePtr<SIPTransaction> reInvite = pendingInvitations.GetAt(0, PSafeReadWrite);
@@ -1461,12 +1461,14 @@ void SIPConnection::StartPendingReINVITE()
     if (!reInvite->IsCompleted()) {
       if (reInvite->Start()) {
         m_handlingINVITE = true;
-        break;
+        return true;
       }
     }
 
     pendingInvitations.RemoveAt(0);
   }
+
+  return false;
 }
 
 
@@ -2154,8 +2156,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
 
     case SIP_PDU::Failure_RequestPending :
-      SendReINVITE(PTRACE_PARAM("retry after getting 491 Request Pending"));
-      return;
+      m_handlingINVITE = false;
+      if (StartPendingReINVITE())
+        return;
+      // Is real error then
+      break;
 
     default :
       switch (responseClass) {
