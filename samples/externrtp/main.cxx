@@ -94,8 +94,8 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 {
   OpalRTPMediaStream * rtpStream = dynamic_cast<OpalRTPMediaStream *>(&stream);
   if (rtpStream != NULL)
-    cout << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteMediaAddress() << "\n"
-            "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteControlAddress() << endl;
+    cout << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteAddress(true) << "\n"
+            "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteAddress(false) << endl;
 
   return OpalManager::OnOpenMediaStream(connection, stream);
 }
