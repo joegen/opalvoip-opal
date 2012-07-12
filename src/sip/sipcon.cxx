@@ -3013,7 +3013,7 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response)
      RTP packet to arrive before setting up codecs etc, our architecture
      cannot deal with that. So what we do is immediately, send a re-INVITE
      nailing the codec down to the first reply. */
-  if (multipleFormats && m_resolveMultipleFormatReINVITE) {
+  if (multipleFormats && m_resolveMultipleFormatReINVITE && response.GetStatusCode()/100 == 2) {
     m_resolveMultipleFormatReINVITE= false;
     SendReINVITE(PTRACE_PARAM("resolve multiple codecs in answer"));
   }
