@@ -1020,7 +1020,7 @@ const PCaselessString & SDPDummySession::GetSessionType() const
 
 SDPMediaDescription * SDPDummySession::CreateSDPMediaDescription()
 {
-  return new SDPDummyMediaDescription(GetLocalMediaAddress(), m_tokens);
+  return new SDPDummyMediaDescription(GetLocalAddress(), m_tokens);
 }
 
 

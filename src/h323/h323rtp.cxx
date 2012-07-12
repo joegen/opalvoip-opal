@@ -62,13 +62,13 @@ PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
   param.m_mediaGuaranteedDelivery = false;
 
   // unicast must have mediaControlChannel
-  H323TransportAddress mediaControlAddress(GetLocalAddress(), GetLocalControlPort());
+  H323TransportAddress mediaControlAddress(GetLocalAddress(false));
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
   mediaControlAddress.SetPDU(param.m_mediaControlChannel);
 
   if (channel.GetDirection() == H323Channel::IsReceiver) {
     // set mediaChannel
-    H323TransportAddress mediaAddress(GetLocalAddress(), GetLocalDataPort());
+    H323TransportAddress mediaAddress(GetLocalAddress(false));
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
     mediaAddress.SetPDU(param.m_mediaChannel);
   }
@@ -90,12 +90,12 @@ void H323RTPSession::OnSendingAckPDU(const H323_RTPChannel & channel,
   PTRACE(3, "RTP\tOnSendingAckPDU");
 
   // set mediaControlChannel
-  H323TransportAddress mediaControlAddress(GetLocalAddress(), GetLocalControlPort());
+  H323TransportAddress mediaControlAddress(GetLocalAddress(false));
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
   mediaControlAddress.SetPDU(param.m_mediaControlChannel);
 
   // set mediaChannel
-  H323TransportAddress mediaAddress(GetLocalAddress(), GetLocalDataPort());
+  H323TransportAddress mediaAddress(GetLocalAddress(false));
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
   mediaAddress.SetPDU(param.m_mediaChannel);
 
@@ -120,7 +120,7 @@ PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
 
   H323TransportAddress transAddr = pdu;
 
-  if (isDataPort ? SetRemoteMediaAddress(transAddr) : SetRemoteControlAddress(transAddr))
+  if (SetRemoteAddress(transAddr, isDataPort))
     return true;
 
   PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");

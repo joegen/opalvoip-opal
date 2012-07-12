@@ -106,12 +106,12 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     return false;
   }
 
-  OpalTransportAddress localAddr = rtp->GetLocalMediaAddress();
+  OpalTransportAddress localAddr = rtp->GetLocalAddress();
   LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalAddr.find(localAddr);
   if (!PAssert(itLocal != m_connectionsByRtpLocalAddr.end(), PLogicError))
     return false;
 
-  OpalTransportAddress remoteAddr = rtp->GetRemoteMediaAddress();
+  OpalTransportAddress remoteAddr = rtp->GetRemoteAddress();
   LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalAddr.find(remoteAddr);
   if (itRemote == m_connectionsByRtpLocalAddr.end()) {
     PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
@@ -146,7 +146,7 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
 
   PWaitAndSignal mutex(m_connectionsByRtpMutex);
 
-  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(rtp->GetLocalMediaAddress());
+  LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(rtp->GetLocalAddress());
   if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
     return;
 
@@ -155,7 +155,7 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
             "on connection " << it->second.m_connection);
   it->second.m_previousResult = -1;
 
-  it = m_connectionsByRtpLocalAddr.find(rtp->GetRemoteMediaAddress());
+  it = m_connectionsByRtpLocalAddr.find(rtp->GetRemoteAddress());
   if (it == m_connectionsByRtpLocalAddr.end() || it->second.m_previousResult < 0)
     return;
   it->second.m_previousResult = -1;
@@ -172,7 +172,7 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConn
   if (rtp == NULL)
     return;
 
-  OpalTransportAddress localAddr = rtp->GetLocalMediaAddress();
+  OpalTransportAddress localAddr = rtp->GetLocalAddress();
   m_connectionsByRtpMutex.Wait();
   if (connection == NULL) {
     LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
