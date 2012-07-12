@@ -1500,12 +1500,14 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     fastStartChannels.RemoveAll();
   }
   else {
-    // We have fast start, can connect immediately.
-    OnConnectedInternal();
- 
+    PTRACE(4, "H323\tOpening " << fastStartChannels.GetSize() << " fast connect channels");
+
     // Otherwise make sure fast started channels are open
     for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
       channel->Open();
+
+    // We have fast start, can connect immediately, this starts the media streams.
+    OnConnectedInternal();
   }
 
   /* do not start h245 negotiation if it is disabled */
