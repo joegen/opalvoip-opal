@@ -1559,7 +1559,7 @@ class OpalConnection : public PSafeObject
 
     /**Set the remote party display name.
       */
-    void SetRemotePartyName(const PString & name);
+    void SetRemotePartyName(const PString & name) { remotePartyName = name; }
 
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an E.1164 number as one of its aliases
