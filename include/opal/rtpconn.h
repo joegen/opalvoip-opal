@@ -258,11 +258,6 @@ class OpalRTPConnection : public OpalConnection
 
   /**@name NAT Management */
   //@{
-    /** Return true if the remote appears to be behind a NAT firewall
-    */
-    virtual PBoolean RemoteIsNAT() const
-    { return remoteIsNAT; }
-
     /**Determine if the RTP session needs to accommodate a NAT router.
        For endpoints that do not use STUN or something similar to set up all the
        correct protocol embeddded addresses correctly when a NAT router is between
@@ -308,14 +303,12 @@ class OpalRTPConnection : public OpalConnection
     void CheckForMediaBypass(OpalMediaSession & session);
 
     SessionMap m_sessions;
+    bool m_remoteBehindNAT;
 
-    OpalRFC2833Proto * rfc2833Handler;
+    OpalRFC2833Proto * m_rfc2833Handler;
 #if OPAL_T38_CAPABILITY
-    OpalRFC2833Proto * ciscoNSEHandler;
+    OpalRFC2833Proto * m_ciscoNSEHandler;
 #endif
-
-    PBoolean remoteIsNAT;
-    PBoolean useRTPAggregation;
 
 #if OPAL_VIDEO
     PSimpleTimer m_rtcpIntraFrameRequestTimer;

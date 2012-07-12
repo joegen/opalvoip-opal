@@ -137,10 +137,10 @@ static PTimeInterval GetDefaultOutOfOrderWaitTime()
 
 OpalRTPSession::OpalRTPSession(const Init & init)
   : OpalMediaSession(init)
-  , isAudio(init.m_mediaType == OpalMediaType::Audio())
-  , m_timeUnits(isAudio ? 8 : 90)
-  , canonicalName(PProcess::Current().GetUserName())
-  , toolName(PProcess::Current().GetName())
+  , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
+  , m_timeUnits(m_isAudio ? 8 : 90)
+  , m_canonicalName(PProcess::Current().GetUserName())
+  , m_toolName(PProcess::Current().GetName())
   , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , syncSourceOut(PRandom::Number())
@@ -173,22 +173,22 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , lastReceivedPayloadType(RTP_DataFrame::IllegalPayloadType)
   , ignorePayloadTypeChanges(true)
   , m_reportTimer(0, 12)  // Seconds
-  , closeOnBye(false)
-  , byeSent(false)
-  , localAddress(0)
-  , localDataPort(0)
-  , localControlPort(0)
-  , remoteAddress(0)
-  , remoteDataPort(0)
-  , remoteControlPort(0)
-  , remoteTransmitAddress(0)
-  , dataSocket(NULL)
-  , controlSocket(NULL)
-  , shutdownRead(false)
-  , shutdownWrite(false)
-  , appliedQOS(false)
-  , remoteIsNAT(false)
-  , localHasNAT(false)
+  , m_closeOnBye(false)
+  , m_byeSent(false)
+  , m_localAddress(0)
+  , m_localDataPort(0)
+  , m_localControlPort(0)
+  , m_remoteAddress(0)
+  , m_remoteDataPort(0)
+  , m_remoteControlPort(0)
+  , m_remoteTransmitAddress(0)
+  , m_dataSocket(NULL)
+  , m_controlSocket(NULL)
+  , m_shutdownRead(false)
+  , m_shutdownWrite(false)
+  , m_appliedQOS(false)
+  , m_remoteBehindNAT(init.m_remoteBehindNAT)
+  , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
 {
   ClearStatistics();
@@ -199,7 +199,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 
 
 OpalRTPSession::OpalRTPSession(const OpalRTPSession & other)
-  : OpalMediaSession(Init(other.m_connection, other.m_sessionId, other.m_mediaType))
+  : OpalMediaSession(Init(other.m_connection, 0, OpalMediaType(), false))
 {
 }
 
@@ -292,13 +292,13 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   transport.DisallowDeleteObjects();
 
   PObject * channel = transport.RemoveHead();
-  dataSocket = dynamic_cast<PUDPSocket *>(channel);
-  if (dataSocket == NULL)
+  m_dataSocket = dynamic_cast<PUDPSocket *>(channel);
+  if (m_dataSocket == NULL)
     delete channel;
 
   channel = transport.RemoveHead();
-  controlSocket = dynamic_cast<PUDPSocket *>(channel);
-  if (controlSocket == NULL)
+  m_controlSocket = dynamic_cast<PUDPSocket *>(channel);
+  if (m_controlSocket == NULL)
     delete channel;
 
   transport.AllowDeleteObjects();
@@ -309,14 +309,14 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 {
   Transport temp;
 
-  if (dataSocket != NULL) {
-    temp.Append(dataSocket);
-    dataSocket = NULL;
+  if (m_dataSocket != NULL) {
+    temp.Append(m_dataSocket);
+    m_dataSocket = NULL;
   }
 
-  if (controlSocket != NULL) {
-    temp.Append(controlSocket);
-    controlSocket = NULL;
+  if (m_controlSocket != NULL) {
+    temp.Append(m_controlSocket);
+    m_controlSocket = NULL;
   }
 
   return temp;
@@ -326,11 +326,11 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 void OpalRTPSession::SendBYE()
 {
   {
-    PWaitAndSignal mutex(dataMutex);
-    if (byeSent)
+    PWaitAndSignal mutex(m_dataMutex);
+    if (m_byeSent)
       return;
 
-    byeSent = true;
+    m_byeSent = true;
   }
 
   RTP_ControlFrame report;
@@ -361,7 +361,7 @@ void OpalRTPSession::SendBYE()
 PString OpalRTPSession::GetCanonicalName() const
 {
   PWaitAndSignal mutex(m_reportMutex);
-  PString s = canonicalName;
+  PString s = m_canonicalName;
   s.MakeUnique();
   return s;
 }
@@ -370,15 +370,15 @@ PString OpalRTPSession::GetCanonicalName() const
 void OpalRTPSession::SetCanonicalName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
-  canonicalName = name;
-  canonicalName.MakeUnique();
+  m_canonicalName = name;
+  m_canonicalName.MakeUnique();
 }
 
 
 PString OpalRTPSession::GetToolName() const
 {
   PWaitAndSignal mutex(m_reportMutex);
-  PString s = toolName;
+  PString s = m_toolName;
   s.MakeUnique();
   return s;
 }
@@ -387,8 +387,8 @@ PString OpalRTPSession::GetToolName() const
 void OpalRTPSession::SetToolName(const PString & name)
 {
   PWaitAndSignal mutex(m_reportMutex);
-  toolName = name;
-  toolName.MakeUnique();
+  m_toolName = name;
+  m_toolName.MakeUnique();
 }
 
 
@@ -442,7 +442,7 @@ unsigned OpalRTPSession::GetJitterBufferSize() const
 
 bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 {
-  if (shutdownRead)
+  if (m_shutdownRead)
     return false;
 
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
@@ -472,18 +472,18 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 
 void OpalRTPSession::FlushData()
 {
-  if (dataSocket == NULL)
+  if (m_dataSocket == NULL)
     return;
 
-  PTimeInterval oldTimeout = dataSocket->GetReadTimeout();  
-  dataSocket->SetReadTimeout(0);
+  PTimeInterval oldTimeout = m_dataSocket->GetReadTimeout();  
+  m_dataSocket->SetReadTimeout(0);
 
   PINDEX count = 0;
   BYTE buffer[2000];
-  while (dataSocket->Read(buffer, sizeof(buffer)))
+  while (m_dataSocket->Read(buffer, sizeof(buffer)))
     ++count;
 
-  dataSocket->SetReadTimeout(oldTimeout);
+  m_dataSocket->SetReadTimeout(oldTimeout);
 
   PTRACE_IF(3, count > 0, "RTP\tSession " << m_sessionId << ", flushed "
             << count << " RTP data packets before activating jitter buffer");
@@ -555,7 +555,7 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame)
 {
-  PWaitAndSignal mutex(dataMutex);
+  PWaitAndSignal mutex(m_dataMutex);
 
   PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
@@ -592,7 +592,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
            << " ts=" << frameTimestamp
            << " src=" << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount()
-           << ' ' << GetRemoteMediaAddress());
+           << ' ' << GetRemoteAddress());
   }
 
   else {
@@ -612,7 +612,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
        For video we measure jitter between whole video frames which is
        indicated by the marker bit being on.
     */
-    if (isAudio  != frame.GetMarker()) {
+    if (m_isAudio  != frame.GetMarker()) {
       DWORD diff = (tick - lastSentPacketTime).GetInterval();
 
       averageSendTimeAccum += diff;
@@ -759,7 +759,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
          normally indicated by the marker bit being on, but this is unreliable,
          many endpoints not sending it correctly, so use a change in timestamp
          as most reliable method. */
-      if (isAudio ? !frame.GetMarker() : (m_lastReceivedStatisticTimestamp != frame.GetTimestamp())) {
+      if (m_isAudio ? !frame.GetMarker() : (m_lastReceivedStatisticTimestamp != frame.GetTimestamp())) {
         m_lastReceivedStatisticTimestamp = frame.GetTimestamp();
 
         DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
@@ -1007,13 +1007,13 @@ void OpalRTPSession::SendReport(PTimer&, INT)
   InsertReportPacket(report);
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", sending SDES: " << canonicalName);
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", sending SDES: " << m_canonicalName);
   report.StartNewPacket();
 
   report.SetCount(0); // will be incremented automatically
   report.StartSourceDescription  (syncSourceOut);
-  report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, canonicalName);
-  report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
+  report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, m_canonicalName);
+  report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, m_toolName);
   report.EndPacket();
   
 #if OPAL_RTCP_XR
@@ -1176,7 +1176,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           PTRACE(2, "RTP\tSession " << m_sessionId << ", Goodbye packet truncated");
         }
 
-        if (closeOnBye) {
+        if (m_closeOnBye) {
           PTRACE(3, "RTP\tSession " << m_sessionId << ", Goodbye packet closing transport");
           return e_AbortTransport;
         }
@@ -1405,7 +1405,7 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
   tmmb->requestSSRC = syncSourceIn;
 
   if (overhead == 0)
-    overhead = localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+    overhead = m_localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
 
   unsigned exponent = 0;
   unsigned mantissa = maxBitRate;
@@ -1530,46 +1530,23 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
 }
 
 
-OpalTransportAddress OpalRTPSession::GetLocalMediaAddress() const
+OpalTransportAddress OpalRTPSession::GetLocalAddress(bool isMediaAddress) const
 {
-  if (localAddress.IsValid() && localDataPort != 0)
-    return OpalTransportAddress(localAddress, localDataPort, OpalTransportAddress::UdpPrefix());
+  WORD port = isMediaAddress ? m_localDataPort : m_localControlPort;
+  if (m_localAddress.IsValid() && port != 0)
+    return OpalTransportAddress(m_localAddress, port, OpalTransportAddress::UdpPrefix());
   else
     return OpalTransportAddress();
 }
 
 
-OpalTransportAddress OpalRTPSession::GetRemoteMediaAddress() const
+OpalTransportAddress OpalRTPSession::GetRemoteAddress(bool isMediaAddress) const
 {
-  if (remoteAddress.IsValid() && remoteDataPort != 0)
-    return OpalTransportAddress(remoteAddress, remoteDataPort, OpalTransportAddress::UdpPrefix());
+  WORD port = isMediaAddress ? m_remoteDataPort : m_remoteControlPort;
+  if (m_remoteAddress.IsValid() && port != 0)
+    return OpalTransportAddress(m_remoteAddress, port, OpalTransportAddress::UdpPrefix());
   else
     return OpalTransportAddress();
-}
-
-
-bool OpalRTPSession::SetRemoteMediaAddress(const OpalTransportAddress & address)
-{
-  PIPSocket::Address ip;
-  WORD port = remoteDataPort;
-  return address.GetIpAndPort(ip, port) && InternalSetRemoteAddress(ip, port, true);
-}
-
-
-OpalTransportAddress OpalRTPSession::GetRemoteControlAddress() const
-{
-  if (remoteAddress.IsValid() && remoteControlPort != 0)
-    return OpalTransportAddress(remoteAddress, remoteControlPort, OpalTransportAddress::UdpPrefix());
-  else
-    return OpalTransportAddress();
-}
-
-
-bool OpalRTPSession::SetRemoteControlAddress(const OpalTransportAddress & address)
-{
-  PIPSocket::Address ip;
-  WORD port = remoteControlPort;
-  return address.GetIpAndPort(ip, port) && InternalSetRemoteAddress(ip, port, false);
 }
 
 
@@ -1589,11 +1566,11 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 
 void OpalRTPSession::ApplyQOS(const PIPSocket::Address & addr)
 {
-  if (controlSocket != NULL)
-    controlSocket->SetSendAddress(addr,GetRemoteControlPort());
-  if (dataSocket != NULL)
-    dataSocket->SetSendAddress(addr,GetRemoteDataPort());
-  appliedQOS = true;
+  if (m_controlSocket != NULL)
+    m_controlSocket->SetSendAddress(addr, m_remoteControlPort);
+  if (m_dataSocket != NULL)
+    m_dataSocket->SetSendAddress(addr, m_remoteDataPort);
+  m_appliedQOS = true;
 }
 
 #if P_QOS
@@ -1605,13 +1582,13 @@ bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
   if (rtpqos == NULL)
     return retval;
 
-  if (controlSocket != NULL)
-    retval = controlSocket->ModifyQoSSpec(&(rtpqos->ctrlQoS));
+  if (m_controlSocket != NULL)
+    retval = m_controlSocket->ModifyQoSSpec(&(rtpqos->ctrlQoS));
     
-  if (dataSocket != NULL)
-    retval &= dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
+  if (m_dataSocket != NULL)
+    retval &= m_dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
 
-  appliedQOS = false;
+  m_appliedQOS = false;
   return retval;
 }
 
@@ -1623,44 +1600,45 @@ void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & tran
   if (transports.IsEmpty())
     return;
 
-  PWaitAndSignal mutex(dataMutex);
+  PWaitAndSignal mutex(m_dataMutex);
 
-  delete dataSocket;
-  delete controlSocket;
-  dataSocket = NULL;
-  controlSocket = NULL;
+  delete m_dataSocket;
+  delete m_controlSocket;
+  m_dataSocket = NULL;
+  m_controlSocket = NULL;
 
-  transports[0].GetIpAndPort(localAddress, localDataPort);
+  transports[0].GetIpAndPort(m_localAddress, m_localDataPort);
   if (transports.GetSize() > 1)
-    transports[1].GetIpAndPort(localAddress, localControlPort);
+    transports[1].GetIpAndPort(m_localAddress, m_localControlPort);
   else
-    localControlPort = (WORD)(localDataPort+1);
+    m_localControlPort = (WORD)(m_localDataPort+1);
 
   OpalMediaSession::SetExternalTransport(transports);
 }
 
 
-bool OpalRTPSession::Open(const PString & localInterface)
+bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
-  PTRACE(5, "RTP\tSession " << m_sessionId << ", opening on interface \"" << localInterface << '"');
-
-  PWaitAndSignal mutex(dataMutex);
+  PWaitAndSignal mutex(m_dataMutex);
 
   if (IsExternalTransport())
     return true;
 
-  if (dataSocket != NULL && controlSocket != NULL)
+  if (m_dataSocket != NULL && m_controlSocket != NULL)
     return true;
 
+  if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
+    return false;
+
   m_firstControl = true;
-  byeSent = false;
-  shutdownRead = false;
-  shutdownWrite = false;
+  m_byeSent = false;
+  m_shutdownRead = false;
+  m_shutdownWrite = false;
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
 
 #if P_NAT
-  PNatMethod * natMethod = m_connection.GetNatMethod(remoteAddress);
+  PNatMethod * natMethod = m_connection.GetNatMethod(m_remoteAddress);
   if (natMethod != NULL) {
     PTRACE(4, "RTP\tNAT Method " << natMethod->GetName() << " selected for call.");
     natMethod->CreateSocketPairAsync(m_connection.GetToken());
@@ -1669,13 +1647,13 @@ bool OpalRTPSession::Open(const PString & localInterface)
 
   WORD firstPort = manager.GetRtpIpPortPair();
 
-  delete dataSocket;
-  delete controlSocket;
-  dataSocket = NULL;
-  controlSocket = NULL;
+  delete m_dataSocket;
+  delete m_controlSocket;
+  m_dataSocket = NULL;
+  m_controlSocket = NULL;
 
-  localDataPort    = firstPort;
-  localControlPort = (WORD)(firstPort + 1);
+  m_localDataPort    = firstPort;
+  m_localControlPort = (WORD)(firstPort + 1);
 
   PIPSocket::Address bindingAddress = localInterface;
 
@@ -1688,7 +1666,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
             this flag to make that happen as soon as we get the remotes IP
             address and port to send to.
           */
-        localHasNAT = true;
+        m_localHasRestrictedNAT = true;
         // Then do case for full cone support and create STUN sockets
 
       case PNatMethod::RTPSupported :
@@ -1700,23 +1678,23 @@ bool OpalRTPSession::Open(const PString & localInterface)
         if (pCon != NULL)
           natInfo = pCon->BuildSessionInformation(GetSessionID());
 #endif
-        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), dataSocket, controlSocket, bindingAddress, natInfo)) {
+        if (natMethod->GetSocketPairAsync(m_connection.GetToken(), m_dataSocket, m_controlSocket, bindingAddress, natInfo)) {
           PTRACE(4, "RTP\tSession " << m_sessionId << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
-          dataSocket->GetLocalAddress(bindingAddress, localDataPort);
-          controlSocket->GetLocalAddress(bindingAddress, localControlPort);
+          m_dataSocket->GetLocalAddress(bindingAddress, m_localDataPort);
+          m_controlSocket->GetLocalAddress(bindingAddress, m_localControlPort);
         }
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
-          if (natMethod->CreateSocket(dataSocket, bindingAddress) && natMethod->CreateSocket(controlSocket, bindingAddress)) {
-            dataSocket->GetLocalAddress(bindingAddress, localDataPort);
-            controlSocket->GetLocalAddress(bindingAddress, localControlPort);
+          if (natMethod->CreateSocket(m_dataSocket, bindingAddress) && natMethod->CreateSocket(m_controlSocket, bindingAddress)) {
+            m_dataSocket->GetLocalAddress(bindingAddress, m_localDataPort);
+            m_controlSocket->GetLocalAddress(bindingAddress, m_localControlPort);
           }
           else {
-            delete dataSocket;
-            delete controlSocket;
-            dataSocket = NULL;
-            controlSocket = NULL;
+            delete m_dataSocket;
+            delete m_controlSocket;
+            m_dataSocket = NULL;
+            m_controlSocket = NULL;
             PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetName()
                     << " could not create STUN RTP/RTCP sockets individually either, using normal sockets.");
           }
@@ -1736,16 +1714,16 @@ bool OpalRTPSession::Open(const PString & localInterface)
   }
 #endif
 
-  if (dataSocket == NULL || controlSocket == NULL) {
-    dataSocket = new PUDPSocket();
-    controlSocket = new PUDPSocket();
-    while (!   dataSocket->Listen(bindingAddress, 1, localDataPort) ||
-           !controlSocket->Listen(bindingAddress, 1, localControlPort)) {
-      dataSocket->Close();
-      controlSocket->Close();
+  if (m_dataSocket == NULL || m_controlSocket == NULL) {
+    m_dataSocket = new PUDPSocket();
+    m_controlSocket = new PUDPSocket();
+    while (!   m_dataSocket->Listen(bindingAddress, 1, m_localDataPort) ||
+           !m_controlSocket->Listen(bindingAddress, 1, m_localControlPort)) {
+      m_dataSocket->Close();
+      m_controlSocket->Close();
 
-      localDataPort = manager.GetRtpIpPortPair();
-      if (localDataPort == firstPort) {
+      m_localDataPort = manager.GetRtpIpPortPair();
+      if (m_localDataPort == firstPort) {
         PTRACE(1, "RTPCon\tNo ports available for RTP session " << m_sessionId << ","
                   " base=" << manager.GetRtpIpPortBase() << ","
                   " max=" << manager.GetRtpIpPortMax() << ","
@@ -1753,32 +1731,32 @@ bool OpalRTPSession::Open(const PString & localInterface)
                   " for " << m_connection);
         return false; // Used up all the available ports!
       }
-      localControlPort = (WORD)(localDataPort + 1);
+      m_localControlPort = (WORD)(m_localDataPort + 1);
     }
   }
 
 #ifndef __BEOS__
   // Set the IP Type Of Service field for prioritisation of media UDP packets
   // through some Cisco routers and Linux boxes
-  if (!dataSocket->SetOption(IP_TOS, manager.GetMediaTypeOfService(m_mediaType), IPPROTO_IP)) {
-    PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not set TOS field in IP header: " << dataSocket->GetErrorText());
+  if (!m_dataSocket->SetOption(IP_TOS, manager.GetMediaTypeOfService(m_mediaType), IPPROTO_IP)) {
+    PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not set TOS field in IP header: " << m_dataSocket->GetErrorText());
   }
 
   // Increase internal buffer size on media UDP sockets
-  SetMinBufferSize(*dataSocket,    SO_RCVBUF, isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
-  SetMinBufferSize(*dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
-  SetMinBufferSize(*controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
-  SetMinBufferSize(*controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
+  SetMinBufferSize(*m_dataSocket,    SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
+  SetMinBufferSize(*m_dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
+  SetMinBufferSize(*m_controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
+  SetMinBufferSize(*m_controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
 #endif
 
-  if (canonicalName.Find('@') == P_MAX_INDEX)
-    canonicalName += '@' + GetLocalHostName();
+  if (m_canonicalName.Find('@') == P_MAX_INDEX)
+    m_canonicalName += '@' + GetLocalHostName();
 
-  dataSocket->GetLocalAddress(localAddress);
-  manager.TranslateIPAddress(localAddress, remoteAddress);
+  m_dataSocket->GetLocalAddress(m_localAddress);
+  manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " opened: "
-         << localAddress << ':' << localDataPort << '-' << localControlPort
+         << m_localAddress << ':' << m_localDataPort << '-' << m_localControlPort
          << " ssrc=" << syncSourceOut);
 
   OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
@@ -1791,8 +1769,8 @@ bool OpalRTPSession::Open(const PString & localInterface)
 
 bool OpalRTPSession::IsOpen() const
 {
-  return dataSocket != NULL && dataSocket->IsOpen() &&
-         controlSocket != NULL && controlSocket->IsOpen();
+  return m_dataSocket != NULL && m_dataSocket->IsOpen() &&
+         m_controlSocket != NULL && m_controlSocket->IsOpen();
 }
 
 
@@ -1811,16 +1789,16 @@ bool OpalRTPSession::Close()
   // over them and exits the reading thread.
   SetJitterBufferSize(0, 0);
 
-  delete dataSocket;
-  dataSocket = NULL;
+  delete m_dataSocket;
+  m_dataSocket = NULL;
 
-  delete controlSocket;
-  controlSocket = NULL;
+  delete m_controlSocket;
+  m_controlSocket = NULL;
 
-  localAddress = PIPSocket::GetInvalidAddress();
-  localDataPort = localControlPort = 0;
-  remoteAddress = PIPSocket::GetInvalidAddress();
-  remoteDataPort = remoteControlPort = 0;
+  m_localAddress = PIPSocket::GetInvalidAddress();
+  m_localDataPort = m_localControlPort = 0;
+  m_remoteAddress = PIPSocket::GetInvalidAddress();
+  m_remoteDataPort = m_remoteControlPort = 0;
 
   return ok;
 }
@@ -1830,9 +1808,9 @@ bool OpalRTPSession::Shutdown(bool reading)
 {
   if (reading) {
     {
-      PWaitAndSignal mutex(dataMutex);
+      PWaitAndSignal mutex(m_dataMutex);
 
-      if (shutdownRead) {
+      if (m_shutdownRead) {
         PTRACE(4, "RTP_UDP\tSession " << m_sessionId << ", read already shut down .");
         return false;
       }
@@ -1840,31 +1818,31 @@ bool OpalRTPSession::Shutdown(bool reading)
       PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", Shutting down read.");
 
       syncSourceIn = 0;
-      shutdownRead = true;
+      m_shutdownRead = true;
 
-      if (dataSocket != NULL && controlSocket != NULL) {
+      if (m_dataSocket != NULL && m_controlSocket != NULL) {
         PIPSocketAddressAndPort addrAndPort;
-        controlSocket->PUDPSocket::InternalGetLocalAddress(addrAndPort);
+        m_controlSocket->PUDPSocket::InternalGetLocalAddress(addrAndPort);
         if (!addrAndPort.IsValid())
           addrAndPort.SetAddress(PIPSocket::GetHostName());
-        dataSocket->WriteTo("", 1, addrAndPort);
+        m_dataSocket->WriteTo("", 1, addrAndPort);
       }
     }
 
     SetJitterBufferSize(0, 0); // Kill jitter buffer too, but outside mutex
   }
   else {
-    if (shutdownWrite) {
+    if (m_shutdownWrite) {
       PTRACE(4, "RTP_UDP\tSession " << m_sessionId << ", write already shut down .");
       return false;
     }
 
     PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", shutting down write.");
-    shutdownWrite = true;
+    m_shutdownWrite = true;
   }
 
   // If shutting down both, no reporting any more
-  if (shutdownRead && shutdownWrite)
+  if (m_shutdownRead && m_shutdownWrite)
     m_reportTimer.Stop(false);
 
   return true;
@@ -1873,17 +1851,17 @@ bool OpalRTPSession::Shutdown(bool reading)
 
 void OpalRTPSession::Restart(bool reading)
 {
-  PWaitAndSignal mutex(dataMutex);
+  PWaitAndSignal mutex(m_dataMutex);
 
   if (reading) {
-    if (!shutdownRead)
+    if (!m_shutdownRead)
       return;
-    shutdownRead = false;
+    m_shutdownRead = false;
   }
   else {
-    if (!shutdownWrite)
+    if (!m_shutdownWrite)
       return;
-    shutdownWrite = false;
+    m_shutdownWrite = false;
   }
 
   m_noTransmitErrors = 0;
@@ -1899,52 +1877,54 @@ PString OpalRTPSession::GetLocalHostName()
 }
 
 
-bool OpalRTPSession::InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort)
+bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
-  if (remoteIsNAT) {
+  if (m_remoteBehindNAT) {
     PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", ignoring remote socket info as remote is behind NAT");
     return true;
   }
 
-  if (!PAssert(address.IsValid() && port != 0,PInvalidParameter))
+  PIPSocket::Address address;
+  WORD port = isMediaAddress ? m_remoteDataPort : m_remoteControlPort;
+  if (!remoteAddress.GetIpAndPort(address, port))
     return false;
 
-  PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", SetRemoteSocketInfo: "
-         << (isDataPort ? "data" : "control") << " channel, "
+  PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", Set remote "
+         << (isMediaAddress ? "data" : "control") << " address, "
             "new=" << address << ':' << port << ", "
-            "local=" << localAddress << ':' << localDataPort << '-' << localControlPort << ", "
-            "remote=" << remoteAddress << ':' << remoteDataPort << '-' << remoteControlPort);
+            "old=" << m_remoteAddress << ':' << m_remoteDataPort << '-' << m_remoteControlPort << ", "
+            "local=" << m_localAddress << ':' << m_localDataPort << '-' << m_localControlPort);
 
-  if (localAddress == address && remoteAddress == address && (isDataPort ? localDataPort : localControlPort) == port)
+  if (m_localAddress == address && m_remoteAddress == address && (isMediaAddress ? m_localDataPort : m_localControlPort) == port)
     return true;
   
-  remoteAddress = address;
+  m_remoteAddress = address;
   
   allowOneSyncSourceChange = true;
   allowRemoteTransmitAddressChange = true;
   allowSequenceChange = packetsReceived != 0;
 
-  if (isDataPort) {
-    remoteDataPort = port;
-    if (remoteControlPort == 0 || allowRemoteTransmitAddressChange)
-      remoteControlPort = (WORD)(port + 1);
+  if (isMediaAddress) {
+    m_remoteDataPort = port;
+    if (m_remoteControlPort == 0 || allowRemoteTransmitAddressChange)
+      m_remoteControlPort = (WORD)(port + 1);
   }
   else {
-    remoteControlPort = port;
-    if (remoteDataPort == 0 || allowRemoteTransmitAddressChange)
-      remoteDataPort = (WORD)(port - 1);
+    m_remoteControlPort = port;
+    if (m_remoteDataPort == 0 || allowRemoteTransmitAddressChange)
+      m_remoteDataPort = (WORD)(port - 1);
   }
 
-  if (!appliedQOS)
-      ApplyQOS(remoteAddress);
+  if (!m_appliedQOS)
+      ApplyQOS(m_remoteAddress);
 
-  if (localHasNAT) {
+  if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
     // to remote to open up the port in the firewall for return data.
     static const BYTE dummy[1] = { 0 };
     WriteDataOrControlPDU(dummy, sizeof(dummy), true);
     WriteDataOrControlPDU(dummy, sizeof(dummy), false);
-    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", sending empty datagrams to open local Port Restricted NAT");
+    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", sending empty datagrams to open local restricted NAT");
   }
 
   return true;
@@ -1955,11 +1935,11 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 {
   SendReceiveStatus receiveStatus = e_IgnorePacket;
   while (receiveStatus == e_IgnorePacket) {
-    if (shutdownRead || PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
+    if (m_shutdownRead || PAssertNULL(m_dataSocket) == NULL || PAssertNULL(m_controlSocket) == NULL)
       return false;
 
-    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, m_maxNoReceiveTime);
-    if (shutdownRead)
+    int selectStatus = WaitForPDU(*m_dataSocket, *m_controlSocket, m_maxNoReceiveTime);
+    if (m_shutdownRead)
       return false;
 
     if (selectStatus > 0) {
@@ -1993,42 +1973,42 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
 #if PTRACING
   const char * channelName = fromDataChannel ? "Data" : "Control";
 #endif
-  PUDPSocket & socket = *(fromDataChannel ? dataSocket : controlSocket);
+  PUDPSocket & socket = *(fromDataChannel ? m_dataSocket : m_controlSocket);
   PIPSocket::Address addr;
   WORD port;
 
   if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
-    if (!remoteAddress.IsValid()) {
-      remoteAddress = addr;
+    if (!m_remoteAddress.IsValid()) {
+      m_remoteAddress = addr;
       PTRACE(4, "RTP\tSession " << m_sessionId << ", set remote address from first "
              << channelName << " PDU from " << addr << ':' << port);
     }
     if (fromDataChannel) {
-      if (remoteDataPort == 0)
-        remoteDataPort = port;
+      if (m_remoteDataPort == 0)
+        m_remoteDataPort = port;
     }
     else {
-      if (remoteControlPort == 0)
-        remoteControlPort = port;
+      if (m_remoteControlPort == 0)
+        m_remoteControlPort = port;
     }
 
-    if (!remoteTransmitAddress.IsValid())
-      remoteTransmitAddress = addr;
-    else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
-      remoteTransmitAddress = addr;
+    if (!m_remoteTransmitAddress.IsValid())
+      m_remoteTransmitAddress = addr;
+    else if (allowRemoteTransmitAddressChange && m_remoteAddress == addr) {
+      m_remoteTransmitAddress = addr;
       allowRemoteTransmitAddressChange = false;
     }
-    else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
+    else if (m_remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", "
              << channelName << " PDU from incorrect host, "
-                " is " << addr << " should be " << remoteTransmitAddress);
+                " is " << addr << " should be " << m_remoteTransmitAddress);
       return e_IgnorePacket;
     }
 
-    if (remoteAddress.IsValid() && !appliedQOS) 
-      ApplyQOS(remoteAddress);
+    if (m_remoteAddress.IsValid() && !m_appliedQOS) 
+      ApplyQOS(m_remoteAddress);
 
     m_noTransmitErrors = 0;
 
@@ -2078,7 +2058,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
     return status;
 
   // Check received PDU is big enough
-  if (frame.SetPacketSize(dataSocket->GetLastReadCount()))
+  if (frame.SetPacketSize(m_dataSocket->GetLastReadCount()))
     return OnReceiveData(frame);
 
   return e_IgnorePacket;
@@ -2102,7 +2082,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadControlPDU()
   if (status != e_ProcessPacket)
     return status;
 
-  PINDEX pduSize = controlSocket->GetLastReadCount();
+  PINDEX pduSize = m_controlSocket->GetLastReadCount();
   if (pduSize < 4 || pduSize < 4+frame.GetPayloadSize()) {
     PTRACE_IF(2, pduSize != 1 || !m_firstControl, "RTP_UDP\tSession " << m_sessionId
               << ", Received control packet too small: " << pduSize << " bytes");
@@ -2117,7 +2097,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadControlPDU()
 
 bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 {
-  PWaitAndSignal m(dataMutex);
+  PWaitAndSignal m(m_dataMutex);
 
   // set timestamp offset if not already set
   // otherwise offset timestamp
@@ -2142,15 +2122,15 @@ bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 {
   {
-    PWaitAndSignal mutex(dataMutex);
-    if (shutdownWrite) {
+    PWaitAndSignal mutex(m_dataMutex);
+    if (m_shutdownWrite) {
       PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
       return false;
     }
   }
 
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteDataPort == 0)
+  if (!m_remoteAddress.IsValid() || m_remoteDataPort == 0)
     return true;
 
   switch (OnSendData(frame)) {
@@ -2169,7 +2149,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
 {
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteControlPort == 0 || controlSocket == NULL)
+  if (!m_remoteAddress.IsValid() || m_remoteControlPort == 0 || m_controlSocket == NULL)
     return true;
 
   switch (OnSendControl(frame)) {
@@ -2188,11 +2168,11 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
 
 bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSize, bool toDataChannel)
 {
-  PUDPSocket & socket = *(toDataChannel ? dataSocket : controlSocket);
-  WORD port = toDataChannel ? remoteDataPort : remoteControlPort;
+  PUDPSocket & socket = *(toDataChannel ? m_dataSocket : m_controlSocket);
+  WORD port = toDataChannel ? m_remoteDataPort : m_remoteControlPort;
   int retry = 0;
 
-  while (!socket.WriteTo(framePtr, frameSize, remoteAddress, port)) {
+  while (!socket.WriteTo(framePtr, frameSize, m_remoteAddress, port)) {
     switch (socket.GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :

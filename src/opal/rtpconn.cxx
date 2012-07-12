@@ -59,22 +59,22 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                                    unsigned int options,
                                 StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions)
-  , remoteIsNAT(false)
+  , m_remoteBehindNAT(false)
 {
-  rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
-  PTRACE_CONTEXT_ID_TO(rfc2833Handler);
+  m_rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
+  PTRACE_CONTEXT_ID_TO(m_rfc2833Handler);
 
 #if OPAL_T38_CAPABILITY
-  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalCiscoNSE);
-  PTRACE_CONTEXT_ID_TO(ciscoNSEHandler);
+  m_ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalCiscoNSE);
+  PTRACE_CONTEXT_ID_TO(m_ciscoNSEHandler);
 #endif
 }
 
 OpalRTPConnection::~OpalRTPConnection()
 {
-  delete rfc2833Handler;
+  delete m_rfc2833Handler;
 #if OPAL_T38_CAPABILITY
-  delete ciscoNSEHandler;
+  delete m_ciscoNSEHandler;
 #endif
 }
 
@@ -232,7 +232,7 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
     actualSessionType = mediaType->GetMediaSessionType();
 
   OpalMediaSession * session = OpalMediaSessionFactory::CreateInstance(actualSessionType,
-                                     OpalMediaSession::Init(*this, sessionId, mediaType));
+                                     OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
   if (session == NULL) {
     PTRACE(1, "RTPCon\tCannot create session for " << actualSessionType);
     return NULL;
@@ -252,7 +252,7 @@ bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaTy
   // Can only do media bypass if we have fast connect
   for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
     if (session->second->GetMediaType() == mediaType) {
-      OpalTransportAddress address = session->second->GetRemoteMediaAddress();
+      OpalTransportAddress address = session->second->GetRemoteAddress();
       if (!address.IsEmpty()) {
         transports.AppendAddress(address);
         PTRACE(3, "RTPCon\tGetMediaTransport for " << mediaType << " found " << setfill(',') << address);
@@ -317,12 +317,12 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
   if (rtpSession == NULL || !rtpSession->IsAudio())
     return;
 
-  if (rfc2833Handler != NULL)
-    rfc2833Handler->UseRTPSession(false, rtpSession);
+  if (m_rfc2833Handler != NULL)
+    m_rfc2833Handler->UseRTPSession(false, rtpSession);
 
 #if OPAL_T38_CAPABILITY
-  if (ciscoNSEHandler != NULL)
-    ciscoNSEHandler->UseRTPSession(false, rtpSession);
+  if (m_ciscoNSEHandler != NULL)
+    m_ciscoNSEHandler->UseRTPSession(false, rtpSession);
 #endif
 }
 
@@ -340,12 +340,12 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(it->second);
   if (rtpSession != NULL && rtpSession->IsAudio()) {
-    if (rfc2833Handler != NULL)
-      rfc2833Handler->UseRTPSession(false, NULL);
+    if (m_rfc2833Handler != NULL)
+      m_rfc2833Handler->UseRTPSession(false, NULL);
 
 #if OPAL_T38_CAPABILITY
-    if (ciscoNSEHandler != NULL)
-      ciscoNSEHandler->UseRTPSession(false, NULL);
+    if (m_ciscoNSEHandler != NULL)
+      m_ciscoNSEHandler->UseRTPSession(false, NULL);
 #endif
   }
 
@@ -443,9 +443,9 @@ PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
   if (GetRealSendUserInputMode() == SendUserInputAsRFC2833) {
     if (
 #if OPAL_T38_CAPABILITY
-        ciscoNSEHandler->SendToneAsync(tone, duration) ||
+        m_ciscoNSEHandler->SendToneAsync(tone, duration) ||
 #endif
-         rfc2833Handler->SendToneAsync(tone, duration))
+         m_rfc2833Handler->SendToneAsync(tone, duration))
       return true;
 
     PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
@@ -521,12 +521,12 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
   if (rtpSession == NULL)
     return;
 
-  if (rfc2833Handler != NULL)
-    rfc2833Handler->UseRTPSession(isSource, rtpSession);
+  if (m_rfc2833Handler != NULL)
+    m_rfc2833Handler->UseRTPSession(isSource, rtpSession);
 
 #if OPAL_T38_CAPABILITY
-  if (ciscoNSEHandler != NULL)
-    ciscoNSEHandler->UseRTPSession(isSource, rtpSession);
+  if (m_ciscoNSEHandler != NULL)
+    m_ciscoNSEHandler->UseRTPSession(isSource, rtpSession);
 #endif
 }
 

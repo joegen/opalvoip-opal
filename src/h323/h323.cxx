@@ -1032,7 +1032,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
 
     // allow the application to determine if RTP NAT is enabled or not
-    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
+    m_remoteBehindNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
   }
 
   // Anything else we need from setup PDU
@@ -3749,7 +3749,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
     // Adjust the RF2388 transitter to remotes capabilities.
     H323Capability * capability = remoteCapabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
-    rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
+    m_rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
   }
 
   return true;
@@ -3860,7 +3860,7 @@ void H323Connection::OnSetLocalCapabilities()
     capability->SetPayloadType(rfc2833->GetPayloadType());
 
   // Adjust the RF2388 transitter to local capabilities.
-  rfc2833Handler->SetRxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
+  m_rfc2833Handler->SetRxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
@@ -4841,30 +4841,24 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (sessionID == 0)
     sessionID = GetNextSessionID(mediaType, true);
 
-  if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
-    // We only support unicast IP at this time.
-    if (param->m_mediaControlChannel.GetTag() != H245_TransportAddress::e_unicastAddress)
-      return NULL;
+  const H323Transport & transport = GetControlChannel();
 
-    const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
-    unsigned int tag = uaddr.GetTag();
-    if ((tag != H245_UnicastAddress::e_iPAddress) && (tag != H245_UnicastAddress::e_iP6Address))
+  H323TransportAddress remoteControlAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
+    remoteControlAddress = H323TransportAddress(param->m_mediaControlChannel);
+    if (remoteControlAddress.IsEmpty())
       return NULL;
   }
 
-  const H323Transport & transport = GetControlChannel();
-
   // We only support RTP over UDP at this point in time ...
-  if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
+  if (!transport.IsCompatibleTransport(remoteControlAddress))
     return NULL;
 
   H323RTPSession * session = dynamic_cast<H323RTPSession *>(UseMediaSession(sessionID, mediaType, h323_rtp_session_type));
   if (PAssertNULL(session) == NULL)
     return NULL;
 
-  PIPSocket::Address localInterface;
-  transport.GetLocalAddress(false).GetIpAddress(localInterface);
-  if (!session->Open(localInterface.AsString())) {
+  if (!session->Open(transport.GetLocalAddress(false).GetHostName(), remoteControlAddress, false)) {
     ReleaseMediaSession(sessionID);
     return NULL;
   }

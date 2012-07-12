@@ -147,9 +147,13 @@ OpalMediaSession::OpalMediaSession(const Init & init)
 }
 
 
-bool OpalMediaSession::Open(const PString &)
+bool OpalMediaSession::Open(const PString & PTRACE_PARAM(localInterface),
+                            const OpalTransportAddress & remoteAddress,
+                            bool isMediaAddress)
 {
-  return true;
+  PTRACE(5, "Media\tSession " << m_sessionId << ", opening on interface \"" << localInterface << "\" to "
+         << (isMediaAddress ? "media" : "control") << " address " << remoteAddress);
+  return SetRemoteAddress(remoteAddress, isMediaAddress);
 }
 
 
@@ -165,31 +169,19 @@ bool OpalMediaSession::Close()
 }
 
 
-OpalTransportAddress OpalMediaSession::GetLocalMediaAddress() const
+OpalTransportAddress OpalMediaSession::GetLocalAddress(bool) const
 {
   return OpalTransportAddress();
 }
 
 
-OpalTransportAddress OpalMediaSession::GetRemoteMediaAddress() const
+OpalTransportAddress OpalMediaSession::GetRemoteAddress(bool) const
 {
   return OpalTransportAddress();
 }
 
 
-bool OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
-{
-  return true;
-}
-
-
-OpalTransportAddress OpalMediaSession::GetRemoteControlAddress() const
-{
-  return OpalTransportAddress();
-}
-
-
-bool OpalMediaSession::SetRemoteControlAddress(const OpalTransportAddress &)
+bool OpalMediaSession::SetRemoteAddress(const OpalTransportAddress &, bool)
 {
   return true;
 }
@@ -216,7 +208,7 @@ void OpalMediaSession::SetExternalTransport(const OpalTransportAddressArray & PT
 #if OPAL_SIP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
-  return m_mediaType->CreateSDPMediaDescription(GetLocalMediaAddress());
+  return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());
 }
 #endif
 

@@ -210,7 +210,7 @@ SDPMediaDescription * OpalMSRPMediaType::CreateSDPMediaDescription(const OpalTra
 
 SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription()
 {
-  return new SDPMSRPMediaDescription(GetLocalMediaAddress(), GetLocalURL());
+  return new SDPMSRPMediaDescription(GetLocalAddress(), GetLocalURL());
 }
 
 
@@ -336,8 +336,11 @@ OpalMSRPMediaSession::~OpalMSRPMediaSession()
 }
 
 
-bool OpalMSRPMediaSession::Open(const PString & localInterface)
+bool OpalMSRPMediaSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
+  if (!OpalMediaSession::Open(localInterface, remoteAddress, isMediaAddress))
+    return false;
+
   m_isOriginating = m_connection.IsOriginating();
   m_localMSRPSessionId = m_manager.CreateSessionID();
   m_localUrl = m_manager.SessionIDToURL(localInterface, m_localMSRPSessionId);
@@ -352,15 +355,23 @@ bool OpalMSRPMediaSession::Close()
 }
 
 
-OpalTransportAddress OpalMSRPMediaSession::GetLocalMediaAddress() const
+OpalTransportAddress OpalMSRPMediaSession::GetLocalAddress(bool) const
 {
   return OpalTransportAddress(m_localUrl.GetHostName(), m_localUrl.GetPort());
 }
 
 
-OpalTransportAddress OpalMSRPMediaSession::GetRemoteMediaAddress() const
+OpalTransportAddress OpalMSRPMediaSession::GetRemoteAddress(bool) const
 {
   return m_remoteAddress;
+}
+
+
+bool OpalMSRPMediaSession::SetRemoteAddress(const OpalTransportAddress & transportAddress, bool)
+{
+  PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
+  m_remoteAddress = transportAddress;
+  return true;
 }
 
 
@@ -371,14 +382,6 @@ OpalMediaStream * OpalMSRPMediaSession::CreateMediaStream(const OpalMediaFormat 
   PTRACE(2, "MSRP\tCreated " << (isSource ? "source" : "sink") << " media stream in "
          << (m_connection.IsOriginating() ? "originator" : "receiver") << " with " << m_localUrl);
   return new OpalMSRPMediaStream(m_connection, mediaFormat, sessionID, isSource, *this);
-}
-
-
-bool OpalMSRPMediaSession::SetRemoteMediaAddress(const OpalTransportAddress & transportAddress)
-{
-  PTRACE(2, "MSRP\tSetting remote media address to " << transportAddress);
-  m_remoteAddress = transportAddress;
-  return true;
 }
 
 
