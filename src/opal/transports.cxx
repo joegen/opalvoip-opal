@@ -438,14 +438,12 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
 
   if (service == "*")
     port = 0;
-  else {
-    if (!service) {
-      PCaselessString proto = address.GetProtoPrefix();
-      if (proto == OpalTransportAddress::IpPrefix())
-        proto = OpalTransportAddress::TcpPrefix();
-      port = PIPSocket::GetPortByService(proto, service);
-    }
-    if (port == 0) {
+  else if (!service.IsEmpty()) {
+    PCaselessString proto = address.GetProtoPrefix();
+    if (proto == OpalTransportAddress::IpPrefix())
+      proto = OpalTransportAddress::TcpPrefix();
+
+    if ((port = PIPSocket::GetPortByService(proto, service)) == 0) {
       PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << address << '"');
       return PFalse;
     }

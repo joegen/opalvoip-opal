@@ -186,18 +186,21 @@ class OpalMediaSession : public PObject
     /// Initialisation information for constructing a session
     struct Init {
       Init(
-        OpalConnection & connection,    ///< Connection that owns the sesion
-        unsigned sessionId,             ///< Unique (in connection) session ID for session
-        const OpalMediaType & mediaType ///< Media type for session
+        OpalConnection & connection,     ///< Connection that owns the sesion
+        unsigned sessionId,              ///< Unique (in connection) session ID for session
+        const OpalMediaType & mediaType, ///< Media type for session
+        bool remoteBehindNAT
       ) : m_connection(connection)
         , m_sessionId(sessionId)
         , m_mediaType(mediaType)
+        , m_remoteBehindNAT(remoteBehindNAT)
       { }
 
 
       OpalConnection & m_connection;
       unsigned         m_sessionId;
       OpalMediaType    m_mediaType;
+      bool             m_remoteBehindNAT;
     };
 
   protected:
@@ -205,14 +208,12 @@ class OpalMediaSession : public PObject
 
   public:
     virtual const PCaselessString & GetSessionType() const = 0;
-    virtual bool Open(const PString & localInterface);
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
     virtual bool IsOpen() const;
     virtual bool Close();
-    virtual OpalTransportAddress GetLocalMediaAddress() const;
-    virtual OpalTransportAddress GetRemoteMediaAddress() const;
-    virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
-    virtual OpalTransportAddress GetRemoteControlAddress() const;
-    virtual bool SetRemoteControlAddress(const OpalTransportAddress &);
+    virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
+    virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 
     typedef PList<PChannel> Transport;
     virtual void AttachTransport(Transport & transport);
@@ -262,6 +263,13 @@ class OpalMediaSession : public PObject
   private:
     OpalMediaSession(const OpalMediaSession & other) : PObject(other), m_connection(other.m_connection) { }
     void operator=(const OpalMediaSession &) { }
+
+    P_REMOVE_VIRTUAL(bool, Open(const PString &), false);
+    P_REMOVE_VIRTUAL(OpalTransportAddress, GetLocalMediaAddress() const, 0);
+    P_REMOVE_VIRTUAL(OpalTransportAddress, GetRemoteMediaAddress() const, 0);
+    P_REMOVE_VIRTUAL(bool, SetRemoteMediaAddress(const OpalTransportAddress &), false);
+    P_REMOVE_VIRTUAL(OpalTransportAddress, GetRemoteControlAddress() const, 0);
+    P_REMOVE_VIRTUAL(bool, SetRemoteControlAddress(const OpalTransportAddress &), false);
 };
 
 

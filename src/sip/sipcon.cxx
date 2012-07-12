@@ -693,7 +693,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
 
   // see if remote socket information has changed
   if (!remoteMediaAddress.IsEmpty()) {
-    OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteMediaAddress();
+    OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
     bool firstTime = oldRemoteMediaAddress.IsEmpty();
     remoteChanged = !firstTime && oldRemoteMediaAddress != remoteMediaAddress;
 
@@ -703,20 +703,20 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     }
 
     if (firstTime || remoteChanged) {
-      if (!session->SetRemoteMediaAddress(remoteMediaAddress)) {
+      if (!session->SetRemoteAddress(remoteMediaAddress)) {
         ReleaseMediaSession(sessionId);
         return NULL;
       }
     }
   }
 
-  if (!session->Open(GetTransport().GetInterface())) {
+  if (!session->Open(GetTransport().GetInterface(), remoteMediaAddress, true)) {
     ReleaseMediaSession(sessionId);
     return NULL;
   }
 
   // Local Address of the session
-  localAddress = session->GetLocalMediaAddress();
+  localAddress = session->GetLocalAddress();
 
   return session;
 }
@@ -813,7 +813,8 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  if (!mediaSession->Open(GetTransport().GetInterface())) {
+  OpalTransportAddress remoteMediaAddress(GetTransport().GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  if (!mediaSession->Open(GetTransport().GetInterface(), remoteMediaAddress, true)) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
     return false;
   }
@@ -825,7 +826,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   }
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
-    sdp.SetDefaultConnectAddress(mediaSession->GetLocalMediaAddress());
+    sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
 
   if (offerOpenMediaStreamOnly) {
     OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
@@ -881,9 +882,9 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
 
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
-    SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
 
@@ -1075,7 +1076,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   bool replaceSession = mediaSession->GetMediaType() != mediaType;
   if (replaceSession) {
     mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
-                                            OpalMediaSession::Init(*this, sessionId, mediaType));
+                                            OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
     if (mediaSession == NULL) {
       PTRACE(2, "SIP\tCould not create session for " << mediaType);
       return false;
@@ -1231,13 +1232,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
-    SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833, localMedia);
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833, localMedia);
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia);
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
 
-  localMedia->SetTransportAddress(mediaSession->GetLocalMediaAddress());
+  localMedia->SetTransportAddress(mediaSession->GetLocalAddress());
 
   sdpOut.AddMediaDescription(localMedia);
 
@@ -2618,7 +2619,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   GetTransport().GetLocalAddress().GetIpAddress(localAddr);
 
   // allow the application to determine if RTP NAT is enabled or not
-  remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
+  m_remoteBehindNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
 
   bool prackSupported = mime.GetSupported().Contains("100rel");
   bool prackRequired = mime.GetRequire().Contains("100rel");
@@ -3409,10 +3410,10 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 
   PINDEX maxFormats = 1;
   if (mediaType == OpalMediaType::Audio()) {
-    if (SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833))
+    if (SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833))
       ++maxFormats;
 #if OPAL_T38_CAPABILITY
-    if (SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE))
+    if (SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE))
       ++maxFormats;
 #endif
   }
