@@ -2133,7 +2133,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     else if (!cmd.IsEmpty())
       PTRACE(1, "SIP\tInvalid message from " << transport.GetLastReceivedAddress()
              << ", request \"" << cmd << "\", mime:\n" << m_mime);
-    else if (transport.IsOpen())
+    else
       PTRACE(1, "SIP\tLost transport to " << transport.GetLastReceivedAddress());
 #endif
     return SIP_PDU::Failure_BadRequest;
