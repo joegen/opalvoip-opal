@@ -733,10 +733,9 @@ class SIP_PDU : public PSafeObject
     PString     m_info;
     SIPMIMEInfo m_mime;
     PString     m_entityBody;
+    PString     m_transactionID;
 
     SDPSessionDescription * m_SDP;
-
-    PString m_transactionID;
 };
 
 

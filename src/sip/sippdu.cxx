@@ -1783,8 +1783,8 @@ SIP_PDU::SIP_PDU(Methods meth)
   , m_statusCode(IllegalStatusCode)
   , m_versionMajor(SIP_VER_MAJOR)
   , m_versionMinor(SIP_VER_MINOR)
-  , m_SDP(NULL)
   , m_transactionID(TransactionPrefix + OpalGloballyUniqueID().AsString())
+  , m_SDP(NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
 }
@@ -1812,6 +1812,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_info(pdu.m_info)
   , m_mime(pdu.m_mime)
   , m_entityBody(pdu.m_entityBody)
+  , m_transactionID(pdu.m_transactionID)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
@@ -1829,6 +1830,7 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   m_info = pdu.m_info;
   m_mime = pdu.m_mime;
   m_entityBody = pdu.m_entityBody;
+  m_transactionID = pdu.m_transactionID;
 
   delete m_SDP;
   m_SDP = pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL;
