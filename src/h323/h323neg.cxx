@@ -55,6 +55,8 @@ H245Negotiator::H245Negotiator(H323EndPoint & end, H323Connection & conn)
   : endpoint(end),
     connection(conn)
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+  PTRACE_CONTEXT_ID_TO(replyTimer);
   replyTimer.SetNotifier(PCREATE_NOTIFIER(HandleTimeoutUnlocked));
 }
 

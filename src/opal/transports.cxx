@@ -1040,6 +1040,7 @@ void OpalTransport::AttachThread(PThread * thrd)
   }
 
   thread = thrd;
+  PTRACE_CONTEXT_ID_TO(thread);
 }
 
 

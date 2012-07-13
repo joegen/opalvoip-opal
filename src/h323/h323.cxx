@@ -240,6 +240,9 @@ H323Connection::H323Connection(OpalCall & call,
   , features(ep.GetFeatureSet())
 #endif
 {
+  PTRACE_CONTEXT_ID_TO(localCapabilities);
+  PTRACE_CONTEXT_ID_TO(remoteCapabilities);
+
   localAliasNames.MakeUnique();
   gkAccessTokenOID.MakeUnique();
 
@@ -492,6 +495,7 @@ void H323Connection::AttachSignalChannel(const PString & token,
 
   delete signallingChannel;
   signallingChannel = channel;
+  PTRACE_CONTEXT_ID_TO(signallingChannel);
 
   // Set our call token for identification in endpoint dictionary
   callToken = token;
@@ -977,6 +981,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   SetPhase(SetUpPhase);
 
   setupPDU = new H323SignalPDU(originalSetupPDU);
+  PTRACE_CONTEXT_ID_TO(setupPDU);
 
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
@@ -1084,6 +1089,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
     // if the application indicates not to contine, then send a Q931 Release Complete PDU
     alertingPDU = new H323SignalPDU;
+    PTRACE_CONTEXT_ID_TO(alertingPDU);
     alertingPDU->BuildAlerting(*this);
 
     /** If we have a case of incoming call intrusion we should not Clear the Call*/
@@ -1217,9 +1223,11 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
+  PTRACE_CONTEXT_ID_TO(connectPDU);
   connectPDU->BuildConnect(*this);
 
   progressPDU = new H323SignalPDU;
+  PTRACE_CONTEXT_ID_TO(progressPDU);
   progressPDU->BuildProgress(*this);
 
   connectionState = AwaitingLocalAnswer;
@@ -2554,6 +2562,8 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddres
     return false;
   }
 
+  PTRACE_CONTEXT_ID_TO(controlChannel);
+
   if (!controlChannel->SetRemoteAddress(H323TransportAddress(h245Address))) {
     PTRACE(1, "H225\tCould not extract H245 address");
     delete controlChannel;
@@ -2599,6 +2609,8 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
     controlListener = signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return false;
+
+    PTRACE_CONTEXT_ID_TO(controlListener);
 
     if (!controlListener->Open(PCREATE_NOTIFIER(NewIncomingControlChannel), OpalListener::HandOffThreadMode)) {
       delete controlListener;
@@ -3789,6 +3801,7 @@ void H323Connection::OnSetLocalCapabilities()
   H323H239ControlCapability * h329Control = NULL;
   if (m_h239Control) {
     h329Control = new H323H239ControlCapability();
+    PTRACE_CONTEXT_ID_TO(h329Control);
     formats += h329Control->GetMediaFormat();
   }
 #endif
@@ -3836,6 +3849,7 @@ void H323Connection::OnSetLocalCapabilities()
     if (localCapabilities.FindCapability(format->GetName()) != NULL &&
         format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption()) != 0) {
       H323H239VideoCapability * newCap = new H323H239VideoCapability(*format);
+      PTRACE_CONTEXT_ID_TO(newCap);
       if (localCapabilities.FindCapability(*newCap) == NULL)
         simultaneous = localCapabilities.SetCapability(0, simultaneous, newCap);
       else

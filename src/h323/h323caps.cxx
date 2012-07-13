@@ -2045,6 +2045,8 @@ H323Capabilities::H323Capabilities()
 H323Capabilities::H323Capabilities(const H323Connection & connection,
                                    const H245_TerminalCapabilitySet & pdu)
 {
+  PTRACE_CONTEXT_ID_FROM(connection);
+
   PTRACE(4, "H323\tH323Capabilities(ctor)");
 
   /** If mediaPacketization information is available, use this with the FindCapability() logic.
@@ -2322,6 +2324,8 @@ void H323Capabilities::Add(H323Capability * capability)
 
   capability->SetCapabilityNumber(MergeCapabilityNumber(table, 1));
   table.Append(capability);
+
+  PTRACE_CONTEXT_ID_TO(capability);
 
   PTRACE(3, "H323\tAdded capability: " << *capability);
 }
