@@ -740,6 +740,9 @@ bool OpalRTPMediaStream::SetPaused(bool pause, bool fromPatch)
 
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
+  if (!IsOpen())
+    return false;
+
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
     return false;
@@ -762,6 +765,9 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
+  if (!IsOpen())
+    return false;
+
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
     return false;
@@ -814,7 +820,7 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 bool OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
 {
-  if (IsSink() || !RequiresPatchThread())
+  if (!IsOpen() || IsSink() || !RequiresPatchThread())
     return false;
 
   unsigned minJitter, maxJitter;

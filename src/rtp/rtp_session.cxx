@@ -415,12 +415,20 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
                                       unsigned timeUnits,
                                         PINDEX packetSize)
 {
+  PWaitAndSignal mutex(m_dataMutex);
+
+  if (!IsOpen())
+    return;
+
   if (timeUnits > 0)
     m_timeUnits = timeUnits;
 
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     PTRACE_IF(4, m_jitterBuffer != NULL, "RTP\tSwitching off jitter buffer " << *m_jitterBuffer);
+    // This can block waiting for JB thread to end, signal mutex to avoid deadlock
+    m_dataMutex.Signal();
     m_jitterBuffer.SetNULL();
+    m_dataMutex.Wait();
   }
   else {
     resequenceOutOfOrderPackets = false;
@@ -446,7 +454,7 @@ unsigned OpalRTPSession::GetJitterBufferSize() const
 
 bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 {
-  if (m_shutdownRead)
+  if (!IsOpen() || m_shutdownRead)
     return false;
 
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
@@ -476,7 +484,7 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 
 void OpalRTPSession::FlushData()
 {
-  if (m_dataSocket == NULL)
+  if (!IsOpen())
     return;
 
   PTimeInterval oldTimeout = m_dataSocket->GetReadTimeout();  
@@ -2134,12 +2142,9 @@ bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 
 bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 {
-  {
-    PWaitAndSignal mutex(m_dataMutex);
-    if (m_shutdownWrite) {
-      PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
-      return false;
-    }
+  if (!IsOpen() || m_shutdownWrite) {
+    PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
+    return false;
   }
 
   // Trying to send a PDU before we are set up!
