@@ -4843,16 +4843,16 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   const H323Transport & transport = GetControlChannel();
 
+  // We only support RTP over UDP at this point in time ...
   H323TransportAddress remoteControlAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
   if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     remoteControlAddress = H323TransportAddress(param->m_mediaControlChannel);
     if (remoteControlAddress.IsEmpty())
       return NULL;
+    // Check for IPv4 or IPv6 mismatch.
+    if (!transport.GetRemoteAddress().IsCompatible(remoteControlAddress))
+      return NULL;
   }
-
-  // We only support RTP over UDP at this point in time ...
-  if (!transport.IsCompatibleTransport(remoteControlAddress))
-    return NULL;
 
   H323RTPSession * session = dynamic_cast<H323RTPSession *>(UseMediaSession(sessionID, mediaType, h323_rtp_session_type));
   if (PAssertNULL(session) == NULL)
