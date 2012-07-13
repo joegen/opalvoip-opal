@@ -1825,7 +1825,7 @@ bool OpalRTPSession::Shutdown(bool reading)
         return false;
       }
 
-      PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", Shutting down read.");
+      PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", shutting down read.");
 
       syncSourceIn = 0;
       m_shutdownRead = true;
@@ -1835,7 +1835,10 @@ bool OpalRTPSession::Shutdown(bool reading)
         m_controlSocket->PUDPSocket::InternalGetLocalAddress(addrAndPort);
         if (!addrAndPort.IsValid())
           addrAndPort.SetAddress(PIPSocket::GetHostName());
-        m_dataSocket->WriteTo("", 1, addrAndPort);
+        if (!m_dataSocket->WriteTo("", 1, addrAndPort)) {
+          PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not write to unblock read socket: "
+                 << m_dataSocket->GetErrorText(PChannel::LastReadError));
+        }
       }
     }
 
