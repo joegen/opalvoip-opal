@@ -193,7 +193,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 {
   ClearStatistics();
 
-
+  PTRACE_CONTEXT_ID_TO(m_reportTimer);
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
 }
 
@@ -295,11 +295,15 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   m_dataSocket = dynamic_cast<PUDPSocket *>(channel);
   if (m_dataSocket == NULL)
     delete channel;
+  else
+    PTRACE_CONTEXT_ID_TO(m_dataSocket);
 
   channel = transport.RemoveHead();
   m_controlSocket = dynamic_cast<PUDPSocket *>(channel);
   if (m_controlSocket == NULL)
     delete channel;
+  else
+    PTRACE_CONTEXT_ID_TO(m_controlSocket);
 
   transport.AllowDeleteObjects();
 }
@@ -709,6 +713,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 #if OPAL_RTCP_XR
     delete m_metrics; // Should be NULL, but just in case ...
     m_metrics = RTCP_XR_Metrics::Create(frame);
+    PTRACE_CONTEXT_ID_TO(m_metrics);
 #endif
 
     if ((frame.GetPayloadType() == RTP_DataFrame::T38) &&
@@ -1734,6 +1739,9 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
       m_localControlPort = (WORD)(m_localDataPort + 1);
     }
   }
+
+  PTRACE_CONTEXT_ID_TO(m_dataSocket);
+  PTRACE_CONTEXT_ID_TO(m_controlSocket);
 
 #ifndef __BEOS__
   // Set the IP Type Of Service field for prioritisation of media UDP packets
