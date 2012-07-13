@@ -807,12 +807,17 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
                                       unsigned timeUnits,
                                         PINDEX packetSize)
 {
+  PWaitAndSignal mutex(dataMutex);
+
   if (timeUnits > 0)
     m_timeUnits = timeUnits;
 
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     PTRACE_IF(4, m_jitterBuffer != NULL, "RTP\tSwitching off jitter buffer " << *m_jitterBuffer);
+    // This can block waiting for JB thread to end, signal mutex to avoid deadlock
+    dataMutex.Signal();
     m_jitterBuffer.SetNULL();
+    dataMutex.Wait();
   }
   else {
     resequenceOutOfOrderPackets = false;
@@ -2202,7 +2207,7 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
 
 void RTP_UDP::FlushData()
 {
-  if (dataSocket == NULL)
+  if (shutdownRead || dataSocket == NULL)
     return;
 
   PTimeInterval oldTimeout = dataSocket->GetReadTimeout();
@@ -2404,12 +2409,9 @@ PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
 
 PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
 {
-  {
-    PWaitAndSignal mutex(dataMutex);
-    if (shutdownWrite) {
-      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-      return false;
-    }
+  if (shutdownWrite || dataSocket == NULL) {
+    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
+    return false;
   }
 
   // Trying to send a PDU before we are set up!
