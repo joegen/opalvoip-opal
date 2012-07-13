@@ -99,7 +99,12 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
 
   OpalConnection & connection = stream.GetConnection();
 
-  if (!PIPSocket::IsLocalHost(rtp->GetRemoteAddress())) {
+  OpalTransportAddress remoteAddr = rtp->GetRemoteAddress();
+  PIPSocket::Address remoteIP;
+  if (!remoteAddr.GetIpAddress(remoteIP))
+    return false;
+
+  if (!PIPSocket::IsLocalHost(remoteIP)) {
     PTRACE(5, "RTPEp\tSession " << stream.GetSessionID() << ", "
               "remote RTP address " << rtp->GetRemoteAddress() << " not local (different host).");
     CheckEndLocalRTP(connection, rtp);
@@ -111,7 +116,6 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
   if (!PAssert(itLocal != m_connectionsByRtpLocalAddr.end(), PLogicError))
     return false;
 
-  OpalTransportAddress remoteAddr = rtp->GetRemoteAddress();
   LocalRtpInfoMap::iterator itRemote = m_connectionsByRtpLocalAddr.find(remoteAddr);
   if (itRemote == m_connectionsByRtpLocalAddr.end()) {
     PTRACE(4, "RTPEp\tSession " << stream.GetSessionID() << ", "
