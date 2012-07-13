@@ -670,8 +670,8 @@ PBoolean H323_RTPChannel::GetMediaTransportAddress(OpalTransportAddress & data,
                                                    OpalTransportAddress & control) const
 {
   const OpalRTPSession & rtpSession = dynamic_cast<const OpalRTPSession &>(m_session);
-  data = rtpSession.GetRemoteAddress(false);
-  control = rtpSession.GetRemoteAddress(true);
+  data = rtpSession.GetRemoteAddress(true);
+  control = rtpSession.GetRemoteAddress(false);
   return true;
 }
 
