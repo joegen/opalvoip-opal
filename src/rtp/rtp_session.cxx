@@ -1797,6 +1797,8 @@ bool OpalRTPSession::Close()
   // over them and exits the reading thread.
   SetJitterBufferSize(0, 0);
 
+  PWaitAndSignal mutex(m_dataMutex);
+
   delete m_dataSocket;
   m_dataSocket = NULL;
 
