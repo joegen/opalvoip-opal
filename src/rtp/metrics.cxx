@@ -125,7 +125,7 @@ RTCP_XR_Metrics * RTCP_XR_Metrics::Create(const RTP_DataFrame & frame)
       return new RTCP_XR_Metrics(20, 10, 5, 33, 13000);
 
     default:
-      PTRACE(3, "VoIP Metrics\tNo Ie and Bpl data for payload type " << frame.GetPayloadType() <<
+      PTRACE(3, NULL, "VoIP Metrics", "No Ie and Bpl data for payload type " << frame.GetPayloadType() <<
                 ", unable to calculate R Factor and MOS score.");
       return NULL;
   }
