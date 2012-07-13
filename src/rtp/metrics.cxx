@@ -794,7 +794,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << src << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  XR: " << reports[i] << '\n';
