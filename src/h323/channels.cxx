@@ -146,6 +146,8 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
   , opened(false)
   , m_bandwidthUsed(0)
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+  PTRACE_CONTEXT_ID_TO(capability);
 }
 
 

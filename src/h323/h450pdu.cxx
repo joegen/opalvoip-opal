@@ -376,6 +376,8 @@ void H450ServiceAPDU::ParseEndpointAddress(H4501_EndpointAddress& endpointAddres
 H450xDispatcher::H450xDispatcher(H323Connection & conn)
   : connection(conn)
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+
   opcodeHandler.DisallowDeleteObjects();
 
   nextInvokeId = 0;
@@ -669,6 +671,8 @@ H450xHandler::H450xHandler(H323Connection & conn, H450xDispatcher & disp)
     connection(conn),
     dispatcher(disp)
 {
+  PTRACE_CONTEXT_ID_FROM(conn);
+
   currentInvokeId = 0;
 }
 
