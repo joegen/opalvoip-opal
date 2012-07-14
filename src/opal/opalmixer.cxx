@@ -1280,7 +1280,7 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
 
-  if (connection->GetRemotePartyURL() == m_ownerConnection)
+  if (!m_ownerConnection.IsEmpty() && connection->GetRemotePartyURL() == m_ownerConnection)
     ShutDown();
 }
 
