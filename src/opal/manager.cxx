@@ -266,7 +266,7 @@ OpalManager::OpalManager()
   , interfaceMonitor(NULL)
   , activeCalls(*this)
   , garbageCollectSkip(false)
-  , m_decoupledEventPool(1, 0, "Event Pool")
+  , m_decoupledEventPool(5, 0, "Event Pool")
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
@@ -2273,28 +2273,6 @@ void OpalManager::OnCompositionIndication(const OpalIMContext::CompositionInfo &
 }
 
 #endif // OPAL_HAS_IM
-
-
-void OpalManager::QueueUserInput(const PSafePtr<OpalConnection> & connection, const PString & value)
-{
-  m_decoupledEventPool.AddWork(new UserInputEvent(connection, value, 100));
-}
-
-
-void OpalManager::QueueUserInput(const PSafePtr<OpalConnection> & connection, char tone, unsigned duration)
-{
-  m_decoupledEventPool.AddWork(new UserInputEvent(connection, tone, duration));
-}
-
-
-void OpalManager::UserInputEvent::Work()
-{
-  if (m_duration > 0 && m_value.GetLength() == 1)
-    m_connection->OnUserInputTone(m_value[0], m_duration);
-  else
-    m_connection->OnUserInputString(m_value);
-}
-
 
 
 /////////////////////////////////////////////////////////////////////////////

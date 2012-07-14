@@ -537,15 +537,11 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_receiving(receiving)
   , m_disableT38(disableT38)
   , m_tiffFileFormat(TIFF_File_FormatName)
-#if OnSwitchTimeout
   , m_state(disableT38 ? e_CompletedSwitch : e_AwaitingSwitchToT38)
-#endif
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
-#if OpenFaxStreams
   m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout));
-#endif
 
   PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","
@@ -726,7 +722,8 @@ void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
          (m_receiving ? (tone == 'X')
                       : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED)))) {
     PTRACE(3, "FAX\tRequesting mode change in response to " << (tone == 'X' ? "CNG" : "CED"));
-    PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+    GetEndPoint().GetManager().QueueDecoupledEvent(
+          new PSafeWorkNoArg<OpalFaxConnection, OpalConnection>(this, &OpalFaxConnection::OpenFaxStreams));
   }
 }
 
@@ -784,7 +781,8 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
   if (m_state == e_AwaitingSwitchToT38) {
     PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
-    PThread::Create(PCREATE_NOTIFIER(OpenFaxStreams));
+    GetEndPoint().GetManager().QueueDecoupledEvent(
+          new PSafeWorkNoArg<OpalFaxConnection, OpalConnection>(this, &OpalFaxConnection::OpenFaxStreams));
   }
 }
 
@@ -819,7 +817,7 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
 }
 
 
-void OpalFaxConnection::OpenFaxStreams(PThread &, INT)
+void OpalFaxConnection::OpenFaxStreams()
 {
   if (LockReadWrite()) {
     m_state = e_SwitchingToT38;

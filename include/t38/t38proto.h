@@ -250,7 +250,7 @@ class OpalFaxConnection : public OpalLocalConnection
 
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSwitchTimeout);
-    PDECLARE_NOTIFIER(PThread, OpalFaxConnection, OpenFaxStreams);
+    void OpenFaxStreams();
 
     enum {
       e_AwaitingSwitchToT38,

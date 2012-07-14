@@ -1269,6 +1269,7 @@ class OpalConnection : public PSafeObject
       unsigned sessionID = 0, ///< Session for media stream, 0 is use first Video stream
       bool force = false      ///< Indicate is a picture loss or forced I-Frame
     ) const;
+    void SendVideoUpdatePictureCallback(unsigned sessionID, bool force) { SendVideoUpdatePicture(sessionID, force); }
 
     /**Callback from the RTP session after an IntraFrameRequest is receieved.
        The default behaviour executes an OpalVideoUpdatePicture command on the
@@ -1413,6 +1414,7 @@ class OpalConnection : public PSafeObject
     virtual void OnUserInputString(
       const PString & value   ///<  String value of indication
     );
+    void OnUserInputStringCallback(PString value) { OnUserInputString(value); }
 
     /**Call back for remote enpoint has sent user input.
        If duration is zero then this indicates the beginning of the tone. If

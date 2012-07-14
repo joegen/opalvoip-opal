@@ -1369,7 +1369,8 @@ void OpalMixerNode::BroadcastUserInput(const OpalConnection * connection, const 
 {
   for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {
     if (connection != conn)
-      conn->GetEndPoint().GetManager().QueueUserInput(conn, value);
+      conn->GetEndPoint().GetManager().QueueDecoupledEvent(
+            new PSafeWorkArg1<OpalConnection, PString>(conn, value, &OpalConnection::OnUserInputStringCallback));
   }
 }
 
