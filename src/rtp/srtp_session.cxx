@@ -423,8 +423,8 @@ bool OpalLibSRTP::OpenCrypto(Context & context, DWORD ssrc, OpalMediaCryptoKeyLi
     cryptoSuite.SetCryptoPolicy(policy.rtcp);
 
     // This is all a bit vague in docs for libSRTP. Had to look into source to figure it out.
-    memcpy(context.m_key_salt, keyInfo->GetCipherKey(), std::min(16, keyInfo->GetCipherKey().GetSize()));
-    memcpy(&context.m_key_salt[16], keyInfo->GetAuthSalt(), std::min(14, keyInfo->GetAuthSalt().GetSize()));
+    memcpy(context.m_key_salt, keyInfo->GetCipherKey(), std::min((PINDEX)16, keyInfo->GetCipherKey().GetSize()));
+    memcpy(&context.m_key_salt[16], keyInfo->GetAuthSalt(), std::min((PINDEX)14, keyInfo->GetAuthSalt().GetSize()));
     policy.key = context.m_key_salt;
 
     if (CHECK_ERROR(srtp_add_stream,(context.m_ctx, &policy))) {

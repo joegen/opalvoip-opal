@@ -886,14 +886,14 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
   // get the size of the output buffer
   int outputDataSize = std::max(GetOptimalDataFrameSize(false),
-                                getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
+                                (PINDEX)getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
 
   unsigned flags;
 
   PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
-    RTP_DataFrame * dst = new RTP_DataFrame(0, outputDataSize+1024);
+    RTP_DataFrame * dst = new RTP_DataFrame((PINDEX)0, outputDataSize+1024);
     dst->CopyHeader(src);
     dst->SetPayloadType(GetPayloadType(false));
 
@@ -972,7 +972,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
 
   if (m_bufferRTP == NULL) {
     if (dstList.IsEmpty())
-      m_bufferRTP = new RTP_DataFrame(0, outputDataSize);
+      m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
     else {
       // Re-use the previously allocated output frame. As video frames can be large
       // when the heap gets a bit fragmented it slows the system down substantially
@@ -1021,7 +1021,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       if (!DecodeFrame(marker, dstList))
         return false;
       if (m_bufferRTP == NULL) {
-        m_bufferRTP = new RTP_DataFrame(0, outputDataSize);
+        m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
         lastFrameWasIFrame = false;
       }
     }
