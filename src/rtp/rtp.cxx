@@ -2016,10 +2016,16 @@ void RTP_UDP::Reopen(PBoolean reading)
 {
   PWaitAndSignal mutex(dataMutex);
 
-  if (reading)
+  if (reading) {
+    if (!shutdownRead)
+      return;
     shutdownRead = false;
-  else
+  }
+  else {
+    if (!shutdownWrite)
+      return;
     shutdownWrite = false;
+  }
 
   badTransmitCounter = 0;
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
@@ -2138,70 +2144,32 @@ PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame)
 
 PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
 {
-  for (;;) {
+  SendReceiveStatus receiveStatus = e_IgnorePacket;
+  while (receiveStatus == e_IgnorePacket) {
+    if (shutdownRead || PAssertNULL(dataSocket) == NULL || PAssertNULL(controlSocket) == NULL)
+      return false;
+
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, PMaxTimeInterval);
+    if (shutdownRead)
+      return false;
 
-    {
-      PWaitAndSignal mutex(dataMutex);
-      if (shutdownRead) {
-        PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-        return false;
-      }
+    if (selectStatus > 0) {
+      PTRACE(1, "RTP_UDP\tSession " << sessionID << ", Select error: "
+              << PChannel::GetErrorText((PChannel::Errors)selectStatus));
+      return false;
     }
 
-    switch (selectStatus) {
-      case -2 :
-        if (ReadControlPDU() == e_AbortTransport)
-          return false;
-        break;
+    if (selectStatus == 0)
+      receiveStatus = OnReadTimeout(frame);
 
-      case -3 :
-        if (ReadControlPDU() == e_AbortTransport)
-          return false;
-        // Then do -1 case
+    if ((-selectStatus & 2) != 0)
+      receiveStatus = ReadControlPDU();
 
-      case -1 :
-        switch (ReadDataPDU(frame)) {
-          case e_ProcessPacket :
-            if (!shutdownRead) {
-              switch (OnReceiveData(frame)) {
-                case e_ProcessPacket :
-                  return true;
-                case e_IgnorePacket :
-                  break;
-                case e_AbortTransport :
-                  return false;
-              }
-            }
-          case e_IgnorePacket :
-            break;
-          case e_AbortTransport :
-            return false;
-        }
-        break;
-
-      case 0 :
-        switch (OnReadTimeout(frame)) {
-          case e_ProcessPacket :
-            if (!shutdownRead)
-              return true;
-          case e_IgnorePacket :
-            break;
-          case e_AbortTransport :
-            return false;
-        }
-        break;
-
-      case PSocket::Interrupted:
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
-        return false;
-
-      default :
-        PTRACE(1, "RTP_UDP\tSession " << sessionID << ", Select error: "
-                << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-        return false;
-    }
+    if ((-selectStatus & 1) != 0)
+      receiveStatus = ReadDataPDU(frame);
   }
+
+  return receiveStatus == e_ProcessPacket;
 }
 
 
@@ -2330,7 +2298,9 @@ RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & fra
     return status;
 
   // Check received PDU is big enough
-  return frame.SetPacketSize(dataSocket->GetLastReadCount()) ? e_ProcessPacket : e_IgnorePacket;
+  if (frame.SetPacketSize(dataSocket->GetLastReadCount()))
+    return OnReceiveData(frame);
+  return e_IgnorePacket;
 }
 
 
