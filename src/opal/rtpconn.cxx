@@ -534,7 +534,11 @@ void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT typ
 {
   // trigger on start of tone only
   if (type == 0)
-    GetEndPoint().GetManager().QueueUserInput(this, info.GetTone(), info.GetDuration() > 0 ? info.GetDuration()/8 : 100);
+    GetEndPoint().GetManager().QueueDecoupledEvent(
+          new PSafeWorkArg2<OpalConnection, char, unsigned>(
+                this, info.GetTone(),
+                info.GetDuration() > 0 ? info.GetDuration()/8 : 100,
+                &OpalConnection::OnUserInputTone));
 }
 
 /////////////////////////////////////////////////////////////////////////////
