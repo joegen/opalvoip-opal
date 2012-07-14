@@ -252,14 +252,6 @@ class OpalFaxConnection : public OpalLocalConnection
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSwitchTimeout);
     void OpenFaxStreams();
 
-    enum {
-      e_AwaitingSwitchToT38,
-      e_SwitchingToT38,
-      e_CompletedSwitch
-    } m_state;
-
-    PTimer m_switchTimer;
-
     void SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
     OpalFaxEndPoint & m_endpoint;
@@ -267,6 +259,14 @@ class OpalFaxConnection : public OpalLocalConnection
     bool              m_receiving;
     bool              m_disableT38;
     OpalMediaFormat   m_tiffFileFormat;
+
+    enum {
+      e_AwaitingSwitchToT38,
+      e_SwitchingToT38,
+      e_CompletedSwitch
+    } m_state;
+
+    PTimer m_switchTimer;
 
 #if OPAL_STATISTICS
     void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
