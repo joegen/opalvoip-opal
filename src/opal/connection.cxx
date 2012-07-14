@@ -1222,30 +1222,10 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
 }
 
 
-class OpalVideoUpdatePictureDecoupledEvent : public OpalManager::DecoupledEvent {
-  public:
-    OpalVideoUpdatePictureDecoupledEvent(
-      const PSafePtr<OpalConnection> & connection,
-      unsigned sessionId,
-      bool force
-    ) : OpalManager::DecoupledEvent(connection)
-      , m_sessionId(sessionId)
-      , m_force(force)
-    { }
-
-    virtual void Work()
-    {
-      m_connection->SendVideoUpdatePicture(m_sessionId, m_force);
-    }
-
-  protected:
-    unsigned m_sessionId;
-    bool     m_force;
-};
-
 void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force)
 {
-  GetEndPoint().GetManager().QueueDecoupledEvent(new OpalVideoUpdatePictureDecoupledEvent(this, session.GetSessionID(), force));
+  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, unsigned, bool>(
+              this, session.GetSessionID(), force, &OpalConnection::SendVideoUpdatePictureCallback));
 }
 
 #endif // OPAL_VIDEO
@@ -1489,7 +1469,8 @@ void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, INT)
   if (!tones.IsEmpty()) {
     PTRACE(3, "OPAL\tDTMF detected: \"" << tones << '"');
     for (PINDEX i = 0; i < tones.GetLength(); i++)
-      GetEndPoint().GetManager().QueueUserInput(this, tones[i], PDTMFDecoder::DetectTime);
+      GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, char, unsigned>(
+                            this, tones[i], PDTMFDecoder::DetectTime, &OpalConnection::OnUserInputTone));
   }
 }
 

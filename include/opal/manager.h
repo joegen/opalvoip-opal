@@ -1871,19 +1871,7 @@ class OpalManager : public PObject
     void GarbageCollection();
 
     // Decoupled event to avoid deadlocks, especially from patch threads
-    class DecoupledEvent {
-    public:
-      DecoupledEvent(
-        const PSafePtr<OpalConnection> & connection
-      ) : m_connection(connection) { }
-      virtual ~DecoupledEvent() { }
-      virtual void Work() = 0;
-    protected:
-      PSafePtr<OpalConnection> m_connection;
-    };
-
-    void QueueUserInput(const PSafePtr<OpalConnection> & connection, const PString & value);
-    void QueueUserInput(const PSafePtr<OpalConnection> & connection, char tone, unsigned duration);
+    typedef PSafeWork<OpalConnection> DecoupledEvent;
     void QueueDecoupledEvent(DecoupledEvent * work) { m_decoupledEventPool.AddWork(work); }
 
   protected:
@@ -1999,24 +1987,6 @@ class OpalManager : public PObject
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::InternalOnClear();
-
-    class UserInputEvent : public DecoupledEvent {
-    public:
-      UserInputEvent(
-        const PSafePtr<OpalConnection> & connection,
-        const PString & value,
-        unsigned duration
-      ) : DecoupledEvent(connection)
-        , m_value(value)
-        , m_duration(duration)
-      { }
-
-    protected:
-      PString  m_value;
-      unsigned m_duration;
-
-      virtual void Work();
-    };
 
     PQueuedThreadPool<DecoupledEvent> m_decoupledEventPool;
 
