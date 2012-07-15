@@ -1851,7 +1851,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX, OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_NoRTCPFb));
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
+                                     OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 
   AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
                                     RoleEnumerations, PARRAYSIZE(RoleEnumerations),

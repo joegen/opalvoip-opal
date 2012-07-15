@@ -48,11 +48,6 @@
 class OpalSIPIMContext;
 
 
-/**OpalConnection::StringOption key to a boolean indicating the SDP ptime
-   parameter should be included in audio session streams. Default false.
-  */
-#define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
-
 /**OpalConnection::StringOption key to a boolean indicating the the state
    of the "Refer-Sub" header in the REFER request. Default true.
   */
