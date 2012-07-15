@@ -825,6 +825,8 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
+  localMedia->SetOptionStrings(m_stringOptions);
+
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
 
@@ -876,10 +878,6 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   }
 
   if (mediaType == OpalMediaType::Audio()) {
-    SDPAudioMediaDescription * audioMedia = dynamic_cast<SDPAudioMediaDescription *>(localMedia);
-    if (audioMedia != NULL)
-      audioMedia->SetOfferPTime(m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME));
-
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
     SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
@@ -1102,6 +1100,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
       PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
       return false;
     }
+
+  localMedia->SetOptionStrings(m_stringOptions);
 
     // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
     OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
