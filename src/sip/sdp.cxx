@@ -295,7 +295,8 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   }
 
   // Save the RTCP feedback (RFC4585) capability.
-  mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
   // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
@@ -377,6 +378,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 bool SDPMediaFormat::PreEncode()
 {
   m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
+  m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
   return m_mediaFormat.ToCustomisedOptions();
 }
 
@@ -995,18 +997,50 @@ PString SDPRTPAVPMediaDescription::GetSDPPortList() const
 }
 
 
+bool SDPRTPAVPMediaDescription::PreEncode()
+{
+  if (!SDPMediaDescription::PreEncode())
+    return false;
+
+  if (formats.IsEmpty())
+    return true;
+
+  bool allSame = true;
+
+  if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
+    SDPMediaFormatList::iterator format = formats.begin();
+    m_rtcp_fb = format->GetRTCP_FB();
+    for (++format; format != formats.end(); ++format) {
+      if (m_rtcp_fb != format->GetRTCP_FB()) {
+        allSame = false;
+        break;
+      }
+    }
+  }
+
+  if (allSame) {
+    for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
+      format->SetRTCP_FB(PString::Empty());
+  }
+  else
+    m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
+
+  return true;
+}
+
+
 void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
   SDPMediaDescription::OutputAttributes(strm);
 
   // output attributes for each payload type
-  SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
+  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     strm << *format;
 
-  if (m_enableFeedback)
-    strm << "a=rtcp-fb:* fir pli tmmbr\r\n";
+  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
+    strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
 }
 
 
@@ -1060,7 +1094,6 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
 SDPAudioMediaDescription::SDPAudioMediaDescription(const OpalTransportAddress & address)
   : SDPRTPAVPMediaDescription(address, OpalMediaType::Audio())
-  , m_offerPTime(false)
 {
 }
 
@@ -1104,7 +1137,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
      what should be rare cases.
     */
 
-  if (m_offerPTime) {
+  if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME)) {
     unsigned ptime = 0;
     for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
       const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
