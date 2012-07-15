@@ -45,6 +45,29 @@
 #include <opal/mediafmt.h>
 #include <rtp/rtp_session.h>
 
+
+
+/**OpalConnection::StringOption key to a boolean indicating the SDP ptime
+   parameter should be included in audio session streams. Default false.
+  */
+#define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
+
+/**OpalConnection::StringOption key to an integer indicating the SDP
+   rtpcp-fb parameter handling. A value of zero indicates it is not to be
+   offerred to the remote. A value of 1 indicates it is to be offerred
+   without requiring the RTP/AVPF transport, but is included in RTP/AVP.
+   A value of 2 indicates it is to be only offerred in RTP/AVPF with a
+   second session in RTP/AVP mode to be also offerred. Default is 1.
+  */
+#define OPAL_OPT_OFFER_RTCP_FB  "Offer-RTCP-FB"
+
+/**OpalConnection::StringOption key to a boolean indicating the RTCP
+   feedback commands are to be sent irrespective of the SDP rtpcp-fb
+   parameter presented by the remote. Default false.
+  */
+#define OPAL_OPT_FORCE_RTCP_FB  "Force-RTCP-FB"
+
+
 /////////////////////////////////////////////////////////
 
 class SDPBandwidth : public std::map<PCaselessString, OpalBandwidth>
@@ -92,6 +115,7 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v) { parameters = v; }
     void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
+    OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
 
     const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
     OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
@@ -221,6 +245,9 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
 
+    void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
+    const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
+
     virtual void Copy(SDPMediaDescription & mediaDescription);
 
   protected:
@@ -228,6 +255,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     OpalTransportAddress m_transportAddress;
     PCaselessString      m_transportType;
+    PStringOptions       m_stringOptions;
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
@@ -319,16 +347,18 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
     virtual PString GetSDPPortList() const;
+    virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
     virtual void SetAttribute(const PString & attr, const PString & value);
 
-    void EnableFeeback() { m_enableFeedback = true; }
+    void EnableFeedback() { m_enableFeedback = true; }
 
   protected:
     bool m_enableFeedback;
-    PList<SDPCryptoSuite> m_cryptoSuites;
+    OpalVideoFormat::RTCPFeedback m_rtcp_fb;
+    PList<SDPCryptoSuite>         m_cryptoSuites;
 };
 
 /////////////////////////////////////////////////////////
@@ -338,7 +368,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
 class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
 {
-  PCLASSINFO(SDPAudioMediaDescription, SDPRTPAVPMediaDescription);
+    PCLASSINFO(SDPAudioMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPAudioMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
@@ -346,13 +376,9 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
-    bool GetOfferPTime() const { return m_offerPTime; }
-    void SetOfferPTime(bool value) { m_offerPTime = value; }
-
   protected:
     unsigned m_PTime;
     unsigned m_maxPTime;
-    bool     m_offerPTime;
 };
 
 
@@ -365,7 +391,7 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
 
 class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
 {
-  PCLASSINFO(SDPVideoMediaDescription, SDPRTPAVPMediaDescription);
+    PCLASSINFO(SDPVideoMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
