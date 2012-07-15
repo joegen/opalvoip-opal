@@ -88,7 +88,7 @@ openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
 
 
-ifneq ($(OSTYPE),Darwin)
+ifneq ($(target_os),Darwin)
 bundle: $(TARGET)
 else
 bundle: $(PROG).app

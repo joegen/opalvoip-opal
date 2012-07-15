@@ -97,6 +97,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G.722.1 Audio Codec", "..\.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G.726 Audio Codec", "..\..\plugins\audio\G726\G726_2008.vcproj", "{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H.264 (x264) Helper", "..\..\plugins\video\H.264\gpl\x264plugin_helper.vcproj", "{81ED2F51-CEF3-40DE-929E-124861D194A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -421,6 +423,18 @@ Global
 		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Release|Win32.Build.0 = Release|Win32
 		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Debug|Win32.Build.0 = Debug|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.No Trace|Win32.ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.No Trace|Win32.Build.0 = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Release|Win32.ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Release|Win32.Build.0 = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{81ED2F51-CEF3-40DE-929E-124861D194A4}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

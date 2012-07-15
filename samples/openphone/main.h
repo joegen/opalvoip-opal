@@ -73,6 +73,7 @@ class wxSplitterEvent;
 class wxSpinCtrl;
 class wxListCtrl;
 class wxListEvent;
+class wxCheckListBox;
 class wxNotebook;
 class wxGrid;
 class wxGridEvent;
@@ -111,7 +112,7 @@ class MyH323EndPoint : public H323EndPoint
     MyH323EndPoint(MyManager & manager);
 
   private:
-    virtual void OnRegistrationConfirm();
+    virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons);
 
     MyManager & m_manager;
 };
@@ -196,6 +197,7 @@ class VideoControlDialog : public wxDialog
     bool        m_remote;
     wxSlider  * m_TargetBitRate;
     wxSlider  * m_FrameRate;
+    wxSlider  * m_TSTO;
 
     DECLARE_EVENT_TABLE()
 };
@@ -304,24 +306,24 @@ class CallPanelBase : public wxPanel
   protected:
     CallPanelBase(
       MyManager & manager,
-      const PwxString & token,
+      const PSafePtr<OpalCall> & call,
       wxWindow * parent,
       const wxChar * resource
     );
 
   public:
-    const PwxString & GetToken() const { return m_token; }
+    PwxString GetToken() const { return m_call->GetToken(); }
 
   protected:
     MyManager & m_manager;
-    PwxString   m_token;
+    PSafePtr<OpalCall> m_call;
 };
 
 
 class CallingPanel : public CallPanelBase
 {
   public:
-    CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -333,7 +335,7 @@ class CallingPanel : public CallPanelBase
 class AnswerPanel : public CallPanelBase
 {
   public:
-    AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    AnswerPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
 
     void SetPartyNames(const PwxString & calling, const PwxString & called);
 
@@ -417,7 +419,7 @@ class StatisticsPage
 class InCallPanel : public CallPanelBase
 {
   public:
-    InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent);
+    InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
     virtual bool Show(bool show = true);
 
     void OnStreamsChanged();
@@ -589,7 +591,8 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Networking fields
-    wxString        m_Bandwidth;
+    wxString        m_RxBandwidth;
+    wxString        m_TxBandwidth;
     int             m_RTPTOS;
     int             m_MaxRtpPayloadSize;
 #if OPAL_PTLIB_SSL
@@ -681,6 +684,7 @@ class OptionsDialog : public wxDialog
     void ChangeVideoGrabDevice(wxCommandEvent & event);
     void TestVideoCapture(wxCommandEvent & event);
     void TestVideoThreadMain();
+    void StopTestVideo();
 
     ////////////////////////////////////////
     // Fax fields
@@ -737,13 +741,6 @@ class OptionsDialog : public wxDialog
     void ChangedCodecOptionValue(wxCommandEvent & event);
 
     ////////////////////////////////////////
-    // Security fields
-    bool         m_SecureH323;
-    bool         m_SecureSIP;
-    PwxString    m_RTPSecurityModeH323;
-    PwxString    m_RTPSecurityModeSIP;
-
-    ////////////////////////////////////////
     // H.323 fields
     int          m_GatekeeperMode;
     PwxString    m_GatekeeperAddress;
@@ -751,6 +748,7 @@ class OptionsDialog : public wxDialog
     int          m_GatekeeperTTL;
     PwxString    m_GatekeeperLogin;
     PwxString    m_GatekeeperPassword;
+
     int          m_DTMFSendMode;
     int          m_CallIntrusionProtectionLevel;
     bool         m_DisableFastStart;
@@ -758,6 +756,7 @@ class OptionsDialog : public wxDialog
     bool         m_DisableH245inSETUP;
     int          m_ExtendedVideoRoles;
     bool         m_EnableH239Control;
+
     wxListBox  * m_Aliases;
     wxTextCtrl * m_NewAlias;
     wxButton   * m_AddAlias;
@@ -768,12 +767,24 @@ class OptionsDialog : public wxDialog
     void AddAlias(wxCommandEvent & event);
     void RemoveAlias(wxCommandEvent & event);
 
+#if OPAL_PTLIB_SSL
+    int              m_H323SignalingSecurity;
+    wxCheckListBox * m_H323MediaCryptoSuites;
+    wxButton       * m_H323MediaCryptoSuiteUp;
+    wxButton       * m_H323MediaCryptoSuiteDown;
+    void H323SignalingSecurityChanged(wxCommandEvent & event);
+    void H323MediaCryptoSuiteChanged(wxCommandEvent & event);
+    void H323MediaCryptoSuiteUp(wxCommandEvent & event);
+    void H323MediaCryptoSuiteDown(wxCommandEvent & event);
+#endif
+
     ////////////////////////////////////////
     // SIP fields
     bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
+
     int       m_LineAppearanceCode;
     int       m_SIPUserInputMode;
     int       m_SIPPRACKMode;
@@ -795,6 +806,17 @@ class OptionsDialog : public wxDialog
     void SelectedRegistration(wxListEvent & event);
     void DeselectedRegistration(wxListEvent & event);
     void ActivateRegistration(wxListEvent & event);
+
+#if OPAL_PTLIB_SSL
+    int              m_SIPSignalingSecurity;
+    wxCheckListBox * m_SIPMediaCryptoSuites;
+    wxButton       * m_SIPMediaCryptoSuiteUp;
+    wxButton       * m_SIPMediaCryptoSuiteDown;
+    void SIPSignalingSecurityChanged(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteChanged(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteUp(wxCommandEvent & event);
+    void SIPMediaCryptoSuiteDown(wxCommandEvent & event);
+#endif
 
     ////////////////////////////////////////
     // Routing fields
@@ -1011,7 +1033,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnNewCodec(wxCommandEvent& event);
     void OnStartVideo(wxCommandEvent& event);
     void OnStopVideo(wxCommandEvent& event);
-    void OnVFU(wxCommandEvent& event);
+    void OnSendVFU(wxCommandEvent& event);
+    void OnSendIntra(wxCommandEvent& event);
     void OnTxVideoControl(wxCommandEvent& event);
     void OnRxVideoControl(wxCommandEvent& event);
     void OnDefVidWinPos(wxCommandEvent& event);
@@ -1096,6 +1119,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
 
     vector<PwxString> m_LocalInterfaces;
     void StartAllListeners();
+#if OPAL_PTLIB_SSL
+    void SetSignalingSecurity(OpalEndPoint * ep, int security, const char * unsecure, const char * secure);
+#endif
 
 #if OPAL_H323
     MyH323EndPoint * h323EP;
