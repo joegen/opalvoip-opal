@@ -32,18 +32,12 @@
 #ifndef _OpenPhone_VERSION_H
 #define _OpenPhone_VERSION_H
 
-#include <opal/buildopts.h>
+#include "../../version.h"
 
 #define	PRODUCT_NAME_TEXT	"Open Phone"
 #define	EXE_NAME_TEXT	        "openphone"
 #define	MANUFACTURER_TEXT	"Vox Lucida"
 #define	COPYRIGHT_HOLDER	"Vox Lucida Pty. Ltd. (Australia)"
-
-
-#define MAJOR_VERSION OPAL_MAJOR
-#define MINOR_VERSION OPAL_MINOR
-#define BUILD_TYPE    BetaCode
-#define BUILD_NUMBER  OPAL_BUILD
 
 
 #endif  // _OpenPhone_VERSION_H

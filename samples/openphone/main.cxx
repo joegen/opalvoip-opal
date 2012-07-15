@@ -47,6 +47,7 @@
 #include <wx/image.h>
 #include <wx/imaglist.h>
 #include <wx/listctrl.h>
+#include <wx/checklst.h>
 #include <wx/grid.h>
 #include <wx/spinctrl.h>
 #include <wx/splitter.h>
@@ -55,6 +56,7 @@
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
+#include <opal/mediasession.h>
 #include <opal/transcoders.h>
 #include <opal/ivr.h>
 #include <opal/opalmixer.h>
@@ -143,6 +145,8 @@ DEF_FIELD(CurrentSIPConnection);
 
 static const wxChar NetworkingGroup[] = wxT("/Networking");
 DEF_FIELD(Bandwidth);
+DEF_FIELD(RxBandwidth);
+DEF_FIELD(TxBandwidth);
 DEF_FIELD(RTPTOS);
 DEF_FIELD(MaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
@@ -210,12 +214,6 @@ static const PConstString PresenceActiveKey("Active");
 static const wxChar CodecsGroup[] = wxT("/Codecs");
 static const wxChar CodecNameKey[] = wxT("Name");
 
-static const wxChar SecurityGroup[] = wxT("/Security");
-DEF_FIELD(SecureH323);
-DEF_FIELD(SecureSIP);
-DEF_FIELD(RTPSecurityModeH323);
-DEF_FIELD(RTPSecurityModeSIP);
-
 static const wxChar H323Group[] = wxT("/H.323");
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
@@ -230,6 +228,10 @@ DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
+#if OPAL_PTLIB_SSL
+DEF_FIELD(H323SignalingSecurity);
+DEF_FIELD(H323MediaCryptoSuites);
+#endif
 
 
 static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
@@ -242,6 +244,10 @@ DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
 DEF_FIELD(SIPUserInputMode);
 DEF_FIELD(SIPPRACKMode);
+#if OPAL_PTLIB_SSL
+DEF_FIELD(SIPSignalingSecurity);
+DEF_FIELD(SIPMediaCryptoSuites);
+#endif
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -440,42 +446,36 @@ static void FillAudioDeviceComboBox(wxItemContainer * list, PSoundChannel::Direc
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static wxFrame * TextCtrlChannelFrame;
+
 class TextCtrlChannel : public PChannel
 {
     PCLASSINFO(TextCtrlChannel, PChannel)
   public:
     TextCtrlChannel()
-      : m_frame(NULL)
       { }
 
     virtual PBoolean Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
     ) {
-      if (m_frame == NULL)
+      if (TextCtrlChannelFrame == NULL)
         return false;
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
-      theEvent.SetEventObject(m_frame);
+      theEvent.SetEventObject(TextCtrlChannelFrame);
       PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len));
       theEvent.SetString(str);
-      m_frame->GetEventHandler()->AddPendingEvent(theEvent);
+      TextCtrlChannelFrame->GetEventHandler()->AddPendingEvent(theEvent);
       PTRACE(3, "OpenPhone\t" << str);
       return true;
     }
 
-    void SetFrame(
-      wxFrame * frame
-    ) { m_frame = frame; }
-
     static TextCtrlChannel & Instance()
     {
-      static TextCtrlChannel instance;
-      return instance;
+      static PThreadLocalStorage<TextCtrlChannel> instance;
+      return *instance;
     }
-
-  protected:
-    wxFrame * m_frame;
 };
 
 #define LogWindow TextCtrlChannel::Instance()
@@ -561,7 +561,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
   EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
   EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
-  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnVFU)
+  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnSendVFU)
+  EVT_MENU(XRCID("MenuSendIntra"),       MyManager::OnSendIntra)
   EVT_MENU(XRCID("MenuTxVideoControl"),  MyManager::OnTxVideoControl)
   EVT_MENU(XRCID("MenuRxVideoControl"),  MyManager::OnRxVideoControl)
   EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
@@ -653,13 +654,13 @@ MyManager::MyManager()
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
   m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
 
-  LogWindow.SetFrame(this);
+  TextCtrlChannelFrame = this;
 }
 
 
 MyManager::~MyManager()
 {
-  LogWindow.SetFrame(NULL);
+  TextCtrlChannelFrame = NULL;
 
   ShutDownEndpoints();
 
@@ -860,6 +861,8 @@ bool MyManager::Initialise()
   config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
 
   config->Read(AutoAnswerKey, &m_autoAnswer);
+  config->Read(LastDialedKey, &m_LastDialed);
+
 
   OpalProductInfo productInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str))
@@ -894,7 +897,14 @@ bool MyManager::Initialise()
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
   if (config->Read(BandwidthKey, &value1))
-    h323EP->SetInitialBandwidth(value1);
+    h323EP->SetInitialBandwidth(OpalBandwidth::RxTx, value1);
+
+  double float1;
+  if (config->Read(RxBandwidthKey, &float1))
+    h323EP->SetInitialBandwidth(OpalBandwidth::Rx, (unsigned)(float1*1000));
+
+  if (config->Read(TxBandwidthKey, &float1))
+    h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(float1*1000));
 #endif
   if (config->Read(RTPTOSKey, &value1))
     SetMediaTypeOfService(value1);
@@ -1146,22 +1156,6 @@ bool MyManager::Initialise()
   }
 #endif
 
-  ////////////////////////////////////////
-  // Security fields
-  config->SetPath(SecurityGroup);
-  if (config->Read(SecureH323Key, &onoff) && !onoff)
-    DetachEndPoint("h323s");
-  if (config->Read(SecureSIPKey, &onoff) && !onoff)
-    DetachEndPoint("sips");
-#if OPAL_H323
-  //if (config->Read(RTPSecurityModeH323Key, &str) && str != "None")
-  //  h323EP->SetDefaultSecurityMode(str);
-#endif
-#if OPAL_SIP
-  //if (config->Read(RTPSecurityModeSIPKey, &str) && str != "None")
-  //  sipEP->SetDefaultSecurityMode(str);
-#endif
-
   PwxString username, password;
 
 #if OPAL_H323
@@ -1198,20 +1192,26 @@ bool MyManager::Initialise()
   h323EP->SetDefaultH239Control(config->Read(EnableH239ControlKey, h323EP->GetDefaultH239Control()));
 #endif
 
+#if OPAL_PTLIB_SSL
+  if (!config->Read(H323SignalingSecurityKey, &value1))
+    value1 = 0;
+  SetSignalingSecurity(h323EP, value1, "h323", "h323s");
+  if (config->Read(H323MediaCryptoSuitesKey, &str))
+    h323EP->SetMediaCryptoSuites(str.p_str().Tokenise(','));
+#endif
+
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
-  if (m_gatekeeperMode > 0) {
-    if (config->Read(GatekeeperTTLKey, &value1))
-      h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
+  if (config->Read(GatekeeperTTLKey, &value1))
+    h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
 
-    config->Read(GatekeeperLoginKey, &username, wxT(""));
-    config->Read(GatekeeperPasswordKey, &password, wxT(""));
-    h323EP->SetGatekeeperPassword(password, username);
+  config->Read(GatekeeperLoginKey, &username, wxEmptyString);
+  config->Read(GatekeeperPasswordKey, &password, wxEmptyString);
+  h323EP->SetGatekeeperPassword(password, username);
 
-    config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxT(""));
-    config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxT(""));
-    if (!StartGatekeeper())
-      return false;
-  }
+  config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxEmptyString);
+  config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxEmptyString);
+  if (!StartGatekeeper())
+    return false;
 #endif
 
 #if OPAL_SIP
@@ -1241,6 +1241,14 @@ bool MyManager::Initialise()
 
   if (config->Read(SIPPRACKModeKey, &value1))
     sipEP->SetDefaultPRACKMode((SIPConnection::PRACKMode)value1);
+
+#if OPAL_PTLIB_SSL
+  if (!config->Read(SIPSignalingSecurityKey, &value1))
+    value1 = 0;
+  SetSignalingSecurity(sipEP, value1, "sip", "sips");
+  if (config->Read(SIPMediaCryptoSuitesKey, &str))
+    sipEP->SetMediaCryptoSuites(str.p_str().Tokenise(','));
+#endif
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
@@ -1277,7 +1285,13 @@ bool MyManager::Initialise()
 
 
 #if OPAL_CAPI
-  capiEP->OpenControllers();
+  unsigned capiCount = capiEP->OpenControllers();
+  if (capiCount > 0) {
+    LogWindow << "ISDN (CAPI) detected " << capiCount << " controller";
+    if (capiCount > 1)
+      LogWindow << 's';
+    LogWindow << endl;
+  }
 #endif
 
   ////////////////////////////////////////
@@ -1286,8 +1300,11 @@ bool MyManager::Initialise()
   config->Read(ForwardingAddressKey, &m_ForwardingAddress);
   config->Read(ForwardingTimeoutKey, &m_ForwardingTimeout);
 
-  if (config->Read(telURIKey, &str) && !str.empty())
-    AttachEndPoint(FindEndPoint(str), "tel");
+  if (config->Read(telURIKey, &str) && !str.empty()) {
+    OpalEndPoint * ep = FindEndPoint(str);
+    if (ep != NULL)
+      AttachEndPoint(ep, "tel");
+  }
 
   config->SetPath(RoutingGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
@@ -1417,6 +1434,29 @@ void MyManager::StartAllListeners()
   StartListenerForEP(sipEP, m_LocalInterfaces);
 #endif
 }
+
+
+#if OPAL_PTLIB_SSL
+void MyManager::SetSignalingSecurity(OpalEndPoint * ep, int security, const char * unsecure, const char * secure)
+{
+  switch (security) {
+    case 0 :
+      AttachEndPoint(ep, unsecure);
+      DetachEndPoint(secure);
+      break;
+
+    case 1 :
+      AttachEndPoint(ep, secure);
+      DetachEndPoint(unsecure);
+      break;
+
+    default :
+      AttachEndPoint(ep, unsecure);
+      AttachEndPoint(ep, secure);
+  }
+}
+#endif
+
 
 void MyManager::RecreateSpeedDials(SpeedDialViews view)
 {
@@ -1592,7 +1632,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   bool hasStartVideo = false;
-  bool hasStopVideo = false;
+  bool hasTxVideo = false;
   bool hasRxVideo = false;
   wxString audioFormat, videoFormat;
 
@@ -1604,12 +1644,12 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
       audioFormat = PwxString(stream->GetMediaFormat());
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    hasStopVideo = stream != NULL && stream->Open();
+    hasTxVideo = stream != NULL && stream->IsOpen();
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
       videoFormat = PwxString(stream->GetMediaFormat());
-      hasRxVideo = stream->Open();
+      hasRxVideo = stream->IsOpen();
     }
 
     // Determine if video is startable
@@ -1631,11 +1671,12 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
-  menubar->Enable(XRCID("MenuStopVideo"), hasStopVideo);
+  menubar->Enable(XRCID("MenuStopVideo"), hasTxVideo);
   menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
-  menubar->Enable(XRCID("MenuTxVideoControl"), hasStopVideo);
-  menubar->Enable(XRCID("MenuRxVideoControl"), hasStopVideo);
-  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasStopVideo);
+  menubar->Enable(XRCID("MenuSendIntra"), hasRxVideo);
+  menubar->Enable(XRCID("MenuTxVideoControl"), hasTxVideo);
+  menubar->Enable(XRCID("MenuRxVideoControl"), hasRxVideo);
+  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasTxVideo);
 
   menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
   menubar->Enable(XRCID("SubMenuConference"), !m_callsOnHold.empty());
@@ -2122,7 +2163,7 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
     LogWindow << "Could not call \"" << address << '"' << endl;
   else {
     LogWindow << "Calling \"" << address << '"' << endl;
-    m_tabs->AddPage(new CallingPanel(*this, m_activeCall->GetToken(), m_tabs), wxT("Calling"), true);
+    m_tabs->AddPage(new CallingPanel(*this, m_activeCall, m_tabs), wxT("Calling"), true);
     if (m_primaryVideoGrabber != NULL)
       m_primaryVideoGrabber->Start();
   }
@@ -2134,9 +2175,10 @@ void MyManager::AnswerCall()
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
 
-    m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
+    PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
+    if (call != NULL && pcssEP->AcceptIncomingConnection(m_incomingToken))
+      m_tabs->AddPage(new CallingPanel(*this, call, m_tabs), wxT("Answering"), true);
 
-    pcssEP->AcceptIncomingConnection(m_incomingToken);
     m_incomingToken.clear();
   }
 }
@@ -2164,9 +2206,9 @@ void MyManager::HangUpCall()
 void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 {
   m_incomingToken = theEvent.GetString();
-  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadOnly);
-  if (!PAssert(call != NULL, PLogicError))
-    return;
+  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
+  if (call == NULL)
+    return; // Call disappeared before we could get to it
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
   if (!PAssert(connection != NULL, PLogicError))
@@ -2206,13 +2248,13 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 #if OPAL_FAX
     m_currentAnswerMode = m_defaultAnswerMode;
 #endif
-    m_tabs->AddPage(new CallingPanel(*this, m_incomingToken, m_tabs), wxT("Answering"), true);
+    m_tabs->AddPage(new CallingPanel(*this, call, m_tabs), wxT("Answering"), true);
 
     pcssEP->AcceptIncomingConnection(m_incomingToken);
     m_incomingToken.clear();
   }
   else {
-    AnswerPanel * answerPanel = new AnswerPanel(*this, m_incomingToken, m_tabs);
+    AnswerPanel * answerPanel = new AnswerPanel(*this, call, m_tabs);
 
     // Want the network side connection to get calling and called party names.
     answerPanel->SetPartyNames(call->GetPartyA(), call->GetPartyB());
@@ -2254,7 +2296,7 @@ PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned o
 
   if (usingHandset) {
     m_activeCall = &connection.GetCall();
-    PostEvent(wxEvtRinging, ID_RINGING, connection.GetCall().GetToken());
+    PostEvent(wxEvtRinging, ID_RINGING, m_activeCall->GetToken());
   }
 
   return true;
@@ -2307,7 +2349,7 @@ void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
     }
     if (createInCallPanel) {
       PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
-      m_tabs->AddPage(new InCallPanel(*this, token, m_tabs), title, true);
+      m_tabs->AddPage(new InCallPanel(*this, m_activeCall, m_tabs), title, true);
     }
     else
       RemoveCallOnHold(token);
@@ -2590,7 +2632,7 @@ void MyManager::AddCallOnHold(OpalCall & call)
   OnHoldChanged(call.GetToken(), true);
 
   if (!m_switchHoldToken.IsEmpty()) {
-    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReadWrite);
+    PSafePtr<OpalCall> call = FindCallWithLock(m_switchHoldToken, PSafeReference);
     if (call != NULL)
       call->Retrieve();
     m_switchHoldToken.clear();
@@ -2700,7 +2742,7 @@ void MyManager::SwitchToFax()
 
 void MyManager::OnRequestHold(wxCommandEvent& /*event*/)
 {
-  PSafePtr<OpalCall> call = GetCall(PSafeReadWrite);
+  PSafePtr<OpalCall> call = GetCall(PSafeReference);
   if (call != NULL)
     call->Hold();
 }
@@ -2796,7 +2838,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
   if (connection == NULL)
     return;
 
@@ -2828,10 +2870,10 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 
 void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
+  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
   if (connection != NULL) {
     AudioDevicesDialog dlg(this, *connection);
-    if (dlg.ShowModal() == wxID_OK && connection.SetSafetyMode(PSafeReadWrite))
+    if (dlg.ShowModal() == wxID_OK)
       m_activeCall->Transfer(dlg.GetTransferAddress(), connection);
   }
 }
@@ -2912,11 +2954,22 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnVFU(wxCommandEvent& /*event*/)
+void MyManager::OnSendVFU(wxCommandEvent& /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
   if (connection != NULL) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
+    if (stream != NULL)
+      stream->ExecuteCommand(OpalVideoUpdatePicture());
+  }
+}
+
+
+void MyManager::OnSendIntra(wxCommandEvent& /*event*/)
+{
+  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
+  if (connection != NULL) {
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
   }
@@ -3124,7 +3177,7 @@ void MyManager::OnForwardingTimeout(PTimer &, INT)
     return;
 
   // Transfer the incoming call to the forwarding address
-  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReadWrite);
+  PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
   if (call == NULL)
     return;
 
@@ -3516,47 +3569,40 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
   if (!m_Active)
     return false;
 
-  int status;
+  bool success;
 
-  switch (m_Type) {
-    case Register :
-      if (sipEP.IsRegistered(m_aor, true))
-        status = 0;
-      else {
-        SIPRegister::Params param;
-        param.m_addressOfRecord = m_User.p_str();
-        param.m_registrarAddress = m_Domain.p_str();
-        param.m_contactAddress = m_Contact.p_str();
-        param.m_authID = m_AuthID.p_str();
-        param.m_password = m_Password.p_str();
-        param.m_proxyAddress = m_Proxy.p_str();
-        param.m_expire = m_TimeToLive;
-        param.m_compatibility = m_Compatibility;
-        status = sipEP.Register(param, m_aor) ? 1 : 2;
-      }
-      break;
+  if (m_Type == Register) {
+    if (sipEP.IsRegistered(m_aor, true))
+      return true;
 
-    default :
-      if (sipEP.IsSubscribed(RegistrationInfoTable[m_Type].m_package, m_aor, true))
-        status = 0;
-      else {
-        SIPSubscribe::Params param(RegistrationInfoTable[m_Type].m_package);
-        param.m_addressOfRecord = m_User.p_str();
-        param.m_agentAddress = m_Domain.p_str();
-        param.m_contactAddress = m_Contact.p_str();
-        param.m_authID = m_AuthID.p_str();
-        param.m_password = m_Password.p_str();
-        param.m_expire = m_TimeToLive;
-        status = sipEP.Subscribe(param, m_aor) ? 1 : 2;
-      }
+    SIPRegister::Params param;
+    param.m_addressOfRecord = m_User.p_str();
+    param.m_registrarAddress = m_Domain.p_str();
+    param.m_contactAddress = m_Contact.p_str();
+    param.m_authID = m_AuthID.p_str();
+    param.m_password = m_Password.p_str();
+    param.m_proxyAddress = m_Proxy.p_str();
+    param.m_expire = m_TimeToLive;
+    param.m_compatibility = m_Compatibility;
+    success = sipEP.Register(param, m_aor);
+  }
+  else {
+    if (sipEP.IsSubscribed(RegistrationInfoTable[m_Type].m_package, m_aor, true))
+      return true;
+
+    SIPSubscribe::Params param(RegistrationInfoTable[m_Type].m_package);
+    param.m_addressOfRecord = m_User.p_str();
+    param.m_agentAddress = m_Domain.p_str();
+    param.m_contactAddress = m_Contact.p_str();
+    param.m_authID = m_AuthID.p_str();
+    param.m_password = m_Password.p_str();
+    param.m_expire = m_TimeToLive;
+    success = sipEP.Subscribe(param, m_aor);
   }
 
-  if (status == 0)
-    return true;
-
   LogWindow << "SIP " << PString(RegistrationInfoTable[m_Type].m_name)
-            << ' ' << (status == 1 ? "start" : "fail") << "ed for " << m_aor << endl;
-  return status != 2;
+            << ' ' << (success ? "start" : "fail") << "ed for " << m_aor << endl;
+  return success;
 }
 
 
@@ -3699,7 +3745,23 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_TEXT(XRCID("CodecOptionValue"), OptionsDialog::ChangedCodecOptionValue)
 
   ////////////////////////////////////////
+  // H.323 fields
+#if OPAL_PTLIB_SSL
+  EVT_RADIOBOX(wxXmlResource::GetXRCID(H323SignalingSecurityKey), OptionsDialog::H323SignalingSecurityChanged)
+  EVT_LISTBOX(wxXmlResource::GetXRCID(H323MediaCryptoSuitesKey), OptionsDialog::H323MediaCryptoSuiteChanged)
+  EVT_BUTTON(XRCID("H323MediaCryptoSuiteUp"), OptionsDialog::H323MediaCryptoSuiteUp)
+  EVT_BUTTON(XRCID("H323MediaCryptoSuiteDown"), OptionsDialog::H323MediaCryptoSuiteDown)
+#endif
+
+  ////////////////////////////////////////
   // SIP fields
+#if OPAL_PTLIB_SSL
+  EVT_RADIOBOX(wxXmlResource::GetXRCID(SIPSignalingSecurityKey), OptionsDialog::SIPSignalingSecurityChanged)
+  EVT_LISTBOX(wxXmlResource::GetXRCID(SIPMediaCryptoSuitesKey), OptionsDialog::SIPMediaCryptoSuiteChanged)
+  EVT_BUTTON(XRCID("SIPMediaCryptoSuiteUp"), OptionsDialog::SIPMediaCryptoSuiteUp)
+  EVT_BUTTON(XRCID("SIPMediaCryptoSuiteDown"), OptionsDialog::SIPMediaCryptoSuiteDown)
+#endif
+
   EVT_BUTTON(XRCID("AddRegistrar"), OptionsDialog::AddRegistration)
   EVT_BUTTON(XRCID("ChangeRegistrar"), OptionsDialog::ChangeRegistration)
   EVT_BUTTON(XRCID("RemoveRegistrar"), OptionsDialog::RemoveRegistration)
@@ -3741,6 +3803,43 @@ END_EVENT_TABLE()
   m_##name = value; \
   FindWindowByName(name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
+
+#if OPAL_PTLIB_SSL
+static void InitSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool securedSignaling)
+{
+  PStringArray allMethods = ep->GetAllMediaCryptoSuites();
+  PStringArray enabledMethods = ep->GetMediaCryptoSuites();
+
+  listbox->Clear();
+
+  bool noneEnabled = true;
+  for (PINDEX i = 0; i < enabledMethods.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(enabledMethods[i]);
+    if (cryptoSuite != NULL) {
+      listbox->Check(listbox->Append(PwxString(cryptoSuite->GetDescription())), securedSignaling);
+      noneEnabled = false;
+    }
+  }
+
+  for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
+    if (enabledMethods.GetValuesIndex(allMethods[i]) != P_MAX_INDEX)
+      continue;
+
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
+    if (cryptoSuite == NULL)
+      continue;
+
+    listbox->Check(listbox->Append(PwxString(cryptoSuite->GetDescription())), false);
+  }
+
+  if (noneEnabled || !securedSignaling)
+    listbox->Check(listbox->FindString(PwxString(OpalMediaCryptoSuite::ClearText())));
+
+  listbox->Enable(securedSignaling && allMethods.GetSize() > 1);
+}
+#endif // OPAL_PTLIB_SSL
+
+
 OptionsDialog::OptionsDialog(MyManager * manager)
   : m_manager(*manager)
   , m_TestVideoThread(NULL)
@@ -3774,25 +3873,31 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Networking fields
 #if OPAL_H323
-  int bandwidth = m_manager.h323EP->GetInitialBandwidth();
-  if (bandwidth%10 == 0)
-    m_Bandwidth.sprintf(wxT("%u"), bandwidth/10);
-  else
-    m_Bandwidth.sprintf(wxT("%u.%u"), bandwidth/10, bandwidth%10);
-  FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
+  OpalBandwidth rxBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Rx);
+  m_RxBandwidth.sprintf(wxT("%.1f"), rxBandwidth/1000.0);
+  FindWindowByName(RxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_RxBandwidth));
+
+  OpalBandwidth txBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Tx);
+  m_TxBandwidth.sprintf(wxT("%.1f"), txBandwidth/1000.0);
+  FindWindowByName(TxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_TxBandwidth));
+
   int bandwidthClass;
-  if (bandwidth <= 144)
+  if (rxBandwidth <= 33600 && txBandwidth <= 33600)
     bandwidthClass = 0;
-  else if (bandwidth <= 288)
+  else if (rxBandwidth <= 64000 && txBandwidth <= 64000)
     bandwidthClass = 1;
-  else if (bandwidth <= 640)
+  else if (rxBandwidth <= 128000 && txBandwidth <= 128000)
     bandwidthClass = 2;
-  else if (bandwidth <= 1280)
+  else if (rxBandwidth <= 1500000 && txBandwidth <= 128000)
     bandwidthClass = 3;
-  else if (bandwidth <= 15000)
+  else if (rxBandwidth <= 4000000 && txBandwidth <= 512000)
     bandwidthClass = 4;
-  else
+  else if (rxBandwidth <= 1472000 && txBandwidth <= 1472000)
     bandwidthClass = 5;
+  else if (rxBandwidth <= 1920000 && txBandwidth <= 1920000)
+    bandwidthClass = 6;
+  else
+    bandwidthClass = 7;
   FindWindowByNameAs<wxChoice>(this, wxT("BandwidthClass"))->SetSelection(bandwidthClass);
 #endif
 
@@ -3992,6 +4097,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   INIT_FIELD(AudioRecordingMode, m_manager.m_recordingOptions.m_stereo);
   INIT_FIELD(AudioRecordingFormat, m_manager.m_recordingOptions.m_audioFormat);
+  if (m_AudioRecordingFormat.empty())
+    m_AudioRecordingFormat = OpalPCM16.GetName();
   INIT_FIELD(VideoRecordingMode, m_manager.m_recordingOptions.m_videoMixing);
   m_VideoRecordingSize = PVideoFrameInfo::AsString(m_manager.m_recordingOptions.m_videoWidth,
                                                    m_manager.m_recordingOptions.m_videoHeight);
@@ -4065,39 +4172,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_CodecOptionValueError = FindWindowByNameAs<wxStaticText>(this, wxT("CodecOptionValueError"));
   m_CodecOptionValueError->Show(false);
 
-  ////////////////////////////////////////
-  // Security fields
-#if OPAL_PTLIB_SSL
-  INIT_FIELD(SecureH323, m_manager.FindEndPoint("h323s") != NULL);
-  INIT_FIELD(SecureSIP, m_manager.FindEndPoint("sips") != NULL);
-#else
-  FindWindowByName(SecureH323Key)->Disable();
-  FindWindowByName(SecureSIPKey)->Disable();
-#endif
-#if (defined OPAL_SRTP) || (defined OPAL_ZRTP)
-#if OPAL_H323
-  INIT_FIELD(RTPSecurityModeH323, m_manager.h323EP->GetDefaultSecurityMode());
-#endif // OPAL_H323
-#if OPAL_SIP
-  INIT_FIELD(RTPSecurityModeSIP, m_manager.sipEP->GetDefaultSecurityMode());
-#endif
-#ifndef OPAL_SRTP
-  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
-  choice->Delete(choice->FindString("SRTP"));
-  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
-  choice->Delete(choice->FindString("SRTP"));
-#endif
-#ifndef OPAL_ZRTP
-  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeH323Key);
-  choice->Delete(choice->FindString(wxT("ZRTP")));
-  choice = FindWindowByNameAs<wxChoice>(this, RTPSecurityModeSIPKey);
-  choice->Delete(choice->FindString(wxT("ZRTP")));
-#endif
-#else
-  FindWindowByName(RTPSecurityModeH323Key)->Disable();
-  FindWindowByName(RTPSecurityModeSIPKey)->Disable();
-#endif // OPAL_SRTP || OPAL_ZRTP
-
 #if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
@@ -4124,6 +4198,23 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles);
   INIT_FIELD(EnableH239Control, m_manager.h323EP->GetDefaultH239Control());
 
+#if OPAL_PTLIB_SSL
+  m_H323SignalingSecurity = 0;
+  if (m_manager.FindEndPoint("h323") != NULL)
+    m_H323SignalingSecurity |= 1;
+  if (m_manager.FindEndPoint("h323s") != NULL)
+    m_H323SignalingSecurity |= 2;
+  --m_H323SignalingSecurity;
+  FindWindowByName(H323SignalingSecurityKey)->SetValidator(wxGenericValidator(&m_H323SignalingSecurity));
+  m_H323MediaCryptoSuites = FindWindowByNameAs<wxCheckListBox>(this, H323MediaCryptoSuitesKey);
+  m_H323MediaCryptoSuiteUp = FindWindowByNameAs<wxButton>(this, wxT("H323MediaCryptoSuiteUp"));
+  m_H323MediaCryptoSuiteDown = FindWindowByNameAs<wxButton>(this, wxT("H323MediaCryptoSuiteDown"));
+  InitSecurityFields(m_manager.h323EP, m_H323MediaCryptoSuites, m_H323SignalingSecurity > 0);
+#else
+  FindWindowByName(H323SignalingSecurityKey)->Disable();
+  FindWindowByName(H323MediaCryptoSuitesKey)->Disable();
+#endif // OPAL_PTLIB_SSL
+
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
@@ -4145,6 +4236,23 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   if (m_SIPUserInputMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_SIPUserInputMode = OpalConnection::SendUserInputAsRFC2833;
   m_SIPUserInputMode--; // No SendUserInputAsQ931 mode, so decrement
+
+#if OPAL_PTLIB_SSL
+  m_SIPSignalingSecurity = 0;
+  if (m_manager.FindEndPoint("sip") != NULL)
+    m_SIPSignalingSecurity |= 1;
+  if (m_manager.FindEndPoint("sips") != NULL)
+    m_SIPSignalingSecurity |= 2;
+  --m_SIPSignalingSecurity;
+  FindWindowByName(SIPSignalingSecurityKey)->SetValidator(wxGenericValidator(&m_SIPSignalingSecurity));
+  m_SIPMediaCryptoSuites = FindWindowByNameAs<wxCheckListBox>(this, SIPMediaCryptoSuitesKey);
+  m_SIPMediaCryptoSuiteUp = FindWindowByNameAs<wxButton>(this, wxT("SIPMediaCryptoSuiteUp"));
+  m_SIPMediaCryptoSuiteDown = FindWindowByNameAs<wxButton>(this, wxT("SIPMediaCryptoSuiteDown"));
+  InitSecurityFields(m_manager.sipEP, m_SIPMediaCryptoSuites, m_SIPSignalingSecurity > 0);
+#else
+  FindWindowByName(SIPSignalingSecurityKey)->Disable();
+  FindWindowByName(SIPMediaCryptoSuitesKey)->Disable();
+#endif // OPAL_PTLIB_SSL
 
   m_SelectedRegistration = INT_MAX;
 
@@ -4253,12 +4361,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
 OptionsDialog::~OptionsDialog()
 {
-  if (m_TestVideoThread != NULL) {
-    m_TestVideoGrabber->Close();
-    m_TestVideoDisplay->Close();
-    m_TestVideoThread->WaitForTermination();
-    delete m_TestVideoThread;
-  }
+  StopTestVideo();
 
   long i;
   for (i = 0; i < m_Presentities->GetItemCount(); ++i)
@@ -4266,6 +4369,7 @@ OptionsDialog::~OptionsDialog()
   for (i = 0; i < m_Registrations->GetItemCount(); ++i)
     delete (RegistrationInfo *)m_Registrations->GetItemData(i);
 }
+
 
 #define SAVE_FIELD(name, set) \
   set(m_##name); \
@@ -4280,13 +4384,47 @@ OptionsDialog::~OptionsDialog()
   config->Write(name1##Key, m_##name1); \
   config->Write(name2##Key, m_##name2)
 
+
+#if OPAL_PTLIB_SSL
+static void SaveSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool securedSignaling,
+                               wxConfigBase * config, const wxChar * securedSignalingKey, const wxChar * mediaCryptoSuitesKey)
+{
+  config->Write(securedSignalingKey, securedSignaling);
+
+  PStringArray allMethods = ep->GetAllMediaCryptoSuites();
+  PStringArray enabledMethods;
+  for (unsigned item = 0; item < listbox->GetCount(); ++item) {
+    if (listbox->IsChecked(item)) {
+      PString description = PwxString(listbox->GetString(item));
+      for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
+        OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
+        if (cryptoSuite != NULL && description == cryptoSuite->GetDescription()) {
+          enabledMethods.AppendString(allMethods[i]);
+          break;
+        }
+      }
+    }
+  }
+
+  ep->SetMediaCryptoSuites(enabledMethods);
+  PStringStream strm;
+  strm << setfill(',') << enabledMethods;
+  config->Write(mediaCryptoSuitesKey, PwxString(strm));
+}
+#endif // OPAL_PTLIB_SSL
+
+
 bool OptionsDialog::TransferDataFromWindow()
 {
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
-  double floatBandwidth;
-  if (!m_Bandwidth.ToDouble(&floatBandwidth) || floatBandwidth < 10)
+  double floatRxBandwidth;
+  if (!m_RxBandwidth.ToDouble(&floatRxBandwidth) || floatRxBandwidth < 10)
+    return false;
+
+  double floatTxBandwidth;
+  if (!m_TxBandwidth.ToDouble(&floatTxBandwidth) || floatTxBandwidth < 10)
     return false;
 
   ::wxBeginBusyCursor();
@@ -4324,11 +4462,13 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Networking fields
   config->SetPath(NetworkingGroup);
-  int adjustedBandwidth = (int)(floatBandwidth*10);
 #if OPAL_H323
-  m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
+  m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Rx, (unsigned)(floatRxBandwidth*1000));
+  m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(floatTxBandwidth*1000));
 #endif
-  config->Write(BandwidthKey, adjustedBandwidth);
+  config->Write(RxBandwidthKey, floatRxBandwidth);
+  config->Write(TxBandwidthKey, floatTxBandwidth);
+
   SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
   SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
@@ -4505,33 +4645,6 @@ bool OptionsDialog::TransferDataFromWindow()
   }
 
 
-  ////////////////////////////////////////
-  // Security fields
-  config->SetPath(SecurityGroup);
-  if (m_SecureH323)
-    m_manager.AttachEndPoint(m_manager.FindEndPoint("h323"), "h323s");
-  else
-    m_manager.DetachEndPoint("h323s");
-  config->Write(SecureH323Key, m_SecureH323);
-
-  if (m_SecureSIP)
-    m_manager.AttachEndPoint(m_manager.FindEndPoint("sip"), "sips");
-  else
-    m_manager.DetachEndPoint("sips");
-  config->Write(SecureSIPKey, m_SecureSIP);
-
-  if (m_RTPSecurityModeH323 == "None")
-    m_RTPSecurityModeH323.erase();
-  if (m_RTPSecurityModeSIP == "None")
-    m_RTPSecurityModeSIP.erase();
-#if OPAL_H323
-  //SAVE_FIELD(RTPSecurityModeH323, m_manager.h323EP->SetDefaultSecurityMode);
-#endif
-#if OPAL_SIP
-  //SAVE_FIELD(RTPSecurityModeSIP, m_manager.sipEP->SetDefaultSecurityMode);
-#endif
-
-
 #if OPAL_H323
   ////////////////////////////////////////
   // H.323 fields
@@ -4559,6 +4672,13 @@ bool OptionsDialog::TransferDataFromWindow()
 
   SAVE_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles = (MyManager::ExtendedVideoRoles));
   SAVE_FIELD(EnableH239Control, m_manager.h323EP->SetDefaultH239Control);
+
+#if OPAL_PTLIB_SSL
+  SaveSecurityFields(m_manager.h323EP, m_H323MediaCryptoSuites, m_H323SignalingSecurity > 0,
+                     config, H323SignalingSecurityKey, H323MediaCryptoSuitesKey);
+  m_manager.SetSignalingSecurity(m_manager.h323EP, m_H323SignalingSecurity, "h323", "h323s");
+  config->Write(H323SignalingSecurityKey, m_H323SignalingSecurity);
+#endif
 
   config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
   m_manager.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));
@@ -4592,6 +4712,13 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPUserInputModeKey, m_SIPUserInputMode+1);
   m_manager.sipEP->SetDefaultPRACKMode((SIPConnection::PRACKMode)m_SIPPRACKMode);
   config->Write(SIPPRACKModeKey, m_SIPPRACKMode);
+
+#if OPAL_PTLIB_SSL
+  SaveSecurityFields(m_manager.sipEP, m_SIPMediaCryptoSuites, m_SIPSignalingSecurity > 0,
+                     config, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey);
+  m_manager.SetSignalingSecurity(m_manager.sipEP, m_SIPSignalingSecurity, "sip", "sips");
+  config->Write(SIPSignalingSecurityKey, m_SIPSignalingSecurity);
+#endif
 
   RegistrationList newRegistrations;
 
@@ -4721,7 +4848,7 @@ bool OptionsDialog::TransferDataFromWindow()
 void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 {
   wxString newFile = wxFileSelector(wxT("Sound file to play on incoming calls"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_RingSoundFileName,
                                     wxT(".wav"),
                                     wxT("WAV files (*.wav)|*.wav"),
@@ -4748,11 +4875,15 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 
 void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 {
-  static const wxChar * bandwidthClasses[] = {
-    wxT("14.4"), wxT("28.8"), wxT("64.0"), wxT("128"), wxT("1500"), wxT("10000")
+  static const wxChar * rxBandwidthClasses[] = {
+    wxT("33.6"), wxT("64"), wxT("128"), wxT("1500"), wxT("4000"), wxT("1472"), wxT("1920"), wxT("10000")
+  };
+  static const wxChar * txBandwidthClasses[] = {
+    wxT("33.6"), wxT("64"), wxT("128"), wxT("128"), wxT("512"), wxT("1472"), wxT("1920"), wxT("10000")
   };
 
-  m_Bandwidth = bandwidthClasses[event.GetSelection()];
+  m_RxBandwidth = rxBandwidthClasses[event.GetSelection()];
+  m_TxBandwidth = txBandwidthClasses[event.GetSelection()];
   TransferDataToWindow();
 }
 
@@ -4760,7 +4891,7 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for Certificate Authority"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_CertificateAuthority,
                                     wxT(".cer"),
                                     wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
@@ -4775,7 +4906,7 @@ void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 void OptionsDialog::FindLocalCertificate(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for local Certificate"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_LocalCertificate,
                                     wxT(".cer"),
                                     wxT("CER files (*.cer)|*.cer|PEM files (*.pem)|*.pem"),
@@ -4790,7 +4921,7 @@ void OptionsDialog::FindLocalCertificate(wxCommandEvent &)
 void OptionsDialog::FindPrivateKey(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for private key"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_PrivateKey,
                                     wxT(".key"),
                                     wxT("KEY files (*.key)|*.key|PEM files (*.pem)|*.pem"),
@@ -4906,8 +5037,8 @@ void OptionsDialog::ChangedSoundPlayer(wxCommandEvent & /*event*/)
     return;
 
  device = wxFileSelector(wxT("Select Sound File"),
-                          wxT(""),
-                          wxT(""),
+                          wxEmptyString,
+                          wxEmptyString,
                           device.Mid(1),
                           device,
                           wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
@@ -4925,8 +5056,8 @@ void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
     return;
 
  device = wxFileSelector(wxT("Select Sound File"),
-                          wxT(""),
-                          wxT(""),
+                          wxEmptyString,
+                          wxEmptyString,
                           device.Mid(1),
                           device,
                           wxFD_OPEN|wxFD_FILE_MUST_EXIST);
@@ -4971,8 +5102,8 @@ void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
   PwxString device = newDevice;
   if (newDevice[0] == '*') {
     device = wxFileSelector(wxT("Select Video File"),
-                            wxT(""),
-                            wxT(""),
+                            wxEmptyString,
+                            wxEmptyString,
                             device.Mid(1),
                             device,
                             wxFD_OPEN|wxFD_FILE_MUST_EXIST);
@@ -5003,14 +5134,30 @@ void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 }
 
 
+void OptionsDialog::StopTestVideo()
+{
+  if (m_TestVideoThread == NULL)
+    return;
+
+  m_TestVideoGrabber->Close();
+  m_TestVideoDisplay->Close();
+  m_TestVideoThread->WaitForTermination();
+
+  delete m_TestVideoThread;
+  m_TestVideoThread = NULL;
+
+  delete m_TestVideoDisplay;
+  m_TestVideoDisplay = NULL;
+
+  delete m_TestVideoGrabber;
+  m_TestVideoGrabber = NULL;
+}
+
+
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
   if (m_TestVideoThread != NULL) {
-    m_TestVideoGrabber->Close();
-    m_TestVideoDisplay->Close();
-    m_TestVideoThread->WaitForTermination();
-    delete m_TestVideoThread;
-    m_TestVideoThread = NULL;
+    StopTestVideo();
     m_TestVideoCapture->SetLabel(wxT("Test Video"));
     return;
   }
@@ -5069,12 +5216,6 @@ void OptionsDialog::TestVideoThreadMain()
                                           m_TestVideoGrabber->GetFrameHeight(),
                                           frame))
     frameCount++;
-
-  delete m_TestVideoDisplay;
-  m_TestVideoDisplay = NULL;
-
-  delete m_TestVideoGrabber;
-  m_TestVideoGrabber = NULL;
 }
 
 
@@ -5240,8 +5381,8 @@ void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
     wxString value = m_allCodecs->GetString(sourceSelection);
     void * data = m_allCodecs->GetClientData(sourceSelection);
     value.Remove(0, value.Find(':')+2);
-    value.Replace(SIPonly, wxT(""));
-    value.Replace(H323only, wxT(""));
+    value.Replace(SIPonly, wxEmptyString);
+    value.Replace(H323only, wxEmptyString);
     if (m_selectedCodecs->FindString(value) < 0) {
       if (insertionPoint < 0)
         m_selectedCodecs->Append(value, data);
@@ -5317,7 +5458,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_MoveDownCodec->Enable(count == 1 && selections[0] < (int)m_selectedCodecs->GetCount()-1);
 
   m_codecOptions->DeleteAllItems();
-  m_codecOptionValue->SetValue(wxT(""));
+  m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 
@@ -5354,7 +5495,7 @@ void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
 
 void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
 {
-  m_codecOptionValue->SetValue(wxT(""));
+  m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
 }
@@ -5395,7 +5536,69 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 
 
 ////////////////////////////////////////
+
+#if OPAL_PTLIB_SSL
+static void MediaCryptoSuiteChanged(wxCheckListBox * listbox, wxButton * up, wxButton * down)
+{
+  int selection = listbox->GetSelection();
+  up->Enable(selection > 0);
+  down->Enable((unsigned)selection < listbox->GetCount()-1);
+}
+
+
+static void MediaCryptoSuiteMove(wxCheckListBox * listbox, wxButton * up, wxButton * down, int dir)
+{
+  int selection = listbox->GetSelection();
+  if (dir < 0 ? (selection <= 0) : ((unsigned)selection >= listbox->GetCount()-1))
+    return;
+
+  wxString str = listbox->GetString(selection);
+  bool check = listbox->IsChecked(selection);
+
+  listbox->Delete(selection);
+
+  selection += dir;
+
+  listbox->Insert(str, selection);
+  listbox->Check(selection, check);
+
+  MediaCryptoSuiteChanged(listbox, up, down);
+}
+#endif // OPAL_PTLIB_SSL
+
+
+////////////////////////////////////////
 // H.323 fields
+
+#if OPAL_PTLIB_SSL
+void OptionsDialog::H323SignalingSecurityChanged(wxCommandEvent & /*event*/)
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
+  InitSecurityFields(m_manager.h323EP, m_H323MediaCryptoSuites, m_H323SignalingSecurity > 0);
+  MediaCryptoSuiteChanged(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown);
+}
+
+
+void OptionsDialog::H323MediaCryptoSuiteChanged(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteChanged(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown);
+}
+
+
+void OptionsDialog::H323MediaCryptoSuiteUp(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown, -1);
+}
+
+
+void OptionsDialog::H323MediaCryptoSuiteDown(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown, +1);
+}
+#endif
+
 
 void OptionsDialog::SelectedAlias(wxCommandEvent & /*event*/)
 {
@@ -5426,6 +5629,36 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 
 ////////////////////////////////////////
 // SIP fields
+
+#if OPAL_PTLIB_SSL
+void OptionsDialog::SIPSignalingSecurityChanged(wxCommandEvent & /*event*/)
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
+  InitSecurityFields(m_manager.sipEP, m_SIPMediaCryptoSuites, m_SIPSignalingSecurity > 0);
+  MediaCryptoSuiteChanged(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown);
+}
+
+
+void OptionsDialog::SIPMediaCryptoSuiteChanged(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteChanged(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown);
+}
+
+
+void OptionsDialog::SIPMediaCryptoSuiteUp(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown, -1);
+}
+
+
+void OptionsDialog::SIPMediaCryptoSuiteDown(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown, +1);
+}
+#endif
+
 
 static void RenumberList(wxListCtrl * list, int position)
 {
@@ -5662,49 +5895,36 @@ void OptionsDialog::RestoreDefaultRoutes(wxCommandEvent &)
 {
   m_Routes->DeleteAllItems();
 
-  for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++) {
-    PString spec = DefaultRoutes[i];
-    PINDEX equal = spec.Find('=');
-    if (equal != P_MAX_INDEX)
-      AddRouteTableEntry(OpalManager::RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim()));
-  }
+  for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); i++)
+    AddRouteTableEntry(OpalManager::RouteEntry(DefaultRoutes[i]));
 }
 
 
 void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
 {
-  PString expression = entry.pattern;
+  PAssert(entry.IsValid(), PInvalidParameter);
 
-  PINDEX tab = expression.Find('\t');
-  if (tab == P_MAX_INDEX)
-    tab = expression.Find("\\t");
+  PString partyA = entry.GetPartyA();
+  PINDEX colon = partyA.Find(':');
 
-  PINDEX colon = expression.Find(':');
-
-  PwxString source, device, pattern;
-  if (colon >= tab) {
+  PwxString source, device;
+  if (colon == P_MAX_INDEX) {
     source = AllRouteSources;
-    device = expression(colon+1, tab-1);
-    pattern = expression.Mid(tab+1);
+    device = partyA;
   }
   else {
-    source = expression.Left(colon);
+    source = partyA.Left(colon);
     if (source == ".*")
       source = AllRouteSources;
-    if (tab == P_MAX_INDEX)
-      pattern = expression.Mid(colon+1);
-    else {
-      device = expression(colon+1, tab-1);
-      if (device == ".*")
-        device = "";
-      pattern = expression.Mid(tab + (expression[tab] == '\t' ? 1 : 2));
-    }
+    device = partyA.Mid(colon+1);
+    if (device == ".*")
+      device = "";
   }
 
   int pos = m_Routes->InsertItem(INT_MAX, source);
   m_Routes->SetItem(pos, 1, device);
-  m_Routes->SetItem(pos, 2, pattern);
-  m_Routes->SetItem(pos, 3, PwxString(entry.destination));
+  m_Routes->SetItem(pos, 2, PwxString(entry.GetPartyB()));
+  m_Routes->SetItem(pos, 3, PwxString(entry.GetDestination()));
 }
 
 
@@ -5715,7 +5935,7 @@ void OptionsDialog::AddRouteTableEntry(OpalManager::RouteEntry entry)
 void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 {
   wxString newFile = wxFileSelector(wxT("Trace log file"),
-                                    wxT(""),
+                                    wxEmptyString,
                                     m_TraceFileName,
                                     wxT(".log"),
                                     wxT("Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||"),
@@ -5841,6 +6061,7 @@ VideoControlDialog::VideoControlDialog(MyManager * manager, bool remote)
 
   m_TargetBitRate = FindWindowByNameAs<wxSlider>(this, wxT("VideoBitRate"));
   m_FrameRate = FindWindowByNameAs<wxSlider>(this, wxT("FrameRate"));
+  m_TSTO = FindWindowByNameAs<wxSlider>(this, wxT("TSTO"));
 
   OpalMediaStreamPtr stream = GetStream();
   if (stream != NULL) {
@@ -5855,6 +6076,8 @@ VideoControlDialog::VideoControlDialog(MyManager * manager, bool remote)
 
     m_FrameRate->SetMax(30);
     m_FrameRate->SetValue(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime());
+
+    m_TSTO->SetValue(mediaFormat.GetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption()));
   }
 }
 
@@ -5874,6 +6097,7 @@ bool VideoControlDialog::TransferDataFromWindow()
       OpalMediaFormat mediaFormat = stream->GetMediaFormat();
       mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), m_TargetBitRate->GetValue()*1000);
       mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), mediaFormat.GetClockRate()/m_FrameRate->GetValue());
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption(), m_TSTO->GetValue());
       stream->UpdateMediaFormat(mediaFormat);
     }
   }
@@ -5930,6 +6154,7 @@ BEGIN_EVENT_TABLE(RegistrationDialog, wxDialog)
 END_EVENT_TABLE()
 
 RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo * info)
+  : m_user(NULL)
 {
   if (info != NULL)
     m_info = *info;
@@ -5961,6 +6186,9 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
 
 void RegistrationDialog::Changed(wxCommandEvent & /*event*/)
 {
+  if (m_user == NULL)
+    return;
+
   wxString user = m_user->GetValue();
   if (user.empty())
     m_ok->Disable();
@@ -6156,7 +6384,7 @@ void IMDialog::OnText(wxCommandEvent & WXUNUSED(event))
 void IMDialog::SendCurrentText()
 {
   PwxString text = m_enteredText->GetValue();
-  m_enteredText->SetValue(wxT(""));
+  m_enteredText->SetValue(wxEmptyString);
   AddTextToScreen(text, true);
 
   OpalIM * im = new OpalIM;
@@ -6189,7 +6417,7 @@ void IMDialog::OnCompositionIndication(OpalIMContext &, OpalIMContext::Compositi
   if (info.m_state == OpalIMContext::CompositionIndicationActive())
     m_compositionIndication->SetLabel(PwxString(m_context.GetRemoteName()) + wxT(" is typing"));
   else
-    m_compositionIndication->SetLabel(wxT(""));
+    m_compositionIndication->SetLabel(wxEmptyString);
 }
 
 
@@ -6309,11 +6537,11 @@ void CallIMDialog::OnChanged(wxCommandEvent & WXUNUSED(event))
 ///////////////////////////////////////////////////////////////////////////////
 
 CallPanelBase::CallPanelBase(MyManager & manager,
-                             const PwxString & token,
+                             const PSafePtr<OpalCall> & call,
                              wxWindow * parent,
                              const wxChar * resource)
   : m_manager(manager)
-  , m_token(token)
+  , m_call(call)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, resource);
 }
@@ -6329,8 +6557,8 @@ BEGIN_EVENT_TABLE(AnswerPanel, CallPanelBase)
 #endif
 END_EVENT_TABLE()
 
-AnswerPanel::AnswerPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("AnswerPanel"))
+AnswerPanel::AnswerPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("AnswerPanel"))
 {
 }
 
@@ -6369,8 +6597,8 @@ BEGIN_EVENT_TABLE(CallingPanel, CallPanelBase)
   EVT_BUTTON(XRCID("HangUpCall"), CallingPanel::OnHangUp)
 END_EVENT_TABLE()
 
-CallingPanel::CallingPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("CallingPanel"))
+CallingPanel::CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("CallingPanel"))
 {
 }
 
@@ -6412,8 +6640,8 @@ BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
 END_EVENT_TABLE()
 
 
-InCallPanel::InCallPanel(MyManager & manager, const PwxString & token, wxWindow * parent)
-  : CallPanelBase(manager, token, parent, wxT("InCallPanel"))
+InCallPanel::InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
+  : CallPanelBase(manager, call, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
 {
@@ -6487,21 +6715,17 @@ void InCallPanel::OnStreamsChanged()
 
 void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> activeCall = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
-  if (PAssertNULL(activeCall) != NULL) {
-    LogWindow << "Hanging up \"" << *activeCall << '"' << endl;
-    activeCall->Clear();
-  }
+  LogWindow << "Hanging up \"" << *m_call << '"' << endl;
+  m_call->Clear();
+  FindWindowByNameAs<wxButton>(this, wxT("HangUp"))->Disable();
+  m_Hold->Disable();
+  m_Conference->Disable();
 }
 
 
 void InCallPanel::OnHoldChanged(bool onHold)
 {
-  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadOnly);
-  if (PAssertNULL(call) == NULL)
-    return;
-
-  bool notConferenced = call->GetConnectionAs<OpalMixerConnection>() == NULL;
+  bool notConferenced = m_call->GetConnectionAs<OpalMixerConnection>() == NULL;
 
   m_Hold->SetLabel(onHold ? wxT("Retrieve") : wxT("Hold"));
   m_Hold->Enable(notConferenced);
@@ -6511,24 +6735,20 @@ void InCallPanel::OnHoldChanged(bool onHold)
 
 void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalCall> call = m_manager.FindCallWithLock(m_token, PSafeReadWrite);
-  if (PAssertNULL(call) == NULL)
-    return;
-
-  if (call->IsOnHold()) {
-    PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReadWrite);
+  if (m_call->IsOnHold()) {
+    PSafePtr<OpalCall> activeCall = m_manager.GetCall(PSafeReference);
     if (activeCall == NULL) {
-      if (!call->Retrieve())
+      if (!m_call->Retrieve())
         return;
     }
     else {
-      m_manager.m_switchHoldToken = m_token;
+      m_manager.m_switchHoldToken = m_call->GetToken();
       if (!activeCall->Hold())
         return;
     }
   }
   else {
-    if (!call->Hold())
+    if (!m_call->Hold())
       return;
   }
 
@@ -6539,7 +6759,7 @@ void InCallPanel::OnHoldRetrieve(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnConference(wxCommandEvent & /*event*/)
 {
-  if (m_manager.m_activeCall != NULL && m_token == m_manager.m_activeCall->GetToken()) {
+  if (m_call == m_manager.m_activeCall) {
     m_manager.AddToConference(*m_manager.m_callsOnHold.front().m_call);
     m_Conference->Enable(false);
     m_Hold->Enable(false);
@@ -7050,7 +7270,7 @@ void StatisticsPage::UpdateSession(const OpalConnection * connection)
     m_isActive = false;
   else {
     OpalMediaStreamPtr stream = connection->GetMediaStream(m_mediaType, m_receiver);
-    m_isActive = stream != NULL && stream->Open();
+    m_isActive = stream != NULL && stream->IsOpen();
     if (m_isActive) {
       OpalMediaStatistics statistics;
       stream->GetStatistics(statistics);
@@ -7183,9 +7403,9 @@ MyH323EndPoint::MyH323EndPoint(MyManager & manager)
 }
 
 
-void MyH323EndPoint::OnRegistrationConfirm()
+void MyH323EndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
 {
-  LogWindow << "H.323 registration successful." << endl;
+  LogWindow << "H.323 registration: " << status << endl;
 }
 
 #endif
