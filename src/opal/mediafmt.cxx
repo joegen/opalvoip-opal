@@ -1703,7 +1703,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::RateControlEnableOption(),        false, OpalMediaOption::NoMerge,     false                                  ));
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX, OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_NoRTCPFb));
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
+                                     OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 
 
   static const char * const RoleEnumerations[OpalVideoFormat::eNumRoles] = {

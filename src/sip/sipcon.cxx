@@ -827,6 +827,8 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     return false;
   }
 
+  localMedia->SetOptionStrings(m_stringOptions);
+
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(sdpContactAddress);
 
@@ -877,10 +879,6 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
   }
 
   if (mediaType == OpalMediaType::Audio()) {
-    SDPAudioMediaDescription * audioMedia = dynamic_cast<SDPAudioMediaDescription *>(localMedia);
-    if (audioMedia != NULL)
-      audioMedia->SetOfferPTime(m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME));
-
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
     // Must be after other codecs, as Mediatrix gateways barf if RFC2833 is first
     SetNxECapabilities(rfc2833Handler, m_localMediaFormats, m_remoteFormatList, OpalRFC2833, localMedia);
@@ -1089,6 +1087,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   }
 
   PTRACE(4, "SIP\tAnswering offer for media type " << mediaType);
+
+  localMedia->SetOptionStrings(m_stringOptions);
 
   SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(sessionId);
   if (GetPhase() < ConnectedPhase) {
