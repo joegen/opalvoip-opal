@@ -78,9 +78,28 @@ static const char SIPListenersKey[] = "SIP Interfaces";
 
 static const char LIDKey[] = "Line Interface Devices";
 
-static const char VXMLKey[] = "VXML URL";
+static const char VXMLKey[] = "IVR VXML URL";
 
-static const char DialPeerKey[] = "Dial Peers";
+#define ROUTES_SECTION "Routes"
+#define ROUTES_KEY "Route"
+
+static const char RouteAPartyKey[] = "A Party";
+static const char RouteBPartyKey[] = "B Party";
+static const char RouteDestKey[]   = "Destination";
+
+static const char * const DefaultRoutes[] = {
+  ".*:.*\t#|.*:#=ivr:",
+  "pots:\\+*[0-9]+ = tel:<dn>",
+  "pstn:\\+*[0-9]+ = tel:<dn>",
+  "capi:\\+*[0-9]+ = tel:<dn>",
+  "h323:\\+*[0-9]+ = tel:<dn>",
+  "sip:\\+*[0-9]+@.* = tel:<dn>",
+  "h323:.+@.+ = sip:<da>",
+  "h323:.* = sip:<dn>@",
+  "sip:.* = h323:<dn>",
+  "tel:[0-9]+\\*[0-9]+\\*[0-9]+\\*[0-9]+ = sip:<dn2ip>",
+  "tel:.*=sip:<dn>"
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -479,23 +498,41 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 
   // Routing
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), true);
-  PStringArray routes = fieldArray->GetStrings(cfg);
-  if (routes.IsEmpty()) {
-    routes += ".*:# = ivr:";
-    routes += "pots:.*\\*.*\\*.* = sip:<dn2ip>";
-    routes += "pots:.* = sip:<da>";
-    routes += "pstn:.*\\*.*\\*.* = sip:<dn2ip>";
-    routes += "pstn:.* = sip:<da>";
-    routes += "h323:.* = sip:<da>";
-    routes += "sip:.* = sip:<da>";
-    fieldArray->SetStrings(cfg, routes);
+  RouteTable routes;
+  PINDEX arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
+  for (PINDEX i = 0; i < arraySize; i++) {
+    PString section(PString::Printf, ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1);
+    RouteEntry * entry = new RouteEntry(cfg.GetString(RouteAPartyKey),
+                                        cfg.GetString(RouteBPartyKey),
+                                        cfg.GetString(RouteDestKey));
+    if (entry->IsValid())
+      routes.Append(entry);
+    else
+      delete entry;
   }
-  rsrc->Add(fieldArray);
 
-  if (!SetRouteTable(routes)) {
-    PSYSTEMLOG(Error, "No legal entries in dial peers!");
+  if (routes.IsEmpty()) {
+    arraySize = 0;
+    for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); ++i) {
+      RouteEntry * entry = new RouteEntry(DefaultRoutes[i]);
+      PAssert(entry->IsValid(), PLogicError);
+      routes.Append(entry);
+
+      cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", ++arraySize));
+      cfg.SetString(RouteAPartyKey, entry->GetPartyA());
+      cfg.SetString(RouteBPartyKey, entry->GetPartyB());
+      cfg.SetString(RouteDestKey,   entry->GetDestination());
+    }
+    cfg.SetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size", arraySize);
   }
+
+  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION);
+  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 30));
+  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 30));
+  routeFields->Append(new PHTTPStringField(RouteDestKey, 30));
+  rsrc->Add(new PHTTPFieldArray(routeFields, true));
+
+  SetRouteTable(routes);
 
 
   return true;

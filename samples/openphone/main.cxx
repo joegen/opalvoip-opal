@@ -228,10 +228,8 @@ DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
-#if OPAL_PTLIB_SSL
 DEF_FIELD(H323SignalingSecurity);
 DEF_FIELD(H323MediaCryptoSuites);
-#endif
 
 
 static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
@@ -244,10 +242,8 @@ DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
 DEF_FIELD(SIPUserInputMode);
 DEF_FIELD(SIPPRACKMode);
-#if OPAL_PTLIB_SSL
 DEF_FIELD(SIPSignalingSecurity);
 DEF_FIELD(SIPMediaCryptoSuites);
-#endif
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -896,6 +892,10 @@ bool MyManager::Initialise()
 
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
+#if EPSILON
+  if (config->Read(BandwidthKey, &value1))
+    h323EP->SetInitialBandwidth(value1);
+#else
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(OpalBandwidth::RxTx, value1);
 
@@ -905,6 +905,7 @@ bool MyManager::Initialise()
 
   if (config->Read(TxBandwidthKey, &float1))
     h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(float1*1000));
+#endif
 #endif
   if (config->Read(RTPTOSKey, &value1))
     SetMediaTypeOfService(value1);
@@ -3698,9 +3699,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_RADIOBUTTON(XRCID("NoNATUsed"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
+#if OPAL_PTLIB_SSL
   EVT_BUTTON(XRCID("FindCertificateAuthority"), OptionsDialog::FindCertificateAuthority)
   EVT_BUTTON(XRCID("FindLocalCertificate"), OptionsDialog::FindLocalCertificate)
   EVT_BUTTON(XRCID("FindPrivateKey"), OptionsDialog::FindPrivateKey)
+#endif
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
   EVT_CHOICE(XRCID("InterfaceProtocol"), OptionsDialog::ChangedInterfaceInfo)
   EVT_TEXT(XRCID("InterfaceAddress"), OptionsDialog::ChangedInterfaceInfo)
@@ -3873,6 +3876,12 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Networking fields
 #if OPAL_H323
+#if EPSILON
+  unsigned rxBandwidth = m_manager.h323EP->GetInitialBandwidth();
+  m_RxBandwidth.sprintf(wxT("%.1f"), rxBandwidth/1000.0);
+  FindWindowByName(RxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_RxBandwidth));
+  unsigned txBandwidth = rxBandwidth;
+#else
   OpalBandwidth rxBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Rx);
   m_RxBandwidth.sprintf(wxT("%.1f"), rxBandwidth/1000.0);
   FindWindowByName(RxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_RxBandwidth));
@@ -3880,7 +3889,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   OpalBandwidth txBandwidth = m_manager.h323EP->GetInitialBandwidth(OpalBandwidth::Tx);
   m_TxBandwidth.sprintf(wxT("%.1f"), txBandwidth/1000.0);
   FindWindowByName(TxBandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_TxBandwidth));
-
+#endif
   int bandwidthClass;
   if (rxBandwidth <= 33600 && txBandwidth <= 33600)
     bandwidthClass = 0;
@@ -4463,8 +4472,12 @@ bool OptionsDialog::TransferDataFromWindow()
   // Networking fields
   config->SetPath(NetworkingGroup);
 #if OPAL_H323
+#if EPSILON
+  m_manager.h323EP->SetInitialBandwidth((unsigned)(floatRxBandwidth*1000));
+#else
   m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Rx, (unsigned)(floatRxBandwidth*1000));
   m_manager.h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(floatTxBandwidth*1000));
+#endif
 #endif
   config->Write(RxBandwidthKey, floatRxBandwidth);
   config->Write(TxBandwidthKey, floatTxBandwidth);
@@ -4888,6 +4901,7 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 }
 
 
+#if OPAL_PTLIB_SSL
 void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for Certificate Authority"),
@@ -4931,6 +4945,7 @@ void OptionsDialog::FindPrivateKey(wxCommandEvent &)
     TransferDataToWindow();
   }
 }
+#endif // OPAL_PTLIB_SSL
 
 
 void OptionsDialog::NATHandling(wxCommandEvent &)
