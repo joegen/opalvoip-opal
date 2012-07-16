@@ -87,6 +87,12 @@ OpalLocalConnection * OpalLocalEndPoint::CreateConnection(OpalCall & call,
 }
 
 
+bool OpalLocalEndPoint::OnOutgoingSetUp(const OpalLocalConnection & /*connection*/)
+{
+  return true;
+}
+
+
 bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & /*connection*/)
 {
   return true;
@@ -207,13 +213,13 @@ OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
 
 OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                                 OpalLocalEndPoint & ep,
-                                             void * /*userData*/,
+                                             void * userData,
                                            unsigned options,
                     OpalConnection::StringOptions * stringOptions,
                                                char tokenPrefix)
   : OpalConnection(call, ep, ep.GetManager().GetNextToken(tokenPrefix), options, stringOptions)
   , endpoint(ep)
-  , userData(NULL)
+  , m_userData(userData)
 {
 #if OPAL_PTLIB_DTMF
   m_sendInBandDTMF = m_detectInBandDTMF = false;
@@ -253,7 +259,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
     }
 
     PTRACE(3, "LocalCon\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this)) {
+    if (!OnOutgoingSetUp() || !ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return false;
     }
@@ -269,7 +275,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
 
     OnApplyStringOptions();
 
-    if (!endpoint.OnIncomingCall(*this)) {
+    if (!OnIncoming()) {
       Release(EndedByLocalBusy);
       return false;
     }
@@ -330,6 +336,24 @@ bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
   return endpoint.OnUserInput(*this, value);
+}
+
+
+bool OpalLocalConnection::OnOutgoingSetUp()
+{
+  return endpoint.OnOutgoingSetUp(*this);
+}
+
+
+bool OpalLocalConnection::OnOutgoing()
+{
+  return endpoint.OnOutgoingCall(*this);
+}
+
+
+bool OpalLocalConnection::OnIncoming()
+{
+  return endpoint.OnIncomingCall(*this);
 }
 
 
