@@ -435,12 +435,26 @@ class OpalManager : public PObject
     {
         PCLASSINFO(RouteEntry, PObject);
       public:
-        RouteEntry(const PString & pat, const PString & dest);
+        RouteEntry(const PString & partyA, const PString & partyB, const PString & dest);
+        RouteEntry(const PString & spec);
+
+        PObject * Clone() const { return new RouteEntry(*this); }
         void PrintOn(ostream & strm) const;
 
-        PString            pattern;     ///< Original pattern string
-        PString            destination; ///< Destination URL with macro substitutions
-        PRegularExpression regex;       ///< Compiled Regular expression from pattern
+        bool IsValid() const;
+        bool IsMatch(const PString & search) const;
+
+        const PString & GetPartyA() const { return m_partyA; }
+        const PString & GetPartyB() const { return m_partyB; }
+        const PString & GetDestination() const { return m_destination; }
+
+      protected:
+        PString            m_partyA;      ///< URL of caller
+        PString            m_partyB;      ///< URL caller want to conect to
+        PString            m_destination; ///< URL we map above to, with macro substitutions
+        PRegularExpression m_regex;       ///< Compiled Regular expression from pattern
+
+        void CompileRegEx();
     };
     PARRAY(RouteTable, RouteEntry);
 
