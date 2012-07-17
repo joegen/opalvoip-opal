@@ -87,6 +87,12 @@ OpalLocalConnection * OpalLocalEndPoint::CreateConnection(OpalCall & call,
 }
 
 
+bool OpalLocalEndPoint::OnOutgoingSetUp(const OpalLocalConnection & /*connection*/)
+{
+  return true;
+}
+
+
 bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & /*connection*/)
 {
   return true;
@@ -207,13 +213,13 @@ OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
 
 OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                                 OpalLocalEndPoint & ep,
-                                             void * /*userData*/,
+                                             void * userData,
                                            unsigned options,
                     OpalConnection::StringOptions * stringOptions,
                                                char tokenPrefix)
   : OpalConnection(call, ep, ep.GetManager().GetNextToken(tokenPrefix), options, stringOptions)
   , endpoint(ep)
-  , userData(NULL)
+  , m_userData(userData)
 {
 #if OPAL_PTLIB_DTMF
   m_sendInBandDTMF = m_detectInBandDTMF = false;
@@ -240,6 +246,20 @@ void OpalLocalConnection::OnApplyStringOptions()
 }
 
 
+PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  if (!OpalConnection::OnIncomingConnection(options, stringOptions))
+    return false;
+
+  if (OnOutgoingSetUp())
+    return true;
+
+  PTRACE(4, "LocalCon\tOnOutgoingSetUp returned false on " << *this);
+  Release(EndedByNoAccept);
+  return false;
+}
+
+
 PBoolean OpalLocalConnection::SetUpConnection()
 {
   bool notIncoming = ownerCall.GetConnection(0) == this || ownerCall.IsEstablished();
@@ -250,7 +270,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
   if (notIncoming)
     return true;
 
-  if (!endpoint.OnIncomingCall(*this)) {
+  if (!OnIncoming()) {
     Release(EndedByLocalBusy);
     return false;
   }
@@ -310,6 +330,24 @@ bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
   return endpoint.OnUserInput(*this, value);
+}
+
+
+bool OpalLocalConnection::OnOutgoingSetUp()
+{
+  return endpoint.OnOutgoingSetUp(*this);
+}
+
+
+bool OpalLocalConnection::OnOutgoing()
+{
+  return endpoint.OnOutgoingCall(*this);
+}
+
+
+bool OpalLocalConnection::OnIncoming()
+{
+  return endpoint.OnIncomingCall(*this);
 }
 
 
