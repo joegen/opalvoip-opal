@@ -140,6 +140,15 @@ class OpalLocalEndPoint : public OpalEndPoint
       OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
 
+    /**Call back just before remote is contacted.
+       If false is returned the call is aborted with EndedByNoAccept.
+
+       The default implementation returns true.
+      */
+    virtual bool OnOutgoingSetUp(
+      const OpalLocalConnection & connection ///<  Connection having event
+    );
+
     /**Call back to indicate that remote is ringing.
        If false is returned the call is aborted.
 
@@ -383,6 +392,33 @@ class OpalLocalConnection : public OpalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
+    /**Call back for an incoming call.
+       This function is used for an application to control the answering of
+       incoming calls.
+
+       If true is returned then the connection continues. If false then the
+       connection is aborted.
+
+       Note this function should not block for any length of time. If the
+       decision to answer the call may take some time eg waiting for a user to
+       pick up the phone, then AnswerCallPending or AnswerCallDeferred should
+       be returned.
+
+       If an application overrides this function, it should generally call the
+       ancestor version to complete calls. Unless the application completely
+       takes over that responsibility. Generally, an application would only
+       intercept this function if it wishes to do some form of logging. For
+       this you can obtain the name of the caller by using the function
+       OpalConnection::GetRemotePartyName().
+
+       The default behaviour calls the base class then OnOutgoingSetUp().
+
+       Note that the most explicit version of this override is made pure, so as to force 
+       descendant classes to implement it. This will only affect code that implements new
+       descendants of OpalConnection - code that uses existing descendants will be unaffected
+     */
+    virtual PBoolean OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+
     /**Get indication of connection being to a "network".
        This indicates the if the connection may be regarded as a "network"
        connection. The distinction is about if there is a concept of a "remote"
@@ -400,7 +436,10 @@ class OpalLocalConnection : public OpalConnection
        This function will initiate the connection to the remote entity, for
        example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
 
-       The default behaviour does.
+       The default behaviour determines if this si incoming or outgoing call
+       by checking if we are party A or B, then does approriate setting up
+       of the conenction, including calling OnOutgoing() or OnIncoming() as
+       appropriate.
       */
     virtual PBoolean SetUpConnection();
 
@@ -473,6 +512,32 @@ class OpalLocalConnection : public OpalConnection
 
   /**@name New operations */
   //@{
+    /**Call back just before remote is contacted.
+
+       The default implementation call OpalLocalEndPoint::OnOutgoingSetUp().
+
+       @return false if the call is to be aborted with EndedByNoAccept.
+      */
+    virtual bool OnOutgoingSetUp();
+
+    /**Call back to indicate that remote is ringing.
+
+       The default implementation call OpalLocalEndPoint::OnOutgoingCall().
+
+       @return false if the call is to be aborted with EndedByNoAccept.
+      */
+    virtual bool OnOutgoing();
+
+    /**Call back to indicate that there is an incoming call.
+       Note this function should not block or it will impede the operation of
+       the stack.
+
+       The default implementation call OpalLocalEndPoint::OnIncomingCall().
+
+       @return false if the call is to be aborted with status of EndedByLocalBusy.
+      */
+    virtual bool OnIncoming();
+
     /**Indicate alerting for the incoming connection.
       */
     virtual void AlertingIncoming();
@@ -485,10 +550,10 @@ class OpalLocalConnection : public OpalConnection
   /**@name Member variable access */
   //@{
     /// Get user data pointer.
-    void * GetUserData() const  { return userData; }
+    void * GetUserData() const  { return m_userData; }
 
     /// Set user data pointer.
-    void SetUserData(void * v)  { userData = v; }
+    void SetUserData(void * v)  { m_userData = v; }
   //@}
 
   protected:
@@ -496,7 +561,7 @@ class OpalLocalConnection : public OpalConnection
     void InternalAcceptIncoming();
 
     OpalLocalEndPoint & endpoint;
-    void * userData;
+    void * m_userData;
 };
 
 

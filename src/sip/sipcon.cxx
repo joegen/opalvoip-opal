@@ -936,12 +936,6 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     return false;
 
   if (sdp == NULL || sdp->GetMediaDescriptions().IsEmpty()) {
-    if (m_holdFromRemote) {
-      PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
-      m_holdFromRemote = false;
-      OnHold(true, false);
-    }
-
     // They did not offer anything, so it behooves us to do so: RFC 3261, para 14.2
     PTRACE(3, "SIP\tRemote did not offer media, so we will.");
     return OnSendOfferSDP(sdpOut, false);
@@ -949,17 +943,11 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
 
   // The Re-INVITE can be sent to change the RTP Session parameters,
   // the current codecs, or to put the call on hold
-  if (sdp->IsHold()) {
-    PTRACE(3, "SIP\tRemote hold detected");
-    m_holdFromRemote = true;
-    OnHold(true, true);
-  }
-  else if (m_holdFromRemote) {
-    // If we receive a consecutive reinvite without the SendOnly
-    // parameter, then we are not on hold anymore
-    PTRACE(3, "SIP\tRemote retrieve from hold detected");
-    m_holdFromRemote = false;
-    OnHold(true, false);
+  bool holdFromRemote = sdp->IsHold();
+  if (m_holdFromRemote != holdFromRemote) {
+    PTRACE(3, "SIP\tRemote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
+    m_holdFromRemote = holdFromRemote;
+    OnHold(true, holdFromRemote);
   }
 
   return OnSendAnswerSDP(*sdp, sdpOut);
@@ -3279,7 +3267,12 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * tra
   m_answerFormatList = sdp->GetMediaFormats();
   AdjustMediaFormats(false, NULL, m_answerFormatList);
 
-  m_holdFromRemote = sdp->IsHold();
+  bool holdFromRemote = sdp->IsHold();
+  if (m_holdFromRemote != holdFromRemote) {
+    PTRACE(3, "SIP\tRemote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
+    m_holdFromRemote = holdFromRemote;
+    OnHold(true, holdFromRemote);
+  }
 
   unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();
 
