@@ -617,22 +617,43 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       contentRole = preselectedFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
     if (contentRole != OpalVideoFormat::eNoRole) {
       PTRACE(4, "Call\tContent Role " << contentRole << traceText);
-      // Remove all media formats no supporting the role
-      OpalMediaFormatList * lists[2] = { &sourceMediaFormats, &sinkMediaFormats };
+
+      bool noDefaultMainRole = contentRole != OpalVideoFormat::eMainRole;
+
+      // Remove all media formats not supporting the role
+      OpalMediaFormatList * oldLists[2] = { &sourceMediaFormats, &sinkMediaFormats };
+      OpalMediaFormatList newLists[2];
       for (PINDEX i = 0; i < 2; i++) {
-        OpalMediaFormatList::iterator format = lists[i]->begin();
-        while (format != lists[i]->end()) {
-          if ( format->GetMediaType() != mediaType ||
-              (format->IsTransportable() &&
-              (format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption())&OpalVideoFormat::ContentRoleBit(contentRole)) == 0))
-            *lists[i] -= *format++;
-          else
-            ++format;
+        for (OpalMediaFormatList::iterator format = oldLists[i]->begin(); format != oldLists[i]->end(); ++format) {
+          if (format->GetMediaType() != mediaType)
+            continue;
+
+          if (!format->IsTransportable()) {
+            newLists[i] += *format;
+            continue;
+          }
+
+          unsigned mask = format->GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
+          if (mask != 0)
+            noDefaultMainRole = true;
+
+          if ((mask&OpalVideoFormat::ContentRoleBit(contentRole)) != 0)
+            newLists[i] += *format;
         }
-        if (lists[i]->IsEmpty()) {
+      }
+
+      if (noDefaultMainRole) {
+        if (newLists[0].IsEmpty() || newLists[1].IsEmpty()) {
           PTRACE(2, "Call\tUnsupported Content Role " << contentRole << traceText);
           return false;
         }
+
+        sourceMediaFormats = newLists[0];
+        sinkMediaFormats = newLists[1];
+      }
+      else {
+        PTRACE(4, "Call\tDefault main content role used " << traceText);
+        contentRole = OpalVideoFormat::eNoRole;
       }
     }
 #endif
