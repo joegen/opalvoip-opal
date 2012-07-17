@@ -378,7 +378,7 @@ PBoolean OpalConnection::SetUpConnection()
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
     if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
+      Release(EndedByNoUser);
       return false;
     }
 

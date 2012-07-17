@@ -674,7 +674,7 @@ class OpalConnection : public PSafeObject
        this you can obtain the name of the caller by using the function
        OpalConnection::GetRemotePartyName().
 
-       The default behaviour calls the OpalManager function of the same name.
+       The default behaviour calls the OpalEndPoint function of the same name.
 
        Note that the most explicit version of this override is made pure, so as to force 
        descendant classes to implement it. This will only affect code that implements new
