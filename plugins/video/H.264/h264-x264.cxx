@@ -626,7 +626,7 @@ public:
     unsigned maxFrameSizeInMB;
     unsigned maxBitRate;
 
-    if (original["Protocol"] == "H.323") {
+    if (original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_H323) {
       unsigned h241profiles = String2Unsigned(original[H241Profiles.m_name]);
       while (--profileIndex > 0) {
         if ((h241profiles&ProfileInfo[profileIndex].m_H241) != 0)
@@ -643,7 +643,7 @@ public:
       maxFrameSizeInMB = String2Unsigned(original[MaxFS_H241.m_name])*256;
       maxBitRate = String2Unsigned(original[MaxBR_H241.m_name])*25000;
     }
-    else {
+    else if (original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_SIP) {
       std::string sdpProfLevel = original[SDPProfileAndLevel.m_name];
       if (sdpProfLevel.length() < 6) {
         PTRACE(1, MY_CODEC_LOG, "SDP profile-level-id field illegal.");
@@ -678,6 +678,23 @@ public:
       maxMBPS = String2Unsigned(original[MaxMBPS_SDP.m_name]);
       maxFrameSizeInMB = String2Unsigned(original[MaxFS_SDP.m_name]);
       maxBitRate = String2Unsigned(original[MaxBR_SDP.m_name])*1000;
+    }
+    else {
+      std::string profileName = original[Profile.m_name];
+      while (--profileIndex > 0) {
+        if (profileName == ProfileInfo[profileIndex].m_Name)
+          break;
+      }
+
+      std::string levelName = original[Level.m_name];
+      for (; levelIndex < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; ++levelIndex) {
+        if (levelName == LevelInfo[levelIndex].m_Name)
+          break;
+      }
+
+      maxMBPS = 0;
+      maxFrameSizeInMB = 0;
+      maxBitRate = 0;
     }
 
     Change(ProfileInfo[profileIndex].m_Name, original, changed, Profile.m_name); 
@@ -788,7 +805,7 @@ public:
 
   virtual bool IsValidForProtocol(const char * protocol)
   {
-    return (strcasecmp(protocol, "SIP") == 0) == m_sipOnly;
+    return (strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0) == m_sipOnly;
   }
 }; 
 

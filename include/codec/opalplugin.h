@@ -318,6 +318,9 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF "Temporal Spatial Trade Off"
 #define PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD        "Tx Key Frame Period"
 
+#define PLUGINCODEC_OPTION_PROTOCOL      "Protocol"
+#define PLUGINCODEC_OPTION_PROTOCOL_H323 "H.323"
+#define PLUGINCODEC_OPTION_PROTOCOL_SIP  "SIP"
 
 
 // Full definition of the codec
