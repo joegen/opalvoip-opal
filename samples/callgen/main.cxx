@@ -61,7 +61,9 @@ void CallGen::Main()
              "l-listen."
              "m-max:"
              "O-out-msg:"
+#if PTRACING
              "o-output:"
+#endif
              "P-prefer:"
              "p-password:"
              "q-quiet."
@@ -69,7 +71,9 @@ void CallGen::Main()
              "-require-gatekeeper."
              "S-stun:"
              "T-h245tunneldisable."
+#if PTRACING
              "t-trace."
+#endif
              "-tmaxest:"
              "-tmincall:"
              "-tmaxcall:"
@@ -94,8 +98,6 @@ void CallGen::Main()
             "  -m --max num          Maximum number of simultaneous calls\n"
             "  -r --repeat num       Repeat calls n times\n"
             "  -C --cycle            Each simultaneous call cycles through destination list\n"
-            "  -t --trace            Trace enable (use multiple times for more detail)\n"
-            "  -o --output file      Specify filename for trace output [stdout]\n"
             "  -S --stun server      Specify Host/addres of STUN server\n"
             "  --sip-interface addr  Specify IP address and port listen on for SIP [*:5060]\n"
             "  --h323-interface addr Specify IP address and port listen on for H.323 [*:1720]\n"
@@ -122,6 +124,10 @@ void CallGen::Main()
             "  --tmaxcall secs       Maximum call duration in seconds [60]\n"
             "  --tminwait secs       Minimum interval between calls in seconds [10]\n"
             "  --tmaxwait secs       Maximum interval between calls in seconds [30]\n"
+#if PTRACING
+            "  -t --trace            Trace enable (use multiple times for more detail)\n"
+            "  -o --output file      Specify filename for trace output [stdout]\n"
+#endif
             "\n"
             "Notes:\n"
             "  If --tmaxest is set a non-zero value then --tmincall is the time to leave\n"
