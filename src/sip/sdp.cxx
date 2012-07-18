@@ -41,6 +41,7 @@
 
 #include <ptlib/socket.h>
 #include <opal/transports.h>
+#include <codec/opalplugin.h>
 #include <rtp/srtp_session.h>
 
 
@@ -385,7 +386,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 
 bool SDPMediaFormat::PreEncode()
 {
-  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
+  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
   m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
   return m_mediaFormat.ToCustomisedOptions();
 }
@@ -441,7 +442,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
     m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
 
-  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), "SIP");
+  m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
   if (m_mediaFormat.ToNormalisedOptions())
     return true;
 
