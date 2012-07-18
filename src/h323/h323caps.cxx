@@ -182,7 +182,7 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString &
 
 PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
 {
-  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
+  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToCustomisedOptions();
 }
 
@@ -219,14 +219,14 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
       capabilityDirection = e_NoDirection;
   }
 
-  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
+  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToNormalisedOptions();
 }
 
 
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
 {
-  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), "H.323");
+  GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToNormalisedOptions();
 }
 
@@ -1375,6 +1375,7 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
       if (capability.IsMatch(vidCap, PString::Empty()) && capability.OnReceivedPDU(vidCap, type)) {
         OpalMediaFormat mediaFormat = capability.GetMediaFormat();
         mediaFormat.SetOptionInteger(OpalVideoFormat::ContentRoleMaskOption(), roleMask);
+        mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
         if (mediaFormat.ToNormalisedOptions())
           m_videoFormats += mediaFormat;
       }
