@@ -224,11 +224,10 @@ class OpalJitterBufferThread : public OpalJitterBuffer
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     ) = 0;
 
+    void StartThread();
+
   protected:
     PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
-
-    /// Internal function to be called from derived class constructor
-    void StartThread();
 
     /// Internal function to be called from derived class destructor
     void WaitForThreadTermination();
