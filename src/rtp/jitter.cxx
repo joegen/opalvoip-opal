@@ -669,7 +669,6 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, time, packetSize),
     m_session(sess)
 {
-  StartThread();
 }
 
 
