@@ -225,7 +225,7 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   unsigned maxFrameSizeInMB;
   unsigned maxBitRate;
 
-  if (original["Protocol"] == "H.323") {
+  if (original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_H323) {
     unsigned h241profiles = original.GetUnsigned(H241ProfilesName);
     while (--profileIndex > 0) {
       if ((h241profiles&ProfileInfo[profileIndex].m_H241) != 0)
@@ -248,7 +248,7 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     PluginCodec_Utilities::Change(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name); 
     PluginCodec_Utilities::Change((maxBitRate+999)/1000, original, changed, MaxBR_SDP_Name); 
   }
-  else {
+  else if (original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_SIP) {
     std::string sdpProfLevel = original[SDPProfileAndLevelName];
     if (sdpProfLevel.length() < 6) {
       PTRACE(1, MY_CODEC_LOG, "SDP profile-level-id field illegal.");
@@ -279,7 +279,6 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
       if ((sdpConstraints & 0x10) == LevelInfo[levelIndex].m_constraints)
         break;
     }
-
     maxMBPS = original.GetUnsigned(MaxMBPS_SDP_Name);
     maxSMBPS = original.GetUnsigned(MaxSMBPS_SDP_Name);
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_SDP_Name);
@@ -289,6 +288,23 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     PluginCodec_Utilities::Change((maxSMBPS+499)/500, original, changed, MaxSMBPS_H241_Name); 
     PluginCodec_Utilities::Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name); 
     PluginCodec_Utilities::Change((maxBitRate+24999)/25000, original, changed, MaxBR_H241_Name); 
+  }
+  else {
+    std::string profileName = original[ProfileName];
+    while (--profileIndex > 0) {
+      if (profileName == ProfileInfo[profileIndex].m_Name)
+        break;
+    }
+
+    std::string levelName = original[LevelName];
+    for (; levelIndex < sizeof(LevelInfo)/sizeof(LevelInfo[0])-1; ++levelIndex) {
+      if (levelName == LevelInfo[levelIndex].m_Name)
+        break;
+    }
+
+    maxMBPS = 0;
+    maxFrameSizeInMB = 0;
+    maxBitRate = 0;
   }
 
   PluginCodec_Utilities::Change(ProfileInfo[profileIndex].m_Name, original, changed, ProfileName); 
