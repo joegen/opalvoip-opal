@@ -829,6 +829,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
     else {
       m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, m_timeUnits, packetSize);
       PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
+      m_jitterBuffer->StartThread();
     }
   }
 }
