@@ -1403,7 +1403,7 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 
   unsigned exponent = 0;
   unsigned mantissa = maxBitRate;
-  while (maxBitRate >= 0x20000) {
+  while (mantissa >= 0x20000) {
     mantissa >>= 1;
     ++exponent;
   }
