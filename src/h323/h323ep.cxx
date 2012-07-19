@@ -978,14 +978,12 @@ PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & to
   if (connnection != NULL)
     return connnection;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, mode); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     connnection = PSafePtrCast<OpalConnection, H323Connection>(conn);
-    if(connnection != NULL) {      //cast success
-      if (connnection->GetCallIdentifier().AsString() == token)
-        return connnection;
-      if (connnection->GetConferenceIdentifier().AsString() == token)
-        return connnection;
-    }
+    if (  connnection != NULL &&
+         (connnection->GetCallIdentifier().AsString() == token ||
+          connnection->GetConferenceIdentifier().AsString() == token))
+      return connnection.SetSafetyMode(mode) ? connnection : NULL;
   }
 
   return NULL;
