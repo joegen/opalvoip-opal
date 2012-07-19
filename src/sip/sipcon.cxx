@@ -3014,9 +3014,23 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.GetMIME().SetTo(m_dialog.GetLocalURI());
   request.SendResponse(GetTransport(), response);
-  
-  if (!IsOriginating())
-    Release(EndedByCallerAbort);
+
+  if (IsOriginating())
+    return;
+
+  CallEndReason endReason = EndedByCallerAbort;
+  PString strReason = request.GetMIME().GetString("Reason");
+  if (!strReason.IsEmpty()) {
+    static const char cause[] = "cause=";
+    PINDEX pos = strReason.Find(cause);
+    if (pos != P_MAX_INDEX) {
+      pos += sizeof(cause)-1;
+      if (strReason(pos, strReason.Find(';', pos)-1) == "200")
+        endReason = EndedByCallCompletedElsewhere;
+    }
+  }
+
+  Release(endReason);
 }
 
 
