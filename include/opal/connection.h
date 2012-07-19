@@ -390,6 +390,7 @@ class OpalConnection : public PSafeObject
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
       EndedByGkAdmissionFailed,    /// Call cleared because gatekeeper admission request failed.
       EndedByMediaFailed,          /// Call cleared due to loss of media flow.
+      EndedByCallCompletedElsewhere,/// Call cleared because it was answered by another extension.
       NumCallEndReasons
     };
 
