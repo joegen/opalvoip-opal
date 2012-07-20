@@ -120,7 +120,10 @@ class CallGen : public PProcess
 
   public:
     CallGen();
-    void Main();
+
+    virtual void Main();
+    virtual bool OnInterrupt(bool);
+
     static CallGen & Current() { return (CallGen&)PProcess::Current(); }
 
     MyManager  m_manager;
@@ -134,9 +137,7 @@ class CallGen : public PProcess
     bool       m_quietMode;
     PMutex     m_coutMutex;
 
-    PDECLARE_NOTIFIER(PThread, CallGen, Cancel);
-    PConsoleChannel m_console;
-
+    PSyncPoint     m_completed;
     CallThreadList m_threadList;
 };
 
