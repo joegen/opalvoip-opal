@@ -621,7 +621,7 @@ OpalJitterBufferThread::~OpalJitterBufferThread()
 }
 
 
-void OpalJitterBufferThread::StartThread()
+void OpalJitterBufferThread::Start()
 {
   m_bufferMutex.Wait();
 

@@ -86,6 +86,9 @@ class OpalJitterBuffer : public PSafeObject
 
   /**@name Operations */
   //@{
+    /// Start jitter buffer.
+    virtual void Start() { }
+
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
@@ -210,6 +213,9 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     );
     ~OpalJitterBufferThread();
 
+    /// Start jiter buffer
+    virtual void Start();
+
     /**Read a data frame from the jitter buffer.
        This function never blocks. If no data is available, an RTP packet
        with zero payload size is returned.
@@ -230,9 +236,6 @@ class OpalJitterBufferThread : public OpalJitterBuffer
 
   protected:
     PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
-
-    /// Internal function to be called from derived class constructor
-    void StartThread();
 
     /// Internal function to be called from derived class destructor
     void WaitForThreadTermination();
