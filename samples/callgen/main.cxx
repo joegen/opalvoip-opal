@@ -38,6 +38,7 @@ PCREATE_PROCESS(CallGen);
 
 CallGen::CallGen()
   : PProcess("Equivalence", "CallGen", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
+  , m_running(true)
   , m_totalAttempts(0)
   , m_totalEstablished(0)
   , m_quietMode(false)
@@ -105,7 +106,7 @@ void CallGen::Main()
 
   PAssert(result != PArgList::ParseInvalidOptions, PInvalidParameter);
 
-  if (args.HasOption('h') || (result == PArgList::ParseNoArguments && !args.HasOption('l'))) {
+  if (args.HasOption('h') || result < 0 || (result == PArgList::ParseNoArguments && !args.HasOption('l'))) {
     cout << "Usage:\n"
             "  " << GetFile().GetTitle() << " [options] --listen\n"
             "  " << GetFile().GetTitle() << " [options] destination [ destination ... ]\n";
@@ -331,7 +332,6 @@ void CallGen::Main()
   if (args.HasOption('l')) {
     m_manager.AddRouteEntry(".*\t.* = ivr:"); // Everything goes to IVR
     cout << "Endpoint is listening for incoming calls, press ^C to exit.\n";
-    m_completed.Wait();
   }
   else {
     CallParams params(*this);
@@ -381,12 +381,12 @@ void CallGen::Main()
       }
     }
 
-    while (!m_completed.Wait(1000)) {
+    while (m_running) {
       m_threadEnded.Wait();
 
       finished = true;
       for (PINDEX i = 0; i < m_threadList.GetSize(); i++) {
-        if (!m_threadList[i].IsTerminated()) {
+        if (m_threadList[i].m_running) {
           finished = false;
           break;
         }
@@ -415,15 +415,13 @@ void CallGen::Main()
   if (m_totalAttempts > 0)
     cout << "Total calls: " << m_totalAttempts
          << " attempted, " << m_totalEstablished << " established\n";
-
-  m_manager.ShutDownEndpoints();
 }
 
 
 bool CallGen::OnInterrupt(bool)
 {
-  
-  m_completed.Signal();
+  m_running = false;
+  m_threadEnded.Signal();
   return true;
 }
 
@@ -435,6 +433,7 @@ CallThread::CallThread(unsigned index, const PStringArray & destinations, const 
   , m_destinations(destinations)
   , m_index(index)
   , m_params(params)
+  , m_running(true)
 {
   Resume();
 }
@@ -478,79 +477,79 @@ void CallThread::Main()
 
   if (m_exit.Wait(delay)) {
     PTRACE(2, "CallGen\tAborted thread " << m_index);
-    callgen.m_threadEnded.Signal();
-    return;
   }
+  else {
+    // Loop "repeat" times for (repeat > 0), or loop forever for (repeat == 0)
+    unsigned count = 1;
+    do {
+      PString destination = m_destinations[(m_index-1 + count-1)%m_destinations.GetSize()];
 
-  // Loop "repeat" times for (repeat > 0), or loop forever for (repeat == 0)
-  unsigned count = 1;
-  do {
-    PString destination = m_destinations[(m_index-1 + count-1)%m_destinations.GetSize()];
+      // trigger a call
+      PString token;
+      PTRACE(1, "CallGen\tMaking call to " << destination);
+      unsigned totalAttempts = ++callgen.m_totalAttempts;
+      if (!callgen.m_manager.SetUpCall("ivr:*", destination, token, this))
+        OUTPUT(m_index, token, "Failed to start call to " << destination)
+      else {
+        bool stopping = false;
 
-    // trigger a call
-    PString token;
-    PTRACE(1, "CallGen\tMaking call to " << destination);
-    unsigned totalAttempts = ++callgen.m_totalAttempts;
-    if (!callgen.m_manager.SetUpCall("ivr:*", destination, token, this))
-      OUTPUT(m_index, token, "Failed to start call to " << destination)
-    else {
-      bool stopping = false;
+        delay = RandomRange(rand, m_params.tmin_call, m_params.tmax_call);
+        PTRACE(1, "CallGen\tMax call time " << delay);
 
-      delay = RandomRange(rand, m_params.tmin_call, m_params.tmax_call);
-      PTRACE(1, "CallGen\tMax call time " << delay);
+        START_OUTPUT(m_index, token) << "Making call " << count;
+        if (m_params.repeat)
+          cout << " of " << m_params.repeat;
+        cout << " (total=" << totalAttempts<< ") for " << delay << " seconds to " << destination;
+        END_OUTPUT();
 
-      START_OUTPUT(m_index, token) << "Making call " << count;
-      if (m_params.repeat)
-        cout << " of " << m_params.repeat;
-      cout << " (total=" << totalAttempts<< ") for " << delay << " seconds to " << destination;
-      END_OUTPUT();
+        if (m_params.tmax_est > 0) {
+          OUTPUT(m_index, token, "Waiting " << m_params.tmax_est << " seconds for establishment");
+          PTRACE(1, "CallGen\tWaiting " << m_params.tmax_est << " seconds for establishment");
 
-      if (m_params.tmax_est > 0) {
-        OUTPUT(m_index, token, "Waiting " << m_params.tmax_est << " seconds for establishment");
-        PTRACE(1, "CallGen\tWaiting " << m_params.tmax_est << " seconds for establishment");
-
-        PTimer timeout = m_params.tmax_est;
-        while (!callgen.m_manager.IsCallEstablished(token)) {
-          stopping = m_exit.Wait(100);
-          if (stopping || !timeout.IsRunning() || !callgen.m_manager.HasCall(token)) {
-            PTRACE(1, "CallGen\tTimeout/Stopped on establishment");
-            delay = 0;
-            break;
+          PTimer timeout = m_params.tmax_est;
+          while (!callgen.m_manager.IsCallEstablished(token)) {
+            stopping = m_exit.Wait(100);
+            if (stopping || !timeout.IsRunning() || !callgen.m_manager.HasCall(token)) {
+              PTRACE(1, "CallGen\tTimeout/Stopped on establishment");
+              delay = 0;
+              break;
+            }
           }
         }
+
+        if (delay > 0) {
+          // wait for a random time
+          PTRACE(1, "CallGen\tWaiting for " << delay);
+          stopping = m_exit.Wait(delay);
+        }
+
+        // end the call
+        OUTPUT(m_index, token, "Clearing call");
+        PTRACE(1, "CallGen\tClearing call");
+
+        callgen.m_manager.ClearCallSynchronous(token);
+
+        if (stopping)
+          break;
       }
 
-      if (delay > 0) {
-        // wait for a random time
-        PTRACE(1, "CallGen\tWaiting for " << delay);
-        stopping = m_exit.Wait(delay);
-      }
-
-      // end the call
-      OUTPUT(m_index, token, "Clearing call");
-      PTRACE(1, "CallGen\tClearing call");
-
-      callgen.m_manager.ClearCallSynchronous(token);
-
-      if (stopping)
+      count++;
+      if (m_params.repeat > 0 && count > m_params.repeat)
         break;
-    }
 
-    count++;
-    if (m_params.repeat > 0 && count > m_params.repeat)
-      break;
+      // wait for a random delay
+      delay = RandomRange(rand, m_params.tmin_wait, m_params.tmax_wait);
+      OUTPUT(m_index, PString::Empty(), "Delaying for " << delay << " seconds");
 
-    // wait for a random delay
-    delay = RandomRange(rand, m_params.tmin_wait, m_params.tmax_wait);
-    OUTPUT(m_index, PString::Empty(), "Delaying for " << delay << " seconds");
+      PTRACE(1, "CallGen\tDelaying for " << delay);
+      // wait for a random time
+    } while (!m_exit.Wait(delay));
 
-    PTRACE(1, "CallGen\tDelaying for " << delay);
-    // wait for a random time
-  } while (!m_exit.Wait(delay));
+    OUTPUT(m_index, PString::Empty(), "Completed call set.");
+    PTRACE(2, "CallGen\tFinished thread " << m_index);
+  }
 
-  OUTPUT(m_index, PString::Empty(), "Completed call set.");
-  PTRACE(2, "CallGen\tFinished thread " << m_index);
-
+  m_running = false;
   callgen.m_threadEnded.Signal();
 }
 
