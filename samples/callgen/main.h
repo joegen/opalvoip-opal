@@ -59,7 +59,13 @@ class MyManager : public OpalManager
     PCLASSINFO(MyManager, OpalManager);
   public:
     MyManager()
-      { }
+    {
+    }
+
+    ~MyManager()
+    {
+      ShutDownEndpoints();
+    }
 
     virtual OpalCall * CreateCall(void * userData);
 
@@ -106,6 +112,7 @@ class CallThread : public PThread
     PStringArray m_destinations;
     unsigned     m_index;
     CallParams   m_params;
+    bool         m_running;
     PSyncPoint   m_exit;
 };
 
@@ -132,12 +139,12 @@ class CallGen : public PProcess
     PTextFile  m_cdrFile;
 
     PSyncPoint m_threadEnded;
+    bool       m_running;
     unsigned   m_totalAttempts;
     unsigned   m_totalEstablished;
     bool       m_quietMode;
     PMutex     m_coutMutex;
 
-    PSyncPoint     m_completed;
     CallThreadList m_threadList;
 };
 
