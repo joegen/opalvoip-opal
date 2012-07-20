@@ -36,16 +36,19 @@ class MyCall : public OpalCall
   public:
     MyCall(MyManager & manager, CallThread * caller);
 
+    virtual void OnNewConnection(OpalConnection & connection);
     virtual void OnEstablishedCall();
-    virtual void OnReleased(OpalConnection & connection);
-    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnCleared();
 
-    MyManager          & manager;
-    unsigned             index;
-    PTime                openedTransmitMedia;
-    PTime                openedReceiveMedia;
-    PTime                receivedMedia;
-    OpalTransportAddress mediaGateway;
+    void OnOpenMediaStream(OpalMediaStream & stream);
+
+    MyManager          & m_manager;
+    unsigned             m_index;
+    PString              m_callIdentifier;
+    PTime                m_openedTransmitMedia;
+    PTime                m_openedReceiveMedia;
+    PTime                m_receivedMedia;
+    OpalTransportAddress m_mediaGateway;
 };
 
 
@@ -100,10 +103,10 @@ class CallThread : public PThread
     void Main();
     void Stop();
 
-    PStringArray destinations;
-    unsigned     index;
-    CallParams   params;
-    PSyncPoint   exit;
+    PStringArray m_destinations;
+    unsigned     m_index;
+    CallParams   m_params;
+    PSyncPoint   m_exit;
 };
 
 PLIST(CallThreadList, CallThread);
@@ -120,20 +123,21 @@ class CallGen : public PProcess
     void Main();
     static CallGen & Current() { return (CallGen&)PProcess::Current(); }
 
-    MyManager  manager;
+    MyManager  m_manager;
     PURL       m_outgoingMessageFile;
-    PString    incomingAudioDirectory;
-    PTextFile  cdrFile;
+    PString    m_incomingAudioDirectory;
+    PTextFile  m_cdrFile;
 
-    PSyncPoint threadEnded;
-    unsigned   totalAttempts;
-    unsigned   totalEstablished;
-    bool       quietMode;
-    PMutex     coutMutex;
+    PSyncPoint m_threadEnded;
+    unsigned   m_totalAttempts;
+    unsigned   m_totalEstablished;
+    bool       m_quietMode;
+    PMutex     m_coutMutex;
 
     PDECLARE_NOTIFIER(PThread, CallGen, Cancel);
-    PConsoleChannel console;
-    CallThreadList threadList;
+    PConsoleChannel m_console;
+
+    CallThreadList m_threadList;
 };
 
 
