@@ -57,6 +57,7 @@
 OpalCall::OpalCall(OpalManager & mgr)
   : manager(mgr)
   , myToken(mgr.GetNextToken('C'))
+  , m_networkOriginated(false)
   , m_establishedTime(0)
   , m_isEstablished(false)
   , m_isClearing(false)
@@ -139,7 +140,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
       return;
     }
 
-  m_isClearing = true;
+    m_isClearing = true;
 
     SetCallEndReason(reason);
 
@@ -204,6 +205,9 @@ void OpalCall::OnCleared()
 
 void OpalCall::OnNewConnection(OpalConnection & connection)
 {
+  if (connectionsActive.GetSize() == 1)
+    m_networkOriginated = connection.IsNetworkConnection();
+
   manager.OnNewConnection(connection);
   SetPartyNames();
 }
@@ -912,13 +916,6 @@ void OpalCall::OnRecordVideo(const PString & streamId, const RTP_DataFrame & fra
 #endif
 
 
-bool OpalCall::IsNetworkOriginated() const
-{
-  PSafePtr<OpalConnection> connection = PSafePtr<OpalConnection>(connectionsActive, PSafeReadOnly);
-  return connection == NULL || connection->IsNetworkConnection();
-}
-
-
 void OpalCall::SetPartyNames()
 {
   PSafeLockReadWrite lock(*this);
@@ -930,10 +927,14 @@ void OpalCall::SetPartyNames()
     return;
 
   bool networkA = connectionA->IsNetworkConnection();
-  if (networkA)
+  if (networkA) {
     m_partyA = connectionA->GetRemotePartyURL();
-  if (!networkA || m_partyA.IsEmpty())
+    m_nameA = connectionA->GetRemotePartyName();
+  }
+  if (!networkA || m_partyA.IsEmpty()) {
     m_partyA = connectionA->GetLocalPartyURL();
+    m_nameA = connectionA->GetLocalPartyName();
+  }
 
   PSafePtr<OpalConnection> connectionB = connectionsActive.GetAt(1, PSafeReadOnly);
   if (connectionB == NULL)
@@ -943,14 +944,18 @@ void OpalCall::SetPartyNames()
     if (!networkA)
       connectionA->CopyPartyNames(*connectionB);
     m_partyB = connectionB->GetRemotePartyURL();
+    m_nameB = connectionB->GetRemotePartyName();
   }
   else {
     if (networkA) {
       connectionB->CopyPartyNames(*connectionA);
-      m_partyB = connectionA->GetCalledPartyURL();
+      PString dest = connectionA->GetDestinationAddress();
+      if (!dest.IsEmpty() && dest != "*")
+        m_partyB = connectionA->GetCalledPartyURL();
     }
     if (m_partyB.IsEmpty())
       m_partyB = connectionB->GetLocalPartyURL();
+    m_nameB = connectionB->GetLocalPartyName();
   }
 }
 
