@@ -986,34 +986,33 @@ PString H460_FeatureOID::GetBase()
 
 /////////////////////////////////////////////////////////////////////
 H460_FeatureSet::H460_FeatureSet()
+  : m_endpoint(NULL)
+  , m_baseSet(NULL)
 {
-  ep = NULL;
-  baseSet = NULL;
 }
 
 H460_FeatureSet::H460_FeatureSet(H460_FeatureSet * _base)
+  : m_endpoint(NULL)
+  , m_baseSet(NULL)
 {
-  Features.DisallowDeleteObjects();   // Derived FeatureSets should not delete Objects.
   AttachBaseFeatureSet(_base);
   AttachEndPoint(_base->GetEndPoint());
 }
 
 H460_FeatureSet::H460_FeatureSet(const H225_FeatureSet & fs)
+  : m_endpoint(NULL)
+  , m_baseSet(NULL)
 {
-  Features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
-  ep = NULL;
-  baseSet = NULL;
   CreateFeatureSet(fs);
 }
 
 H460_FeatureSet::H460_FeatureSet(const H225_ArrayOf_GenericData & genericData)
+  : m_endpoint(NULL)
+  , m_baseSet(NULL)
 {
-  Features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
-  ep = NULL;
-  baseSet = NULL;
-
+  m_features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
   for (PINDEX i=0; i < genericData.GetSize(); i++)
-    AddFeature((H460_Feature *)&genericData[i]);
+    AddFeature(genericData[i].CloneAs<H460_Feature>());
 }
 
 
@@ -1024,8 +1023,8 @@ PBoolean H460_FeatureSet::ProcessFirstPDU(const H225_FeatureSet & fs)
   H460_FeatureSet remote = H460_FeatureSet(fs);
 
   /// Remove the features the remote does not support.
-  H460_Features::iterator it = Features.begin();
-  while (it != Features.end()) {
+  H460_Features::iterator it = m_features.begin();
+  while (it != m_features.end()) {
     H460_FeatureID id = it->second.GetFeatureID();
     ++it; // Must be before RemoveFeature
     if (remote.HasFeature(id))
@@ -1044,21 +1043,21 @@ PBoolean H460_FeatureSet::CreateFeatureSet(const H225_FeatureSet & fs)
   if (fs.HasOptionalField(H225_FeatureSet::e_neededFeatures)) {
     const H225_ArrayOf_FeatureDescriptor & fsn = fs.m_neededFeatures;
     for (PINDEX i=0; i < fsn.GetSize(); i++) {
-      AddFeature((H460_Feature *)&fsn[i]);
+      AddFeature(fsn[i].CloneAs<H460_Feature>());
     }
   }
 
   if (fs.HasOptionalField(H225_FeatureSet::e_desiredFeatures)) {
     const H225_ArrayOf_FeatureDescriptor & fsd = fs.m_desiredFeatures;
     for (PINDEX i=0; i < fsd.GetSize(); i++) {
-      AddFeature((H460_Feature *)&fsd[i]);
+      AddFeature(fsd[i].CloneAs<H460_Feature>());
     }
   }
 
   if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
     const H225_ArrayOf_FeatureDescriptor & fss = fs.m_supportedFeatures; 
     for (PINDEX i=0; i < fss.GetSize(); i++) {
-      AddFeature((H460_Feature *)&fss[i]);
+      AddFeature(fss[i].CloneAs<H460_Feature>());
     }
   }
   return TRUE;
@@ -1068,26 +1067,26 @@ PBoolean H460_FeatureSet::CreateFeatureSet(const H225_FeatureSet & fs)
 PBoolean H460_FeatureSet::LoadFeatureSet(int inst, H323Connection * con)
 {
 
-  if ((ep) && (ep->FeatureSetDisabled()))
+  if (m_endpoint != NULL && m_endpoint->FeatureSetDisabled())
     return FALSE;
 
   PStringList features = H460_Feature::GetFeatureNames();
 
   for (PINDEX i = 0; i < features.GetSize(); i++) {
-    if ((ep) && (!ep->OnFeatureInstance(inst,features[i]))) {
+    if (m_endpoint && !m_endpoint->OnFeatureInstance(inst,features[i])) {
       PTRACE(4,"H460\tFeature " << features[i] << " disabled due to policy.");
       continue;
     } 
     H460_FeatureID id;
     H460_Feature * feat = NULL;
-    if (baseSet && baseSet->HasFeature(features[i])) {
-      H460_Feature * tempfeat = baseSet->GetFeature(features[i]);
+    if (m_baseSet && m_baseSet->HasFeature(features[i])) {
+      H460_Feature * tempfeat = m_baseSet->GetFeature(features[i]);
       if ((tempfeat->GetPurpose() >= inst) && (tempfeat->GetPurpose() < inst*2)) 
-        feat = tempfeat;
+        feat = tempfeat->CloneAs<H460_Feature>();
     } else {
       feat = H460_Feature::CreateFeature(features[i],inst);
-      if ((feat) && (ep)) 
-        feat->AttachEndPoint(ep);
+      if ((feat) && m_endpoint) 
+        feat->AttachEndPoint(m_endpoint);
     }
 
     if (feat) {
@@ -1104,13 +1103,10 @@ PBoolean H460_FeatureSet::LoadFeatureSet(int inst, H323Connection * con)
 
 PBoolean H460_FeatureSet::LoadFeature(const PString & featid)
 {
-
   H460_Feature * newfeat = H460_Feature::CreateFeature(featid);
-
-  if (newfeat != NULL)
-    return AddFeature(newfeat);
-  else
-    return FALSE;
+  if (newfeat == NULL)
+    return false;
+  return AddFeature(newfeat);
 }
 
 H460_FeatureSet * H460_FeatureSet::DeriveNewFeatureSet()
@@ -1119,14 +1115,15 @@ H460_FeatureSet * H460_FeatureSet::DeriveNewFeatureSet()
 }
 
 
-PBoolean H460_FeatureSet::AddFeature(H460_Feature * Nfeat)
+PBoolean H460_FeatureSet::AddFeature(H460_Feature * feat)
 {
+  if (feat == NULL)
+    return false;
 
-  PTRACE(4, "H460\tLoaded " << Nfeat->GetFeatureIDAsString());
-
-  return Features.SetAt(Nfeat->GetFeatureID(),Nfeat);
-
+  PTRACE(4, "H460\tLoaded " << feat->GetFeatureIDAsString());
+  return m_features.SetAt(feat->GetFeatureID(), feat);
 }
+
 
 void H460_FeatureSet::RemoveFeature(H460_FeatureID id)
 {
@@ -1145,7 +1142,7 @@ void H460_FeatureSet::RemoveFeature(H460_FeatureID id)
   }
   PTRACE(4, info);
 
-  Features.RemoveAt(id);
+  m_features.RemoveAt(id);
 }
 
 
@@ -1167,7 +1164,7 @@ PBoolean H460_FeatureSet::CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned Mes
 
   PBoolean buildPDU = FALSE;
 
-  for (H460_Features::iterator it = Features.begin(); it != Features.end(); ++it) {    // Iterate thro the features
+  for (H460_Features::iterator it = m_features.begin(); it != m_features.end(); ++it) {    // Iterate thro the features
     H460_Feature & feat = it->second;
     PTRACE(6,"H460\tExamining " << feat.GetFeatureIDAsString());
 
@@ -1259,7 +1256,7 @@ void H460_FeatureSet::ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned Mes
 
   PTRACE(6,"H460\tRead FeatureSet " << PTracePDU(MessageID) << " PDU");
 
-  // Generate Common Set of Features.
+  // Generate Common Set of m_features.
   switch (MessageID) {
   case H460_MessageType::e_gatekeeperRequest:
   case H460_MessageType::e_gatekeeperConfirm:
@@ -1282,7 +1279,7 @@ void H460_FeatureSet::ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned Mes
       ID = GetFeatureIDPDU(fd);
 
       if (HasFeature(ID))
-        ReadFeaturePDU(Features[ID],fd,MessageID);
+        ReadFeaturePDU(m_features[ID],fd,MessageID);
     }
   }
 
@@ -1293,7 +1290,7 @@ void H460_FeatureSet::ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned Mes
       ID = GetFeatureIDPDU(fd);
 
       if (HasFeature(ID))
-        ReadFeaturePDU(Features[ID],fd,MessageID);
+        ReadFeaturePDU(m_features[ID],fd,MessageID);
     }
   }
 
@@ -1304,7 +1301,7 @@ void H460_FeatureSet::ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned Mes
       ID = GetFeatureIDPDU(fd);
 
       if (HasFeature(ID))
-        ReadFeaturePDU(Features[ID],fd,MessageID);
+        ReadFeaturePDU(m_features[ID],fd,MessageID);
     }
   }
 }
@@ -1577,25 +1574,25 @@ PBoolean H460_FeatureSet::SendFeature(unsigned id, H225_FeatureSet & Message)
   return CreateFeatureSetPDU(Message,id);
 }
 
-void H460_FeatureSet::AttachEndPoint(H323EndPoint * _ep) 
+void H460_FeatureSet::AttachEndPoint(H323EndPoint * ep) 
 {
   PTRACE(4,"H460\tEndpoint Attached");
-  ep = _ep;
+  m_endpoint = ep;
 }
 
-void H460_FeatureSet::AttachBaseFeatureSet(H460_FeatureSet * _baseSet)
+void H460_FeatureSet::AttachBaseFeatureSet(H460_FeatureSet * baseSet)
 {
-  baseSet = _baseSet;
+  m_baseSet = baseSet;
 }
 
 PBoolean H460_FeatureSet::HasFeature(const H460_FeatureID & id)
 {
-  return Features.Contains(id);
+  return m_features.Contains(id);
 }
 
 H460_Feature * H460_FeatureSet::GetFeature(const H460_FeatureID & id)
 {
-  return &Features[id];
+  return &m_features[id];
 }
 
 #endif // OPAL_H460
