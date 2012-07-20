@@ -1019,100 +1019,99 @@ class H460_FeatureSet : public PObject
     PCLASSINFO(H460_FeatureSet, PObject);
   public:
 
-	/** Blank Constructor
-	 */
-	H460_FeatureSet();
+    /** Blank Constructor
+    */
+    H460_FeatureSet();
 
-	/** Build a new featureSet from a base featureset
-	 */
-    H460_FeatureSet(H460_FeatureSet * _base);
+    /** Build a new featureSet from a base featureset
+    */
+    H460_FeatureSet(H460_FeatureSet * base);
 
-	/** Build a Feature Set from the contents of a Feature Set PDU
-	 */
-	H460_FeatureSet(const H225_FeatureSet & fs);
+    /** Build a Feature Set from the contents of a Feature Set PDU
+    */
+    H460_FeatureSet(const H225_FeatureSet & fs);
 
     /** Build a FeatureSet from the contents of a generic data field.
-	 */
-	H460_FeatureSet(const H225_ArrayOf_GenericData & genericData);
+    */
+    H460_FeatureSet(const H225_ArrayOf_GenericData & genericData);
 
     /** Derive new Feature Set based on this Feature Set ie Clone this FeatureSet
-	  */
-	H460_FeatureSet * DeriveNewFeatureSet();
+    */
+    H460_FeatureSet * DeriveNewFeatureSet();
 
-	/** Load Entire Feature Sets from PFactory loader
-	   */
-	virtual PBoolean LoadFeatureSet(int inst = H460_Feature::FeatureBase,
-		                                  H323Connection * con = NULL);
+    /** Load Entire Feature Sets from PFactory loader
+    */
+    virtual PBoolean LoadFeatureSet(int inst = H460_Feature::FeatureBase,
+      H323Connection * con = NULL);
 
-	/** Process the first PDU, This will combine the features supported by
-	    the remote and local party to derive a common feature set. This will 
-		remove features that are not supported be the remote.
-	  */
-	PBoolean ProcessFirstPDU(const H225_FeatureSet & fs);
+    /** Process the first PDU, This will combine the features supported by
+    the remote and local party to derive a common feature set. This will 
+    remove features that are not supported be the remote.
+    */
+    PBoolean ProcessFirstPDU(const H225_FeatureSet & fs);
 
-	/**  Create FeatureSet from a FeatureSet PDU
-	  */
-	virtual PBoolean CreateFeatureSet(const H225_FeatureSet & fs);
+    /**  Create FeatureSet from a FeatureSet PDU
+    */
+    virtual PBoolean CreateFeatureSet(const H225_FeatureSet & fs);
 
-	/** Load Feature from id.
-	  */
-	virtual PBoolean LoadFeature(const PString & featid);
-	
-	/** Add a Feature to the Feature Set
-	*/
-	PBoolean AddFeature(H460_Feature * Nfeat);
+    /** Load Feature from id.
+    */
+    virtual PBoolean LoadFeature(const PString & featid);
 
-	/** Remove a Feature from the Feature Set
-	*/
-	void RemoveFeature(H460_FeatureID id);
+    /** Add a Feature to the Feature Set
+    */
+    PBoolean AddFeature(H460_Feature * feat);
 
-	/** Get Feature with id
-	*/
-	H460_Feature * GetFeature(const H460_FeatureID & id);
+    /** Remove a Feature from the Feature Set
+    */
+    void RemoveFeature(H460_FeatureID id);
 
-	/** Determine if the FeatureSet has a particular FeatureID.
-	  */
-	PBoolean HasFeature(const H460_FeatureID & feat);
+    /** Get Feature with id
+    */
+    H460_Feature * GetFeature(const H460_FeatureID & id);
 
-	/** New Processing Paradigm
-		 Main PDU & RAS link to OpenH323
-	*/
-	void ReceiveFeature(unsigned id, const H225_FeatureSet & Message);
+    /** Determine if the FeatureSet has a particular FeatureID.
+    */
+    PBoolean HasFeature(const H460_FeatureID & feat);
 
-	/** New Processing Paradigm
-		 Main PDU & RAS link to OpenH323
-	*/
-	PBoolean SendFeature(unsigned id, H225_FeatureSet & Message);	
+    /** New Processing Paradigm
+    Main PDU & RAS link to OpenH323
+    */
+    void ReceiveFeature(unsigned id, const H225_FeatureSet & Message);
 
-	/** Attach Endpoint
-	*/
-	virtual void AttachEndPoint(H323EndPoint * _ep);
+    /** New Processing Paradigm
+    Main PDU & RAS link to OpenH323
+    */
+    PBoolean SendFeature(unsigned id, H225_FeatureSet & Message);	
 
-	/** Attach Base FeatureSet
-	 */
-	virtual void AttachBaseFeatureSet(H460_FeatureSet * _baseSet);
+    /** Attach Endpoint
+    */
+    virtual void AttachEndPoint(H323EndPoint * ep);
 
-	/** Attach Endpoint to collect Events from
-	  */
-	H323EndPoint * GetEndPoint() { return ep; };
+    /** Attach Base FeatureSet
+    */
+    virtual void AttachBaseFeatureSet(H460_FeatureSet * baseSet);
+
+    /** Attach Endpoint to collect Events from
+    */
+    H323EndPoint * GetEndPoint() { return m_endpoint; };
 
   protected:
 
-   PBoolean CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned MessageID);
+    PBoolean CreateFeatureSetPDU(H225_FeatureSet & fs, unsigned MessageID);
 
-   void ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned MessageID);
+    void ReadFeatureSetPDU(const H225_FeatureSet & fs, unsigned MessageID);
 
-   H460_FeatureID GetFeatureIDPDU(H225_FeatureDescriptor & pdu);
+    H460_FeatureID GetFeatureIDPDU(H225_FeatureDescriptor & pdu);
 
-   PBoolean CreateFeaturePDU(H460_Feature & Feat, H225_FeatureDescriptor & pdu, unsigned MessageID);
-   void ReadFeaturePDU(H460_Feature & Feat, const H225_FeatureDescriptor & pdu, unsigned MessageID);
+    PBoolean CreateFeaturePDU(H460_Feature & Feat, H225_FeatureDescriptor & pdu, unsigned MessageID);
+    void ReadFeaturePDU(H460_Feature & Feat, const H225_FeatureDescriptor & pdu, unsigned MessageID);
 
-   PString PTracePDU(PINDEX id) const;
+    PString PTracePDU(PINDEX id) const;
 
-   H460_Features  Features;
-   H323EndPoint * ep;
-   H460_FeatureSet * baseSet;
-
+    H460_Features     m_features;
+    H323EndPoint    * m_endpoint;
+    H460_FeatureSet * m_baseSet;
 };
 
 /////////////////////////////////////////////////////////////////////
