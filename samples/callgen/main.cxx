@@ -41,7 +41,6 @@ CallGen::CallGen()
   , m_totalAttempts(0)
   , m_totalEstablished(0)
   , m_quietMode(false)
-  , m_console(PConsoleChannel::StandardInput)
 {
 }
 
@@ -321,16 +320,18 @@ void CallGen::Main()
   }
 
   if (args.HasOption('f'))
-    h323->DisableFastStart(TRUE);
+    h323->DisableFastStart(true);
   if (args.HasOption('T'))
-    h323->DisableH245Tunneling(TRUE);
+    h323->DisableH245Tunneling(true);
 #endif // OPAL_H323
-  
+
+
+  bool finished = false;
+
   if (args.HasOption('l')) {
     m_manager.AddRouteEntry(".*\t.* = ivr:"); // Everything goes to IVR
-    cout << "Endpoint is listening for incoming calls, press ENTER to exit.\n";
-    m_console.ReadChar();
-    m_manager.ClearAllCalls();
+    cout << "Endpoint is listening for incoming calls, press ^C to exit.\n";
+    m_completed.Wait();
   }
   else {
     CallParams params(*this);
@@ -367,7 +368,7 @@ void CallGen::Main()
     if (params.repeat != 0)
       cout << ", grand total of " << simultaneous*params.repeat << " calls";
     cout << ".\n\n"
-            "Press ENTER at any time to quit.\n\n"
+            "Press ^C at any time to quit.\n\n"
          << endl;
 
     // create some threads to do calls, but start them randomly
@@ -380,26 +381,35 @@ void CallGen::Main()
       }
     }
 
-    PThread::Create(PCREATE_NOTIFIER(Cancel), 0);
-
-    for (;;) {
+    while (!m_completed.Wait(1000)) {
       m_threadEnded.Wait();
-      PThread::Sleep(100);
 
-      bool finished = TRUE;
+      finished = true;
       for (PINDEX i = 0; i < m_threadList.GetSize(); i++) {
         if (!m_threadList[i].IsTerminated()) {
-          finished = FALSE;
+          finished = false;
           break;
         }
       }
 
       if (finished) {
         cout << "\nAll call sets completed." << endl;
-        m_console.Close();
         break;
       }
     }
+  }
+
+  if (!finished) {
+    m_coutMutex.Wait();
+    cout << "\nAborting all calls ..." << endl;
+    m_coutMutex.Signal();
+
+    // stop threads
+    for (PINDEX i = 0; i < m_threadList.GetSize(); i++)
+      m_threadList[i].Stop();
+
+    // stop all calls
+    m_manager.ClearAllCalls();
   }
 
   if (m_totalAttempts > 0)
@@ -410,32 +420,11 @@ void CallGen::Main()
 }
 
 
-void CallGen::Cancel(PThread &, INT)
+bool CallGen::OnInterrupt(bool)
 {
-  PTRACE(3, "CallGen\tCancel thread started.");
-
-  // wait for a keypress
-  while (m_console.ReadChar() != '\n') {
-    if (!m_console.IsOpen()) {
-      PTRACE(3, "CallGen\tCancel thread ended.");
-      return;
-    }
-  }
-
-  PTRACE(2, "CallGen\tCancelling calls.");
-
-  m_coutMutex.Wait();
-  cout << "\nAborting all calls ..." << endl;
-  m_coutMutex.Signal();
   
-  // stop threads
-  for (PINDEX i = 0; i < m_threadList.GetSize(); i++)
-    m_threadList[i].Stop();
-
-  // stop all calls
-  m_manager.ClearAllCalls();
-
-  PTRACE(1, "CallGen\tCancelled calls.");
+  m_completed.Signal();
+  return true;
 }
 
 
@@ -505,7 +494,7 @@ void CallThread::Main()
     if (!callgen.m_manager.SetUpCall("ivr:*", destination, token, this))
       OUTPUT(m_index, token, "Failed to start call to " << destination)
     else {
-      bool stopping = FALSE;
+      bool stopping = false;
 
       delay = RandomRange(rand, m_params.tmin_call, m_params.tmax_call);
       PTRACE(1, "CallGen\tMax call time " << delay);
@@ -513,9 +502,7 @@ void CallThread::Main()
       START_OUTPUT(m_index, token) << "Making call " << count;
       if (m_params.repeat)
         cout << " of " << m_params.repeat;
-      cout << " (total=" << totalAttempts
-           << ") for " << delay << " seconds to "
-           << destination;
+      cout << " (total=" << totalAttempts<< ") for " << delay << " seconds to " << destination;
       END_OUTPUT();
 
       if (m_params.tmax_est > 0) {
