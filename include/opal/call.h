@@ -480,13 +480,13 @@ class OpalCall : public PSafeObject
      */
     const PString & GetToken() const { return myToken; }
 
-    /**Get the A party for the call.
+    /**Get the A party URI for the call.
        Note this will be available even after the A party connection has been
        released from the call.
      */
     const PString & GetPartyA() const { return m_partyA; }
 
-    /**Get the B party for the call.
+    /**Get the B party URI for the call.
        Note this will be available even after the B party connection has been
        released from the call. Also this will only be the first B party if the
        object represents a conference call with more that 2 parties.
@@ -502,11 +502,40 @@ class OpalCall : public PSafeObject
       const PString & b
     ) { m_partyB = b; }
 
+    /**Get the A party display name for the call.
+       Note this will be available even after the A party connection has been
+       released from the call.
+     */
+    const PString & GetNameA() const { return m_nameA; }
+
+    /**Get the B party display name for the call.
+       Note this will be available even after the B party connection has been
+       released from the call. Also this will only be the first B party if the
+       object represents a conference call with more that 2 parties.
+     */
+    const PString & GetNameB() const { return m_nameB; }
+
     /**Get indication that A-Party is the network.
        This will indicate if the call is "incoming" or "outgoing" by looking at
        the type of the A-party connection.
       */
-    bool IsNetworkOriginated() const;
+    bool IsNetworkOriginated() const { return m_networkOriginated; }
+
+    /**Get remote/network party URI.
+      */
+    const PString & GetRemoteParty() const { return m_networkOriginated ? m_partyA : m_partyB; }
+
+    /**Get local party URI.
+      */
+    const PString & GetLocalParty() const { return m_networkOriginated ? m_partyB : m_partyA; }
+
+    /**Get remote/network party display name.
+      */
+    const PString & GetRemoteName() const { return m_networkOriginated ? m_nameA : m_nameB; }
+
+    /**Get local party display name.
+      */
+    const PString & GetLocalName() const { return m_networkOriginated ? m_nameB : m_nameA; }
 
     /**Get the time the call started.
      */
@@ -584,6 +613,9 @@ class OpalCall : public PSafeObject
 
     PString m_partyA;
     PString m_partyB;
+    PString m_nameA;
+    PString m_nameB;
+    bool    m_networkOriginated;
     PTime   m_startTime;
     PTime   m_establishedTime;
     bool    m_isEstablished;
