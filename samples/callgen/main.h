@@ -58,14 +58,7 @@ class MyManager : public OpalManager
 {
     PCLASSINFO(MyManager, OpalManager);
   public:
-    MyManager()
-    {
-    }
-
-    ~MyManager()
-    {
-      ShutDownEndpoints();
-    }
+    ~MyManager();
 
     virtual OpalCall * CreateCall(void * userData);
 
@@ -106,6 +99,7 @@ class CallThread : public PThread
       const PStringArray & destinations,
       const CallParams & params
     );
+
     void Main();
     void Stop();
 
@@ -127,6 +121,7 @@ class CallGen : public PProcess
 
   public:
     CallGen();
+    ~CallGen();
 
     virtual void Main();
     virtual bool OnInterrupt(bool);
@@ -138,8 +133,8 @@ class CallGen : public PProcess
     PString    m_incomingAudioDirectory;
     PTextFile  m_cdrFile;
 
-    PSyncPoint m_threadEnded;
-    bool       m_running;
+    PSyncPoint m_signalMain;
+    bool       m_interrupted;
     unsigned   m_totalAttempts;
     unsigned   m_totalEstablished;
     bool       m_quietMode;

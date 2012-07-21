@@ -38,10 +38,15 @@ PCREATE_PROCESS(CallGen);
 
 CallGen::CallGen()
   : PProcess("Equivalence", "CallGen", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
-  , m_running(true)
+  , m_interrupted(false)
   , m_totalAttempts(0)
   , m_totalEstablished(0)
   , m_quietMode(false)
+{
+}
+
+
+CallGen::~CallGen()
 {
 }
 
@@ -327,11 +332,10 @@ void CallGen::Main()
 #endif // OPAL_H323
 
 
-  bool finished = false;
-
   if (args.HasOption('l')) {
     m_manager.AddRouteEntry(".*\t.* = ivr:"); // Everything goes to IVR
     cout << "Endpoint is listening for incoming calls, press ^C to exit.\n";
+    m_signalMain.Wait();
   }
   else {
     CallParams params(*this);
@@ -381,10 +385,10 @@ void CallGen::Main()
       }
     }
 
-    while (m_running) {
-      m_threadEnded.Wait();
+   for (;;) {
+      m_signalMain.Wait();
 
-      finished = true;
+      bool finished = true;
       for (PINDEX i = 0; i < m_threadList.GetSize(); i++) {
         if (m_threadList[i].m_running) {
           finished = false;
@@ -396,20 +400,20 @@ void CallGen::Main()
         cout << "\nAll call sets completed." << endl;
         break;
       }
+
+      if (m_interrupted) {
+        m_coutMutex.Wait();
+        cout << "\nAborting all calls ..." << endl;
+        m_coutMutex.Signal();
+
+        // stop threads
+        for (PINDEX i = 0; i < m_threadList.GetSize(); i++)
+          m_threadList[i].Stop();
+
+        // stop all calls
+        m_manager.ClearAllCalls();
+      }
     }
-  }
-
-  if (!finished) {
-    m_coutMutex.Wait();
-    cout << "\nAborting all calls ..." << endl;
-    m_coutMutex.Signal();
-
-    // stop threads
-    for (PINDEX i = 0; i < m_threadList.GetSize(); i++)
-      m_threadList[i].Stop();
-
-    // stop all calls
-    m_manager.ClearAllCalls();
   }
 
   if (m_totalAttempts > 0)
@@ -420,8 +424,8 @@ void CallGen::Main()
 
 bool CallGen::OnInterrupt(bool)
 {
-  m_running = false;
-  m_threadEnded.Signal();
+  m_interrupted = false;
+  m_signalMain.Signal();
   return true;
 }
 
@@ -550,7 +554,7 @@ void CallThread::Main()
   }
 
   m_running = false;
-  callgen.m_threadEnded.Signal();
+  callgen.m_signalMain.Signal();
 }
 
 
@@ -565,6 +569,12 @@ void CallThread::Stop()
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+MyManager::~MyManager()
+{
+  ShutDownEndpoints();
+}
+
 
 OpalCall * MyManager:: CreateCall(void * userData)
 {
