@@ -424,7 +424,7 @@ void CallGen::Main()
 
 bool CallGen::OnInterrupt(bool)
 {
-  m_interrupted = false;
+  m_interrupted = true;
   m_signalMain.Signal();
   return true;
 }
