@@ -172,12 +172,8 @@ PObject::Comparison OpalPresenceInfo::Compare(const PObject & obj) const
 
 ///////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger::IntegerType g_idNumber = 1;
-
-
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
-  , m_idNumber(g_idNumber++)
   , m_temporarilyUnavailable(false)
   , m_localState(OpalPresenceInfo::NoPresence)
 {
@@ -188,7 +184,6 @@ OpalPresentity::OpalPresentity(const OpalPresentity & other)
   : PSafeObject(other)
   , m_manager(other.m_manager)
   , m_attributes(other.m_attributes)
-  , m_idNumber(g_idNumber++)
   , m_temporarilyUnavailable(false)
   , m_localState(OpalPresenceInfo::NoPresence)
 {
@@ -216,6 +211,26 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
   presEntity->SetAOR(url);
 
   return presEntity;
+}
+
+
+bool OpalPresentity::Open()
+{
+  if (m_open.TestAndSet(true))
+    return false; // Already open
+
+  PTRACE(3, "OpalPres\t'" << m_aor << "' opening.");
+  return true;
+}
+
+
+bool OpalPresentity::Close()
+{
+  if (!m_open.TestAndSet(false))
+    return false; // Aleady closed
+
+  PTRACE(3, "OpalPres\t'" << m_aor << "' closing.");
+  return true;
 }
 
 
@@ -525,14 +540,6 @@ OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdNa
 
   PAssertAlways(PUnimplementedFunction);
   return NULL;
-}
-
-
-PString OpalPresentity::GetID() const 
-{ 
-  PStringStream strm;
-  strm << "id" << (unsigned)m_idNumber;
-  return strm;
 }
 
 
