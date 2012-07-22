@@ -5279,11 +5279,13 @@ void OptionsDialog::EditedPresentity(wxListEvent & evt)
 
   if (!evt.IsEditCancelled() && !newAOR.IsEmpty() && newAOR != oldAOR) {
     OpalPresentity * presentity = OpalPresentity::Create(m_manager, newAOR);
-    presentity->GetAttributes().Set(PresenceActiveKey, "Yes"); // OpenPhone extra attribute
-    if (FillPresentityAttributes(presentity)) {
-      delete (OpalPresentity *)m_Presentities->GetItemData(index);
-      m_Presentities->SetItemPtrData(index, (wxUIntPtr)presentity);
-      return;
+    if (presentity != NULL) {
+      presentity->GetAttributes().Set(PresenceActiveKey, "Yes"); // OpenPhone extra attribute
+      if (FillPresentityAttributes(presentity)) {
+        delete (OpalPresentity *)m_Presentities->GetItemData(index);
+        m_Presentities->SetItemPtrData(index, (wxUIntPtr)presentity);
+        return;
+      }
     }
 
     wxMessageBox(wxT("Cannot create presence identity ")+newAOR);
