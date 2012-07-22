@@ -169,15 +169,15 @@ class OpalPresentity : public PSafeObject
         presentity has successfully been indicated as "present" on the server
         only that the underlying system can do so at some time.
       */
-    virtual bool Open() = 0;
+    virtual bool Open();
 
     /** Indicate if the presentity has been successfully opened.
       */
-    virtual bool IsOpen() const = 0;
+    virtual bool IsOpen() const { return m_open; }
 
     /**Close the presentity.
       */
-    virtual bool Close() = 0;
+    virtual bool Close();
   //@}
 
   /**@name Attributes */
@@ -531,8 +531,6 @@ class OpalPresentity : public PSafeObject
       const PURL & aor
     );
 
-    virtual PString GetID() const;
-
     OpalManager & GetManager() const { return *m_manager; }
 
   protected:
@@ -549,9 +547,8 @@ class OpalPresentity : public PSafeObject
     ReceivedMessageNotifier      m_onReceivedMessageNotifier;
 #endif // OPAL_HAS_IM
 
+    PAtomicBoolean m_open;
     PMutex m_notificationMutex;
-    PAtomicInteger::IntegerType m_idNumber;
-
     bool m_temporarilyUnavailable;
     OpalPresenceInfo::State m_localState;      ///< our presentity state
     PString m_localStateNote;                  ///< Additional note attached to the 
