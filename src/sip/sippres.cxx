@@ -143,7 +143,8 @@ PStringArray SIP_Presentity::GetAttributeTypes() const
 
 bool SIP_Presentity::Open()
 {
-  Close();
+  if (!OpalPresentityWithCommandThread::Open())
+    return false;
 
   // find the endpoint
   m_endpoint = dynamic_cast<SIPEndPoint *>(m_manager->FindEndPoint("sip"));
@@ -206,18 +207,11 @@ bool SIP_Presentity::Open()
 }
 
 
-bool SIP_Presentity::IsOpen() const
-{
-  return m_endpoint != NULL;
-}
-
-
 bool SIP_Presentity::Close()
 {
-  if (!IsOpen())
+  if (!OpalPresentityWithCommandThread::Close())
     return false;
 
-  PTRACE(3, "SIPPres\t'" << m_aor << "' closing.");
   StopThread();
 
   if (!m_publishedTupleId.IsEmpty()) {
@@ -229,7 +223,7 @@ bool SIP_Presentity::Close()
   m_notificationMutex.Wait();
 
   PString watcherSubscriptionAOR = m_watcherSubscriptionAOR;
-    m_watcherSubscriptionAOR.MakeEmpty();
+  m_watcherSubscriptionAOR.MakeEmpty();
 
   StringMap presenceIdByAor = m_presenceIdByAor;
   m_watcherAorById.clear();
@@ -579,7 +573,8 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
   SIPPresenceInfo sipPresence;
-  sipPresence.m_personId = GetID();
+  static PAtomicInteger::IntegerType g_idNumber;
+  sipPresence.m_personId = PString(++g_idNumber);
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   if (m_subProtocol != e_PeerToPeer)

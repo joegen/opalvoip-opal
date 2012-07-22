@@ -245,7 +245,6 @@ class SIP_Presentity : public OpalPresentityWithCommandThread
     virtual PStringArray GetAttributeTypes() const;
 
     virtual bool Open();
-    virtual bool IsOpen() const;
     virtual bool Close();
     virtual BuddyStatus GetBuddyListEx(BuddyList & buddies);
     virtual BuddyStatus SetBuddyListEx(const BuddyList & buddies);
