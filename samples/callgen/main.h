@@ -135,7 +135,7 @@ class CallGen : public PProcess
 
     PSyncPoint m_signalMain;
     bool       m_interrupted;
-    unsigned   m_totalAttempts;
+    unsigned   m_totalCalls;
     unsigned   m_totalEstablished;
     bool       m_quietMode;
     PMutex     m_coutMutex;
