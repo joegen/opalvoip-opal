@@ -39,7 +39,7 @@ PCREATE_PROCESS(CallGen);
 CallGen::CallGen()
   : PProcess("Equivalence", "CallGen", MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
   , m_interrupted(false)
-  , m_totalAttempts(0)
+  , m_totalCalls(0)
   , m_totalEstablished(0)
   , m_quietMode(false)
 {
@@ -416,9 +416,7 @@ void CallGen::Main()
     }
   }
 
-  if (m_totalAttempts > 0)
-    cout << "Total calls: " << m_totalAttempts
-         << " attempted, " << m_totalEstablished << " established\n";
+  cout << "Total calls: " << m_totalCalls << " attempted, " << m_totalEstablished << " established.\n";
 }
 
 
@@ -491,7 +489,7 @@ void CallThread::Main()
       // trigger a call
       PString token;
       PTRACE(1, "CallGen\tMaking call to " << destination);
-      unsigned totalAttempts = ++callgen.m_totalAttempts;
+      unsigned totalAttempts = ++callgen.m_totalCalls;
       if (!callgen.m_manager.SetUpCall("ivr:*", destination, token, this))
         OUTPUT(m_index, token, "Failed to start call to " << destination)
       else {
@@ -604,26 +602,32 @@ MyCall::MyCall(MyManager & mgr, CallThread * caller)
 
 void MyCall::OnNewConnection(OpalConnection & connection)
 {
-  if (connection.IsNetworkConnection())
+  OpalCall::OnNewConnection(connection);
+
+  if (connection.IsNetworkConnection()) {
     m_callIdentifier = connection.GetIdentifier();
+    if (IsNetworkOriginated()) {
+      OUTPUT(m_index, GetToken(), "Started \"" << GetRemoteName() << "\""
+                                           " " << GetRemoteParty() <<
+                                    " active=" << m_manager.GetActiveCalls() <<
+                                     " total=" << ++CallGen::Current().m_totalCalls);
+    }
+  }
 }
 
 
 void MyCall::OnEstablishedCall()
 {
-  PSafePtr<OpalConnection> connection = GetConnection(IsNetworkOriginated() ? 0 : 1, PSafeReadOnly);
-
-  OUTPUT(m_index, GetToken(), "Established \"" << connection->GetRemotePartyName() << "\""
-                                  " " << connection->GetRemotePartyAddress() <<
+  OUTPUT(m_index, GetToken(), "Established \"" << GetRemoteName() << "\""
+                                           " " << GetRemoteParty() <<
                                     " active=" << m_manager.GetActiveCalls() <<
-                                    " total=" << ++CallGen::Current().m_totalEstablished);
+                                     " total=" << ++CallGen::Current().m_totalEstablished);
   OpalCall::OnEstablishedCall();
 }
 
 
 void MyCall::OnCleared()
 {
-
   OUTPUT(m_index, GetToken(), "Cleared \"" << GetRemoteName() << "\""
                                        " " << GetRemoteParty() <<
                                 " reason=" << GetCallEndReason() <<
