@@ -189,7 +189,7 @@ void CallGen::Main()
     cout << "SIP listening on: " << setfill(',') << sip->GetListeners() << setfill(' ') << endl;
 
     SIPRegister::Params reg;
-    reg.m_addressOfRecord = args.GetOptionString('r');
+    reg.m_addressOfRecord = args.GetOptionString('R');
     if (!reg.m_addressOfRecord.IsEmpty()) {
       PString aor;
       sip->Register(reg, aor);
