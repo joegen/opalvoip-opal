@@ -121,8 +121,8 @@ void OpalMediaPatch::Start()
     }
   }
 
-  patchThread = new Thread(*this);
-  patchThread->Resume();
+  patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
+  PTRACE_CONTEXT_ID_TO(patchThread);
   PThread::Yield();
   PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
 }
@@ -1007,17 +1007,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 #endif
 
   return true;
-}
-
-
-OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
-  : PThread(65536,  //16*4kpage size
-            NoAutoDeleteThread,
-            HighPriority,
-            "Media Patch"),
-    patch(p)
-{
-  PTRACE_CONTEXT_ID_FROM(p);
 }
 
 
