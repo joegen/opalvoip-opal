@@ -293,15 +293,7 @@ class OpalMediaPatch : public PSafeObject
     OpalMediaPatch * m_bypassFromPatch;
     PSyncPoint       m_bypassEnded;
 
-    class Thread : public PThread {
-        PCLASSINFO(Thread, PThread);
-      public:
-        Thread(OpalMediaPatch & p);
-        virtual void Main() { patch.Main(); };
-        OpalMediaPatch & patch;
-    };
-
-    Thread * patchThread;
+    PThread * patchThread;
     PMutex patchThreadMutex;
 
   private:
