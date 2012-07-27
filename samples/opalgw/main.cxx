@@ -553,8 +553,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices(),
                                    0, "Line Interface Devices to monitor, if any"), false);
   PStringArray devices = fieldArray->GetStrings(cfg);
-  if (!m_potsEP->AddDeviceNames(devices))
+  if (!m_potsEP->AddDeviceNames(devices)) {
     PSYSTEMLOG(Error, "No LID devices!");
+  }
   rsrc->Add(fieldArray);
 #endif // OPAL_LID
 
@@ -562,9 +563,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_CAPI
   m_enableCAPI = cfg.GetBoolean(EnableCAPIKey);
   rsrc->Add(new PHTTPBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available"));
-  if (m_enableCAPI) {
-    if (m_capiEP->OpenControllers() == 0)
-      PSYSTEMLOG(Error, "No CAPI controllers!");
+  if (m_enableCAPI && m_capiEP->OpenControllers() == 0) {
+    PSYSTEMLOG(Error, "No CAPI controllers!");
   }
 #endif
 
