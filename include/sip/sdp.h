@@ -87,7 +87,7 @@ class SDPMediaDescription;
 
 class SDPMediaFormat : public PObject
 {
-  PCLASSINFO(SDPMediaFormat, PObject);
+    PCLASSINFO(SDPMediaFormat, PObject);
   public:
     SDPMediaFormat(
       SDPMediaDescription & parent,
@@ -101,6 +101,7 @@ class SDPMediaFormat : public PObject
     );
 
     virtual void PrintOn(ostream & str) const;
+    virtual PObject * Clone() const { return new SDPMediaFormat(*this); }
 
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
 
@@ -110,8 +111,8 @@ class SDPMediaFormat : public PObject
     void SetFMTP(const PString & _fmtp); 
     PString GetFMTP() const;
 
-    unsigned GetClockRate(void)                        { return clockRate ; }
-    void SetClockRate(unsigned  v)                     { clockRate = v; }
+    unsigned GetClockRate(void)    { return clockRate ; }
+    void SetClockRate(unsigned  v) { clockRate = v; }
 
     void SetParameters(const PString & v) { parameters = v; }
     void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
