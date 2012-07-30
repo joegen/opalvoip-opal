@@ -1162,11 +1162,11 @@ OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
 #if OPAL_PTLIB_LUA
 static void OnStartStopmediaPatch(PLua & lua, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OpalMediaFormat medisFormat = patch.GetSource().GetMediaFormat();
-  lua.Call(fn, "ss",
+  OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
+  lua.Call(fn, "sss",
         (const char *)connection.GetCall().GetToken(),
         (const char *)patch.GetSource().GetID(),
-        (const char *)medisFormat.GetName());
+        (const char *)mediaFormat.GetName());
 }
 
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
