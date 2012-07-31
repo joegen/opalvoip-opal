@@ -2778,8 +2778,6 @@ fi
 
 
 
-
-
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
@@ -8945,38 +8943,6 @@ $as_echo "$as_me: libavcodec stack align hack disabled" >&6;}
                                            LIBAVCODEC_LIB_NAME="avcodec.dll"
                                            ;;
                      esac
-                     LIBAVCODEC_HEADER=
-          old_CPPFLAGS="$CPPFLAGS"
-          export CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
-          ac_fn_c_check_header_mongrel "$LINENO" "libavcodec/avcodec.h" "ac_cv_header_libavcodec_avcodec_h" "$ac_includes_default"
-if test "x$ac_cv_header_libavcodec_avcodec_h" = xyes; then :
-
-
-$as_echo "#define LIBAVCODEC_HEADER \"libavcodec/avcodec.h\"" >>confdefs.h
-
-                           LIBAVCODEC_HEADER="libavcodec/avcodec.h"
-
-fi
-
-
-          if test x$LIBAVCODEC_HEADER = x; then
-            ac_fn_c_check_header_mongrel "$LINENO" "ffmpeg/avcodec.h" "ac_cv_header_ffmpeg_avcodec_h" "$ac_includes_default"
-if test "x$ac_cv_header_ffmpeg_avcodec_h" = xyes; then :
-
-
-$as_echo "#define LIBAVCODEC_HEADER \"ffmpeg/avcodec.h\"" >>confdefs.h
-
-                             LIBAVCODEC_HEADER="ffmpeg/avcodec.h"
-
-fi
-
-
-          fi
-          if test x$LIBAVCODEC_HEADER = x; then
-            as_fn_error $? "Cannot find libavcodec header file" "$LINENO" 5
-          fi
-          export CPPFLAGS="$old_CPPFLAGS"
-
                      HAVE_LIBAVCODEC=yes
 
 fi
@@ -9140,7 +9106,7 @@ $as_echo_n "checking if libavcodec has rtp_mode... " >&6; };
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-      #include <${LIBAVCODEC_HEADER}>
+      #include <libavcodec/avcodec.h>
 int
 main ()
 {
@@ -9171,7 +9137,7 @@ $as_echo_n "checking if libavutil has AV_PICTURE_TYPE_NONE... " >&6; };
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-      #include <${LIBAVCODEC_HEADER}>
+      #include <libavcodec/avcodec.h>
 int
 main ()
 {
@@ -9196,7 +9162,7 @@ $as_echo_n "checking if libavutil has AVPictureType... " >&6; };
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-          #include <${LIBAVCODEC_HEADER}>
+          #include <libavcodec/avcodec.h>
 int
 main ()
 {

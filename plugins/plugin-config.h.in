@@ -123,9 +123,6 @@
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR
 
-/* The libavcodec header file */
-#undef LIBAVCODEC_HEADER
-
 /* Filename of the libavcodec library */
 #undef LIBAVCODEC_LIB_NAME
 
