@@ -453,7 +453,6 @@ else
                                            LIBAVCODEC_LIB_NAME="avcodec.dll"
                                            ;;
                      esac
-                     OPAL_LIBAVCODEC_HEADER
                      HAVE_LIBAVCODEC=yes
                     ],
                     [
@@ -481,7 +480,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   AC_COMPILE_IFELSE(
     [
       AC_LANG_PROGRAM(
-        [[#include <${LIBAVCODEC_HEADER}>]],
+        [[#include <libavcodec/avcodec.h>]],
         [[AVCodecContext c; c.rtp_mode = 1; ]]
       )
     ],
@@ -498,7 +497,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   AC_COMPILE_IFELSE(
     [
       AC_LANG_PROGRAM(
-        [[#include <${LIBAVCODEC_HEADER}>]],
+        [[#include <libavcodec/avcodec.h>]],
         [[enum AVPictureType t = AV_PICTURE_TYPE_NONE; ]]
       )
     ],
@@ -511,7 +510,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       AC_COMPILE_IFELSE(
         [
           AC_LANG_PROGRAM(
-            [[#include <${LIBAVCODEC_HEADER}>]],
+            [[#include <libavcodec/avcodec.h>]],
             [[enum AVPictureType t; ]]
           )
         ],

@@ -56,11 +56,8 @@
 
 #include "../../../src/codec/h263mf_inc.cxx"
 
-
 #include "rfc2190.h"
 #include "rfc2429.h"
-
-//#include <iomanip>
 
 
 /////////////////////////////////////////////////////////////////////////////
