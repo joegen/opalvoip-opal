@@ -456,13 +456,7 @@ PString SIPURL::AsQuotedString() const
     s << '"' << m_displayName << "\" ";
   s << '<' << AsString() << '>';
 
-  for (PStringToString::const_iterator it = m_fieldParameters.begin(); it != m_fieldParameters.end(); ++it) {
-    s << ';' << it->first;
-
-    PString data = it->second;
-    if (!data.IsEmpty())
-      s << '=' << data;
-  }
+  OutputVars(s, m_fieldParameters, ';', ';', '=', QuotedParameterTranslation);
 
   return s;
 }
