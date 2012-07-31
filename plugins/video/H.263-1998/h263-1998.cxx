@@ -56,13 +56,9 @@
 
 #include "../common/mpi.h"
 #include "../common/dyna.h"
+#include "../common/ffmpeg.h"
 #include "rfc2190.h"
 #include "rfc2429.h"
-
-
-extern "C" {
-#include LIBAVCODEC_HEADER
-};
 
 
 static const char YUV420PDesc[]  = { "YUV420P" };
