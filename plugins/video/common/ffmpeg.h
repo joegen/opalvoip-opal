@@ -45,9 +45,8 @@
 
 #include "dyna.h"
 
-extern "C" {
-  #include LIBAVCODEC_HEADER
-};
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
 
 #ifndef LIBAVCODEC_VERSION_INT
 #error Libavcodec include is not correct

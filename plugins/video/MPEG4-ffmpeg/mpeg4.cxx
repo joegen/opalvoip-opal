@@ -93,7 +93,7 @@ extern "C" {
 #include <libavcodec/mpegvideo.h>
 
 #else /* LIBAVCODEC_HAVE_SOURCE_DIR */
-#include LIBAVCODEC_HEADER
+#include "../common/ffmpeg.h"
 #endif /* LIBAVCODEC_HAVE_SOURCE_DIR */
 }
 
