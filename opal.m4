@@ -553,38 +553,6 @@ AC_DEFUN([OPAL_LIBAVCODEC_SOURCE],
           fi
          ])
 
-dnl OPAL_LIBAVCODEC_HEADER
-dnl Find out whether libavcodec headers reside in ffmpeg/ (old) or libavcodec/ (new)
-dnl Arguments: $LIBAVCODEC_CFLAGS The cflags for compiling apps with libavcodec
-dnl Return:    none
-dnl Define:    LIBAVCODEC_HEADER The libavcodec header (e.g. libavcodec/avcodec.h)
-AC_DEFUN([OPAL_LIBAVCODEC_HEADER],
-         [LIBAVCODEC_HEADER=
-          old_CPPFLAGS="$CPPFLAGS"
-          CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
-          AC_CHECK_HEADER([libavcodec/avcodec.h], 
-                          [
-                           AC_DEFINE([LIBAVCODEC_HEADER], 
-                                     ["libavcodec/avcodec.h"],
-                                     [The libavcodec header file])
-                           LIBAVCODEC_HEADER="libavcodec/avcodec.h"
-                          ],
-                          [])
-          if test x$LIBAVCODEC_HEADER = x; then
-            AC_CHECK_HEADER([ffmpeg/avcodec.h], 
-                            [
-                             AC_DEFINE([LIBAVCODEC_HEADER], 
-                                       ["ffmpeg/avcodec.h"],
-                                       [The libavcodec header file])
-                             LIBAVCODEC_HEADER="ffmpeg/avcodec.h"
-                            ])
-          fi
-          if test x$LIBAVCODEC_HEADER = x; then
-            AC_MSG_ERROR([Cannot find libavcodec header file])
-          fi
-          CPPFLAGS="$old_CPPFLAGS"
-         ])
-         
 dnl OPAL_CHECK_LIBAVCODEC
 dnl Check if libavcodec has a specific C symbol
 dnl Arguments: $LIBAVCODEC_LIBS The libs needed to link to libavcodec
