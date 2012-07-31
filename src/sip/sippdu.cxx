@@ -447,13 +447,7 @@ PString SIPURL::AsQuotedString() const
     s << '"' << m_displayName << "\" ";
   s << '<' << AsString() << '>';
 
-  for (PINDEX i = 0; i < m_fieldParameters.GetSize(); ++i) {
-    s << ';' << m_fieldParameters.GetKeyAt(i);
-
-    PString data = m_fieldParameters.GetDataAt(i);
-    if (!data.IsEmpty())
-      s << '=' << data;
-  }
+  OutputVars(s, m_fieldParameters, ';', ';', '=', QuotedParameterTranslation);
 
   return s;
 }
