@@ -27,7 +27,7 @@
 #
 
 ifndef DEBUG_BUILD
-DEBUG_BUILD             = @DEBUG_BUILD@
+DEBUG_BUILD := @DEBUG_BUILD@
 endif
 
 #detected by configure, needed by Makefile
@@ -51,12 +51,6 @@ RANLIB                  = @RANLIB@
 LD                      = @LD@
 ARCHIVE                 = @ARCHIVE@
 SWIG                    = @SWIG@
-
-# The opal source and destination dirs
-OPALDIR                 = @OPALDIR@
-OPAL_SRCDIR             = $(OPALDIR)/src
-OPAL_INCDIR             = $(OPALDIR)/include
-OPAL_LIBDIR             = @OPAL_LIBDIR@
 
 # The library file names
 RELEASE_LIB_NAME                = @RELEASE_LIB_NAME@
@@ -83,9 +77,15 @@ DEBUG_OPAL_OBJDIR	        = @DEBUG_OPAL_OBJDIR@
 DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
 
 # Compile and linker flags
-CFLAGS           := @CFLAGS@ -I$(OPAL_INCDIR) $(CFLAGS)
-CXXFLAGS         := @CXXFLAGS@ -I$(OPAL_INCDIR) $(CXXFLAGS)
-LDFLAGS          := @LDFLAGS@
+ifndef OPALDIR
+CFLAGS           := $(shell pkg-config opal --cflags-only-I) $(CFLAGS)
+CXXFLAGS         := $(shell pkg-config opal --cflags-only-I) $(CXXFLAGS)
+LDFLAGS          := $(shell pkg-config opal --libs) $(LDFLAGS)
+endif
+
+CFLAGS           := @CFLAGS@ $(CFLAGS)
+CXXFLAGS         := @CXXFLAGS@ $(CXXFLAGS)
+LDFLAGS          := @LDFLAGS@ $(LDFLAGS)
 LIBS             += @LIBS@
 LDSOOPTS          = @LDSOOPTS@
 

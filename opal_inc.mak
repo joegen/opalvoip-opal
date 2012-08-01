@@ -28,8 +28,11 @@
 
 
 # This file is for backward compatibility with old OPAL
-# applications that are not pkg-config aware.
+# applications that are not pkg-config aware, or ones
+# that are just too lazy to write their own. :-)
 
+  opt ::
+	@true
 
 
 ifdef DEBUG
@@ -43,23 +46,21 @@ endif
 
 ifdef OPALDIR
   include $(OPALDIR)/make/opal_defs.mak
+  LIBDIRS  += $(OPALDIR)
 else
-  $(error Must have OPALDIR defined)
+  include $(shell pkg-config opal --variable=makedir)/opal_defs.mak
 endif
 
 
 ifdef PTLIBDIR
-  opt ::
-	@true
   include $(PTLIBDIR)/make/ptlib.mak
 else
-  $(error Must have PTLIBDIR defined)
+  include $(shell pkg-config ptlib --variable=makedir)/ptlib.mak
 endif
 
 
 LDFLAGS	 += -L$(OPAL_LIBDIR)
 LDLIBS	 := -l$(subst lib,,$(LIB_NAME))$(LIB_TYPE) $(LDLIBS)
-LIBDIRS  += $(OPALDIR)
 
 $(TARGET) : $(OPAL_LIBDIR)/$(OPAL_FILE)
 

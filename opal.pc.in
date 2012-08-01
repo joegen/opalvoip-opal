@@ -2,6 +2,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+makedir=@datarootdir@/opal/make
 suffix=
 target_cpu=@target_cpu@
 target_os=@target_os@
@@ -14,7 +15,7 @@ Version: @OPAL_VERSION@
 Requires:@PKG_REQUIRES@
 Libs: -L${libdir} -lopal${suffix}
 Libs.private: @PKG_LIBS@
-Cflags: -I${includedir} -I${includedir}/opal
+Cflags: -I${includedir}
 
 #Optional OPAL features
 OPAL_H323=@OPAL_H323@

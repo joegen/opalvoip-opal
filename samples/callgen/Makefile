@@ -21,30 +21,17 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.1  2007/09/18 12:17:44  rjongbloed
-# Added call generator
+# $Revision$
+# $Author$
+# $Date$
 #
-
 
 PROG = callgen
 SOURCES := main.cxx
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
-endif
-
 ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
