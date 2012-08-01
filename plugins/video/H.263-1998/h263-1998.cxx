@@ -1575,10 +1575,13 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
+  {{
   CIF4_WIDTH,                         // frame width
   CIF4_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
+  }},
+
   0,                                  // IANA RTP payload code
   sdpH263P,                           // RTP payload name
 
@@ -1609,10 +1612,13 @@ static struct PluginCodec_Definition h263CodecDefn[] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
+  {{
   CIF4_WIDTH,                         // frame width
   CIF4_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
+  }},
+
   0,                                  // IANA RTP payload code
   sdpH263P,                           // RTP payload name
 
