@@ -26,7 +26,7 @@
 # $Date$
 #
 
-include $(OPALDIR)/make/opal_defs.mak
+include @OPALDIR@/make/opal_defs.mak
 
 SHELL		:= /bin/sh
 OS_NAME=$(shell uname -s)
@@ -68,6 +68,13 @@ Q_LD = @echo [LD] `echo $@ | sed s^@OPALDIR@/^^` ;
 endif
 
 
+OPAL_SRCDIR = @OPALDIR@/src
+OPAL_INCDIR = @OPALDIR@/include
+OPAL_LIBDIR = @OPAL_LIBDIR@
+
+CFLAGS += -I$(OPAL_INCDIR)
+CXXFLAGS += -I$(OPAL_INCDIR)
+
 ifeq ($(DEBUG_BUILD),yes)
   LIB_FILENAME_STATIC=$(DEBUG_LIB_FILENAME_STATIC)
   LIB_FILENAME_SHARED=$(DEBUG_LIB_FILENAME_SHARED)
@@ -82,7 +89,7 @@ else
   OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
 endif
 
-REVISION_FILE = $(OPALDIR)/revision.h
+REVISION_FILE = @OPALDIR@/revision.h
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -691,7 +698,9 @@ install:
 	fi )
 	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
-
+	mkdir -p $(DESTDIR)$(datarootdir)/opal/make ; chmod 755 $(DESTDIR)$(datarootdir)/opal/make
+	$(INSTALL) -m 644 make/opal_defs.mak $(DESTDIR)$(datarootdir)/opal/make
+	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(datarootdir)/opal/make
 	mkdir -p $(DESTDIR)$(includedir)/opal; chmod 755 $(DESTDIR)$(includedir)/opal
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)/opal
 	( for dir in asn codec h323 h460 iax2 im lids opal rtp sip t120 t38; \
@@ -708,12 +717,16 @@ endif
 uninstall:
 	( for filename in $(LIB_FILENAME_SHARED) \
                           $(LIB_FILENAME_SHARED_PAT) \
-                          $(LIB_FILENAME_STATIC); \
+                          $(LIB_FILENAME_STATIC) \
+                          $(DEBUG_LIB_FILENAME_SHARED) \
+                          $(DEBUG_LIB_FILENAME_SHARED_PAT) \
+                          $(DEBUG_LIB_FILENAME_STATIC) \
+                          ; \
 	do rm -f $(DESTDIR)$(libdir)/$$filename ;\
 	done)
-	rm -rf $(DESTDIR)$(includedir)/opal
-	rm -f $(DESTDIR)$(libdir)/pkgconfig/opal.pc
-
+	rm -rf $(DESTDIR)$(includedir)/opal \
+               $(DESTDIR)$(datarootdir)/opal \
+	       $(DESTDIR)$(libdir)/pkgconfig/opal.pc
 ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins uninstall
 endif

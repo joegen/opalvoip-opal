@@ -209,6 +209,8 @@ dnl set libdir accordingly
 if test "$prefix" = "$OPALDIR"; then
    includedir=$OPALDIR/include
    libdir=$OPALDIR/lib_$target
+else
+   includedir="$includedir/opal"
 fi
 
 
