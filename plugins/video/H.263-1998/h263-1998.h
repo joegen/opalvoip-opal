@@ -181,7 +181,7 @@ class H263_Base_DecoderContext
   protected:
     H263_Base_DecoderContext(const char * prefix, Depacketizer * depacketizer);
   public:
-    ~H263_Base_DecoderContext();
+    virtual ~H263_Base_DecoderContext();
 
     bool OpenCodec();
     void CloseCodec();
