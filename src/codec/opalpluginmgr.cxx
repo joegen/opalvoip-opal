@@ -1151,7 +1151,7 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
 // Fax transcoder classes
 //
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
 
 OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Definition * codecDefn,
                                                          const char * fmtName,
@@ -1374,7 +1374,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
     }
 };
 
-#endif // OPAL_T38_CAPABILITY
+#endif // OPAL_FAX
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1699,11 +1699,11 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
       case PluginCodec_MediaTypeAudioStreamed:
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
         break;
-  #if OPAL_T38_CAPABILITY
+  #if OPAL_FAX
       case PluginCodec_MediaTypeFax:
         new OpalPluginTranscoderFactory<OpalFaxTranscoder>::Worker(OpalTranscoderKey(src, dst), codecDefn, isEncoder);
         break;
-  #endif
+  #endif // OPAL_FAX
       default:
         PTRACE(3, "OpalPlugin\tno media transcoder factory created for codec " << codecDefn->descr);
         continue;
@@ -1764,7 +1764,7 @@ void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const 
 
 #endif
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
 OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCodecManager & /*mgr*/,
                                                    const PluginCodec_Definition * codecDefn,
                                                                      const char * fmtName,
@@ -1775,7 +1775,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCo
 {
   return new OpalPluginFaxFormatInternal(codecDefn, fmtName, rtpEncodingName, frameTime, timeUnits, timeStamp);
 }
-#endif
+#endif // OPAL_FAX
 
 /////////////////////////////////////////////////////////////////////////////
 
