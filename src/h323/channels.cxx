@@ -520,9 +520,11 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
 void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {
   // We are master, we use OUR session ID
-  if (connection.IsH245Master()) {
+  // Also include standard ones as the odd implementation (cough RMX cough) wants it
+  unsigned sessionID = GetSessionID();
+  if (connection.IsH245Master() || sessionID <= H323Capability::DefaultDataSessionID) {
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-    param.m_sessionID = GetSessionID();
+    param.m_sessionID = sessionID;
   }
 
   PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << GetSessionID());
