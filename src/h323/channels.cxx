@@ -363,9 +363,12 @@ H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 
 PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
-  return SetBandwidthUsed(capability->GetMediaFormat().GetOptionInteger(
-                          GetDirection() == IsReceiver ? OpalMediaFormat::MaxBitRateOption()
-                                                       : OpalMediaFormat::TargetBitRateOption())/100);
+  unsigned bandwidth = 0;
+  if (GetDirection() == IsTransmit)
+    bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
+  if (bandwidth == 0)
+    bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::MaxBitRateOption());
+  return SetBandwidthUsed(bandwidth/100);
 }
 
 
