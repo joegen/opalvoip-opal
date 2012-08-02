@@ -343,7 +343,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
 
 class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalPluginMediaFormatInternal
 {
@@ -360,7 +360,7 @@ class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalP
     virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
-#endif // OPAL_T38_CAPABILITY
+#endif // OPAL_FAX
 
 
 //////////////////////////////////////////////////////
