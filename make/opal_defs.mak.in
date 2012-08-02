@@ -77,15 +77,21 @@ DEBUG_OPAL_OBJDIR	        = @DEBUG_OPAL_OBJDIR@
 DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
 
 # Compile and linker flags
-ifndef OPALDIR
-CFLAGS           := $(shell pkg-config opal --cflags-only-I) $(CFLAGS)
-CXXFLAGS         := $(shell pkg-config opal --cflags-only-I) $(CXXFLAGS)
-LDFLAGS          := $(shell pkg-config opal --libs) $(LDFLAGS)
+ifeq ($(DEBUG_BUILD),yes)
+  CFLAGS   := $(DEBUG_CFLAGS) $(CFLAGS)
+  CXXFLAGS := $(DEBUG_CFLAGS) $(CXXFLAGS)
+  LIB_NAME := $(DEBUG_LIB_NAME)
+  LIBS     += $(DEBUG_LIBS)
+else
+  CFLAGS   := $(RELEASE_CFLAGS) $(CFLAGS)
+  CXXFLAGS := $(RELEASE_CFLAGS) $(CXXFLAGS)
+  LIB_NAME := $(RELEASE_LIB_NAME)
+  LIBS     += $(RELEASE_LIBS)
 endif
 
-CFLAGS           := @CFLAGS@ $(CFLAGS)
-CXXFLAGS         := @CXXFLAGS@ $(CXXFLAGS)
-LDFLAGS          := @LDFLAGS@ $(LDFLAGS)
+CFLAGS           := -I$(includedir) @CFLAGS@ $(CFLAGS)
+CXXFLAGS         := -I$(includedir) @CXXFLAGS@ $(CXXFLAGS)
+LDFLAGS          := -L$(libdir) @LDFLAGS@ $(LDFLAGS)
 LIBS             += @LIBS@
 LDSOOPTS          = @LDSOOPTS@
 
@@ -141,16 +147,5 @@ OPAL_PTLIB_STUN   = @OPAL_PTLIB_STUN@
 OPAL_PTLIB_CLI    = @OPAL_PTLIB_CLI@
 
 
-ifeq ($(DEBUG_BUILD),yes)
-  CFLAGS   := $(DEBUG_CFLAGS) $(CFLAGS)
-  CXXFLAGS := $(DEBUG_CFLAGS) $(CXXFLAGS)
-  LIBS     += $(DEBUG_LIBS)
-  LIB_NAME  = $(DEBUG_LIB_NAME)
-else
-  CFLAGS   := $(RELEASE_CFLAGS) $(CFLAGS)
-  CXXFLAGS := $(RELEASE_CFLAGS) $(CXXFLAGS)
-  LIBS     += $(RELEASE_LIBS)
-  LIB_NAME  = $(RELEASE_LIB_NAME)
-endif
 
 # End of file
