@@ -2027,10 +2027,12 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
 
-  // Ask the application what channels to open
-  PTRACE(3, "H225\tCheck for Fast start by local endpoint");
+  // Start channels, if allowed
   fastStartChannels.RemoveAll();
-  OnSelectLogicalChannels();
+  if (fastStartState == FastStartInitiate) {
+    PTRACE(3, "H225\tFast connect by local endpoint");
+    OnSelectLogicalChannels();
+  }
 
   // If application called OpenLogicalChannel, put in the fastStart field
   if (!fastStartChannels.IsEmpty()) {
