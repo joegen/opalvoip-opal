@@ -27,7 +27,7 @@
 #
 
 ifdef OPALDIR
-  CFG_ARGS:=--prefix=$(OPALDIR) $(CFG_ARGS)
+  override CFG_ARGS+=--prefix=$(OPALDIR)
 else
   export OPALDIR=$(CURDIR)
 endif

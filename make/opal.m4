@@ -159,7 +159,7 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           fi
           $1_OPAL_OBJDIR="\${OPALDIR}/lib_${target}/obj${OBJ_SUFFIX}"
           OPAL_LIBDIR="\${OPALDIR}/lib_${target}"
-          $1_LIB_NAME="libopal${OBJ_SUFFIX}"
+          $1_LIB_NAME="opal${OBJ_SUFFIX}"
           $1_LIB_FILENAME_SHARED="libopal${OBJ_SUFFIX}.${SHAREDLIBEXT}"
           $1_LIB_FILENAME_STATIC="libopal${OBJ_SUFFIX}_s.a"
 
@@ -299,36 +299,22 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             fi
 
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
-
-            echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
-
-            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
-            else
-              PKG_CHECK_MODULES(PTLIB, ptlib)
-            fi            
-
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
-            PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags`
-            PTLIB_LIBS=`$PKG_CONFIG ptlib --libs`
-
-            RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
-            DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
-            	    
-          dnl This segment looks for PTLIB on the system
-          else
-            if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-              PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
-            else
-              PKG_CHECK_MODULES(PTLIB, ptlib)
-            fi            
-
-            PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
-            PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
-            DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
-            RELEASE_LIBS="$PTLIB_LIBS"
           fi
+
+          echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+          if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
+            PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+          else
+            PKG_CHECK_MODULES(PTLIB, ptlib)
+          fi            
+
+          PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
+          PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
+          PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
+          PTLIB_LIBS=`$PKG_CONFIG ptlib --libs`
+          RELEASE_LIBS="$PTLIB_LIBS"
+          DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
+
 
           dnl determine which variant of ptlib is installed (static/dynamic, release/debug)
           
@@ -342,7 +328,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           AC_MSG_CHECKING([linkable PTLib])
 
-          DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
           RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
           OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
           if test "x$found" = "x1" ; then
