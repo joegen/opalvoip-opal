@@ -711,7 +711,8 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
     destAddr.SetPDU(setup.m_destCallSignalAddress);
   }
 
-  PString destAlias = connection.GetRemotePartyName();
+  const OpalConnection::StringOptions & stringOptions = connection.GetStringOptions();
+  PString destAlias = stringOptions(OPAL_OPT_CALLED_PARTY_NAME, connection.GetRemotePartyName());
   if (!destAlias && destAlias != destAddr) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
     setup.m_destinationAddress.SetSize(1);
@@ -722,7 +723,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
       q931pdu.SetCalledPartyNumber(destAlias);
   }
 
-  PString redir(connection.GetStringOptions()(OPAL_OPT_REDIRECTING_PARTY, connection.GetRedirectingParty()));
+  PString redir(stringOptions(OPAL_OPT_REDIRECTING_PARTY, connection.GetRedirectingParty()));
   if (!redir.IsEmpty())
     q931pdu.SetRedirectingNumber(redir);
 
@@ -1354,30 +1355,29 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
 
   PString localName = connection.GetLocalPartyName();
   PString displayName = connection.GetDisplayName();
-  PString number;
 
-  if (OpalIsE164(localName)) {
-    number = localName;
-    if (displayName.IsEmpty()) {
+  PString number = connection.GetStringOptions()(OPAL_OPT_CALLING_PARTY_NUMBER);
+  if (!number.IsEmpty()) {
+    if (OpalIsE164(localName))
+      number = localName;
+    else {
       for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
-        if (!OpalIsE164(*alias)) {
-          displayName = *alias;
+        if (OpalIsE164(*alias)) {
+          number = *alias;
           break;
         }
       }
     }
   }
-  else {
-    if (displayName.IsEmpty())
-      displayName = localName;
+
+  if (displayName.IsEmpty()) {
     for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
-      if (OpalIsE164(*alias)) {
-        number = *alias;
+      if (!OpalIsE164(*alias)) {
+        displayName = *alias;
         break;
       }
     }
   }
-
   q931pdu.SetDisplayName(displayName);
 
   if (insertPartyNumbers) {
