@@ -593,7 +593,8 @@ PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   // Send the PDU
   releaseComplete.Write(*transport);
 
-  return true;
+  // Return true, allowing caller to delete transport, if not attached to connection
+  return connection == NULL;
 }
 
 
