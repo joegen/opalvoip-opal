@@ -3983,10 +3983,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     case ProceedingPhase :
     case AlertingPhase :
       if ( connectionState == HasExecutedSignalConnect &&
-           FindChannel(H323Capability::DefaultAudioSessionID, true) != NULL &&
-          (FindChannel(H323Capability::DefaultVideoSessionID, true) != NULL ||
-              localCapabilities.FindCapability(H323Capability::e_Video) == NULL ||
-              remoteCapabilities.FindCapability(H323Capability::e_Video) == NULL))
+           FindChannel(H323Capability::DefaultAudioSessionID, true) != NULL)
         OnConnectedInternal();
       break;
 
