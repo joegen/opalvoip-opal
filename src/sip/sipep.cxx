@@ -1662,25 +1662,56 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 }
 
 
-bool SIPEndPoint::GetAuthentication(const PString & realm, PString & user, PString & password) 
+bool SIPEndPoint::GetAuthentication(SIPAuthentication & newAuthentication,
+                                    SIPAuthentication * oldAuthentication,
+                                    const SIPURL & proxyOverride,
+                                    const PString & user,
+                                    const PString & pass) 
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, user, PSafeReadOnly);
-  if (handler == NULL) {
-    if (m_registeredUserMode)
-      return false;
+  PString realm = newAuthentication.GetAuthRealm();
+  PString username = user;
+  PString password = pass;
 
-    handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly);
-    if (handler == NULL)
-      return false;
+  if (username.IsEmpty() || password.IsEmpty()) {
+    // Try to find authentication parameters for the given realm
+    PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, username, PSafeReadOnly);
+    if (handler != NULL ||
+          (!m_registeredUserMode &&
+            (handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PSafeReadOnly)) != NULL)) {
+      // really just after password, but username MAY change too.
+      username = handler->GetUsername();
+      password = handler->GetPassword();
+      PTRACE (3, "SIP\tUsing auth info for realm \"" << realm << '"');
+    }
   }
 
-  if (handler->GetPassword().IsEmpty())
+  // Still need stuff, check proxy
+  if (username.IsEmpty() || password.IsEmpty()) {
+    SIPURL proxy = proxyOverride;
+    if (proxy.IsEmpty())
+      proxy = GetProxy();
+    if (!proxy.IsEmpty()) {
+      PTRACE (3, "SIP\tNo auth info for realm \"" << realm << "\", using proxy auth");
+      username = proxy.GetUserName();
+      password = proxy.GetPassword();
+    }
+  }
+
+  if (username.IsEmpty() || password.IsEmpty()) {
+    PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
     return false;
+  }
 
-  // really just after password, but username MAY change too.
-  user     = handler->GetUsername();
-  password = handler->GetPassword();
+  newAuthentication.SetUsername(username);
+  newAuthentication.SetPassword(password);
 
+  if (oldAuthentication != NULL && newAuthentication == *oldAuthentication) {
+    PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
+    return false;
+  }
+
+  PTRACE(4, "SIP\t" << (oldAuthentication != NULL ? "Upd" : "Cre") << "ating"
+            " authentication credentials of user \"" << username << "\" for realm \"" << realm << '"');
   return true;
 }
 
