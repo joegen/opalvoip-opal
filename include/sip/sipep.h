@@ -883,7 +883,13 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Return the SIPAuthentication for a specific realm.
      */
-    bool GetAuthentication(const PString & authRealm, PString & user, PString & password); 
+    bool GetAuthentication(
+      SIPAuthentication & newAuthentication,
+      SIPAuthentication * oldAuthentication,
+      const SIPURL & proxy,
+      const PString & username,
+      const PString & password
+    );
     
     /**Return the default Contact URL.
      */
