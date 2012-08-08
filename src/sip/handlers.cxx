@@ -460,10 +460,8 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 {
   bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
 
-#if PTRACING
-  const char * proxyTrace = isProxy ? "Proxy " : "";
-#endif
-  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+  PTRACE(3, "SIP\tReceived " << (isProxy ? "Proxy " : "")
+         << "Authentication Required response, state=" << GetState());
   
   // authenticate 
   PString errorMsg;
@@ -476,48 +474,18 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
 
   // If either username or password blank, try and fine values from other
   // handlers which might be logged into the realm, or the proxy, if one.
-  PString username = m_username;
-  PString password = m_password;
-  if (username.IsEmpty() || password.IsEmpty()) {
-    // Try to find authentication parameters for the given realm,
-    // if not, use the proxy authentication parameters (if any)
-    if (endpoint.GetAuthentication(newAuth->GetAuthRealm(), username, password)) {
-      PTRACE (3, "SIP\tFound auth info for realm " << newAuth->GetAuthRealm());
-    }
-    else if (username.IsEmpty()) {
-      if (m_proxy.IsEmpty()) {
-        delete newAuth;
-        PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
-        OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
-        if (!transaction.IsCanceled())
-          RetryLater(m_offlineExpireTime);
-        return;
-      }
-
-      PTRACE (3, "SIP\tNo auth info for realm " << newAuth->GetAuthRealm() << ", using proxy auth");
-      username = m_proxy.GetUserName();
-      password = m_proxy.GetPassword();
-    }
-  }
-
-  newAuth->SetUsername(username);
-  newAuth->SetPassword(password);
-
-  // check to see if this is a follow-on from the last authentication scheme used
-  if (GetState() == Subscribing && authentication != NULL && *newAuth == *authentication) {
+  if (!endpoint.GetAuthentication(*newAuth, authentication, GetProxy(), m_username, m_password)) {
     delete newAuth;
-    PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
+
     OnFailed(SIP_PDU::Failure_UnAuthorised);
+    if (GetState() != Unsubscribing && !transaction.IsCanceled())
+      RetryLater(m_offlineExpireTime);
     return;
   }
-
-  PTRACE(4, "SIP\tUpdating authentication credentials.");
 
   // switch authentication schemes
   delete authentication;
   authentication = newAuth;
-  m_username = username;
-  m_password = password;
 
   // If we changed realm (or hadn't got one yet) update the handler database
   if (m_realm != newAuth->GetAuthRealm()) {
