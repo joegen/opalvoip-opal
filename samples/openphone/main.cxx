@@ -7426,18 +7426,8 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   SIPEndPoint::OnRegistrationStatus(status);
 
-  switch (status.m_reason) {
-    default:
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Information_Trying :
-      return;
-
-    case SIP_PDU::Successful_OK :
-      if (status.m_reRegistering)
-        return;
-  }
+  if (status.m_reason < 200 || (status.m_reRegistering && status.m_reason < 300))
+    return;
 
   SIPURL aor = status.m_addressofRecord;
   aor.Sanitise(SIPURL::ExternalURI);
@@ -7455,6 +7445,10 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
       LogWindow << "timed out";
       break;
 
+    case SIP_PDU::Failure_UnAuthorised :
+      LogWindow << "has invalid credentials";
+      break;
+
     default :
       LogWindow << "failed (" << status.m_reason << ')';
   }
@@ -7469,17 +7463,8 @@ void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
 {
   SIPEndPoint::OnSubscriptionStatus(status);
 
-  switch (status.m_reason) {
-    default:
-      break;
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Information_Trying :
-      return;
-
-    case SIP_PDU::Successful_OK :
-      if (status.m_reSubscribing)
-        return;
-  }
+  if (status.m_reason < 200 || (status.m_reSubscribing && status.m_reason < 300))
+    return;
 
   SIPURL uri = status.m_addressofRecord;
   uri.Sanitise(SIPURL::ExternalURI);
@@ -7495,6 +7480,10 @@ void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
 
     case SIP_PDU::Failure_RequestTimeout :
       LogWindow << "timed out";
+      break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+      LogWindow << "has invalid credentials";
       break;
 
     default :
