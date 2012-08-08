@@ -818,15 +818,13 @@ void SIP_Presentity::InitBuddyXcap(XCAPClient & xcap, const PString & entryName,
 }
 
 
-static PXMLElement * BuddyInfoToXML(const OpalPresentity::BuddyInfo & buddy, PXMLElement * parent)
+static void BuddyInfoToXML(const OpalPresentity::BuddyInfo & buddy, PXMLElement * parent)
 {
-  PXMLElement * element = new PXMLElement(parent, "entry");
+  PXMLElement * element = parent->GetName() == "entry" ? parent : parent->AddElement("entry");
   element->SetAttribute("uri", buddy.m_presentity);
 
   if (!buddy.m_displayName.IsEmpty())
     element->AddElement("display-name", buddy.m_displayName);
-
-  return element;
 }
 
 
@@ -935,7 +933,7 @@ OpalPresentity::BuddyStatus SIP_Presentity::SetBuddyListEx(const BuddyList & bud
   root->SetAttribute("name", m_attributes.Get(XcapBuddyListKey, buddyListKey));
 
   for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
-    root->AddChild(BuddyInfoToXML(*it, root));
+    BuddyInfoToXML(*it, root);
 
   XCAPClient xcap;
   InitBuddyXcap(xcap);
@@ -952,7 +950,7 @@ OpalPresentity::BuddyStatus SIP_Presentity::SetBuddyListEx(const BuddyList & bud
     PXMLElement * listElement = root->AddElement("list", "name", m_attributes.Get(XcapBuddyListKey, buddyListKey));
 
     for (BuddyList::const_iterator it = buddies.begin(); it != buddies.end(); ++it)
-      listElement->AddChild(BuddyInfoToXML(*it, listElement));
+      BuddyInfoToXML(*it, listElement);
 
     xcap.ClearNode();
     if (xcap.PutXml(xml))
@@ -1017,7 +1015,7 @@ OpalPresentity::BuddyStatus SIP_Presentity::SetBuddyEx(const BuddyInfo & buddy)
   InitBuddyXcap(xcap, buddy.m_presentity);
 
   PXML xml(PXML::FragmentOnly);
-  xml.SetRootElement(BuddyInfoToXML(buddy, NULL));
+  BuddyInfoToXML(buddy, xml.SetRootElement("entry"));
 
   if (xcap.PutXml(xml))
     return BuddyStatus_OK;
