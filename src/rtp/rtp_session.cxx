@@ -431,12 +431,12 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     resequenceOutOfOrderPackets = false;
-    FlushData();
     if (m_jitterBuffer != NULL) {
       PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
       m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
     }
     else {
+      FlushData();
       m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, m_timeUnits, packetSize);
       PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
       m_jitterBuffer->Start();
