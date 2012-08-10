@@ -64,77 +64,44 @@ void PlayRTP::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("h-help."
-             "m-mapping:"
-             "S-src-ip:"
-             "D-dst-ip:"
-             "s-src-port:"
-             "d-dst-port:"
-             "A-audio-driver:"
-             "a-audio-device:"
-             "V-video-driver:"
-             "v-video-device:"
-             "p-singlestep."
-             "P-payload-file:"
-             "i-info."
-             "f-find."
-             "Y-video-file:"
-             "E:"
-             "T:"
-             "X."
-             "O:"
-             "-session:"
-             "-rotate:"
-             "-nodelay."
-#if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
-#endif
-             , FALSE);
+  PArgList::ParseResult parseResult = args.Parse("[Options:]"
+             "m-mapping: Set mapping of payload type to format, eg 101=H.264\n"
+             "S-src-ip: Source IP address, default is any\n"
+             "D-dst-ip: Destination IP address, default is any\n"
+             "s-src-port: Source UDP port, default is any\n"
+             "d-dst-port: Destination UDP port, default is any\n"
+             "A-audio-driver: Audio player driver.\n"
+             "a-audio-device: Audio player device.\n"
+             "V-video-driver: Video display driver to use.\n"
+             "v-video-device: Video display device to use.\n"
+             "p-singlestep. Single step through input data.\n"
+             "P-payload-file: write RTP payload to file\n"
+             "i-info. Display per-frame information.\n"
+             "f-find. find and display list of RTP sessions.\n"
+             "Y-video-file: write decoded video to file\n"
+             "E: write event log to file\n"
+             "T: put text in extra video information\n"
+             "X. enable extra video information\n"
+             "O: Set codec option (may be used multiple times)\r"
+                 "   fmt is name of codec, eg \"H.261\"\r"
+                 "   opt is name of option, eg \"Target Bit Rate\"\r"
+                 "   val is value of option, eg \"48000\"\n"
+             "-session: automatically select session num\n"
+             "-rotate: Rotate on RTP header extension N\n"
+             "-nodelay. do not delay as per timestamps\n"
+             PTRACE_ARGLIST
+             "h-help. print this help message.\n"
+             , false);
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
 
-  if (args.HasOption('h') || args.GetCount() == 0) {
-    PError << "usage: " << GetFile().GetTitle() << " [ options ] filename [ filename ... ]\n"
-              "\n"
-              "Available options are:\n"
-              "  --help                   : print this help message.\n"
-              "  -m or --mapping N=fmt    : Set mapping of payload type to format, eg 101=H.264\n"
-              "  -S or --src-ip addr      : Source IP address, default is any\n"
-              "  -D or --dst-ip addr      : Destination IP address, default is any\n"
-              "  -s or --src-port N       : Source UDP port, default is any\n"
-              "  -d or --dst-port N       : Destination UDP port, default is any\n"
-              "  -A or --audio-driver drv : Audio player driver.\n"
-              "  -a or --audio-device dev : Audio player device.\n"
-              "  -V or --video-driver drv : Video display driver to use.\n"
-              "  -v or --video-device dev : Video display device to use.\n"
-              "  -p or --singlestep       : Single step through input data.\n"
-              "  -i or --info             : Display per-frame information.\n"
-              "  -f or --find             : find and display list of RTP sessions.\n"
-              "  -P or --payload-file fn  : write RTP payload to file\n"
-              "  -Y file                  : write decoded video to file\n"
-              "  -E file                  : write event log to file\n"
-              "  -T title                 : put text in extra video information\n"
-              "  -X                       : enable extra video information\n"
-              "  -O --option fmt:opt=val  : Set codec option (may be used multiple times)\n"
-              "                           :  fmt is name of codec, eg \"H.261\"\n"
-              "                           :  opt is name of option, eg \"Target Bit Rate\"\n"
-              "                           :  val is value of option, eg \"48000\"\n"
-              "  --session num            : automatically select session num\n"
-              "  --rotate n               : Rotate on RTP header extension N\n"
-              "  --nodelay                : do not delay as per timestamps\n"
-#if PTRACING
-              "  -o or --output file     : file name for output of log messages\n"       
-              "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-              "\n"
-              "e.g. " << GetFile().GetTitle() << " conversation.pcap\n\n";
+  if (parseResult <= PArgList::ParseNoArguments || args.HasOption('h')) {
+    args.Usage(cerr, "[ options ] filename [ filename ... ]") << "\n"
+               "e.g. " << GetFile().GetTitle() << " conversation.pcap\n\n";
     return;
   }
+
+  PTRACE_INITIALISE(args);
 
   m_extendedInfo = args.HasOption('X') || args.HasOption('T');
   m_rotateExtensionId = args.GetOptionString("rotate").AsUnsigned();

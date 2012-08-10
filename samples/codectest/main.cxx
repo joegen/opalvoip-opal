@@ -65,49 +65,54 @@ void CodecTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("b-bit-rate:"
-             "c-crop."
-             "C-rate-control:"
-             "d-drop:"
-             "D-display-device:"
-             "-display-driver:"
-             "F-audio-frames:"
-             "G-grab-device:"
-             "-grab-driver:"
-             "-grab-format:"
-             "-grab-channel:"
-             "h-help."
-             "i-info."
-             "m-suppress-marker."
-             "M-force-marker."
-             "O-option:"
-             "p-payload-size:"
-             "P-play-device:"
-             "-play-driver:"
-             "-play-buffers:"
-             "r-frame-rate:"
-             "R-record-device:"
-             "-record-driver:"
-             "-ext-hdr:"
-             "s-frame-size:"
-             "-single-step."
-             "S-simultaneous:"
-             "T-statistics."
-             "-count:"
-             "-noprompt."
-             "-snr."
-             "-list."
-#if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
-#endif
-             , FALSE);
+  PArgList::ParseResult parseResult = args.Parse("[Available options are:]"
+             "-record-driver: audio recorder driver.\n"
+             "R-record-device: audio recorder device.\n"
+             "-play-driver: audio player driver.\n"
+             "P-play-device: audio player device.\n"
+             "F-audio-frames: audio frames per packet, default 1.\n"
+             "-play-buffers: audio player buffers, default 8.\n"
+             "-grab-driver: video grabber driver.\n"
+             "G-grab-device: video grabber device.\n"
+             "-grab-format: video grabber format (\"pal\"/\"ntsc\")\n"
+             "-grab-channel: video grabber channel.\n"
+             "-display-driver: video display driver to use.\n"
+             "D-display-device: video display device to use.\n"
+             "s-frame-size: video frame size (\"qcif\", \"cif\", WxH)\n"
+             "r-frame-rate: video frame rate (frames/second)\n"
+             "b-bit-rate: video bit rate (bits/second)\n"
+             "O-option: set media format option to value, in form  opt=val\n"
+             "-ext-hdr: Set RTP extension header (RFC5285 one byte value)\n"
+             "-single-step. video single frame at a time mode\n"
+             "c-crop. crop rather than scale if resizing\n"
+             "m-suppress-marker. suppress marker bits to decoder\n"
+             "M-force-marker. force marker bits to decoder\n"
+             "p-payload-size: Set size of maximum RTP payload for encoded data\n"
+             "S-simultanoues: Number of simultaneous encode/decode threads\n"
+             "T-statistics. output statistics files\n"
+             "C-rate-control. enable rate control\n"
+             "d-drop: randomly drop N% of encoded packets\n"
+             "-count: set number of frames to transcode\n"
+             "-noprompt. do not prompt for commands, i.e. exit when input closes\n"
+             "-snr. calculate signal-to-noise ratio between input and output\n"
+             "i-info. display per-frame info (use multiple times for more info)\n"
+             "-list. list all available plugin codecs\n"
+             PTRACE_ARGLIST
+             "h-help. print this help message.\n"
+             , false);
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
+
+  if (parseResult <= PArgList::ParseNoArguments || args.HasOption('h')) {
+    cerr << "usage: " << GetFile().GetTitle() << " [ options ] fmtname [ fmtname ]\n"
+              "  where fmtname is the Media Format Name for the codec(s) to test, up to two\n"
+              "  formats (one audio and one video) may be specified.\n";
+    args.Usage(cerr) << "\n"
+               "e.g. " << GetFile().GetTitle() << " --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
+    return;
+  }
+
+  PTRACE_INITIALISE(args);
 
   if (args.HasOption("list")) {
     OpalPluginCodecManager & codecMgr = OpalPluginCodecManager::GetInstance();
@@ -139,53 +144,6 @@ void CodecTest::Main()
       
     }
     cout << "\n\n";
-    return;
-  }
-
-  if (args.HasOption('h') || args.GetCount() == 0) {
-    PError << "usage: " << GetFile().GetTitle() << " [ options ] fmtname [ fmtname ]\n"
-              "  where fmtname is the Media Format Name for the codec(s) to test, up to two\n"
-              "  formats (one audio and one video) may be specified.\n"
-              "\n"
-              "Available options are:\n"
-              "  --help                  : print this help message.\n"
-              "  --record-driver drv     : audio recorder driver.\n"
-              "  -R --record-device dev  : audio recorder device.\n"
-              "  --play-driver drv       : audio player driver.\n"
-              "  -P --play-device dev    : audio player device.\n"
-              "  -F --audio-frames n     : audio frames per packet, default 1.\n"
-              "  --play-buffers n        : audio player buffers, default 8.\n"
-              "  --grab-driver drv       : video grabber driver.\n"
-              "  -G --grab-device dev    : video grabber device.\n"
-              "  --grab-format fmt       : video grabber format (\"pal\"/\"ntsc\")\n"
-              "  --grab-channel num      : video grabber channel.\n"
-              "  --display-driver drv    : video display driver to use.\n"
-              "  -D --display-device dev : video display device to use.\n"
-              "  -s --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
-              "  -r --frame-rate size    : video frame rate (frames/second)\n"
-              "  -b --bit-rate size      : video bit rate (bits/second)\n"
-              "  -O --option opt=val     : set media format option to value\n"
-              "  --ext-hdr n             : Set RTP extension header (RFC5285 one byte value)\n"
-              "  --single-step           : video single frame at a time mode\n"
-              "  -c --crop               : crop rather than scale if resizing\n"
-              "  -m --suppress-marker    : suppress marker bits to decoder\n"
-              "  -M --force-marker       : force marker bits to decoder\n"
-              "  -p --payload-size sz    : Set size of maximum RTP payload for encoded data\n"
-              "  -S --simultanoues n     : Number of simultaneous encode/decode threads\n"
-              "  -T --statistics         : output statistics files\n"
-              "  -C --rate-control       : enable rate control\n"
-              "  -d --drop N             : randomly drop N% of encoded packets\n"
-              "  --count n               : set number of frames to transcode\n"
-              "  --noprompt              : do not prompt for commands, i.e. exit when input closes\n"
-              "  --snr                   : calculate signal-to-noise ratio between input and output\n"
-              "  -i --info               : display per-frame info (use multiple times for more info)\n"
-              "  --list                  : list all available plugin codecs\n"
-#if PTRACING
-              "  -o or --output file     : file name for output of log messages\n"       
-              "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-              "\n"
-              "e.g. " << GetFile().GetTitle() << " --grab-device fake --grab-channel 2 GSM-AMR H.264\n\n";
     return;
   }
 
