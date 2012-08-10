@@ -625,8 +625,10 @@ void OpalJitterBufferThread::Start()
 {
   m_bufferMutex.Wait();
 
-  if (m_jitterThread == NULL)
+  if (m_jitterThread == NULL) {
     m_jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), "RTP Jitter");
+    PTRACE_CONTEXT_ID_TO(m_jitterThread);
+  }
 
   m_bufferMutex.Signal();
 }
