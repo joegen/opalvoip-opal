@@ -87,46 +87,29 @@ void RegTest::Main()
 {
   PArgList & args = GetArguments();
 
-  args.Parse("c-count:"
-             "C-contact:"
-             "I-interfaces:"
-             "p-password:"
-             "P-proxy:"
-             "v-verbose."
-#if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
-#endif
-             , FALSE);
+  PArgList::ParseResult parseResult = args.Parse("[Options:]"
+      "c-count: Count of users to register.\n"
+      "C-contact: Pre-define REGISTER Contact header.\n"
+      "I-interfaces: Use specified interface(s)\n"
+      "p-password: Pasword to use for all registrations\n"
+      "P-proxy: Proxy to use for registration.\n"
+      "v-verbose. Indicate verbose output.\n"
+      PTRACE_ARGLIST
+      "h-help."
+      , false);
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
 
-  if (args.HasOption('h') || args.GetCount() == 0) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ options ] aor [ ... ]\n"
-            "\n"
-            "Available options are:\n"
-            "  -c or --count n            : Count of users to register.\n"
-            "  -C or --contact url        : Pre-define REGISTER Contact header.\n"
-            "  -P or --proxy url          : Proxy to use for registration.\n"
-            "  -I or --interfaces iface   : Use specified interface(s)\n"
-            "  -p or --password pwd       : Pasword to use for all registrations\n"
-            "  -v or --verbose            : Indicate verbose output.\n"
-#if PTRACING
-            "  -o or --output file        : file name for output of log messages\n"       
-            "  -t or --trace              : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-            "  -h or --help               : print this help message.\n"
-            "\n"
+  if (parseResult <= PArgList::ParseNoArguments || args.HasOption('h')) {
+    args.Usage(cerr, "[ options ] aor [ ... ]") << "\n"
             "e.g. " << GetFile().GetTitle() << " sip:fred@bloggs.com\n"
             "If --count is used, then users sip:fredXXXXX@bloggs.com are registered where\n"
             "XXXXX is an integer from 1 to count.\n"
             ;
     return;
   }
+
+  PTRACE_INITIALISE(args);
 
   {
     OpalManager manager;
