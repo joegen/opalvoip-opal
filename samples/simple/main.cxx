@@ -305,10 +305,7 @@ void SimpleOpalProcess::Main()
 #endif
             "\n"
             "Debug options:\n"
-#if PTRACING
-            "  -t --trace              : Enable trace, use multiple times for more detail.\n"
-            "  -o --output             : File for trace output, default is stderr.\n"
-#endif
+            PTRACE_ARGLIST
 #if OPAL_IAX2
             "  -X --no-iax2            : Remove support for iax2\n"
             "     --iaxport n          : Set port to use (def. 4569)\n"
@@ -374,11 +371,7 @@ void SimpleOpalProcess::Main()
     return;
   }
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-                     PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
-#endif
+  PTRACE_INITIALISE(args);
 
   // Create the Opal Manager and initialise it
   opal = new MyManager;

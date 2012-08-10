@@ -92,52 +92,24 @@ void JesterProcess::Main()
 {
   // Get and parse all of the command line arguments.
   PArgList & args = GetArguments();
-  args.Parse(
-    "a-audiodevice:"
-    "D-start-delta:"
-    "d-drop."
-    "j-jitter:"
-    "g-generate:"
-    "I-init-play-ts:"
-    "i-init-gen-ts:"
-    "s-silence."
-    "S-size:"
-    "h-help."
-    "m-marker."
-    "P-pcap:"
-    "R."
-#if PTRACING
-    "o-output:"
-    "t-trace."
-#endif
-    "v-version."
-    "w-wavfile:"
-    , false);
-
-
-  if (args.HasOption('h') ) {
-    cerr << "Usage : " << GetName() << " [options] \n"
-            "General options:\n"
-            "  -w --wavfile          : audio file from which the source data is read from \n"
-            "  -a --audiodevice      : audio device to play the output on\n"
-            "  -s --silence          : simulate silence suppression. - so audio is sent in bursts.\n"
-            "  -d --drop             : simulate dropped packets.\n"
-            "  -j --jitter [min-]max : size of the jitter buffer in ms (100-1000)\n"
-            "  -g --generate profile : amount of jitter to simulate (see below)\n"
-            "  -S --size max         : size of each RTP packet in ms\n"
-            "  -m --marker           : turn some of the marker bits off, that indicate speech bursts\n"
-            "  -D --start-delta n    : Start delta time between generator and playback (ms)\n"
-            "  -I --init-play-ts n   : Initial timestamp value for generator\n"
-            "  -i --init-gen-ts n    : Initial timestamp value for playback\n"
-            "  -P --pcap file        : Read RTP data from PCAP file\n"
-            "  -R                    : Non real time test\n"
-#if PTRACING
-            "  -t --trace            : Enable trace, use multiple times for more detail.\n"
-            "  -o --output           : File for trace output, default is stderr.\n"
-#endif
-            "  -h --help             : This help message.\n"
-            "  -v --version          : report version and program info.\n"
-            "\n"
+  if (args.Parse("a-audiodevice: audio device to play the output on\n"
+                 "D-start-delta: Start delta time between generator and playback (ms)\n"
+                 "d-drop. simulate dropped packets.\n"
+                 "j-jitter: size of the jitter buffer in ms (100-1000)\n"
+                 "g-generate: amount of jitter to simulate (see below)\n"
+                 "I-init-play-ts: Initial timestamp value for generator\n"
+                 "i-init-gen-ts: Initial timestamp value for playback\n"
+                 "s-silence. simulate silence suppression. - so audio is sent in bursts.\n"
+                 "S-size: size of each RTP packet in ms\n"
+                 "m-marker. turn some of the marker bits off, that indicate speech bursts\n"
+                 "P-pcap: Read RTP data from PCAP file\n"
+                 "R. Non real time test\n"
+                 "v-version. report version and program info.\n"
+                 "w-wavfile:audio file from which the source data is read from\n"
+                 PTRACE_ARGLIST
+                 "h-help. This help message.\n"
+                 , false) < PArgList::ParseNoArguments || args.HasOption('h') ) {
+    args.Usage(cerr, "[options]") << "\n"
             "The jitter generate profile is a comma separated list of timestamps and\n"
             "jitter levels. e.g. \"0=30,16000=60,48000=120,64000=30\" would start at\n"
             "30ms, thena 2 seconds in generate 60ms of jitter, at 6 seconds 120ms,\n"
@@ -155,11 +127,7 @@ void JesterProcess::Main()
     return;
   }
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-    args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-    PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
-#endif
+  PTRACE_INITIALISE(args);
 
   unsigned minJitterSize = 50;
   unsigned maxJitterSize = 250;

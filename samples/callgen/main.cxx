@@ -102,34 +102,24 @@ void CallGen::Main()
              "q-quiet.               Do not display call progress output.\n"
              "c-cdr:                 Specify Call Detail Record file [none]\n"
              "I-in-dir:              Specify directory for incoming WAV files [disabled]\n"
-#if PTRACING
-             "t-trace.               Trace enable (use multiple times for more detail)\n"
-             "o-output:              Specify filename for trace output [stdout]\n"
-#endif
+             PTRACE_ARGLIST
              "h-help.                This help\n"
              , false);
 
   PAssert(result != PArgList::ParseInvalidOptions, PInvalidParameter);
 
   if (args.HasOption('h') || result < 0 || (result == PArgList::ParseNoArguments && !args.HasOption('l'))) {
-    cout << "Usage:\n"
-            "  " << GetFile().GetTitle() << " [options] --listen\n"
-            "  " << GetFile().GetTitle() << " [options] destination [ destination ... ]\n";
-    args.Usage(cout);
-    cout << "\n"
-            "Notes:\n"
-            "  If --tmaxest is set a non-zero value then --tmincall is the time to leave\n"
-            "  the call running once established. If zero (the default) then --tmincall\n"
-            "  is the length of the call from initiation. The call may or may not be\n"
-            "  \"answered\" within that time.\n"
-            "\n";
+    args.Usage(cout, "[options] --listen\n[options] destination [ destination ... ]") << "\n"
+               "Notes:\n"
+               "  If --tmaxest is set a non-zero value then --tmincall is the time to leave\n"
+               "  the call running once established. If zero (the default) then --tmincall\n"
+               "  is the length of the call from initiation. The call may or may not be\n"
+               "  \"answered\" within that time.\n"
+               "\n";
     return;
   }
   
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'), args.GetOptionString('o'),
-		     PTrace::Blocks | PTrace::DateAndTime | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PTRACE_INITIALISE(args, PTrace::DateAndTime|PTrace::Thread|PTrace::FileAndLine|PTrace::ContextIdentifier);
 
 #if OPAL_H323
   H323EndPoint * h323 = new H323EndPoint(m_manager);

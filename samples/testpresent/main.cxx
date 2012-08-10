@@ -147,63 +147,35 @@ void TestPresEnt::AddPresentity(PArgList & args)
 void TestPresEnt::Main()
 {
   PArgList & args = GetArguments();
-#define URL_OPTIONS "a-auth-id:" \
-                    "p-password:" \
-                    "s-sub-protocol:"
-  args.Parse("h-help."
-             "f-file:"
-             "L-listener:"
-             "P-presence-agent:"
-#if PTRACING
-             "o-output:"
-#endif
-             "S-stun:"
-             "T-translation:"
-#if PTRACING
-             "t-trace."
-#endif
-             "X-xcap-server:"
-             "-xcap-auth-id:"
-             "-xcap-password:"
-             "-proxy:"
-             URL_OPTIONS);
+#define URL_OPTIONS "[Available URL options are:]" \
+                    "a-auth-id: Authorisation ID, default to URL username.\n" \
+                    "p-password: Authorisation password.\n" \
+                    "s-sub-protocol: set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
+  PArgList::ParseResult parseResult = args.Parse("[Available global options are:]"
+             "f-file: name of script file to execute.\n"
+             "L-listener: set listener address:port.\n"
+             "P-presence-agent: set presence agent default address.\n"
+             "S-stun: set STUN server address.\n"
+             "T-translation: set NAT translation address.\n"
+             "X-xcap-server: set XCAP server root URL.\n"
+             "-xcap-auth-id: set XCAP server authorisation ID.\n"
+             "-xcap-password: set XCAP server authorisation password.\n"
+             "-proxy: set outbound proxy.\n"
+             URL_OPTIONS
+             "[Debugging]"
+             PTRACE_ARGLIST
+             "h-help.");
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount('t'),
-                     args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
-         PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
 
-  if (args.HasOption('h')) {
-    cerr << "usage: " << GetFile().GetTitle() << " [ global-options ] { [ url-options ] url } ...\n"
-            "\n"
-            "Available global options are:\n"
-            "  -proxy URL                   : set outbound proxy.\n"
-            "  -f or --file filename        : name of script file to execute.\n"
-            "  -L or --listener addr        : set listener address:port.\n"
-            "  -T or --translation addr     : set NAT translation address.\n"
-            "  -S or --stun addr            : set STUN server address.\n"
-            "  -P or --presence-agent addr  : set presence agent default address.\n"
-            "  -X or --xcap-root url        : set XCAP server root URL.\n"
-            "        --xcap-auth-id name    : set XCAP server authorisation ID.\n"
-            "        --xcap-password pwd    : set XCAP server authorisation password.\n"
-#if PTRACING
-            "  -o or --output file          : file name for output of log messages\n"       
-            "  -t or --trace                : degree of verbosity in error log (more times for more detail)\n"     
-#endif
-            "  -h or --help                 : print this help message.\n"
-            "\n"
-            "Available URL options are:\n"
-#define URL_HELP \
-            "  -a or --auth-id              : Authorisation ID, default to URL username.\n" \
-            "  -p or --password             : Authorisation password.\n" \
-            "  -s or --sub-protocol proto   : set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
-            URL_HELP
-            "\n"
-            "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
-            ;
+  if (parseResult < PArgList::ParseNoArguments || args.HasOption('h')) {
+    args.Usage(cerr, "[ global-options ] { [ url-options ] url } ...") << "\n"
+               "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
+               ;
     return;
   }
+
+  PTRACE_INITIALISE(args);
 
   m_manager = new MyManager();
 
@@ -242,7 +214,7 @@ void TestPresEnt::Main()
   if (args.GetCount() != 0) {
     do {
       AddPresentity(args);
-    } while (args.Parse(URL_OPTIONS));
+    } while (args.Parse(URL_OPTIONS) > PArgList::ParseNoArguments);
 
     if (m_presentities.GetSize() == 0) {
       cerr << "error: no presentities available" << endl;
@@ -254,7 +226,7 @@ void TestPresEnt::Main()
   cli.SetPrompt("PRES> ");
   cli.SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
                  "Create presentity.",
-                 "[ -a -p -s ] <url>\n" URL_HELP);
+                 "[ -a -p -s ] <url>", URL_OPTIONS);
   cli.SetCommand("list", PCREATE_NOTIFIER(CmdList),
                  "List presentities.");
   cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
@@ -306,7 +278,7 @@ void TestPresEnt::Main()
 
 void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
 {
-  if (!args.Parse(URL_OPTIONS))
+  if (args.GetCount() == 0)
     args.WriteUsage();
   else if (m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" already exists." << endl;

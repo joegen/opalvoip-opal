@@ -164,10 +164,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-rtp-size:         Set RTP maximum payload size in bytes.\n"
 
          "[Debug & General:]"
-#if PTRACING
-         "t-trace.           Verbosity in error log (more times for more detail)\n"     
-         "o-output:          File name for output of log messages\n"       
-#endif
+         PTRACE_ARGLIST
          "V-version.         Display application version.\n"
          "h-help.            This help message.\n"
          ;
@@ -182,8 +179,7 @@ PString OpalManagerConsole::GetArgumentUsage() const
 
 void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 {
-  strm << "usage: " << PProcess::Current().GetFile().GetTitle() << ' ' << GetArgumentUsage() << "\n\n";
-  args.Usage(strm);
+  args.Usage(strm, GetArgumentUsage());
 }
 
 
@@ -203,11 +199,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     return false;
   }
 
-#if PTRACING
-  PTrace::Initialise(args.GetOptionCount("trace"),
-                     args.HasOption("output") ? (const char *)args.GetOptionString("output") : NULL,
-                PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
-#endif
+  PTRACE_INITIALISE(args);
 
   if (args.HasOption("option")) {
     PStringArray options = args.GetOptionString("option").Lines();
