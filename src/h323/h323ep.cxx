@@ -965,18 +965,17 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 
 PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & token, PSafetyMode mode)
 {
-  PSafePtr<H323Connection> connnection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
-  if (connnection != NULL)
-    return connnection;
+  PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
+  if (connection != NULL)
+    return connection;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, mode); conn != NULL; ++conn) {
-    connnection = PSafePtrCast<OpalConnection, H323Connection>(conn);
-    if(connnection != NULL) {      //cast success
-      if (connnection->GetCallIdentifier().AsString() == token)
-        return connnection;
-      if (connnection->GetConferenceIdentifier().AsString() == token)
-        return connnection;
-    }
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
+    connection = PSafePtrCast<OpalConnection, H323Connection>(conn);
+    if (  connection != NULL &&
+          connection.SetSafetyMode(PSafeReadOnly) &&
+         (connection->GetCallIdentifier().AsString() == token ||
+          connection->GetConferenceIdentifier().AsString() == token))
+      return connection.SetSafetyMode(mode) ? connection : NULL;
   }
 
   return NULL;
