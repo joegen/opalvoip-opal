@@ -186,30 +186,6 @@ AC_DEFUN([OPAL_DETERMINE_LIBNAMES],
           AC_SUBST($1_LIB_FILENAME_SHARED_PAT)
          ])
 
-dnl OPAL_GCC_VERSION
-dnl Verify that GCC version is > 3
-dnl Arguments: 
-dnl Return:
-AC_DEFUN([OPAL_GCC_VERSION],
-         [
-          if test "x$GXX" = "xyes" ; then
-            gcc_version=`$CXX -dumpversion`
-            AC_MSG_NOTICE(gcc version is $gcc_version);
-            GXX_MAJOR=`echo $gcc_version | sed 's/\..*$//'`
-            GXX_MINOR=[`echo $gcc_version | sed -e 's/[0-9][0-9]*\.//' -e 's/\..*$//'`]
-            GXX_PATCH=[`echo $gcc_version | sed -e 's/[0-9][0-9]*\.[0-9][0-9]*\.//' -e 's/\..*$//'`]
-
-            dnl cannot compile for less than gcc 3
-            AC_MSG_CHECKING(if gcc version is valid)
-            if test ${GXX_MAJOR} -lt 3 ; then
-              AC_MSG_RESULT(no)
-              AC_MSG_ERROR([OPAL requires gcc version 3 or later])
-            else
-              AC_MSG_RESULT(yes)
-            fi
-          fi
-         ])
-
 dnl OPAL_CHECK_BSR
 dnl Check for bit scan intrinsic
 dnl Arguments: 
