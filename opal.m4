@@ -504,32 +504,12 @@ AC_DEFUN([OPAL_CHECK_PTLIB_DEFINE],
 	  if test "x$opal_ptlib_option" = "xyes" ; then
 	    AC_DEFINE([$3], [1], [$1])
 	  fi
-	  
          ])
 
 dnl ########################################################################
 dnl LIBAVCODEC
 dnl ########################################################################
 
-
-dnl OPAL_LIBAVCODEC_HACK
-dnl Whether to activate or deactivate the memory alignment hack for libavcodec
-dnl Arguments: $LIBAVCODEC_STACKALIGN_HACK The default value
-dnl Return:    $LIBAVCODEC_STACKALIGN_HACK The possibly user-mandated value
-dnl Define:    LIBAVCODEC_STACKALIGN_HACK The possibly user-mandated value
-
-AC_DEFUN([OPAL_LIBAVCODEC_HACK],
-         [
-          AC_ARG_ENABLE([libavcodec-stackalign-hack],
-                        [AC_HELP_STRING([--enable-libavcodec-stackalign-hack], [Stack alignment hack for libavcodec library])],
-                        [LIBAVCODEC_STACKALIGN_HACK=$enableval])
-          if test x$LIBAVCODEC_STACKALIGN_HACK = xyes; then
-            AC_MSG_NOTICE(libavcodec stack align hack enabled)
-            AC_DEFINE([LIBAVCODEC_STACKALIGN_HACK], [1], [Stack alignment hack for libavcodec library])
-          else
-            AC_MSG_NOTICE(libavcodec stack align hack disabled)
-          fi
-         ])
 
 dnl OPAL_LIBAVCODEC_SOURCE
 dnl Allow the user to specify the libavcodec source dir for full MPEG4 rate control
