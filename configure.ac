@@ -27,7 +27,6 @@ AC_PROG_RANLIB
 AC_HEADER_STDC
 AC_CHECK_TOOL([AR], [ar], [:])
 AC_SUBST(LD, $CXX)
-OPAL_GCC_VERSION()
 
 OPAL_CHECK_BSR([GCC_HAS_CLZ=yes], [GCC_HAS_CLZ=no])
 if test "x${GCC_HAS_CLZ}" = "xyes" ; then
@@ -38,10 +37,7 @@ AC_SUBST(GCC_HAS_CLZ)
 dnl Enable compiler warnings
 WFLAGS=
 if test "x$ac_cv_c_compiler_gnu" = xyes; then
-  WFLAGS="-Wall -Wextra -Wstrict-aliasing -Wfloat-equal -Wno-comment -Wno-unused"
-  if test ${GXX_MAJOR} -ge 4 ; then
-    WFLAGS="$WFLAGS -Winit-self -Wno-missing-field-initializers"
-  fi
+  WFLAGS="-Wall -Wextra -Wstrict-aliasing -Wfloat-equal -Wno-comment -Wno-unused -Winit-self -Wno-missing-field-initializers"
 fi
 
 CFLAGS="$CFLAGS $WFLAGS"
