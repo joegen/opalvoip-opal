@@ -58,30 +58,4 @@
 #error Libavcodec LIBAVCODEC_VERSION_INT too old.
 #endif
 
-
-#ifdef LIBAVCODEC_STACKALIGN_HACK
-/*
-* Some combination of gcc 3.3.5, glibc 2.3.5 and PWLib 1.11.3 is throwing
-* off stack alignment for ffmpeg when it is dynamically loaded by PWLib.
-* Wrapping all ffmpeg calls in this macro should ensure the stack is aligned
-* when it reaches ffmpeg. ffmpeg still needs to be compiled with a more
-* recent gcc (we used 4.1.1) to ensure it preserves stack boundaries
-* internally.
-*
-* This macro comes from FFTW 3.1.2, kernel/ifft.h. See:
-*     http://www.fftw.org/fftw3_doc/Stack-alignment-on-x86.html
-* Used with permission.
-*/
-#define WITH_ALIGNED_STACK(what)                               \
-{                                                              \
-    (void)__builtin_alloca(16);                                \
-     __asm__ __volatile__ ("andl $-16, %esp");                 \
-							       \
-    what						       \
-}
-#else
-#define WITH_ALIGNED_STACK(what) what
-#endif
-
-
 #endif // __FFMPEG_H__
