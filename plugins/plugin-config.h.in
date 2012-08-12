@@ -117,9 +117,6 @@
 /* ffmpeg */
 #undef HAVE_LIBAVCODEC
 
-/* Stack alignment hack for libavcodec library */
-#undef LIBAVCODEC_STACKALIGN_HACK
-
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR
 
