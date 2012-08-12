@@ -123,7 +123,6 @@ HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
-LIBAVCODEC_STACKALIGN_HACK=no
 
 SUBDIRS=""
 AC_SUBST(SUBDIRS)
@@ -447,9 +446,8 @@ else
                      AC_DEFINE([HAVE_LIBAVCODEC], [1], [ffmpeg])
                      OPAL_GET_LIBNAME([LIBAVCODEC], [libavcodec], [$LIBAVCODEC_LIBS])
                      AC_SUBST(LIBAVCODEC_LIB_NAME)
-                     OPAL_LIBAVCODEC_HACK
                      case "$target_os" in
-                        cygwin | mingw ) 
+                        cygwin | mingw )
                                            LIBAVCODEC_LIB_NAME="avcodec.dll"
                                            ;;
                      esac

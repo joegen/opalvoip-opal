@@ -190,23 +190,22 @@ bool FFMPEGLibrary::Load()
   if (!CHECK_AVUTIL("av_log_set_callback", FAv_log_set_callback))
     return false;
 
-  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
+  // must be called before using avcodec lib
 
-    unsigned libVer = Favcodec_version();
-    if (libVer != LIBAVCODEC_VERSION_INT) {
-      PTRACE(2, "FFMPEG", "Warning: compiled against libavcodec headers from version "
-             << LIBAVCODEC_VERSION_MAJOR << '.' << LIBAVCODEC_VERSION_MINOR << '.' << LIBAVCODEC_VERSION_MICRO
-             << ", loaded "
-             << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
-    }
-    else {
-      PTRACE(3, "FFMPEG", "Loaded libavcodec version "
-             << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
-    }
+  unsigned libVer = Favcodec_version();
+  if (libVer != LIBAVCODEC_VERSION_INT) {
+    PTRACE(2, "FFMPEG", "Warning: compiled against libavcodec headers from version "
+           << LIBAVCODEC_VERSION_MAJOR << '.' << LIBAVCODEC_VERSION_MINOR << '.' << LIBAVCODEC_VERSION_MICRO
+           << ", loaded "
+           << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
+  }
+  else {
+    PTRACE(3, "FFMPEG", "Loaded libavcodec version "
+           << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
+  }
 
-    Favcodec_init();
-    Favcodec_register_all ();
-  });
+  Favcodec_init();
+  Favcodec_register_all ();
 
 #if PLUGINCODEC_TRACING
   AvLogSetLevel(AV_LOG_DEBUG);
@@ -222,88 +221,57 @@ bool FFMPEGLibrary::Load()
 
 AVCodec *FFMPEGLibrary::AvcodecFindEncoder(enum CodecID id)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    AVCodec *res = Favcodec_find_encoder(id);
-    return res;
-  });
+  return Favcodec_find_encoder(id);
 }
 
 
 AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    AVCodec *res = Favcodec_find_decoder(id);
-    return res;
-  });
+  return Favcodec_find_decoder(id);
 }
 
 
 AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    AVCodecContext *res = Favcodec_alloc_context();
-    return res;
-  });
+  return Favcodec_alloc_context();
 }
 
 
 AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    AVFrame *res = Favcodec_alloc_frame();
-    return res;
-  });
+  return Favcodec_alloc_frame();
 }
 
 
 int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    return Favcodec_open(ctx, codec);
-  });
+  return Favcodec_open(ctx, codec);
 }
 
 
 int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    return Favcodec_close(ctx);
-  });
+  return Favcodec_close(ctx);
 }
 
 
 int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict)
 {
-  char dummy[16];
   int res;
 
-  WITH_ALIGNED_STACK({
-    res = Favcodec_encode_video(ctx, buf, buf_size, pict);
-  });
+  res = Favcodec_encode_video(ctx, buf, buf_size, pict);
 
   PTRACE(6, "FFMPEG", "Encoded into " << res << " bytes, max " << buf_size);
   return res;
@@ -312,60 +280,40 @@ int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_si
 
 int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, const BYTE *buf, int buf_size)
 {
-  char dummy[16];
-
   AVPacket avpkt;
   Fav_init_packet(&avpkt);
   avpkt.data = (uint8_t *)buf;
   avpkt.size = buf_size;
 
-  WITH_ALIGNED_STACK({
-    return Favcodec_decode_video(ctx, pict, got_picture_ptr, &avpkt);
-  });
+  return Favcodec_decode_video(ctx, pict, got_picture_ptr, &avpkt);
 }
 
 
 void FFMPEGLibrary::AvcodecFree(void * ptr)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    Favcodec_free(ptr);
-  });
+  Favcodec_free(ptr);
 }
 
 
 void FFMPEGLibrary::AvSetDimensions(AVCodecContext *s, int width, int height)
 {
-  char dummy[16];
-
   WaitAndSignal m(processLock);
 
-  WITH_ALIGNED_STACK({
-    Favcodec_set_dimensions(s, width, height);
-  });
+  Favcodec_set_dimensions(s, width, height);
 }
 
 
 void FFMPEGLibrary::AvLogSetLevel(int level)
 {
-  char dummy[16];
-
-  WITH_ALIGNED_STACK({
-    FAv_log_set_level(level);
-  });
+  FAv_log_set_level(level);
 }
 
 
 void FFMPEGLibrary::AvLogSetCallback(void (*callback)(void*, int, const char*, va_list))
 {
-  char dummy[16];
-
-  WITH_ALIGNED_STACK({
-    FAv_log_set_callback(callback);
-  });
+  FAv_log_set_callback(callback);
 }
 
 
