@@ -10,10 +10,6 @@ dnl
 AC_DEFUN([MY_CANONICAL_TARGET], [
    AC_CANONICAL_TARGET()
 
-   # reset flags after AC_CANONICAL_TARGET which sets them to undesirable values.
-   CFLAGS=""
-   CXXFLAGS=""
-
    AC_ARG_ENABLE([ios], [AS_HELP_STRING([--enable-ios=iphone|simulator],[enable iOS support])])
 
    if test "$enable_ios" = "iphone" ; then
@@ -99,16 +95,16 @@ AC_DEFUN([MY_CANONICAL_TARGET], [
 
    case "$target_cpu" in
       x86 | i686 | i586 | i486 | i386 )
+         AC_MSG_CHECKING([64 bit system masquerading as 32 bit])
          AC_COMPILE_IFELSE(
-            [AC_LANG_SOURCE(
-               [],
-               [int t = __amd64__;]
-            )],
+            [AC_LANG_SOURCE([int t = __amd64__;])],
             [
+               AC_MSG_RESULT(yes)
                target_cpu=x86_64
                target_64bit=1
             ],
             [
+               AC_MSG_RESULT(no)
                target_cpu=x86
                target_64bit=0
             ]
