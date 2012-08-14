@@ -1516,35 +1516,30 @@ void SIPMIMEInfo::SetSIPETag(const PString & v)
 }
 
 
+static PConstCaselessString const AppearanceFieldParamName("appearance");
+static PConstCaselessString const x_line_id("x-line-id");
+
 void SIPMIMEInfo::GetAlertInfo(PString & info, int & appearance) const
 {
   info.MakeEmpty();
   appearance = -1;
 
-  PString str = GetString("Alert-Info");
-  if (str.IsEmpty())
+  SIPURL uri = GetString("Alert-Info");
+  if (uri.IsEmpty())
     return;
 
-  PINDEX pos = str.Find('<');
-  PINDEX end = str.Find('>', pos);
-  if (pos == P_MAX_INDEX || end == P_MAX_INDEX) {
-    info = str;
-    return;
+  PStringOptions & params = uri.GetFieldParameters();
+
+  if (params.Has(AppearanceFieldParamName)) {
+    appearance = params[AppearanceFieldParamName].AsUnsigned();
+    params.Remove(AppearanceFieldParamName);
+  }
+  else if (params.Has(x_line_id)) {
+    appearance = params[x_line_id].AsUnsigned();
+    params.Remove(x_line_id);
   }
 
-  info = str(pos+1, end-1);
-
-  static const char appearance1[] = ";appearance=";
-  pos = str.Find(appearance1, end);
-  if (pos != P_MAX_INDEX) {
-    appearance = str.Mid(pos+sizeof(appearance1)).AsUnsigned();
-    return;
-  }
-
-  static const char appearance2[] = ";x-line-id";
-  pos = str.Find(appearance2, end);
-  if (pos != P_MAX_INDEX)
-    appearance = str.Mid(pos+sizeof(appearance2)).AsUnsigned();
+  info = uri.AsQuotedString();
 }
 
 
@@ -1555,16 +1550,14 @@ void SIPMIMEInfo::SetAlertInfo(const PString & info, int appearance)
     return;
   }
 
-  PStringStream str;
-  if (info[0] == '<')
-    str << info;
-  else
-    str << '<' << info << '>';
-
-  if (appearance >= 0)
-    str << ";appearance=" << appearance;
-
-  SetAt("Alert-Info", str);
+  if (info.IsEmpty())
+    SetAt("Alert-Info", PSTRSTRM("<>;" << AppearanceFieldParamName << '=' << appearance));
+  else {
+    SIPURL uri = info;
+    if (appearance >= 0)
+      uri.GetFieldParameters().Set(AppearanceFieldParamName, appearance);
+    SetAt("Alert-Info", uri.AsQuotedString());
+  }
 }
 
 
