@@ -292,8 +292,8 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   m_dialog.SetProxy(proxy, false); // No default routeSet if there is a proxy for INVITE
 
-  forkedInvitations.DisallowDeleteObjects();
-  pendingInvitations.DisallowDeleteObjects();
+  m_forkedInvitations.DisallowDeleteObjects();
+  m_pendingInvitations.DisallowDeleteObjects();
   m_pendingTransactions.DisallowDeleteObjects();
 
   m_responseFailTimer.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseTimeout));
@@ -339,8 +339,8 @@ bool SIPConnection::GarbageCollection()
   }
 
   // Remove all the references to the transactions so garbage can be collected
-  pendingInvitations.RemoveAll();
-  forkedInvitations.RemoveAll();
+  m_pendingInvitations.RemoveAll();
+  m_forkedInvitations.RemoveAll();
 
   return OpalConnection::GarbageCollection();
 }
@@ -390,14 +390,8 @@ void SIPConnection::OnReleased()
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
-      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-        /* If we never even received a "100 Trying" from a remote, then just abort
-           the transaction, do not wait, it is probably on an interface that the
-           remote is not physically on. */
-        if (!invitation->IsCompleted())
-          invitation->Abort();
+      if (!m_forkedInvitations.IsEmpty())
         notifyDialogEvent = SIPDialogNotification::Timeout;
-      }
       break;
 
     case ReleaseWithResponse :
@@ -431,32 +425,25 @@ void SIPConnection::OnReleased()
         delete bye;
         bye.SetNULL();
       }
-
-      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-        /* If we never even received a "100 Trying" from a remote, then just abort
-            the transaction, do not wait, it is probably on an interface that the
-            remote is not physically on. */
-        if (!invitation->IsCompleted())
-          invitation->Abort();
-      }
       break;
 
     case ReleaseWithCANCEL :
-      PTRACE(3, "SIP\tCancelling " << forkedInvitations.GetSize() << " transactions.");
-      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
-        /* If we never even received a "100 Trying" from a remote, then just abort
-           the transaction, do not wait, it is probably on an interface that the
-           remote is not physically on, otherwise we have to CANCEL and wait. */
-        if (invitation->IsTrying())
-          invitation->Abort();
-        else
-          invitation->Cancel();
-      }
       notifyDialogEvent = SIPDialogNotification::Cancelled;
   }
 
+  PTRACE(3, "SIP\tCancelling " << m_forkedInvitations.GetSize() << " invitations.");
+  for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+    /* If we never even received a "100 Trying" from a remote, then just abort
+       the transaction, do not wait, it is probably on an interface that the
+       remote is not physically on, otherwise we have to CANCEL and wait. */
+    if (invitation->IsTrying())
+      invitation->Cancel();
+    else
+      invitation->Abort();
+  }
+
   // Abort the queued up re-INVITEs we never got a chance to send.
-  for (PSafePtr<SIPTransaction> invitation(pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
+  for (PSafePtr<SIPTransaction> invitation(m_pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
     invitation->Abort();
 
   // No termination event set yet, get it from the call end reason
@@ -480,6 +467,19 @@ void SIPConnection::OnReleased()
   if (bye != NULL) {
     bye->WaitForCompletion();
     bye.SetNULL();
+  }
+
+  /* CANCEL any pending transactions, e.g. INFO messages. These should timeout
+     and go away, but a pathological case with a broken proxy had it returning
+     a 100 Trying on every request. The RFC3261/17.1.4 state machine does not
+     have an out for the client in this case, it would continue forever if the
+     server says so. Fail safe on call termination. */
+  PTRACE(3, "SIP\tCancelling " << m_pendingTransactions.GetSize() << " transactions.");
+  for (PSafePtr<SIPTransaction> transaction(m_pendingTransactions, PSafeReference); transaction != NULL; ++transaction) {
+    if (transaction->IsTrying())
+      transaction->Abort();
+    else
+      transaction->Cancel();
   }
 
   // Close media and indicate call ended, even though we have a little bit more
@@ -1368,7 +1368,7 @@ void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
 
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
-  bool startImmediate = !m_handlingINVITE && pendingInvitations.IsEmpty();
+  bool startImmediate = !m_handlingINVITE && m_pendingInvitations.IsEmpty();
 
   PTRACE(3, "SIP\t" << (startImmediate ? "Start" : "Queue") << "ing re-INVITE to " << msg);
 
@@ -1385,15 +1385,15 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
     m_handlingINVITE = true;
   }
 
-  pendingInvitations.Append(invite);
+  m_pendingInvitations.Append(invite);
   return true;
 }
 
 
 void SIPConnection::StartPendingReINVITE()
 {
-  while (!pendingInvitations.IsEmpty()) {
-    PSafePtr<SIPTransaction> reInvite = pendingInvitations.GetAt(0, PSafeReadWrite);
+  while (!m_pendingInvitations.IsEmpty()) {
+    PSafePtr<SIPTransaction> reInvite = m_pendingInvitations.GetAt(0, PSafeReadWrite);
     if (reInvite->IsInProgress())
       break;
 
@@ -1404,7 +1404,7 @@ void SIPConnection::StartPendingReINVITE()
       }
     }
 
-    pendingInvitations.RemoveAt(0);
+    m_pendingInvitations.RemoveAt(0);
   }
 }
 
@@ -1486,7 +1486,7 @@ bool SIPConnection::WriteINVITE()
   }
 
   if (invite->Start()) {
-    forkedInvitations.Append(invite);
+    m_forkedInvitations.Append(invite);
     return PTrue;
   }
 
@@ -1767,10 +1767,10 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   bool allFailed = true;
   {
     // The connection stays alive unless all INVITEs have failed
-    PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference);
+    PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference);
     while (invitation != NULL) {
       if (invitation == &transaction)
-        forkedInvitations.Remove(invitation++);
+        m_forkedInvitations.Remove(invitation++);
       else {
         if (!invitation->IsFailed())
           allFailed = false;
@@ -1861,7 +1861,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   // See if this is an initial INVITE or a re-INVITE
   bool reInvite = true;
-  for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+  for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
     if (invitation == &transaction) {
       reInvite = false;
       break;
@@ -1931,7 +1931,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       m_sessions.Assign(sessionsInTransaction);
 
     // Have a positive response to the INVITE, so cancel all the other invitations sent.
-    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+    for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
       if (invitation != &transaction)
         invitation->Cancel();
     }
@@ -2175,7 +2175,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         break;
       }
 
-      forkedInvitations.Append(newTransaction);
+      m_forkedInvitations.Append(newTransaction);
       return;
     }
 
@@ -2206,7 +2206,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   // To avoid overlapping INVITE transactions, wait till here before
   // starting the next one.
   if (responseClass != 1) {
-    pendingInvitations.Remove(&transaction);
+    m_pendingInvitations.Remove(&transaction);
     StartPendingReINVITE();
   }
 
@@ -2248,7 +2248,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (GetPhase() < ConnectedPhase) {
     // Final check to see if we have forked INVITEs still running, don't
     // release connection until all of them have failed.
-    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+    for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
       if (invitation->IsProceeding())
         return;
       // If we have not even got a 1xx from the remote for this forked INVITE,
@@ -2938,7 +2938,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   }
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE)
-    forkedInvitations.Append(newTransaction);
+    m_forkedInvitations.Append(newTransaction);
   else {
     std::map<std::string, SIP_PDU *>::iterator it = m_responses.find(transaction.GetTransactionID());
     if (it != m_responses.end()) {

@@ -734,8 +734,8 @@ class SIPConnection : public OpalRTPConnection
     unsigned       m_responseRetryCount;
 
     bool                      m_referInProgress;
-    PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
-    PSafeList<SIPTransaction> pendingInvitations; // For re-INVITE
+    PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
+    PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
     PSafeList<SIPTransaction> m_pendingTransactions;
 
 #if OPAL_FAX
