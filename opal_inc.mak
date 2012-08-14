@@ -59,7 +59,7 @@ else
 endif
 
 
-LDLIBS := -l$(LIB_NAME)$(LIBTYPE) $(LDLIBS)
+LDLIBS := -l$(LIB_NAME)$(LIB_TYPE) $(LDLIBS)
 
 $(TARGET) : $(OPAL_LIBDIR)/$(OPAL_FILE)
 
