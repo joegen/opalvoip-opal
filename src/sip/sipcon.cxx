@@ -3872,7 +3872,8 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
   bool done = OpalRTPConnection::OnMediaCommand(stream, command);
 
 #if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+  if (PIsDescendant(&command, OpalVideoUpdatePicture) &&
+        (m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) != 0) {
     if (m_infoPictureFastUpdateTimer.IsRunning()) {
       PTRACE(4, "SIP\tRecent INFO picture_fast_update was sent, not sending another");
     }
