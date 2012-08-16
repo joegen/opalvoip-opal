@@ -4182,7 +4182,8 @@ bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
     }
 
 #if OPAL_VIDEO
-    if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    if (PIsDescendant(&command, OpalVideoUpdatePicture) &&
+         (m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) != 0) {
       if (m_h245FastUpdatePictureTimer.IsRunning()) {
         PTRACE(4, "H.323\tRecent H.245 VideoFastUpdatePicture was sent, not sending another");
         return true;

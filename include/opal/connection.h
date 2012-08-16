@@ -93,6 +93,33 @@ class PURL;
 #define OPAL_OPT_ALERTING_TYPE        "Alerting-Type"         ///< String option to set the alerting type string for call
 #define OPAL_OPT_REMOVE_CODEC         "Remove-Codec"          ///< String option to remove codecs for this call
 
+/**OpalConnection::StringOption key to a bit mask indicating the the video
+   update picture request method.
+
+   Bit 0 (OPAL_OPT_VIDUP_METHOD_OOB) indicates it is sent out of band, e.g.
+   SIP INFO request or H.245 videoFastUpdate)
+
+   bit 1 (OPAL_OPT_VIDUP_METHOD_RTCP) indicates using RTCP is used as per
+   RFC4585 and RFC5104. These are only transmitted if the capabilities have
+   been negotiated successfully.
+
+   bit 2 (OPAL_OPT_VIDUP_METHOD_PLI) indicates the forced use of RTCP Packet
+   Loss Indication command as per RFC4585. Capabilities are ignored.
+
+   bit 3 (OPAL_OPT_VIDUP_METHOD_FIR) indicates the forced use of RTCP Force
+   Intra-Frame Request command as per RFC5104. Capabilities are ignored.
+
+   Default is 3 (OPAL_OPT_VIDUP_METHOD_DEFAULT) for both out of band and RTCP
+   methods.
+  */
+#define OPAL_OPT_VIDUP_METHODS        "Video-Update-Picture-Method"
+#define OPAL_OPT_VIDUP_METHOD_OOB     1
+#define OPAL_OPT_VIDUP_METHOD_RTCP    2
+#define OPAL_OPT_VIDUP_METHOD_PLI     4
+#define OPAL_OPT_VIDUP_METHOD_FIR     8
+#define OPAL_OPT_VIDUP_METHOD_DEFAULT 3
+
+
 
 /*! \page pageOpalConnections Connection handling in the OPAL library
 
