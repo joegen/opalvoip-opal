@@ -155,7 +155,9 @@ void TestPresEnt::Main()
              "f-file: name of script file to execute.\n"
              "L-listener: set listener address:port.\n"
              "P-presence-agent: set presence agent default address.\n"
+#if OPAL_PTLIB_STUN
              "S-stun: set STUN server address.\n"
+#endif
              "T-translation: set NAT translation address.\n"
              "X-xcap-server: set XCAP server root URL.\n"
              "-xcap-auth-id: set XCAP server authorisation ID.\n"
@@ -184,6 +186,7 @@ void TestPresEnt::Main()
 
   PString listeners = args.GetOptionString('L');
 
+#if OPAL_PTLIB_STUN
   if (args.HasOption('S')) {
     cout << "Executing STUN lookup..." << flush;
     m_manager->SetSTUNServer(args.GetOptionString('S'));
@@ -196,6 +199,7 @@ void TestPresEnt::Main()
     if ((stun != NULL) && (stun->GetNatType() != PSTUNClient::OpenNat))
       listeners = "udp$*:*";
   }
+#endif
 
   m_presenceAgent = args.GetOptionString('P');
   m_xcapRoot = args.GetOptionString('X');

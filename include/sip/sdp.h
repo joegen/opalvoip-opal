@@ -115,8 +115,11 @@ class SDPMediaFormat : public PObject
     void SetClockRate(unsigned  v) { clockRate = v; }
 
     void SetParameters(const PString & v) { parameters = v; }
+
+#if OPAL_VIDEO
     void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
     OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
+#endif
 
     const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
     OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
@@ -135,7 +138,9 @@ class SDPMediaFormat : public PObject
     PCaselessString encodingName;
     PString parameters;
     PString m_fmtp;
+#if OPAL_VIDEO
     OpalVideoFormat::RTCPFeedback m_rtcp_fb; // RFC4585
+#endif
 };
 
 typedef PList<SDPMediaFormat> SDPMediaFormatList;
@@ -244,7 +249,9 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
+#if OPAL_VIDEO
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
+#endif
 
     void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
     const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
@@ -358,7 +365,9 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
   protected:
     bool m_enableFeedback;
+#if OPAL_VIDEO
     OpalVideoFormat::RTCPFeedback m_rtcp_fb;
+#endif
     PList<SDPCryptoSuite>         m_cryptoSuites;
 };
 

@@ -713,7 +713,11 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 PBoolean H323_RTPChannel::OnSendingAltPDU(H245_ArrayOf_GenericInformation & alternate) const
 {
   PTRACE ( 4, "H323RTP\tOnSendingAltPDU");
+#if OPAL_H460
   return connection.OnSendingOLCGenericInformation(GetSessionID(), alternate, false);
+#else
+  return false;
+#endif
 }
 
 
@@ -758,7 +762,11 @@ PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckPara
 
 PBoolean H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
 { 
+#if OPAL_H460
   return connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
+#else
+  return false;
+#endif
 }
 
 

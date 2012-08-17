@@ -1146,7 +1146,11 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
-      if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole()))
+      if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+#if OPAL_VIDEO
+            , incomingMedia->GetContentRole()
+#endif
+         ))
         return false;
 
       sendStream = GetMediaStream(sessionId, false);
@@ -1162,7 +1166,11 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
     if (recvStream == NULL) {
       PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
-      if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), incomingMedia->GetContentRole()))
+      if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+#if OPAL_VIDEO
+            , incomingMedia->GetContentRole()
+#endif
+         ))
         return false;
 
       recvStream = GetMediaStream(sessionId, true);
@@ -3171,7 +3179,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       break;
 
     case SIP_PDU::Method_MESSAGE :
-#if OPAL_HAS_IM
+#if OPAL_HAS_SIPIM
       OpalSIPIMContext::OnMESSAGECompleted(endpoint,
                                            dynamic_cast<SIPMessage &>(transaction).GetParameters(),
                                            response.GetStatusCode());
@@ -3385,8 +3393,11 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // If already open then update to new parameters/payload type
 
   if (recvStream == NULL &&
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat(), mediaDescription->GetContentRole()) &&
-      (recvStream = GetMediaStream(sessionId, true)) != NULL) {
+      ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+#if OPAL_VIDEO
+                         , mediaDescription->GetContentRole()
+#endif
+                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
     recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
     recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
   }
@@ -3394,8 +3405,11 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL &&
-        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat(), mediaDescription->GetContentRole()) &&
-        (sendStream = GetMediaStream(sessionId, false)) != NULL)
+        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+#if OPAL_VIDEO
+                         , mediaDescription->GetContentRole()
+#endif
+                         ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
   }
 
@@ -3723,7 +3737,7 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
-#if OPAL_HAS_IM
+#if OPAL_HAS_SIPIM
   OpalSIPIMContext::OnReceivedMESSAGE(endpoint, this, GetTransport(), pdu);
 #else
   pdu.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);

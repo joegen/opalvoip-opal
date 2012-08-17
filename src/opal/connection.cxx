@@ -1099,9 +1099,11 @@ void OpalConnection::EnableRecording()
   if (stream != NULL)
     OnStartRecording(stream->GetPatch());
 
+#if OPAL_VIDEO
   stream = GetMediaStream(OpalMediaType::Video(), true);
   if (stream != NULL)
     OnStartRecording(stream->GetPatch());
+#endif
 }
 
 
@@ -1111,9 +1113,11 @@ void OpalConnection::DisableRecording()
   if (stream != NULL)
     OnStopRecording(stream->GetPatch());
 
+#if OPAL_VIDEO
   stream = GetMediaStream(OpalMediaType::Video(), true);
   if (stream != NULL)
     OnStopRecording(stream->GetPatch());
+#endif
 }
 
 

@@ -798,7 +798,7 @@ class SIPConnection : public OpalRTPConnection
 
     std::map<std::string, SIP_PDU *> m_responses;
 
-#if OPAL_HAS_IM
+#if OPAL_HAS_SIPIM
     PSafePtr<OpalSIPIMContext> m_imContext;
 #endif
 

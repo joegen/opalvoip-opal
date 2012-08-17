@@ -1129,6 +1129,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 };
 
 
+#if OPAL_STATISTICS
 void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
 {
   OpalVideoTranscoder::GetStatistics(statistics);
@@ -1140,6 +1141,7 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
     statistics.m_quality = stats.GetInteger("Quality", -1);
   }
 }
+#endif // OPAL_STATISTICS
 
 
 #endif // OPAL_VIDEO
@@ -1333,6 +1335,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       return false;
     }
 
+#if OPAL_STATISTICS
     void GetStatistics(OpalMediaStatistics & statistics) const
     {
       statistics.m_fax.m_result = -2;
@@ -1372,6 +1375,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         }
       }
     }
+#endif // OPAL_STATISTICS
 };
 
 #endif // OPAL_FAX
@@ -1597,7 +1601,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
                                                          timeStamp);
       break;
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
     case PluginCodec_MediaTypeFax:
       mediaFormatInternal = handler->OnCreateFaxFormat(*this,
                                                        codecDefn,

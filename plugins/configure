@@ -764,7 +764,6 @@ enable_silk
 enable_h_261
 enable_default_to_full_capabilties
 enable_libavcodec
-enable_libavcodec_stackalign_hack
 with_libavcodec_source_dir
 enable_x264
 enable_x264_link_static
@@ -1442,8 +1441,6 @@ Optional Features:
   --enable-default-to-full-capabilties
                           default to full capabilities at empty fmtp lines
   --disable-libavcodec    disable libavcodec support
-  --enable-libavcodec-stackalign-hack
-                          Stack alignment hack for libavcodec library
   --disable-x264          disable x264 support
   --enable-x264-link-static
                           Statically link x264 to the plugin. Default for
@@ -2717,11 +2714,6 @@ $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
-
-
-
-
-
 
 
 
@@ -6523,7 +6515,6 @@ HAVE_VPB=no
 HAVE_IXJ=no
 HAVE_SPANDSP=yes
 DEFAULT_TO_FULL_CAPABILITIES=yes
-LIBAVCODEC_STACKALIGN_HACK=no
 
 SUBDIRS=""
 
@@ -8938,23 +8929,6 @@ _ACEOF
 
           fi
 
-
-
-          # Check whether --enable-libavcodec-stackalign-hack was given.
-if test "${enable_libavcodec_stackalign_hack+set}" = set; then :
-  enableval=$enable_libavcodec_stackalign_hack; LIBAVCODEC_STACKALIGN_HACK=$enableval
-fi
-
-          if test x$LIBAVCODEC_STACKALIGN_HACK = xyes; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: libavcodec stack align hack enabled" >&5
-$as_echo "$as_me: libavcodec stack align hack enabled" >&6;}
-
-$as_echo "#define LIBAVCODEC_STACKALIGN_HACK 1" >>confdefs.h
-
-          else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: libavcodec stack align hack disabled" >&5
-$as_echo "$as_me: libavcodec stack align hack disabled" >&6;}
-          fi
 
                      case "$target_os" in
                         cygwin | mingw )

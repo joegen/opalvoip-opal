@@ -436,6 +436,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
             }
           }
 
+#if OPAL_VIDEO
           // look for known video types
           else if (pt <= RTP_DataFrame::LastKnownPayloadType) {
             OpalMediaFormatList::const_iterator r;
@@ -476,6 +477,7 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
               }
             }
           }
+#endif // OPAL_VIDEO
         }
       }
       ++iter;

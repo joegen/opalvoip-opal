@@ -67,7 +67,9 @@ void FaxOPAL::Main()
                   "F-no-fallback."
                   "q-quiet."
                   "T-timeout:"
+#if OPAL_STATISTICS
                   "v-verbose."
+#endif
                   "X-switch-time:") ||
        args.HasOption('h') ||
        args.GetCount() == 0) {
@@ -85,7 +87,9 @@ void FaxOPAL::Main()
             "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
             "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
             "  -q or --quiet              : Only output error conditions.\n"
+#if OPAL_STATISTICS
             "  -v or --verbose            : Output more information on call progress.\n"
+#endif
             "\n"
          << m_manager->GetArgumentUsage()
          << "\n"
@@ -196,7 +200,9 @@ void FaxOPAL::Main()
 
   SetTerminationValue(2);
 
+#if OPAL_STATISTICS
   map<PString, OpalMediaStatistics> lastStatisticsByToken;
+#endif
 
   // Wait for call to come in and finish (default one year)
   PSimpleTimer timeout(0, args.GetOptionString('T', "31536000").AsUnsigned());
@@ -206,6 +212,7 @@ void FaxOPAL::Main()
       break;
     }
 
+#if OPAL_STATISTICS
     if (args.HasOption('v')) {
       PArray<PString> tokens = m_manager->GetAllCalls();
       for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
@@ -237,6 +244,7 @@ void FaxOPAL::Main()
         }
       }
     }
+#endif // OPAL_STATISTICS
   }
 
   cout << "\nCompleted." << endl;
@@ -270,6 +278,7 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
+#if OPAL_STATISTICS
   OpalMediaStatistics stats;
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
@@ -297,6 +306,10 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
       if (!stats.m_fax.m_errorText.IsEmpty())
         cerr << " (" << stats.m_fax.m_errorText << ')';
   }
+#else
+  cerr << (failed ? "Success" : "Failed");
+#endif // OPAL_STATISTICS
+
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
 }
 

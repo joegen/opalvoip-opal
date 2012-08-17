@@ -76,7 +76,7 @@ bool OpalFaxMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
                                   const PStringArray & /*sdpLines*/,
                                   PINDEX /*index*/)
 {
-  return sdpMediaType == GetSDPMediaType() && sdpTransport == OpalFaxSession::UDPTL();
+  return sdpMediaType == GetSDPMediaType() && sdpTransport == OpalFaxMediaType::UDPTL();
 }
 
 

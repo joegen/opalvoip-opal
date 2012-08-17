@@ -2158,10 +2158,14 @@ void H323Gatekeeper::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interf
 }
 
 
+#if OPAL_H460
+
 H460_FeatureSet & H323Gatekeeper::GetFeatures()
 {
   return *features;
 }
+
+#endif // OPAL_H460
 
 
 #endif // OPAL_H323

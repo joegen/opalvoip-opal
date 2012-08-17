@@ -107,6 +107,8 @@ class MyMixerEndPoint : public OpalMixerEndPoint
 };
 
 
+#if OPAL_PCSS
+
 class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
     PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
@@ -126,6 +128,8 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
       return true;
     }
 };
+
+#endif // OPAL_PCSS
 
 
 class MyManager : public OpalManagerCLI
