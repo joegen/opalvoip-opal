@@ -242,6 +242,11 @@ if test "x$OPAL_PTLIB_URL" != "xyes" ; then
    AC_MSG_ERROR([Must have URL functionality enabled in PTLib])
 fi
 
+OPAL_CHECK_PTLIB([HTTP],     [PTLIB_HTTP])
+if test "x$OPAL_PTLIB_HTTP" != "xyes" ; then
+   AC_MSG_ERROR([Must have HTTP functionality enabled in PTLib])
+fi
+
 OPAL_CHECK_PTLIB([STUN],         [PTLIB_STUN])
 OPAL_CHECK_PTLIB([SSL/TLS],      [PTLIB_SSL])
 OPAL_CHECK_PTLIB([SSL/AES],      [PTLIB_SSL_AES])
@@ -471,7 +476,8 @@ dnl MSWIN_DEFINE   h323,OPAL_H323
 OPAL_SIMPLE_OPTION(h323,OPAL_H323, [whether to enable H.323 protocol support])
 
 if test "x$OPAL_H323" = "xyes" -a "x$OPAL_PTLIB_ASN" != "xyes" ; then
-  AC_MSG_ERROR([Must have ASN.1 for H.323])
+  AC_MSG_NOTICE([Must have ASN.1 for H.323])
+  OPAL_H323=no
 fi
 
 dnl MSWIN_DISPLAY  iax2,IAX2 support
@@ -508,7 +514,7 @@ OPAL_SIMPLE_OPTION(rfc4103,OPAL_HAS_RFC4103, [whether to enable RFC4103 support]
 
 dnl MSWIN_DISPLAY  fax,T.38 FAX protocol
 dnl MSWIN_DEFINE   fax,OPAL_FAX
-OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY])
+OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY], [OPAL_PTLIB_ASN])
 
 dnl MSWIN_DISPLAY    h450,H.450
 dnl MSWIN_IF_FEATURE h450,h323

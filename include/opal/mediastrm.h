@@ -670,8 +670,10 @@ class OpalRTPMediaStream : public OpalMediaStream
     OpalRTPSession & rtpSession;
     unsigned         minAudioJitterDelay;
     unsigned         maxAudioJitterDelay;
+#if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
+#endif
 };
 
 

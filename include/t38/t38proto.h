@@ -277,8 +277,6 @@ class OpalFaxConnection : public OpalLocalConnection
 
 typedef OpalFaxConnection OpalT38Connection; // For backward compatibility
 
-#if OPAL_PTLIB_ASN
-
 class T38_UDPTLPacket;
 
 class OpalFaxSession : public OpalMediaSession
@@ -350,8 +348,6 @@ class OpalFaxMediaStream : public OpalMediaStream
 
     OpalFaxSession & m_session;
 };
-
-#endif // OPAL_PTLIB_ASN
 
 #endif // OPAL_FAX
 

@@ -48,6 +48,7 @@
 #include <ptclib/enum.h>
 #include <sip/sipep.h>
 #include <ptclib/pxml.h>
+#include <ptclib/random.h>
 
 #include <algorithm>
 

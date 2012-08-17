@@ -36,7 +36,6 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_FAX
 #if OPAL_H323
 
 #include <t38/h323t38.h>
@@ -248,7 +247,6 @@ H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & conn
 
 
 #endif // OPAL_H323
-#endif // OPAL_FAX
 
 
 /////////////////////////////////////////////////////////////////////////////

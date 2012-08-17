@@ -41,15 +41,12 @@
 
 
 #if OPAL_T38_CAPABILITY
-#if OPAL_PTLIB_ASN
 
 #include <rtp/rtp.h>
 
 OPAL_INSTANTIATE_MEDIATYPE(OpalFaxMediaType);
 
-const PCaselessString & OpalFaxSession::UDPTL() { static const PConstCaselessString s("udptl"); return s; }
-
-static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxSession::UDPTL());
+const PCaselessString & OpalFaxMediaType::UDPTL() { static const PConstCaselessString s("udptl"); return s; }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -92,12 +89,11 @@ const OpalMediaFormat & GetOpalT38()
 const char * OpalFaxMediaType::Name() { return "fax"; }
 
 OpalFaxMediaType::OpalFaxMediaType()
-  : OpalMediaTypeDefinition(Name(), OpalFaxSession::UDPTL(), 3) // Must be 3 for H.323 operation
+  : OpalMediaTypeDefinition(Name(), UDPTL(), 3) // Must be 3 for H.323 operation
 {
 }
 
 
-#endif // OPAL_PTLIB_ASN
 #endif // OPAL_T38_CAPABILITY
 
 

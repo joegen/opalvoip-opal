@@ -1501,9 +1501,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 
 #if OPAL_T38_CAPABILITY
 extern const OpalMediaFormat & GetOpalCiscoNSE();
-#if OPAL_PTLIB_ASN
 extern const OpalMediaFormat & GetOpalT38();
-#endif
 #endif
 
 

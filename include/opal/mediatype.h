@@ -260,6 +260,7 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 {
   public:
     static const char * Name();
+    static const PCaselessString & UDPTL();
 
     OpalFaxMediaType();
 

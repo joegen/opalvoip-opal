@@ -1868,10 +1868,10 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
 
   PNatMethod::NatTypes type = m_natMethod->GetNatType();
   PIPSocket::Address stunExternalAddress;
-  if (type != PSTUNClient::BlockedNat)
+  if (type != PNatMethod::BlockedNat)
     m_natMethod->GetExternalAddress(stunExternalAddress);
 
-  PTRACE(3, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
+  PTRACE(3, "OPAL\tNAT \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
 
   return type;
 }

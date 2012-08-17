@@ -34,10 +34,10 @@ endif
 
 TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
 CONFIGURE      := $(OPALDIR)/configure
-CONFIG_FILES   := $(TOP_LEVEL_MAKE) \
-                  $(OPALDIR)/make/opal_defs.mak \
-                  $(OPALDIR)/opal.pc \
+CONFIG_FILES   := $(OPALDIR)/opal.pc \
                   $(OPALDIR)/opal_cfg.dxy \
+                  $(TOP_LEVEL_MAKE) \
+                  $(OPALDIR)/make/opal_defs.mak \
                   $(OPALDIR)/include/opal/buildopts.h
 
 PLUGIN_CONFIG  := $(OPALDIR)/plugins/configure
@@ -58,8 +58,17 @@ default: $(CONFIG_FILES)
 config:
 	$(CONFIGURE) $(CFG_ARGS)
 
-$(firstword $(CONFIG_FILES)): $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(CONFIG_FILES))
+# this complexity is so if any of CONFIG_FILES does not exist it is created
+# with ./configure only being executed once.
+FIRST_CONFIG := $(firstword $(CONFIG_FILES))
+OTHER_CONFIGS := $(wordlist 2,1000,$(CONFIG_FILES))
+
+$(FIRST_CONFIG): $(OTHER_CONFIGS) $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(CONFIG_FILES))
 	$(CONFIGURE) $(CFG_ARGS)
+	touch $@
+
+$(OTHER_CONFIGS):
+	touch $@
 
 
 ifneq (,$(AUTOCONF))

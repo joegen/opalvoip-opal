@@ -31,6 +31,10 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include "h264mf_inc.cxx"
 
 #include <opal/mediafmt.h>
@@ -204,6 +208,9 @@ const OpalVideoFormat & GetOpalH264_MODE1()
 
   return format;
 }
+
+
+#endif // OPAL_VIDEO
 
 
 // End of File ///////////////////////////////////////////////////////////////

@@ -44,28 +44,6 @@
 class T140String;
 
 
-/** Packet for carrying RFC 4103 (T.140) instant message over RTP
-  */
-class OpalT140RTPFrame : public RTP_DataFrame
-{
-  public:
-    OpalT140RTPFrame();
-    OpalT140RTPFrame(const PString & contentType);
-    OpalT140RTPFrame(const PString & contentType, const T140String & content);
-    OpalT140RTPFrame(const BYTE * data, PINDEX len, PBoolean dynamic = true);
-    OpalT140RTPFrame(const RTP_DataFrame & frame);
-
-    void SetContentType(const PString & contentType);
-    PString GetContentType() const;
-
-    void SetContent(const T140String & text);
-    bool GetContent(T140String & text) const;
-    bool GetContent(PString & str) const;
-
-    PString AsString() const { return PString((const char *)GetPayloadPtr(), GetPayloadSize()); }
-};
-
-
 /** Media stream for carrying RFC 4103 (T.140) instant message over RTP
   */
 class OpalT140MediaStream : public OpalMediaStream

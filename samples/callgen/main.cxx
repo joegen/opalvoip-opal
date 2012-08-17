@@ -69,11 +69,14 @@ void CallGen::Main()
              "-tminwait:             Minimum interval between calls in seconds [10]\n"
              "-tmaxwait:             Maximum interval between calls in seconds [30]\n"
 
+#if OPAL_SIP
              "[SIP:]"
              "-no-sip.               Do not start SIP\n"
              "-sip-interface:        Specify IP address and port listen on for SIP [*:5060]\n"
              "R-registrar:           Specify address of record for registration\n"
+#endif
 
+#if OPAL_H323
              "[H.323:]"
              "-no-h323.              Do not start H.323\n"
              "-h323-interface:       Specify IP address and port listen on for H.323 [*:1720]\n"
@@ -83,6 +86,7 @@ void CallGen::Main()
              "G-discover-gatekeeper. Discover gatekeeper automatically [false]\n"
              "-require-gatekeeper.   Exit if gatekeeper discovery fails [false]\n"
              "a-access-token-oid:    Gatekeeper access token object identifier\n"
+#endif
 
              "[Media:]"
              "O-out-msg:             Specify PCM16 WAV file for outgoing message [ogm.wav]\n"
@@ -90,7 +94,9 @@ void CallGen::Main()
              "D-disable:             Disable codec (use multiple times) [none]\n"
 
              "[Network:]"
+#if OPAL_PTLIB_STUN
              "S-stun:                Specify Host/addres of STUN server\n"
+#endif
              "-tcp-base:             Specific the base TCP port to use.\n"
              "-tcp-max:              Specific the maximum TCP port to use.\n"
              "-udp-base:             Specific the base UDP port to use.\n"
@@ -152,8 +158,10 @@ void CallGen::Main()
     m_incomingAudioDirectory = PString::Empty();
   }
 
+#if OPAL_PTLIB_STUN
   if (args.HasOption('S'))
     m_manager.SetSTUNServer(args.GetOptionString('S'));
+#endif
 
 #if OPAL_H323
   if (!args.HasOption("no-h323")) {

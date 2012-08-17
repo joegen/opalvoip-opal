@@ -122,12 +122,14 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
   OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
   OpalMediaTypeList::iterator iterMediaType;
 
+#if OPAL_VIDEO
   // For maximum compatibility, make sure audio/video are first
   iterMediaType = std::find(allMediaTypes.begin(), allMediaTypes.end(), OpalMediaType::Video());
   if (iterMediaType != allMediaTypes.end() && iterMediaType != allMediaTypes.begin()) {
     allMediaTypes.erase(iterMediaType);
     allMediaTypes.insert(allMediaTypes.begin(), OpalMediaType::Video());
   }
+#endif
   iterMediaType = std::find(allMediaTypes.begin(), allMediaTypes.end(), OpalMediaType::Audio());
   if (iterMediaType != allMediaTypes.end() && iterMediaType != allMediaTypes.begin()) {
     allMediaTypes.erase(iterMediaType);
@@ -376,6 +378,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   if (session == NULL)
     return OpalConnection::OnMediaCommand(stream, command);
 
+#if OPAL_VIDEO
+
   OpalVideoFormat::RTCPFeedback rtcp_fb = stream.GetMediaFormat().GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
                                                                                 OpalVideoFormat::e_NoRTCPFb);
   if (rtcp_fb == OpalVideoFormat::e_NoRTCPFb) {
@@ -393,8 +397,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
     PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
     return OpalConnection::OnMediaCommand(stream, command);
   }
-
-#if OPAL_VIDEO
 
   const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
   if (tsto != NULL) {

@@ -100,7 +100,7 @@ class OpalPluginCodecHandler : public PObject
     virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool v);
 #endif
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
     virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
                                           const PluginCodec_Definition * codecDefn,
                                                             const char * fmtName,
@@ -321,7 +321,9 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     OpalPluginVideoTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
     ~OpalPluginVideoTranscoder();
 
+#if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
 
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);

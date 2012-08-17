@@ -1106,7 +1106,7 @@ bool SIPEndPoint::OnReceivedMESSAGE(OpalTransport & transport, SIP_PDU & pdu)
     }
   }
 
-#if OPAL_HAS_IM
+#if OPAL_HAS_SIPIM
   OpalSIPIMContext::OnReceivedMESSAGE(*this, NULL, transport, pdu);
 #else
   pdu.SendResponse(transport, SIP_PDU::Failure_BadRequest, this);
@@ -1591,7 +1591,7 @@ bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
 }
 
 
-#if OPAL_HAS_IM
+#if OPAL_HAS_SIPIM
 void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params & params, SIP_PDU::StatusCodes reason)
 {
     OpalSIPIMContext::OnMESSAGECompleted(*this, params, reason);

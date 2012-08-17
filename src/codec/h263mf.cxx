@@ -31,6 +31,10 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include "h263mf_inc.cxx"
 
 #include <opal/mediafmt.h>
@@ -212,5 +216,6 @@ const OpalVideoFormat & GetOpalH263plus()
   return format;
 }
 
+#endif // OPAL_VIDEO
 
 // End of File ///////////////////////////////////////////////////////////////
