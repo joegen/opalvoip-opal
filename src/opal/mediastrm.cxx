@@ -535,7 +535,7 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
-  : m_timeOnMarkers(mediaFormat.GetMediaType() == OpalMediaType::Video())
+  : m_timeOnMarkers(mediaFormat.GetMediaType() != OpalMediaType::Audio())
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
   , m_timeUnits(mediaFormat.GetTimeUnits())
@@ -700,8 +700,10 @@ PBoolean OpalRTPMediaStream::Open()
 
   rtpSession.Restart(IsSource());
 
+#if OPAL_VIDEO
   m_forceIntraFrameFlag = mediaFormat.GetMediaType() == OpalMediaType::Video();
   m_forceIntraFrameTimer = 500;
+#endif
 
   return OpalMediaStream::Open();
 }

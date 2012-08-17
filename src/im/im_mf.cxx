@@ -334,7 +334,7 @@ OpalIMEndPoint::OpalIMEndPoint(OpalManager & manager)
 #if OPAL_HAS_SIPIM
   GetOpalSIPIM();
 #endif
-#if OPAL_RFC4175
+#if OPAL_HAS_RFC4103
   GetOpalT140();
 #endif
 #if OPAL_HAS_MSRP

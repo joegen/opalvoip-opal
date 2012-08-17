@@ -271,8 +271,10 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   if (!fmtpString.IsEmpty())
     strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
 
+#if OPAL_VIDEO
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
     strm << "a=rtcp-fb:" << (int)payloadType << ' ' << m_rtcp_fb << "\r\n";
+#endif
 }
 
 
@@ -303,9 +305,11 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
     }
   }
 
+#if OPAL_VIDEO
   // Save the RTCP feedback (RFC4585) capability.
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
+#endif
 
   // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
@@ -387,7 +391,9 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 bool SDPMediaFormat::PreEncode()
 {
   m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
+#if OPAL_VIDEO
   m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
+#endif
   return m_mediaFormat.ToCustomisedOptions();
 }
 
@@ -1222,6 +1228,7 @@ bool SDPRTPAVPMediaDescription::PreEncode()
   if (!SDPMediaDescription::PreEncode())
     return false;
 
+#if OPAL_VIDEO
   if (formats.IsEmpty())
     return true;
 
@@ -1244,6 +1251,7 @@ bool SDPRTPAVPMediaDescription::PreEncode()
   }
   else
     m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
+#endif
 
   return true;
 }
@@ -1258,9 +1266,11 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     strm << *format;
 
+#if OPAL_VIDEO
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
     strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
+#endif
 
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;
@@ -1321,6 +1331,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+#if OPAL_VIDEO
   if (attr *= "rtcp-fb") {
     if (value[0] == '*') {
       PString params = value.Mid(1).Trim();
@@ -1336,6 +1347,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     }
     return;
   }
+#endif
 
   if (attr *= "crypto") {
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);

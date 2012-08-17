@@ -59,6 +59,8 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC)
 
 
 static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
+const PCaselessString & OpalFaxSession::UDPTL() { return OpalFaxMediaType::UDPTL(); }
+static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxMediaType::UDPTL());
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -672,7 +674,9 @@ void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
   if (patch.GetSink()->GetMediaFormat() == OpalT38) {
     m_switchTimer.Stop(false);
     m_state = e_CompletedSwitch;
+#if OPAL_STATISTICS
     m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
+#endif
     PTRACE(4, "FAX\tStarted fax media stream for " << m_tiffFileFormat
            << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
   }

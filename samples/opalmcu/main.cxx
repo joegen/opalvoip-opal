@@ -70,8 +70,10 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   if (!OpalManagerCLI::Initialise(args, verbose, "mcu:<du>"))
     return false;
 
+#if OPAL_PCSS
   // Set up PCSS to do speaker playback
   new MyPCSSEndPoint(*this);
+#endif
 
   // Set up IVR to do recording or WAV file play
   OpalIVREndPoint * ivr = new OpalIVREndPoint(*this);
@@ -219,9 +221,11 @@ void MyMixerEndPoint::CmdConfAdd(PCLI::Arguments & args, INT)
 
   MyMixerNodeInfo * info = new MyMixerNodeInfo();
   info->m_name = args[0];
+#if OPAL_VIDEO
   info->m_audioOnly = args.HasOption('V');
   if (args.HasOption('s'))
     PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info->m_width, info->m_height);
+#endif
   info->m_moderatorPIN = args.GetOptionString('m');
   info->m_mediaPassThru = args.HasOption("pass-thru");
 

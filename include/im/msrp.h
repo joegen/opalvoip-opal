@@ -36,10 +36,13 @@
 
 #if OPAL_HAS_MSRP
 
+#include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <ptclib/url.h>
 #include <ptclib/inetprot.h>
-#include <opal/mediasession.h>
-#include <im/rfc4103.h>
+
+
+class OpalManager;
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -280,7 +283,9 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
+#if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
+#endif
 
     PURL GetLocalURL() const { return m_localUrl; }
     PURL GetRemoteURL() const { return m_remoteUrl; }

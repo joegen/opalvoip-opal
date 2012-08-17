@@ -117,9 +117,11 @@ OpalMediaTypeList OpalMediaType::GetList()
   if (it != types.end())
     std::swap(*types.begin(), *it);
 
+#if OPAL_VIDEO
   it = std::find(types.begin(), types.end(), Video());
   if (it != types.end())
     std::swap(*(types.begin()+1), *it);
+#endif
 
   return types;
 }

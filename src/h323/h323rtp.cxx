@@ -214,7 +214,11 @@ void H323RTPSession::OnSendRasInfo(H225_RTPSession & info)
 PBoolean H323RTPSession::OnReceivedAckAltPDU(H323_RTPChannel & channel,
                                              const H245_ArrayOf_GenericInformation & alternate)
 {
+#if OPAL_H260
   return dynamic_cast<H323Connection*>(&m_connection)->OnReceiveOLCGenericInformation(channel.GetSessionID(), alternate);
+#else
+  return false;
+#endif
 }
 
 

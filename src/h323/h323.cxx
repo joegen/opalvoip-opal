@@ -3825,9 +3825,13 @@ void H323Connection::OnSetLocalCapabilities()
 
   // Add those things that are in the other parties media format list
   static const OpalMediaType mediaList[] = {
-    OpalMediaType::Audio(),
-    OpalMediaType::Fax(),
-    OpalMediaType::Video()
+    OpalMediaType::Audio()
+#if OPAL_T38_CAPABILITY
+    , OpalMediaType::Fax()
+#endif
+#if OPAL_VIDEO
+    , OpalMediaType::Video()
+#endif
 #if OPAL_HAS_H224
     , OpalH224MediaType::MediaType()
 #endif
@@ -4540,6 +4544,8 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
 }
 
 
+#if OPAL_H460
+
 PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
                           const H245_ArrayOf_GenericInformation & alternate) const
 {
@@ -4694,6 +4700,7 @@ PBoolean H323Connection::OnSendingOLCGenericInformation(const unsigned & session
   return false;
 }
 
+#endif // OPAL_H460
 
 
 PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChannel)
@@ -5469,6 +5476,8 @@ void H323Connection::MonitorCallStatus()
 }
 
 
+#if OPAL_H460_NAT
+
 void H323Connection::H46019SetCallReceiver() 
 { 
     PTRACE(4,"H46019\tCall is receiver.");
@@ -5482,7 +5491,6 @@ void H323Connection::H46019Enabled()
 }
 
 
-#if OPAL_H460_NAT
 PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp) 
 {
     std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(session);
@@ -5586,13 +5594,14 @@ const PString & H323Connection::SessionInformation::GetCUI()
 }
 
 
+#endif // OPAL_H460_NAT
+
+
 bool H323Connection::HasCompatibilityIssue(CompatibilityIssues issue) const
 {
   return endpoint.HasCompatibilityIssue(issue, GetRemoteProductInfo());
 }
 
-
-#endif // OPAL_H460_NAT
 
 #endif // OPAL_H323
 

@@ -41,22 +41,32 @@ SUBDIRS += plugins
 endif
 
 ifeq ($(OPAL_SAMPLES),yes)
-SUBDIRS += samples/simple \
-           samples/codectest \
-           samples/callgen \
-           samples/opalecho \
-           samples/c_api
-ifeq ($(OPAL_PTLIB_CLI), yes)
-SUBDIRS += samples/testpresent
-ifeq ($(OPAL_FAX), yes)
-SUBDIRS += samples/faxopal
+
+SUBDIRS += samples/c_api
+
+ifeq ($(OPAL_HAS_PCSS),yes)
+SUBDIRS += samples/simple
+endif
+ifeq ($(OPAL_VIDEO),yes)
+SUBDIRS += samples/codectest
 endif
 ifeq ($(OPAL_IVR),yes)
-SUBDIRS += samples/opalmcu \
-           samples/ivropal
+SUBDIRS += samples/callgen
 endif
+ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
+SUBDIRS += samples/testpresent
 endif
+ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
+SUBDIRS += samples/faxopal
 endif
+ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
+SUBDIRS += samples/ivropal
+endif
+ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
+SUBDIRS += samples/opalmcu
+endif
+
+endif # OPAL_SAMPLES
 
 
 ifeq ($(V)$(VERBOSE),)
@@ -419,12 +429,8 @@ endif
 # T.38 Fax
 
 ifeq ($(OPAL_FAX), yes)
-SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx 
-
-ifeq ($(OPAL_PTLIB_ASN), yes)
-SOURCES += $(ASN_SRCDIR)/t38.cxx
-
-endif
+SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
+           $(ASN_SRCDIR)/t38.cxx
 endif
 
 
@@ -457,8 +463,6 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/gsm0610mf.cxx \
            $(OPAL_SRCDIR)/codec/gsmamrmf.cxx \
            $(OPAL_SRCDIR)/codec/iLBCmf.cxx \
-           $(OPAL_SRCDIR)/codec/h263mf.cxx \
-           $(OPAL_SRCDIR)/codec/h264mf.cxx \
            $(OPAL_SRCDIR)/codec/t38mf.cxx \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
@@ -467,7 +471,9 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
 	   $(OPAL_SRCDIR)/codec/ratectl.cxx 
 
 ifeq ($(OPAL_VIDEO), yes)
-SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx 
+SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx \
+           $(OPAL_SRCDIR)/codec/h263mf.cxx \
+           $(OPAL_SRCDIR)/codec/h264mf.cxx
 endif
 
 ifeq ($(OPAL_RFC4175), yes)
