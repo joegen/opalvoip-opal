@@ -136,16 +136,15 @@ PString OpalManagerConsole::GetArgumentSpec() const
 
 #if OPAL_LID || OPAL_CAPI
          "[PSTN options:]"
+#endif
 #if OPAL_CAPI
          "-no-capi.          Disable SDN via CAPI\n"
 #endif
 #if OPAL_LID
-         "-no-lid.           Disable Line Interface Devices"
+         "-no-lid.           Disable Line Interface Devices\n"
          "L-lines:           Set Line Interface Devices.\n"
          "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
 #endif
-#endif
-         "-stun:"
 
          "[IP options:]"
 #ifdef P_STUN
