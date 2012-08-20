@@ -46,7 +46,11 @@
 #include "dyna.h"
 
 #include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
+
+// AVPacket was declared in avformat.h before April 2009
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+  #include "libavformat/avformat.h"
+#endif
 
 #ifndef LIBAVCODEC_VERSION_INT
 #error Libavcodec include is not correct
