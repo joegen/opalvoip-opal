@@ -64,7 +64,7 @@ void PlayRTP::Main()
 {
   PArgList & args = GetArguments();
 
-  PArgList::ParseResult parseResult = args.Parse("[Options:]"
+  if (!args.Parse("[Options:]"
              "m-mapping: Set mapping of payload type to format, eg 101=H.264\n"
              "S-src-ip: Source IP address, default is any\n"
              "D-dst-ip: Destination IP address, default is any\n"
@@ -91,11 +91,7 @@ void PlayRTP::Main()
              "-nodelay. do not delay as per timestamps\n"
              PTRACE_ARGLIST
              "h-help. print this help message.\n"
-             , false);
-
-  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
-
-  if (parseResult <= PArgList::ParseNoArguments || args.HasOption('h')) {
+             , false) || args.HasOption('h')) {
     args.Usage(cerr, "[ options ] filename [ filename ... ]") << "\n"
                "e.g. " << GetFile().GetTitle() << " conversation.pcap\n\n";
     return;

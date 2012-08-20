@@ -51,6 +51,8 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
+    virtual PString GetArgumentUsage() const;
+    virtual void Usage(ostream & strm, const PArgList & args);
     virtual void OnClearedCall(OpalCall & call); // Callback override
 
     PSyncPoint m_completed;

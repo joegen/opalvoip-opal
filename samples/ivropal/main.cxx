@@ -46,47 +46,9 @@ IvrOPAL::IvrOPAL()
 
 void IvrOPAL::Main()
 {
-  m_manager = new MyManager();
-
   PArgList & args = GetArguments();
 
-  if (!args.Parse(m_manager->GetArgumentSpec()) || args.HasOption('h') || args.GetCount() == 0) {
-    PString name = GetFile().GetTitle();
-    cerr << "usage: " << name << " [ options ] vxml [ url ]\n"
-            "\n"
-            "Available options are:\n"
-         << m_manager->GetArgumentUsage()
-         << "\n"
-            "where vxml is a VXML script, a URL to a VXML script or a WAV file, or a\n"
-            "series of commands separated by ';'.\n"
-            "\n"
-            "Commands are:\n"
-            "  repeat=n    Repeat next WAV file n times.\n"
-            "  delay=n     Delay after repeats n milliseconds.\n"
-            "  voice=name  Set Text To Speech voice to name\n"
-            "  tone=t      Emit DTMF tone t\n"
-            "  silence=n   Emit silence for n milliseconds\n"
-            "  speak=text  Speak the text using the Text To Speech system.\n"
-            "  speak=$var  Speak the internal variable using the Text To Speech system.\n"
-            "\n"
-            "Variables may be one of:\n"
-            "  Time\n"
-            "  Originator-Address\n"
-            "  Remote-Address\n"
-            "  Source-IP-Address\n"
-            "\n"
-            "If a second parameter is provided and outgoing call is made and when answered\n"
-            "the script is executed. If no second paramter is provided then the program\n"
-            "will continuosly listen for incoming calls and execute the script on each\n"
-            "call. Simultaneous calls to the limits of the operating system arre possible.\n"
-            "\n"
-            "e.g. " << name << " file://message.wav sip:fred@bloggs.com\n"
-            "     " << name << " http://voicemail.vxml\n"
-            "     " << name << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
-            "\n";
-    return;
-  }
-
+  m_manager = new MyManager();
   if (!m_manager->Initialise(args, true, "ivr:"))
     return;
 
@@ -114,6 +76,48 @@ void IvrOPAL::Main()
   MyManager * mgr = m_manager;
   m_manager = NULL;
   delete mgr;
+}
+
+
+PString MyManager::GetArgumentUsage() const
+{
+  return "[ options ] vxml [ url ]\n\n"
+          "where vxml is a VXML script, a URL to a VXML script or a WAV file, or a\n"
+          "series of commands separated by ';'.";
+}
+
+
+void MyManager::Usage(ostream & strm, const PArgList & args)
+{
+  OpalManagerConsole::Usage(strm, args);
+  strm << "\n"
+          "Commands are:\n"
+          "  repeat=n    Repeat next WAV file n times.\n"
+          "  delay=n     Delay after repeats n milliseconds.\n"
+          "  voice=name  Set Text To Speech voice to name\n"
+          "  tone=t      Emit DTMF tone t\n"
+          "  silence=n   Emit silence for n milliseconds\n"
+          "  speak=text  Speak the text using the Text To Speech system.\n"
+          "  speak=$var  Speak the internal variable using the Text To Speech system.\n"
+          "\n"
+          "Variables may be one of:\n"
+          "  Time\n"
+          "  Originator-Address\n"
+          "  Remote-Address\n"
+          "  Source-IP-Address\n"
+          "\n"
+          "If a second parameter is provided and outgoing call is made and when answered\n"
+          "the script is executed. If no second paramter is provided then the program\n"
+          "will continuosly listen for incoming calls and execute the script on each\n"
+          "call. Simultaneous calls to the limits of the operating system arre possible.\n"
+          "\n";
+
+  PString name = PProcess::Current().GetFile().GetTitle();
+  strm << "e.g. " << name << " file://message.wav sip:fred@bloggs.com\n"
+          "     " << name << " http://voicemail.vxml\n"
+          "     " << name << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
+          "\n";
+
 }
 
 

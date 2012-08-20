@@ -54,7 +54,7 @@ CallGen::~CallGen()
 void CallGen::Main()
 {
   PArgList & args = GetArguments();
-  PArgList::ParseResult result = args.Parse("[Call Control:]"
+  if (!(args.Parse("[Call Control:]"
              "l-listen.              Passive/listening mode.\n"
              "m-max:                 Maximum number of simultaneous calls\n"
              "r-repeat:              Repeat calls n times\n"
@@ -110,11 +110,7 @@ void CallGen::Main()
              "I-in-dir:              Specify directory for incoming WAV files [disabled]\n"
              PTRACE_ARGLIST
              "h-help.                This help\n"
-             , false);
-
-  PAssert(result != PArgList::ParseInvalidOptions, PInvalidParameter);
-
-  if (args.HasOption('h') || result < 0 || (result == PArgList::ParseNoArguments && !args.HasOption('l'))) {
+             , false) || args.HasOption('l')) || args.HasOption('h')) {
     args.Usage(cout, "[options] --listen\n[options] destination [ destination ... ]") << "\n"
                "Notes:\n"
                "  If --tmaxest is set a non-zero value then --tmincall is the time to leave\n"

@@ -64,7 +64,7 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 
 bool MyManager::Initialise(PArgList & args, bool verbose)
 {
-  if (args.Parse(GetArgumentSpec()) != PArgList::ParseWithArguments && !args.HasOption('l')) {
+  if (!args.Parse(GetArgumentSpec()) && !args.HasOption('l')) {
     Usage(cerr, args);
     return false;
   }
