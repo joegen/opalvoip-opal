@@ -69,8 +69,10 @@ rand_source_init(void) {
   if (dev_random_fdes < 0)
     return err_status_init_fail;
 #else
-  /* no random source available; let the user know */
-  fprintf(stderr, "WARNING: no real random source present!\n");
+  #ifdef ENABLE_DEBUGGING
+    /* no random source available; let the user know */
+    fprintf(stderr, "WARNING: no real random source present!\n");
+  #endif
   dev_random_fdes = 17;
 #endif
   return err_status_ok;
