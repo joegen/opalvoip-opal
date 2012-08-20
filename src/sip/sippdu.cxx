@@ -167,15 +167,15 @@ PString SIP_PDU::GetStatusCodeDescription(int code)
     if (sipErrorDescriptions[i].code == code)
       return sipErrorDescriptions[i].desc;
   }
-  return psprintf("Reponse code %u", code);
+  return PString::Empty();
 }
 
 
 ostream & operator<<(ostream & strm, SIP_PDU::StatusCodes status)
 {
   strm << (unsigned)status;
-  const char * info = SIP_PDU::GetStatusCodeDescription(status);
-  if (info != NULL && *info != '\0')
+  PString info = SIP_PDU::GetStatusCodeDescription(status);
+  if (!info.IsEmpty())
     strm << ' ' << info;
   return strm;
 }
