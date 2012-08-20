@@ -57,42 +57,22 @@ void FaxOPAL::Main()
 
   PArgList & args = GetArguments();
 
-  if (!args.Parse(m_manager->GetArgumentSpec() +
-                  "a-audio."
-                  "A-no-audio."
-                  "d-directory:"
-                  "-station-id:"
-                  "-header-info:"
-                  "e-switch-on-ced."
-                  "F-no-fallback."
-                  "q-quiet."
-                  "T-timeout:"
+  if (!args.Parse("[Available options are:]"
+            "d-directory: Set default directory for fax receive.\n"
+            "-station-id: Set T.30 Station Identifier string.\n"
+            "-header-info: Set transmitted fax page header string.\n"
+            "a-audio. Send fax as G.711 audio.\n"
+            "A-no-audio. No audio phase at all, starts T.38 immediately.\n"
+            "F-no-fallback. Do not fall back to audio it T.38 switch fails.\n"
+            "e-switch-on-ced. Switch to T.38 on receipt of CED tone as caller.\n"
+            "X-switch-time: Set fail safe T.38 switch time in seconds.\n"
+            "T-timeout: Set timeout to wait for fax rx/tx to complete in seconds.\n"
+            "q-quiet. Only output error conditions.\n"
 #if OPAL_STATISTICS
-                  "v-verbose."
+            "v-verbose. Output statistics during fax operation\n"
 #endif
-                  "X-switch-time:") ||
-       args.HasOption('h') ||
-       args.GetCount() == 0) {
-    PString name = GetFile().GetTitle();
-    cerr << "usage: " << name << " [ options ] filename [ url ]\n"
-            "\n"
-            "Available options are:\n"
-            "  -d or --directory dir      : Set default directory for fax receive.\n"
-            "        --station-id id      : Set T.30 Station Identifier string.\n"
-            "        --header-info msg    : Set transmitted fax page header string.\n"
-            "  -a or --audio              : Send fax as G.711 audio.\n"
-            "  -A or --no-audio           : No audio phase at all, starts T.38 immediately.\n"
-            "  -F or --no-fallback n      : Do not fall back to audio it T.38 switch fails.\n"
-            "  -e or --switch-on-ced      : Switch to T.38 on receipt of CED tone as caller.\n"
-            "  -X or --switch-time n      : Set fail safe T.38 switch time in seconds.\n"
-            "  -T or --timeout n          : Set timeout to wait for fax rx/tx to complete in seconds.\n"
-            "  -q or --quiet              : Only output error conditions.\n"
-#if OPAL_STATISTICS
-            "  -v or --verbose            : Output more information on call progress.\n"
-#endif
-            "\n"
-         << m_manager->GetArgumentUsage()
-         << "\n"
+            + m_manager->GetArgumentSpec(), false) || args.HasOption('h')) {
+    args.Usage(cerr, "[ options ] filename [ remote-url ]") << "\n"
             "Specific T.38 format options (using -O/--option):\n"
             "  Station-Identifier    string (\"-\"\n"
             "  Header-Info           string (\"\")\n"
@@ -107,11 +87,13 @@ void FaxOPAL::Main()
             "  T38FaxTranscodingMMR  bool (0)\n"
             "  T38FaxTranscodingJBIG bool (0)\n"
             "\n"
-            "e.g. " << name << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
+            "e.g. " << GetFile().GetTitle() << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
             "\n"
-            "     " << name << " received_fax.tif\n\n";
+            "     " << GetFile().GetTitle() << " received_fax.tif\n\n";
     return;
   }
+
+  PTRACE_INITIALISE(args);
 
   static char const * FormatMask[] = { "!G.711*", "!@fax" };
   m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));

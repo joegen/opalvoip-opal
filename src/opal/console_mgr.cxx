@@ -185,10 +185,9 @@ void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
   if (!args.IsParsed()) {
-    PArgList::ParseResult result = args.Parse(GetArgumentSpec());
-    if (result < 0 || args.HasOption("help")) {
-      if (PAssert(result != PArgList::ParseInvalidOptions, "Invalid options specification"))
-        Usage(cerr, args);
+    args.Parse(GetArgumentSpec());
+    if (!args.IsParsed() || args.HasOption("help")) {
+      Usage(cerr, args);
       return false;
     }
   }
@@ -695,11 +694,11 @@ PCLI * OpalManagerCLI::CreatePCLI()
 #if OPAL_SIP
 void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, INT)
 {
-  if (args.Parse("a-auth-id: Override user for authorisation\n"
+  if (!args.Parse("a-auth-id: Override user for authorisation\n"
                   "r-realm: Set realm for authorisation\n"
                   "p-proxy: Set proxy for registration\n"
                   "m-mode: Set registration mode (normal, single, public)\n"
-                  "t-ttl: Set Time To Live for registration\n") <= PArgList::ParseNoArguments) {
+                  "t-ttl: Set Time To Live for registration\n")) {
     args.WriteUsage();
     return;
   }

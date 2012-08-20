@@ -87,20 +87,16 @@ void RegTest::Main()
 {
   PArgList & args = GetArguments();
 
-  PArgList::ParseResult parseResult = args.Parse("[Options:]"
-      "c-count: Count of users to register.\n"
-      "C-contact: Pre-define REGISTER Contact header.\n"
-      "I-interfaces: Use specified interface(s)\n"
-      "p-password: Pasword to use for all registrations\n"
-      "P-proxy: Proxy to use for registration.\n"
-      "v-verbose. Indicate verbose output.\n"
-      PTRACE_ARGLIST
-      "h-help."
-      , false);
-
-  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
-
-  if (parseResult <= PArgList::ParseNoArguments || args.HasOption('h')) {
+  if (!args.Parse("[Options:]"
+                  "c-count: Count of users to register.\n"
+                  "C-contact: Pre-define REGISTER Contact header.\n"
+                  "I-interfaces: Use specified interface(s)\n"
+                  "p-password: Pasword to use for all registrations\n"
+                  "P-proxy: Proxy to use for registration.\n"
+                  "v-verbose. Indicate verbose output.\n"
+                  PTRACE_ARGLIST
+                  "h-help."
+                  , false) || args.HasOption('h')) {
     args.Usage(cerr, "[ options ] aor [ ... ]") << "\n"
             "e.g. " << GetFile().GetTitle() << " sip:fred@bloggs.com\n"
             "If --count is used, then users sip:fredXXXXX@bloggs.com are registered where\n"

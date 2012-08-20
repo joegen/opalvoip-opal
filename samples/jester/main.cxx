@@ -92,23 +92,24 @@ void JesterProcess::Main()
 {
   // Get and parse all of the command line arguments.
   PArgList & args = GetArguments();
-  if (args.Parse("a-audiodevice: audio device to play the output on\n"
-                 "D-start-delta: Start delta time between generator and playback (ms)\n"
-                 "d-drop. simulate dropped packets.\n"
-                 "j-jitter: size of the jitter buffer in ms (100-1000)\n"
-                 "g-generate: amount of jitter to simulate (see below)\n"
-                 "I-init-play-ts: Initial timestamp value for generator\n"
-                 "i-init-gen-ts: Initial timestamp value for playback\n"
-                 "s-silence. simulate silence suppression. - so audio is sent in bursts.\n"
-                 "S-size: size of each RTP packet in ms\n"
-                 "m-marker. turn some of the marker bits off, that indicate speech bursts\n"
-                 "P-pcap: Read RTP data from PCAP file\n"
-                 "R. Non real time test\n"
-                 "v-version. report version and program info.\n"
-                 "w-wavfile:audio file from which the source data is read from\n"
-                 PTRACE_ARGLIST
-                 "h-help. This help message.\n"
-                 , false) < PArgList::ParseNoArguments || args.HasOption('h') ) {
+  args.Parse("a-audiodevice: audio device to play the output on\n"
+             "D-start-delta: Start delta time between generator and playback (ms)\n"
+             "d-drop. simulate dropped packets.\n"
+             "j-jitter: size of the jitter buffer in ms (100-1000)\n"
+             "g-generate: amount of jitter to simulate (see below)\n"
+             "I-init-play-ts: Initial timestamp value for generator\n"
+             "i-init-gen-ts: Initial timestamp value for playback\n"
+             "s-silence. simulate silence suppression. - so audio is sent in bursts.\n"
+             "S-size: size of each RTP packet in ms\n"
+             "m-marker. turn some of the marker bits off, that indicate speech bursts\n"
+             "P-pcap: Read RTP data from PCAP file\n"
+             "R. Non real time test\n"
+             "v-version. report version and program info.\n"
+             "w-wavfile:audio file from which the source data is read from\n"
+             PTRACE_ARGLIST
+             "h-help. This help message.\n"
+             , false);
+  if (!args.IsParsed() || args.HasOption('h')) {
     args.Usage(cerr, "[options]") << "\n"
             "The jitter generate profile is a comma separated list of timestamps and\n"
             "jitter levels. e.g. \"0=30,16000=60,48000=120,64000=30\" would start at\n"

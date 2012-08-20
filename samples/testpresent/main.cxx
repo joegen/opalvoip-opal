@@ -151,7 +151,7 @@ void TestPresEnt::Main()
                     "a-auth-id: Authorisation ID, default to URL username.\n" \
                     "p-password: Authorisation password.\n" \
                     "s-sub-protocol: set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
-  PArgList::ParseResult parseResult = args.Parse("[Available global options are:]"
+  args.Parse("[Available global options are:]"
              "f-file: name of script file to execute.\n"
              "L-listener: set listener address:port.\n"
              "P-presence-agent: set presence agent default address.\n"
@@ -167,10 +167,7 @@ void TestPresEnt::Main()
              "[Debugging]"
              PTRACE_ARGLIST
              "h-help.");
-
-  PAssert(parseResult != PArgList::ParseInvalidOptions, PInvalidParameter);
-
-  if (parseResult < PArgList::ParseNoArguments || args.HasOption('h')) {
+  if (!args.IsParsed() || args.HasOption('h')) {
     args.Usage(cerr, "[ global-options ] { [ url-options ] url } ...") << "\n"
                "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
                ;
@@ -218,7 +215,7 @@ void TestPresEnt::Main()
   if (args.GetCount() != 0) {
     do {
       AddPresentity(args);
-    } while (args.Parse(URL_OPTIONS) > PArgList::ParseNoArguments);
+    } while (args.Parse(URL_OPTIONS));
 
     if (m_presentities.GetSize() == 0) {
       cerr << "error: no presentities available" << endl;
