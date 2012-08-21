@@ -90,8 +90,9 @@ static const char EnableCAPIKey[] = "CAPI ISDN";
 static const char VXMLKey[] = "VXML Script";
 #endif
 
-#if OPAL_PTLIB_LUA
-static const char LuaScriptKey[] = "Lua Script";
+#if OPAL_SCRIPT
+static const char ScriptLanguageKey[] = "Language";
+static const char ScriptTextKey[] = "Script";
 #endif
 
 #define ROUTES_SECTION "Routes"
@@ -578,15 +579,24 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     m_ivrEP->SetDefaultVXML(vxml);
 #endif
 
-#if OPAL_PTLIB_LUA
-  PString lua = cfg.GetString(LuaScriptKey);
-  rsrc->Add(new PHTTPStringField(LuaScriptKey, 800, lua,
-            "Lua language interpreter script, may be a filename or the actual script text"));
-  if (m_luaScript != lua) {
-    m_luaScript = lua;
-    GetLua().Run(lua);
+#if OPAL_SCRIPT
+  PFactory<PScriptLanguage>::KeyList_T keys = PFactory<PScriptLanguage>::GetKeyList();
+  PStringArray languages;
+  for (PFactory<PScriptLanguage>::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
+    languages.AppendString(*it);
+  PString language = cfg.GetString(ScriptLanguageKey, languages[0]);
+  rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
+            languages.GetValuesIndex(language),"Interpreter script language."));
+
+  PString script = cfg.GetString(ScriptTextKey);
+  rsrc->Add(new PHTTPStringField(ScriptTextKey, 800, script,
+            "Interpreter script, may be a filename or the actual script text"));
+  if (m_scriptLanguage != language || m_scriptText != script) {
+    m_scriptLanguage = language;
+    m_scriptText = script;
+    RunScript(script, language);
   }
-#endif
+#endif //OPAL_SCRIPT
 
   // Routing
   RouteTable routes;

@@ -199,8 +199,9 @@ class MyManager : public OpalManager
 #if OPAL_PTLIB_EXPAT
     OpalIVREndPoint * m_ivrEP;
 #endif
-#if OPAL_PTLIB_LUA
-    PString m_luaScript;
+#if OPAL_SCRIPT
+    PString m_scriptLanguage;
+    PString m_scriptText;
 #endif
 };
 
