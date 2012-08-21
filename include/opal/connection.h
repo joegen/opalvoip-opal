@@ -1924,15 +1924,15 @@ class OpalConnection : public PSafeObject
     } m_faxMediaStreamsSwitchState;
 #endif
 
-#if OPAL_PTLIB_LUA
-    PString m_luaTableName;
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaRelease);
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaSetOption);
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetLocalPartyURL);
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetRemotePartyURL);
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetCalledPartyURL);
-    PDECLARE_LuaFunctionNotifier(OpalConnection, LuaGetRedirectingParty);
-#endif
+#if OPAL_SCRIPT
+    PString m_scriptTableName;
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptRelease);
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptSetOption);
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptGetLocalPartyURL);
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptGetRemotePartyURL);
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptGetCalledPartyURL);
+    PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptGetRedirectingParty);
+#endif // OPAL_SCRIPT
 
     // A version of PTime where default constructor creates invalid times
     class ZeroTime : public PTime

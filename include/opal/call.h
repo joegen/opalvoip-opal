@@ -630,8 +630,8 @@ class OpalCall : public PSafeObject
     OpalRecordManager * m_recordManager;
 #endif
 
-#if OPAL_PTLIB_LUA
-    PDECLARE_LuaFunctionNotifier(OpalCall, LuaClear);
+#if OPAL_SCRIPT
+    PDECLARE_ScriptFunctionNotifier(OpalCall, ScriptClear);
 #endif
 
   //use to add the connection to the call's connection list

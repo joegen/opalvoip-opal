@@ -57,6 +57,7 @@
 #include <ptclib/url.h>
 #include <ptclib/mime.h>
 #include <ptclib/pssl.h>
+#include <ptclib/script.h>
 
 #include "../../version.h"
 #include "../../revision.h"
@@ -267,6 +268,9 @@ OpalManager::OpalManager()
   , activeCalls(*this)
   , garbageCollectSkip(false)
   , m_decoupledEventPool(5, 0, "Event Pool")
+#if OPAL_SCRIPT
+  , m_script(NULL)
+#endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5999;
@@ -299,10 +303,6 @@ OpalManager::OpalManager()
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
-#if OPAL_PTLIB_LUA
-  m_lua.CreateTable(OPAL_LUA_CALL_TABLE_NAME);
-#endif
-
   PTRACE(4, "OpalMan\tCreated manager.");
 }
 
@@ -314,6 +314,10 @@ OpalManager::OpalManager()
 OpalManager::~OpalManager()
 {
   ShutDownEndpoints();
+
+#if OPAL_SCRIPT
+  delete m_script;
+#endif
 
   // Shut down the cleaner thread
   garbageCollectExit.Signal();
@@ -392,8 +396,9 @@ void OpalManager::ShutDownEndpoints()
 
   --m_clearingAllCallsCount; // Allow for endpoints to be added again.
 
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnShutdown");
+#if OPAL_SCRIPT
+  if (m_script != NULL)
+    m_script->Call("OnShutdown");
 #endif
 }
 
@@ -539,10 +544,11 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 }
 
 
-#if OPAL_PTLIB_LUA
+#if OPAL_SCRIPT
 void OpalManager::OnEstablishedCall(OpalCall & call)
 {
-  m_lua.Call("OnEstablished", "s", (const char *)call.GetToken());
+  if (m_script != NULL)
+    m_script->Call("OnEstablished", "s", (const char *)call.GetToken());
 }
 #else
 void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
@@ -750,16 +756,18 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   }
 #endif // OPAL_HAS_IM
 
-#if OPAL_PTLIB_LUA
-  PLua::Signature sig;
-  sig.m_arguments.resize(5);
-  sig.m_arguments[0].SetDynamicString(call.GetToken());
-  sig.m_arguments[1].SetDynamicString(connection.GetToken());
-  sig.m_arguments[2].SetDynamicString(connection.GetRemotePartyURL());
-  sig.m_arguments[3].SetDynamicString(connection.GetLocalPartyURL());
-  sig.m_arguments[4].SetDynamicString(destination);
-  if (m_lua.Call("OnIncoming", sig) && !sig.m_results.empty())
-    destination = sig.m_results[0].AsString();
+#if OPAL_SCRIPT
+  if (m_script != NULL) {
+    PScriptLanguage::Signature sig;
+    sig.m_arguments.resize(5);
+    sig.m_arguments[0].SetDynamicString(call.GetToken());
+    sig.m_arguments[1].SetDynamicString(connection.GetToken());
+    sig.m_arguments[2].SetDynamicString(connection.GetRemotePartyURL());
+    sig.m_arguments[3].SetDynamicString(connection.GetLocalPartyURL());
+    sig.m_arguments[4].SetDynamicString(destination);
+    if (m_script->Call("OnIncoming", sig) && !sig.m_results.empty())
+      destination = sig.m_results[0].AsString();
+  }
 #endif
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
@@ -812,10 +820,11 @@ void OpalManager::OnProceeding(OpalConnection & connection)
 
   connection.GetCall().OnProceeding(connection);
 
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnProceeding", "ss",
-             (const char *)connection.GetCall().GetToken(),
-             (const char *)connection.GetToken());
+#if OPAL_SCRIPT
+  if (m_script != NULL)
+    m_script->Call("OnProceeding", "ss",
+                   (const char *)connection.GetCall().GetToken(),
+                   (const char *)connection.GetToken());
 #endif
 }
 
@@ -826,10 +835,11 @@ void OpalManager::OnAlerting(OpalConnection & connection)
 
   connection.GetCall().OnAlerting(connection);
 
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnAlerting", "ss",
-             (const char *)connection.GetCall().GetToken(),
-             (const char *)connection.GetToken());
+#if OPAL_SCRIPT
+  if (m_script != NULL)
+    m_script->Call("OnAlerting", "ss",
+                   (const char *)connection.GetCall().GetToken(),
+                   (const char *)connection.GetToken());
 #endif
 }
 
@@ -845,13 +855,14 @@ void OpalManager::OnConnected(OpalConnection & connection)
 {
   PTRACE(3, "OpalMan\tOnConnected " << connection);
 
-  connection.GetCall().OnConnected(connection);
-
-#if OPAL_PTLIB_LUA
-  m_lua.Call("OnConnected", "ss",
-             (const char *)connection.GetCall().GetToken(),
-             (const char *)connection.GetToken());
+#if OPAL_SCRIPT
+  if (m_script != NULL)
+    m_script->Call("OnConnected", "ss",
+                   (const char *)connection.GetCall().GetToken(),
+                   (const char *)connection.GetToken());
 #endif
+
+  connection.GetCall().OnConnected(connection);
 }
 
 
@@ -1159,25 +1170,28 @@ OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
 }
 
 
-#if OPAL_PTLIB_LUA
-static void OnStartStopmediaPatch(PLua & lua, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
+#if OPAL_SCRIPT
+static void OnStartStopmediaPatch(PScriptLanguage * script, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
 {
+  if (script == NULL)
+    return;
+
   OpalMediaFormat mediaFormat = patch.GetSource().GetMediaFormat();
-  lua.Call(fn, "sss",
-        (const char *)connection.GetCall().GetToken(),
-        (const char *)patch.GetSource().GetID(),
-        (const char *)mediaFormat.GetName());
+  script->Call(fn, "sss",
+               (const char *)connection.GetCall().GetToken(),
+               (const char *)patch.GetSource().GetID(),
+               (const char *)mediaFormat.GetName());
 }
 
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OnStartStopmediaPatch(m_lua, "OnStartMedia", connection, patch);
+  OnStartStopmediaPatch(m_script, "OnStartMedia", connection, patch);
 }
 
 
 void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OnStartStopmediaPatch(m_lua, "OnStopMedia", connection, patch);
+  OnStartStopmediaPatch(m_script, "OnStopMedia", connection, patch);
 }
 #else
 void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
@@ -2273,6 +2287,25 @@ void OpalManager::OnCompositionIndication(const OpalIMContext::CompositionInfo &
 }
 
 #endif // OPAL_HAS_IM
+
+
+#if OPAL_SCRIPT
+bool OpalManager::RunScript(const PString & script, const char * language)
+{
+  delete m_script;
+  m_script = PFactory<PScriptLanguage>::CreateInstance(language);
+  if (m_script == NULL)
+    return false;
+
+  if (!m_script->Load(script)) {
+    delete m_script;
+    return false;
+  }
+
+  m_script->CreateComposite(OPAL_SCRIPT_CALL_TABLE_NAME);
+  return m_script->Run();
+}
+#endif // OPAL_SCRIPT
 
 
 /////////////////////////////////////////////////////////////////////////////
