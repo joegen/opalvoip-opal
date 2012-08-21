@@ -181,7 +181,7 @@ static struct PluginCodec_Option const StationIdentifierOption =
   "Station-Identifier",       // Generic (human readable) option name
   true,                       // Read Only flag
   PluginCodec_MaxMerge,       // Merge mode
-  "",                         // Initial value
+  "-",                        // Initial value
   NULL,                       // SIP/SDP FMTP name
   NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0                           // H.245 Generic Capability number and scope bits
