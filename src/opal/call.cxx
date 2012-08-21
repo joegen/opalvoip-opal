@@ -546,7 +546,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     OpalMediaPatch * patch = sourceStream->GetPatch();
     if (patch != NULL)
       sinkStream = patch->GetSink();
-    if (sourceStream->GetMediaFormat() == preselectedFormat ||
+    if (preselectedFormat.IsEmpty() ||
+        sourceStream->GetMediaFormat() == preselectedFormat ||
         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
       if (sourceStream->IsPaused()) {
         sourceStream->SetPaused(false);
