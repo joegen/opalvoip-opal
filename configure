@@ -617,6 +617,7 @@ RELEASE_CFLAGS
 OPAL_SAMPLES
 subdirs
 OPAL_PLUGINS
+OPAL_SCRIPT
 OPAL_HAS_PCSS
 OPAL_HAS_MIXER
 OPAL_STATISTICS
@@ -813,6 +814,7 @@ enable_rtcpxr
 enable_statistics
 enable_mixer
 enable_pcss
+enable_script
 enable_plugins
 enable_samples
 with_plugin_installdir
@@ -1495,6 +1497,7 @@ Optional Features:
   --enable-statistics     whether to enable statistics gathering support
   --enable-mixer          whether to enable media mixing support
   --enable-pcss           whether to enable PC sound system support
+  --enable-script         whether to enable script language support
   --enable-plugins        whether to enable plugin support
   --enable-samples        whether to enable samples build
 
@@ -5515,6 +5518,7 @@ OPAL_SAMPLES=no
 OPAL_ZRTP=no
 OPAL_JAVA=yes
 OPAL_RUBY=yes
+OPAL_SCRIPT=yes
 OPAL_HAS_MSRP=yes
 OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
@@ -8788,6 +8792,46 @@ $as_echo "$OPAL_HAS_PCSS" >&6; }
           if test "x$OPAL_HAS_PCSS" = "xyes"; then
 
 $as_echo "#define OPAL_HAS_PCSS 1" >>confdefs.h
+
+          fi
+
+
+
+          if test "x$OPAL_SCRIPT" = "x"; then
+            as_fn_error $? "No default specified for OPAL_SCRIPT, please correct configure.ac" "$LINENO" 5
+	  fi
+          # Check whether --enable-script was given.
+if test "${enable_script+set}" = set; then :
+  enableval=$enable_script; OPAL_SCRIPT=$enableval
+fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: script support disabled due to disabled dependency " >&5
+$as_echo "$as_me: script support disabled due to disabled dependency " >&6;}
+	      OPAL_SCRIPT=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: script support disabled due to disabled dependency " >&5
+$as_echo "$as_me: script support disabled due to disabled dependency " >&6;}
+	      OPAL_SCRIPT=no
+	    fi
+	  fi
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable script language support" >&5
+$as_echo_n "checking whether to enable script language support... " >&6; }
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPAL_SCRIPT" >&5
+$as_echo "$OPAL_SCRIPT" >&6; }
+
+
+          if test "x$OPAL_SCRIPT" = "xyes"; then
+
+$as_echo "#define OPAL_SCRIPT 1" >>confdefs.h
 
           fi
 
