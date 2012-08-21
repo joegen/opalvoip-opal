@@ -181,6 +181,10 @@ void FaxOPAL::Main()
   else
     cout << "No T.38 switch timeout set\n";
 
+  // Wait for call to come in and finish (default one year)
+  PSimpleTimer timeout(args.GetOptionString('T', "365:0:0:0"));
+  cout << "Completion timeout is " << timeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
+
   if (args.GetCount() == 1)
     cout << "Receive directory: " << fax->GetDefaultDirectory() << "\n"
             "\n"
@@ -202,8 +206,6 @@ void FaxOPAL::Main()
   map<PString, OpalMediaStatistics> lastStatisticsByToken;
 #endif
 
-  // Wait for call to come in and finish (default one year)
-  PSimpleTimer timeout(0, args.GetOptionString('T', "31536000").AsUnsigned());
   while (!m_manager->m_completed.Wait(1000)) {
     if (timeout.HasExpired()) {
       cout << " no call";
