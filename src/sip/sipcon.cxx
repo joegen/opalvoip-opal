@@ -1145,7 +1145,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   if (!incomingMedia->GetTransportAddress().IsEmpty()) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
-      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
+      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from offer SDP");
       if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
             , incomingMedia->GetContentRole()
@@ -1165,7 +1165,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     }
 
     if (recvStream == NULL) {
-      PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from SDP");
+      PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from offer SDP");
       if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
             , incomingMedia->GetContentRole()
@@ -1410,8 +1410,10 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
     PSafePtr<OpalConnection> otherConnection = isSource ? GetCall().GetOtherPartyConnection(*this) : this;
     bool ok = false;
-    if (otherConnection != NULL)
+    if (otherConnection != NULL) {
+      PTRACE(4, "SIP\tSymmetric media stream required");
       ok = GetCall().OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), sessionID, mediaFormat);
+    }
 
     m_symmetricOpenStream = false;
 
@@ -3392,25 +3394,29 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
 
-  if (recvStream == NULL &&
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+  if (recvStream == NULL) {
+    PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from answer SDP");
+    if (ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
-                         , mediaDescription->GetContentRole()
+                                         , mediaDescription->GetContentRole()
 #endif
-                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
-    recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
-    recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+                                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
+      recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
+      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+    }
   }
 
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-    if (otherParty != NULL &&
-        ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+    if (otherParty != NULL) {
+      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from answer SDP");
+      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
-                         , mediaDescription->GetContentRole()
+                                           , mediaDescription->GetContentRole()
 #endif
-                         ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
-      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+                                           ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
+        sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+    }
   }
 
   PINDEX maxFormats = 1;
