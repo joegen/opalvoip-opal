@@ -49,6 +49,22 @@ FaxOPAL::~FaxOPAL()
 }
 
 
+static void PrintOption(const char * name, const char * type)
+{
+  cerr << "  " << setw(22) << name << ' ' << type << " (";
+  if (strcmp(type, "string") == 0)
+    cerr << OpalT38.GetOptionString(name).ToLiteral();
+  else if (strcmp(type, "bool") == 0)
+    cerr << (OpalT38.GetOptionBoolean(name) ? "true" : "false");
+  else {
+    PString value;
+    OpalT38.GetOptionValue(name, value);
+    cerr << value;
+  }
+  cerr << ")\n";
+}
+
+
 void FaxOPAL::Main()
 {
   SetTerminationValue(1);
@@ -73,20 +89,20 @@ void FaxOPAL::Main()
 #endif
             + m_manager->GetArgumentSpec(), false) || args.HasOption('h')) {
     args.Usage(cerr, "[ options ] filename [ remote-url ]") << "\n"
-            "Specific T.38 format options (using -O/--option):\n"
-            "  Station-Identifier    string (\"-\"\n"
-            "  Header-Info           string (\"\")\n"
-            "  Use-ECM               bool (1)\n"
-            "  T38FaxVersion         integer (0)\n"
-            "  T38FaxRateManagement  localTCF or transferredTCF (transferredTCF) \n"
-            "  T38MaxBitRate         integer (14400)\n"
-            "  T38FaxMaxBuffer       integer (2000\n"
-            "  T38FaxMaxDatagram     integer (528)\n"
-            "  T38FaxUdpEC           t38UDPFEC or t38UDPRedundancy (t38UDPRedundancy)\n"
-            "  T38FaxFillBitRemoval  bool (0)\n"
-            "  T38FaxTranscodingMMR  bool (0)\n"
-            "  T38FaxTranscodingJBIG bool (0)\n"
-            "\n"
+            "Specific T.38 format options (using -O/--option):\n";
+    PrintOption("Station-Identifier",    "string");
+    PrintOption("Header-Info",           "string");
+    PrintOption("Use-ECM",               "bool");
+    PrintOption("T38FaxVersion",         "integer");
+    PrintOption("T38FaxRateManagement",  "localTCF or transferredTCF");
+    PrintOption("T38MaxBitRate",         "integer");
+    PrintOption("T38FaxMaxBuffer",       "integer");
+    PrintOption("T38FaxMaxDatagram",     "integer");
+    PrintOption("T38FaxUdpEC",           "t38UDPFEC or t38UDPRedundancy");
+    PrintOption("T38FaxFillBitRemoval",  "bool");
+    PrintOption("T38FaxTranscodingMMR",  "bool");
+    PrintOption("T38FaxTranscodingJBIG", "bool");
+    cerr << "\n"
             "e.g. " << GetFile().GetTitle() << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
             "\n"
             "     " << GetFile().GetTitle() << " received_fax.tif\n\n";
