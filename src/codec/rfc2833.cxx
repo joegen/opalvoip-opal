@@ -492,11 +492,14 @@ char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833, bool hasNSE)
 }
 
 
-void OpalRFC2833Proto::AsyncTimeout(PTimer &, INT)
+void OpalRFC2833Proto::AsyncTimeout(PTimer & timer, INT)
 {
-  m_sendMutex.Wait();
-  SendAsyncFrame();
-  m_sendMutex.Signal();
+  if (m_sendMutex.Try()) {
+    SendAsyncFrame();
+    m_sendMutex.Signal();
+  }
+  else
+    timer = 2; // Try again in a couple of milliseconds
 }
 
 
