@@ -78,6 +78,8 @@ const OpalMediaFormat & GetOpalT38()
         AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingMMR", false, OpalMediaOption::NoMerge, false));
         AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingJBIG", false, OpalMediaOption::NoMerge, false));
         AddOption(new OpalMediaOptionBoolean("Use-ECM", false, OpalMediaOption::NoMerge, true));
+        AddOption(new OpalMediaOptionString("Station-Identifier", false, "-"));
+        AddOption(new OpalMediaOptionString("Header-Info", false));
       }
   } const T38;
   return T38;
