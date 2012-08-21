@@ -72,12 +72,14 @@ OpalCall::OpalCall(OpalManager & mgr)
 
   connectionsActive.DisallowDeleteObjects();
 
-#if OPAL_PTLIB_LUA
-  PLua & lua = manager.GetLua();
-  PString luaTableName = OPAL_LUA_CALL_TABLE_NAME "." + GetToken();
-  lua.CreateTable(luaTableName);
-  lua.SetFunction(luaTableName + ".Clear", PCREATE_NOTIFIER(LuaClear));
-  lua.Call("OnNewCall", "s", (const char *)GetToken());
+#if OPAL_SCRIPT
+  PScriptLanguage * script = manager.GetScript();
+  if (script != NULL) {
+    PString tableName = OPAL_SCRIPT_CALL_TABLE_NAME "." + GetToken();
+    script->CreateComposite(tableName);
+    script->SetFunction(tableName + ".Clear", PCREATE_NOTIFIER(ScriptClear));
+    script->Call("OnNewCall", "s", (const char *)GetToken());
+  }
 #endif
 
   PTRACE(3, "Call\tCreated " << *this);
@@ -94,10 +96,12 @@ OpalCall::~OpalCall()
   delete m_recordManager;
 #endif
 
-#if OPAL_PTLIB_LUA
-  PLua & lua = manager.GetLua();
-  lua.Call("OnDestroyCall", "s", (const char *)GetToken());
-  lua.DeleteTable(OPAL_LUA_CALL_TABLE_NAME "." + GetToken());
+#if OPAL_SCRIPT
+  PScriptLanguage * script = manager.GetScript();
+  if (script != NULL) {
+    script->Call("OnDestroyCall", "s", (const char *)GetToken());
+    script->ReleaseVariable(OPAL_SCRIPT_CALL_TABLE_NAME "." + GetToken());
+  }
 #endif
 
   PTRACE(3, "Call\tDestroyed " << *this);
@@ -983,9 +987,9 @@ bool OpalCall::EnumerateConnections(PSafePtr<OpalConnection> & connection,
 }
 
 
-#if OPAL_PTLIB_LUA
+#if OPAL_SCRIPT
 
-void OpalCall::LuaClear(PLua &, PLua::Signature & sig)
+void OpalCall::ScriptClear(PScriptLanguage &, PScriptLanguage::Signature & sig)
 {
   OpalConnection::CallEndReason reason;
 
@@ -1006,7 +1010,7 @@ void OpalCall::LuaClear(PLua &, PLua::Signature & sig)
   Clear(reason);
 }
 
-#endif // OPAL_PTLIB_LUA
+#endif // OPAL_SCRIPT
 
 
 /////////////////////////////////////////////////////////////////////////////

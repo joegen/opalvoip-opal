@@ -48,7 +48,6 @@
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
 #include <ptclib/pxml.h>
-#include <ptclib/lua.h>
 #include <ptclib/threadpool.h>
 
 #if OPAL_VIDEO
@@ -60,10 +59,10 @@ class OpalEndPoint;
 class OpalMediaPatch;
 class PSSLCertificate;
 class PSSLPrivateKey;
+class PScriptLanguage;
 
-#if OPAL_PTLIB_LUA
-  #define OPAL_LUA_CALL_TABLE_NAME "OpalCall"
-#endif
+
+#define OPAL_SCRIPT_CALL_TABLE_NAME "OpalCall"
 
 
 class OpalConferenceState : public PObject
@@ -1817,21 +1816,22 @@ class OpalManager : public PObject
       const PString & server
     ) { ilsServer = server; }
 
-#if OPAL_PTLIB_LUA
-    /**Get the lua script for applciation.
-       The Lua script can contain functions which OPAL will call, and can
+#if OPAL_SCRIPT
+    /**Get the script interpreter interface for application.
+       The script can contain functions which OPAL will call, and can
        call some functions within OPAL to get information or execute
        desired behaviour.
 
-       The Lua script can allow ther "require" keyward to load extra modules
-       such as sockets or SQL integration, though this is outside of the scope
-       of OPAL.
+       The script can typically also call other sub-system, for example with
+       Lua, the "require" keyword can be used to load extra modules such as
+       sockets or SQL integration, though explanation of it's use is outside
+       of the scope of OPAL documentation.
 
        The table <i>OpalCall</i> is always available and is an array of the active
        calls indeaxed by the call token. Each call has further tables for each
        connection in the call indexed by connection token.
 
-       The Lua script can contain the following functions, which OPAL will call:
+       The script can contain the following functions, which OPAL will call:
           OnNewCall(token)
           OnDestroyCall(token)
           OnNewConnection(callToken, connectionToken)
@@ -1846,7 +1846,7 @@ class OpalManager : public PObject
           OnStopMedia(callToken, mediaId)
           OnShutdown()
 
-       The Lua script may call the following functions within OPAL:
+       The script may call the following functions within OPAL:
           PTRACE(level, arg [, arg [, ...]])
           OpalCall[token].Clear([endedByCode [, wait] ])
           OpalCall[callToken][conToken].Release([endedbyCode])
@@ -1862,9 +1862,15 @@ class OpalManager : public PObject
           OpalCall[callToken][conToken].prefix
           OpalCall[callToken][conToken].originating
       */
-    const PLua & GetLua() const { return m_lua; }
-          PLua & GetLua()       { return m_lua; }
-#endif
+    PScriptLanguage * GetScript() const { return m_script; }
+
+    /**Set script for application.
+      */
+    bool RunScript(
+      const PString & script,
+      const char * language = "Lua"
+    );
+#endif // OPAL_SCRIPT
   //@}
 
     // needs to be public for gcc 3.4
@@ -1990,8 +1996,8 @@ class OpalManager : public PObject
 
     PQueuedThreadPool<DecoupledEvent> m_decoupledEventPool;
 
-#if OPAL_PTLIB_LUA
-    PLua m_lua;
+#if OPAL_SCRIPT
+    PScriptLanguage * m_script;
 #endif
 
   private:
