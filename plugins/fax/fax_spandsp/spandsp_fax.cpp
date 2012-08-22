@@ -1522,10 +1522,12 @@ class FaxCodecContext
       WaitAndSignal mutex(InstanceMapMutex);
 
       InstanceMapType::iterator iter = InstanceMap.find(m_key);
-      if (iter != InstanceMap.end() && iter->second->Dereference()) {
-        delete iter->second;
-        InstanceMap.erase(iter);
+      if (iter != InstanceMap.end()) {
         PTRACE(LOG_LEVEL_CONTEXT_ID, KeyToStr(m_key) << " Context Id removed");
+        if (iter->second->Dereference()) {
+          delete iter->second;
+          InstanceMap.erase(iter);
+        }
       }
     }
 
