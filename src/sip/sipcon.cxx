@@ -1089,7 +1089,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
       return false;
     }
 
-  localMedia->SetOptionStrings(m_stringOptions);
+    localMedia->SetOptionStrings(m_stringOptions);
 
     // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
     OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
@@ -1383,6 +1383,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
                           otherStream->IsOpen() &&
                           otherStream->GetMediaFormat() != mediaFormat;
   if (makesymmetrical) {
+    PTRACE(4, "SIP\tSymmetric media stream for " << mediaFormat << " required, closing");
     m_symmetricOpenStream = true;
     // We must make sure reverse stream is closed before opening the
     // new forward one or can really confuse the RTP stack, especially
@@ -1411,7 +1412,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     PSafePtr<OpalConnection> otherConnection = isSource ? GetCall().GetOtherPartyConnection(*this) : this;
     bool ok = false;
     if (otherConnection != NULL) {
-      PTRACE(4, "SIP\tSymmetric media stream required");
+      PTRACE(4, "SIP\tSymmetric media stream for " << mediaFormat << " required, opening");
       ok = GetCall().OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), sessionID, mediaFormat);
     }
 

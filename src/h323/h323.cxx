@@ -2399,17 +2399,24 @@ PBoolean H323Connection::OnOutgoingCall(const H323SignalPDU & connectPDU)
 PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & fastStartReply)
 {
   // See if we have already added the fast start OLC's
-  if (fastStartReply.GetSize() > 0)
+  if (fastStartReply.GetSize() > 0) {
+    PTRACE(4, "H323\tAlready have fast connect reply");
     return true;
+  }
 
-  if (fastStartState == FastStartDisabled)
+  if (fastStartState == FastStartDisabled) {
+    PTRACE(4, "H323\tFast connect disabled, no acknowdgement");
     return false;
+  }
 
-  if (fastStartState == FastStartAcknowledged)
+  if (fastStartState == FastStartAcknowledged) {
+    PTRACE(4, "H323\tFast connect already acknowdgement");
     return true;
+  }
 
   if (fastStartChannels.IsEmpty()) {
-    // If we are incapable of ANY of the fast start channels, don't do fast start
+    // If we are capable of ANY of the fast start channels, don't do fast start
+    PTRACE(4, "H323\tNo fast connect offerred");
     fastStartState = FastStartDisabled;
     return false;
   }
@@ -2429,6 +2436,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   // None left, so didn't open any channels fast
   if (fastStartChannels.IsEmpty()) {
+    PTRACE(4, "H323\tCould not use any offerred fast connect channels");
     fastStartState = FastStartDisabled;
     return false;
   }
