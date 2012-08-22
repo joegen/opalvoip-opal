@@ -211,6 +211,7 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnEstablished();
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnStartMediaPatch(OpalMediaPatch & patch);
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
@@ -269,7 +270,6 @@ class OpalFaxConnection : public OpalLocalConnection
     PTimer m_switchTimer;
 
 #if OPAL_STATISTICS
-    void InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const;
     OpalMediaStatistics m_finalStatistics;
 #endif
 };
