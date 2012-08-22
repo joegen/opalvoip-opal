@@ -605,7 +605,7 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
       SetFaxMediaFormatOptions(*it++);
   }
 
-  OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
+  OpalLocalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
 }
 
 
@@ -639,7 +639,8 @@ void OpalFaxConnection::SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) 
 
 void OpalFaxConnection::OnEstablished()
 {
-  OpalConnection::OnEstablished();
+  OpalLocalConnection::OnEstablished();
+
 #if OPAL_PTLIB_ASN
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
@@ -657,13 +658,29 @@ void OpalFaxConnection::OnEstablished()
 void OpalFaxConnection::OnReleased()
 {
   m_switchTimer.Stop(false);
-  OpalConnection::OnReleased();
+  OpalLocalConnection::OnReleased();
 }
 
 
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, isSource, true);
+}
+
+
+void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  if (stream.GetMediaFormat() == m_tiffFileFormat) {
+    stream.GetPatch()->ExecuteCommand(OpalFaxTerminate(), false);
+#if OPAL_STATISTICS
+    if (m_finalStatistics.m_fax.m_result < 0) {
+      stream.GetStatistics(m_finalStatistics);
+      PTRACE_IF(3, m_finalStatistics.m_fax.m_result >= 0,
+                "FAX\tGot statistics: result=" << m_finalStatistics.m_fax.m_result);
+    }
+#endif
+  }
+  OpalLocalConnection::OnClosedMediaStream(stream);
 }
 
 
@@ -682,7 +699,7 @@ void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
   }
 #endif
 
-  OpalConnection::OnStartMediaPatch(patch);
+  OpalLocalConnection::OnStartMediaPatch(patch);
 }
 
 
@@ -698,8 +715,10 @@ void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
     // Not an explicit switch, so fax plug in indicated end of fax
     if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
+      patch.ExecuteCommand(OpalFaxTerminate(), false);
 #if OPAL_STATISTICS
-      InternalGetStatistics(m_finalStatistics, true);
+      if (m_finalStatistics.m_fax.m_result < 0)
+        source.GetStatistics(m_finalStatistics);
       PTRACE(3, "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
       OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
 #else
@@ -745,12 +764,6 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 
 void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 {
-  InternalGetStatistics(statistics, false);
-}
-
-
-void OpalFaxConnection::InternalGetStatistics(OpalMediaStatistics & statistics, bool terminate) const
-{
   if (m_finalStatistics.m_fax.m_result >= 0) {
     statistics = m_finalStatistics;
     return;
@@ -772,9 +785,6 @@ void OpalFaxConnection::InternalGetStatistics(OpalMediaStatistics & statistics, 
       return;
     }
   }
-
-  if (terminate)
-    stream->ExecuteCommand(OpalFaxTerminate());
 
   stream->GetStatistics(statistics);
 }
