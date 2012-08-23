@@ -48,7 +48,11 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
-#include <ptclib/lua.h>
+
+#if OPAL_SCRIPT
+// Inside #if so does not force loading of factories when statically linked.
+#include <ptclib/script.h>
+#endif
 
 
 class OpalEndPoint;

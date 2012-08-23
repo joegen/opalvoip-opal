@@ -51,6 +51,7 @@
 #include <ptclib/threadpool.h>
 
 #if OPAL_VIDEO
+// Inside #if so does not force loading of factories when statically linked.
 #include <ptlib/videoio.h>
 #endif
 
@@ -59,7 +60,6 @@ class OpalEndPoint;
 class OpalMediaPatch;
 class PSSLCertificate;
 class PSSLPrivateKey;
-class PScriptLanguage;
 
 
 #define OPAL_SCRIPT_CALL_TABLE_NAME "OpalCall"
