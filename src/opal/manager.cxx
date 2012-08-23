@@ -2166,8 +2166,13 @@ bool OpalManager::StopRecording(const PString & callToken)
 #endif
 
 
-void OpalManager::OnApplyStringOptions(OpalConnection &, OpalConnection::StringOptions &)
+void OpalManager::OnApplyStringOptions(OpalConnection &, OpalConnection::StringOptions & stringOptions)
 {
+  for (OpalConnection::StringOptions::iterator it  = m_defaultConnectionOptions.begin();
+                                               it != m_defaultConnectionOptions.end(); ++it) {
+    if (!stringOptions.Contains(it->first))
+      stringOptions.SetAt(it->first, it->second);
+  }
 }
 
 
