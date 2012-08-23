@@ -57,7 +57,6 @@
 #include <ptclib/url.h>
 #include <ptclib/mime.h>
 #include <ptclib/pssl.h>
-#include <ptclib/script.h>
 
 #include "../../version.h"
 #include "../../revision.h"
