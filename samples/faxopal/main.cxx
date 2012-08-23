@@ -79,7 +79,7 @@ void FaxOPAL::Main()
             "-header-info: Set transmitted fax page header string.\n"
             "a-audio. Send fax as G.711 audio.\n"
             "A-no-audio. No audio phase at all, starts T.38 immediately.\n"
-            "F-no-fallback. Do not fall back to audio it T.38 switch fails.\n"
+            "F-no-fallback. Do not fall back to audio if T.38 switch fails.\n"
             "e-switch-on-ced. Switch to T.38 on receipt of CED tone as caller.\n"
             "X-switch-time: Set fail safe T.38 switch time in seconds.\n"
             "T-timeout: Set timeout to wait for fax rx/tx to complete in seconds.\n"
@@ -164,22 +164,24 @@ void FaxOPAL::Main()
   }
 
   if (args.HasOption('F')) {
-    stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
+    stringOptions.SetBoolean(OPAL_NO_G111_FAX, true);
     cout << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
   }
 
   if (args.HasOption('e')) {
-    stringOptions.SetAt(OPAL_SWITCH_ON_CED, "true");
+    stringOptions.SetBoolean(OPAL_SWITCH_ON_CED, true);
     cout << "Enabled switch to T.38 on receipt of CED\n";
   }
 
   if (args.HasOption('X')) {
     unsigned seconds = args.GetOptionString('X').AsUnsigned();
-    stringOptions.SetAt(OPAL_T38_SWITCH_TIME, seconds);
+    stringOptions.SetInteger(OPAL_T38_SWITCH_TIME, seconds);
     cout << "Switch to T.38 after " << seconds << "seconds\n";
   }
   else
     cout << "No T.38 switch timeout set\n";
+
+  m_manager->SetDefaultConnectionOptions(stringOptions);
 
   // Wait for call to come in and finish (default one year)
   PSimpleTimer timeout(args.GetOptionString('T', "365:0:0:0"));
@@ -190,13 +192,12 @@ void FaxOPAL::Main()
             "\n"
             "Awaiting incoming fax, saving as " << args[0];
   else {
-    PString token;
-    if (!m_manager->SetUpCall(prefix + ":" + args[0], args[1], token, NULL, 0, &stringOptions)) {
+    cout << '\n';
+    if (m_manager->SetUpCall(prefix + ":" + args[0], args[1]) == NULL) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
       return;
     }
-    cout << "\n"
-            "Sending " << args[0] << " to " << args[1];
+    cout << "Sending " << args[0] << " to " << args[1];
   }
   cout << " ..." << endl;
 

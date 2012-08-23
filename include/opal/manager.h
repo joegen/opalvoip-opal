@@ -1637,6 +1637,14 @@ class OpalManager : public PObject
       bool updateAll = true   ///< Update all registered endpoints
     );
 
+    /**Set default connection string options.
+       Note that if the individual string option is already present for a
+       connection, then it is not overridden by an entry here.
+      */
+    void SetDefaultConnectionOptions(
+      const OpalConnection::StringOptions & stringOptions
+    ) { m_defaultConnectionOptions = stringOptions; }
+
 #if OPAL_VIDEO
 
     //
@@ -1889,6 +1897,8 @@ class OpalManager : public PObject
 
     BYTE                     m_defaultMediaTypeOfService;
     std::map<OpalMediaType, BYTE> m_mediaTypeOfService;
+
+    OpalConnection::StringOptions m_defaultConnectionOptions;
 
     PINDEX        rtpPayloadSizeMax;
     PINDEX        rtpPacketSizeMax;
