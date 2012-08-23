@@ -597,9 +597,12 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 }
 
 
-void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
+void OpalRFC2833Proto::ReceiveTimeout(PTimer & timer, INT)
 {
-  m_receiveMutex.Wait();
+  if (!m_receiveMutex.Try()) {
+    timer = 2; // Try again in a couple of milliseconds
+    return;
+  }
 
   PTRACE(3, "RFC2833\tTimeout occurred while receiving " << (unsigned)m_receivedTone
          << " for " << m_baseMediaFormat);
