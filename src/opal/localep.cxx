@@ -366,7 +366,7 @@ void OpalLocalConnection::AlertingIncoming()
 void OpalLocalConnection::AcceptIncoming()
 {
   GetEndPoint().GetManager().QueueDecoupledEvent(
-        new PSafeWorkNoArg<OpalLocalConnection, OpalConnection>(this, &OpalLocalConnection::InternalAcceptIncoming));
+        new PSafeWorkNoArg<OpalLocalConnection>(this, &OpalLocalConnection::InternalAcceptIncoming));
 }
 
 
