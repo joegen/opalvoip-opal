@@ -557,7 +557,7 @@ class OpalLocalConnection : public OpalConnection
   //@}
 
   protected:
-    friend class PSafeWorkNoArg<OpalLocalConnection, OpalConnection>;
+    friend class PSafeWorkNoArg<OpalLocalConnection>;
     void InternalAcceptIncoming();
 
     OpalLocalEndPoint & endpoint;

@@ -746,7 +746,7 @@ void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
                       : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED)))) {
     PTRACE(3, "FAX\tRequesting mode change in response to " << (tone == 'X' ? "CNG" : "CED"));
     GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection, OpalConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
   }
 }
 
@@ -796,7 +796,7 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
   if (m_state == e_AwaitingSwitchToT38) {
     PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
     GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection, OpalConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
   }
 }
 

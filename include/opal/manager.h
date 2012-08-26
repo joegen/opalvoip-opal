@@ -1885,8 +1885,7 @@ class OpalManager : public PObject
     void GarbageCollection();
 
     // Decoupled event to avoid deadlocks, especially from patch threads
-    typedef PSafeWork<OpalConnection> DecoupledEvent;
-    void QueueDecoupledEvent(DecoupledEvent * work) { m_decoupledEventPool.AddWork(work); }
+    void QueueDecoupledEvent(PSafeWork * work) { m_decoupledEventPool.AddWork(work); }
 
   protected:
     // Configuration variables
@@ -2004,7 +2003,7 @@ class OpalManager : public PObject
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::InternalOnClear();
 
-    PQueuedThreadPool<DecoupledEvent> m_decoupledEventPool;
+    PSafeThreadPool m_decoupledEventPool;
 
 #if OPAL_SCRIPT
     PScriptLanguage * m_script;
