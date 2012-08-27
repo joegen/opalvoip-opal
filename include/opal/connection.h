@@ -1036,18 +1036,19 @@ class OpalConnection : public PSafeObject
     );
 
 #if OPAL_FAX
-    /**Switch to/from FAX mode.
+    /**Switch to/from T.38 fax mode.
       */
-    virtual bool SwitchFaxMediaStreams(
-      bool enableFax  ///< Enable FAX or return to audio mode
+    virtual bool SwitchT38(
+      bool toT38  ///< T.38 or return to audio mode
     );
 
-    /**Indicate status of switch to/from FAX mode.
+    /**Indicate status of switch to/from T.38 fax mode.
 
-       Default behaviour does nothing.
+       Default behaviour calls the same function on the other connection.
       */
-    virtual void OnSwitchedFaxMediaStreams(
-      bool enabledFax  ///< Enabled FAX or audio mode
+    virtual void OnSwitchedT38(
+      bool toT38,   ///< Was switching to T.38 or audio mode
+      bool success  ///< Switch succeeded or failed
     );
 #endif
 
@@ -1920,14 +1921,6 @@ class OpalConnection : public PSafeObject
     };
     AutoStartMap m_autoStartInfo;
 
-#if OPAL_FAX
-    enum {
-      e_NotSwitchingFaxMediaStreams,
-      e_SwitchingToFaxMediaStreams,
-      e_SwitchingFromFaxMediaStreams
-    } m_faxMediaStreamsSwitchState;
-#endif
-
 #if OPAL_SCRIPT
     PString m_scriptTableName;
     PDECLARE_ScriptFunctionNotifier(OpalConnection, ScriptRelease);
@@ -1966,6 +1959,9 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(PBoolean, SetBandwidthAvailable(unsigned, PBoolean), false);
     P_REMOVE_VIRTUAL(unsigned, GetBandwidthUsed() const, 0);
     P_REMOVE_VIRTUAL(PBoolean, SetBandwidthUsed(unsigned, unsigned), false);
+    P_REMOVE_VIRTUAL(bool, SwitchFaxMediaStreams(bool), false);
+    P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
+
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

@@ -248,9 +248,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
-#if OPAL_FAX
-  , m_faxMediaStreamsSwitchState(e_NotSwitchingFaxMediaStreams)
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
@@ -759,43 +756,29 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 
 
 #if OPAL_FAX
-bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
+bool OpalConnection::SwitchT38(bool)
 {
-  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
-    PTRACE(2, "OpalCon\tNested call to SwitchFaxMediaStreams on " << *this);
-    return false;
-  }
-
-  PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
-#if OPAL_PTLIB_ASN
-  OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
-#else
-  OpalMediaFormat format = OpalG711uLaw;
-#endif
-  if (!ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
-    return false;
-
-  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
-  return true;
+  PAssertAlways(PUnimplementedFunction);
+  return false;
 }
 
 
-void OpalConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
+void OpalConnection::OnSwitchedT38(bool toT38, bool success)
 {
-  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
-    PTRACE(3, "OpalCon\tSwitch of media streams to "
-           << (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams ? "fax" : "audio") << ' '
-           << (enabledFax != (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams) ? "failed" : "succeeded")
-           << " on " << *this);
+  if (ownerCall.IsSwitchingT38()) {
+    ownerCall.ResetSwitchingT38();
 
-    m_faxMediaStreamsSwitchState = e_NotSwitchingFaxMediaStreams;
+    PTRACE(3, "OpalCon\tSwitch of media streams to "
+           << (toT38 ? "T.38" : "audio") << ' '
+           << (success ? "succeeded" : "failed")
+           << " on " << *this);
 
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
     if (other != NULL)
-      other->OnSwitchedFaxMediaStreams(enabledFax);
+      other->OnSwitchedT38(toT38, success);
   }
 }
-#endif
+#endif // OPAL_FAX
 
 
 OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
@@ -972,7 +955,7 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 
 void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  OpalMediaPatch * patch = stream.GetPatch();
+  OpalMediaPatchPtr patch = stream.GetPatch();
   if (patch != NULL) {
 #if OPAL_HAS_MIXER
     OnStopRecording(patch);

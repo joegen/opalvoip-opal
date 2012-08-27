@@ -160,8 +160,12 @@ void OpalMediaPatch::Close()
     SetBypassPatch(NULL);
 
   filters.RemoveAll();
-  if (source.GetPatch() == this)
+  if (source.GetPatch() == this) {
+    UnlockReadWrite();
     source.Close();
+    if (!LockReadWrite())
+      return;
+  }
 
   while (sinks.GetSize() > 0) {
     OpalMediaStreamPtr stream = sinks.front().stream;
@@ -329,12 +333,9 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 }
 
 
-void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
+void OpalMediaPatch::RemoveSink(const OpalMediaStream & stream)
 {
-  if (PAssertNULL(stream) == NULL)
-    return;
-
-  PTRACE(3, "Patch\tRemoving sink " << *stream << " from " << *this);
+  PTRACE(3, "Patch\tRemoving sink " << stream << " from " << *this);
 
   bool closeSource = false;
 
@@ -342,9 +343,9 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
     return;
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->stream == stream) {
+    if (s->stream == &stream) {
       sinks.erase(s);
-      PTRACE(5, "Patch\tRemoved sink " << *stream << " from " << *this);
+      PTRACE(5, "Patch\tRemoved sink " << stream << " from " << *this);
       break;
     }
   }

@@ -309,6 +309,14 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual bool RequireSymmetricMediaStreams() const;
 
+#if OPAL_FAX
+    /**Switch to/from T.38 fax mode.
+      */
+    virtual bool SwitchT38(
+      bool toT38  ///< T.38 or return to audio mode
+    );
+#endif
+
     /**Create a new media stream.
      */
     virtual OpalMediaStream * CreateMediaStream(
@@ -780,10 +788,6 @@ class SIPConnection : public OpalRTPConnection
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
     PSafeList<SIPTransaction> m_pendingTransactions;
-
-#if OPAL_FAX
-    bool m_switchedToFaxMode;
-#endif
 
     enum {
       ReleaseWithBYE,
