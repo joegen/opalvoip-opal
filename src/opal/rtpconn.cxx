@@ -221,7 +221,9 @@ OpalMediaSession * OpalRTPConnection::FindSessionByLocalPort(WORD port) const
 }
 
 
-OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const OpalMediaType & mediaType, const PString & sessionType)
+OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId,
+                                                      const OpalMediaType & mediaType,
+                                                      const PString & sessionType)
 {
   SessionMap::iterator it = m_sessions.find(sessionId);
   if (it != m_sessions.end()) {
@@ -229,6 +231,18 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
     return it->second;
   }
 
+  OpalMediaSession * session = CreateMediaSession(sessionId, mediaType, sessionType);
+  if (session != NULL)
+    m_sessions[sessionId] = session;
+
+  return session;
+}
+
+
+OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
+                                                         const OpalMediaType & mediaType,
+                                                         const PString & sessionType)
+{
   PString actualSessionType = sessionType;
   if (actualSessionType.IsEmpty())
     actualSessionType = mediaType->GetMediaSessionType();
@@ -239,8 +253,6 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId, const 
     PTRACE(1, "RTPCon\tCannot create session for " << actualSessionType);
     return NULL;
   }
-
-  m_sessions[sessionId] = session;
 
   CheckForMediaBypass(*session);
 
@@ -288,7 +300,7 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
     if (stream->GetSessionID() == fromSessionID) {
       stream->SetSessionID(toSessionID);
-      OpalMediaPatch * patch = stream->GetPatch();
+      OpalMediaPatchPtr patch = stream->GetPatch();
       if (patch != NULL) {
         patch->GetSource().SetSessionID(toSessionID);
         OpalMediaStreamPtr otherStream;
@@ -312,6 +324,8 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
 
   OpalMediaSession::Transport transport = it->second->DetachTransport();
   mediaSession->AttachTransport(transport);
+  mediaSession->SetRemoteAddress(it->second->GetRemoteAddress(true), true);
+  mediaSession->SetRemoteAddress(it->second->GetRemoteAddress(false), false);
   delete it->second;
   it->second = mediaSession;
 

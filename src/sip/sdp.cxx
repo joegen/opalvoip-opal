@@ -603,6 +603,7 @@ PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress & n
     return false;
 
   m_transportAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_port = port;
   return true;
 }
 

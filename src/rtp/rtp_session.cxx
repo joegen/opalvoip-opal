@@ -294,15 +294,19 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   m_dataSocket = dynamic_cast<PUDPSocket *>(channel);
   if (m_dataSocket == NULL)
     delete channel;
-  else
+  else {
     PTRACE_CONTEXT_ID_TO(m_dataSocket);
+    m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
+  }
 
   channel = transport.RemoveHead();
   m_controlSocket = dynamic_cast<PUDPSocket *>(channel);
   if (m_controlSocket == NULL)
     delete channel;
-  else
+  else {
     PTRACE_CONTEXT_ID_TO(m_controlSocket);
+    m_controlSocket->GetLocalAddress(m_localAddress, m_localControlPort);
+  }
 
   transport.AllowDeleteObjects();
 }

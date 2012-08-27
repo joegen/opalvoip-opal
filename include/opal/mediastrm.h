@@ -53,6 +53,10 @@ class OpalConnection;
 class OpalRTPConnection;
 class OpalMediaStatistics;
 
+
+typedef PSafePtr<OpalMediaPatch, PSafePtrMultiThreaded> OpalMediaPatchPtr;
+
+
 /*!< \page pageOpalMediaStream Media streams in the OPAL library
 
 \section secOverviewM Overview
@@ -388,7 +392,7 @@ class OpalMediaStream : public PSafeObject
 
     /**Get the patch thread that is using the stream.
       */
-    OpalMediaPatch * GetPatch() const { return m_mediaPatch; }
+    OpalMediaPatchPtr GetPatch() const { return m_mediaPatch; }
 
     /**Add a filter to the owning patch safely.
       */
@@ -433,8 +437,7 @@ class OpalMediaStream : public PSafeObject
     unsigned         timestamp;
     bool             marker;
 
-    typedef PSafePtr<OpalMediaPatch, PSafePtrMultiThreaded> PatchPtr;
-    PatchPtr m_mediaPatch;
+    OpalMediaPatchPtr m_mediaPatch;
 
     RTP_DataFrame::PayloadTypes m_payloadType;
     unsigned                    m_frameTime;

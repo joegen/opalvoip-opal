@@ -123,7 +123,7 @@ class OpalMediaPatch : public PSafeObject
        nothing.
       */
     void RemoveSink(
-      const OpalMediaStreamPtr & stream  ///<  Media stream to remove
+      const OpalMediaStream & stream  ///<  Media stream to remove
     );
 
     /**Get the current source stream for patch.

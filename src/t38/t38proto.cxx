@@ -34,24 +34,20 @@
 #pragma implementation "t38proto.h"
 #endif
 
-#include <opal/buildopts.h>
-
 #include <t38/t38proto.h>
+
+#if OPAL_FAX
+
+#ifdef _MSC_VER
+  #pragma message("T.38 Fax (spandsp) support enabled")
+#endif
+
+#include <asn/t38.h>
 #include <opal/patch.h>
 #include <codec/opalpluginmgr.h>
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_FAX
-
-  #ifdef _MSC_VER
-    #pragma message("T.38 Fax (spandsp) support enabled")
-  #endif
-
-#if OPAL_PTLIB_ASN
-#include <asn/t38.h>
-#endif
 
 OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC);
 
@@ -64,8 +60,6 @@ static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxMedi
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_PTLIB_ASN
 
 OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
                                        const OpalMediaFormat & mediaFormat,
@@ -101,11 +95,18 @@ PBoolean OpalFaxMediaStream::IsSynchronous() const
 }
 
 
+void OpalFaxMediaStream::InternalClose()
+{
+  m_session.Close();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxSession::OpalFaxSession(const Init & init)
   : OpalMediaSession(init)
   , m_dataSocket(NULL)
+  , m_shuttingDown(false)
   , m_consecutiveBadPackets(0)
   , m_oneGoodPacket(false)
   , m_receivedPacket(new T38_UDPTLPacket)
@@ -126,6 +127,8 @@ OpalFaxSession::OpalFaxSession(const Init & init)
 OpalFaxSession::~OpalFaxSession()
 {
   m_timerWriteDataIdle.Stop();
+  if (m_dataSocket != NULL && m_savedTransport.GetObjectsIndex(m_dataSocket) == P_MAX_INDEX)
+    delete m_dataSocket;
   delete m_receivedPacket;
   delete m_sentPacket;
 }
@@ -159,13 +162,13 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
           }
         }
 
-        PTRACE(2, "T38_UDPTL\tIgnored redundancy \"" << value[i] << "\"");
+        PTRACE(2, "UDPTL\tIgnored redundancy \"" << value[i] << "\"");
       }
 
 #if PTRACING
       if (PTrace::CanTrace(3)) {
         ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
-        trace << "T38_UDPTL\tUse redundancy \"";
+        trace << "UDPTL\tUse redundancy \"";
         for (std::map<int, int>::iterator it = m_redundancy.begin() ; it != m_redundancy.end() ; it++) {
           if (it != m_redundancy.begin())
             trace << ",";
@@ -179,13 +182,13 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
     if (key == "T38-UDPTL-Redundancy-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
       m_redundancyInterval = option.AsString().AsUnsigned();
-      PTRACE(3, "T38_UDPTL\tUse redundancy interval " << m_redundancyInterval);
+      PTRACE(3, "UDPTL\tUse redundancy interval " << m_redundancyInterval);
     }
     else
     if (key == "T38-UDPTL-Keep-Alive-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
       m_keepAliveInterval = option.AsString().AsUnsigned();
-      PTRACE(3, "T38_UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
+      PTRACE(3, "UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
     }
     else
     if (key == "T38-UDPTL-Optimise-On-Retransmit") {
@@ -193,23 +196,126 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
       PWaitAndSignal mutex(m_writeMutex);
       m_optimiseOnRetransmit = (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
 
-      PTRACE(3, "T38_UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
+      PTRACE(3, "UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
     }
   }
+}
+
+
+bool OpalFaxSession::Open(const PString & localInterface,
+                          const OpalTransportAddress & remoteAddress,
+                          bool isMediaAddress)
+{
+  m_shuttingDown = false;
+
+  if (IsOpen())
+    return true;
+
+  if (!isMediaAddress)
+    return false;
+
+  // T.38 over TCP is half baked. One day someone might want it enough for it to be finished
+  m_dataSocket = new PTCPSocket();
+  return m_dataSocket->Listen(localInterface) && m_dataSocket->Connect(remoteAddress.GetHostName(true));
+}
+
+
+bool OpalFaxSession::IsOpen() const
+{
+  return m_dataSocket != NULL && m_dataSocket->IsOpen();
+}
+
+
+bool OpalFaxSession::Close()
+{
+  if (m_dataSocket == NULL)
+    return false;
+
+  m_shuttingDown = true;
+
+  if (m_savedTransport.GetObjectsIndex(m_dataSocket) == P_MAX_INDEX)
+    return m_dataSocket->Close();
+
+  PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
+  if (udp != NULL) {
+    PTRACE(4, "UDPTL\tBreaking UDPTL session read block.");
+    PIPSocketAddressAndPort addrPort;
+    udp->GetLocalAddress(addrPort);
+    udp->WriteTo("", 1, addrPort);
+  }
+
+  return true;
+}
+
+
+OpalTransportAddress OpalFaxSession::GetLocalAddress(bool isMediaAddress) const
+{
+  OpalTransportAddress address;
+
+  if (isMediaAddress && m_dataSocket != NULL) {
+    PIPSocket::Address ip;
+    WORD port;
+    if (m_dataSocket->GetLocalAddress(ip, port))
+      address = OpalTransportAddress(ip, port,
+                  dynamic_cast<PUDPSocket *>(m_dataSocket) != NULL ? "udp" : "tcp");
+  }
+
+  return address;
+}
+
+
+OpalTransportAddress OpalFaxSession::GetRemoteAddress(bool isMediaAddress) const
+{
+  OpalTransportAddress address;
+
+  if (isMediaAddress && m_dataSocket != NULL) {
+    PIPSocket::Address ip;
+    WORD port;
+
+    PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
+    if (udp != NULL) {
+      udp->GetSendAddress(ip, port);
+      address = OpalTransportAddress(ip, port, "udp");
+    }
+    else {
+      m_dataSocket->GetPeerAddress(ip, port);
+      address = OpalTransportAddress(ip, port, "tcp");
+    }
+  }
+
+  return address;
+}
+
+
+bool OpalFaxSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
+{
+  if (!isMediaAddress || m_dataSocket == NULL)
+    return false;
+
+  PIPSocketAddressAndPort addrPort;
+  if (!remoteAddress.GetIpAndPort(addrPort))
+    return false;
+
+  PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
+  if (udp == NULL)
+    return false;
+
+  udp->SetSendAddress(addrPort);
+  return true;
 }
 
 
 void OpalFaxSession::AttachTransport(Transport & transport)
 {
   m_savedTransport = transport;
-  m_dataSocket = dynamic_cast<PUDPSocket *>(&transport.front());
+  m_dataSocket = dynamic_cast<PIPSocket *>(&transport.front());
 }
 
 
 OpalMediaSession::Transport OpalFaxSession::DetachTransport()
 {
   Transport temp = m_savedTransport;
-  m_savedTransport = Transport(); // Detaches reference
+  m_savedTransport = Transport(); // Detaches reference, do not use RemoveAll()
   m_dataSocket = NULL;
   return temp;
 }
@@ -226,7 +332,7 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
   PINDEX plLen = frame.GetPayloadSize();
 
   if (plLen == 0) {
-    PTRACE(2, "T38_UDPTL\tInternal error - empty payload");
+    PTRACE(2, "UDPTL\tInternal error - empty payload");
     return false;
   }
 
@@ -250,7 +356,7 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
         m_sentPacket->m_primary_ifp_packet = T38_UDPTLPacket_primary_ifp_packet();
       }
     } else {
-      PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
+      PTRACE(3, "UDPTL\tNot implemented yet " << recovery.GetTagName());
     }
   }
 
@@ -318,7 +424,7 @@ void OpalFaxSession::DecrementSentPacketRedundancy(bool stripRedundancy)
       T38_UDPTLPacket_error_recovery_secondary_ifp_packets &secondary = recovery;
       secondary.SetSize(iMax > 0 ? iMax : 0);
     } else {
-      PTRACE(3, "T38_UDPTL\tNot implemented yet " << recovery.GetTagName());
+      PTRACE(3, "UDPTL\tNot implemented yet " << recovery.GetTagName());
     }
   }
 }
@@ -326,15 +432,20 @@ void OpalFaxSession::DecrementSentPacketRedundancy(bool stripRedundancy)
 
 bool OpalFaxSession::WriteUDPTL()
 {
-  PTRACE(5, "T38_UDPTL\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << m_sentPacket);
+  if (m_dataSocket == NULL || !m_dataSocket->IsOpen()) {
+    PTRACE(2, "UDPTL\tWrite failed, data socket not open");
+    return false;
+  }
+
+  PTRACE(5, "UDPTL\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << *m_sentPacket);
 
   PPER_Stream rawData;
   m_sentPacket->Encode(rawData);
   rawData.CompleteEncoding();
 
-  PTRACE(4, "T38_UDPTL\tSending UDPTL of size " << rawData.GetSize());
+  PTRACE(4, "UDPTL\tSending UDPTL of size " << rawData.GetSize());
 
-  return m_dataSocket != NULL && m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
+  return m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
 }
 
 
@@ -365,43 +476,49 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   if (m_dataSocket == NULL || !m_dataSocket->Read(thisUDPTL, sizeof(thisUDPTL)))
     return false;
 
+  if (m_shuttingDown) {
+    PTRACE(4, "UDPTL\tRead UDPTL shutting down");
+    m_shuttingDown = false;
+    return false;
+  }
+
   PINDEX pduSize = m_dataSocket->GetLastReadCount();
       
-  PTRACE(4, "T38_UDPTL\tRead UDPTL of size " << pduSize);
+  PTRACE(4, "UDPTL\tRead UDPTL of size " << pduSize);
 
   PPER_Stream rawData(thisUDPTL, pduSize);
 
       // Decode the PDU
-  if (!m_receivedPacket->Decode(rawData)) {
+  if (!m_receivedPacket->Decode(rawData) || rawData.GetPosition() < pduSize) {
 #if PTRACING
     if (m_oneGoodPacket)
-      PTRACE(2, "T38_UDPTL\tRaw data decode failure:\n  "
+      PTRACE(2, "UDPTL\tRaw data decode failure:\n  "
              << setprecision(2) << rawData << "\n  UDPTL = "
              << setprecision(2) << m_receivedPacket);
     else
-      PTRACE(2, "T38_UDPTL\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+      PTRACE(2, "UDPTL\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
 #endif
 
     m_consecutiveBadPackets++;
     if (m_consecutiveBadPackets < 1000)
       return true;
 
-    PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
+    PTRACE(1, "UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
     return false;
   }
 
-  PTRACE_IF(3, !m_oneGoodPacket, "T38_UDPTL\tFirst decoded UDPTL packet");
+  PTRACE_IF(3, !m_oneGoodPacket, "UDPTL\tFirst decoded UDPTL packet");
   m_oneGoodPacket = true;
   m_consecutiveBadPackets = 0;
 
-  PTRACE(5, "T38_UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << m_receivedPacket);
+  PTRACE(5, "UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << *m_receivedPacket);
 
   int missing = m_receivedPacket->m_seq_number - m_expectedSequenceNumber;
   if (missing > 0 && m_receivedPacket->m_error_recovery.GetTag() == T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets) {
     // Packets are missing and we have redundency in the UDPTL packets
     T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondaryPackets = m_receivedPacket->m_error_recovery;
     if (secondaryPackets.GetSize() > 0) {
-      PTRACE(4, "T38_UDPTL\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
+      PTRACE(4, "UDPTL\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
       m_secondaryPacket = missing;
       if (m_secondaryPacket > secondaryPackets.GetSize())
         m_secondaryPacket = secondaryPackets.GetSize();
@@ -417,7 +534,6 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   return true;
 }
 
-#endif // OPAL_PTLIB_ASN
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -510,9 +626,7 @@ OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call,
 OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
-#if OPAL_PTLIB_ASN
   formats += OpalT38;
-#endif
   formats += TIFF_File_FormatName;
   return formats;
 }
@@ -539,7 +653,6 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_receiving(receiving)
   , m_disableT38(disableT38)
   , m_tiffFileFormat(TIFF_File_FormatName)
-  , m_state(disableT38 ? e_CompletedSwitch : e_AwaitingSwitchToT38)
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
@@ -590,16 +703,10 @@ void OpalFaxConnection::AdjustMediaFormats(bool   local,
   // Remove everything but G.711 or fax stuff
   OpalMediaFormatList::iterator it = mediaFormats.begin();
   while (it != mediaFormats.end()) {
-    if ((m_state != e_SwitchingToT38 && it->GetMediaType() == OpalMediaType::Audio()) ||
-        (*it == OpalG711_ULAW_64K || *it == OpalG711_ALAW_64K || *it == OpalRFC2833 || *it == OpalCiscoNSE))
+    if ((!ownerCall.IsSwitchingToT38() && it->GetMediaType() == OpalMediaType::Audio())
+         || *it == OpalG711_ULAW_64K || *it == OpalG711_ALAW_64K || *it == OpalRFC2833 || *it == OpalCiscoNSE)
       ++it;
-    else if (it->GetMediaType() != OpalMediaType::Fax()
-             || (m_disableT38
-#ifdef OPAL_PTLIB_ASN
-                              && *it == OpalT38
-#endif
-                                                )
-        )
+    else if (it->GetMediaType() != OpalMediaType::Fax() || (m_disableT38 && *it == OpalT38))
       mediaFormats -= *it++;
     else
       SetFaxMediaFormatOptions(*it++);
@@ -641,17 +748,17 @@ void OpalFaxConnection::OnEstablished()
 {
   OpalLocalConnection::OnEstablished();
 
-#if OPAL_PTLIB_ASN
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
-  if (m_state == e_AwaitingSwitchToT38) {
-    PString str = m_stringOptions(OPAL_T38_SWITCH_TIME);
-    if (!str.IsEmpty()) {
-      m_switchTimer.SetInterval(0, str.AsUnsigned());
-      PTRACE(3, "FAX\tStarting timer for auto-switch to T.38");
-    }
-  }
-#endif
+  if (m_disableT38)
+    return;
+
+  PString str = m_stringOptions(OPAL_T38_SWITCH_TIME);
+  if (str.IsEmpty())
+    return;
+
+  m_switchTimer.SetInterval(0, str.AsUnsigned());
+  PTRACE(3, "FAX\tStarting timer for auto-switch to T.38");
 }
 
 
@@ -670,64 +777,50 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 
 void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  if (stream.GetMediaFormat() == m_tiffFileFormat) {
-    stream.GetPatch()->ExecuteCommand(OpalFaxTerminate(), false);
+  OpalLocalConnection::OnClosedMediaStream(stream);
+
+  if (ownerCall.IsSwitchingT38()) {
+    PTRACE(4, "FAX\tIgnoring switching "
+           << (stream.IsSource() ? "source" : "sink")
+           << " media stream id=" << stream.GetID());
+    return;
+  }
+
+  bool bothClosed = false;
+  OpalMediaStreamPtr other;
+  if (stream.IsSource()) {
+    other = GetMediaStream(stream.GetID(), false);
+    bothClosed = other == NULL || !other->IsOpen();
+  }
+  else {
+    other = GetMediaStream(stream.GetID(), true);
+    bothClosed = other == NULL || !other->IsOpen();
+
+    PTRACE(4, "FAX\tTerminating fax in closed media stream id=" << stream.GetID());
+    OpalMediaPatchPtr patch = stream.GetPatch();
+    if (patch != NULL)
+      patch->ExecuteCommand(OpalFaxTerminate(), false);
+
 #if OPAL_STATISTICS
     if (m_finalStatistics.m_fax.m_result < 0) {
       stream.GetStatistics(m_finalStatistics);
       PTRACE_IF(3, m_finalStatistics.m_fax.m_result >= 0,
-                "FAX\tGot statistics: result=" << m_finalStatistics.m_fax.m_result);
+                "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
     }
 #endif
   }
-  OpalLocalConnection::OnClosedMediaStream(stream);
-}
 
-
-void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
-{
-#if OPAL_PTLIB_ASN
-  // Have switched to T.38 mode
-  if (patch.GetSink()->GetMediaFormat() == OpalT38) {
-    m_switchTimer.Stop(false);
-    m_state = e_CompletedSwitch;
+  if (bothClosed) {
 #if OPAL_STATISTICS
-    m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
-#endif
-    PTRACE(4, "FAX\tStarted fax media stream for " << m_tiffFileFormat
-           << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
-  }
-#endif
-
-  OpalLocalConnection::OnStartMediaPatch(patch);
-}
-
-
-void OpalFaxConnection::OnStopMediaPatch(OpalMediaPatch & patch)
-{
-  // Finished the fax transmission, look for TIFF
-  OpalMediaStream & source = patch.GetSource();
-  if (source.GetMediaFormat() == m_tiffFileFormat) {
-    m_switchTimer.Stop(false);
-
-    PTRACE(4, "FAX\tStopped fax media stream for " << m_tiffFileFormat
-           << " state=" << m_state << " switch=" << m_faxMediaStreamsSwitchState);
-
-    // Not an explicit switch, so fax plug in indicated end of fax
-    if (m_state == e_CompletedSwitch && m_faxMediaStreamsSwitchState == e_NotSwitchingFaxMediaStreams) {
-      patch.ExecuteCommand(OpalFaxTerminate(), false);
-#if OPAL_STATISTICS
-      if (m_finalStatistics.m_fax.m_result < 0)
-        source.GetStatistics(m_finalStatistics);
-      PTRACE(3, "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
-      OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
+    OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
 #else
-      OnFaxCompleted(true);
+    OnFaxCompleted(false);
 #endif
-    }
   }
-
-  OpalConnection::OnStopMediaPatch(patch);
+  else {
+    PTRACE(4, "FAX\tClosing " << (other->IsSource() ? "source" : "sink") << " media stream id=" << stream.GetID());
+    other->Close();
+  }
 }
 
 
@@ -741,9 +834,11 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
   // Not yet switched and got a CNG/CED from the remote system, start switch
-  if (m_state == e_AwaitingSwitchToT38 &&
-         (m_receiving ? (tone == 'X')
-                      : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED)))) {
+  if (m_disableT38)
+    return;
+
+  if (m_receiving ? (tone == 'X')
+                  : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED))) {
     PTRACE(3, "FAX\tRequesting mode change in response to " << (tone == 'X' ? "CNG" : "CED"));
     GetEndPoint().GetManager().QueueDecoupledEvent(
           new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
@@ -793,50 +888,55 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
-  if (m_state == e_AwaitingSwitchToT38) {
-    PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
-    GetEndPoint().GetManager().QueueDecoupledEvent(
+  if (m_disableT38)
+    return;
+
+  PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
+  GetEndPoint().GetManager().QueueDecoupledEvent(
           new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
-  }
 }
 
-bool OpalFaxConnection::SwitchFaxMediaStreams(bool enableFax)
+
+bool OpalFaxConnection::SwitchT38(bool enable)
 {
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL && other->SwitchFaxMediaStreams(enableFax))
-    return true;
-
-  PTRACE(1, "FAX\tMode change request to " << (enableFax ? "fax" : "audio") << " failed");
-  return false;
+  return other != NULL && other->SwitchT38(enable);
 }
 
 
-
-void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
+void OpalFaxConnection::OnSwitchedT38(bool toT38, bool success)
 {
-  if (enabledFax) {
-    PTRACE(3, "FAX\tMode change request to fax succeeded");
+  if (success) {
+    m_switchTimer.Stop(false);
+#if OPAL_STATISTICS
+    m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
+#endif
+    return;
   }
-  else {
-    PTRACE(4, "FAX\tMode change request to fax failed, falling back to G.711");
-    if (m_stringOptions.GetBoolean(OPAL_NO_G111_FAX))
+
+  if (toT38) {
+    if (m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
+      PTRACE(4, "FAX\tSwitch request to fax failed, checking for fall back to G.711");
       OnFaxCompleted(true);
-    else {
+    }
+
+    if (!IsReleased()) {
+      PTRACE(4, "FAX\tSwitch request to fax failed, falling back to G.711");
       m_disableT38 = true;
-      SwitchFaxMediaStreams(false);
+      SwitchT38(false);
     }
   }
-
-  m_state = e_CompletedSwitch;
+  else {
+    PTRACE(3, "FAX\tSwitch request back to audio failed.");
+    Release();
+  }
 }
 
 
 void OpalFaxConnection::OpenFaxStreams()
 {
   if (LockReadWrite()) {
-    m_state = e_SwitchingToT38;
-    if (!SwitchFaxMediaStreams(true))
-      m_state = e_CompletedSwitch; // Couldn't, don't try again.
+    SwitchT38(true);
     UnlockReadWrite();
   }
 }

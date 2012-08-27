@@ -123,7 +123,7 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
   mediaFormat = newMediaFormat;
 
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   UnlockReadWrite();
 
@@ -146,7 +146,7 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
 bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   return mediaPatch != NULL ? mediaPatch->UpdateMediaFormat(newMediaFormat)
                             : InternalUpdateMediaFormat(newMediaFormat);
@@ -169,7 +169,7 @@ bool OpalMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMedia
 PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch == NULL)
     return false;
@@ -205,7 +205,7 @@ PBoolean OpalMediaStream::Start()
     return false;
 
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch == NULL)
     return false;
@@ -397,7 +397,7 @@ PBoolean OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
 PBoolean OpalMediaStream::PushPacket(RTP_DataFrame & packet)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   // OpalMediaPatch::PushFrame() might block, do outside of mutex
   return mediaPatch != NULL && mediaPatch->PushFrame(packet);
@@ -436,7 +436,7 @@ bool OpalMediaStream::EnableJitterBuffer(bool) const
 bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   // If we are source, then update the sink side, and vice versa
   if (!fromPatch && mediaPatch != NULL)
@@ -459,7 +459,7 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  PatchPtr mediaPatch = m_mediaPatch.Set(patch);
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch.Set(patch);
 
 #if PTRACING
   if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
@@ -476,7 +476,7 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 
   if (mediaPatch != NULL) {
     if (IsSink())
-      mediaPatch->RemoveSink(this);
+      mediaPatch->RemoveSink(*this);
     else
       mediaPatch->Close();
   }
@@ -488,7 +488,7 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 void OpalMediaStream::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch != NULL)
     mediaPatch->AddFilter(filter, stage);
@@ -498,7 +498,7 @@ void OpalMediaStream::AddFilter(const PNotifier & filter, const OpalMediaFormat 
 PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage) const
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   return mediaPatch != NULL && mediaPatch->RemoveFilter(filter, stage);
 }
@@ -508,7 +508,7 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMedia
 void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch != NULL && !fromPatch)
     mediaPatch->GetStatistics(statistics, IsSink());
@@ -519,7 +519,7 @@ void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromP
 void OpalMediaStream::OnStartMediaPatch() 
 { 
   // We make referenced copy of pointer so can't be deleted out from under us
-  PatchPtr mediaPatch = m_mediaPatch;
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   if (mediaPatch != NULL)
     connection.OnStartMediaPatch(*mediaPatch);
@@ -535,7 +535,11 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
-  : m_timeOnMarkers(mediaFormat.GetMediaType() != OpalMediaType::Audio())
+#if OPAL_VIDEO
+  : m_timeOnMarkers(mediaFormat.GetMediaType() == OpalMediaType::Video())
+#else
+  : m_timeOnMarkers(false)
+#endif
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
   , m_timeUnits(mediaFormat.GetTimeUnits())
