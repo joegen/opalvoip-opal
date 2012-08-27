@@ -198,6 +198,16 @@ class OpalRTPConnection : public OpalConnection
       CreateMediaSessionsSecurity security  ///< Wse secure media, or not
     );
 
+    /**Create an RTP session for the specified ID.
+       The type of RTP session that is created will be compatible with the
+       transport. At this time only IP (RTP over UDP) is supported.
+      */
+    virtual OpalMediaSession * CreateMediaSession(
+      unsigned sessionId,               ///< Unique (in connection) session ID for session
+      const OpalMediaType & mediaType,  ///< Media type for session
+      const PString & sessionType = PString::Empty() ///< Type of session to create
+    );
+
     /**Get an RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */

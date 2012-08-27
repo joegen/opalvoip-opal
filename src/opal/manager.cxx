@@ -1017,13 +1017,13 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
     return false;
   }
 
-  OpalMediaPatch * sourcePatch = source->GetPatch();
+  OpalMediaPatchPtr sourcePatch = source->GetPatch();
   if (sourcePatch == NULL) {
     PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source patch does not exist");
     return false;
   }
 
-  OpalMediaPatch * sinkPatch = sink->GetPatch();
+  OpalMediaPatchPtr sinkPatch = sink->GetPatch();
   if (sinkPatch == NULL) {
     PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink patch does not exist");
     return false;
@@ -1181,27 +1181,31 @@ static void OnStartStopmediaPatch(PScriptLanguage * script, const char * fn, Opa
                (const char *)patch.GetSource().GetID(),
                (const char *)mediaFormat.GetName());
 }
+#endif // OPAL_SCRIPT
 
+
+#if OPAL_SCRIPT
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
   OnStartStopmediaPatch(m_script, "OnStartMedia", connection, patch);
-}
-
-
-void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
-{
-  OnStartStopmediaPatch(m_script, "OnStopMedia", connection, patch);
-}
 #else
 void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
 {
-}
-
-
-void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
-{
-}
 #endif
+}
+
+
+#if OPAL_SCRIPT
+void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
+{
+  OnStartStopmediaPatch(m_script, "OnStopMedia", connection, patch);
+#else
+void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & patch)
+{
+#endif
+
+  QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch>(&patch, &OpalMediaPatch::Close));
+}
 
 
 bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, bool)

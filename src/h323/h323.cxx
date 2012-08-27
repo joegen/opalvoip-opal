@@ -4078,32 +4078,33 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 
 
 #if OPAL_FAX
-bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
+bool H323Connection::SwitchT38(bool toT38)
 {
-  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
-    PTRACE(2, "H323\tNested call to SwitchFaxMediaStreams on " << *this);
+  if (ownerCall.IsSwitchingT38()) {
+    PTRACE(2, "H323\tNested call to SwitchT38 on " << *this);
     return false;
   }
 
-  if (enableFax && remoteCapabilities.FindCapability(OpalT38) == NULL) {
+  if (toT38 && remoteCapabilities.FindCapability(OpalT38) == NULL) {
     PTRACE(3, "H323\tRemote does not have T.38 capabilities on " << *this);
     return false;
   }
 
-  if (enableFax ? (GetMediaStream(H323Capability::DefaultDataSessionID, true) != NULL)
-                : (GetMediaStream(H323Capability::DefaultAudioSessionID, true) != NULL)) {
-    PTRACE(3, "H323\tAlready switched media streams to " << (enableFax ? "fax" : "audio") << " on " << *this);
+  if (GetMediaStream(toT38 ? H323Capability::DefaultDataSessionID
+                           : H323Capability::DefaultAudioSessionID, true) != NULL) {
+    PTRACE(3, "H323\tAlready switched media streams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
     return false;
   }
 
-  PTRACE(3, "H323\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
-  if (!RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw))
-    return false;
+  PTRACE(3, "H323\tSwitching to " << (toT38 ? "T.38" : "audio") << " on " << *this);
+  ownerCall.SetSwitchingT38(toT38);
+  if (RequestModeChangeT38(toT38 ? OpalT38 : OpalG711uLaw))
+    return true;
 
-  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
-  return true;
+  ownerCall.ResetSwitchingT38();
+  return false;
 }
-#endif
+#endif // OPAL_FAX
 
 
 OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
@@ -4746,7 +4747,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     // close the source media stream so it will be re-established
     OpalMediaStreamPtr stream = conflictingChannel.GetMediaStream();
     if (stream != NULL) {
-      OpalMediaPatch * patch = stream->GetPatch();
+      OpalMediaPatchPtr patch = stream->GetPatch();
       if (patch != NULL) 
         patch->GetSource().Close();
     }
@@ -4965,6 +4966,25 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
 PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
+  if (channel.GetDirection() == H323Channel::IsReceiver) {
+    if (t38ModeChangeCapabilities.IsEmpty()) {
+#if OPAL_FAX
+      PTRACE(4, "H323\tResetting switching T.38 flag");
+      ownerCall.ResetSwitchingT38();
+#endif
+    }
+    else {
+      OpalMediaFormat format = channel.GetCapability().GetMediaFormat();
+      t38ModeChangeCapabilities.Replace(format.GetName(), "");
+#if OPAL_FAX
+      if (t38ModeChangeCapabilities.IsEmpty()) {
+        PTRACE(4, "H323\tSetting switching T.38 flag");
+        OnSwitchedT38(format == OpalT38, true);
+      }
+#endif
+    }
+  }
+
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 
@@ -5278,10 +5298,15 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
   for (selectedMode = 0; selectedMode < pdu.m_requestedModes.GetSize(); selectedMode++) {
     PBoolean ok = true;
     for (PINDEX i = 0; i < pdu.m_requestedModes[selectedMode].GetSize(); i++) {
-      if (localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]) == NULL) {
+      H323Capability * capability = localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]);
+      if (capability == NULL) {
         ok = false;
         break;
       }
+#if OPAL_FAX
+      if (capability->GetMediaFormat() == OpalT38)
+        ownerCall.SetSwitchingT38(true);
+#endif
     }
     if (ok)
       return true;
@@ -5311,15 +5336,15 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
                                         it != logicalChannels->GetChannels().end(); ++it) {
     H245NegLogicalChannel & negChannel = it->second;
     H323Channel * channel = negChannel.GetChannel();
-    if (channel != NULL && !channel->GetNumber().IsFromRemote() &&
+    OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
+    if (channel != NULL && mediaStream != NULL && !channel->GetNumber().IsFromRemote() &&
           (negChannel.IsAwaitingEstablishment() || negChannel.IsEstablished())) {
       bool closeOne = true;
 
       for (PINDEX m = 0; m < newMode.GetSize(); m++) {
         H323Capability * capability = localCapabilities.FindCapability(newMode[m]);
         if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
-          OpalMediaStreamPtr mediaStream = channel->GetMediaStream();
-          if (mediaStream != NULL && capability->GetMediaFormat() == mediaStream->GetMediaFormat()) {
+          if (capability->GetMediaFormat() == mediaStream->GetMediaFormat()) {
             closeOne = false;
             break;
           }
@@ -5375,7 +5400,6 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   CloseAllLogicalChannels(false);
 
   PStringArray modes = t38ModeChangeCapabilities.Lines();
-  t38ModeChangeCapabilities.MakeEmpty();
 
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
                                      && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
@@ -5392,21 +5416,17 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
       }
     }
   }
-
-#if OPAL_FAX
-  OnSwitchedFaxMediaStreams(switched);
-#endif
 }
 
 
 void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
-#if OPAL_FAX
   if (!t38ModeChangeCapabilities.IsEmpty()) {
     t38ModeChangeCapabilities.MakeEmpty();
-    OnSwitchedFaxMediaStreams(false);
-  }
+#if OPAL_FAX
+    OnSwitchedT38(false, false);
 #endif
+  }
 }
 
 

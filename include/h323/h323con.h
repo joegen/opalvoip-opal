@@ -296,10 +296,10 @@ class H323Connection : public OpalRTPConnection
     );
 
 #if OPAL_FAX
-    /**Switch to/from FAX mode.
+    /**Switch to/from T.38 fax mode.
       */
-    virtual bool SwitchFaxMediaStreams(
-      bool enableFax  ///< Enable FAX or return to audio mode
+    virtual bool SwitchT38(
+      bool toT38  ///< T.38 or return to audio mode
     );
 #endif
 

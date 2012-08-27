@@ -65,6 +65,9 @@ OpalCall::OpalCall(OpalManager & mgr)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
 #endif
+#if OPAL_FAX
+  , m_T38SwitchState(e_NotSwitchingT38)
+#endif
 {
   PTRACE_CONTEXT_ID_NEW();
 
@@ -543,7 +546,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   OpalMediaStreamPtr sinkStream;
   OpalMediaStreamPtr sourceStream = connection.GetMediaStream(sessionID, true);
   if (sourceStream != NULL) {
-    OpalMediaPatch * patch = sourceStream->GetPatch();
+    OpalMediaPatchPtr patch = sourceStream->GetPatch();
     if (patch != NULL)
       sinkStream = patch->GetSink();
     if (preselectedFormat.IsEmpty() ||
@@ -700,7 +703,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       if (!sourceStream.SetSafetyMode(PSafeReadOnly))
         return false;
 
-      OpalMediaPatch * patch = sourceStream->GetPatch();
+      OpalMediaPatchPtr patch = sourceStream->GetPatch();
       if (patch == NULL) {
         patch = manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
                                                         sourceStream->RequiresPatchThread(sinkStream));
@@ -729,7 +732,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     if (!sourceStream.SetSafetyMode(PSafeReadOnly))
       return false;
 
-    OpalMediaPatch * patch = sourceStream->GetPatch();
+    OpalMediaPatchPtr patch = sourceStream->GetPatch();
     if (patch == NULL)
       return false;
 

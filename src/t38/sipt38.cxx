@@ -69,7 +69,7 @@ Either, or both, can be used in a call
 /////////////////////////////////////////////////////////////////////////////
 
 const PCaselessString & OpalFaxMediaType::GetSDPMediaType() { static PConstCaselessString const s("image"); return s; }
-const PString & OpalFaxMediaType::GetSDPTransportType() { return OpalFaxMediaType::GetSDPMediaType(); }
+const PString & OpalFaxMediaType::GetSDPTransportType() { return OpalFaxMediaType::UDPTL(); }
 
 bool OpalFaxMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
                                   const PCaselessString & sdpTransport,

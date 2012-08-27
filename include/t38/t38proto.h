@@ -212,14 +212,10 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnReleased();
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
-    virtual void OnStartMediaPatch(OpalMediaPatch & patch);
-    virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
-
-    virtual bool SwitchFaxMediaStreams(bool enableFax);
-    virtual void OnSwitchedFaxMediaStreams(bool enabledFax);
-
+    virtual bool SwitchT38(bool toT38);
+    virtual void OnSwitchedT38(bool toT38, bool success);
     virtual void OnApplyStringOptions();
   //@}
 
@@ -261,12 +257,6 @@ class OpalFaxConnection : public OpalLocalConnection
     bool              m_disableT38;
     OpalMediaFormat   m_tiffFileFormat;
 
-    enum {
-      e_AwaitingSwitchToT38,
-      e_SwitchingToT38,
-      e_CompletedSwitch
-    } m_state;
-
     PTimer m_switchTimer;
 
 #if OPAL_STATISTICS
@@ -288,6 +278,12 @@ class OpalFaxSession : public OpalMediaSession
     ~OpalFaxSession();
 
     virtual const PCaselessString & GetSessionType() const { return UDPTL(); }
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+    virtual bool IsOpen() const;
+    virtual bool Close();
+    virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
+    virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
@@ -309,7 +305,8 @@ class OpalFaxSession : public OpalMediaSession
     bool WriteUDPTL();
 
     Transport          m_savedTransport;
-    PUDPSocket       * m_dataSocket;
+    PIPSocket        * m_dataSocket;
+    bool               m_shuttingDown;
 
     int                m_consecutiveBadPackets;
     bool               m_oneGoodPacket;
@@ -344,7 +341,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean IsSynchronous() const;
 
   protected:
-    virtual void InternalClose() { }
+    virtual void InternalClose();
 
     OpalFaxSession & m_session;
 };

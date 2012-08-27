@@ -600,6 +600,13 @@ class OpalCall : public PSafeObject
 
     void SetPartyNames();
 
+#if OPAL_FAX
+    bool IsSwitchingT38()     const { return m_T38SwitchState != e_NotSwitchingT38; }
+    bool IsSwitchingToT38()   const { return m_T38SwitchState == e_SwitchingToT38;  }
+    void ResetSwitchingT38()        { m_T38SwitchState = e_NotSwitchingT38; }
+    void SetSwitchingT38(bool to)   { m_T38SwitchState = to ? e_SwitchingToT38 : e_SwitchingFromT38; }
+#endif
+
   protected:
     bool EnumerateConnections(
       PSafePtr<OpalConnection> & connection,
@@ -632,6 +639,14 @@ class OpalCall : public PSafeObject
 
 #if OPAL_SCRIPT
     PDECLARE_ScriptFunctionNotifier(OpalCall, ScriptClear);
+#endif
+
+#if OPAL_FAX
+    enum {
+      e_NotSwitchingT38,
+      e_SwitchingToT38,
+      e_SwitchingFromT38
+    } m_T38SwitchState;
 #endif
 
   //use to add the connection to the call's connection list
