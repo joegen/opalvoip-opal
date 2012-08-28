@@ -43,6 +43,9 @@
 #undef OPAL_BUILD
 #undef OPAL_VERSION
 
+#define OPAL_CHECK_VERSION(major,minor,build) \
+          (PTLIB_VERSION_INT(OPAL_MAJOR,OPAL_MINOR,OPAL_BUILD) >= PTLIB_VERSION_INT(major,minor,build))
+
 #undef  OPAL_PTLIB_SSL
 #undef  OPAL_PTLIB_SSL_AES
 #undef  OPAL_PTLIB_ASN
