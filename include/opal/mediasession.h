@@ -120,7 +120,7 @@ class OpalMediaStatistics : public PObject
       PString m_stationId; // Remote station identifier
       PString m_errorText;
     } m_fax;
-#endif
+#endif // OPAL_FAX
 };
 
 #endif

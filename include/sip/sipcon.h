@@ -309,7 +309,7 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual bool RequireSymmetricMediaStreams() const;
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     /**Switch to/from T.38 fax mode.
       */
     virtual bool SwitchT38(
