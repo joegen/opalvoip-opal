@@ -443,6 +443,8 @@ class OpalMediaStream : public PSafeObject
     unsigned                    m_frameTime;
     PINDEX                      m_frameSize;
 
+    typedef OpalMediaPatchPtr PatchPtr; // For backward compatibility
+
   private:
     P_REMOVE_VIRTUAL_VOID(OnPatchStart());
     P_REMOVE_VIRTUAL_VOID(OnPatchStop());
