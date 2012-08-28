@@ -4077,7 +4077,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 }
 
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
 bool H323Connection::SwitchT38(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
@@ -4104,7 +4104,7 @@ bool H323Connection::SwitchT38(bool toT38)
   ownerCall.ResetSwitchingT38();
   return false;
 }
-#endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
 
 
 OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
@@ -4968,7 +4968,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
   if (channel.GetDirection() == H323Channel::IsReceiver) {
     if (t38ModeChangeCapabilities.IsEmpty()) {
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
       PTRACE(4, "H323\tResetting switching T.38 flag");
       ownerCall.ResetSwitchingT38();
 #endif
@@ -4976,7 +4976,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
     else {
       OpalMediaFormat format = channel.GetCapability().GetMediaFormat();
       t38ModeChangeCapabilities.Replace(format.GetName(), "");
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
       if (t38ModeChangeCapabilities.IsEmpty()) {
         PTRACE(4, "H323\tSetting switching T.38 flag");
         OnSwitchedT38(format == OpalT38, true);
@@ -5303,7 +5303,7 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
         ok = false;
         break;
       }
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
       if (capability->GetMediaFormat() == OpalT38)
         ownerCall.SetSwitchingT38(true);
 #endif
@@ -5423,7 +5423,7 @@ void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 {
   if (!t38ModeChangeCapabilities.IsEmpty()) {
     t38ModeChangeCapabilities.MakeEmpty();
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     OnSwitchedT38(false, false);
 #endif
   }

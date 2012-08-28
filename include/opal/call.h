@@ -600,7 +600,7 @@ class OpalCall : public PSafeObject
 
     void SetPartyNames();
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     bool IsSwitchingT38()     const { return m_T38SwitchState != e_NotSwitchingT38; }
     bool IsSwitchingToT38()   const { return m_T38SwitchState == e_SwitchingToT38;  }
     void ResetSwitchingT38()        { m_T38SwitchState = e_NotSwitchingT38; }
@@ -641,7 +641,7 @@ class OpalCall : public PSafeObject
     PDECLARE_ScriptFunctionNotifier(OpalCall, ScriptClear);
 #endif
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     enum {
       e_NotSwitchingT38,
       e_SwitchingToT38,

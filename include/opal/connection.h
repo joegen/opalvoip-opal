@@ -1035,7 +1035,7 @@ class OpalConnection : public PSafeObject
       bool force = false ///< Force re-open even if already open
     );
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     /**Switch to/from T.38 fax mode.
       */
     virtual bool SwitchT38(
@@ -1050,7 +1050,7 @@ class OpalConnection : public PSafeObject
       bool toT38,   ///< Was switching to T.38 or audio mode
       bool success  ///< Switch succeeded or failed
     );
-#endif
+#endif // OPAL_T38_CAPABILITY
 
     /**Open source or sink media stream for session.
       */

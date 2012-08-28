@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H323
+#if OPAL_H323 && OPAL_T38_CAPABILITY
 
 #include <t38/h323t38.h>
 
@@ -246,7 +246,7 @@ H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & conn
 }
 
 
-#endif // OPAL_H323
+#endif // OPAL_H323 && OPAL_T38_CAPABILITY
 
 
 /////////////////////////////////////////////////////////////////////////////

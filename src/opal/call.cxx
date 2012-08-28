@@ -65,7 +65,7 @@ OpalCall::OpalCall(OpalManager & mgr)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
 #endif
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
   , m_T38SwitchState(e_NotSwitchingT38)
 #endif
 {

@@ -911,24 +911,14 @@ void OpalFaxConnection::OnSwitchedT38(bool toT38, bool success)
 #if OPAL_STATISTICS
     m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
 #endif
-    return;
   }
-
-  if (toT38) {
-    if (m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
+  else {
+    if (toT38 && m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
       PTRACE(4, "FAX\tSwitch request to fax failed, checking for fall back to G.711");
       OnFaxCompleted(true);
     }
 
-    if (!IsReleased()) {
-      PTRACE(4, "FAX\tSwitch request to fax failed, falling back to G.711");
-      m_disableT38 = true;
-      SwitchT38(false);
-    }
-  }
-  else {
-    PTRACE(3, "FAX\tSwitch request back to audio failed.");
-    Release();
+    m_disableT38 = true;
   }
 }
 
