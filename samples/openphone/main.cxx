@@ -6666,8 +6666,10 @@ InCallPanel::InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, w
   m_pages[TxAudio].Init(this, TxAudio, OpalMediaType::Audio(), false);
   m_pages[RxVideo].Init(this, RxVideo, OpalMediaType::Video(), true );
   m_pages[TxVideo].Init(this, TxVideo, OpalMediaType::Video(), false);
+#if OPAL_FAX
   m_pages[RxFax  ].Init(this, RxFax  , OpalMediaType::Fax(),   false);
   m_pages[TxFax  ].Init(this, TxFax  , OpalMediaType::Fax(),   true);
+#endif
 
   m_FirstTime = true;
 }
@@ -6709,9 +6711,11 @@ void InCallPanel::OnStreamsChanged()
 
   UpdateStatistics();
 
+#if OPAL_FAX
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
   if (connection != NULL && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL)
     FindWindowByNameAs<wxNotebook>(this, wxT("Statistics"))->SetSelection(RxFax);
+#endif
 }
 
 

@@ -1061,12 +1061,12 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   bool replaceSession = mediaSession->GetMediaType() != mediaType;
   if (replaceSession) {
     PTRACE(4, "SIP\tReplacing " << mediaSession->GetMediaType() << " session for " << mediaType);
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
     if (mediaType == OpalMediaType::Fax())
       ownerCall.SetSwitchingT38(true);
     else if (mediaSession->GetMediaType() == OpalMediaType::Fax())
       ownerCall.SetSwitchingT38(false);
-#endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
     mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
                                             OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
     if (mediaSession == NULL) {
@@ -1244,7 +1244,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   sdpOut.AddMediaDescription(localMedia);
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
   ownerCall.ResetSwitchingT38();
 #endif
 
@@ -1340,7 +1340,7 @@ bool SIPConnection::RequireSymmetricMediaStreams() const
 }
 
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
 bool SIPConnection::SwitchT38(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
@@ -1358,7 +1358,7 @@ bool SIPConnection::SwitchT38(bool toT38)
   ownerCall.ResetSwitchingT38();
   return false;
 }
-#endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
 
 
 OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
@@ -2480,7 +2480,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     StartPendingReINVITE();
   }
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
     SDPSessionDescription * sdp = transaction.GetSDP();
     bool toT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
@@ -2488,7 +2488,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     bool isT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
     OnSwitchedT38(toT38, isT38 == toT38);
   }
-#endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
 
   if (handled)
     return;
