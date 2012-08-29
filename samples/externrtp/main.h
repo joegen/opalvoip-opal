@@ -81,6 +81,7 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
+    virtual MediaTransferMode GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const;
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 
