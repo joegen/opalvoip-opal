@@ -38,6 +38,7 @@
 
 
 #include <wx/wx.h>
+#include <wx/taskbar.h>
 #include <wx/dataobj.h>
 
 #include <opal/manager.h>
@@ -227,8 +228,8 @@ class CallDialog : public wxDialog
     int       m_FaxMode;
 
   private:
-    void OnOK(wxCommandEvent & event);
-    void OnAddressChange(wxCommandEvent & event);
+    void OnOK(wxCommandEvent & /*event*/);
+    void OnAddressChange(wxCommandEvent & /*event*/);
 
     wxComboBox * m_AddressCtrl;
     wxButton   * m_ok;
@@ -248,8 +249,8 @@ class CallIMDialog : public wxDialog
     PwxString m_Address;
 
   private:
-    void OnOK(wxCommandEvent & event);
-    void OnChanged(wxCommandEvent & event);
+    void OnOK(wxCommandEvent & /*event*/);
+    void OnChanged(wxCommandEvent & /*event*/);
 
     MyManager  & m_manager;
     wxButton   * m_ok;
@@ -270,16 +271,16 @@ class IMDialog : public wxDialog, PAsyncNotifierTarget
   private:
     // PAsyncNotifierTarget override
     virtual void AsyncNotifierSignal();
-    void OnEvtAsyncNotification(wxCommandEvent &);
+    void OnEvtAsyncNotification(wxCommandEvent & /*event*/);
 
     PDECLARE_ASYNC_MessageDispositionNotifier(IMDialog, OnMessageDisposition);
     PDECLARE_ASYNC_MessageReceivedNotifier(IMDialog, OnMessageReceived);
     PDECLARE_ASYNC_CompositionIndicationNotifier(IMDialog, OnCompositionIndication);
 
-    void OnSend(wxCommandEvent & event);
-    void OnTextEnter(wxCommandEvent & event);
-    void OnText(wxCommandEvent & event);
-    void OnCloseWindow(wxCloseEvent &event);
+    void OnSend(wxCommandEvent & /*event*/);
+    void OnTextEnter(wxCommandEvent & /*event*/);
+    void OnText(wxCommandEvent & /*event*/);
+    void OnCloseWindow(wxCloseEvent & /*event*/);
 
     void SendCurrentText();
     void SendCompositionIndication();
@@ -326,7 +327,7 @@ class CallingPanel : public CallPanelBase
     CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
 
   private:
-    void OnHangUp(wxCommandEvent & event);
+    void OnHangUp(wxCommandEvent & /*event*/);
 
     DECLARE_EVENT_TABLE()
 };
@@ -340,10 +341,10 @@ class AnswerPanel : public CallPanelBase
     void SetPartyNames(const PwxString & calling, const PwxString & called);
 
   private:
-    void OnAnswer(wxCommandEvent & event);
-    void OnReject(wxCommandEvent & event);
+    void OnAnswer(wxCommandEvent & /*event*/);
+    void OnReject(wxCommandEvent & /*event*/);
 #if OPAL_FAX
-    void OnChangeAnswerMode(wxCommandEvent & event);
+    void OnChangeAnswerMode(wxCommandEvent & /*event*/);
 #endif
 
     DECLARE_EVENT_TABLE()
@@ -426,28 +427,28 @@ class InCallPanel : public CallPanelBase
     void OnHoldChanged(bool onHold);
 
   private:
-    void OnHangUp(wxCommandEvent & event);
-    void OnHoldRetrieve(wxCommandEvent & event);
-    void OnConference(wxCommandEvent & event);
-    void OnSpeakerMute(wxCommandEvent & event);
-    void OnMicrophoneMute(wxCommandEvent & event);
-    void OnUserInput1(wxCommandEvent & event);
-    void OnUserInput2(wxCommandEvent & event);
-    void OnUserInput3(wxCommandEvent & event);
-    void OnUserInput4(wxCommandEvent & event);
-    void OnUserInput5(wxCommandEvent & event);
-    void OnUserInput6(wxCommandEvent & event);
-    void OnUserInput7(wxCommandEvent & event);
-    void OnUserInput8(wxCommandEvent & event);
-    void OnUserInput9(wxCommandEvent & event);
-    void OnUserInput0(wxCommandEvent & event);
-    void OnUserInputStar(wxCommandEvent & event);
-    void OnUserInputHash(wxCommandEvent & event);
-    void OnUserInputFlash(wxCommandEvent & event);
-    void OnUpdateVU(wxTimerEvent& event);
+    void OnHangUp(wxCommandEvent & /*event*/);
+    void OnHoldRetrieve(wxCommandEvent & /*event*/);
+    void OnConference(wxCommandEvent & /*event*/);
+    void OnSpeakerMute(wxCommandEvent & /*event*/);
+    void OnMicrophoneMute(wxCommandEvent & /*event*/);
+    void OnUserInput1(wxCommandEvent & /*event*/);
+    void OnUserInput2(wxCommandEvent & /*event*/);
+    void OnUserInput3(wxCommandEvent & /*event*/);
+    void OnUserInput4(wxCommandEvent & /*event*/);
+    void OnUserInput5(wxCommandEvent & /*event*/);
+    void OnUserInput6(wxCommandEvent & /*event*/);
+    void OnUserInput7(wxCommandEvent & /*event*/);
+    void OnUserInput8(wxCommandEvent & /*event*/);
+    void OnUserInput9(wxCommandEvent & /*event*/);
+    void OnUserInput0(wxCommandEvent & /*event*/);
+    void OnUserInputStar(wxCommandEvent & /*event*/);
+    void OnUserInputHash(wxCommandEvent & /*event*/);
+    void OnUserInputFlash(wxCommandEvent & /*event*/);
+    void OnUpdateVU(wxTimerEvent & /*event*/);
 
-    void SpeakerVolume(wxScrollEvent & event);
-    void MicrophoneVolume(wxScrollEvent & event);
+    void SpeakerVolume(wxScrollEvent & /*event*/);
+    void MicrophoneVolume(wxScrollEvent & /*event*/);
     void SetVolume(bool microphone, int value, bool muted);
     void UpdateStatistics();
 
@@ -489,7 +490,7 @@ class SpeedDialDialog : public wxDialog, public SpeedDialInfo
     SpeedDialDialog(MyManager *parent, const SpeedDialInfo & info);
 
   private:
-    void OnChange(wxCommandEvent & event);
+    void OnChange(wxCommandEvent & /*event*/);
 
     MyManager & m_manager;
 
@@ -556,7 +557,7 @@ class RegistrationDialog : public wxDialog
   private:
     DECLARE_EVENT_TABLE()
 
-    void Changed(wxCommandEvent & event);
+    void Changed(wxCommandEvent & /*event*/);
 
     wxButton       * m_ok;
     wxTextCtrl     * m_user;
@@ -585,9 +586,10 @@ class OptionsDialog : public wxDialog
     PwxString m_VendorName;
     PwxString m_ProductName;
     PwxString m_ProductVersion;
+    bool      m_HideMinimised;
 
-    void BrowseSoundFile(wxCommandEvent & event);
-    void PlaySoundFile(wxCommandEvent & event);
+    void BrowseSoundFile(wxCommandEvent & /*event*/);
+    void PlaySoundFile(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Networking fields
@@ -619,15 +621,15 @@ class OptionsDialog : public wxDialog
     wxTextCtrl    * m_InterfacePort;
     wxButton      * m_AddInterface;
     wxButton      * m_RemoveInterface;
-    void BandwidthClass(wxCommandEvent & event);
-    void FindCertificateAuthority(wxCommandEvent & event);
-    void FindLocalCertificate(wxCommandEvent & event);
-    void FindPrivateKey(wxCommandEvent & event);
-    void NATHandling(wxCommandEvent & event);
-    void SelectedLocalInterface(wxCommandEvent & event);
-    void ChangedInterfaceInfo(wxCommandEvent & event);
-    void AddInterface(wxCommandEvent & event);
-    void RemoveInterface(wxCommandEvent & event);
+    void BandwidthClass(wxCommandEvent & /*event*/);
+    void FindCertificateAuthority(wxCommandEvent & /*event*/);
+    void FindLocalCertificate(wxCommandEvent & /*event*/);
+    void FindPrivateKey(wxCommandEvent & /*event*/);
+    void NATHandling(wxCommandEvent & /*event*/);
+    void SelectedLocalInterface(wxCommandEvent & /*event*/);
+    void ChangedInterfaceInfo(wxCommandEvent & /*event*/);
+    void AddInterface(wxCommandEvent & /*event*/);
+    void RemoveInterface(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Sound fields
@@ -651,9 +653,9 @@ class OptionsDialog : public wxDialog
     wxChoice   * m_selectedAEC;
     wxComboBox * m_selectedCountry;
 
-    void ChangedSoundPlayer(wxCommandEvent & event);
-    void ChangedSoundRecorder(wxCommandEvent & event);
-    void SelectedLID(wxCommandEvent & event);
+    void ChangedSoundPlayer(wxCommandEvent & /*event*/);
+    void ChangedSoundRecorder(wxCommandEvent & /*event*/);
+    void SelectedLID(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Video fields
@@ -681,8 +683,8 @@ class OptionsDialog : public wxDialog
     PVideoOutputDevice * m_TestVideoDisplay;
 
     void AdjustVideoControls(const PwxString & device);
-    void ChangeVideoGrabDevice(wxCommandEvent & event);
-    void TestVideoCapture(wxCommandEvent & event);
+    void ChangeVideoGrabDevice(wxCommandEvent & /*event*/);
+    void TestVideoCapture(wxCommandEvent & /*event*/);
     void TestVideoThreadMain();
     void StopTestVideo();
 
@@ -691,7 +693,7 @@ class OptionsDialog : public wxDialog
     PwxString m_FaxStationIdentifier;
     PwxString m_FaxReceiveDirectory;
     int       m_FaxAutoAnswerMode;
-    void BrowseFaxDirectory(wxCommandEvent & event);
+    void BrowseFaxDirectory(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // IVR fields
@@ -709,13 +711,13 @@ class OptionsDialog : public wxDialog
     wxGrid     * m_PresentityAttributes;
     wxButton   * m_AddPresentity;
     wxButton   * m_RemovePresentity;
-    void AddPresentity(wxCommandEvent & event);
-    void RemovePresentity(wxCommandEvent & event);
-    void SelectedPresentity(wxListEvent & event);
-    void DeselectedPresentity(wxListEvent & event);
-    void EditedPresentity(wxListEvent & event);
+    void AddPresentity(wxCommandEvent & /*event*/);
+    void RemovePresentity(wxCommandEvent & /*event*/);
+    void SelectedPresentity(wxListEvent & /*event*/);
+    void DeselectedPresentity(wxListEvent & /*event*/);
+    void EditedPresentity(wxListEvent & /*event*/);
     bool FillPresentityAttributes(OpalPresentity * presentity);
-    void ChangedPresentityAttribute(wxGridEvent & event);
+    void ChangedPresentityAttribute(wxGridEvent & /*event*/);
 
     ////////////////////////////////////////
     // Codec fields
@@ -730,15 +732,15 @@ class OptionsDialog : public wxDialog
     wxStaticText * m_CodecOptionValueLabel;
     wxStaticText * m_CodecOptionValueError;
 
-    void AddCodec(wxCommandEvent & event);
-    void RemoveCodec(wxCommandEvent & event);
-    void MoveUpCodec(wxCommandEvent & event);
-    void MoveDownCodec(wxCommandEvent & event);
-    void SelectedCodecToAdd(wxCommandEvent & event);
-    void SelectedCodec(wxCommandEvent & event);
-    void SelectedCodecOption(wxListEvent & event);
-    void DeselectedCodecOption(wxListEvent & event);
-    void ChangedCodecOptionValue(wxCommandEvent & event);
+    void AddCodec(wxCommandEvent & /*event*/);
+    void RemoveCodec(wxCommandEvent & /*event*/);
+    void MoveUpCodec(wxCommandEvent & /*event*/);
+    void MoveDownCodec(wxCommandEvent & /*event*/);
+    void SelectedCodecToAdd(wxCommandEvent & /*event*/);
+    void SelectedCodec(wxCommandEvent & /*event*/);
+    void SelectedCodecOption(wxListEvent & /*event*/);
+    void DeselectedCodecOption(wxListEvent & /*event*/);
+    void ChangedCodecOptionValue(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // H.323 fields
@@ -762,20 +764,20 @@ class OptionsDialog : public wxDialog
     wxButton   * m_AddAlias;
     wxButton   * m_RemoveAlias;
 
-    void SelectedAlias(wxCommandEvent & event);
-    void ChangedNewAlias(wxCommandEvent & event);
-    void AddAlias(wxCommandEvent & event);
-    void RemoveAlias(wxCommandEvent & event);
+    void SelectedAlias(wxCommandEvent & /*event*/);
+    void ChangedNewAlias(wxCommandEvent & /*event*/);
+    void AddAlias(wxCommandEvent & /*event*/);
+    void RemoveAlias(wxCommandEvent & /*event*/);
 
 #if OPAL_PTLIB_SSL
     int              m_H323SignalingSecurity;
     wxCheckListBox * m_H323MediaCryptoSuites;
     wxButton       * m_H323MediaCryptoSuiteUp;
     wxButton       * m_H323MediaCryptoSuiteDown;
-    void H323SignalingSecurityChanged(wxCommandEvent & event);
-    void H323MediaCryptoSuiteChanged(wxCommandEvent & event);
-    void H323MediaCryptoSuiteUp(wxCommandEvent & event);
-    void H323MediaCryptoSuiteDown(wxCommandEvent & event);
+    void H323SignalingSecurityChanged(wxCommandEvent & /*event*/);
+    void H323MediaCryptoSuiteChanged(wxCommandEvent & /*event*/);
+    void H323MediaCryptoSuiteUp(wxCommandEvent & /*event*/);
+    void H323MediaCryptoSuiteDown(wxCommandEvent & /*event*/);
 #endif
 
     ////////////////////////////////////////
@@ -797,25 +799,25 @@ class OptionsDialog : public wxDialog
     wxButton   * m_MoveDownRegistration;
 
     void RegistrationToList(bool create, RegistrationInfo * registration, int position);
-    void AddRegistration(wxCommandEvent & event);
-    void ChangeRegistration(wxCommandEvent & event);
-    void RemoveRegistration(wxCommandEvent & event);
-    void MoveUpRegistration(wxCommandEvent & event);
-    void MoveDownRegistration(wxCommandEvent & event);
+    void AddRegistration(wxCommandEvent & /*event*/);
+    void ChangeRegistration(wxCommandEvent & /*event*/);
+    void RemoveRegistration(wxCommandEvent & /*event*/);
+    void MoveUpRegistration(wxCommandEvent & /*event*/);
+    void MoveDownRegistration(wxCommandEvent & /*event*/);
     void MoveRegistration(int delta);
-    void SelectedRegistration(wxListEvent & event);
-    void DeselectedRegistration(wxListEvent & event);
-    void ActivateRegistration(wxListEvent & event);
+    void SelectedRegistration(wxListEvent & /*event*/);
+    void DeselectedRegistration(wxListEvent & /*event*/);
+    void ActivateRegistration(wxListEvent & /*event*/);
 
 #if OPAL_PTLIB_SSL
     int              m_SIPSignalingSecurity;
     wxCheckListBox * m_SIPMediaCryptoSuites;
     wxButton       * m_SIPMediaCryptoSuiteUp;
     wxButton       * m_SIPMediaCryptoSuiteDown;
-    void SIPSignalingSecurityChanged(wxCommandEvent & event);
-    void SIPMediaCryptoSuiteChanged(wxCommandEvent & event);
-    void SIPMediaCryptoSuiteUp(wxCommandEvent & event);
-    void SIPMediaCryptoSuiteDown(wxCommandEvent & event);
+    void SIPSignalingSecurityChanged(wxCommandEvent & /*event*/);
+    void SIPMediaCryptoSuiteChanged(wxCommandEvent & /*event*/);
+    void SIPMediaCryptoSuiteUp(wxCommandEvent & /*event*/);
+    void SIPMediaCryptoSuiteDown(wxCommandEvent & /*event*/);
 #endif
 
     ////////////////////////////////////////
@@ -834,14 +836,14 @@ class OptionsDialog : public wxDialog
     wxButton   * m_MoveUpRoute;
     wxButton   * m_MoveDownRoute;
 
-    void AddRoute(wxCommandEvent & event);
-    void RemoveRoute(wxCommandEvent & event);
-    void MoveUpRoute(wxCommandEvent & event);
-    void MoveDownRoute(wxCommandEvent & event);
-    void SelectedRoute(wxListEvent & event);
-    void DeselectedRoute(wxListEvent & event);
-    void ChangedRouteInfo(wxCommandEvent & event);
-    void RestoreDefaultRoutes(wxCommandEvent & event);
+    void AddRoute(wxCommandEvent & /*event*/);
+    void RemoveRoute(wxCommandEvent & /*event*/);
+    void MoveUpRoute(wxCommandEvent & /*event*/);
+    void MoveDownRoute(wxCommandEvent & /*event*/);
+    void SelectedRoute(wxListEvent & /*event*/);
+    void DeselectedRoute(wxListEvent & /*event*/);
+    void ChangedRouteInfo(wxCommandEvent & /*event*/);
+    void RestoreDefaultRoutes(wxCommandEvent & /*event*/);
     void AddRouteTableEntry(OpalManager::RouteEntry entry);
 
 #if PTRACING
@@ -860,7 +862,7 @@ class OptionsDialog : public wxDialog
     bool      m_TraceContextId;
     PwxString m_TraceFileName;
 
-    void BrowseTraceFile(wxCommandEvent & event);
+    void BrowseTraceFile(wxCommandEvent & /*event*/);
 #endif
 
     DECLARE_EVENT_TABLE()
@@ -882,6 +884,24 @@ public:
 
 typedef std::list<MyMedia> MyMediaList;
 
+
+class MyTaskBarIcon : public wxTaskBarIcon
+{
+  public:
+    MyTaskBarIcon(MyManager & manager);
+
+    virtual wxMenu * CreatePopupMenu();
+    virtual void OnDoubleClick(wxTaskBarIconEvent & /*event*/);
+
+  protected:
+    virtual bool ProcessEvent(wxEvent & /*event*/);
+
+    MyManager & m_manager;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarget
 {
   public:
@@ -889,6 +909,10 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     ~MyManager();
 
     bool Initialise();
+
+    void SetTrayTipText(const char * text);
+    void SetBalloonText(const wxChar * text);
+    wxMenu * CreateTrayMenu();
 
     bool HasSpeedDialName(const wxString & name) const;
     bool HasSpeedDialNumber(const wxString & number, const wxString & ignore) const;
@@ -927,7 +951,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
   private:
     // PAsyncNotifierTarget override
     virtual void AsyncNotifierSignal();
-    void OnEvtAsyncNotification(wxCommandEvent &);
+    void OnEvtAsyncNotification(wxCommandEvent & /*event*/);
 
     // OpalManager overrides
     virtual PBoolean OnIncomingConnection(
@@ -993,68 +1017,69 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
-    void OnClose(wxCloseEvent& event);
-    void OnLogMessage(wxCommandEvent & event);
-    void OnAdjustMenus(wxMenuEvent& event);
-    void OnStateChange(wxCommandEvent & event);
-    void OnStreamsChanged(wxCommandEvent &);
+    void OnClose(wxCloseEvent & /*event*/);
+    void OnIconize(wxIconizeEvent & /*event*/);
+    void OnLogMessage(wxCommandEvent & /*event*/);
+    void OnAdjustMenus(wxMenuEvent & /*event*/);
+    void OnStateChange(wxCommandEvent & /*event*/);
+    void OnStreamsChanged(wxCommandEvent & /*event*/);
 
-    void OnMenuQuit(wxCommandEvent& event);
-    void OnMenuAbout(wxCommandEvent& event);
-    void OnMenuCall(wxCommandEvent& event);
-    void OnMenuCallLastDialed(wxCommandEvent& event);
-    void OnMenuCallLastReceived(wxCommandEvent& event);
-    void OnCallSpeedDialAudio(wxCommandEvent& event);
-    void OnCallSpeedDialHandset(wxCommandEvent& event);
-    void OnSendFax(wxCommandEvent& event);
-    void OnSendFaxSpeedDial(wxCommandEvent& event);
-    void OnMenuAnswer(wxCommandEvent& event);
-    void OnMenuHangUp(wxCommandEvent& event);
-    void OnNewSpeedDial(wxCommandEvent& event);
-    void OnViewLarge(wxCommandEvent& event);
-    void OnViewSmall(wxCommandEvent& event);
-    void OnViewList(wxCommandEvent& event);
-    void OnViewDetails(wxCommandEvent& event);
-    void OnEditSpeedDial(wxCommandEvent& event);
-    void OnCutSpeedDial(wxCommandEvent& event);
-    void OnCopySpeedDial(wxCommandEvent& event);
-    void OnPasteSpeedDial(wxCommandEvent& event);
-    void OnDeleteSpeedDial(wxCommandEvent& event);
-    void OnOptions(wxCommandEvent& event);
-    void OnRequestHold(wxCommandEvent& event);
-    void OnRetrieve(wxCommandEvent& event);
-    void OnConference(wxCommandEvent& event);
-    void OnTransfer(wxCommandEvent& event);
-    void OnStartRecording(wxCommandEvent& event);
-    void OnStopRecording(wxCommandEvent& event);
-    void OnSendAudioFile(wxCommandEvent& event);
-    void OnAudioDevicePair(wxCommandEvent& event);
-    void OnAudioDevicePreset(wxCommandEvent& event);
-    void OnNewCodec(wxCommandEvent& event);
-    void OnStartVideo(wxCommandEvent& event);
-    void OnStopVideo(wxCommandEvent& event);
-    void OnSendVFU(wxCommandEvent& event);
-    void OnSendIntra(wxCommandEvent& event);
-    void OnTxVideoControl(wxCommandEvent& event);
-    void OnRxVideoControl(wxCommandEvent& event);
-    void OnDefVidWinPos(wxCommandEvent& event);
-    void OnSashPositioned(wxSplitterEvent& event);
-    void OnSpeedDialActivated(wxListEvent& event);
-    void OnSpeedDialColumnResize(wxListEvent& event);
-    void OnSpeedDialRightClick(wxListEvent& event);
-    void OnSpeedDialEndEdit(wxListEvent& event);
+    void OnMenuQuit(wxCommandEvent & /*event*/);
+    void OnMenuAbout(wxCommandEvent & /*event*/);
+    void OnMenuCall(wxCommandEvent & /*event*/);
+    void OnMenuCallLastDialed(wxCommandEvent & /*event*/);
+    void OnMenuCallLastReceived(wxCommandEvent & /*event*/);
+    void OnCallSpeedDialAudio(wxCommandEvent & /*event*/);
+    void OnCallSpeedDialHandset(wxCommandEvent & /*event*/);
+    void OnSendFax(wxCommandEvent & /*event*/);
+    void OnSendFaxSpeedDial(wxCommandEvent & /*event*/);
+    void OnMenuAnswer(wxCommandEvent & /*event*/);
+    void OnMenuHangUp(wxCommandEvent & /*event*/);
+    void OnNewSpeedDial(wxCommandEvent & /*event*/);
+    void OnViewLarge(wxCommandEvent & /*event*/);
+    void OnViewSmall(wxCommandEvent & /*event*/);
+    void OnViewList(wxCommandEvent & /*event*/);
+    void OnViewDetails(wxCommandEvent & /*event*/);
+    void OnEditSpeedDial(wxCommandEvent & /*event*/);
+    void OnCutSpeedDial(wxCommandEvent & /*event*/);
+    void OnCopySpeedDial(wxCommandEvent & /*event*/);
+    void OnPasteSpeedDial(wxCommandEvent & /*event*/);
+    void OnDeleteSpeedDial(wxCommandEvent & /*event*/);
+    void OnOptions(wxCommandEvent & /*event*/);
+    void OnRequestHold(wxCommandEvent & /*event*/);
+    void OnRetrieve(wxCommandEvent & /*event*/);
+    void OnConference(wxCommandEvent & /*event*/);
+    void OnTransfer(wxCommandEvent & /*event*/);
+    void OnStartRecording(wxCommandEvent & /*event*/);
+    void OnStopRecording(wxCommandEvent & /*event*/);
+    void OnSendAudioFile(wxCommandEvent & /*event*/);
+    void OnAudioDevicePair(wxCommandEvent & /*event*/);
+    void OnAudioDevicePreset(wxCommandEvent & /*event*/);
+    void OnNewCodec(wxCommandEvent & /*event*/);
+    void OnStartVideo(wxCommandEvent & /*event*/);
+    void OnStopVideo(wxCommandEvent & /*event*/);
+    void OnSendVFU(wxCommandEvent & /*event*/);
+    void OnSendIntra(wxCommandEvent & /*event*/);
+    void OnTxVideoControl(wxCommandEvent & /*event*/);
+    void OnRxVideoControl(wxCommandEvent & /*event*/);
+    void OnDefVidWinPos(wxCommandEvent & /*event*/);
+    void OnSashPositioned(wxSplitterEvent & /*event*/);
+    void OnSpeedDialActivated(wxListEvent & /*event*/);
+    void OnSpeedDialColumnResize(wxListEvent & /*event*/);
+    void OnSpeedDialRightClick(wxListEvent & /*event*/);
+    void OnSpeedDialEndEdit(wxListEvent & /*event*/);
 
-    void OnMyPresence(wxCommandEvent& event);
+    void OnMyPresence(wxCommandEvent & /*event*/);
 #if OPAL_HAS_IM
-    void OnStartIM(wxCommandEvent& event);
-    void OnInCallIM(wxCommandEvent& event);
-    void OnSendIMSpeedDial(wxCommandEvent& event);
+    void OnStartIM(wxCommandEvent & /*event*/);
+    void OnInCallIM(wxCommandEvent & /*event*/);
+    void OnSendIMSpeedDial(wxCommandEvent & /*event*/);
 #endif // OPAL_HAS_IM
 
-    void OnEvtRinging(wxCommandEvent & theEvent);
-    void OnEvtEstablished(wxCommandEvent & theEvent);
-    void OnEvtOnHold(wxCommandEvent & theEvent);
-    void OnEvtCleared(wxCommandEvent & theEvent);
+    void OnEvtRinging(wxCommandEvent & /*event*/ theEvent);
+    void OnEvtEstablished(wxCommandEvent & /*event*/ theEvent);
+    void OnEvtOnHold(wxCommandEvent & /*event*/ theEvent);
+    void OnEvtCleared(wxCommandEvent & /*event*/ theEvent);
 
     bool CanDoFax() const;
     bool CanDoIM() const;
@@ -1096,6 +1121,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
       SpeedDialsID
     };
 
+    wxIcon             m_appIcon;
+    bool               m_hideMinimised; // Task bar icon gets it back
+    MyTaskBarIcon    * m_taskBarIcon;
     wxSplitterWindow * m_splitter;
     wxNotebook       * m_tabs;
     wxTextCtrl       * m_logWindow;
