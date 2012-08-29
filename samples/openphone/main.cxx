@@ -69,6 +69,10 @@
 
 #include <algorithm>
 
+#ifdef WIN32
+  #include <shellapi.h>
+#endif
+
 
 #if defined(__WXGTK__)   || \
     defined(__WXMOTIF__) || \
@@ -127,6 +131,7 @@ DEF_FIELD(DisplayName);
 DEF_FIELD(RingSoundDeviceName);
 DEF_FIELD(RingSoundFileName);
 DEF_FIELD(AutoAnswer);
+DEF_FIELD(HideMinimised);
 DEF_FIELD(VendorName);
 DEF_FIELD(ProductName);
 DEF_FIELD(ProductVersion);
@@ -356,6 +361,56 @@ static const char * const DefaultRoutes[] = {
 };
 
 
+// Menu and command identifiers
+#define DEF_XRCID(name) static int ID_##name = XRCID(#name)
+DEF_XRCID(MenuCall);
+DEF_XRCID(MenuCallLastDialed);
+DEF_XRCID(MenuCallLastReceived);
+DEF_XRCID(MenuAnswer);
+DEF_XRCID(MenuHangUp);
+DEF_XRCID(MenuHold);
+DEF_XRCID(MenuSpeedDialsEdit);
+DEF_XRCID(MenuTransfer);
+DEF_XRCID(MenuStartRecording);
+DEF_XRCID(MenuStopRecording);
+DEF_XRCID(CallSpeedDialAudio);
+DEF_XRCID(CallSpeedDialHandset);
+DEF_XRCID(MenuSendFax);
+DEF_XRCID(SendFaxSpeedDial);
+DEF_XRCID(NewSpeedDial);
+DEF_XRCID(ViewLarge);
+DEF_XRCID(ViewSmall);
+DEF_XRCID(ViewList);
+DEF_XRCID(ViewDetails);
+DEF_XRCID(EditSpeedDial);
+DEF_XRCID(MenuCut);
+DEF_XRCID(MenuCopy);
+DEF_XRCID(MenuPaste);
+DEF_XRCID(MenuDelete);
+DEF_XRCID(MenuSendAudioFile);
+DEF_XRCID(MenuAudioDevice);
+DEF_XRCID(MenuStartVideo);
+DEF_XRCID(MenuStopVideo);
+DEF_XRCID(MenuSendVFU);
+DEF_XRCID(MenuSendIntra);
+DEF_XRCID(MenuTxVideoControl);
+DEF_XRCID(MenuRxVideoControl);
+DEF_XRCID(MenuDefVidWinPos);
+DEF_XRCID(MenuPresence);
+#if OPAL_HAS_IM
+DEF_XRCID(MenuStartIM);
+DEF_XRCID(MenuInCallMessage);
+DEF_XRCID(SendIMSpeedDial);
+#endif // OPAL_HAS_IM
+DEF_XRCID(SubMenuAudio);
+DEF_XRCID(SubMenuVideo);
+DEF_XRCID(SubMenuRetrieve);
+DEF_XRCID(SubMenuConference);
+DEF_XRCID(SubMenuTransfer);
+DEF_XRCID(SubMenuSound);
+DEF_XRCID(SubMenuSpeedDial);
+
+
 enum {
   ID_RETRIEVE_MENU_BASE = wxID_HIGHEST+1,
   ID_RETRIEVE_MENU_TOP = ID_RETRIEVE_MENU_BASE+999,
@@ -369,6 +424,8 @@ enum {
   ID_AUDIO_CODEC_MENU_TOP = ID_AUDIO_CODEC_MENU_BASE+99,
   ID_VIDEO_CODEC_MENU_BASE,
   ID_VIDEO_CODEC_MENU_TOP = ID_VIDEO_CODEC_MENU_BASE+99,
+  ID_SPEEDDIAL_MENU_BASE,
+  ID_SPEEDDIAL_MENU_TOP = ID_SPEEDDIAL_MENU_BASE+999,
   ID_LOG_MESSAGE,
   ID_RINGING,
   ID_ESTABLISHED,
@@ -393,7 +450,7 @@ DEFINE_EVENT_TYPE(wxEvtAsyncNotification)
 #pragma warning(disable:4100)
 #endif
 
-template <class cls> cls * FindWindowByNameAs(wxWindow * window, const wxChar * name)
+template <class cls, typename id_type> cls * FindWindowByNameAs(wxWindow * window, id_type name)
 {
   wxWindow * baseChild = window->FindWindow(name);
   if (PAssert(baseChild != NULL, "Windows control not found")) {
@@ -522,63 +579,64 @@ bool OpenPhoneApp::OnInit()
 
 BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_CLOSE(MyManager::OnClose)
+  EVT_ICONIZE(MyManager::OnIconize)
 
   EVT_MENU_OPEN(MyManager::OnAdjustMenus)
 
-  EVT_MENU(wxID_EXIT,                    MyManager::OnMenuQuit)
-  EVT_MENU(wxID_ABOUT,                   MyManager::OnMenuAbout)
-  EVT_MENU(wxID_PREFERENCES,             MyManager::OnOptions)
-  EVT_MENU(XRCID("MenuCall"),            MyManager::OnMenuCall)
-  EVT_MENU(XRCID("MenuCallLastDialed"),  MyManager::OnMenuCallLastDialed)
-  EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
-  EVT_MENU(XRCID("CallSpeedDialAudio"),  MyManager::OnCallSpeedDialAudio)
-  EVT_MENU(XRCID("CallSpeedDialHandset"),MyManager::OnCallSpeedDialHandset)
-  EVT_MENU(XRCID("MenuSendFax"),         MyManager::OnSendFax)
-  EVT_MENU(XRCID("SendFaxSpeedDial"),    MyManager::OnSendFaxSpeedDial)
-  EVT_MENU(XRCID("MenuAnswer"),          MyManager::OnMenuAnswer)
-  EVT_MENU(XRCID("MenuHangUp"),          MyManager::OnMenuHangUp)
-  EVT_MENU(XRCID("NewSpeedDial"),        MyManager::OnNewSpeedDial)
-  EVT_MENU(XRCID("ViewLarge"),           MyManager::OnViewLarge)
-  EVT_MENU(XRCID("ViewSmall"),           MyManager::OnViewSmall)
-  EVT_MENU(XRCID("ViewList"),            MyManager::OnViewList)
-  EVT_MENU(XRCID("ViewDetails"),         MyManager::OnViewDetails)
-  EVT_MENU(XRCID("EditSpeedDial"),       MyManager::OnEditSpeedDial)
-  EVT_MENU(XRCID("MenuCut"),             MyManager::OnCutSpeedDial)
-  EVT_MENU(XRCID("MenuCopy"),            MyManager::OnCopySpeedDial)
-  EVT_MENU(XRCID("MenuPaste"),           MyManager::OnPasteSpeedDial)
-  EVT_MENU(XRCID("MenuDelete"),          MyManager::OnDeleteSpeedDial)
-  EVT_MENU(XRCID("MenuHold"),            MyManager::OnRequestHold)
-  EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,ID_RETRIEVE_MENU_TOP, MyManager::OnRetrieve)
-  EVT_MENU(XRCID("MenuTransfer"),        MyManager::OnTransfer)
-  EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,ID_TRANSFER_MENU_TOP, MyManager::OnTransfer)
-  EVT_MENU_RANGE(ID_CONFERENCE_MENU_BASE,ID_CONFERENCE_MENU_TOP, MyManager::OnConference)
-  EVT_MENU(XRCID("MenuStartRecording"),  MyManager::OnStartRecording)
-  EVT_MENU(XRCID("MenuStopRecording"),   MyManager::OnStopRecording)
-  EVT_MENU(XRCID("MenuSendAudioFile"),   MyManager::OnSendAudioFile)
-  EVT_MENU(XRCID("MenuAudioDevice"),     MyManager::OnAudioDevicePair)
-  EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDevicePreset)
-  EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE, ID_AUDIO_CODEC_MENU_TOP, MyManager::OnNewCodec)
-  EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE, ID_VIDEO_CODEC_MENU_TOP, MyManager::OnNewCodec)
-  EVT_MENU(XRCID("MenuStartVideo"),      MyManager::OnStartVideo)
-  EVT_MENU(XRCID("MenuStopVideo"),       MyManager::OnStopVideo)
-  EVT_MENU(XRCID("MenuSendVFU"),         MyManager::OnSendVFU)
-  EVT_MENU(XRCID("MenuSendIntra"),       MyManager::OnSendIntra)
-  EVT_MENU(XRCID("MenuTxVideoControl"),  MyManager::OnTxVideoControl)
-  EVT_MENU(XRCID("MenuRxVideoControl"),  MyManager::OnRxVideoControl)
-  EVT_MENU(XRCID("MenuDefVidWinPos"),    MyManager::OnDefVidWinPos)
-
-  EVT_MENU(XRCID("MenuPresence"),        MyManager::OnMyPresence)
+  EVT_MENU(wxID_EXIT,               MyManager::OnMenuQuit)
+  EVT_MENU(wxID_ABOUT,              MyManager::OnMenuAbout)
+  EVT_MENU(wxID_PREFERENCES,        MyManager::OnOptions)
+  EVT_MENU(ID_MenuCall,             MyManager::OnMenuCall)
+  EVT_MENU(ID_MenuCallLastDialed,   MyManager::OnMenuCallLastDialed)
+  EVT_MENU(ID_MenuCallLastReceived, MyManager::OnMenuCallLastReceived)
+  EVT_MENU(ID_MenuAnswer,           MyManager::OnMenuAnswer)
+  EVT_MENU(ID_MenuHangUp,           MyManager::OnMenuHangUp)
+  EVT_MENU(ID_MenuHold,             MyManager::OnRequestHold)
+  EVT_MENU(ID_MenuTransfer,         MyManager::OnTransfer)
+  EVT_MENU(ID_MenuStartRecording,   MyManager::OnStartRecording)
+  EVT_MENU(ID_MenuStopRecording,    MyManager::OnStopRecording)
+  EVT_MENU(ID_CallSpeedDialAudio,   MyManager::OnCallSpeedDialAudio)
+  EVT_MENU(ID_CallSpeedDialHandset, MyManager::OnCallSpeedDialHandset)
+  EVT_MENU(ID_MenuSendFax,          MyManager::OnSendFax)
+  EVT_MENU(ID_SendFaxSpeedDial,     MyManager::OnSendFaxSpeedDial)
+  EVT_MENU(ID_NewSpeedDial,         MyManager::OnNewSpeedDial)
+  EVT_MENU(ID_ViewLarge,            MyManager::OnViewLarge)
+  EVT_MENU(ID_ViewSmall,            MyManager::OnViewSmall)
+  EVT_MENU(ID_ViewList,             MyManager::OnViewList)
+  EVT_MENU(ID_ViewDetails,          MyManager::OnViewDetails)
+  EVT_MENU(ID_EditSpeedDial,        MyManager::OnEditSpeedDial)
+  EVT_MENU(ID_MenuCut,              MyManager::OnCutSpeedDial)
+  EVT_MENU(ID_MenuCopy,             MyManager::OnCopySpeedDial)
+  EVT_MENU(ID_MenuPaste,            MyManager::OnPasteSpeedDial)
+  EVT_MENU(ID_MenuDelete,           MyManager::OnDeleteSpeedDial)
+  EVT_MENU(ID_MenuSendAudioFile,    MyManager::OnSendAudioFile)
+  EVT_MENU(ID_MenuAudioDevice,      MyManager::OnAudioDevicePair)
+  EVT_MENU(ID_MenuStartVideo,       MyManager::OnStartVideo)
+  EVT_MENU(ID_MenuStopVideo,        MyManager::OnStopVideo)
+  EVT_MENU(ID_MenuSendVFU,          MyManager::OnSendVFU)
+  EVT_MENU(ID_MenuSendIntra,        MyManager::OnSendIntra)
+  EVT_MENU(ID_MenuTxVideoControl,   MyManager::OnTxVideoControl)
+  EVT_MENU(ID_MenuRxVideoControl,   MyManager::OnRxVideoControl)
+  EVT_MENU(ID_MenuDefVidWinPos,     MyManager::OnDefVidWinPos)
+  EVT_MENU(ID_MenuPresence,         MyManager::OnMyPresence)
 #if OPAL_HAS_IM
-  EVT_MENU(XRCID("MenuStartIM"),         MyManager::OnStartIM)
-  EVT_MENU(XRCID("MenuInCallMessage"),   MyManager::OnInCallIM)
-  EVT_MENU(XRCID("SendIMSpeedDial"),     MyManager::OnSendIMSpeedDial)
+  EVT_MENU(ID_MenuStartIM,          MyManager::OnStartIM)
+  EVT_MENU(ID_MenuInCallMessage,    MyManager::OnInCallIM)
+  EVT_MENU(ID_SendIMSpeedDial,      MyManager::OnSendIMSpeedDial)
 #endif // OPAL_HAS_IM
 
+  EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,     ID_RETRIEVE_MENU_TOP,     MyManager::OnRetrieve)
+  EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,     ID_TRANSFER_MENU_TOP,     MyManager::OnTransfer)
+  EVT_MENU_RANGE(ID_CONFERENCE_MENU_BASE,   ID_CONFERENCE_MENU_TOP,   MyManager::OnConference)
+  EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDevicePreset)
+  EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE,  ID_AUDIO_CODEC_MENU_TOP,  MyManager::OnNewCodec)
+  EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE,  ID_VIDEO_CODEC_MENU_TOP,  MyManager::OnNewCodec)
+
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
-  EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
-  EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
-  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnSpeedDialRightClick) 
-  EVT_LIST_END_LABEL_EDIT(SpeedDialsID, MyManager::OnSpeedDialEndEdit)
+  EVT_LIST_ITEM_ACTIVATED(SpeedDialsID,     MyManager::OnSpeedDialActivated)
+  EVT_LIST_COL_END_DRAG(SpeedDialsID,       MyManager::OnSpeedDialColumnResize)
+  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID,   MyManager::OnSpeedDialRightClick) 
+  EVT_LIST_END_LABEL_EDIT(SpeedDialsID,     MyManager::OnSpeedDialEndEdit)
 
   EVT_COMMAND(ID_LOG_MESSAGE,         wxEvtLogMessage,         MyManager::OnLogMessage)
   EVT_COMMAND(ID_RINGING,             wxEvtRinging,            MyManager::OnEvtRinging)
@@ -597,6 +655,10 @@ MyManager::MyManager()
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
 #endif // OPAL_FAX
+  , m_appIcon(wxICON(AppIcon))
+  , m_hideMinimised(false)
+  , m_taskBarIcon(NULL)
+  , m_splitter(NULL)
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
@@ -633,7 +695,7 @@ MyManager::MyManager()
 #endif
 {
   // Give it an icon
-  SetIcon(wxICON(AppIcon));
+  SetIcon(m_appIcon);
 
   // Make an image list containing large icons
   m_imageListSmall = new wxImageList(16, 16, true);
@@ -665,6 +727,8 @@ MyManager::~MyManager()
   ShutDownEndpoints();
 
   delete m_primaryVideoGrabber;
+
+  delete m_taskBarIcon;
 
   wxMenuBar * menubar = GetMenuBar();
   SetMenuBar(NULL);
@@ -706,6 +770,10 @@ bool MyManager::Initialise()
   wxXmlResource::Get()->InitAllHandlers();
   InitXmlResource();
 
+  // Task bar icon
+  m_taskBarIcon = new MyTaskBarIcon(*this);
+  SetTrayTipText("Initialising");
+
   // Make a menubar
   wxMenuBar * menubar;
   {
@@ -716,11 +784,11 @@ bool MyManager::Initialise()
   }
 
   wxAcceleratorEntry accelEntries[] = {
-      wxAcceleratorEntry(wxACCEL_CTRL,  'E',         XRCID("EditSpeedDial")),
-      wxAcceleratorEntry(wxACCEL_CTRL,  'X',         XRCID("MenuCut")),
-      wxAcceleratorEntry(wxACCEL_CTRL,  'C',         XRCID("MenuCopy")),
-      wxAcceleratorEntry(wxACCEL_CTRL,  'V',         XRCID("MenuPaste")),
-      wxAcceleratorEntry(wxACCEL_NORMAL, WXK_DELETE, XRCID("MenuDelete"))
+      wxAcceleratorEntry(wxACCEL_CTRL,  'E',         ID_EditSpeedDial),
+      wxAcceleratorEntry(wxACCEL_CTRL,  'X',         ID_MenuCut),
+      wxAcceleratorEntry(wxACCEL_CTRL,  'C',         ID_MenuCopy),
+      wxAcceleratorEntry(wxACCEL_CTRL,  'V',         ID_MenuPaste),
+      wxAcceleratorEntry(wxACCEL_NORMAL, WXK_DELETE, ID_MenuDelete)
   };
   wxAcceleratorTable accel(PARRAYSIZE(accelEntries), accelEntries);
   SetAcceleratorTable(accel);
@@ -861,6 +929,7 @@ bool MyManager::Initialise()
   config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
 
   config->Read(AutoAnswerKey, &m_autoAnswer);
+  config->Read(HideMinimisedKey, &m_hideMinimised);
   config->Read(LastDialedKey, &m_LastDialed);
 
 
@@ -1326,6 +1395,7 @@ bool MyManager::Initialise()
 #endif
 
   LogWindow << "Ready ..." << endl;
+  SetTrayTipText("Online");
   return true;
 }
 
@@ -1516,22 +1586,25 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
 }
 
 
-void MyManager::OnClose(wxCloseEvent& /*event*/)
+void MyManager::OnClose(wxCloseEvent & /*event*/)
 {
   ::wxBeginBusyCursor();
+  SetTrayTipText("Exiting");
 
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
 
-  int x, y;
-  GetPosition(&x, &y);
-  config->Write(MainFrameXKey, x);
-  config->Write(MainFrameYKey, y);
+  if (!IsIconized()) {
+    int x, y;
+    GetPosition(&x, &y);
+    config->Write(MainFrameXKey, x);
+    config->Write(MainFrameYKey, y);
 
-  int w, h;
-  GetSize(&w, &h);
-  config->Write(MainFrameWidthKey, w);
-  config->Write(MainFrameHeightKey, h);
+    int w, h;
+    GetSize(&w, &h);
+    config->Write(MainFrameWidthKey, w);
+    config->Write(MainFrameHeightKey, h);
+  }
 
   if (m_speedDialDetail) {
     for (int i = 0; i < e_NumColumns; i++) {
@@ -1550,7 +1623,16 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   m_registrations.clear();
   ShutDownEndpoints();
 
+  m_taskBarIcon->RemoveIcon();
+
   Destroy();
+}
+
+
+void MyManager::OnIconize(wxIconizeEvent & evt)
+{
+  if (m_hideMinimised && evt.Iconized())
+    Hide();
 }
 
 
@@ -1582,24 +1664,24 @@ bool MyManager::CanDoIM() const
 }
 
 
-void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
+void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
 {
   int id;
 
   wxMenuBar * menubar = GetMenuBar();
-  menubar->Enable(XRCID("MenuCall"),            m_activeCall == NULL);
-  menubar->Enable(XRCID("MenuCallLastDialed"),  m_activeCall == NULL && !m_LastDialed.IsEmpty());
-  menubar->Enable(XRCID("MenuCallLastReceived"),m_activeCall == NULL && !m_LastReceived.IsEmpty());
-  menubar->Enable(XRCID("MenuAnswer"),          !m_incomingToken.IsEmpty());
-  menubar->Enable(XRCID("MenuHangUp"),          m_activeCall != NULL);
-  menubar->Enable(XRCID("MenuHold"),            m_activeCall != NULL);
-  menubar->Enable(XRCID("MenuTransfer"),        m_activeCall != NULL);
-  menubar->Enable(XRCID("MenuStartRecording"),  m_activeCall != NULL && !m_activeCall->IsRecording());
-  menubar->Enable(XRCID("MenuStopRecording"),   m_activeCall != NULL &&  m_activeCall->IsRecording());
-  menubar->Enable(XRCID("MenuSendAudioFile"),   m_activeCall != NULL);
-  menubar->Enable(XRCID("MenuInCallMessage"),   m_activeCall != NULL);
+  menubar->Enable(ID_MenuCall,            m_activeCall == NULL);
+  menubar->Enable(ID_MenuCallLastDialed,  m_activeCall == NULL && !m_LastDialed.IsEmpty());
+  menubar->Enable(ID_MenuCallLastReceived,m_activeCall == NULL && !m_LastReceived.IsEmpty());
+  menubar->Enable(ID_MenuAnswer,          !m_incomingToken.IsEmpty());
+  menubar->Enable(ID_MenuHangUp,          m_activeCall != NULL);
+  menubar->Enable(ID_MenuHold,            m_activeCall != NULL);
+  menubar->Enable(ID_MenuTransfer,        m_activeCall != NULL);
+  menubar->Enable(ID_MenuStartRecording,  m_activeCall != NULL && !m_activeCall->IsRecording());
+  menubar->Enable(ID_MenuStopRecording,   m_activeCall != NULL &&  m_activeCall->IsRecording());
+  menubar->Enable(ID_MenuSendAudioFile,   m_activeCall != NULL);
+  menubar->Enable(ID_MenuInCallMessage,   m_activeCall != NULL);
 
-  menubar->Enable(XRCID("MenuSendFax"),         CanDoFax());
+  menubar->Enable(ID_MenuSendFax,         CanDoFax());
 
   for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
     menubar->Enable(it->m_retrieveMenuId,   m_activeCall == NULL);
@@ -1608,20 +1690,20 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
   }
 
   int count = m_speedDials->GetSelectedItemCount();
-  menubar->Enable(XRCID("MenuCut"),       count >= 1);
-  menubar->Enable(XRCID("MenuCopy"),      count >= 1);
-  menubar->Enable(XRCID("MenuDelete"),    count >= 1);
-  menubar->Enable(XRCID("EditSpeedDial"), count == 1);
+  menubar->Enable(ID_MenuCut,       count >= 1);
+  menubar->Enable(ID_MenuCopy,      count >= 1);
+  menubar->Enable(ID_MenuDelete,    count >= 1);
+  menubar->Enable(ID_EditSpeedDial, count == 1);
 
   bool hasFormat = false;
   if (wxTheClipboard->Open()) {
     hasFormat = wxTheClipboard->IsSupported(m_ClipboardFormat);
     wxTheClipboard->Close();
   }
-  menubar->Enable(XRCID("MenuPaste"), hasFormat);
+  menubar->Enable(ID_MenuPaste, hasFormat);
 
   wxString deviceName;
-  menubar->Enable(XRCID("SubMenuSound"), m_activeCall != NULL);
+  menubar->Enable(ID_SubMenuSound, m_activeCall != NULL);
   PSafePtr<OpalPCSSConnection> pcss = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
   if (pcss != NULL)
     deviceName = AudioDeviceNameToScreen(pcss->GetSoundChannelPlayDevice());
@@ -1656,40 +1738,40 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
     hasStartVideo = connection->GetMediaFormats().HasType(OpalMediaType::Video());
   }
 
-  menubar->Enable(XRCID("SubMenuAudio"), m_activeCall != NULL);
+  menubar->Enable(ID_SubMenuAudio, m_activeCall != NULL);
   for (id = ID_AUDIO_CODEC_MENU_BASE; id <= ID_AUDIO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
       item->Check(item->GetItemLabelText() == audioFormat);
   }
 
-  menubar->Enable(XRCID("SubMenuVideo"), !videoFormat.IsEmpty() && m_activeCall != NULL);
+  menubar->Enable(ID_SubMenuVideo, !videoFormat.IsEmpty() && m_activeCall != NULL);
   for (id = ID_VIDEO_CODEC_MENU_BASE; id <= ID_VIDEO_CODEC_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
       item->Check(item->GetItemLabelText() == videoFormat);
   }
 
-  menubar->Enable(XRCID("MenuStartVideo"), hasStartVideo);
-  menubar->Enable(XRCID("MenuStopVideo"), hasTxVideo);
-  menubar->Enable(XRCID("MenuSendVFU"), hasRxVideo);
-  menubar->Enable(XRCID("MenuSendIntra"), hasRxVideo);
-  menubar->Enable(XRCID("MenuTxVideoControl"), hasTxVideo);
-  menubar->Enable(XRCID("MenuRxVideoControl"), hasRxVideo);
-  menubar->Enable(XRCID("MenuDefVidWinPos"), hasRxVideo || hasTxVideo);
+  menubar->Enable(ID_MenuStartVideo, hasStartVideo);
+  menubar->Enable(ID_MenuStopVideo, hasTxVideo);
+  menubar->Enable(ID_MenuSendVFU, hasRxVideo);
+  menubar->Enable(ID_MenuSendIntra, hasRxVideo);
+  menubar->Enable(ID_MenuTxVideoControl, hasTxVideo);
+  menubar->Enable(ID_MenuRxVideoControl, hasRxVideo);
+  menubar->Enable(ID_MenuDefVidWinPos, hasRxVideo || hasTxVideo);
 
-  menubar->Enable(XRCID("SubMenuRetrieve"), !m_callsOnHold.empty());
-  menubar->Enable(XRCID("SubMenuConference"), !m_callsOnHold.empty());
+  menubar->Enable(ID_SubMenuRetrieve, !m_callsOnHold.empty());
+  menubar->Enable(ID_SubMenuConference, !m_callsOnHold.empty());
 }
 
 
-void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuQuit(wxCommandEvent & WXUNUSED(event))
 {
-    Close(true);
+  Close(true);
 }
 
 
-void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
 {
   tstringstream text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
@@ -1708,7 +1790,7 @@ void MyManager::OnMenuAbout(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuCall(wxCommandEvent & WXUNUSED(event))
 {
   CallDialog dlg(this, false, true);
   if (dlg.ShowModal() == wxID_OK)
@@ -1716,13 +1798,13 @@ void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnMenuCallLastDialed(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuCallLastDialed(wxCommandEvent & WXUNUSED(event))
 {
   MakeCall(m_LastDialed);
 }
 
 
-void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuCallLastReceived(wxCommandEvent & WXUNUSED(event))
 {
   MakeCall(m_LastReceived);
 }
@@ -1822,13 +1904,13 @@ void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnMenuAnswer(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuAnswer(wxCommandEvent & WXUNUSED(event))
 {
   AnswerCall();
 }
 
 
-void MyManager::OnMenuHangUp(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnMenuHangUp(wxCommandEvent & WXUNUSED(event))
 {
   HangUpCall();
 }
@@ -1852,7 +1934,7 @@ static wxString MakeUniqueSpeedDialName(wxListCtrl * speedDials, const wxChar * 
 }
 
 
-void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnNewSpeedDial(wxCommandEvent & WXUNUSED(event))
 {
   SpeedDialInfo info;
   info.m_Name = MakeUniqueSpeedDialName(m_speedDials, wxT("New Speed Dial"));
@@ -1860,48 +1942,48 @@ void MyManager::OnNewSpeedDial(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnViewLarge(wxCommandEvent& event)
+void MyManager::OnViewLarge(wxCommandEvent & event)
 {
   GetMenuBar()->Check(event.GetId(), true);
   RecreateSpeedDials(e_ViewLarge);
 }
 
 
-void MyManager::OnViewSmall(wxCommandEvent& event)
+void MyManager::OnViewSmall(wxCommandEvent & event)
 {
   GetMenuBar()->Check(event.GetId(), true);
   RecreateSpeedDials(e_ViewSmall);
 }
 
 
-void MyManager::OnViewList(wxCommandEvent& event)
+void MyManager::OnViewList(wxCommandEvent & event)
 {
   GetMenuBar()->Check(event.GetId(), true);
   RecreateSpeedDials(e_ViewList);
 }
 
 
-void MyManager::OnViewDetails(wxCommandEvent& event)
+void MyManager::OnViewDetails(wxCommandEvent & event)
 {
   GetMenuBar()->Check(event.GetId(), true);
   RecreateSpeedDials(e_ViewDetails);
 }
 
 
-void MyManager::OnEditSpeedDial(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnEditSpeedDial(wxCommandEvent & WXUNUSED(event))
 {
   EditSpeedDial(m_speedDials->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED));
 }
 
 
-void MyManager::OnCutSpeedDial(wxCommandEvent& event)
+void MyManager::OnCutSpeedDial(wxCommandEvent & event)
 {
   OnCopySpeedDial(event);
   OnDeleteSpeedDial(event);
 }
 
 
-void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
 {
   if (!wxTheClipboard->Open())
     return;
@@ -1934,7 +2016,7 @@ void MyManager::OnCopySpeedDial(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
 {
   if (wxTheClipboard->Open()) {
     if (wxTheClipboard->IsSupported(m_ClipboardFormat)) {
@@ -1960,7 +2042,7 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
+void MyManager::OnDeleteSpeedDial(wxCommandEvent & WXUNUSED(event))
 {
   int count = m_speedDials->GetSelectedItemCount();
   if (count == 0)
@@ -1986,7 +2068,7 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void MyManager::OnSashPositioned(wxSplitterEvent& event)
+void MyManager::OnSashPositioned(wxSplitterEvent & event)
 {
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
@@ -1995,7 +2077,7 @@ void MyManager::OnSashPositioned(wxSplitterEvent& event)
 }
 
 
-void MyManager::OnSpeedDialActivated(wxListEvent& event)
+void MyManager::OnSpeedDialActivated(wxListEvent & event)
 {
   SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(event.GetIndex());
   if (info != NULL)
@@ -2003,7 +2085,7 @@ void MyManager::OnSpeedDialActivated(wxListEvent& event)
 }
 
 
-void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
+void MyManager::OnSpeedDialColumnResize(wxListEvent & event)
 {
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
@@ -2014,21 +2096,21 @@ void MyManager::OnSpeedDialColumnResize(wxListEvent& event)
 }
 
 
-void MyManager::OnSpeedDialRightClick(wxListEvent& event)
+void MyManager::OnSpeedDialRightClick(wxListEvent & event)
 {
   wxMenuBar * menuBar = wxXmlResource::Get()->LoadMenuBar(wxT("SpeedDialMenu"));
   wxMenu * menu = menuBar->Remove(0);
   delete menuBar;
 
-  menu->Enable(XRCID("CallSpeedDialHandset"), HasHandset());
-  menu->Enable(XRCID("SendFaxSpeedDial"),     CanDoFax());
-  menu->Enable(XRCID("SendIMSpeedDial"),      CanDoIM());
+  menu->Enable(ID_CallSpeedDialHandset, HasHandset());
+  menu->Enable(ID_SendFaxSpeedDial,     CanDoFax());
+  menu->Enable(ID_SendIMSpeedDial,      CanDoIM());
   PopupMenu(menu, event.GetPoint());
   delete menu;
 }
 
 
-void MyManager::OnSpeedDialEndEdit(wxListEvent& event)
+void MyManager::OnSpeedDialEndEdit(wxListEvent & event)
 {
   if (event.IsEditCancelled())
     return;
@@ -2220,11 +2302,21 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
     alertingType = network->GetAlertingType();
 
   PTime now;
-  LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
-            << " from " << connection->GetRemotePartyName();
+  LogWindow << "\nIncoming call at " << now.AsString("w h:mma");
+
+  PString from = connection->GetRemotePartyName();
+  wstringstream strm;
+  strm << "Incoming call";
+  if (!from.IsEmpty()) {
+    strm << " from \"" << from << '"';
+    LogWindow << " from " << from;
+  }
+
   if (!alertingType.IsEmpty())
     LogWindow << ", type=" << alertingType;
+
   LogWindow << endl;
+  SetBalloonText(strm.str().c_str());
 
   m_LastReceived = connection->GetRemotePartyAddress();
   wxConfigBase * config = wxConfig::Get();
@@ -2288,8 +2380,10 @@ void MyManager::StopRingSound()
 PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   bool usingHandset = connection.GetEndPoint().GetPrefixName() == "pots";
-  if (usingHandset)
+  if (usingHandset) {
     LogWindow << "Line interface device \"" << connection.GetRemotePartyName() << "\" has gone off hook." << endl;
+    SetTrayTipText("Off hook");
+  }
 
   if (!OpalManager::OnIncomingConnection(connection, options, stringOptions))
     return false;
@@ -2611,21 +2705,21 @@ void MyManager::AddCallOnHold(OpalCall & call)
   PwxString otherParty = call.IsNetworkOriginated() ? call.GetPartyA() : call.GetPartyB();
 
   wxMenuBar * menubar = GetMenuBar();
-  wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuRetrieve"));
+  wxMenuItem * item = PAssertNULL(menubar)->FindItem(ID_SubMenuRetrieve);
   wxMenu * menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_retrieveMenuId, otherParty);
   item = menu->FindItemByPosition(0);
   if (item->IsSeparator())
     menu->Delete(item);
 
-  item = menubar->FindItem(XRCID("SubMenuConference"));
+  item = menubar->FindItem(ID_SubMenuConference);
   menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_conferenceMenuId, otherParty);
   item = menu->FindItemByPosition(0);
   if (item->IsSeparator())
     menu->Delete(item);
 
-  item = menubar->FindItem(XRCID("SubMenuTransfer"));
+  item = menubar->FindItem(ID_SubMenuTransfer);
   menu = PAssertNULL(item)->GetSubMenu();
   PAssertNULL(menu)->Append(m_callsOnHold.back().m_transferMenuId, otherParty);
 
@@ -2740,7 +2834,7 @@ void MyManager::SwitchToFax()
 #endif // OPAL_FAX
 
 
-void MyManager::OnRequestHold(wxCommandEvent& /*event*/)
+void MyManager::OnRequestHold(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalCall> call = GetCall(PSafeReference);
   if (call != NULL)
@@ -2748,7 +2842,7 @@ void MyManager::OnRequestHold(wxCommandEvent& /*event*/)
 }
 
 
-void MyManager::OnRetrieve(wxCommandEvent& theEvent)
+void MyManager::OnRetrieve(wxCommandEvent & theEvent)
 {
   if (PAssert(m_activeCall == NULL, PLogicError)) {
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
@@ -2761,7 +2855,7 @@ void MyManager::OnRetrieve(wxCommandEvent& theEvent)
 }
 
 
-void MyManager::OnConference(wxCommandEvent& theEvent)
+void MyManager::OnConference(wxCommandEvent & theEvent)
 {
   if (PAssert(m_activeCall != NULL, PLogicError)) {
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
@@ -2794,7 +2888,7 @@ void MyManager::AddToConference(OpalCall & call)
 }
 
 
-void MyManager::OnTransfer(wxCommandEvent& theEvent)
+void MyManager::OnTransfer(wxCommandEvent & theEvent)
 {
   if (PAssert(m_activeCall != NULL, PLogicError)) {
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
@@ -2885,7 +2979,7 @@ void MyManager::OnAudioDevicePreset(wxCommandEvent & theEvent)
 }
 
 
-void MyManager::OnNewCodec(wxCommandEvent& theEvent)
+void MyManager::OnNewCodec(wxCommandEvent & theEvent)
 {
   OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()).p_str());
   if (mediaFormat.IsValid()) {
@@ -2954,7 +3048,7 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 }
 
 
-void MyManager::OnSendVFU(wxCommandEvent& /*event*/)
+void MyManager::OnSendVFU(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
   if (connection != NULL) {
@@ -2965,7 +3059,7 @@ void MyManager::OnSendVFU(wxCommandEvent& /*event*/)
 }
 
 
-void MyManager::OnSendIntra(wxCommandEvent& /*event*/)
+void MyManager::OnSendIntra(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
   if (connection != NULL) {
@@ -2976,14 +3070,14 @@ void MyManager::OnSendIntra(wxCommandEvent& /*event*/)
 }
 
 
-void MyManager::OnTxVideoControl(wxCommandEvent& /*event*/)
+void MyManager::OnTxVideoControl(wxCommandEvent & /*event*/)
 {
   VideoControlDialog dlg(this, false);
   dlg.ShowModal();
 }
 
 
-void MyManager::OnRxVideoControl(wxCommandEvent& /*event*/)
+void MyManager::OnRxVideoControl(wxCommandEvent & /*event*/)
 {
   VideoControlDialog dlg(this, true);
   dlg.ShowModal();
@@ -3233,8 +3327,15 @@ void MyManager::StartRegistrations()
   if (sipEP == NULL)
     return;
 
-  for (RegistrationList::iterator iter = m_registrations.begin(); iter != m_registrations.end(); ++iter)
-    iter->Start(*sipEP);
+  bool gotOne = false;
+
+  for (RegistrationList::iterator iter = m_registrations.begin(); iter != m_registrations.end(); ++iter) {
+    if (iter->Start(*sipEP))
+      gotOne = true;
+  }
+
+  if (gotOne)
+    SetTrayTipText("Registering");
 }
 
 
@@ -3422,7 +3523,7 @@ bool MyManager::AdjustVideoFormats()
 void MyManager::UpdateAudioDevices()
 {
   wxMenuBar * menubar = GetMenuBar();
-  wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuSound"));
+  wxMenuItem * item = PAssertNULL(menubar)->FindItem(ID_SubMenuSound);
   wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
   while (audioMenu->GetMenuItemCount() > 2)
     audioMenu->Delete(audioMenu->FindItemByPosition(2));
@@ -3444,12 +3545,12 @@ void MyManager::ApplyMediaInfo()
   m_mediaInfo.sort();
 
   wxMenuBar * menubar = GetMenuBar();
-  wxMenuItem * item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuAudio"));
+  wxMenuItem * item = PAssertNULL(menubar)->FindItem(ID_SubMenuAudio);
   wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
   while (audioMenu->GetMenuItemCount() > 0)
     audioMenu->Delete(audioMenu->FindItemByPosition(0));
 
-  item = PAssertNULL(menubar)->FindItem(XRCID("SubMenuVideo"));
+  item = PAssertNULL(menubar)->FindItem(ID_SubMenuVideo);
   wxMenu * videoMenu = PAssertNULL(item)->GetSubMenu();
   while (videoMenu->GetMenuItemCount() > 0)
     videoMenu->Delete(videoMenu->FindItemByPosition(0));
@@ -3478,6 +3579,115 @@ void MyManager::ApplyMediaInfo()
     PTRACE(3, "OpenPhone\tMedia mask:\n"<< setfill('\n') << mediaFormatMask << setfill(' '));
     SetMediaFormatMask(mediaFormatMask);
   }
+}
+
+
+void MyManager::SetTrayTipText(const char * text)
+{
+  tstringstream strm;
+  strm << PProcess::Current().GetName();
+  strm << " - " << text << ends;
+  m_taskBarIcon->SetIcon(m_appIcon, strm.str());
+}
+
+
+void MyManager::SetBalloonText(const wxChar * text)
+{
+#if WIN32
+  NOTIFYICONDATA notify;
+  memset(&notify, 0, sizeof(notify));
+  notify.cbSize = sizeof(NOTIFYICONDATA);
+  notify.hWnd = (HWND)GetHWND();
+  notify.uID = 99;
+#ifdef NIF_REALTIME
+  notify.uFlags = NIF_INFO|NIF_REALTIME;
+#else
+  notify.uFlags = NIF_INFO;
+#endif
+  notify.dwInfoFlags = NIIF_NOSOUND;
+  notify.uVersion = NOTIFYICON_VERSION;
+  wxStrncpy(notify.szInfoTitle, PwxString(PProcess::Current().GetName()), WXSIZEOF(notify.szInfoTitle));
+  wxStrncpy(notify.szInfo, text, WXSIZEOF(notify.szInfo));
+  Shell_NotifyIcon(NIM_MODIFY, &notify);
+#endif
+}
+
+
+wxMenu * MyManager::CreateTrayMenu()
+{
+  wxMenuBar * menubar = wxXmlResource::Get()->LoadMenuBar(wxT("TrayMenu"));
+  wxMenu * menu = menubar->Remove(0);
+  delete menubar;
+
+  menu->Enable(ID_MenuCall,             m_activeCall == NULL);
+  menu->Enable(ID_MenuCallLastDialed,   m_activeCall == NULL && !m_LastDialed.IsEmpty());
+  menu->Enable(ID_MenuCallLastReceived, m_activeCall == NULL && !m_LastReceived.IsEmpty());
+  menu->Enable(ID_MenuAnswer,          !m_incomingToken.IsEmpty());
+  menu->Enable(ID_MenuHangUp,           m_activeCall != NULL);
+  menu->Enable(ID_MenuHold,             m_activeCall != NULL);
+  menu->Enable(ID_MenuTransfer,         m_activeCall != NULL);
+  menu->Enable(ID_MenuStartRecording,   m_activeCall != NULL && !m_activeCall->IsRecording());
+  menu->Enable(ID_MenuStopRecording,    m_activeCall != NULL &&  m_activeCall->IsRecording());
+  menu->Enable(ID_SubMenuRetrieve,     !m_callsOnHold.empty());
+  menu->Enable(ID_SubMenuTransfer,     !m_callsOnHold.empty());
+
+  wxMenuItem * item = menu->FindItem(ID_SubMenuRetrieve);
+  wxMenu * retrieveSubmenu = PAssertNULL(item)->GetSubMenu();
+  item = menu->FindItem(ID_SubMenuTransfer);
+  wxMenu * transferSubmenu = PAssertNULL(item)->GetSubMenu();
+
+  for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
+    PwxString otherParty = it->m_call->GetPartyA();
+
+    retrieveSubmenu->Append(m_callsOnHold.back().m_retrieveMenuId, otherParty);
+    menu->Enable(it->m_retrieveMenuId, m_activeCall == NULL);
+
+    transferSubmenu->Append(m_callsOnHold.back().m_transferMenuId, otherParty);
+    menu->Enable(it->m_transferMenuId, m_activeCall != NULL);
+  }
+
+  item = menu->FindItem(ID_SubMenuSpeedDial);
+  wxMenu * speedDialSubmenu = PAssertNULL(item)->GetSubMenu();
+  int menuID = ID_SPEEDDIAL_MENU_BASE;
+  for (set<SpeedDialInfo>::iterator it = m_speedDialInfo.begin(); it != m_speedDialInfo.end(); ++it)
+    speedDialSubmenu->Append(menuID++, it->m_Name);
+
+  return menu;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(MyTaskBarIcon, wxTaskBarIcon)
+  EVT_TASKBAR_LEFT_DCLICK(MyTaskBarIcon::OnDoubleClick)
+END_EVENT_TABLE()
+
+
+MyTaskBarIcon::MyTaskBarIcon(MyManager & manager)
+  : m_manager(manager)
+{
+}
+
+
+wxMenu * MyTaskBarIcon::CreatePopupMenu()
+{
+  return m_manager.CreateTrayMenu();
+}
+
+
+void MyTaskBarIcon::OnDoubleClick(wxTaskBarIconEvent &)
+{
+  m_manager.Show();
+  if (m_manager.IsIconized())
+    m_manager.Iconize(false);
+  m_manager.Raise();
+}
+
+
+bool MyTaskBarIcon::ProcessEvent(wxEvent & evt)
+{
+  // This passes menu commands on to the main frame window.
+  return wxTaskBarIcon::ProcessEvent(evt) || m_manager.ProcessEvent(evt);
 }
 
 
@@ -3678,7 +3888,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void MyManager::OnOptions(wxCommandEvent& /*event*/)
+void MyManager::OnOptions(wxCommandEvent & /*event*/)
 {
   PTRACE(4, "OpenPhone\tOpening options dialog");
   OptionsDialog dlg(this);
@@ -3865,6 +4075,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
+  INIT_FIELD(HideMinimised, m_manager.m_hideMinimised);
   const OpalProductInfo & productInfo = m_manager.GetProductInfo();
   INIT_FIELD(VendorName, productInfo.vendor);
   INIT_FIELD(ProductName, productInfo.name);
@@ -4439,6 +4650,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = AudioDeviceNameFromScreen);
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
+  SAVE_FIELD(HideMinimised, m_manager.m_hideMinimised = );
 
   OpalProductInfo productInfo = m_manager.GetProductInfo();
   SAVE_FIELD_STR(VendorName, productInfo.vendor = );
@@ -6163,7 +6375,7 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
 
   wxXmlResource::Get()->LoadDialog(this, parent, wxT("RegistrationDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
   m_ok->Disable();
 
   m_user = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
@@ -6207,7 +6419,7 @@ void RegistrationDialog::Changed(wxCommandEvent & /*event*/)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallDialog, wxDialog)
-  EVT_BUTTON(XRCID("wxID_OK"), CallDialog::OnOK)
+  EVT_BUTTON(wxID_OK, CallDialog::OnOK)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
@@ -6217,7 +6429,7 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
   m_ok->Disable();
 
   wxCheckBox * useHandset = FindWindowByNameAs<wxCheckBox>(this, wxT("UseHandset"));
@@ -6466,7 +6678,7 @@ void IMDialog::AddTextToScreen(const PwxString & text, bool fromUs)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallIMDialog, wxDialog)
-  EVT_BUTTON(XRCID("wxID_OK"), CallIMDialog::OnOK)
+  EVT_BUTTON(wxID_OK, CallIMDialog::OnOK)
   EVT_CHOICE(XRCID("Presentity"), CallIMDialog::OnChanged)
   EVT_TEXT(XRCID("Address"), CallIMDialog::OnChanged)
 END_EVENT_TABLE()
@@ -6476,7 +6688,7 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
   m_ok->Disable();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
@@ -6851,7 +7063,7 @@ static void SetGauge(wxGauge * gauge, int level)
 }
 
 
-void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
+void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
 {
   if (IsShown()) {
     if (++m_updateStatistics % 8 == 0)
@@ -7308,7 +7520,7 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("SpeedDialDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxT("wxID_OK"));
+  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
 
   m_nameCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialName"));
   m_nameCtrl->SetValidator(wxGenericValidator(&m_Name));
@@ -7440,23 +7652,29 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   if (!status.m_wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
+  PString tipText;
   switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
+      tipText = "ed";
       break;
 
     case SIP_PDU::Failure_RequestTimeout :
       LogWindow << "timed out";
+      tipText = " time out";
       break;
 
     case SIP_PDU::Failure_UnAuthorised :
       LogWindow << "has invalid credentials";
+      tipText = " has invalid credentials";
       break;
 
     default :
       LogWindow << "failed (" << status.m_reason << ')';
+      tipText = " failed";
   }
   LogWindow << '.' << endl;
+  m_manager.SetTrayTipText((status.m_wasRegistering ? "Register" : "Unregister") + tipText);
 
   if (!status.m_wasRegistering)
     m_manager.StartRegistrations();
