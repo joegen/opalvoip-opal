@@ -4285,7 +4285,7 @@ bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
                                           OpalTransportAddressArray & transports) const
 {
-  // Can only do media bypass if we have fast connect
+  // If have fast connect, use addresses from them as don't have sessions yet
   for (H323LogicalChannelList::const_iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
     if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType) {
       OpalTransportAddress media, control;

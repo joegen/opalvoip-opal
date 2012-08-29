@@ -979,7 +979,7 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
                                                                  const OpalConnection & PTRACE_PARAM(destination),
                                                                   const OpalMediaType & PTRACE_PARAM(mediaType)) const
 {
-  PTRACE(3, "OpalMan\tGetMediaTransferMode for " << mediaType << ", "
+  PTRACE(3, "OpalMan\tMedia transfer mode set to forwarding for " << mediaType << ", "
             "from " << source << " to " << destination);
   return MediaTransferForward;
 }
