@@ -1231,6 +1231,14 @@ class OpalConnection : public PSafeObject
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
+    /**Get  the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
+      */
+    virtual PBoolean GetAudioVolume(
+      PBoolean source,        ///< true for source (microphone), false for sink (speaker)
+      unsigned & percentage   ///< Gain, 0=silent, 100=maximun
+    );
+
     /**Get the average signal level (0..32767) for the audio media channel.
        A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
       */
