@@ -6375,7 +6375,7 @@ RegistrationDialog::RegistrationDialog(wxDialog * parent, const RegistrationInfo
 
   wxXmlResource::Get()->LoadDialog(this, parent, wxT("RegistrationDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
+  m_ok = FindWindowByNameAs<wxButton>(this, (int)wxID_OK);
   m_ok->Disable();
 
   m_user = FindWindowByNameAs<wxTextCtrl>(this, RegistrarUsernameKey);
@@ -6429,7 +6429,7 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
+  m_ok = FindWindowByNameAs<wxButton>(this, (int)wxID_OK);
   m_ok->Disable();
 
   wxCheckBox * useHandset = FindWindowByNameAs<wxCheckBox>(this, wxT("UseHandset"));
@@ -6688,7 +6688,7 @@ CallIMDialog::CallIMDialog(MyManager * manager)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("CallIMDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
+  m_ok = FindWindowByNameAs<wxButton>(this, (int)wxID_OK);
   m_ok->Disable();
 
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, wxT("Address"));
@@ -7520,7 +7520,7 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("SpeedDialDialog"));
 
-  m_ok = FindWindowByNameAs<wxButton>(this, wxID_OK);
+  m_ok = FindWindowByNameAs<wxButton>(this, (int)wxID_OK);
 
   m_nameCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialName"));
   m_nameCtrl->SetValidator(wxGenericValidator(&m_Name));
