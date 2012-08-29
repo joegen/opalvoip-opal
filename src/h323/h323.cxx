@@ -5296,7 +5296,10 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
                                          PINDEX & selectedMode)
 {
   for (selectedMode = 0; selectedMode < pdu.m_requestedModes.GetSize(); selectedMode++) {
-    PBoolean ok = true;
+    bool ok = true;
+#if OPAL_T38_CAPABILITY
+    bool hasT38 = false;
+#endif
     for (PINDEX i = 0; i < pdu.m_requestedModes[selectedMode].GetSize(); i++) {
       H323Capability * capability = localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]);
       if (capability == NULL) {
@@ -5305,11 +5308,16 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
       }
 #if OPAL_T38_CAPABILITY
       if (capability->GetMediaFormat() == OpalT38)
-        ownerCall.SetSwitchingT38(true);
+        hasT38 = true;
 #endif
     }
-    if (ok)
+    if (ok) {
+#if OPAL_T38_CAPABILITY
+      if (hasT38 != (GetMediaStream(OpalMediaType::Fax(), true) != NULL))
+        OnSwitchingT38(hasT38);
+#endif
       return true;
+    }
   }
 
   PTRACE(2, "H245\tMode change rejected as does not have capabilities");

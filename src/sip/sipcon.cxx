@@ -1063,9 +1063,9 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     PTRACE(4, "SIP\tReplacing " << mediaSession->GetMediaType() << " session for " << mediaType);
 #if OPAL_T38_CAPABILITY
     if (mediaType == OpalMediaType::Fax())
-      ownerCall.SetSwitchingT38(true);
+      OnSwitchingT38(true);
     else if (mediaSession->GetMediaType() == OpalMediaType::Fax())
-      ownerCall.SetSwitchingT38(false);
+      OnSwitchingT38(false);
 #endif // OPAL_T38_CAPABILITY
     mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
                                             OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));

@@ -1042,13 +1042,21 @@ class OpalConnection : public PSafeObject
       bool toT38  ///< T.38 or return to audio mode
     );
 
-    /**Indicate status of switch to/from T.38 fax mode.
+    /**Indicate status of local request of switch to/from T.38 fax mode.
 
        Default behaviour calls the same function on the other connection.
       */
     virtual void OnSwitchedT38(
       bool toT38,   ///< Was switching to T.38 or audio mode
       bool success  ///< Switch succeeded or failed
+    );
+
+    /**Indicate remote is requesting switch to/from T.38 fax mode.
+
+       Default behaviour calls the same function on the other connection.
+      */
+    virtual void OnSwitchingT38(
+      bool toT38   ///< Is switching to T.38 or audio mode
     );
 #endif // OPAL_T38_CAPABILITY
 
