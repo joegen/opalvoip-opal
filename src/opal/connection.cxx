@@ -791,6 +791,21 @@ void OpalConnection::OnSwitchedT38(bool toT38, bool success)
     Release();
   }
 }
+
+void OpalConnection::OnSwitchingT38(bool toT38)
+{
+  if (ownerCall.IsSwitchingT38())
+    return;
+
+  PTRACE(3, "OpalCon\tRemote requests switching media streams to "
+         << (toT38 ? "T.38" : "audio") << " on " << *this);
+
+  ownerCall.SetSwitchingT38(toT38);
+
+  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+  if (other != NULL)
+    other->OnSwitchingT38(toT38);
+}
 #endif // OPAL_T38_CAPABILITY
 
 
