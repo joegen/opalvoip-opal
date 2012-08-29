@@ -263,7 +263,6 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
 bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
                                              OpalTransportAddressArray & transports) const
 {
-  // Can only do media bypass if we have fast connect
   for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
     if (session->second->GetMediaType() == mediaType) {
       OpalTransportAddress address = session->second->GetRemoteAddress();

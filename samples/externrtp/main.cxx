@@ -90,6 +90,12 @@ void MyProcess::Main()
 }
 
 
+MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
+{
+  return MyManager::MediaTransferBypass;
+}
+
+
 PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   OpalRTPMediaStream * rtpStream = dynamic_cast<OpalRTPMediaStream *>(&stream);
