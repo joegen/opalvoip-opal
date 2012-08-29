@@ -1174,7 +1174,7 @@ PBoolean OpalConnection::SetAudioVolume(PBoolean /*source*/, unsigned /*percenta
 }
 
 
-PBoolean OpalConnection::GetAudioVolume(PBoolean /*source*/, unsigned /*percentage*/)
+PBoolean OpalConnection::GetAudioVolume(PBoolean /*source*/, unsigned & /*percentage*/)
 {
   return PFalse;
 }
