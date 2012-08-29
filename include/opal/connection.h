@@ -1314,14 +1314,16 @@ class OpalConnection : public PSafeObject
     );
 #endif
 
-    /**Set the volume (gain) for the audio media channel to the specified percentage.
+    /**Set the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
       */
     virtual PBoolean SetAudioVolume(
-      PBoolean source,                  ///< true for source (microphone), false for sink (speaker)
-      unsigned percentage           ///< Gain, 0=silent, 100=maximun
+      PBoolean source,        ///< true for source (microphone), false for sink (speaker)
+      unsigned percentage     ///< Gain, 0=silent, 100=maximun
     );
 
-    /**Get the volume (gain) for the audio media channel to the specified percentage.
+    /**Get the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
       */
     virtual PBoolean GetAudioVolume(
       PBoolean source,       ///< true for source (microphone), false for sink (speaker)
