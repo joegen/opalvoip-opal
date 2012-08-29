@@ -449,6 +449,20 @@ PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage
 }
 
 
+PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percentage)
+{
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  if (stream == NULL)
+    return PFalse;
+
+  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+  if (channel == NULL)
+    return PFalse;
+
+  return channel->GetVolume(percentage);
+}
+
+
 unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
