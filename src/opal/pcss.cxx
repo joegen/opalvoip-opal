@@ -463,6 +463,34 @@ PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percenta
 }
 
 
+bool OpalPCSSConnection::SetAudioMute(bool source, bool mute)
+{
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  if (stream == NULL)
+    return PFalse;
+
+  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+  if (channel == NULL)
+    return PFalse;
+
+  return channel->SetMute(mute);
+}
+
+
+bool OpalPCSSConnection::GetAudioMute(bool source, bool & mute)
+{
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  if (stream == NULL)
+    return PFalse;
+
+  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
+  if (channel == NULL)
+    return PFalse;
+
+  return channel->GetMute(mute);
+}
+
+
 unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));

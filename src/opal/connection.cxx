@@ -1180,6 +1180,18 @@ PBoolean OpalConnection::GetAudioVolume(PBoolean /*source*/, unsigned & /*percen
 }
 
 
+bool OpalConnection::SetAudioMute(bool /*source*/, bool /*mute*/)
+{
+  return false;
+}
+
+
+bool OpalConnection::GetAudioMute(bool /*source*/, bool & /*mute*/)
+{
+  return false;
+}
+
+
 unsigned OpalConnection::GetAudioSignalLevel(PBoolean /*source*/)
 {
     return UINT_MAX;
