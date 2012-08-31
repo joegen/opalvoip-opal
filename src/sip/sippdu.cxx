@@ -1191,9 +1191,9 @@ void SIPMIMEInfo::SetExpires(unsigned v)
 }
 
 
-PINDEX SIPMIMEInfo::GetMaxForwards() const
+unsigned SIPMIMEInfo::GetMaxForwards() const
 {
-  return GetInteger("Max-Forwards", P_MAX_INDEX);       // no compact form
+  return GetInteger("Max-Forwards", INT_MAX);       // no compact form
 }
 
 
@@ -1203,9 +1203,9 @@ void SIPMIMEInfo::SetMaxForwards(PINDEX v)
 }
 
 
-PINDEX SIPMIMEInfo::GetMinExpires() const
+unsigned SIPMIMEInfo::GetMinExpires() const
 {
-  return GetInteger("Min-Expires", P_MAX_INDEX);        // no compact form
+  return GetInteger("Min-Expires", INT_MAX);        // no compact form
 }
 
 

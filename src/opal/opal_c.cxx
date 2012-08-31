@@ -380,7 +380,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
   char * newData = (char *)realloc(m_data, m_size + length);
   if (PAssertNULL(newData) != m_data) {
     // Memory has moved, this invalidates pointer variables so recalculate them
-    int delta = newData - m_data;
+    intptr_t delta = newData - m_data;
     char * endData = m_data + m_size;
     for (size_t i = 0; i < m_strPtrOffset.size(); ++i) {
       const char ** ptr = (const char **)(newData + m_strPtrOffset[i]);
