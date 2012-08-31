@@ -35,16 +35,10 @@
 
 #if OPAL_H323
 
-#include <openssl/sha.h>
+#include <ptclib/pssl.h>
 
 #include <h323/h235auth.h>
 #include <h323/h323pdu.h>
-
-
-#ifdef _MSC_VER
-#pragma comment(lib, P_SSL_LIB1)
-#pragma comment(lib, P_SSL_LIB2)
-#endif
 
 
 #define REPLY_BUFFER_SIZE 1024
@@ -61,14 +55,6 @@ static const char OID_U[] = "0.0.8.235.0.2.6";
 static const BYTE SearchPattern[HASH_SIZE] = { // Must be 12 bytes
   't', 'W', 'e', 'l', 'V', 'e', '~', 'b', 'y', 't', 'e', 'S'
 };
-
-#ifndef SHA_DIGESTSIZE
-#define SHA_DIGESTSIZE  20
-#endif
-
-#ifndef SHA_BLOCKSIZE
-#define SHA_BLOCKSIZE   64
-#endif
 
 
 #define new PNEW
@@ -103,57 +89,55 @@ static void hmac_sha (const unsigned char*    k,      /* secret key */
                       const unsigned char*    d,      /* data */
                       int      ld,              /* length of data in bytes */
                       char*    out,             /* output buffer, at least "t" bytes */
-                      int      t)
+                      size_t   t)
 {
-        SHA_CTX ictx, octx ;
-        unsigned char    isha[SHA_DIGESTSIZE], osha[SHA_DIGESTSIZE] ;
-        unsigned char    key[SHA_DIGESTSIZE] ;
-        char    buf[SHA_BLOCKSIZE] ;
-        int     i ;
+  PSHA1Context::Digest key;
+  char    buf[PSHA1Context::BlockSize];
+  int     i ;
 
-        if (lk > SHA_BLOCKSIZE) {
+  if (lk > PSHA1Context::BlockSize) {
+    PSHA1Context tctx;
 
-                SHA_CTX         tctx ;
+    tctx.Update(k, lk);
+    tctx.Finalise(key);
 
-                SHA1_Init(&tctx) ;
-                SHA1_Update(&tctx, k, lk) ;
-                SHA1_Final(key, &tctx) ;
+    k = key;
+    lk = sizeof(key);
+  }
 
-                k = key ;
-                lk = SHA_DIGESTSIZE ;
-        }
+  /**** Inner Digest ****/
+  PSHA1Context ictx;
 
-        /**** Inner Digest ****/
+  /* Pad the key for inner digest */
+  for (i = 0 ; i < lk ; ++i)
+    buf[i] = (char)(k[i] ^ 0x36);
+  for (i = lk ; i < PSHA1Context::BlockSize ; ++i)
+    buf[i] = 0x36;
 
-        SHA1_Init(&ictx) ;
+  ictx.Update(buf, PSHA1Context::BlockSize) ;
+  ictx.Update(d, ld) ;
 
-        /* Pad the key for inner digest */
-        for (i = 0 ; i < lk ; ++i) buf[i] = (char)(k[i] ^ 0x36);
-        for (i = lk ; i < SHA_BLOCKSIZE ; ++i) buf[i] = 0x36;
+  PSHA1Context::Digest isha;
+  ictx.Finalise(isha);
 
-        SHA1_Update(&ictx, buf, SHA_BLOCKSIZE) ;
-        SHA1_Update(&ictx, d, ld) ;
+  /**** Outter Digest ****/
+  PSHA1Context octx;
 
-        SHA1_Final(isha, &ictx) ;
+  /* Pad the key for outter digest */
 
-        /**** Outter Digest ****/
+  for (i = 0 ; i < lk ; ++i)
+    buf[i] = (char)(k[i] ^ 0x5C);
+  for (i = lk ; i < PSHA1Context::BlockSize ; ++i)
+    buf[i] = 0x5C;
 
-        SHA1_Init(&octx) ;
+  octx.Update(buf, PSHA1Context::BlockSize);
+  octx.Update(isha, sizeof(isha));
 
-        /* Pad the key for outter digest */
+  PSHA1Context::Digest osha;
+  octx.Finalise(osha);
 
-        for (i = 0 ; i < lk ; ++i) buf[i] = (char)(k[i] ^ 0x5C);
-        for (i = lk ; i < SHA_BLOCKSIZE ; ++i) buf[i] = 0x5C;
-
-        SHA1_Update(&octx, buf, SHA_BLOCKSIZE) ;
-        SHA1_Update(&octx, isha, SHA_DIGESTSIZE) ;
-
-        SHA1_Final(osha, &octx) ;
-
-        /* truncate and print the results */
-        t = t > SHA_DIGESTSIZE ? SHA_DIGESTSIZE : t ;
-        truncate(osha, out, t) ;
-
+  /* truncate and print the results */
+  truncate(osha, out, std::min(t, sizeof(osha)));
 }
 
 
@@ -283,7 +267,7 @@ PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
  
   /** make a SHA1 hash before send to the hmac_sha1 */
   unsigned char secretkey[20];
-  SHA1(password, password.GetLength(), secretkey);
+  PSHA1Context::Process(password, secretkey);
   hmac_sha(secretkey, 20, rawPDU.GetPointer(), rawPDU.GetSize(), key, HASH_SIZE);
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
@@ -416,7 +400,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   memcpy(RV, data, HASH_SIZE);
   
   unsigned char secretkey[20];
-  SHA1(password, password.GetLength(), secretkey);
+  PSHA1Context::Process(password, secretkey);
   
   /****
   * step 4

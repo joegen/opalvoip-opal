@@ -48,14 +48,6 @@
 
 #include <ptclib/cypher.h>
 
-#if OPAL_PTLIB_SSL
-#include <openssl/aes.h>
-  #ifdef _MSC_VER
-    #pragma comment(lib, P_SSL_LIB1)
-    #pragma comment(lib, P_SSL_LIB2)
-  #endif
-#endif
-
 
 #define new PNEW
 
@@ -342,7 +334,7 @@ PBoolean IAX2Frame::DecryptContents(IAX2Encryption &encryption)
   PBYTEArray working(encDataSize);
 
   for (PINDEX i = 0; i < encDataSize; i+= 16) {
-    AES_decrypt(data.GetPointer() + headerSize + i, working.GetPointer() + i, encryption.AesDecryptKey());
+    encryption.AesDecryptKey().Decrypt(data.GetPointer() + headerSize + i, working.GetPointer() + i);
     for (int x = 0; x < 16; x++)
       working[x + i] ^= lastblock[x];
     memcpy(lastblock, data.GetPointer() + headerSize + i, 16);
@@ -390,7 +382,7 @@ PBoolean IAX2Frame::EncryptContents(IAX2Encryption &encryption)
   for (PINDEX i = 0; i < (eDataSize + padding); i+= 16) {
     for (int x = 0; x < 16; x++)
       curblock[x] ^= working[x + i];
-    AES_encrypt(curblock, result.GetPointer() + i + headerSize, encryption.AesEncryptKey());
+    encryption.AesEncryptKey().Encrypt(curblock, result.GetPointer() + i + headerSize);
     memcpy(curblock, result.GetPointer() + i + headerSize, 16);
   }
 

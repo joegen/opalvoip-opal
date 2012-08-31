@@ -488,17 +488,6 @@ PBoolean IAX2Encryption::IsEncrypted() const
   return encryptionEnabled;
 }
 
-#ifdef P_SSL_AES
-AES_KEY *IAX2Encryption::AesEncryptKey()
-{
-  return &aesEncryptKey; 
-}
-
-AES_KEY *IAX2Encryption::AesDecryptKey()
-{
-  return &aesDecryptKey;
-}
-#endif
 
 void IAX2Encryption::CalculateAesKeys()
 {
@@ -515,8 +504,8 @@ void IAX2Encryption::CalculateAesKeys()
 
   PTRACE(6, "Decryption\tContext has a size of " << context.GetSize());
 
-  AES_set_encrypt_key(context.GetPointer(), 128, &aesEncryptKey);
-  AES_set_decrypt_key(context.GetPointer(), 128, &aesDecryptKey);
+  m_aesEncryptKey.SetEncrypt(context.GetPointer(), 128);
+  m_aesDecryptKey.SetDecrypt(context.GetPointer(), 128);
 #endif
 }
   
