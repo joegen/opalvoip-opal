@@ -373,10 +373,10 @@ class SIPMIMEInfo : public PMIMEInfo
     unsigned GetExpires(unsigned dflt = UINT_MAX) const;// returns default value if not found
     void SetExpires(unsigned v);
 
-    PINDEX GetMaxForwards() const;
+    unsigned GetMaxForwards() const;
     void SetMaxForwards(PINDEX v);
 
-    PINDEX GetMinExpires() const;
+    unsigned GetMinExpires() const;
     void SetMinExpires(PINDEX v);
 
     PString GetProxyAuthenticate() const;

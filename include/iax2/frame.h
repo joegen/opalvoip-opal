@@ -563,7 +563,7 @@ class IAX2FullFrame : public IAX2Frame
   PTimer transmissionTimer;
   
   /** integer variable specifying the uncompressed subClass value for this particular frame */
-  PINDEX subClass;
+  int subClass;
   
   /**Time to wait between retries */
   PTimeInterval retryDelta;     

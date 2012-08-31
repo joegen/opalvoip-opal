@@ -763,7 +763,7 @@ int IAX2FullFrame::CompressSubClass()
   if (subClass < 0x80)
     return subClass;
   
-  for(PINDEX i = 0; i <  0x1f; i++) {
+  for(int i = 0; i <  0x1f; i++) {
     if (subClass & (1 << i)) 
       return i | 0x80;
   }
