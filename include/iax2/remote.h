@@ -42,9 +42,7 @@
 #if OPAL_IAX2
 
 #include <ptlib/sockets.h>
-#ifdef P_SSL_AES
-#include <openssl/aes.h>
-#endif
+#include <ptclib/pssl.h>
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -368,10 +366,10 @@ class IAX2Encryption : public PObject
 
 #ifdef P_SSL_AES
   /**Get a pointer to a filled AES_KEY encrypt structure */
-  AES_KEY *AesEncryptKey();
+  PAESContext & AesEncryptKey() { return m_aesEncryptKey; }
 
   /**Get a pointer to a filled AES_KEY decrypt structure */
-  AES_KEY *AesDecryptKey();
+  PAESContext & AesDecryptKey() { return m_aesDecryptKey; }
 #endif
 
  protected:
@@ -390,10 +388,10 @@ class IAX2Encryption : public PObject
 
 #ifdef P_SSL_AES
   /**key to be used for AES 128 encryption */
-  AES_KEY aesEncryptKey;
+  PAESContext m_aesEncryptKey;
 
   /**key to be used for AES 128 decoding */
-  AES_KEY aesDecryptKey;
+  PAESContext m_aesDecryptKey;
 #endif
 };
 
