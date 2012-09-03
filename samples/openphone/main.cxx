@@ -3686,8 +3686,12 @@ void MyTaskBarIcon::OnDoubleClick(wxTaskBarIconEvent &)
 
 bool MyTaskBarIcon::ProcessEvent(wxEvent & evt)
 {
+#if wxCHECK_VERSION(2,9,2)
+  return wxTaskBarIcon::ProcessEvent(evt);
+#else
   // This passes menu commands on to the main frame window.
   return wxTaskBarIcon::ProcessEvent(evt) || m_manager.ProcessEvent(evt);
+#endif
 }
 
 
