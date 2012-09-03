@@ -567,6 +567,8 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
     case SIP_PDU::Failure_RequestTimeout :
     case SIP_PDU::Local_BadTransportAddress :
     case SIP_PDU::Failure_TemporarilyUnavailable:
+    case SIP_PDU::Failure_ServiceUnavailable:
+    case SIP_PDU::Failure_ServerTimeout:
       if (GetState() != Unsubscribing) {
         SetState(Unavailable);
         break;
