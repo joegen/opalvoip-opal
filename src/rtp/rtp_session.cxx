@@ -1512,37 +1512,43 @@ void OpalRTPSession::AddFilter(const FilterNotifier & filter)
 
 /////////////////////////////////////////////////////////////////////////////
 
-static void SetMinBufferSize(PUDPSocket & sock, int buftype, int bufsz)
+static void SetMinBufferSize(PUDPSocket & sock, int bufType, int newSize)
 {
-  int sz = 0;
-  if (!sock.GetOption(buftype, sz)) {
-    PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << buftype << ") failed: " << sock.GetErrorText());
+  int originalSize = 0;
+  if (!sock.GetOption(bufType, originalSize)) {
+    PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufType << ") failed: " << sock.GetErrorText());
     return;
   }
 
   // Already big enough
-  if (sz >= bufsz)
+  if (originalSize >= newSize)
     return;
 
-  for (; bufsz >= 1024; bufsz /= 2) {
+  for (; newSize >= 1024; newSize -= newSize/10) {
     // Set to new size
-    if (!sock.SetOption(buftype, bufsz)) {
-      PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") failed: " << sock.GetErrorText());
+    if (!sock.SetOption(bufType, newSize)) {
+      PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") failed: " << sock.GetErrorText());
       continue;
     }
 
     // As some stacks lie about setting the buffer size, we double check.
-    if (!sock.GetOption(buftype, sz)) {
-      PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << buftype << ") failed: " << sock.GetErrorText());
+    int adjustedSize;
+    if (!sock.GetOption(bufType, adjustedSize)) {
+      PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufType << ") failed: " << sock.GetErrorText());
       return;
     }
 
-    if (sz >= bufsz) {
-      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") succeeded.");
+    if (adjustedSize >= newSize) {
+      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") succeeded.");
       return;
     }
 
-    PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << buftype << ',' << bufsz << ") failed, even though it said it succeeded!");
+    if (adjustedSize > originalSize) {
+      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") clamped to maximum " << adjustedSize);
+      return;
+    }
+
+    PTRACE(2, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") failed, even though it said it succeeded!");
   }
 }
 
