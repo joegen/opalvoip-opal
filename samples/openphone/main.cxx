@@ -1631,7 +1631,12 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
 
 void MyManager::OnIconize(wxIconizeEvent & evt)
 {
-  if (m_hideMinimised && evt.Iconized())
+  if (m_hideMinimised &&
+#if wxCHECK_VERSION(2,9,2)
+                         evt.IsIconized())
+#else
+                         evt.Iconized())
+#endif
     Hide();
 }
 
