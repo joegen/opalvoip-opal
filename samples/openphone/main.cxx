@@ -1638,7 +1638,7 @@ void MyManager::OnIconize(wxIconizeEvent & evt)
 
 void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 {
-  m_logWindow->WriteText(theEvent.GetString());
+  m_logWindow->AppendText(theEvent.GetString());
 #if defined(__WXMAC__) && wxCHECK_VERSION(2,9,2)
   // Workaround for OSX (2.9.2) bug
   m_logWindow->SetStyle(0, m_logWindow->GetLastPosition(), wxTextAttr(*wxGREEN, *wxBLACK));
