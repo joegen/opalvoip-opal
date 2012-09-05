@@ -910,8 +910,8 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
 
     bool Initialise();
 
-    void SetTrayTipText(const char * text);
-    void SetBalloonText(const wxChar * text);
+    void SetTrayTipText(const wxString & text);
+    void SetBalloonText(const wxString & text);
     wxMenu * CreateTrayMenu();
 
     bool HasSpeedDialName(const wxString & name) const;
