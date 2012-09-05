@@ -3019,7 +3019,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
                   ) {
             PString name;
             if (data.GetSize() > 0)
-              name = PString((const char *)(const BYTE *)data, data.GetSize());
+              name = PString(data);
             strm << " [Equivalence " << name << "]";
           }
 
@@ -3030,7 +3030,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
                   ) {
             PString name;
             if (data.GetSize() > 0)
-              name = PString((const char *)(const BYTE *)data, data.GetSize());
+              name = PString(data);
             strm << " [Xiph " << name << "]";
           }
 
@@ -3041,7 +3041,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
                   ) {
             PString name;
             if (data.GetSize() > 0)
-              name = PString((const char *)(const BYTE *)data, data.GetSize());
+              name = PString(data);
             strm << " [Cisco " << name << "]";
           }
 
