@@ -807,7 +807,7 @@ PString Q931::GetKeypad() const
   if (digits.IsEmpty())
     return PString();
 
-  return PString((const char *)(const BYTE *)digits, digits.GetSize());
+  return PString(digits);
 }
 
 
@@ -862,7 +862,7 @@ PString Q931::GetDisplayName() const
   if (display.IsEmpty())
     return PString();
 
-  return PString((const char *)(const BYTE *)display, display.GetSize());
+  return PString(display);
 }
 
 
