@@ -1773,7 +1773,7 @@ void MyManager::OnMenuQuit(wxCommandEvent & WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
 {
-  wxString text;
+  PwxString text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
            "Copyright (c) 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
@@ -1988,7 +1988,7 @@ void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
   if (!wxTheClipboard->Open())
     return;
 
-  wxString tabbedText;
+  PwxString tabbedText;
   int pos = -1;
   while ((pos = m_speedDials->GetNextItem(pos, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(pos);
@@ -2048,7 +2048,7 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent & WXUNUSED(event))
   if (count == 0)
     return;
 
-  wxString msg;
+  PwxString msg;
   msg << "Delete " << count << " item";
   if (count > 1)
     msg << 's';
@@ -2305,7 +2305,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma");
 
   PString from = connection->GetRemotePartyName();
-  wxString balloon;
+  PwxString balloon;
   balloon << "Incoming call";
   if (!from.IsEmpty()) {
     balloon << " from \"" << from << '"';
@@ -3582,15 +3582,15 @@ void MyManager::ApplyMediaInfo()
 }
 
 
-void MyManager::SetTrayTipText(const wxString & tip)
+void MyManager::SetTrayTipText(const PwxString & tip)
 {
-  wxString text;
+  PwxString text;
   text << PProcess::Current().GetName() << " - " << tip;
   m_taskBarIcon->SetIcon(m_appIcon, text);
 }
 
 
-void MyManager::SetBalloonText(const wxString & text)
+void MyManager::SetBalloonText(const PwxString & text)
 {
 #if wxUSE_TASKBARICON_BALLOONS
   m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
@@ -4367,7 +4367,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_allCodecs = FindWindowByNameAs<wxListBox>(this, wxT("AllCodecs"));
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
-    wxString details;
+    PwxString details;
     details << mm->mediaFormat.GetMediaType().c_str() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
@@ -7656,29 +7656,29 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   if (!status.m_wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
-  wxString tipText;
+  PString tipText = status.m_wasRegistering ? "Register" : "Unregister";
   switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
-      tipText = "ed";
+      tipText += "ed";
       break;
 
     case SIP_PDU::Failure_RequestTimeout :
       LogWindow << "timed out";
-      tipText = " time out";
+      tipText += " time out";
       break;
 
     case SIP_PDU::Failure_UnAuthorised :
       LogWindow << "has invalid credentials";
-      tipText = " has invalid credentials";
+      tipText += " has invalid credentials";
       break;
 
     default :
       LogWindow << "failed (" << status.m_reason << ')';
-      tipText = " failed";
+      tipText += " failed";
   }
   LogWindow << '.' << endl;
-  m_manager.SetTrayTipText((status.m_wasRegistering ? "Register" : "Unregister") + tipText);
+  m_manager.SetTrayTipText(tipText);
 
   if (!status.m_wasRegistering)
     m_manager.StartRegistrations();
