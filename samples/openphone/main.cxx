@@ -100,11 +100,6 @@
 
 #endif
 
-#if wxUSE_UNICODE
-typedef wstringstream tstringstream;
-#else
-typedef  stringstream tstringstream;
-#endif
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
@@ -1778,7 +1773,7 @@ void MyManager::OnMenuQuit(wxCommandEvent & WXUNUSED(event))
 
 void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
 {
-  tstringstream text;
+  wxString text;
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
            "Copyright (c) 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
@@ -1790,7 +1785,7 @@ void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
            "Part of the Open Phone Abstraction Library, http://www.opalvoip.org\n"
            "  OPAL Version:  " << OpalGetVersion() << "\n"
            "  PTLib Version: " << PProcess::GetLibVersion() << '\n';
-  wxMessageDialog dialog(this, text.str().c_str(), wxT("About ..."), wxOK);
+  wxMessageDialog dialog(this, text, wxT("About ..."), wxOK);
   dialog.ShowModal();
 }
 
@@ -1993,7 +1988,7 @@ void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
   if (!wxTheClipboard->Open())
     return;
 
-  tstringstream tabbedText;
+  wxString tabbedText;
   int pos = -1;
   while ((pos = m_speedDials->GetNextItem(pos, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(pos);
@@ -2012,10 +2007,10 @@ void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
   // just guarantees the format of teh string, where just using CF_TEXT
   // coupld provide anything.
   wxDataObjectComposite * multiFormatData = new wxDataObjectComposite;
-  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText.str());
+  wxTextDataObject * myFormatData = new wxTextDataObject(tabbedText);
   myFormatData->SetFormat(m_ClipboardFormat);
   multiFormatData->Add(myFormatData);
-  multiFormatData->Add(new wxTextDataObject(tabbedText.str()));
+  multiFormatData->Add(new wxTextDataObject(tabbedText));
   wxTheClipboard->SetData(multiFormatData);
   wxTheClipboard->Close();
 }
@@ -2053,12 +2048,12 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent & WXUNUSED(event))
   if (count == 0)
     return;
 
-  tstringstream strm;
-  strm << "Delete " << count << " item";
+  wxString msg;
+  msg << "Delete " << count << " item";
   if (count > 1)
-    strm << 's';
-  strm << '?';
-  wxMessageDialog dlg(this, strm.str(), wxT("OpenPhone Speed Dials"), wxYES_NO);
+    msg << 's';
+  msg << '?';
+  wxMessageDialog dlg(this, msg, wxT("OpenPhone Speed Dials"), wxYES_NO);
   if (dlg.ShowModal() != wxID_YES)
     return;
 
@@ -2310,10 +2305,10 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma");
 
   PString from = connection->GetRemotePartyName();
-  wstringstream strm;
-  strm << "Incoming call";
+  wxString balloon;
+  balloon << "Incoming call";
   if (!from.IsEmpty()) {
-    strm << " from \"" << from << '"';
+    balloon << " from \"" << from << '"';
     LogWindow << " from " << from;
   }
 
@@ -2321,7 +2316,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
     LogWindow << ", type=" << alertingType;
 
   LogWindow << endl;
-  SetBalloonText(strm.str().c_str());
+  SetBalloonText(balloon);
 
   m_LastReceived = connection->GetRemotePartyAddress();
   wxConfigBase * config = wxConfig::Get();
@@ -3587,18 +3582,19 @@ void MyManager::ApplyMediaInfo()
 }
 
 
-void MyManager::SetTrayTipText(const char * text)
+void MyManager::SetTrayTipText(const wxString & tip)
 {
-  tstringstream strm;
-  strm << PProcess::Current().GetName();
-  strm << " - " << text << ends;
-  m_taskBarIcon->SetIcon(m_appIcon, strm.str());
+  wxString text;
+  text << PProcess::Current().GetName() << " - " << tip;
+  m_taskBarIcon->SetIcon(m_appIcon, text);
 }
 
 
-void MyManager::SetBalloonText(const wxChar * text)
+void MyManager::SetBalloonText(const wxString & text)
 {
-#if WIN32
+#if wxUSE_TASKBARICON_BALLOONS
+  m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
+#elif WIN32
   NOTIFYICONDATA notify;
   memset(&notify, 0, sizeof(notify));
   notify.cbSize = sizeof(NOTIFYICONDATA);
@@ -4371,11 +4367,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_allCodecs = FindWindowByNameAs<wxListBox>(this, wxT("AllCodecs"));
   m_selectedCodecs = FindWindowByNameAs<wxListBox>(this, wxT("SelectedCodecs"));
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
-    tstringstream details;
+    wxString details;
     details << mm->mediaFormat.GetMediaType().c_str() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
-    m_allCodecs->Append(details.str().c_str(), &*mm);
+    m_allCodecs->Append(details, &*mm);
 
     PwxString str(mm->mediaFormat);
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
@@ -6535,8 +6531,7 @@ IMDialog::IMDialog(MyManager * manager, OpalIMContext & context)
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
 
   PStringStream str;
-  str << "Conversation with ";
-  str << context.GetRemoteURL();
+  str << "Conversation with " << context.GetRemoteURL();
   SetTitle(PwxString(str));
 
   m_textArea    = FindWindowByNameAs<wxTextCtrl>(this, wxT("TextArea"));
@@ -7661,7 +7656,7 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   if (!status.m_wasRegistering)
     LogWindow << "un";
   LogWindow << "registration of " << aor << ' ';
-  PString tipText;
+  wxString tipText;
   switch (status.m_reason) {
     case SIP_PDU::Successful_OK :
       LogWindow << "successful";
