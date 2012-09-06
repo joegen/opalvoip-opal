@@ -640,7 +640,7 @@ class SIP_PDU : public PSafeObject
     );
     void InitialiseHeaders(
       SIPDialogContext & dialog,
-      const PString & via = PString::Empty(),
+      const PString & via,
       unsigned cseq = 0
     );
     void InitialiseHeaders(
@@ -803,6 +803,7 @@ class SIPDialogContext
     }
 
     OpalTransportAddress GetRemoteTransportAddress() const;
+    const PString & GetInterface() const { return m_interface; }
 
     void SetForking(bool f) { m_forking = f; }
 
@@ -819,6 +820,7 @@ class SIPDialogContext
     OpalTransportAddress m_externalTransportAddress;
     bool        m_forking;
     SIPURL      m_proxy;
+    PString     m_interface;
 };
 
 
