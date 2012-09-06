@@ -2094,16 +2094,15 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     return SIP_PDU::Local_TransportError;
   }
 
-  PStringStream datagram;
-  PBYTEArray pdu;
-  bool truncated = false;
+  StatusCodes status;
 
-  istream * stream;
-  if (transport.IsReliable())
-    stream = &transport;
+  if (transport.IsReliable()) {
+    status = Read(transport, false PTRACE_PARAM(, &transport));
+    PTRACE_IF(2, status == SIP_PDU::Local_TransportLost, "SIP\tReliable transport lost to " << transport);
+  }
   else {
-    stream = &datagram;
-
+    PBYTEArray pdu;
+    bool truncated = false;
     if (!transport.ReadPDU(pdu)) {
       if (pdu.IsEmpty()) {
         PTRACE(1, "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
@@ -2112,26 +2111,44 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
       truncated = true;
     }
 
-    datagram = PString((char *)pdu.GetPointer(), pdu.GetSize());
+    PStringStream datagram;
+    datagram = PString(pdu);
+    status = Read(datagram, truncated PTRACE_PARAM(, &transport));
+
+    PTRACE_IF(2, status == SIP_PDU::Local_TransportLost,
+              "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress() <<
+              " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
   }
+
+  return status;
+}
+
+
+SIP_PDU::StatusCodes SIP_PDU::Read(istream & stream,
+                                   bool truncated
+                                   PTRACE_PARAM(, OpalTransport * transport))
+{
+#if PTRACING
+  PStringStream transportName;
+  if (transport != NULL)
+    transportName << " from " << transport->GetLastReceivedAddress() << " on " << *transport;
+#endif
 
   // get the message from transport/datagram into cmd and parse MIME
   PString cmd;
-  *stream >> cmd >> m_mime;
+  stream >> cmd >> m_mime;
 
-  if (!stream->good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
-#if PTRACING
-    if (stream->good() && cmd.IsEmpty() && m_mime.IsEmpty())
-      PTRACE(5, "SIP\tProbable keep-alive from " << transport.GetLastReceivedAddress());
-    else if (!pdu.IsEmpty())
-      PTRACE(1, "SIP\tInvalid datagram from " << transport.GetLastReceivedAddress()
-                << " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
-    else if (!cmd.IsEmpty())
-      PTRACE(1, "SIP\tInvalid message from " << transport.GetLastReceivedAddress()
-             << ", request \"" << cmd << "\", mime:\n" << m_mime);
-    else
-      PTRACE(1, "SIP\tLost transport to " << transport.GetLastReceivedAddress());
-#endif
+  if (!stream.good() || cmd.IsEmpty() || m_mime.IsEmpty()) {
+    if (cmd.IsEmpty() && m_mime.IsEmpty()) {
+      if (!stream.good())
+        return Local_TransportLost;
+
+      PTRACE(5, "SIP\tProbable keep-alive" << transportName);
+      return Local_KeepAlive;
+    }
+
+    PTRACE(1, "SIP\tInvalid message from" << transportName
+           << ", request \"" << cmd << "\", mime:\n" << m_mime);
     return SIP_PDU::Failure_BadRequest;
   }
 
@@ -2139,7 +2156,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     // parse Response version, code & reason (ie: "SIP/2.0 200 OK")
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
-      PTRACE(2, "SIP\tBad Status-Line \"" << cmd << "\" received on " << transport);
+      PTRACE(2, "SIP\tBad Status-Line \"" << cmd << "\" received" << transportName);
       return SIP_PDU::Failure_BadRequest;
     }
 
@@ -2153,7 +2170,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     // parse the method, URI and version
     PStringArray cmds = cmd.Tokenise( ' ', PFalse);
     if (cmds.GetSize() < 3) {
-      PTRACE(2, "SIP\tBad Request-Line \"" << cmd << "\" received on " << transport);
+      PTRACE(2, "SIP\tBad Request-Line \"" << cmd << "\" received" << transportName);
       return SIP_PDU::Failure_BadRequest;
     }
 
@@ -2161,7 +2178,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
     while (!(cmds[0] *= MethodNames[i])) {
       i++;
       if (i >= NumMethods) {
-        PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
+        PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received" << transportName);
         return SIP_PDU::Failure_BadRequest;
       }
     }
@@ -2174,7 +2191,7 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (m_versionMajor < 2) {
-    PTRACE(2, "SIP\tInvalid version (" << m_versionMajor << ") received on " << transport);
+    PTRACE(2, "SIP\tInvalid version (" << m_versionMajor << ") received" << transportName);
     return SIP_PDU::Failure_BadRequest;
   }
 
@@ -2186,14 +2203,14 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   bool contentLengthPresent = m_mime.IsContentLengthPresent();
 
   if (!contentLengthPresent) {
-    PTRACE(2, "SIP\tNo Content-Length present from " << transport << ", reading till end of datagram/stream.");
+    PTRACE(2, "SIP\tNo Content-Length present" << transportName << ", reading till end of datagram/stream.");
   }
   else if (contentLength < 0) {
-    PTRACE(2, "SIP\tImpossible negative Content-Length from " << transport << ", reading till end of datagram/stream.");
+    PTRACE(2, "SIP\tImpossible negative Content-Length" << transportName << ", reading till end of datagram/stream.");
     contentLengthPresent = false;
   }
-  else if (contentLength > (transport.IsReliable() ? 1000000 : datagram.GetLength())) {
-    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received from " << transport << ", reading to end of datagram/stream.");
+  else if (contentLength > 65535) {
+    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received" << transportName << ", reading to end of datagram/stream.");
     contentLengthPresent = false;
   }
 
@@ -2201,12 +2218,12 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
   if (!truncated) {
     if (contentLengthPresent) {
       if (contentLength > 0)
-        stream->read(m_entityBody.GetPointerAndSetLength(contentLength), contentLength);
+        stream.read(m_entityBody.GetPointerAndSetLength(contentLength), contentLength);
     }
     else {
       contentLength = 0;
       int c;
-      while ((c = stream->get()) != EOF) {
+      while ((c = stream.get()) != EOF) {
         m_entityBody.SetMinSize((++contentLength/1000+1)*1000);
         m_entityBody += (char)c;
       }
@@ -2232,9 +2249,10 @@ SIP_PDU::StatusCodes SIP_PDU::Read(OpalTransport & transport)
       trace << ' ';
     }
 
-    trace << "received: rem=" << transport.GetLastReceivedAddress()
-          << ",local=" << transport.GetLocalAddress()
-          << ",if=" << transport.GetLastReceivedInterface();
+    if (transport != NULL)
+      trace << "received: rem=" << transport->GetLastReceivedAddress()
+            << ",local=" << transport->GetLocalAddress()
+            << ",if=" << transport->GetLastReceivedInterface();
 
     if (PTrace::CanTrace(4)) {
       trace << '\n' << cmd << '\n' << setfill('\n') << m_mime << setfill(' ');
