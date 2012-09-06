@@ -790,7 +790,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 
         // As per RFC3550 Appendix 8
         diff *= GetJitterTimeUnits(); // Convert to timestamp units
-        long variance = diff - lastTransitTime;
+        long variance = (long)diff - (long)lastTransitTime;
         lastTransitTime = diff;
         if (variance < 0)
           variance = -variance;
