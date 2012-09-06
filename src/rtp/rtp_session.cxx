@@ -1982,8 +1982,10 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
     if (selectStatus == 0)
       receiveStatus = OnReadTimeout(frame);
 
-    if ((-selectStatus & 2) != 0)
-      receiveStatus = ReadControlPDU();
+    if ((-selectStatus & 2) != 0) {
+      if (ReadControlPDU() == e_AbortTransport)
+        return false;
+    }
 
     if ((-selectStatus & 1) != 0)
       receiveStatus = ReadDataPDU(frame);
