@@ -542,6 +542,8 @@ class SIP_PDU : public PSafeObject
       Local_Timeout,
       Local_NoCompatibleListener,
       Local_CannotMapScheme,
+      Local_TransportLost,
+      Local_KeepAlive,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,
@@ -673,8 +675,13 @@ class SIP_PDU : public PSafeObject
 
     /**Read PDU from the specified transport.
       */
-    SIP_PDU::StatusCodes Read(
+    StatusCodes Read(
       OpalTransport & transport
+    );
+    StatusCodes Read(
+      istream & strm,
+      bool truncated
+      PTRACE_PARAM(, OpalTransport * transport = NULL)
     );
 
     /**Write the PDU to the transport.
