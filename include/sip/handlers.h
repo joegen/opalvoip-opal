@@ -505,36 +505,26 @@ struct SIPDialogNotification : public PObject
 {
   PCLASSINFO(SIPDialogNotification, PObject);
 
-  enum States {
+  P_DECLARE_ENUM(States,
     Terminated,
     Trying,
     Proceeding,
     Early,
-    Confirmed,
-
-    FirstState = Terminated,
-    LastState = Confirmed
-  };
-  friend States operator++(States & state) { return (state = (States)(state+1)); }
-  friend States operator--(States & state) { return (state = (States)(state-1)); }
+    Confirmed
+  );
   static PString GetStateName(States state);
   PString GetStateName() const { return GetStateName(m_state); }
 
-  enum Events {
-    NoEvent = -1,
+  P_DECLARE_ENUM_EX(Events,
+    NoEvent, -1,
     Cancelled,
     Rejected,
     Replaced,
     LocalBye,
     RemoteBye,
     Error,
-    Timeout,
-
-    FirstEvent = Cancelled,
-    LastEvent = Timeout
-  };
-  friend Events operator++(Events & evt) { return (evt = (Events)(evt+1)); }
-  friend Events operator--(Events & evt) { return (evt = (Events)(evt-1)); }
+    Timeout
+  );
   static PString GetEventName(Events state);
   PString GetEventName() const { return GetEventName(m_eventType); }
 
@@ -574,14 +564,11 @@ class SIPRegNotification : public PObject
 {
   PCLASSINFO(SIPRegNotification, PObject)
 public:
-  enum States {
+  P_DECLARE_ENUM(States,
     Initial,
     Active,
-    Terminated,
-    NumStates
-  };
-  friend States operator++(States & state) { return (state = (States)(state+1)); }
-  friend States operator--(States & state) { return (state = (States)(state-1)); }
+    Terminated
+  );
   static PString GetStateName(States state);
   PString GetStateName() const { return GetStateName(m_state); }
   static States GetStateFromName(const PCaselessString & str);

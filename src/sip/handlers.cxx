@@ -1481,13 +1481,13 @@ public:
         info.m_state = SIPDialogNotification::Terminated;
       else {
         PCaselessString str = stateElement->GetData();
-        for (info.m_state = SIPDialogNotification::LastState; info.m_state > SIPDialogNotification::FirstState; --info.m_state) {
+        for (info.m_state = SIPDialogNotification::BeginStates; info.m_state < SIPDialogNotification::EndStates; ++info.m_state) {
           if (str == info.GetStateName())
             break;
         }
 
         str = stateElement->GetAttribute("event");
-        for (info.m_eventType = SIPDialogNotification::LastEvent; info.m_eventType >= SIPDialogNotification::FirstEvent; --info.m_eventType) {
+        for (info.m_eventType = SIPDialogNotification::BeginEvents; info.m_eventType < SIPDialogNotification::EndEvents; ++info.m_eventType) {
           if (str == info.GetEventName())
             break;
         }
@@ -1755,7 +1755,7 @@ PString SIPRegNotification::GetStateName(States state)
 SIPRegNotification::States SIPRegNotification::GetStateFromName(const PCaselessString & str)
 {
   States state = Initial;
-  while (state < NumStates && str != GetStateName(state))
+  while (state < EndStates && str != GetStateName(state))
    ++state;
 
   return state;

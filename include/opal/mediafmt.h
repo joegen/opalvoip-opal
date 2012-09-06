@@ -1408,17 +1408,13 @@ class OpalVideoFormat : public OpalMediaFormat
           Speaker        Live (0x02)          speaker
           SignLanguage   Live (0x02)          sl
       */
-    enum ContentRole {
+    P_DECLARE_STREAMABLE_ENUM(ContentRole,
       eNoRole,
       ePresentation,
       eMainRole,
       eSpeaker,
-      eSignLanguage,
-      eNumRoles
-    };
-    __inline friend ContentRole operator++(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole+1)); }
-    __inline friend ContentRole operator--(ContentRole & contentRole) { return (contentRole = (ContentRole)(contentRole-1)); }
-    friend std::ostream & operator<<(std::ostream & strm, ContentRole role);
+      eSignLanguage
+    );
 
     enum { ContentRoleMask = 15 };
     __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }
