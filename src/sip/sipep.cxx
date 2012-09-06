@@ -571,19 +571,20 @@ bool SIPEndPoint::ClearDialogContext(const PString & descriptor)
 bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
 {
   if (!context.IsEstablished())
-    return false;
+    return true; // Was not actually fully formed dialog, assume cleared
 
   /* This is an extra increment of the sequence number to allow for
      any PDU's in the dialog being sent between the last saved
-     context. Highly unlikely this will ever by a million ... */
+     context. Highly unlikely this will ever be by a million ... */
   context.IncrementCSeq(1000000);
 
-  std::auto_ptr<OpalTransport> transport(CreateTransport(context.GetRemoteURI(), context.GetLocalURI().GetHostName()));
-  if (transport.get() == NULL)
-    return true; // Can't create transport, so remote host uncontactable, assume dialog cleared.
+  OpalTransport * transport = CreateTransport(context.GetRemoteURI(), context.GetInterface());
+  if (transport == NULL)
+    return true; // Can't create transport, so remote host uncontactable, no, but maybe later
 
   PSafePtr<SIPTransaction> byeTransaction = new SIPBye(*this, *transport, context);
   byeTransaction->WaitForCompletion();
+  delete transport;
   return !byeTransaction->IsFailed();
 }
 
