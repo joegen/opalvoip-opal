@@ -1370,8 +1370,8 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
 
   unsigned roleMask = videoCapExtMediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
 
-  OpalVideoFormat::ContentRole role = OpalVideoFormat::eNumRoles;
-  while (--role > OpalVideoFormat::eNoRole && (OpalVideoFormat::ContentRoleBit(role)&roleMask) == 0)
+  OpalVideoFormat::ContentRole role = OpalVideoFormat::EndContentRole;
+  while (--role > OpalVideoFormat::BeginContentRole && (OpalVideoFormat::ContentRoleBit(role)&roleMask) == 0)
      ;
 
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();

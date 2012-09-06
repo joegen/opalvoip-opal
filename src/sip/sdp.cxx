@@ -1529,7 +1529,7 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 }
 
 
-static const char * const ContentRoleNames[OpalVideoFormat::eNumRoles] = { NULL, "slides", "main", "speaker", "sl" };
+static const char * const ContentRoleNames[OpalVideoFormat::EndContentRole] = { NULL, "slides", "main", "speaker", "sl" };
 
 
 void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
@@ -1537,7 +1537,7 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
   // call ancestor
   SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
-  if (m_contentRole < OpalVideoFormat::eNumRoles && ContentRoleNames[m_contentRole] != NULL)
+  if (m_contentRole < OpalVideoFormat::EndContentRole && ContentRoleNames[m_contentRole] != NULL)
     strm << "a=content:" << ContentRoleNames[m_contentRole] << "\r\n";
 }
 
@@ -1551,7 +1551,7 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
   if (attr *= "content") {
     PStringArray tokens = value.Tokenise(',');
     for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-      OpalVideoFormat::ContentRole content = OpalVideoFormat::eNumRoles;
+      OpalVideoFormat::ContentRole content = OpalVideoFormat::EndContentRole;
       while ((content = (OpalVideoFormat::ContentRole)(content-1)) > OpalVideoFormat::eNoRole) {
         if (tokens[i] *= ContentRoleNames[content]) {
           m_contentMask |= OpalVideoFormat::ContentRoleBit(content);
