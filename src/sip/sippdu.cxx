@@ -2483,6 +2483,7 @@ PString SIPDialogContext::AsString() const
   url.SetParamVar("remote-uri",m_remoteURI.AsQuotedString());
   url.SetParamVar("tx-cseq",   m_lastSentCSeq);
   url.SetParamVar("rx-cseq",   m_lastReceivedCSeq);
+  url.SetParamVar("interface", m_interface);
 
   unsigned index = 0;
   for (SIPURLList::const_iterator it = m_routeSet.begin(); it != m_routeSet.end(); ++it)
@@ -2507,6 +2508,7 @@ bool SIPDialogContext::FromString(const PString & str)
   SetRemoteURI(params("remote-uri"));
   m_lastSentCSeq = params("tx-cseq").AsUnsigned();
   m_lastReceivedCSeq = params("rx-cseq").AsUnsigned();
+  m_interface = params("interface");
 
   PString route;
   unsigned index = 0;
@@ -2598,6 +2600,8 @@ void SIPDialogContext::Update(OpalTransport & transport, const SIP_PDU & pdu)
     if (LocateFieldParameter(mime.GetFirstVia(), "rport", start, val, end) && val >= end)
       m_externalTransportAddress = transport.GetLastReceivedAddress();
   }
+
+  m_interface = transport.GetInterface();
 }
 
 
@@ -3342,7 +3346,7 @@ SIPTransaction * SIPAck::CreateDuplicate() const
 SIPBye::SIPBye(SIPEndPoint & ep, OpalTransport & trans, SIPDialogContext dialog)
   : SIPTransaction(Method_BYE, ep, trans)
 {
-  InitialiseHeaders(dialog);
+  InitialiseHeaders(dialog, CreateVia(trans));
 }
 
 
