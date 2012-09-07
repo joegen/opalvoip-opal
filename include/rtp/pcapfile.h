@@ -37,8 +37,6 @@
 #pragma interface
 #endif
 
-#if P_PCAP
-
 #include <rtp/rtp.h>
 #include <opal/mediafmt.h>
 #include <ptlib/sockets.h>
@@ -181,7 +179,6 @@ class OpalPCAPFile : public PFile
     std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
 };
 
-#endif // P_PCAP
 
 #endif // PTLIB_PCAPFILE_H
 
