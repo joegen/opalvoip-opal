@@ -3592,9 +3592,10 @@ void MyManager::SetTrayTipText(const PwxString & tip)
 
 void MyManager::SetBalloonText(const PwxString & text)
 {
+#ifdef __WXMSW__
 #if wxUSE_TASKBARICON_BALLOONS
   m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
-#elif WIN32
+#else
   NOTIFYICONDATA notify;
   memset(&notify, 0, sizeof(notify));
   notify.cbSize = sizeof(NOTIFYICONDATA);
@@ -3610,6 +3611,7 @@ void MyManager::SetBalloonText(const PwxString & text)
   wxStrncpy(notify.szInfoTitle, PwxString(PProcess::Current().GetName()), WXSIZEOF(notify.szInfoTitle));
   wxStrncpy(notify.szInfo, text, WXSIZEOF(notify.szInfo));
   Shell_NotifyIcon(NIM_MODIFY, &notify);
+#endif
 #endif
 }
 
