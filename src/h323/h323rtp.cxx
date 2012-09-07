@@ -163,8 +163,11 @@ PBoolean H323_RTP_UDP::ExtractTransport(const H245_TransportAddress & pdu,
 
   PIPSocket::Address ip;
   WORD port = 0;
-  if (transAddr.GetIpAndPort(ip, port) && ip.IsValid() && port != 0)
-    return rtp.SetRemoteSocketInfo(ip, port, isDataPort);
+  if (transAddr.GetIpAndPort(ip, port) && ip.IsValid() && port != 0) {
+    if (isDataPort || rtp.GetRemoteDataPort() == 0)
+      return rtp.SetRemoteSocketInfo(ip, port, isDataPort);
+    return true;
+  }
 
   PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");
   return PFalse;
