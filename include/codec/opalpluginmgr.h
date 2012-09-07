@@ -628,12 +628,11 @@ class H323CodecPluginGenericVideoCapability : public H323GenericVideoCapability,
 // Class for handling H.261 plugin capabilities
 //
 
-class H323H261PluginCapability : public H323VideoCapability,
-                                 public H323PluginCapabilityInfo
+class H323H261Capability : public H323VideoCapability
 {
-    PCLASSINFO(H323H261PluginCapability, H323VideoCapability);
+    PCLASSINFO(H323H261Capability, H323VideoCapability);
   public:
-    H323H261PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat);
+    H323H261Capability();
 
     Comparison Compare(const PObject & obj) const;
 
@@ -654,6 +653,18 @@ class H323H261PluginCapability : public H323VideoCapability,
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
 };
+
+
+class H323H261PluginCapability : public H323H261Capability,
+                                 public H323PluginCapabilityInfo
+{
+    PCLASSINFO(H323H261PluginCapability, H323VideoCapability);
+  public:
+    H323H261PluginCapability(const PluginCodec_Definition * codecDefn, const OpalMediaFormat & mediaFormat);
+
+    virtual PObject * Clone() const;
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
