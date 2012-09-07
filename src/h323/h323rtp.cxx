@@ -118,6 +118,9 @@ PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
     return false;
   }
 
+  if (!isDataPort && GetRemoteDataPort() != 0)
+    return true; // Ignore
+
   H323TransportAddress transAddr = pdu;
 
   if (SetRemoteAddress(transAddr, isDataPort))
