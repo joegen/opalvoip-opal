@@ -94,6 +94,12 @@
     <Filter Include="Source Files\RTP\libSRTP\Source">
       <UniqueIdentifier>{dedc621e-e6c9-4446-a53e-a0b8411f9195}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Endpoints">
+      <UniqueIdentifier>{16feb3e1-4525-4aa9-a363-0ad2423b276e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Endpoints">
+      <UniqueIdentifier>{e5ff36ca-f78c-42fa-b87d-03387fd6d751}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -423,12 +429,6 @@
     <ClCompile Include="..\opal\guid.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\ivr.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\opal\localep.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
     <ClCompile Include="..\opal\manager.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
@@ -441,19 +441,10 @@
     <ClCompile Include="..\opal\mediatype.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\opalmixer.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\opal\opalvxml.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
     <ClCompile Include="..\opal\opal_c.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
     <ClCompile Include="..\opal\patch.cxx">
-      <Filter>Source Files\OPAL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\opal\pcss.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
     <ClCompile Include="..\opal\pres_ent.cxx">
@@ -634,6 +625,27 @@
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
     <ClCompile Include="..\codec\h264mf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\ivr.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\localep.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\pcss.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\opalvxml.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opal\opalmixer.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codec\h261mf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\codec\mpeg4mf.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
   </ItemGroup>
@@ -929,12 +941,6 @@
     <ClInclude Include="..\..\include\opal\guid.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\ivr.h">
-      <Filter>Header Files\OPAL</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\opal\localep.h">
-      <Filter>Header Files\OPAL</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\opal\manager.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
@@ -950,16 +956,7 @@
     <ClInclude Include="..\..\include\opal\mediatype.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\opalmixer.h">
-      <Filter>Header Files\OPAL</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\opal\opalvxml.h">
-      <Filter>Header Files\OPAL</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\opal\patch.h">
-      <Filter>Header Files\OPAL</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\opal\pcss.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\opal\pres_ent.h">
@@ -1168,6 +1165,21 @@
     </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\include\ut_sim.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\ivr.h">
+      <Filter>Header Files\Endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\localep.h">
+      <Filter>Header Files\Endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\pcss.h">
+      <Filter>Header Files\Endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\opalvxml.h">
+      <Filter>Header Files\Endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\opal\opalmixer.h">
+      <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
