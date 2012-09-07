@@ -40,12 +40,6 @@
 
 
 
-template <typename T> const T & Get(const PBYTEArray & p, PINDEX off)
-{
-  return *(const T *)(((const BYTE *)p)+off);
-}
-
-
 void Reverse(char * ptr, size_t sz)
 {
   char * top = ptr+sz-1;
@@ -64,15 +58,6 @@ void Reverse(char * ptr, size_t sz)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalPCAPFile::OpalPCAPFile()
-  : m_otherEndian(false)
-  , m_filterSrcIP(PIPSocket::GetInvalidAddress())
-  , m_filterDstIP(PIPSocket::GetInvalidAddress())
-  , m_fragmentated(false)
-  , m_fragmentProto(0)
-  , m_filterSrcPort(0)
-  , m_filterDstPort(0)
-  , m_packetSrcPort(0)
-  , m_packetDstPort(0)
 {
   OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
   for (PINDEX i = 0; i < list.GetSize(); i++) {
@@ -93,26 +78,21 @@ bool OpalPCAPFile::Open(const PFilePath & filename)
   }
 
   if (m_fileHeader.magic_number == 0xa1b2c3d4)
-    m_otherEndian = false;
+    m_rawPacket.m_otherEndian = false;
   else if (m_fileHeader.magic_number == 0xd4c3b2a1)
-    m_otherEndian = true;
+    m_rawPacket.m_otherEndian = true;
   else {
     PTRACE(1, "PCAPFile\tFile \"" << filename << "\" is not a PCAP file, bad magic number.");
     return false;
   }
 
-  if (m_otherEndian) {
+  if (m_rawPacket.m_otherEndian) {
     REVERSE(m_fileHeader.version_major);
     REVERSE(m_fileHeader.version_minor);
     REVERSE(m_fileHeader.thiszone);
     REVERSE(m_fileHeader.sigfigs);
     REVERSE(m_fileHeader.snaplen);
     REVERSE(m_fileHeader.network);
-  }
-
-  if (GetNetworkLayerHeaderSize() == 0) {
-    PTRACE(1, "PCAPFile\tUnsupported Data Link Layer " << m_fileHeader.network << " in file \"" << filename << '"');
-    return false;
   }
 
   return true;
@@ -136,16 +116,11 @@ void OpalPCAPFile::PrintOn(ostream & strm) const
 }
 
 
-bool OpalPCAPFile::ReadRawPacket(PBYTEArray & payload)
+bool OpalPCAPFile::Frame::Read(PChannel & channel, PINDEX)
 {
-  if (m_fragmentated) {
-    m_fragments.SetSize(0);
-    m_fragmentated = false;
-  }
-
   RecordHeader recordHeader;
-  if (!Read(&recordHeader, sizeof(recordHeader))) {
-    PTRACE(1, "PCAPFile\tTruncated file \"" << GetFilePath() << '"');
+  if (!channel.Read(&recordHeader, sizeof(recordHeader))) {
+    PTRACE(1, "PCAPFile\tTruncated file \"" << channel.GetName() << '"');
     return false;
   }
 
@@ -156,109 +131,49 @@ bool OpalPCAPFile::ReadRawPacket(PBYTEArray & payload)
     REVERSE(recordHeader.orig_len);
   }
 
-  m_packetTime.SetTimestamp(recordHeader.ts_sec, recordHeader.ts_usec);
+  m_timestamp.SetTimestamp(recordHeader.ts_sec, recordHeader.ts_usec);
 
-  if (!Read(m_rawPacket.GetPointer(recordHeader.incl_len), recordHeader.incl_len)) {
-    PTRACE(1, "PCAPFile\tTruncated file \"" << GetFilePath() << '"');
+  if (!channel.Read(m_rawData.GetPointer(recordHeader.incl_len), recordHeader.incl_len)) {
+    PTRACE(1, "PCAPFile\tTruncated file \"" << channel.GetName() << '"');
     return false;
   }
 
-  payload.Attach(m_rawPacket, recordHeader.incl_len);
+  m_rawSize = recordHeader.incl_len;
   return true;
-}
-
-
-PINDEX OpalPCAPFile::GetNetworkLayerHeaderSize()
-{
-  switch (m_fileHeader.network) {
-    case 1 : // DLT_EN10MB - Ethernet (10Mb)
-      return 14;
-
-    case 113 : // DLT_LINUX_SLL - Linux cooked sockets
-      return 16;
-  }
-
-  return 0;
 }
 
 
 int OpalPCAPFile::GetDataLink(PBYTEArray & payload)
 {
-  PBYTEArray dataLink;
-  if (!ReadRawPacket(dataLink))
-    return -1;
-
-  PINDEX headerLength = GetNetworkLayerHeaderSize();
-  payload.Attach(&dataLink[headerLength], dataLink.GetSize()-headerLength);
-  return Get<PUInt16b>(dataLink, headerLength-2); // Next protocol layer
+  return m_rawPacket.Read(*this) ? m_rawPacket.GetDataLink(payload) : -1;
 }
 
 
 int OpalPCAPFile::GetIP(PBYTEArray & payload)
 {
-  PBYTEArray ip;
-  if (GetDataLink(ip) != 0x800) // IPv4
+  if (!m_rawPacket.Read(*this))
     return -1;
 
-  PINDEX headerLength = (ip[0]&0xf)*4; // low 4 bits in DWORDS, is this in bytes
-  payload.Attach(&ip[headerLength], ip.GetSize()-headerLength);
-
-  m_packetSrcIP = PIPSocket::Address(4, ip+12);
-  if (m_filterSrcIP.IsValid() && m_filterSrcIP != m_packetSrcIP)
+  PIPSocket::Address src, dst;
+  int type = m_rawPacket.GetIP(payload, src, dst);
+  if (type < 0)
     return -1;
 
-  m_packetDstIP = PIPSocket::Address(4, ip+16);
-  if (m_filterDstIP.IsValid() && m_filterDstIP != m_packetDstIP)
-    return -1;
+  m_packetSrc.SetAddress(src);
+  m_packetDst.SetAddress(dst);
 
-  // Check for fragmentation
-  bool isFragment = (ip[6] & 0x20) != 0;
-  int fragmentOffset = (((ip[6]&0x1f)<<8)+ip[7])*8;
-  PINDEX fragmentsSize = m_fragments.GetSize();
-  if (!isFragment && fragmentsSize == 0)
-    return ip[9]; // Next protocol layer
-
-  if (fragmentsSize != fragmentOffset) {
-    PTRACE(2, "PCAPFile\tMissing IP fragment in \"" << GetFilePath() << '"');
-    m_fragments.SetSize(0);
-    return -1;
-  }
-
-  if (fragmentsSize == 0)
-    m_fragmentProto = ip[9]; // Next protocol layer
-
-  m_fragments.Concatenate(payload);
-
-  if (isFragment)
-    return -1;
-
-  payload.Attach(m_fragments, m_fragments.GetSize());
-  m_fragmentated = true;
-
-  return m_fragmentProto; // Next protocol layer
+  return (m_filterSrc.GetAddress().IsValid() && m_filterSrc.GetAddress() != src) ||
+         (m_filterDst.GetAddress().IsValid() || m_filterDst.GetAddress() == dst) ? -1 : type;
 }
 
 
 int OpalPCAPFile::GetUDP(PBYTEArray & payload)
 {
-  PBYTEArray udp;
-  if (GetIP(udp) != 0x11)
-    return -1;
-
-  if (udp.GetSize() < 8)
-    return -1;
-
-  m_packetSrcPort = Get<PUInt16b>(udp, 0);
-  if (m_filterSrcPort != 0 && m_filterSrcPort != m_packetSrcPort)
-    return -1;
-
-  m_packetDstPort = Get<PUInt16b>(udp, 2);
-  if (m_filterDstPort != 0 && m_filterDstPort != m_packetDstPort)
-    return -1;
-
-  int payloadLength = udp.GetSize() - 8;
-  payload.Attach(&udp[8], payloadLength);
-  return payloadLength;
+  return m_rawPacket.Read(*this) &&
+         m_rawPacket.GetUDP(payload, m_packetSrc, m_packetDst) &&
+         m_packetSrc.MatchWildcard(m_filterSrc) &&
+         m_packetDst.MatchWildcard(m_filterDst)
+         ? payload.GetSize() : -1;
 }
 
 
@@ -495,10 +410,8 @@ bool OpalPCAPFile::SetFilters(const DiscoveredRTPInfo & info, int dir, const PSt
   if (!SetPayloadMap(info.m_payload[dir], format.IsEmpty() ? info.m_format[dir] : format))
     return false;
 
-  m_filterSrcIP = info.m_addr[dir].GetAddress();
-  m_filterDstIP = info.m_addr[1 - dir].GetAddress();
-  m_filterSrcPort = info.m_addr[dir].GetPort();
-  m_filterDstPort = info.m_addr[1 - dir].GetPort();
+  m_filterSrc = info.m_addr[dir];
+  m_filterDst = info.m_addr[1 - dir];
   return true;
 }
 
