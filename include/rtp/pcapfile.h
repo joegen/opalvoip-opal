@@ -37,6 +37,8 @@
 #pragma interface
 #endif
 
+#if P_PCAP
+
 #include <rtp/rtp.h>
 #include <opal/mediafmt.h>
 #include <ptlib/sockets.h>
@@ -55,38 +57,37 @@ class OpalPCAPFile : public PFile
 
     void PrintOn(ostream & strm) const;
 
-    bool ReadRawPacket(PBYTEArray & payload);
     int GetDataLink(PBYTEArray & payload);
     int GetIP(PBYTEArray & payload);
     int GetUDP(PBYTEArray & payload);
     int GetRTP(RTP_DataFrame & rtp);
 
-    const PTime & GetPacketTime() const { return m_packetTime; }
-    const PIPSocket::Address & GetSrcIP() const { return m_packetSrcIP; }
-    const PIPSocket::Address & GetDstIP() const { return m_packetDstIP; }
-    unsigned IsFragmentated() const { return m_fragmentated; }
-    WORD GetSrcPort() const { return m_packetSrcPort; }
-    WORD GetDstPort() const { return m_packetDstPort; }
+    const PTime & GetPacketTime() const { return m_rawPacket.GetTimestamp(); }
+    const PIPSocket::Address & GetSrcIP() const { return m_packetSrc.GetAddress(); }
+    const PIPSocket::Address & GetDstIP() const { return m_packetDst.GetAddress(); }
+    unsigned IsFragmentated() const { return m_rawPacket.IsFragmentated(); }
+    WORD GetSrcPort() const { return m_packetSrc.GetPort(); }
+    WORD GetDstPort() const { return m_packetDst.GetPort(); }
 
     void SetFilterSrcIP(
       const PIPSocket::Address & ip
-    ) { m_filterSrcIP = ip; }
-    const PIPSocket::Address & GetFilterSrcIP() const { return m_filterSrcIP; }
+    ) { m_filterSrc.SetAddress(ip); }
+    const PIPSocket::Address & GetFilterSrcIP() const { return m_filterSrc.GetAddress(); }
 
     void SetFilterDstIP(
       const PIPSocket::Address & ip
-    ) { m_filterDstIP = ip; }
-    const PIPSocket::Address & GetFilterDstIP() const { return m_filterDstIP; }
+    ) { m_filterDst.SetAddress(ip); }
+    const PIPSocket::Address & GetFilterDstIP() const { return m_filterDst.GetAddress(); }
 
     void SetFilterSrcPort(
       WORD port
-    ) { m_filterSrcPort = port; }
-    WORD GetFilterSrcPort() const { return m_filterSrcPort; }
+    ) { m_filterSrc.SetPort(port); }
+    WORD GetFilterSrcPort() const { return m_filterSrc.GetPort(); }
 
     void SetFilterDstPort(
       WORD port
-    ) { m_filterDstPort = port; }
-    WORD GetFilterDstPort() const { return m_filterDstPort; }
+    ) { m_filterDst.SetPort(port); }
+    WORD GetFilterDstPort() const { return m_filterDst.GetPort(); }
 
 
     struct DiscoveredRTPInfo {
@@ -139,8 +140,6 @@ class OpalPCAPFile : public PFile
     OpalMediaFormat GetMediaFormat(const RTP_DataFrame & rtp) const;
 
   protected:
-    PINDEX GetNetworkLayerHeaderSize();
-
     struct FileHeader { 
       DWORD magic_number;   /* magic number */
       WORD  version_major;  /* major version number */
@@ -160,27 +159,29 @@ class OpalPCAPFile : public PFile
 
 
     FileHeader m_fileHeader;
-    bool       m_otherEndian;
-    PBYTEArray m_rawPacket;
-    PTime      m_packetTime;
 
-    PIPSocket::Address m_filterSrcIP;
-    PIPSocket::Address m_filterDstIP;
-    PIPSocket::Address m_packetSrcIP;
-    PIPSocket::Address m_packetDstIP;
+    class Frame : public PEthSocket::Frame {
+      public:
+        Frame() : m_otherEndian(false) { }
 
-    PBYTEArray m_fragments;
-    bool       m_fragmentated;
-    unsigned   m_fragmentProto;
+        virtual bool Read(
+          PChannel & channel,
+          PINDEX packetSize = P_MAX_INDEX
+        );
 
-    WORD m_filterSrcPort;
-    WORD m_filterDstPort;
-    WORD m_packetSrcPort;
-    WORD m_packetDstPort;
+        bool m_otherEndian;
+    };
+    Frame m_rawPacket;
+
+    PIPSocketAddressAndPort m_filterSrc;
+    PIPSocketAddressAndPort m_filterDst;
+    PIPSocketAddressAndPort m_packetSrc;
+    PIPSocketAddressAndPort m_packetDst;
 
     std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
 };
 
+#endif // P_PCAP
 
 #endif // PTLIB_PCAPFILE_H
 
