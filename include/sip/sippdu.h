@@ -1177,10 +1177,13 @@ class SIPRegister : public SIPTransaction
                                              contact field. Correct behaviour is to return
                                              a contact with the fields it can accept in
                                              the 200 OK */
-      e_HasApplicationLayerGateway      /**< Router has Application Layer Gateway code that
+      e_HasApplicationLayerGateway,     /**< Router has Application Layer Gateway code that
                                              is doing address transations, so we do not try
                                              to do it ourselves as well or it goes horribly
                                              wrong. */
+      e_RFC5626                         /**< Connect using RFC 5626 rules. Only a single
+                                             contact is included and this will contain the
+                                             m_instance field as it's GUID. */
     };
 
     /// Registrar parameters
@@ -1188,16 +1191,19 @@ class SIPRegister : public SIPTransaction
       Params()
         : m_registrarAddress(m_remoteAddress)
         , m_compatibility(SIPRegister::e_FullyCompliant)
+        , m_instanceId(NULL)
       { }
 
       Params(const Params & param)
         : SIPParameters(param)
         , m_registrarAddress(m_remoteAddress)
         , m_compatibility(param.m_compatibility)
+        , m_instanceId(param.m_instanceId)
       { }
 
       PCaselessString  & m_registrarAddress; // For backward compatibility
       CompatibilityModes m_compatibility;
+      PGloballyUniqueID  m_instanceId;
     };
 
     SIPRegister(
