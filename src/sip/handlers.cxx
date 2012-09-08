@@ -609,10 +609,13 @@ void SIPHandler::OnExpireTimeout()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static PAtomicInteger LastRegId;
+
 SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
   : SIPHandler(SIP_PDU::Method_REGISTER, endpoint, params)
   , m_parameters(params)
   , m_sequenceNumber(0)
+  , m_rfc5626_reg_id(++LastRegId)
 {
   // Foer some bizarre reason, even though REGISTER does not create a dialog,
   // some registrars insist that you have a from tag ...
@@ -620,6 +623,26 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   local.SetTag();
   m_parameters.m_localAddress = local.AsQuotedString();
   m_parameters.m_proxyAddress = m_proxy.AsString();
+}
+
+
+PString SIPRegisterHandler::CreateRegisterContact(const OpalTransportAddress & address, int q)
+{
+  SIPURL contact(m_addressOfRecord.GetUserName(), address, 0, m_addressOfRecord.GetScheme());
+  contact.Sanitise(SIPURL::RegContactURI);
+
+  if (m_parameters.m_compatibility == SIPRegister::e_RFC5626) {
+    if (m_parameters.m_instanceId.IsNULL())
+      m_parameters.m_instanceId = PGloballyUniqueID();
+
+    contact.GetFieldParameters().Set("+sip.instance", "<urn:uuid:" + m_parameters.m_instanceId.AsString() + '>');
+    contact.GetFieldParameters().SetInteger("reg-id", m_rfc5626_reg_id);
+  }
+
+  if (q >= 0)
+    contact.GetFieldParameters().Set("q", q < 1000 ? psprintf("0.%03u", q) : "1");
+
+  return contact.AsQuotedString();
 }
 
 
@@ -647,12 +670,8 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
       if (GetState() != Refreshing || m_contactAddresses.empty()) {
         PString userName = m_addressOfRecord.GetUserName();
         OpalTransportAddressArray interfaces = GetEndPoint().GetInterfaceAddresses(true, &trans);
-        if (params.m_compatibility == SIPRegister::e_CannotRegisterMultipleContacts) {
-          // If translated by STUN then only the external address of the interface is used.
-          SIPURL contact(userName, interfaces[0], 0, m_addressOfRecord.GetScheme());
-          contact.Sanitise(SIPURL::RegContactURI);
-          params.m_contactAddress += contact.AsQuotedString();
-        }
+        if (params.m_compatibility == SIPRegister::e_CannotRegisterMultipleContacts || params.m_compatibility == SIPRegister::e_RFC5626)
+          params.m_contactAddress = CreateRegisterContact(interfaces[0], -1);
         else {
           OpalTransportAddress localAddress = trans.GetLocalAddress(params.m_compatibility != SIPRegister::e_HasApplicationLayerGateway);
           unsigned qvalue = 1000;
@@ -662,13 +681,9 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
                listeners that are on the same interface. If translated by STUN
                then only the external address of the interface is used. */
             if (params.m_compatibility == SIPRegister::e_FullyCompliant || localAddress.IsEquivalent(interfaces[i], true)) {
-              SIPURL contact(userName, interfaces[i], 0, m_addressOfRecord.GetScheme());
-              contact.Sanitise(SIPURL::RegContactURI);
-              contact.GetFieldParameters().Set("q", qvalue < 1000 ? psprintf("0.%03u", qvalue) : "1");
-
               if (!params.m_contactAddress.IsEmpty())
                 params.m_contactAddress += ", ";
-              params.m_contactAddress += contact.AsQuotedString();
+              params.m_contactAddress += CreateRegisterContact(interfaces[i], qvalue);
 
               qvalue -= 1000/interfaces.GetSize();
             }

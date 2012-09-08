@@ -255,6 +255,7 @@ DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
 DEF_FIELD(RegistrarDomain);
 DEF_FIELD(RegistrarContact);
+DEF_FIELD(RegistrarInstanceId);
 DEF_FIELD(RegistrarAuthID);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
@@ -3740,6 +3741,7 @@ bool RegistrationInfo::Read(wxConfigBase & config)
     m_Type = (Types)iType;
 
   config.Read(RegistrarContactKey, &m_Contact);
+  config.Read(RegistrarInstanceIdKey, &m_InstanceId);
   config.Read(RegistrarAuthIDKey, &m_AuthID);
   config.Read(RegistrarPasswordKey, &m_Password);
   config.Read(RegistrarProxyKey, &m_Proxy);
@@ -3758,6 +3760,7 @@ void RegistrationInfo::Write(wxConfigBase & config)
   config.Write(RegistrarUsernameKey, m_User);
   config.Write(RegistrarDomainKey, m_Domain);
   config.Write(RegistrarContactKey, m_Contact);
+  config.Write(RegistrarInstanceIdKey, m_InstanceId);
   config.Write(RegistrarAuthIDKey, m_AuthID);
   config.Write(RegistrarPasswordKey, m_Password);
   config.Write(RegistrarProxyKey, m_Proxy);
@@ -3792,10 +3795,14 @@ bool RegistrationInfo::Start(SIPEndPoint & sipEP)
     if (sipEP.IsRegistered(m_aor, true))
       return true;
 
+    if (m_Compatibility == SIPRegister::e_RFC5626 && m_InstanceId.empty())
+      m_InstanceId = PGloballyUniqueID().AsString();
+
     SIPRegister::Params param;
     param.m_addressOfRecord = m_User.p_str();
     param.m_registrarAddress = m_Domain.p_str();
     param.m_contactAddress = m_Contact.p_str();
+    param.m_instanceId = m_InstanceId.p_str();
     param.m_authID = m_AuthID.p_str();
     param.m_password = m_Password.p_str();
     param.m_proxyAddress = m_Proxy.p_str();
