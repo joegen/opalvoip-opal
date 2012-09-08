@@ -224,12 +224,14 @@ public:
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
+  PString CreateRegisterContact(const OpalTransportAddress & address, int q);
 
   SIPRegister::Params  m_parameters;
   unsigned             m_sequenceNumber;
   SIPURLList           m_contactAddresses;
   SIPURLList           m_serviceRoute;
   OpalTransportAddress m_externalAddress;
+  PAtomicInteger::IntegerType m_rfc5626_reg_id;
 };
 
 

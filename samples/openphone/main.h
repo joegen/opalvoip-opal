@@ -535,6 +535,7 @@ class RegistrationInfo
     PwxString m_User;
     PwxString m_Domain;
     PwxString m_Contact;
+    PwxString m_InstanceId;
     PwxString m_AuthID;
     PwxString m_Password;
     int       m_TimeToLive;
