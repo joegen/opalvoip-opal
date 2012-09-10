@@ -3578,7 +3578,7 @@ bool H323Connection::RetrieveCall()
   holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
   
   // Signal the manager that there is a retrieve 
-  endpoint.OnHold(*this, false, false);
+  OnHold(false, false);
   return true;
 }
 
@@ -3739,7 +3739,10 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    transmitterSidePaused = true;
+    if (!transmitterSidePaused) {
+      OnHold(true, true);
+      transmitterSidePaused = true;
+    }
   }
   else {
     /* Received non-empty TCS, if was in paused state or this is the first TCS
@@ -3755,6 +3758,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
     if (transmitterSidePaused) {
       PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
+      OnHold(true, false);
       transmitterSidePaused = false;
       connectionState = HasExecutedSignalConnect;
       capabilityExchangeProcedure->Start(true);
