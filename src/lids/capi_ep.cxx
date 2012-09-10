@@ -311,6 +311,7 @@ struct OpalCapiProfile {
   BYTE  m_Reserved[64];       // Make sure struct is big enough
 };
 
+#pragma pack()
 
 #if PTRACING
   #define MAKE_MSG_NAME(cmd,sub) { CAPICMD(CAPI_##cmd, CAPI_##sub), #cmd "_" #sub }
