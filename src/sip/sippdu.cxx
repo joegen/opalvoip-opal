@@ -3065,22 +3065,6 @@ void SIPTransaction::SetTerminated(States newState)
   if (!PAssert(newState >= Terminated_Success, PInvalidParameter))
     return;
 
-#if PTRACING
-  static const char * const StateNames[NumStates] = {
-    "NotStarted",
-    "Trying",
-    "Proceeding",
-    "Cancelling",
-    "Completed",
-    "Terminated_Success",
-    "Terminated_Timeout",
-    "Terminated_RetriesExceeded",
-    "Terminated_TransportError",
-    "Terminated_Cancelled",
-    "Terminated_Aborted"
-  };
-#endif
-
   // Terminated, so finished with timers
   m_retryTimer.Stop(false);
   m_completionTimer.Stop(false);
@@ -3089,14 +3073,14 @@ void SIPTransaction::SetTerminated(States newState)
     m_connection->m_pendingTransactions.Remove(this);
 
   if (m_state >= Terminated_Success) {
-    PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << StateNames[newState] 
+    PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << newState 
               << " for " << GetMethod() << " transaction id=" << GetTransactionID()
-              << " but already terminated ( " << StateNames[m_state] << ')');
+              << " but already terminated ( " << m_state << ')');
     return;
   }
 
   m_state = newState;
-  PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for "
+  PTRACE(3, "SIP\tSet state " << newState << " for "
          << GetMethod() << " transaction id=" << GetTransactionID());
 
   // Transaction failed, tell the endpoint
@@ -3409,21 +3393,6 @@ SIPTransaction * SIPRegister::CreateDuplicate() const
 
 
 #if PTRACING
-ostream & operator<<(ostream & strm, SIPRegister::CompatibilityModes mode)
-{
-  static const char * const Names[] = {
-    "FullyCompliant",
-    "CannotRegisterMultipleContacts",
-    "CannotRegisterPrivateContacts",
-    "HasApplicationLayerGateway"
-  };
-  if (mode < PARRAYSIZE(Names) && Names[mode] != NULL)
-    strm << Names[mode];
-  else
-    strm << '<' << (unsigned)mode << '>';
-  return strm;
-}
-
 ostream & operator<<(ostream & strm, const SIPRegister::Params & params)
 {
   return strm << (const SIPParameters &)params << "\n"
