@@ -46,6 +46,7 @@
 #include <ptlib/vconvert.h>
 #include <ptclib/pwavfile.h>
 #include <sip/handlers.h>
+#include <sip/sipcon.h>
 
 
 #define DETAIL_LOG_LEVEL 6
