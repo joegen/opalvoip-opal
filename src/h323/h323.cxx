@@ -5089,11 +5089,12 @@ static PBoolean CheckSendUserInputMode(const H323Capabilities & caps,
   // If have remote capabilities, then verify we can send selected mode,
   // otherwise just return and accept it for future validation
   static const H323_UserInputCapability::SubTypes types[H323Connection::NumSendUserInputModes] = {
-    H323_UserInputCapability::NumSubTypes,
-    H323_UserInputCapability::BasicString,
-    H323_UserInputCapability::SignalToneH245,
-    H323_UserInputCapability::SignalToneRFC2833,
-    H323_UserInputCapability::NumSubTypes,
+    H323_UserInputCapability::NumSubTypes,        // SendUserInputAsQ931
+    H323_UserInputCapability::BasicString,        // SendUserInputAsString
+    H323_UserInputCapability::SignalToneH245,     // SendUserInputAsTone
+    H323_UserInputCapability::SignalToneRFC2833,  // SendUserInputAsRFC2833
+    H323_UserInputCapability::NumSubTypes,        // SendUserInputInBand
+    H323_UserInputCapability::SignalToneH245      // SendUserInputAsProtocolDefault
   };
 
   if (types[mode] == H323_UserInputCapability::NumSubTypes)
