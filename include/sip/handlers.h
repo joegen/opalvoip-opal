@@ -517,7 +517,7 @@ struct SIPDialogNotification : public PObject
   static PString GetStateName(States state);
   PString GetStateName() const { return GetStateName(m_state); }
 
-  P_DECLARE_ENUM_EX(Events,
+  P_DECLARE_ENUM_EX(Events, NumEvents,
     NoEvent, -1,
     Cancelled,
     Rejected,

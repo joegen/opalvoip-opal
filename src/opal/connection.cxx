@@ -60,102 +60,13 @@
 
 
 #if PTRACING
-ostream & operator<<(ostream & out, OpalConnection::Phases phase)
-{
-  static const char * const names[OpalConnection::NumPhases] = {
-    "UninitialisedPhase",
-    "SetUpPhase",
-    "ProceedingPhase",
-    "AlertingPhase",
-    "ConnectedPhase",
-    "EstablishedPhase",
-    "ForwardingPhase",
-    "ReleasingPhase",
-    "ReleasedPhase"
-  };
-  return out << names[phase];
-}
-
 
 ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
 {
-  const char * const names[OpalConnection::NumCallEndReasons] = {
-    "EndedByLocalUser",         /// Local endpoint application cleared call
-    "EndedByNoAccept",          /// Local endpoint did not accept call OnIncomingCall()=PFalse
-    "EndedByAnswerDenied",      /// Local endpoint declined to answer call
-    "EndedByRemoteUser",        /// Remote endpoint application cleared call
-    "EndedByRefusal",           /// Remote endpoint refused call
-    "EndedByNoAnswer",          /// Remote endpoint did not answer in required time
-    "EndedByCallerAbort",       /// Remote endpoint stopped calling
-    "EndedByTransportFail",     /// Transport error cleared call
-    "EndedByConnectFail",       /// Transport connection failed to establish call
-    "EndedByGatekeeper",        /// Gatekeeper has cleared call
-    "EndedByNoUser",            /// Call failed as could not find user (in GK)
-    "EndedByNoBandwidth",       /// Call failed as could not get enough bandwidth
-    "EndedByCapabilityExchange",/// Could not find common capabilities
-    "EndedByCallForwarded",     /// Call was forwarded using FACILITY message
-    "EndedBySecurityDenial",    /// Call failed a security check and was ended
-    "EndedByLocalBusy",         /// Local endpoint busy
-    "EndedByLocalCongestion",   /// Local endpoint congested
-    "EndedByRemoteBusy",        /// Remote endpoint busy
-    "EndedByRemoteCongestion",  /// Remote endpoint congested
-    "EndedByUnreachable",       /// Could not reach the remote party
-    "EndedByNoEndPoint",        /// The remote party is not running an endpoint
-    "EndedByOffline",           /// The remote party is off line
-    "EndedByTemporaryFailure",  /// The remote failed temporarily app may retry
-    "EndedByQ931Cause",         /// The remote ended the call with unmapped Q.931 cause code
-    "EndedByDurationLimit",     /// Call cleared due to an enforced duration limit
-    "EndedByInvalidConferenceID",/// Call cleared due to invalid conference ID
-    "EndedByNoDialTone",        /// Call cleared due to missing dial tone
-    "EndedByNoRingBackTone",    /// Call cleared due to missing ringback tone    
-    "EndedByOutOfService",      /// Call cleared because the line is out of service, 
-    "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
-    "EndedByGkAdmissionFailed", /// Call cleared because gatekeeper admission request failed.
-    "EndedByCallCompletedElsewhere", /// Call cleared because it was answered by another extension.
-  };
-  PAssert((PINDEX)(reason & 0xff) < PARRAYSIZE(names), "Invalid reason");
-  return out << names[reason & 0xff];
-}
-
-ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
-{
-  static const char * const AnswerCallResponseNames[OpalConnection::NumAnswerCallResponses] = {
-    "AnswerCallNow",
-    "AnswerCallDenied",
-    "AnswerCallPending",
-    "AnswerCallDeferred",
-    "AnswerCallAlertWithMedia",
-    "AnswerCallDeferredWithMedia",
-    "AnswerCallProgress",
-    "AnswerCallNowAndReleaseCurrent"
-  };
-  if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
-    o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
-  else if (AnswerCallResponseNames[s] == NULL)
-    o << "AnswerCallResponse<" << (unsigned)s << '>';
+  if (reason.code != OpalConnection::EndedByQ931Cause)
+    return out << reason.code;
   else
-    o << AnswerCallResponseNames[s];
-  return o;
-}
-
-ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
-{
-  static const char * const SendUserInputModeNames[OpalConnection::NumSendUserInputModes] = {
-    "SendUserInputAsQ931",
-    "SendUserInputAsString",
-    "SendUserInputAsTone",
-    "SendUserInputAsRFC2833",
-    "SendUserInputInBand",
-    "SendUserInputAsProtocolDefault"
-  };
-
-  if ((PINDEX)m >= PARRAYSIZE(SendUserInputModeNames))
-    o << "InvalidSendUserInputMode<" << (unsigned)m << '>';
-  else if (SendUserInputModeNames[m] == NULL)
-    o << "SendUserInputMode<" << (unsigned)m << '>';
-  else
-    o << SendUserInputModeNames[m];
-  return o;
+    return out << "Q.931[0x" << hex << reason.q931 << dec << ']';
 }
 
 #endif

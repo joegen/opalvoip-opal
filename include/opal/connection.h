@@ -388,8 +388,8 @@ class OpalConnection : public PSafeObject
        NOTE: if anything is added to this, you also need to add the field to
        the tables in connection.cxx and h323pdu.cxx.
       */
-    enum CallEndReasonCodes {
-      EndedByLocalUser,            /// Local endpoint application cleared call
+    P_DECLARE_ENUM_EX(CallEndReasonCodes,NumCallEndReasons,
+      EndedByLocalUser,0,          /// Local endpoint application cleared call
       EndedByNoAccept,             /// Local endpoint did not accept call OnIncomingCall()=false
       EndedByAnswerDenied,         /// Local endpoint declined to answer call
       EndedByRemoteUser,           /// Remote endpoint application cleared call
@@ -421,9 +421,8 @@ class OpalConnection : public PSafeObject
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
       EndedByGkAdmissionFailed,    /// Call cleared because gatekeeper admission request failed.
       EndedByMediaFailed,          /// Call cleared due to loss of media flow.
-      EndedByCallCompletedElsewhere,/// Call cleared because it was answered by another extension.
-      NumCallEndReasons
-    };
+      EndedByCallCompletedElsewhere/// Call cleared because it was answered by another extension.
+    );
 
     struct CallEndReason {
       CallEndReason(
@@ -446,7 +445,7 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, CallEndReason reason);
 #endif
 
-    enum AnswerCallResponse {
+    P_DECLARE_TRACED_ENUM(AnswerCallResponse,
       AnswerCallNow,               /// Answer the call continuing with the connection.
       AnswerCallDenied,            /// Refuse the call sending a release complete.
       AnswerCallPending,           /// Send an Alerting PDU and wait for AnsweringCall()
@@ -454,12 +453,8 @@ class OpalConnection : public PSafeObject
       AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
       AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
       AnswerCallProgress,          /// Answer the call with a h323 progress, or sip 183 session in progress, or ... 
-      AnswerCallNowAndReleaseCurrent, /// Answer the call and destroy the current call
-      NumAnswerCallResponses
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & o, AnswerCallResponse s);
-#endif
+      AnswerCallNowAndReleaseCurrent /// Answer the call and destroy the current call
+    );
 
     /** Connection options
     */
@@ -552,7 +547,7 @@ class OpalConnection : public PSafeObject
     /**Different phases of a call, which are used in all OpalConnection
        instances. These phases are fully described in the documentation page
        \ref pageOpalConnections.  */
-    enum Phases {
+    P_DECLARE_TRACED_ENUM(Phases,
       UninitialisedPhase,   //!< Indicates the OpalConnection instance has just been constructed
       SetUpPhase,           //!< Has just sent/received the initial SETUP/INVITE packet
       ProceedingPhase,      //!< The receipt of SETUP/INVITE has been acknowledged
@@ -561,9 +556,8 @@ class OpalConnection : public PSafeObject
       EstablishedPhase,     //!< Media is established, streams  are all operational
       ForwardingPhase,      //!< Connection is in the process of being forwarded
       ReleasingPhase,       //!< Hangup packet has been sent/received, media and control not yet stopped
-      ReleasedPhase,        //!< Media and control streams have been terminated
-      NumPhases             //!< Number of available phases. Can be used to indicate an unknown phase
-    };
+      ReleasedPhase         //!< Media and control streams have been terminated
+    );
 
     /**Get the phase of the connection.
        This indicates the current phase of the connection sequence. Whether
@@ -1401,20 +1395,15 @@ class OpalConnection : public PSafeObject
 
   /**@name User input */
   //@{
-    enum SendUserInputModes {
+    P_DECLARE_TRACED_ENUM(SendUserInputModes,
       SendUserInputAsQ931,
       SendUserInputAsString,
       SendUserInputAsTone,
       SendUserInputAsRFC2833,
+      SendUserInputAsInlineRFC2833 = SendUserInputAsRFC2833, // For backward compatibility
       SendUserInputInBand,
-      SendUserInputAsProtocolDefault,
-      NumSendUserInputModes,
-
-      SendUserInputAsInlineRFC2833 = SendUserInputAsRFC2833  // For backward compatibility
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & o, SendUserInputModes m);
-#endif
+      SendUserInputAsProtocolDefault
+    );
 
     /**Set the user input indication transmission mode.
       */
