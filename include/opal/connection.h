@@ -1896,10 +1896,6 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnSendInBandDTMF);
 #endif
 
-#if PTRACING
-    friend ostream & operator<<(ostream & o, Phases p);
-#endif
-
     StringOptions m_stringOptions;
 
 #if OPAL_HAS_MIXER
