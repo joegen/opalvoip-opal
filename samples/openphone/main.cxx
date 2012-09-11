@@ -517,7 +517,7 @@ class TextCtrlChannel : public PChannel
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
       theEvent.SetEventObject(TextCtrlChannelFrame);
-      PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len));
+      PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len-1));
       theEvent.SetString(str);
       TextCtrlChannelFrame->GetEventHandler()->AddPendingEvent(theEvent);
       PTRACE(3, "OpenPhone\t" << str);
@@ -1640,6 +1640,7 @@ void MyManager::OnIconize(wxIconizeEvent & evt)
 void MyManager::OnLogMessage(wxCommandEvent & theEvent)
 {
   m_logWindow->AppendText(theEvent.GetString());
+  m_logWindow->AppendText(wxChar('\n'));
 #if defined(__WXMAC__) && wxCHECK_VERSION(2,9,2)
   // Workaround for OSX (2.9.2) bug
   m_logWindow->SetStyle(0, m_logWindow->GetLastPosition(), wxTextAttr(*wxGREEN, *wxBLACK));
