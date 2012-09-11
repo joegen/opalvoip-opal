@@ -423,15 +423,15 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     }
 
 
-    __inline const char *  GetFormatName() const   { return m_formatName; }
-    __inline const char *  GetPayloadName() const  { return m_payloadName; }
-    __inline unsigned char GetPayloadType() const  { return (unsigned char)m_payloadType; }
-    __inline const char *  GetDescription() const  { return m_description; }
-    __inline unsigned      GetMaxBandwidth() const { return m_maxBandwidth; }
-    __inline unsigned char GetH323CapabilityType() const { return (unsigned char)m_h323CapabilityType; }
-    __inline const void *  GetH323CapabilityData() const { return m_h323CapabilityData; }
-    __inline unsigned      GetFlags() const { return m_flags; }
-    __inline const void *  GetOptionsTable() const { return m_options; }
+    __inline const char *  GetFormatName() const   { return this->m_formatName; }
+    __inline const char *  GetPayloadName() const  { return this->m_payloadName; }
+    __inline unsigned char GetPayloadType() const  { return (unsigned char)this->m_payloadType; }
+    __inline const char *  GetDescription() const  { return this->m_description; }
+    __inline unsigned      GetMaxBandwidth() const { return this->m_maxBandwidth; }
+    __inline unsigned char GetH323CapabilityType() const { return (unsigned char)this->m_h323CapabilityType; }
+    __inline const void *  GetH323CapabilityData() const { return this->m_h323CapabilityData; }
+    __inline unsigned      GetFlags() const { return this->m_flags; }
+    __inline const void *  GetOptionsTable() const { return this->m_options; }
 
 
     /// Determine if codec is valid for the specified protocol
@@ -535,12 +535,12 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
     }
 
 
-    __inline unsigned GetSamplesPerFrame() const { return m_samplesPerFrame; }
-    __inline unsigned GetBytesPerFrame() const { return m_bytesPerFrame; }
-    __inline unsigned GetSampleRate() const { return m_sampleRate; }
-    __inline unsigned GetFrameTime() const { return m_samplesPerFrame*1000000/m_sampleRate; }
-    __inline unsigned GetRecommendedFramesPerPacket() const { return m_recommendedFramesPerPacket; }
-    __inline unsigned GetMaxFramesPerPacket() const { return m_maxFramesPerPacket; }
+    __inline unsigned GetSamplesPerFrame() const { return this->m_samplesPerFrame; }
+    __inline unsigned GetBytesPerFrame() const { return this->m_bytesPerFrame; }
+    __inline unsigned GetSampleRate() const { return this->m_sampleRate; }
+    __inline unsigned GetFrameTime() const { return this->m_samplesPerFrame*1000000/this->m_sampleRate; }
+    __inline unsigned GetRecommendedFramesPerPacket() const { return this->m_recommendedFramesPerPacket; }
+    __inline unsigned GetMaxFramesPerPacket() const { return this->m_maxFramesPerPacket; }
 };
 
 
@@ -571,8 +571,8 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
     }
 
 
-    __inline unsigned GetMaxWidth() const { return m_maxWidth; }
-    __inline unsigned GetMaxHeight() const { return m_maxHeight; }
+    __inline unsigned GetMaxWidth() const { return this->m_maxWidth; }
+    __inline unsigned GetMaxHeight() const { return this->m_maxHeight; }
 };
 
 
@@ -660,20 +660,20 @@ class PluginCodec : public PluginCodec_Utilities
     /// Set all the options for the codec.
     virtual bool SetOptions(const char * const * options)
     {
-      m_optionsSame = true;
+      this->m_optionsSame = true;
 
       // get the media format options after adjustment from protocol negotiation
       for (const char * const * option = options; *option != NULL; option += 2) {
-        if (!SetOption(option[0], option[1])) {
+        if (!this->SetOption(option[0], option[1])) {
           PTRACE(1, "Plugin", "Could not set option \"" << option[0] << "\" to \"" << option[1] << '"');
           return false;
         }
       }
 
-      if (m_optionsSame)
+      if (this->m_optionsSame)
         return true;
 
-      return OnChangedOptions();
+      return this->OnChangedOptions();
     }
 
 
@@ -688,10 +688,11 @@ class PluginCodec : public PluginCodec_Utilities
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-        return SetOptionUnsigned(m_maxBitRate, optionValue, 1, m_definition->bitsPerSec);
+        return this->SetOptionUnsigned(this->m_maxBitRate, optionValue, 1, this->m_definition->bitsPerSec);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-        return SetOptionUnsigned(m_frameTime, optionValue, m_definition->sampleRate/1000, m_definition->sampleRate); // 1ms to 1 second
+        return this->SetOptionUnsigned(this->m_frameTime, optionValue,
+                                       this->m_definition->sampleRate/1000, this->m_definition->sampleRate); // 1ms to 1 second
 
       return true;
     }
@@ -701,7 +702,7 @@ class PluginCodec : public PluginCodec_Utilities
     bool SetOptionUnsigned(T & oldValue, const char * optionValue, unsigned minimum, unsigned maximum = UINT_MAX)
     {
       unsigned newValue = oldValue;
-      if (!SetOptionUnsigned(newValue, optionValue, minimum, maximum))
+      if (!this->SetOptionUnsigned(newValue, optionValue, minimum, maximum))
         return false;
       oldValue = (T)newValue;
       return true;
@@ -722,7 +723,7 @@ class PluginCodec : public PluginCodec_Utilities
 
       if (oldValue != newValue) {
         oldValue = newValue;
-        m_optionsSame = false;
+        this->m_optionsSame = false;
       }
 
       return true;
@@ -733,7 +734,7 @@ class PluginCodec : public PluginCodec_Utilities
     bool SetOptionBoolean(T & oldValue, const char * optionValue)
     {
       bool opt = oldValue != 0;
-      if (!SetOptionBoolean(opt, optionValue))
+      if (!this->SetOptionBoolean(opt, optionValue))
         return false;
       oldValue = (T)opt;
       return true;
@@ -760,7 +761,7 @@ class PluginCodec : public PluginCodec_Utilities
 
       if (oldValue != newValue) {
         oldValue = newValue;
-        m_optionsSame = false;
+        this->m_optionsSame = false;
       }
 
       return true;
@@ -769,7 +770,7 @@ class PluginCodec : public PluginCodec_Utilities
 
     bool SetOptionBit(int & oldValue, unsigned bit, const char * optionValue)
     {
-      return SetOptionBit((unsigned &)oldValue, bit, optionValue);
+      return this->SetOptionBit((unsigned &)oldValue, bit, optionValue);
     }
 
 
@@ -788,7 +789,7 @@ class PluginCodec : public PluginCodec_Utilities
           oldValue |= bit;
         else
           oldValue &= ~bit;
-        m_optionsSame = false;
+        this->m_optionsSame = false;
       }
 
       return true;
@@ -1007,19 +1008,19 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-        return SetOptionUnsigned(this->m_width, optionValue, 16, BaseClass::MaxWidth);
+        return this->SetOptionUnsigned(this->m_width, optionValue, 16, BaseClass::MaxWidth);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        return SetOptionUnsigned(this->m_height, optionValue, 16, BaseClass::MaxHeight);
+        return this->SetOptionUnsigned(this->m_height, optionValue, 16, BaseClass::MaxHeight);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
-        return SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256, 8192);
+        return this->SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256, 8192);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
-        return SetOptionUnsigned(this->m_tsto, optionValue, 1, 31);
+        return this->SetOptionUnsigned(this->m_tsto, optionValue, 1, 31);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
-        return SetOptionUnsigned(this->m_keyFramePeriod, optionValue, 0);
+        return this->SetOptionUnsigned(this->m_keyFramePeriod, optionValue, 0);
 
       // Base class sets bit rate and frame time
       return BaseClass::SetOption(optionName, optionValue);
@@ -1067,7 +1068,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
 
     virtual size_t GetOutputDataSize()
     {
-      return m_outputSize;
+      return this->m_outputSize;
     }
 
 
@@ -1104,8 +1105,8 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
       {
         for (unsigned y = 0; y < m_height; ++y) {
           memcpy(m_destination, m_source, m_width);
-          m_source += m_raster;
-          m_destination += m_width;
+          this->m_source += m_raster;
+          this->m_destination += m_width;
         }
       }
     };
