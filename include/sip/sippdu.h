@@ -1036,7 +1036,7 @@ class SIPTransaction : public SIPTransactionBase
     void OnRetry();
     void OnTimeout();
 
-    enum States {
+    P_DECLARE_TRACED_ENUM(States,
       NotStarted,
       Trying,
       Proceeding,
@@ -1047,9 +1047,8 @@ class SIPTransaction : public SIPTransactionBase
       Terminated_RetriesExceeded,
       Terminated_TransportError,
       Terminated_Cancelled,
-      Terminated_Aborted,
-      NumStates
-    };
+      Terminated_Aborted
+    );
     virtual void SetTerminated(States newState);
 
     SIPEndPoint           & m_endpoint;
@@ -1165,7 +1164,7 @@ class SIPRegister : public SIPTransaction
 {
     PCLASSINFO(SIPRegister, SIPTransaction);
   public:
-    enum CompatibilityModes {
+    P_DECLARE_TRACED_ENUM(CompatibilityModes,
       e_FullyCompliant,                 /**< Registrar is fully compliant, we will register
                                              all listeners of all types (e.g. sip, sips etc)
                                              in the Contact field. */
@@ -1184,7 +1183,7 @@ class SIPRegister : public SIPTransaction
       e_RFC5626                         /**< Connect using RFC 5626 rules. Only a single
                                              contact is included and this will contain the
                                              m_instance field as it's GUID. */
-    };
+    );
 
     /// Registrar parameters
     struct Params : public SIPParameters {
