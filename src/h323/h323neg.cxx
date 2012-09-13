@@ -560,7 +560,7 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
     }
   }
 
-  if (!channel->Open())
+  if (!channel->PreOpen())
     return PFalse;
 
   if (!channel->SetInitialBandwidth()) {
