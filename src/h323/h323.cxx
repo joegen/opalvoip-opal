@@ -4970,22 +4970,20 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
 PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  if (channel.GetDirection() == H323Channel::IsReceiver) {
-    if (t38ModeChangeCapabilities.IsEmpty()) {
+  if (!t38ModeChangeCapabilities.IsEmpty()) {
+    H323Channel * other = logicalChannels->FindChannelBySession(channel.GetSessionID(),
+                                                   !channel.GetNumber().IsFromRemote());
+    if (other != NULL && other->IsOpen()) {
+      t38ModeChangeCapabilities.Replace(channel.GetCapability().GetMediaFormat().GetName(), PString::Empty());
+      if (t38ModeChangeCapabilities.FindSpan(",") == P_MAX_INDEX) {
+        PTRACE(4, "H323\tCompleted switch of T.38");
 #if OPAL_T38_CAPABILITY
-      PTRACE(4, "H323\tResetting switching T.38 flag");
-      ownerCall.ResetSwitchingT38();
+        OnSwitchedT38(channel.GetSessionID() == H323Capability::DefaultDataSessionID, true);
 #endif
+      }
     }
     else {
-      OpalMediaFormat format = channel.GetCapability().GetMediaFormat();
-      t38ModeChangeCapabilities.Replace(format.GetName(), "");
-#if OPAL_T38_CAPABILITY
-      if (t38ModeChangeCapabilities.IsEmpty()) {
-        PTRACE(4, "H323\tSetting switching T.38 flag");
-        OnSwitchedT38(format == OpalT38, true);
-      }
-#endif
+      PTRACE(4, "H323\tWaiting for other channel in switch of T.38");
     }
   }
 
