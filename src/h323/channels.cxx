@@ -305,6 +305,12 @@ PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
 }
 
 
+bool H323Channel::PreOpen()
+{
+  return Open();
+}
+
+
 PBoolean H323Channel::Open()
 {
   if (opened)
@@ -356,35 +362,43 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 }
 
 
-PBoolean H323UnidirectionalChannel::Open()
+bool H323UnidirectionalChannel::PreOpen()
 {
-  if (opened)
+  if (m_mediaStream != NULL)
     return true;
 
-  if (m_mediaStream == NULL) {
-    m_mediaStream = connection.CreateMediaStream(m_mediaFormat, GetSessionID(), receiver);
+  m_mediaStream = connection.CreateMediaStream(m_mediaFormat, GetSessionID(), receiver);
 
-    OpalCall & call = connection.GetCall();
-    OpalMediaType mediaType = m_mediaFormat.GetMediaType();
+  OpalCall & call = connection.GetCall();
+  OpalMediaType mediaType = m_mediaFormat.GetMediaType();
 
-    bool ok;
-    if (GetDirection() == IsReceiver)
-      ok = call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), m_mediaFormat);
-    else {
-      PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
-      ok = otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), m_mediaFormat);
+  if (GetDirection() == IsReceiver) {
+    if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), m_mediaFormat)) {
+      PTRACE(1, "LogChan\tReceive OpenSourceMediaStreams failed");
+      return false;
     }
-
-    if (!ok) {
-      PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
-             << " open failed (OpalMediaStream::Open fail)");
+  }
+  else {
+    PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
+    if (otherConnection == NULL) {
+      PTRACE(1, "LogChan\tTransmit failed, no other connection");
+      return false;
+    }
+    if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), m_mediaFormat)) {
+      PTRACE(1, "LogChan\tTransmit OpenSourceMediaStreams failed");
       return false;
     }
   }
 
   m_mediaFormat = m_mediaStream->GetMediaFormat();
   capability->UpdateMediaFormat(m_mediaFormat);
-  return H323Channel::Open();
+  return true;
+}
+
+
+PBoolean H323UnidirectionalChannel::Open()
+{
+  return opened || (PreOpen() && H323Channel::Open());
 }
 
 
@@ -412,6 +426,7 @@ OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 void H323UnidirectionalChannel::SetMediaStream(OpalMediaStreamPtr mediaStream)
 {
   m_mediaStream = mediaStream;
+  m_mediaFormat = m_mediaStream->GetMediaFormat();
 }
 
 
