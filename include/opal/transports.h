@@ -783,6 +783,13 @@ class OpalTransport : public PIndirectChannel
       */
     virtual PBoolean IsReliable() const = 0;
 
+    /**Get indication of the remote being authenticated.
+       Note, non TLS always return true.
+      */
+    virtual bool IsAuthenticated(
+      const PString & /*domain*/
+    ) const { return true; }
+
     /** Get the interface this transport is bound to.
         This is generally only relevant for datagram based transports such as
         UDP and TCP is always bound to a local interface once open.
@@ -964,7 +971,7 @@ class OpalTransport : public PIndirectChannel
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
 
     OpalEndPoint & endpoint;
-    PThread      * thread;      ///<  Thread handling the transport
+    PThread      * m_thread;      ///<  Thread handling the transport
     PMutex         m_writeMutex;
     PTimer         m_keepAliveTimer;
     PBYTEArray     m_keepAliveData;
@@ -1415,6 +1422,7 @@ class OpalListenerTLS : public OpalListenerTCP
       */
     ~OpalListenerTLS();
 
+    virtual PBoolean Open(const PNotifier & acceptHandler, ThreadMode mode = SpawnNewThreadMode);
     virtual OpalTransport * Accept(const PTimeInterval & timeout);
     virtual const PCaselessString & GetProtoPrefix() const;
     virtual OpalTransport * CreateTransport(
@@ -1423,9 +1431,7 @@ class OpalListenerTLS : public OpalListenerTCP
     ) const;
 
   protected:
-    void Construct();
-
-    PSSLContext * sslContext;
+    PSSLContext * m_sslContext;
 };
 
 
@@ -1443,10 +1449,12 @@ class OpalTransportTLS : public OpalTransportTCP
       /// Destroy the TCPS channel
       ~OpalTransportTLS();
 
-      PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
-      PBoolean Connect();
-      PBoolean OnOpen();
+      // Overrides
+      virtual PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
+      virtual PBoolean Connect();
+      virtual PBoolean OnOpen();
       virtual const PCaselessString & GetProtoPrefix() const;
+      virtual bool IsAuthenticated(const PString & domain) const;
 };
 
 typedef OpalInternalIPTransportTemplate<OpalListenerTLS, OpalTransportTLS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTLSTransport;
