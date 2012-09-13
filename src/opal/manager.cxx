@@ -1651,19 +1651,36 @@ void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
 
 #if OPAL_PTLIB_SSL
 bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
-                                    PSSLCertificate & ca,
+                                    PString & caPath,
+                                    PList<PSSLCertificate> & caList,
                                     PSSLCertificate & cert,
-                                    PSSLPrivateKey & key) const
+                                    PSSLPrivateKey & key,
+                                    bool create) const
 {
-  if (!m_caFile.IsEmpty()) {
-    if (!ca.Load(m_caFile)) {
-      PTRACE(2, "OPALSSL\tCould not load CA file \"" << m_caFile << '"');
-      return false;
+  if (!m_caFiles.IsEmpty()) {
+    if (PDirectory::Exists(m_caFiles))
+      caPath = m_caFiles;
+    else {
+      PStringArray files = m_caFiles.Tokenise(';', false);
+      for (PINDEX i = 0; i < files.GetSize(); ++i) {
+        PSSLCertificate * ca = new PSSLCertificate(files[i]);
+        if (!ca->IsValid()) {
+          PTRACE(2, "OPALSSL\tCould not load CA file \"" << files[i] << '"');
+          delete ca;
+          return false;
+        }
+        caList.Append(ca);
+      }
     }
   }
 
-  if (m_autoCreateCertificate &&
-        (!PFile::Exists(m_certificateFile) || !PFile::Exists(m_privateKeyFile))) {
+  if (!PFile::Exists(m_certificateFile) || !PFile::Exists(m_privateKeyFile)) {
+    if (!create)
+      return true;
+
+    if (!m_autoCreateCertificate)
+      return false;
+
     PStringStream dn;
     dn << "/O=" << PProcess::Current().GetManufacturer()
        << "/CN=" << PIPSocket::GetHostName();

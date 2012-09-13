@@ -977,7 +977,7 @@ bool MyManager::Initialise()
     SetMaxRtpPayloadSize(value1);
 #if OPAL_PTLIB_SSL
   if (config->Read(CertificateAuthorityKey, &str))
-    SetSSLCertificateAuthorityFile(str);
+    SetSSLCertificateAuthorityFiles(str);
   if (config->Read(LocalCertificateKey, &str))
     SetSSLCertificateFile(str);
   if (config->Read(PrivateKeyKey, &str))
@@ -4130,7 +4130,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPTOS, m_manager.GetMediaTypeOfService());
   INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
 #if OPAL_PTLIB_SSL
-  INIT_FIELD(CertificateAuthority, m_manager.GetSSLCertificateAuthorityFile());
+  INIT_FIELD(CertificateAuthority, m_manager.GetSSLCertificateAuthorityFiles());
   INIT_FIELD(LocalCertificate, m_manager.GetSSLCertificateFile());
   INIT_FIELD(PrivateKey, m_manager.GetSSLPrivateKeyFile());
 #endif
@@ -4699,7 +4699,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
   SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
-  SAVE_FIELD(CertificateAuthority, m_manager.SetSSLCertificateAuthorityFile);
+  SAVE_FIELD(CertificateAuthority, m_manager.SetSSLCertificateAuthorityFiles);
   SAVE_FIELD(LocalCertificate, m_manager.SetSSLCertificateFile);
   SAVE_FIELD(PrivateKey, m_manager.SetSSLPrivateKeyFile);
 #endif
