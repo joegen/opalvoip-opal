@@ -1339,24 +1339,32 @@ class OpalManager : public PObject
 #if OPAL_PTLIB_SSL
     /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
         This function loads the certificates and keys for use by a OpalListener
-        or OpalTrransport on the \p endpoint parameter. It allows for embedded
+        or OpalTransport on the \p endpoint parameter. It allows for embedded
         certificates and keys, while the default behaviour loads the
         certificates and keys from files pointed to by member variables.
+
+        Note that a listener must have a cert/key and may have CA directory/list
+        for bi-directional authentication. A transport should have the CA
+        directory/list set, and if missing then no server authentication is
+        performed. Similarly if a transport may have an optional cert/key for
+        bi-directional authentication.
       */
     virtual bool GetSSLCredentials(
-      const OpalEndPoint & ep,  ///< Endpoint transport is based on.
-      PSSLCertificate & ca,     ///< Certificate Authority (may be NULL if self signed)
-      PSSLCertificate & cert,   ///< Certificate for this endpoint
-      PSSLPrivateKey & key      ///< Private key to enable certificate for this endpoint
+      const OpalEndPoint & ep,          ///< Endpoint transport is based on.
+      PString & caPath,                 ///< Certificate Authority directory
+      PList<PSSLCertificate> & caList,  ///< Certificate Authority list
+      PSSLCertificate & cert,           ///< Certificate for this endpoint
+      PSSLPrivateKey & key,             ///< Private key to enable certificate for this endpoint
+      bool create                       ///< Create self signed cert/key if required
     ) const;
 
-    /**Get the default CA filename
+    /**Get the default CA filenames (';' separated) or dirctory for CA file.
       */
-    const PString & GetSSLCertificateAuthorityFile() const { return m_caFile; }
+    const PString & GetSSLCertificateAuthorityFiles() const { return m_caFiles; }
 
     /**Set the default CA filename
       */
-    void SetSSLCertificateAuthorityFile(const PString & file) { m_caFile = file; }
+    void SetSSLCertificateAuthorityFiles(const PString & files) { m_caFiles = files; }
 
     /**Get the default local certificate filename
       */
@@ -1955,7 +1963,7 @@ class OpalManager : public PObject
     };
 
 #if OPAL_PTLIB_SSL
-    PFilePath m_caFile;
+    PString   m_caFiles;
     PFilePath m_certificateFile;
     PFilePath m_privateKeyFile;
     bool      m_autoCreateCertificate;

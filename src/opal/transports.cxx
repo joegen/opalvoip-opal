@@ -113,10 +113,10 @@ PString OpalTransportAddress::GetHostName(bool includeService) const
 PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address, bool wildcard) const
 {
   if (*this == address)
-    return PTrue;
+    return true;
 
   if (IsEmpty() || address.IsEmpty())
-    return PFalse;
+    return false;
 
   PIPSocket::Address ip1, ip2;
   WORD port1 = 65535, port2 = 65535;
@@ -130,7 +130,7 @@ PBoolean OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address
 PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address) const
 {
   if (IsEmpty() || address.IsEmpty())
-    return PTrue;
+    return true;
 
   PCaselessString myPrefix = GetProtoPrefix();
   if (myPrefix == UdpPrefix() ||
@@ -165,7 +165,7 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
 PBoolean OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
 {
   if (m_transport == NULL)
-    return PFalse;
+    return false;
 
   WORD dummy = 65535;
   return m_transport->GetIpAndPort(*this, ip, dummy);
@@ -175,7 +175,7 @@ PBoolean OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
 PBoolean OpalTransportAddress::GetIpAndPort(PIPSocket::Address & ip, WORD & port) const
 {
   if (m_transport == NULL)
-    return PFalse;
+    return false;
 
   return m_transport->GetIpAndPort(*this, ip, port);
 }
@@ -184,7 +184,7 @@ PBoolean OpalTransportAddress::GetIpAndPort(PIPSocket::Address & ip, WORD & port
 PBoolean OpalTransportAddress::GetIpAndPort(PIPSocketAddressAndPort & ipPort) const
 {
   if (m_transport == NULL)
-    return PFalse;
+    return false;
 
   PIPSocket::Address ip;
   WORD port = 0;
@@ -298,7 +298,7 @@ PBoolean OpalInternalTransport::GetIpAndPort(const OpalTransportAddress &,
                                          PIPSocket::Address &,
                                          WORD &) const
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -429,11 +429,11 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
 {
   PString host, device, service;
   if (!SplitAddress(address, host, device, service))
-    return PFalse;
+    return false;
 
   if (host.IsEmpty() && device.IsEmpty()) {
     PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
-    return PFalse;
+    return false;
   }
 
   if (service == "*")
@@ -445,7 +445,7 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
 
     if ((port = PIPSocket::GetPortByService(proto, service)) == 0) {
       PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << address << '"');
-      return PFalse;
+      return false;
     }
   }
 
@@ -475,7 +475,7 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
     PTRACE(1, "Opal\tCould not find device \"" << device << '"');
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -497,7 +497,7 @@ PBoolean OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddres
       else
         ip = PIPSocket::GetDefaultIpAny();
       port = 0;
-      return PTrue;
+      return true;
 
     case OpalTransportAddress::HostOnly :
       port = 0;
@@ -821,7 +821,7 @@ PBoolean OpalListenerUDP::Open(const PNotifier & theAcceptHandler, ThreadMode /*
   }
 
   PTRACE(1, "Listen\tCould not start any UDP listeners");
-  return PFalse;
+  return false;
 }
 
 
@@ -933,15 +933,15 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
 
 OpalTransport::OpalTransport(OpalEndPoint & end)
   : endpoint(end)
+  , m_thread(NULL)
 {
-  thread = NULL;
   m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
 }
 
 
 OpalTransport::~OpalTransport()
 {
-  PAssert(thread == NULL, PLogicError);
+  PAssert(m_thread == NULL, PLogicError);
 }
 
 
@@ -974,7 +974,7 @@ PBoolean OpalTransport::Close()
   if (IsOpen())
     return GetBaseWriteChannel()->Close();
 
-  return PTrue;
+  return true;
 }
 
 
@@ -985,8 +985,8 @@ void OpalTransport::CloseWait()
   Close();
 
   channelPointerMutex.StartWrite();
-  PThread * exitingThread = thread;
-  thread = NULL;
+  PThread * exitingThread = m_thread;
+  m_thread = NULL;
   channelPointerMutex.EndWrite();
 
   m_keepAliveTimer.Stop();
@@ -1005,7 +1005,7 @@ void OpalTransport::CloseWait()
 PBoolean OpalTransport::IsCompatibleTransport(const OpalTransportAddress &) const
 {
   PAssertAlways(PUnimplementedFunction);
-  return PFalse;
+  return false;
 }
 
 
@@ -1034,22 +1034,23 @@ PBoolean OpalTransport::WriteConnect(WriteConnectCallback function, void * userD
 
 void OpalTransport::AttachThread(PThread * thrd)
 {
-  if (thread != NULL) {
-    PAssert(thread->WaitForTermination(10000), "Transport not terminated when reattaching thread");
-    delete thread;
+  PTRACE_CONTEXT_ID_TO(thrd);
+
+  if (m_thread != NULL) {
+    PAssert(m_thread->WaitForTermination(10000), "Transport not terminated when reattaching thread");
+    delete m_thread;
   }
 
-  thread = thrd;
-  PTRACE_CONTEXT_ID_TO(thread);
+  m_thread = thrd;
 }
 
 
 PBoolean OpalTransport::IsRunning() const
 {
-  if (thread == NULL)
-    return PFalse;
+  if (m_thread == NULL)
+    return false;
 
-  return !thread->IsTerminated();
+  return !m_thread->IsTerminated();
 }
 
 
@@ -1111,7 +1112,7 @@ OpalTransportAddress OpalTransportIP::GetLocalAddress(bool /*allowNAT*/) const
 PBoolean OpalTransportIP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
   if (!IsCompatibleTransport(newLocalAddress))
-    return PFalse;
+    return false;
 
   if (!IsOpen())
     return newLocalAddress.GetIpAndPort(localAddress, localPort);
@@ -1119,7 +1120,7 @@ PBoolean OpalTransportIP::SetLocalAddress(const OpalTransportAddress & newLocalA
   PIPSocket::Address address;
   WORD port = 0;
   if (!newLocalAddress.GetIpAndPort(address, port))
-    return PFalse;
+    return false;
 
   return localAddress == address && localPort == port;
 }
@@ -1137,7 +1138,7 @@ PBoolean OpalTransportIP::SetRemoteAddress(const OpalTransportAddress & address)
     return address.GetIpAndPort(remoteAddress, remotePort);
 
   PTRACE(2, "OpalIP\tAttempt to set incompatible transport " << address);
-  return PFalse;
+  return false;
 }
 
 
@@ -1169,7 +1170,7 @@ OpalTransportTCP::~OpalTransportTCP()
 
 PBoolean OpalTransportTCP::IsReliable() const
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -1183,7 +1184,7 @@ PBoolean OpalTransportTCP::IsCompatibleTransport(const OpalTransportAddress & ad
 PBoolean OpalTransportTCP::Connect()
 {
   if (IsOpen())
-    return PTrue;
+    return true;
 
   PTCPSocket * socket = new PTCPSocket(remotePort);
   Open(socket);
@@ -1237,7 +1238,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
       // Do case for read error
 
     case -1 :
-      return PFalse;
+      return false;
   }
 
   // Save timeout
@@ -1253,7 +1254,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
     PINDEX packetLength = ((header[1] << 8)|header[2]);
     if (packetLength < 4) {
       PTRACE(2, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
-      ok = PFalse;
+      ok = false;
     } else {
       packetLength -= 4;
       ok = ReadBlock(pdu.GetPointer(packetLength), packetLength);
@@ -1293,14 +1294,14 @@ PBoolean OpalTransportTCP::OnOpen()
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
     PTRACE(1, "OpalTCP\tGetPeerAddress() failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 
   // get local address of incoming socket to ensure that multi-homed machines
   // use a NIC address that is guaranteed to be addressable to destination
   if (!socket->GetLocalAddress(localAddress, localPort)) {
     PTRACE(1, "OpalTCP\tGetLocalAddress() failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 
 #ifndef __BEOS__
@@ -1312,7 +1313,7 @@ PBoolean OpalTransportTCP::OnOpen()
   const linger ling = { 1, 3 };
   if (!socket->SetOption(SO_LINGER, &ling, sizeof(ling))) {
     PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 #endif
 
@@ -1320,7 +1321,7 @@ PBoolean OpalTransportTCP::OnOpen()
          << remoteAddress.AsString(true) << ':' << remotePort
          << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1347,7 +1348,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                                           P_NAT_PARAM(manager.GetNatMethod()));
   if (preOpen)
     sockets->Open(localPort);
-  Open(new PMonitoredSocketChannel(sockets, PFalse));
+  Open(new PMonitoredSocketChannel(sockets, false));
 }
 
 
@@ -1359,7 +1360,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   , m_bufferSize(8192)
   , m_preReadOK(true)
 {
-  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, PTrue);
+  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, true);
   socket->SetInterface(iface);
   socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
   Open(socket);
@@ -1377,7 +1378,7 @@ OpalTransportUDP::~OpalTransportUDP()
 
 PBoolean OpalTransportUDP::IsReliable() const
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1391,7 +1392,7 @@ PBoolean OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & ad
 PBoolean OpalTransportUDP::Connect()
 {	
   if (remotePort == 0)
-    return PFalse;
+    return false;
 
   if (remoteAddress.IsAny() || remoteAddress.IsBroadcast()) {
 	  remoteAddress = PIPSocket::Address::GetBroadcast(remoteAddress.GetVersion());
@@ -1402,11 +1403,11 @@ PBoolean OpalTransportUDP::Connect()
   }
 
   if (PAssertNULL(writeChannel) == NULL)
-    return PFalse;
+    return false;
 
   PMonitoredSocketsPtr bundle = ((PMonitoredSocketChannel *)writeChannel)->GetMonitoredSockets();
   if (bundle->IsOpen())
-    return PTrue;
+    return true;
 
   OpalManager & manager = endpoint.GetManager();
 
@@ -1417,11 +1418,11 @@ PBoolean OpalTransportUDP::Connect()
     if (localPort == firstPort) {
       PTRACE(1, "OpalUDP\tCould not bind to any port in range " <<
 	      manager.GetUDPPortBase() << " to " << manager.GetUDPPortMax());
-      return PFalse;
+      return false;
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1465,13 +1466,13 @@ OpalTransportAddress OpalTransportUDP::GetLocalAddress(bool allowNAT) const
 PBoolean OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
   if (OpalTransportIP::GetLocalAddress().IsEquivalent(newLocalAddress))
-    return PTrue;
+    return true;
 
   if (!IsCompatibleTransport(newLocalAddress))
-    return PFalse;
+    return false;
 
   if (!newLocalAddress.GetIpAndPort(localAddress, localPort))
-    return PFalse;
+    return false;
 
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL)
@@ -1484,13 +1485,13 @@ PBoolean OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocal
 PBoolean OpalTransportUDP::SetRemoteAddress(const OpalTransportAddress & address)
 {
   if (!OpalTransportIP::SetRemoteAddress(address))
-    return PFalse;
+    return false;
 
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL)
     socket->SetRemote(remoteAddress, remotePort);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1562,7 +1563,7 @@ PBoolean OpalTransportUDP::ReadPDU(PBYTEArray & packet)
   }
 
   packet.SetSize(GetLastReadCount());
-  return PTrue;
+  return true;
 }
 
 
@@ -1576,14 +1577,14 @@ PBoolean OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * us
 {
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)writeChannel;
   if (socket == NULL)
-    return PFalse;
+    return false;
 
   PMonitoredSocketsPtr bundle = socket->GetMonitoredSockets();
   PIPSocket::Address address;
   GetRemoteAddress().GetIpAddress(address);
-  PStringArray interfaces = bundle->GetInterfaces(PFalse, address);
+  PStringArray interfaces = bundle->GetInterfaces(false, address);
 
-  PBoolean ok = PFalse;
+  PBoolean ok = false;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address ifip(interfaces[i]);
     if (ifip.GetVersion() != remoteAddress.GetVersion())
@@ -1593,7 +1594,7 @@ PBoolean OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * us
       socket->SetInterface(interfaces[i]);
       // Make sure is compatible address
       if (function(*this, userData))
-        ok = PTrue;
+        ok = true;
     }
   }
 
@@ -1637,7 +1638,7 @@ PBoolean OpalTransportTLS::IsCompatibleTransport(const OpalTransportAddress & ad
 PBoolean OpalTransportTLS::Connect()
 {
   if (IsOpen())
-    return PTrue;
+    return true;
 
   PTCPSocket * socket = new PTCPSocket(remotePort);
 
@@ -1674,20 +1675,31 @@ PBoolean OpalTransportTLS::Connect()
 
   socket->SetReadTimeout(PMaxTimeInterval);
 
-  PSSLCertificate ca, cert;
+  PString caDir;
+  PList<PSSLCertificate> caList;
+  PSSLCertificate certificate;
   PSSLPrivateKey key;
-  if (!endpoint.GetSSLCredentials(ca, cert, key))
+  if (!endpoint.GetSSLCredentials(caDir, caList, certificate, key, false))
     return SetErrorValues(AccessDenied, EINVAL);
 
   PSSLChannel * sslChannel = new PSSLChannel();
   sslChannel->SetReadTimeout(5000);
 
-  sslChannel->AddCA(ca); // Don't care about error return on this one
+  // Optional authentication of remote certification
+  if (!caList.IsEmpty()) {
+    sslChannel->AddCA(caList);
+    sslChannel->SetVerifyMode(PSSLChannel::VerifyPeerMandatory);
+  }
 
-  if (!sslChannel->UseCertificate(cert)) {
+  if (!caDir.IsEmpty()) {
+    sslChannel->GetContext()->SetCAPath(caDir);
+    sslChannel->SetVerifyMode(PSSLChannel::VerifyPeerMandatory);
+  }
+
+  if (certificate.IsValid() && !sslChannel->UseCertificate(certificate)) {
     PTRACE(1, "OpalTLS\tCould not use certificate");
   }
-  else if (!sslChannel->UsePrivateKey(key)) {
+  else if (key.IsValid() && !sslChannel->UsePrivateKey(key)) {
     PTRACE(1, "OpalTLS\tCould not use private key");
   }
   else if (!sslChannel->Connect(socket)) {
@@ -1700,25 +1712,26 @@ PBoolean OpalTransportTLS::Connect()
   return SetErrorValues(AccessDenied, EACCES);
 }
 
+
 PBoolean OpalTransportTLS::OnOpen()
 {
   PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(GetReadChannel());
   if (sslChannel == NULL)
-    return PFalse;
+    return false;
 
   PIPSocket * socket = dynamic_cast<PIPSocket *>(sslChannel->GetReadChannel());
 
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
     PTRACE(1, "OpalTLS\tGetPeerAddress() failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 
   // get local address of incoming socket to ensure that multi-homed machines
   // use a NIC address that is guaranteed to be addressable to destination
   if (!socket->GetLocalAddress(localAddress, localPort)) {
     PTRACE(1, "OpalTLS\tGetLocalAddress() failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 
 #ifndef __BEOS__
@@ -1730,7 +1743,7 @@ PBoolean OpalTransportTLS::OnOpen()
   const linger ling = { 1, 3 };
   if (!socket->SetOption(SO_LINGER, &ling, sizeof(ling))) {
     PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
-    return PFalse;
+    return false;
   }
 #endif
 
@@ -1738,7 +1751,7 @@ PBoolean OpalTransportTLS::OnOpen()
          << remoteAddress.AsString(true) << ':' << remotePort
          << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1747,6 +1760,36 @@ const PCaselessString & OpalTransportTLS::GetProtoPrefix() const
   return OpalTransportAddress::TlsPrefix();
 }
 
+
+bool OpalTransportTLS::IsAuthenticated(const PString & domain) const
+{
+  PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(GetReadChannel());
+  if (sslChannel == NULL)
+    return false;
+
+  PSSLCertificate cert;
+  PString error;
+  if (!sslChannel->GetPeerCertificate(cert, &error)) {
+    PTRACE(2, "OpalTLS\tCertificate validation failed: " << error);
+    return false;
+  }
+
+  PSSLCertificate::X509_Name subject;
+  if (!cert.GetSubjectName(subject)) {
+    PTRACE(2, "OpalTLS\tCould not get subject name from certificate!");
+    return false;
+  }
+
+  PString alt = cert.GetSubjectAltName();
+  PTRACE(3, "OpalTLS\tPeer certificate: alt=\"" << alt << "\", subject=\"" << subject << '"');
+
+  if (alt.IsEmpty())
+    return subject.GetCommonName() == domain;
+
+  return alt == domain;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
@@ -1754,8 +1797,8 @@ OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
                                  WORD port,
                                  PBoolean exclusive)
   : OpalListenerTCP(ep, binding, port, exclusive)
+  , m_sslContext(NULL)
 {
-  Construct();
 }
 
 
@@ -1763,33 +1806,46 @@ OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
                                     const OpalTransportAddress & binding,
                                     OpalTransportAddress::BindOptions option)
   : OpalListenerTCP(ep, binding, option)
+  , m_sslContext(NULL)
 {
-  Construct();
 }
 
 
 OpalListenerTLS::~OpalListenerTLS()
 {
-  delete sslContext;
+  delete m_sslContext;
 }
 
 
-void OpalListenerTLS::Construct()
+PBoolean OpalListenerTLS::Open(const PNotifier & acceptHandler, ThreadMode mode)
 {
-  sslContext = new PSSLContext();
-
-  PSSLCertificate ca, cert;
+  PString caDir;
+  PList<PSSLCertificate> caList;
+  PSSLCertificate cert;
   PSSLPrivateKey key;
-  if (endpoint.GetSSLCredentials(ca, cert, key)) {
-    sslContext->AddCA(ca);
-    if (!sslContext->UseCertificate(cert)) {
-      PTRACE(1, "OpalTLS\tCould not use certificate");
-    }
-    else if (!sslContext->UsePrivateKey(key)) {
-      PTRACE(1, "OpalTLS\tCould not use private key");
-    }
-    sslContext->SetCipherList("ALL");
+  if (!endpoint.GetSSLCredentials(caDir, caList, cert, key, true))
+    return false;
+
+  m_sslContext = new PSSLContext();
+  m_sslContext->SetCipherList("ALL");
+
+  // Must have cert/key on listener side.
+  if (!m_sslContext->UseCertificate(cert)) {
+    PTRACE(1, "OpalTLS\tCould not use certificate");
+    return false;
   }
+
+  if (!m_sslContext->UsePrivateKey(key)) {
+    PTRACE(1, "OpalTLS\tCould not use private key");
+    return false;
+  }
+
+  // Authenticating remote is optional
+  if (!caDir.IsEmpty())
+    m_sslContext->SetCAPath(caDir);
+  m_sslContext->AddCA(caList);
+
+  return OpalListenerTCP::Open(acceptHandler, mode);
 }
 
 
@@ -1811,7 +1867,7 @@ OpalTransport * OpalListenerTLS::Accept(const PTimeInterval & timeout)
     return NULL;
   }
 
-  PSSLChannel * ssl = new PSSLChannel(sslContext);
+  PSSLChannel * ssl = new PSSLChannel(m_sslContext);
   if (!ssl->Accept(socket)) {
     PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
     delete ssl; // Will also delete socket
