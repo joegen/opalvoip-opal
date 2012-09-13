@@ -180,6 +180,14 @@ class H323Channel : public PObject
      */
     virtual PBoolean SetInitialBandwidth() = 0;
 
+    /**PreOpen the channel.
+       This occurs when we send an OLC, full open happens when the OLC comes
+       back.
+
+       Default behaviour calls Open().
+      */
+    virtual bool PreOpen();
+
     /**Open the channel.
        The default behaviour just calls connection.OnStartLogicalChannel() and
        if successful sets the opened member variable.
@@ -372,6 +380,14 @@ class H323UnidirectionalChannel : public H323Channel
        object created by the channel.
      */
     virtual PBoolean SetInitialBandwidth();
+
+    /**PreOpen the channel.
+       This occurs when we send an OLC, full open happens when the OLC comes
+       back.
+
+       Default behaviour create media stream.
+      */
+    virtual bool PreOpen();
 
     /**Open the channel.
       */
