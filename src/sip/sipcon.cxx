@@ -436,7 +436,7 @@ void SIPConnection::OnReleased()
     /* If we never even received a "100 Trying" from a remote, then just abort
        the transaction, do not wait, it is probably on an interface that the
        remote is not physically on, otherwise we have to CANCEL and wait. */
-    if (invitation->IsTrying())
+    if (invitation->IsInProgress())
       invitation->Cancel();
     else
       invitation->Abort();
