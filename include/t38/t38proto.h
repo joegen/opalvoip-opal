@@ -308,6 +308,9 @@ class OpalFaxSession : public OpalMediaSession
     PIPSocket        * m_dataSocket;
     bool               m_shuttingDown;
 
+    bool               m_rawUDPTL; // Put UDPTL directly in RTP payload
+    PINDEX             m_datagramSize;
+
     int                m_consecutiveBadPackets;
     bool               m_oneGoodPacket;
     T38_UDPTLPacket  * m_receivedPacket;
@@ -336,8 +339,9 @@ class OpalFaxMediaStream : public OpalMediaStream
                        bool isSource,
                        OpalFaxSession & session);
 
-    PBoolean ReadPacket(RTP_DataFrame & packet);
-    PBoolean WritePacket(RTP_DataFrame & packet);
+    virtual PBoolean Open();
+    virtual PBoolean ReadPacket(RTP_DataFrame & packet);
+    virtual PBoolean WritePacket(RTP_DataFrame & packet);
     virtual PBoolean IsSynchronous() const;
 
   protected:
