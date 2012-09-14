@@ -211,12 +211,25 @@ bool OpalFaxSession::Open(const PString & localInterface,
   if (IsOpen())
     return true;
 
-  if (!isMediaAddress)
+  if (!isMediaAddress) {
+    PTRACE(2, "UDPTL\tDoes not have control transport.");
     return false;
+  }
 
   // T.38 over TCP is half baked. One day someone might want it enough for it to be finished
   m_dataSocket = new PTCPSocket();
-  return m_dataSocket->Listen(localInterface) && m_dataSocket->Connect(remoteAddress.GetHostName(true));
+  if (!m_dataSocket->Listen(localInterface)) {
+    PTRACE(2, "UDPTL\tCould listen on TCP, interface=\"" << localInterface << '"');
+    return false;
+  }
+
+  if (m_dataSocket->Connect(remoteAddress.GetHostName(true))) {
+    PTRACE(2, "UDPTL\tCould conect to " << remoteAddress);
+    return false;
+  }
+
+  PTRACE(3, "UDPTL\tOpened transport to " << remoteAddress);
+  return true;
 }
 
 
