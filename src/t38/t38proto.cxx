@@ -217,13 +217,17 @@ bool OpalFaxSession::Open(const PString & localInterface,
   }
 
   // T.38 over TCP is half baked. One day someone might want it enough for it to be finished
-  m_dataSocket = new PTCPSocket();
+  if (remoteAddress.IsEmpty() || remoteAddress.GetProto(true) == OpalTransportAddress::UdpPrefix())
+    m_dataSocket = new PUDPSocket();
+  else
+    m_dataSocket = new PTCPSocket();
+
   if (!m_dataSocket->Listen(localInterface)) {
-    PTRACE(2, "UDPTL\tCould listen on TCP, interface=\"" << localInterface << '"');
+    PTRACE(2, "UDPTL\tCould listen on interface=\"" << localInterface << '"');
     return false;
   }
 
-  if (m_dataSocket->Connect(remoteAddress.GetHostName(true))) {
+  if (!remoteAddress.IsEmpty() && !m_dataSocket->Connect(remoteAddress.GetHostName(true))) {
     PTRACE(2, "UDPTL\tCould conect to " << remoteAddress);
     return false;
   }
@@ -320,6 +324,11 @@ bool OpalFaxSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 
 void OpalFaxSession::AttachTransport(Transport & transport)
 {
+  if (transport.IsEmpty()) {
+    PTRACE(2, "UDPTL\tTried to attach empty transport list.");
+    return;
+  }
+
   m_savedTransport = transport;
   m_dataSocket = dynamic_cast<PIPSocket *>(&transport.front());
 }
@@ -330,6 +339,7 @@ OpalMediaSession::Transport OpalFaxSession::DetachTransport()
   Transport temp = m_savedTransport;
   m_savedTransport = Transport(); // Detaches reference, do not use RemoveAll()
   m_dataSocket = NULL;
+  PTRACE_IF(2, temp.IsEmpty(), "UDPTL\tDetaching transport from closed session.");
   return temp;
 }
 
