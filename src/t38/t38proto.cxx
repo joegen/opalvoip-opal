@@ -283,24 +283,31 @@ OpalTransportAddress OpalFaxSession::GetLocalAddress(bool isMediaAddress) const
 
 OpalTransportAddress OpalFaxSession::GetRemoteAddress(bool isMediaAddress) const
 {
-  OpalTransportAddress address;
+  PIPSocket * socket = NULL;
 
-  if (isMediaAddress && m_dataSocket != NULL) {
-    PIPSocket::Address ip;
-    WORD port;
+  if (isMediaAddress)
+    socket = m_dataSocket;
+  else if (m_savedTransport.GetSize() > 1)
+    socket = dynamic_cast<PIPSocket *>(&m_savedTransport.back());
 
-    PUDPSocket *udp = dynamic_cast<PUDPSocket *>(m_dataSocket);
-    if (udp != NULL) {
-      udp->GetSendAddress(ip, port);
-      address = OpalTransportAddress(ip, port, "udp");
-    }
-    else {
-      m_dataSocket->GetPeerAddress(ip, port);
-      address = OpalTransportAddress(ip, port, "tcp");
-    }
+  if (socket == NULL)
+    return OpalMediaSession::GetRemoteAddress(isMediaAddress);
+
+  PIPSocket::Address ip;
+  WORD port;
+  const char * proto;
+
+  PUDPSocket * udp = dynamic_cast<PUDPSocket *>(socket);
+  if (udp != NULL) {
+    udp->GetSendAddress(ip, port);
+    proto = "udp";
+  }
+  else {
+    socket->GetPeerAddress(ip, port);
+    proto = "tcp";
   }
 
-  return address;
+  return OpalTransportAddress(ip, port, proto);
 }
 
 
