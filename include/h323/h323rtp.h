@@ -42,6 +42,7 @@
 
 #if OPAL_H323
 
+#include <h323/channels.h>
 #include <rtp/rtp_session.h>
 
 
@@ -60,119 +61,75 @@ class H245_TransportCapability;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class is for encpsulating the PDU handling of a session.
+/**This class is for encpsulating the IETF Real Time Protocol interface.
  */
-class H323SessionPDUHandler
+class H323_RTPChannel : public H323_RealTimeChannel
 {
-  public:
-    virtual ~H323SessionPDUHandler() { }
-
-  /**@name Operations */
-  //@{
-    /**Get the session ID
-     */
-    virtual unsigned GetSessionID() const = 0;
-
-    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
-     */
-    virtual PBoolean OnSendingPDU(
-      const H323_RTPChannel & channel,            ///<  Channel using this session.
-      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
-    ) const = 0;
-
-    /**Sending alternate RTP ports if behind same NAT
-      */
-    virtual PBoolean OnSendingAltPDU(
-    const H323_RTPChannel & channel,               ///< Channel using this session.
-      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
-    ) const = 0;
-
-    /**This is called when request to create a channel is received from a
-       remote machine and is about to be acknowledged.
-     */
-    virtual void OnSendingAckPDU(
-      const H323_RTPChannel & channel,              ///<  Channel using this session.
-      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const = 0;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-     */
-    virtual PBoolean OnReceivedPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
-      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
-      unsigned & errorCode                              ///<  Error on failure
-    ) = 0;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-     */
-    virtual PBoolean OnReceivedAckPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
-      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) = 0;
-
-    /**Alternate RTP port information for Same NAT
-      */
-    virtual PBoolean OnReceivedAckAltPDU(
-      H323_RTPChannel & channel,                         ///< Channel using this session.
-      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
-    ) = 0;
-
-    /**This is called when a gatekeeper wants to get status information from
-       the endpoint.
-
-       The default behaviour fills in the session ID's and SSRC parameters
-       but does not do anything with the transport fields.
-     */
-    virtual void OnSendRasInfo(
-      H225_RTPSession & info  ///<  RTP session info PDU
-    ) = 0;
-  //@}
-};
-
-
-/**This class is for the IETF Real Time Protocol interface on UDP/IP.
- */
-class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
-{
-  PCLASSINFO(H323RTPSession, OpalRTPSession);
-
+    PCLASSINFO(H323_RTPChannel, H323_RealTimeChannel);
   public:
   /**@name Construction */
   //@{
-    /**Create a new RTP session H323 info.
+    /**Create a new channel.
      */
-    H323RTPSession(const Init & init) : OpalRTPSession(init) { }
+    H323_RTPChannel(
+      H323Connection & connection,        ///<  Connection to endpoint for channel
+      const H323Capability & capability,  ///<  Capability channel is using
+      Directions direction,               ///< Direction of channel
+      OpalMediaSession & session          ///< Session for channel
+    );
+
+    /// Destroy the channel
+    ~H323_RTPChannel();
   //@}
 
-  /**@name Operations */
+  /**@name Overrides from class H323Channel */
   //@{
-    /**Get the session ID
+    /**Indicate the session number of the channel.
+       Return session for channel. This returns the session ID of the
+       H323RTPSession member variable.
      */
-    virtual unsigned GetSessionID() const { return OpalRTPSession::GetSessionID(); }
+    virtual unsigned GetSessionID() const;
 
+    /**Set the session number of the channel.
+       During OLC negotations teh master may change the session number being
+       used for the logical channel.
+
+       Returns false if the session could not be renumbered.
+      */
+    virtual bool SetSessionID(
+      unsigned sessionID   ///< New session ID
+    );
+
+    /**Get the media transport address for the connection.
+       This is primarily used to determine if media bypass is possible for the
+       call between two connections.
+
+       The default behaviour returns false.
+     */
+    virtual PBoolean GetMediaTransportAddress(
+      OpalTransportAddress & data,        ///<  Data channel address
+      OpalTransportAddress & control      ///<  Control channel address
+    ) const;
+  //@}
+
+  /**@name Overrides from class H323_RealTimeChannel */
+  //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
     virtual PBoolean OnSendingPDU(
-      const H323_RTPChannel & channel,            ///<  Channel using this session.
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
-    /**Sending alternate RTP ports if behind same NAT
+    /**Alternate RTP port information for Same NAT
       */
     virtual PBoolean OnSendingAltPDU(
-      const H323_RTPChannel & channel,               ///< Channel using this session.
       H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
      */
-    virtual void OnSendingAckPDU(
-      const H323_RTPChannel & channel,              ///<  Channel using this session.
+    virtual void OnSendOpenAck(
       H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) const;
 
@@ -183,7 +140,6 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual PBoolean OnReceivedPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
     );
@@ -195,18 +151,18 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
        The default behaviour sets the remote ports to send UDP packets to.
      */
     virtual PBoolean OnReceivedAckPDU(
-      H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
 
     /**Alternate RTP port information for Same NAT
       */
     virtual PBoolean OnReceivedAckAltPDU(
-      H323_RTPChannel & channel,                         ///< Channel using this session.
       const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     );
+  //@}
 
-
+  /**@name Operations */
+  //@{
     /**This is called when a gatekeeper wants to get status information from
        the endpoint.
 
@@ -238,11 +194,14 @@ class H323RTPSession : public OpalRTPSession, public H323SessionPDUHandler
 #endif
   
   protected:
-    virtual PBoolean ExtractTransport(
+    virtual bool ExtractTransport(
       const H245_TransportAddress & pdu,
-      PBoolean isDataPort,
+      bool isDataPort,
       unsigned & errorCode
     );
+
+  protected:
+    OpalMediaSession & m_session;
 };
 
 
