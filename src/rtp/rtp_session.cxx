@@ -326,6 +326,7 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
     m_controlSocket = NULL;
   }
 
+  PTRACE_IF(2, temp.IsEmpty(), "RTP\tDetaching transport from closed session.");
   return temp;
 }
 
