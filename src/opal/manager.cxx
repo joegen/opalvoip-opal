@@ -254,6 +254,7 @@ OpalManager::OpalManager()
   , disableDetectInBandDTMF(false)
   , noMediaTimeout(0, 0, 5)     // Minutes
 #if OPAL_PTLIB_SSL
+  , m_caFiles(".")
   , m_certificateFile("opal_certificate.pem")
   , m_privateKeyFile("opal_private_key.pem")
   , m_autoCreateCertificate(true)
