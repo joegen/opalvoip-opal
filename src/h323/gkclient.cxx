@@ -1577,18 +1577,22 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_originator);
   info.m_originator = !connection.HadAnsweredCall();
 
-  H323RTPSession * session = dynamic_cast<H323RTPSession *>(connection.GetMediaSession(H323Capability::DefaultAudioSessionID));
-  if (session != NULL) {
+  H323_RTPChannel * channel = dynamic_cast<H323_RTPChannel *>(connection.FindChannel(H323Capability::DefaultAudioSessionID, false));
+  if (channel == NULL)
+    channel = dynamic_cast<H323_RTPChannel *>(connection.FindChannel(H323Capability::DefaultAudioSessionID, true));
+  if (channel != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_audio);
     info.m_audio.SetSize(1);
-    session->OnSendRasInfo(info.m_audio[0]);
+    channel->OnSendRasInfo(info.m_audio[0]);
   }
 
-  session = dynamic_cast<H323RTPSession *>(connection.GetMediaSession(H323Capability::DefaultVideoSessionID));
-  if (session != NULL) {
+  channel = dynamic_cast<H323_RTPChannel *>(connection.FindChannel(H323Capability::DefaultVideoSessionID, false));
+  if (channel == NULL)
+    channel = dynamic_cast<H323_RTPChannel *>(connection.FindChannel(H323Capability::DefaultVideoSessionID, true));
+  if (channel != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_video);
     info.m_video.SetSize(1);
-    session->OnSendRasInfo(info.m_video[0]);
+    channel->OnSendRasInfo(info.m_video[0]);
   }
 
   H323TransportAddress address = connection.GetControlChannel().GetLocalAddress();

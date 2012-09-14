@@ -60,7 +60,6 @@ class H245_MiscellaneousIndication_type;
 class H323EndPoint;
 class H323Connection;
 class H323Capability;
-class H323SessionPDUHandler;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -568,114 +567,6 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/**This class is for encpsulating the IETF Real Time Protocol interface.
- */
-class H323_RTPChannel : public H323_RealTimeChannel
-{
-  PCLASSINFO(H323_RTPChannel, H323_RealTimeChannel);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new channel.
-     */
-    H323_RTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///< Direction of channel
-      H323SessionPDUHandler & session     ///< Session for channel
-    );
-
-    /// Destroy the channel
-    ~H323_RTPChannel();
-  //@}
-
-  /**@name Overrides from class H323Channel */
-  //@{
-    /**Indicate the session number of the channel.
-       Return session for channel. This returns the session ID of the
-       H323RTPSession member variable.
-     */
-    virtual unsigned GetSessionID() const;
-
-    /**Set the session number of the channel.
-       During OLC negotations teh master may change the session number being
-       used for the logical channel.
-
-       Returns false if the session could not be renumbered.
-      */
-    virtual bool SetSessionID(
-      unsigned sessionID   ///< New session ID
-    );
-
-    /**Get the media transport address for the connection.
-       This is primarily used to determine if media bypass is possible for the
-       call between two connections.
-
-       The default behaviour returns false.
-     */
-    virtual PBoolean GetMediaTransportAddress(
-      OpalTransportAddress & data,        ///<  Data channel address
-      OpalTransportAddress & control      ///<  Control channel address
-    ) const;
-  //@}
-
-  /**@name Overrides from class H323_RealTimeChannel */
-  //@{
-    /**Fill out the OpenLogicalChannel PDU for the particular channel type.
-     */
-    virtual PBoolean OnSendingPDU(
-      H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
-    ) const;
-
-    /**Alternate RTP port information for Same NAT
-      */
-    virtual PBoolean OnSendingAltPDU(
-      H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
-    ) const;
-
-    /**This is called when request to create a channel is received from a
-       remote machine and is about to be acknowledged.
-     */
-    virtual void OnSendOpenAck(
-      H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    ) const;
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-
-       The default behaviour sets the remote ports to send UDP packets to.
-     */
-    virtual PBoolean OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
-      unsigned & errorCode                              ///<  Error on failure
-    );
-
-    /**This is called after a request to create a channel occurs from the
-       local machine via the H245LogicalChannelDict::Open() function, and
-       the request has been acknowledged by the remote endpoint.
-
-       The default behaviour sets the remote ports to send UDP packets to.
-     */
-    virtual PBoolean OnReceivedAckPDU(
-      const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
-    );
-
-    /**Alternate RTP port information for Same NAT
-      */
-    virtual PBoolean OnReceivedAckAltPDU(
-      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
-    );
-  //@}
-
-  protected:
-    H323SessionPDUHandler & m_session;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 /**This class describes a data logical channel between the two endpoints.
    They may be created and deleted as required in the H245 protocol.
 
@@ -706,8 +597,6 @@ class H323DataChannel : public H323UnidirectionalChannel
   /**@name Overrides from class H323Channel */
   //@{
     /**Indicate the session number of the channel.
-       Return session for channel. This returns the session ID of the
-       H323RTPSession member variable.
      */
     virtual unsigned GetSessionID() const;
 

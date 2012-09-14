@@ -92,7 +92,8 @@ class H323SignalPDU;
 class H323ControlPDU;
 class H323EndPoint;
 class H323TransportAddress;
-class H323RTPSession;
+class H323_RTPChannel;
+typedef OpalMediaSession H323RTPSession;
 
 class H235Authenticators;
 

@@ -53,8 +53,53 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
-                                    H245_H2250LogicalChannelParameters & param) const
+H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
+                                 const H323Capability & cap,
+                                 Directions direction,
+                                 OpalMediaSession & session)
+  : H323_RealTimeChannel(conn, cap, direction)
+  , m_session(session)
+{
+  PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
+         << " created using session " << GetSessionID());
+}
+
+
+H323_RTPChannel::~H323_RTPChannel()
+{
+  // Finished with the RTP session, this will delete the session if it is no
+  // longer referenced by any logical channels.
+  connection.ReleaseMediaSession(GetSessionID());
+}
+
+
+unsigned H323_RTPChannel::GetSessionID() const
+{
+  return m_session.GetSessionID();
+}
+
+
+bool H323_RTPChannel::SetSessionID(unsigned sessionID)
+{
+  unsigned oldSessionID = GetSessionID();
+  if (sessionID == oldSessionID)
+    return true;
+
+  return connection.ChangeSessionID(oldSessionID, sessionID);
+}
+
+
+PBoolean H323_RTPChannel::GetMediaTransportAddress(OpalTransportAddress & data,
+                                                   OpalTransportAddress & control) const
+{
+  const OpalRTPSession & rtpSession = dynamic_cast<const OpalRTPSession &>(m_session);
+  data = rtpSession.GetRemoteAddress(true);
+  control = rtpSession.GetRemoteAddress(false);
+  return true;
+}
+
+
+PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
   PTRACE(3, "RTP\tOnSendingPDU");
 
@@ -62,114 +107,130 @@ PBoolean H323RTPSession::OnSendingPDU(const H323_RTPChannel & channel,
   param.m_mediaGuaranteedDelivery = false;
 
   // unicast must have mediaControlChannel
-  H323TransportAddress mediaControlAddress(GetLocalAddress(false));
+  H323TransportAddress mediaControlAddress(m_session.GetLocalAddress(false));
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
   mediaControlAddress.SetPDU(param.m_mediaControlChannel);
 
-  if (channel.GetDirection() == H323Channel::IsReceiver) {
+  if (GetDirection() == H323Channel::IsReceiver) {
     // set mediaChannel
-    H323TransportAddress mediaAddress(GetLocalAddress(true));
+    H323TransportAddress mediaAddress(m_session.GetLocalAddress(true));
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
     mediaAddress.SetPDU(param.m_mediaChannel);
   }
 
-  return true;
+  if (GetDirection() != H323Channel::IsReceiver) {
+    // Set flag for we are going to stop sending audio on silence
+    if (m_mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
+      param.m_silenceSuppression = (connection.GetEndPoint().GetManager().GetSilenceDetectParams().m_mode != OpalSilenceDetector::NoSilenceDetection);
+    }
+  }
+
+  // Set dynamic payload type, if is one
+  RTP_DataFrame::PayloadTypes rtpPayloadType = GetDynamicRTPPayloadType();
+  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
+    param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
+  }
+
+  // Set the media packetization field if have an option to describe it.
+  param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
+  if (H323SetRTPPacketization(param.m_mediaPacketization, m_mediaFormat, rtpPayloadType))
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
+
+  return H323_RealTimeChannel::OnSendingPDU(param);
 }
 
 
-PBoolean H323RTPSession::OnSendingAltPDU(const H323_RTPChannel &,
-                                         H245_ArrayOf_GenericInformation &) const
+PBoolean H323_RTPChannel::OnSendingAltPDU(H245_ArrayOf_GenericInformation & alternate) const
 {
-  return false; // NOTE what was this supposed to do again?;
+  PTRACE ( 4, "H323RTP\tOnSendingAltPDU");
+#if OPAL_H460
+  return connection.OnSendingOLCGenericInformation(GetSessionID(), alternate, false);
+#else
+  return false;
+#endif
 }
 
 
-void H323RTPSession::OnSendingAckPDU(const H323_RTPChannel & channel,
-                                   H245_H2250LogicalChannelAckParameters & param) const
+void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {
   PTRACE(3, "RTP\tOnSendingAckPDU");
 
   // set mediaControlChannel
-  H323TransportAddress mediaControlAddress(GetLocalAddress(false));
+  H323TransportAddress mediaControlAddress(m_session.GetLocalAddress(false));
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
   mediaControlAddress.SetPDU(param.m_mediaControlChannel);
 
   // set mediaChannel
-  H323TransportAddress mediaAddress(GetLocalAddress(true));
+  H323TransportAddress mediaAddress(m_session.GetLocalAddress(true));
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
   mediaAddress.SetPDU(param.m_mediaChannel);
 
   // Set dynamic payload type, if is one
-  int rtpPayloadType = channel.GetDynamicRTPPayloadType();
+  int rtpPayloadType = GetDynamicRTPPayloadType();
   if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = rtpPayloadType;
   }
+
+  H323_RealTimeChannel::OnSendOpenAck(param);
 }
 
 
-PBoolean H323RTPSession::ExtractTransport(const H245_TransportAddress & pdu,
-                                    PBoolean isDataPort,
+PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
                                     unsigned & errorCode)
-{
-  if (pdu.GetTag() != H245_TransportAddress::e_unicastAddress) {
-    PTRACE(1, "RTP_UDP\tOnly unicast supported at this time");
-    errorCode = H245_OpenLogicalChannelReject_cause::e_multicastChannelNotAllowed;
-    return false;
-  }
-
-  if (!isDataPort && GetRemoteDataPort() != 0)
-    return true; // Ignore
-
-  H323TransportAddress transAddr = pdu;
-
-  if (SetRemoteAddress(transAddr, isDataPort))
-    return true;
-
-  PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");
-  return false;
-}
-
-
-PBoolean H323RTPSession::OnReceivedPDU(H323_RTPChannel & channel,
-                                 const H245_H2250LogicalChannelParameters & param,
-                                 unsigned & errorCode)
 {
   bool ok = false;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     if (!ExtractTransport(param.m_mediaControlChannel, false, errorCode)) {
-      PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << channel);
+      PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << *this);
       return false;
     }
     ok = true;
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
-    if (ok && channel.GetDirection() == H323Channel::IsReceiver)
-      PTRACE(2, "RTP_UDP\tIgnoring media transport for " << channel);
+    if (ok && GetDirection() == H323Channel::IsReceiver)
+      PTRACE(2, "RTP_UDP\tIgnoring media transport for " << *this);
     else if (!ExtractTransport(param.m_mediaChannel, true, errorCode)) {
-      PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
+      PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << *this);
       return false;
     }
     ok = true;
   }
 
-  if (ok)
-    return true;
+  if (!ok) {
+    PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << *this);
 
-  PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
+    if (GetSessionID() != H323Capability::DefaultDataSessionID) {
+      errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
+      return false;
+    }
+  }
 
-  if (GetSessionID() == H323Capability::DefaultDataSessionID)
-    return true;
+  // Override default payload type if indicated by remote
+  RTP_DataFrame::PayloadTypes rtpPayloadType = m_mediaFormat.GetPayloadType();
+  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
+    rtpPayloadType = (RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue();
 
-  errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-  return false;
+  // Update actual media packetization if present
+  PString mediaPacketization;
+  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
+      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
+    mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
+
+  m_mediaFormat.SetPayloadType(rtpPayloadType);
+  m_mediaFormat.SetMediaPacketizations(mediaPacketization);
+  if (m_mediaStream != NULL)
+    m_mediaStream->UpdateMediaFormat(m_mediaFormat);
+
+  return H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
 }
 
 
-PBoolean H323RTPSession::OnReceivedAckPDU(H323_RTPChannel & channel,
-                                    const H245_H2250LogicalChannelAckParameters & param)
+PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
     PTRACE(1, "RTP_UDP\tNo session specified");
@@ -192,36 +253,62 @@ PBoolean H323RTPSession::OnReceivedAckPDU(H323_RTPChannel & channel,
     return false;
   }
 
-  return ExtractTransport(param.m_mediaChannel, true, errorCode);
+  return ExtractTransport(param.m_mediaChannel, true, errorCode) && H323_RealTimeChannel::OnReceivedAckPDU(param);
 }
 
 
-void H323RTPSession::OnSendRasInfo(H225_RTPSession & info)
-{
-  info.m_sessionId = GetSessionID();
-  info.m_ssrc = GetSyncSourceOut();
-  info.m_cname = GetCanonicalName();
-
-  H323TransportAddress lda(GetLocalAddress(true));
-  lda.SetPDU(info.m_rtpAddress.m_recvAddress);
-  H323TransportAddress rda(GetRemoteAddress(true));
-  rda.SetPDU(info.m_rtpAddress.m_sendAddress);
-
-  H323TransportAddress lca(GetLocalAddress(false));
-  lca.SetPDU(info.m_rtcpAddress.m_recvAddress);
-  H323TransportAddress rca(GetRemoteAddress(false));
-  rca.SetPDU(info.m_rtcpAddress.m_sendAddress);
-}
-
-
-PBoolean H323RTPSession::OnReceivedAckAltPDU(H323_RTPChannel & channel,
-                                             const H245_ArrayOf_GenericInformation & alternate)
-{
-#if OPAL_H260
-  return dynamic_cast<H323Connection*>(&m_connection)->OnReceiveOLCGenericInformation(channel.GetSessionID(), alternate);
+PBoolean H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
+{ 
+#if OPAL_H460
+  return connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
 #else
   return false;
 #endif
+}
+
+
+bool H323_RTPChannel::ExtractTransport(const H245_TransportAddress & pdu,
+                                    bool isDataPort,
+                                    unsigned & errorCode)
+{
+  if (pdu.GetTag() != H245_TransportAddress::e_unicastAddress) {
+    PTRACE(1, "RTP_UDP\tOnly unicast supported at this time");
+    errorCode = H245_OpenLogicalChannelReject_cause::e_multicastChannelNotAllowed;
+    return false;
+  }
+
+  if (!isDataPort && !m_session.GetRemoteAddress().IsEmpty())
+    return true; // Ignore
+
+  H323TransportAddress transAddr = pdu;
+
+  if (m_session.SetRemoteAddress(transAddr, isDataPort))
+    return true;
+
+  PTRACE(1, "RTP_UDP\tIllegal IP address/port in transport address.");
+  return false;
+}
+
+
+void H323_RTPChannel::OnSendRasInfo(H225_RTPSession & info)
+{
+  info.m_sessionId = m_session.GetSessionID();
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(&m_session);
+  if (rtpSession != NULL) {
+    info.m_ssrc = rtpSession->GetSyncSourceOut();
+    info.m_cname = rtpSession->GetCanonicalName();
+  }
+
+  H323TransportAddress lda(m_session.GetLocalAddress(true));
+  lda.SetPDU(info.m_rtpAddress.m_recvAddress);
+  H323TransportAddress rda(m_session.GetRemoteAddress(true));
+  rda.SetPDU(info.m_rtpAddress.m_sendAddress);
+
+  H323TransportAddress lca(m_session.GetLocalAddress(false));
+  lca.SetPDU(info.m_rtcpAddress.m_recvAddress);
+  H323TransportAddress rca(m_session.GetRemoteAddress(false));
+  rca.SetPDU(info.m_rtcpAddress.m_sendAddress);
 }
 
 
