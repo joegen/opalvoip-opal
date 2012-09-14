@@ -72,9 +72,6 @@
 #endif
 
 
-static const PConstCaselessString H323RTPSessionSuffix("-H323");
-static OpalMediaSessionFactory::Worker<H323RTPSession> h323_rtp_session(OpalRTPSession::RTP_AVP() + H323RTPSessionSuffix);
-
 const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
 
 #if OPAL_H239
@@ -4888,12 +4885,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
   }
 
-  // Check for if we are using RTP session type, and adjust it to H.323 specific versions
-  PCaselessString sessionType = mediaType->GetMediaSessionType();
-  if (sessionType.Find("RTP/") != P_MAX_INDEX)
-    sessionType += H323RTPSessionSuffix;
-
-  H323RTPSession * session = dynamic_cast<H323RTPSession *>(UseMediaSession(sessionID, mediaType, sessionType));
+  OpalMediaSession * session = UseMediaSession(sessionID, mediaType);
   if (PAssertNULL(session) == NULL)
     return NULL;
 
@@ -4902,11 +4894,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
   }
 
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+  if (rtpSession != NULL) {
 #if P_QOS
-  session->ModifyQOS(rtpqos);
+    rtpSession->ModifyQOS(rtpqos);
 #endif
 
-  session->Restart(dir == H323Channel::IsReceiver);
+    rtpSession->Restart(dir == H323Channel::IsReceiver);
+  }
+
   return CreateRTPChannel(capability, dir, *session);
 }
 
