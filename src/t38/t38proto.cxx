@@ -72,6 +72,14 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
 }
 
 
+PBoolean OpalFaxMediaStream::Open()
+{
+
+  m_session.ApplyMediaOptions(mediaFormat);
+  return OpalMediaStream::Open();
+}
+
+
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (!m_session.ReadData(packet))
@@ -107,6 +115,8 @@ OpalFaxSession::OpalFaxSession(const Init & init)
   : OpalMediaSession(init)
   , m_dataSocket(NULL)
   , m_shuttingDown(false)
+  , m_rawUDPTL(false)
+  , m_datagramSize(528)
   , m_consecutiveBadPackets(0)
   , m_oneGoodPacket(false)
   , m_receivedPacket(new T38_UDPTLPacket)
@@ -140,7 +150,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
     const OpalMediaOption & option = mediaFormat.GetOption(i);
     PCaselessString key = option.GetName();
 
-    if (key == "T38-UDPTL-Redundancy") {
+    if (key == "UDPTL-Redundancy") {
       PStringArray value = option.AsString().Tokenise(",", FALSE);
       PWaitAndSignal mutex(m_writeMutex);
 
@@ -178,25 +188,28 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
       }
 #endif
     }
-    else
-    if (key == "T38-UDPTL-Redundancy-Interval") {
+    else if (key == "UDPTL-Redundancy-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
       m_redundancyInterval = option.AsString().AsUnsigned();
       PTRACE(3, "UDPTL\tUse redundancy interval " << m_redundancyInterval);
     }
-    else
-    if (key == "T38-UDPTL-Keep-Alive-Interval") {
+    else if (key == "UDPTL-Keep-Alive-Interval") {
       PWaitAndSignal mutex(m_writeMutex);
       m_keepAliveInterval = option.AsString().AsUnsigned();
       PTRACE(3, "UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
     }
-    else
-    if (key == "T38-UDPTL-Optimise-On-Retransmit") {
+    else if (key == "UDPTL-Optimise-On-Retransmit") {
       PCaselessString value = option.AsString();
       PWaitAndSignal mutex(m_writeMutex);
       m_optimiseOnRetransmit = (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
 
       PTRACE(3, "UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
+    }
+    else if (key == "UDPTL-Raw-Mode") {
+      m_rawUDPTL = option.AsString() *= "true";
+    }
+    else if (key == "T38FaxMaxDatagram") {
+      m_datagramSize = option.AsString().AsUnsigned();
     }
   }
 }
@@ -359,6 +372,12 @@ OpalMediaStream * OpalFaxSession::CreateMediaStream(const OpalMediaFormat & medi
 
 bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
 {
+  if (m_dataSocket == NULL)
+    return false;
+
+  if (m_rawUDPTL)
+    return m_dataSocket->Write(frame.GetPayloadPtr(), frame.GetPayloadSize());
+
   PINDEX plLen = frame.GetPayloadSize();
 
   if (plLen == 0) {
@@ -491,6 +510,18 @@ void OpalFaxSession::SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetStri
 
 bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 {
+  if (m_dataSocket == NULL)
+    return false;
+
+  if (m_rawUDPTL) {
+    frame.SetPayloadSize(m_datagramSize);
+    if (!m_dataSocket->Read(frame.GetPayloadPtr(), m_datagramSize))
+      return false;
+
+    frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
+    return true;
+  }
+
   if (m_secondaryPacket >= 0) {
     if (m_secondaryPacket == 0)
       SetFrameFromIFP(frame, m_receivedPacket->m_primary_ifp_packet, m_receivedPacket->m_seq_number);
@@ -502,8 +533,8 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     return true;
   }
 
-  BYTE thisUDPTL[500];
-  if (m_dataSocket == NULL || !m_dataSocket->Read(thisUDPTL, sizeof(thisUDPTL)))
+  PBYTEArray thisUDPTL(m_datagramSize);
+  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize))
     return false;
 
   if (m_shuttingDown) {
@@ -516,7 +547,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       
   PTRACE(4, "UDPTL\tRead UDPTL of size " << pduSize);
 
-  PPER_Stream rawData(thisUDPTL, pduSize);
+  PPER_Stream rawData(thisUDPTL);
 
       // Decode the PDU
   if (!m_receivedPacket->Decode(rawData) || rawData.GetPosition() < pduSize) {

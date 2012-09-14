@@ -80,6 +80,7 @@ const OpalMediaFormat & GetOpalT38()
         AddOption(new OpalMediaOptionBoolean("Use-ECM", false, OpalMediaOption::NoMerge, true));
         AddOption(new OpalMediaOptionString("Station-Identifier", false, "-"));
         AddOption(new OpalMediaOptionString("Header-Info", false));
+        AddOption(new OpalMediaOptionBoolean("UDPTL-Raw-Mode", false, OpalMediaOption::NoMerge, false));
       }
   } const T38;
   return T38;
