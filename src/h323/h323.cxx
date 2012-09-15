@@ -4980,22 +4980,29 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
 PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  if (!t38ModeChangeCapabilities.IsEmpty()) {
+#if OPAL_T38_CAPABILITY
+  if (ownerCall.IsSwitchingT38()) {
     H323Channel * other = logicalChannels->FindChannelBySession(channel.GetSessionID(),
                                                    !channel.GetNumber().IsFromRemote());
     if (other != NULL && other->IsOpen()) {
-      t38ModeChangeCapabilities.Replace(channel.GetCapability().GetMediaFormat().GetName(), PString::Empty());
-      if (t38ModeChangeCapabilities.FindSpan(",") == P_MAX_INDEX) {
-        PTRACE(4, "H323\tCompleted switch of T.38");
-#if OPAL_T38_CAPABILITY
-        OnSwitchedT38(channel.GetSessionID() == H323Capability::DefaultDataSessionID, true);
-#endif
+      if (t38ModeChangeCapabilities.IsEmpty()) {
+        PTRACE(4, "H323\tCompleted remote switch of T.38");
+        ownerCall.ResetSwitchingT38();
+      }
+      else {
+        t38ModeChangeCapabilities.Replace(channel.GetCapability().GetMediaFormat().GetName(), PString::Empty());
+        if (t38ModeChangeCapabilities.FindSpan(",") == P_MAX_INDEX) {
+          PTRACE(4, "H323\tCompleted local switch of T.38");
+          OnSwitchedT38(channel.GetSessionID() == H323Capability::DefaultDataSessionID, true);
+        }
       }
     }
-    else {
+    else
       PTRACE(4, "H323\tWaiting for other channel in switch of T.38");
-    }
   }
+#else
+  t38ModeChangeCapabilities.MakeEmpty();
+#endif // OPAL_T38_CAPABILITY
 
   return endpoint.OnStartLogicalChannel(*this, channel);
 }

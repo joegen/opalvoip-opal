@@ -74,9 +74,15 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn,
 
 PBoolean OpalFaxMediaStream::Open()
 {
-
   m_session.ApplyMediaOptions(mediaFormat);
   return OpalMediaStream::Open();
+}
+
+
+bool OpalFaxMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  m_session.ApplyMediaOptions(mediaFormat);
+  return OpalMediaStream::InternalUpdateMediaFormat(mediaFormat);
 }
 
 
@@ -207,6 +213,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
     }
     else if (key == "UDPTL-Raw-Mode") {
       m_rawUDPTL = option.AsString() *= "true";
+      PTRACE(3, "UDPTL\tUsing raw UDPTL mode");
     }
     else if (key == "T38FaxMaxDatagram") {
       m_datagramSize = option.AsString().AsUnsigned();
