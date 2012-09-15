@@ -375,8 +375,10 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
   if (m_dataSocket == NULL)
     return false;
 
-  if (m_rawUDPTL)
+  if (m_rawUDPTL) {
+    PTRACE(4, "UDPTL\tSending raw UDPTL of size " << frame.GetPayloadSize());
     return m_dataSocket->Write(frame.GetPayloadPtr(), frame.GetPayloadSize());
+  }
 
   PINDEX plLen = frame.GetPayloadSize();
 
@@ -519,6 +521,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       return false;
 
     frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
+    PTRACE(4, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
     return true;
   }
 
