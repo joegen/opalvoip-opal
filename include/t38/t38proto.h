@@ -343,6 +343,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean ReadPacket(RTP_DataFrame & packet);
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
     virtual PBoolean IsSynchronous() const;
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
   protected:
     virtual void InternalClose();
