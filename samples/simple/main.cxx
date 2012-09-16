@@ -152,7 +152,6 @@ void SimpleOpalProcess::Main()
              "u-user:"
              "-udp-base:"
              "-udp-max:"
-             "-use-long-mime."
 #if OPAL_VIDEO
              "C-ratecontrol:"
              "-rx-video." "-no-rx-video."
@@ -237,7 +236,6 @@ void SimpleOpalProcess::Main()
             "                          : '*' is all interfaces, (default udp$:*:5060)\n"
             "     --sip-user-agent name: SIP UserAgent name to use.\n"
             "     --sip-ui type        : Set type of user indications to use for SIP. Can be one of 'rfc2833', 'info-tone', 'info-string'.\n"
-            "     --use-long-mime      : Use long MIME headers on outgoing SIP messages\n"
             "     --sip-domain str     : set authentication domain/realm\n"
             "     --sip-contact-nomultiple : do not send multiple contacts in Contact field\n"
             "     --sip-contact-noprivate  : do not send private contacts in Contact field\n"
@@ -705,9 +703,6 @@ PBoolean MyManager::Initialise(PArgList & args)
 
     if (args.HasOption("sip-proxy"))
       sipEP->SetProxy(args.GetOptionString("sip-proxy"));
-
-    // set MIME format
-    sipEP->SetMIMEForm(args.HasOption("use-long-mime"));
 
     // Get local username, multiple uses of -u indicates additional aliases
     if (args.HasOption('u')) {
