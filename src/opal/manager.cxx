@@ -1652,30 +1652,35 @@ void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
 
 #if OPAL_PTLIB_SSL
 bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
-                                    PString & caPath,
-                                    PList<PSSLCertificate> & caList,
-                                    PSSLCertificate & cert,
-                                    PSSLPrivateKey & key,
+                                    PSSLContext & context,
                                     bool create) const
 {
   if (!m_caFiles.IsEmpty()) {
     if (PDirectory::Exists(m_caFiles))
-      caPath = m_caFiles;
-    else {
-      PStringArray files = m_caFiles.Tokenise(';', false);
-      for (PINDEX i = 0; i < files.GetSize(); ++i) {
-        PSSLCertificate * ca = new PSSLCertificate(files[i]);
-        if (!ca->IsValid()) {
-          PTRACE(2, "OPALSSL\tCould not load CA file \"" << files[i] << '"');
-          delete ca;
-          return false;
-        }
-        caList.Append(ca);
-      }
-    }
+      context.SetVerifyLocations(PString::Empty(), m_caFiles);
+    else
+      context.SetVerifyLocations(m_caFiles, PString::Empty());
+    context.SetVerifyMode(PSSLContext::VerifyPeerMandatory);
   }
 
-  if (!PFile::Exists(m_certificateFile) || !PFile::Exists(m_privateKeyFile)) {
+  if (m_certificateFile.IsEmpty() && m_privateKeyFile.IsEmpty())
+    return true;
+
+  PSSLCertificate cert;
+  PSSLPrivateKey key;
+
+  if (PFile::Exists(m_certificateFile) && PFile::Exists(m_privateKeyFile)) {
+    if (!cert.Load(m_certificateFile)) {
+      PTRACE(2, "OPALSSL\tCould not load certificate file \"" << m_certificateFile << '"');
+      return false;
+    }
+
+    if (!key.Load(m_privateKeyFile)) {
+      PTRACE(2, "OPALSSL\tCould not load private key file \"" << m_privateKeyFile << '"');
+      return false;
+    }
+  }
+  else {
     if (!create)
       return true;
 
@@ -1700,13 +1705,13 @@ bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
     PTRACE(2, "OPALSSL\tCreated new private key file \"" << m_privateKeyFile << '"');
   }
 
-  if (!key.Load(m_privateKeyFile)) {
-    PTRACE(2, "OPALSSL\tCould not load private key file \"" << m_privateKeyFile << '"');
+  if (!context.UseCertificate(cert)) {
+    PTRACE(1, "OpalTLS\tCould not use certificate " << cert);
     return false;
   }
 
-  if (!cert.Load(m_certificateFile)) {
-    PTRACE(2, "OPALSSL\tCould not load certificate file \"" << m_certificateFile << '"');
+  if (!context.UsePrivateKey(key)) {
+    PTRACE(1, "OpalTLS\tCould not use private key " << key);
     return false;
   }
 
