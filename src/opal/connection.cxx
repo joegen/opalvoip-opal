@@ -105,6 +105,8 @@ static POrdinalToString::Initialiser const CallEndReasonStringsInitialiser[] = {
   { OpalConnection::EndedByAcceptingCallWaiting, "Call cleared because another call is answered" },
   { OpalConnection::EndedByGkAdmissionFailed,    "Call cleared because gatekeeper admission request failed." },
   { OpalConnection::EndedByMediaFailed,          "Call cleared due to loss of media flow." },
+  { OpalConnection::EndedByCertificateAuthority, "Server certificates could not be authenticated." },
+  { OpalConnection::EndedByIllegalAddress,       "An illegal address was used for transport." },
 };
 
 static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInitialiser), CallEndReasonStringsInitialiser);
