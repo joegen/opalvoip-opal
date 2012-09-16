@@ -152,72 +152,66 @@ OpalFaxSession::~OpalFaxSession()
 
 void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 {
-  for (PINDEX i = 0 ; i < mediaFormat.GetOptionCount() ; i++) {
-    const OpalMediaOption & option = mediaFormat.GetOption(i);
-    PCaselessString key = option.GetName();
+  PString option = mediaFormat.GetOptionString("UDPTL-Redundancy");
+  if (!option.IsEmpty()) {
+    PStringArray value = option.Tokenise(",", FALSE);
+    PWaitAndSignal mutex(m_writeMutex);
 
-    if (key == "UDPTL-Redundancy") {
-      PStringArray value = option.AsString().Tokenise(",", FALSE);
-      PWaitAndSignal mutex(m_writeMutex);
+    m_redundancy.clear();
 
-      m_redundancy.clear();
-
-      for (PINDEX i = 0 ; i < value.GetSize() ; i++) {
-        PStringArray pair = value[i].Tokenise(":", FALSE);
-
-        if (pair.GetSize() == 2) {
-          long size = pair[0].AsInteger();
-          long redundancy = pair[1].AsInteger();
-
-          if (size > INT_MAX)
-            size = INT_MAX;
-
-          if (size > 0 && redundancy >= 0) {
-            m_redundancy[(int)size] = (int)redundancy;
-            continue;
-          }
-        }
-
-        PTRACE(2, "UDPTL\tIgnored redundancy \"" << value[i] << "\"");
-      }
+    for (PINDEX i = 0 ; i < value.GetSize() ; i++) {
+      PString size, redundancy;
+      if (value[i].Split(':', size, redundancy))
+        m_redundancy[size.AsInteger()] = redundancy.AsInteger();
+    }
 
 #if PTRACING
-      if (PTrace::CanTrace(3)) {
-        ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
-        trace << "UDPTL\tUse redundancy \"";
-        for (std::map<int, int>::iterator it = m_redundancy.begin() ; it != m_redundancy.end() ; it++) {
-          if (it != m_redundancy.begin())
-            trace << ",";
-          trace << it->first << ':' << it->second;
-        }
-        trace << '"' << PTrace::End;
+    if (PTrace::CanTrace(3)) {
+      ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
+      trace << "UDPTL\tUse redundancy \"";
+      for (std::map<int, int>::iterator it = m_redundancy.begin() ; it != m_redundancy.end() ; it++) {
+        if (it != m_redundancy.begin())
+          trace << ",";
+        trace << it->first << ':' << it->second;
       }
+      trace << '"' << PTrace::End;
+    }
 #endif
-    }
-    else if (key == "UDPTL-Redundancy-Interval") {
-      PWaitAndSignal mutex(m_writeMutex);
-      m_redundancyInterval = option.AsString().AsUnsigned();
-      PTRACE(3, "UDPTL\tUse redundancy interval " << m_redundancyInterval);
-    }
-    else if (key == "UDPTL-Keep-Alive-Interval") {
-      PWaitAndSignal mutex(m_writeMutex);
-      m_keepAliveInterval = option.AsString().AsUnsigned();
-      PTRACE(3, "UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
-    }
-    else if (key == "UDPTL-Optimise-On-Retransmit") {
-      PCaselessString value = option.AsString();
-      PWaitAndSignal mutex(m_writeMutex);
-      m_optimiseOnRetransmit = (value.IsEmpty() || (value == "true") || (value == "yes") || value.AsInteger() != 0);
+  }
 
-      PTRACE(3, "UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
-    }
-    else if (key == "UDPTL-Raw-Mode") {
-      m_rawUDPTL = option.AsString() *= "true";
-      PTRACE(3, "UDPTL\tUsing raw UDPTL mode");
-    }
-    else if (key == "T38FaxMaxDatagram") {
-      m_datagramSize = option.AsString().AsUnsigned();
-    }
+  int optint = mediaFormat.GetOptionInteger("UDPTL-Redundancy-Interval", m_redundancyInterval.GetSeconds());
+  if (optint != m_redundancyInterval.GetSeconds()) {
+    PWaitAndSignal mutex(m_writeMutex);
+    m_redundancyInterval.SetInterval(0, optint);
+    PTRACE(3, "UDPTL\tUse redundancy interval " << m_redundancyInterval);
+  }
+
+  optint = mediaFormat.GetOptionInteger("UDPTL-Keep-Alive-Interval", m_keepAliveInterval.GetInterval());
+  if (optint != m_keepAliveInterval.GetSeconds()) {
+    PWaitAndSignal mutex(m_writeMutex);
+    m_keepAliveInterval.SetInterval(0, optint);
+    PTRACE(3, "UDPTL\tUse keep-alive interval " << m_keepAliveInterval);
+  }
+
+  bool optbool = mediaFormat.GetOptionBoolean("UDPTL-Optimise-On-Retransmit", m_optimiseOnRetransmit);
+  if (optbool != m_optimiseOnRetransmit) {
+    PWaitAndSignal mutex(m_writeMutex);
+    m_optimiseOnRetransmit = optbool;
+    PTRACE(3, "UDPTL\tUse optimise on retransmit - " << (m_optimiseOnRetransmit ? "true" : "false"));
+  }
+
+  optbool = mediaFormat.GetOptionBoolean("UDPTL-Raw-Mode", m_rawUDPTL);
+  if (optbool != m_rawUDPTL) {
+    PWaitAndSignal mutex(m_writeMutex);
+    m_rawUDPTL = optbool;
+    PTRACE(3, "UDPTL\tSetting raw UDPTL mode to " << m_rawUDPTL);
+  }
+
+  optint = mediaFormat.GetOptionInteger("T38FaxMaxDatagram", m_datagramSize);
+  if (optint != m_datagramSize) {
+    PWaitAndSignal mutex(m_writeMutex);
+    m_datagramSize = optint;
+    PTRACE(3, "UDPTL\tDatagram size set to " << m_datagramSize);
   }
 }
 
