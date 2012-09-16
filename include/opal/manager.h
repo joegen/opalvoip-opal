@@ -1350,12 +1350,9 @@ class OpalManager : public PObject
         bi-directional authentication.
       */
     virtual bool GetSSLCredentials(
-      const OpalEndPoint & ep,          ///< Endpoint transport is based on.
-      PString & caPath,                 ///< Certificate Authority directory
-      PList<PSSLCertificate> & caList,  ///< Certificate Authority list
-      PSSLCertificate & cert,           ///< Certificate for this endpoint
-      PSSLPrivateKey & key,             ///< Private key to enable certificate for this endpoint
-      bool create                       ///< Create self signed cert/key if required
+      const OpalEndPoint & ep,  ///< Endpoint transport is based on.
+      PSSLContext & context,    ///< Context to which t set certificates
+      bool create               ///< Create self signed cert/key if required
     ) const;
 
     /**Get the default CA filenames (';' separated) or dirctory for CA file.

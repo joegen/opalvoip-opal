@@ -161,11 +161,8 @@ class OpalEndPoint : public PObject
     /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
       */
     virtual bool GetSSLCredentials(
-      PString & caPath,                 ///< Certificate Authority directory
-      PList<PSSLCertificate> & caList,  ///< Certificate Authority list
-      PSSLCertificate & cert,           ///< Certificate for this endpoint
-      PSSLPrivateKey & key,             ///< Private key to enable certificate for this endpoint
-      bool create                       ///< Create self signed cert/key if required
+      PSSLContext & context,    ///< Context to which t set certificates
+      bool create               ///< Create self signed cert/key if required
     ) const;
 #endif
 

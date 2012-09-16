@@ -1675,39 +1675,19 @@ PBoolean OpalTransportTLS::Connect()
 
   socket->SetReadTimeout(PMaxTimeInterval);
 
-  PString caDir;
-  PList<PSSLCertificate> caList;
-  PSSLCertificate certificate;
-  PSSLPrivateKey key;
-  if (!endpoint.GetSSLCredentials(caDir, caList, certificate, key, false))
+  PSSLContext * context = new PSSLContext();
+  if (!endpoint.GetSSLCredentials(*context, false)) {
+    delete context;
     return SetErrorValues(AccessDenied, EINVAL);
+  }
 
-  PSSLChannel * sslChannel = new PSSLChannel();
+  PSSLChannel * sslChannel = new PSSLChannel(context, true);
   sslChannel->SetReadTimeout(5000);
 
-  // Optional authentication of remote certification
-  if (!caList.IsEmpty()) {
-    sslChannel->AddCA(caList);
-    sslChannel->SetVerifyMode(PSSLChannel::VerifyPeerMandatory);
-  }
-
-  if (!caDir.IsEmpty()) {
-    sslChannel->GetContext()->SetCAPath(caDir);
-    sslChannel->SetVerifyMode(PSSLChannel::VerifyPeerMandatory);
-  }
-
-  if (certificate.IsValid() && !sslChannel->UseCertificate(certificate)) {
-    PTRACE(1, "OpalTLS\tCould not use certificate");
-  }
-  else if (key.IsValid() && !sslChannel->UsePrivateKey(key)) {
-    PTRACE(1, "OpalTLS\tCould not use private key");
-  }
-  else if (!sslChannel->Connect(socket)) {
-    PTRACE(1, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
-  }
-  else
+  if (sslChannel->Connect(socket))
     return Open(sslChannel);
 
+  PTRACE(1, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
   delete sslChannel;
   return SetErrorValues(AccessDenied, EACCES);
 }
@@ -1819,31 +1799,11 @@ OpalListenerTLS::~OpalListenerTLS()
 
 PBoolean OpalListenerTLS::Open(const PNotifier & acceptHandler, ThreadMode mode)
 {
-  PString caDir;
-  PList<PSSLCertificate> caList;
-  PSSLCertificate cert;
-  PSSLPrivateKey key;
-  if (!endpoint.GetSSLCredentials(caDir, caList, cert, key, true))
-    return false;
-
   m_sslContext = new PSSLContext();
   m_sslContext->SetCipherList("ALL");
 
-  // Must have cert/key on listener side.
-  if (!m_sslContext->UseCertificate(cert)) {
-    PTRACE(1, "OpalTLS\tCould not use certificate");
+  if (!endpoint.GetSSLCredentials(*m_sslContext, true))
     return false;
-  }
-
-  if (!m_sslContext->UsePrivateKey(key)) {
-    PTRACE(1, "OpalTLS\tCould not use private key");
-    return false;
-  }
-
-  // Authenticating remote is optional
-  if (!caDir.IsEmpty())
-    m_sslContext->SetCAPath(caDir);
-  m_sslContext->AddCA(caList);
 
   return OpalListenerTCP::Open(acceptHandler, mode);
 }
