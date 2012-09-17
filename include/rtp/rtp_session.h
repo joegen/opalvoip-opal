@@ -593,9 +593,6 @@ class OpalRTPSession : public OpalMediaSession
     PTimeInterval       m_maxNoReceiveTime;
     PTimeInterval       m_maxNoTransmitTime;
 
-    typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
-    JitterBufferPtr m_jitterBuffer;
-
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
@@ -708,6 +705,10 @@ class OpalRTPSession : public OpalMediaSession
 
     DWORD        m_noTransmitErrors;
     PSimpleTimer m_noTransmitTimer;
+
+    // Make sure JB is last to make sure it is destroyed first.
+    typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
+    JitterBufferPtr m_jitterBuffer;
 
   private:
     OpalRTPSession(const OpalRTPSession &);
