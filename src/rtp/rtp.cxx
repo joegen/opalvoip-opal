@@ -863,7 +863,8 @@ PBoolean RTP_Session::ReadBufferedData(RTP_DataFrame & frame)
   m_outOfOrderPackets.pop_back();
   expectedSequenceNumber = (WORD)(sequenceNumber + 1);
 
-  PTRACE(5, "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn << ", resequenced "
+  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+         "RTP\tSession " << sessionID << ", ssrc=" << syncSourceIn << ", resequenced "
          << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
 }
@@ -2163,8 +2164,10 @@ PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame)
     if (selectStatus == 0)
       receiveStatus = OnReadTimeout(frame);
 
-    if ((-selectStatus & 2) != 0)
-      receiveStatus = ReadControlPDU();
+    if ((-selectStatus & 2) != 0) {
+      if (ReadControlPDU() == e_AbortTransport)
+        return false;
+    }
 
     if ((-selectStatus & 1) != 0)
       receiveStatus = ReadDataPDU(frame);
