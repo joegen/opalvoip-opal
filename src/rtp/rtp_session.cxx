@@ -481,7 +481,8 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
   m_outOfOrderPackets.pop_back();
   expectedSequenceNumber = (WORD)(sequenceNumber + 1);
 
-  PTRACE(5, "RTP\tSession " << m_sessionId << ", ssrc=" << syncSourceIn << ", resequenced "
+  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+         "RTP\tSession " << m_sessionId << ", ssrc=" << syncSourceIn << ", resequenced "
          << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
 }
