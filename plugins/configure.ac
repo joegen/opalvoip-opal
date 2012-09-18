@@ -497,7 +497,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
     [
       AC_LANG_PROGRAM(
         [[#include "libavcodec/avcodec.h"
-          #include "libavutil/avutil.h"]],
+          #include <libavutil/avutil.h>]],
         [[enum AVPictureType t = AV_PICTURE_TYPE_NONE; ]]
       )
     ],
