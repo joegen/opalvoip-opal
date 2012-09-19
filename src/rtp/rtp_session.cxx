@@ -316,6 +316,9 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 {
   Transport temp;
 
+  // Stop jitter buffer before detaching
+  m_jitterBuffer.SetNULL();
+
   if (m_dataSocket != NULL) {
     temp.Append(m_dataSocket);
     m_dataSocket = NULL;
