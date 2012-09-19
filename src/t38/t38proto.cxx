@@ -521,6 +521,11 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     if (!m_dataSocket->Read(frame.GetPayloadPtr(), m_datagramSize))
       return false;
 
+    if (m_shuttingDown) {
+      PTRACE(4, "UDPTL\tRead raw UDPTL shutting down");
+      return false;
+    }
+
     frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
     PTRACE(4, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
     return true;
@@ -543,7 +548,6 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 
   if (m_shuttingDown) {
     PTRACE(4, "UDPTL\tRead UDPTL shutting down");
-    m_shuttingDown = false;
     return false;
   }
 
