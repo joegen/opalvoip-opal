@@ -9114,6 +9114,7 @@ $as_echo_n "checking if libavutil has AV_PICTURE_TYPE_NONE... " >&6; };
 /* end confdefs.h.  */
 
       #include <libavcodec/avcodec.h>
+          #include <libavutil/avutil.h>
 int
 main ()
 {
