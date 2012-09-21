@@ -9110,6 +9110,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libavutil has AV_PICTURE_TYPE_NONE" >&5
 $as_echo_n "checking if libavutil has AV_PICTURE_TYPE_NONE... " >&6; };
+  CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
