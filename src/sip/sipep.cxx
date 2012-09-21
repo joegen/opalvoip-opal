@@ -1662,13 +1662,30 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 }
 
 
-bool SIPEndPoint::GetAuthentication(SIPAuthentication & newAuthentication,
-                                    SIPAuthentication * oldAuthentication,
-                                    const SIPURL & proxyOverride,
-                                    const PString & user,
-                                    const PString & pass) 
+SIP_PDU::StatusCodes SIPEndPoint::HandleAuthentication(SIPAuthentication * & authentication,
+                                                       unsigned & authenticatedCseq,
+                                                       const SIP_PDU & response,
+                                                       const SIPURL & proxyOverride,
+                                                       const PString & user,
+                                                       const PString & pass)
 {
-  PString realm = newAuthentication.GetAuthRealm();
+  bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+
+#if PTRACING
+  const char * proxyTrace = isProxy ? "Proxy " : "";
+#endif
+
+  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response for " << response.GetTransactionID());
+
+  // authenticate 
+  PString errorMsg;
+  SIPAuthentication * newAuthentication = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
+  if (newAuthentication == NULL) {
+    PTRACE(2, "SIP\t" << proxyTrace << " Authentication error: " << errorMsg);
+    return SIP_PDU::Failure_Forbidden;
+  }
+
+  PString realm = newAuthentication->GetAuthRealm();
   PString username = user;
   PString password = pass;
 
@@ -1699,20 +1716,27 @@ bool SIPEndPoint::GetAuthentication(SIPAuthentication & newAuthentication,
 
   if (username.IsEmpty() || password.IsEmpty()) {
     PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
-    return false;
+    return SIP_PDU::Failure_UnAuthorised;
   }
 
-  newAuthentication.SetUsername(username);
-  newAuthentication.SetPassword(password);
+  newAuthentication->SetUsername(username);
+  newAuthentication->SetPassword(password);
 
-  if (oldAuthentication != NULL && newAuthentication == *oldAuthentication) {
+  // Only check for same credentials if same request (via CSeq)
+  unsigned cseq = response.GetMIME().GetCSeqIndex();
+  if (authenticatedCseq == cseq && authentication != NULL && *newAuthentication == *authentication) {
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
-    return false;
+    return SIP_PDU::Failure_UnAuthorised;
   }
 
-  PTRACE(4, "SIP\t" << (oldAuthentication != NULL ? "Upd" : "Cre") << "ating"
+  PTRACE(4, "SIP\t" << (authentication != NULL ? "Upd" : "Cre") << "ating"
             " authentication credentials of user \"" << username << "\" for realm \"" << realm << '"');
-  return true;
+
+  // switch authentication schemes
+  delete authentication;
+  authentication = newAuthentication;
+  authenticatedCseq = cseq;
+  return SIP_PDU::Successful_OK;
 }
 
 
