@@ -3156,49 +3156,27 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 
 PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PBoolean isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-
-#if PTRACING
-  const char * proxyTrace = isProxy ? "Proxy " : "";
-#endif
-
-  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response for " << transaction);
-
-  // determine the authentication type
-  PString errorMsg;
-  SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
-  if (newAuth == NULL) {
-    PTRACE(1, "SIP\t" << errorMsg);
-    return false;
-  }
-
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
-  unsigned cseq = transaction.GetMIME().GetCSeqIndex();
-  if (!endpoint.GetAuthentication(*newAuth,
-                                  m_authenticatedCseq != cseq ? m_authentication : NULL,
-                                  m_dialog.GetProxy(),
-                                  m_dialog.GetLocalURI().GetUserName(),
-                                  PString::Empty())) {
-    delete newAuth;
+  SIP_PDU::StatusCodes status = endpoint.HandleAuthentication(m_authentication,
+                                                              m_authenticatedCseq,
+                                                              response,
+                                                              m_dialog.GetProxy(),
+                                                              m_dialog.GetLocalURI().GetUserName(),
+                                                              PString::Empty());
+  if (status != SIP_PDU::Successful_OK)
     return false;
-  }
-
-  // Restart the transaction with new authentication info
-  delete m_authentication;
-  m_authentication = newAuth;
-  m_authenticatedCseq = cseq;
 
   GetTransport().SetInterface(transaction.GetInterface());
 
   SIPTransaction * newTransaction = transaction.CreateDuplicate();
   if (newTransaction == NULL) {
-    PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for " << transaction);
+    PTRACE(1, "SIP\tCannot create duplicate transaction for " << transaction);
     return false;
   }
 
   if (!newTransaction->Start()) {
-    PTRACE(2, "SIP\tCould not restart " << transaction << " for " << proxyTrace << "Authentication Required");
+    PTRACE(2, "SIP\tCould not restart " << transaction);
     return false;
   }
 

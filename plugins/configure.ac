@@ -492,6 +492,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
   )
 
   AC_MSG_CHECKING(if libavutil has AV_PICTURE_TYPE_NONE);
+  CFLAGS="$CFLAGS $LIBAVUTIL_CFLAGS"
   AC_COMPILE_IFELSE(
     [
       AC_LANG_PROGRAM(
