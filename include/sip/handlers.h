@@ -88,7 +88,7 @@ public:
   virtual OpalTransport * GetTransport();
 
   virtual SIPAuthentication * GetAuthentication()
-  { return authentication; }
+  { return m_authentication; }
 
   virtual const SIPURL & GetAddressOfRecord()
     { return m_addressOfRecord; }
@@ -146,7 +146,8 @@ protected:
 
   SIPEndPoint               & endpoint;
 
-  SIPAuthentication         * authentication;
+  SIPAuthentication         * m_authentication;
+  unsigned                    m_authenticatedCseq;
   PString                     m_username;
   PString                     m_password;
   PString                     m_realm;
