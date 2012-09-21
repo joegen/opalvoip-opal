@@ -883,10 +883,11 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Return the SIPAuthentication for a specific realm.
      */
-    bool GetAuthentication(
-      SIPAuthentication & newAuthentication,
-      SIPAuthentication * oldAuthentication,
-      const SIPURL & proxy,
+    SIP_PDU::StatusCodes HandleAuthentication(
+      SIPAuthentication * & authentication,
+      unsigned & authenticatedCseq,
+      const SIP_PDU & response,
+      const SIPURL & proxyOverride,
       const PString & username,
       const PString & password
     );

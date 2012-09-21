@@ -111,7 +111,7 @@ public:
   { return m_state; }
 
   virtual SIPAuthentication * GetAuthentication() const
-  { return authentication; }
+  { return m_authentication; }
 
   virtual const SIPURL & GetAddressOfRecord() const
     { return m_addressOfRecord; }
@@ -168,7 +168,8 @@ protected:
 
   SIPEndPoint               & m_endpoint;
 
-  SIPAuthentication         * authentication;
+  SIPAuthentication         * m_authentication;
+  unsigned                    m_authenticatedCseq;
   PString                     m_username;
   PString                     m_password;
   PString                     m_realm;
