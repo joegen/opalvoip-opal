@@ -79,7 +79,8 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
                        const PString & callID)
   : SIPHandlerBase(callID)
   , m_endpoint(ep)
-  , authentication(NULL)
+  , m_authentication(NULL)
+  , m_authenticatedCseq(0)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
@@ -117,7 +118,7 @@ SIPHandler::~SIPHandler()
     delete m_transport;
   }
 
-  delete authentication;
+  delete m_authentication;
 
   PTRACE_IF(4, !m_addressOfRecord.IsEmpty(),
             "SIP\tDestroyed " << m_method << " handler for " << m_addressOfRecord);
@@ -382,9 +383,9 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport, bool forked)
   if (GetState() == Unsubscribing)
     mime.SetExpires(0);
 
-  if (authentication != NULL) {
+  if (m_authentication != NULL) {
     SIPAuthenticator auth(*transaction);
-    authentication->Authorise(auth); // If already have info from last time, use it!
+    m_authentication->Authorise(auth); // If already have info from last time, use it!
   }
 
   if (transaction->Start()) {
@@ -466,38 +467,24 @@ void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction
 
 void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
-  bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-
-  PTRACE(3, "SIP\tReceived " << (isProxy ? "Proxy " : "")
-         << "Authentication Required response, state=" << GetState());
-  
-  // authenticate 
-  PString errorMsg;
-  SIPAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, response.GetMIME(), errorMsg);
-  if (newAuth == NULL) {
-    PTRACE(2, "SIP\t" << errorMsg);
-    OnFailed(SIP_PDU::Failure_Forbidden);
-    return;
-  }
-
   // If either username or password blank, try and fine values from other
   // handlers which might be logged into the realm, or the proxy, if one.
-  if (!m_endpoint.GetAuthentication(*newAuth, authentication, GetProxy(), m_username, m_password)) {
-    delete newAuth;
-
-    OnFailed(SIP_PDU::Failure_UnAuthorised);
+  SIP_PDU::StatusCodes status = m_endpoint.HandleAuthentication(m_authentication,
+                                                                m_authenticatedCseq,
+                                                                response,
+                                                                GetProxy(),
+                                                                m_username,
+                                                                m_password);
+  if (status != SIP_PDU::Successful_OK) {
+    OnFailed(status);
     if (GetState() != Unsubscribing && !transaction.IsCanceled())
       RetryLater(m_offlineExpireTime);
     return;
   }
 
-  // switch authentication schemes
-  delete authentication;
-  authentication = newAuth;
-
   // If we changed realm (or hadn't got one yet) update the handler database
-  if (m_realm != newAuth->GetAuthRealm()) {
-    m_realm = newAuth->GetAuthRealm();
+  if (m_realm != m_authentication->GetAuthRealm()) {
+    m_realm = m_authentication->GetAuthRealm();
     PTRACE(3, "SIP\tAuth realm set to " << m_realm);
     GetEndPoint().UpdateHandlerIndexes(this);
   }
