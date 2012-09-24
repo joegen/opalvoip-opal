@@ -1067,7 +1067,7 @@ bool SIPEndPoint::OnReceivedMESSAGE(SIP_PDU & request)
 #if OPAL_HAS_SIPIM
   OpalSIPIMContext::OnReceivedMESSAGE(*this, NULL, request);
 #else
-  pdu.SendResponse(*this, SIP_PDU::Failure_BadRequest);
+  request.SendResponse(*this, SIP_PDU::Failure_BadRequest);
 #endif
   return true;
 }

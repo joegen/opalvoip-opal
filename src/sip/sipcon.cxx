@@ -3682,14 +3682,14 @@ void SIPConnection::OnReceivedPING(SIP_PDU & request)
 }
 
 
-void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
+void SIPConnection::OnReceivedMESSAGE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
 #if OPAL_HAS_SIPIM
-  OpalSIPIMContext::OnReceivedMESSAGE(GetEndPoint(), this, pdu);
+  OpalSIPIMContext::OnReceivedMESSAGE(GetEndPoint(), this, request);
 #else
-  pdu.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);
+  request.SendResponse(GetEndPoint(), SIP_PDU::Failure_BadRequest);
 #endif
 }
 
