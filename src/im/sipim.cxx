@@ -357,8 +357,7 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
 
 void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
                                          SIPConnection * connection,
-                                         OpalTransport & transport,
-                                         SIP_PDU & pdu)
+                                         SIP_PDU & request)
 {
   // RFC3428
   OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
@@ -367,7 +366,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     return;
   }
 
-  const SIPMIMEInfo & mime  = pdu.GetMIME();
+  const SIPMIMEInfo & mime  = request.GetMIME();
 
   OpalIMContext::MessageDisposition status;
   PString errorInfo;
@@ -379,14 +378,14 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     message.m_conversationId = mime.GetCallID() + ';' + to.GetTag();
     message.m_to             = to;
     message.m_from           = from;
-    message.m_toAddr         = transport.GetLastReceivedAddress();
-    message.m_fromAddr       = transport.GetRemoteAddress();
+    message.m_toAddr         = request.GetTransport()->GetLastReceivedAddress();
+    message.m_fromAddr       = request.GetTransport()->GetRemoteAddress();
     message.m_fromName       = from.GetDisplayName();
-    message.m_bodies.SetAt(mime.GetContentType(), pdu.GetEntityBody());
+    message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
     status = imEP->OnRawMessageReceived(message, connection, errorInfo);
   }
 
-  SIPResponse * response = new SIPResponse(endpoint, SIP_PDU::Failure_BadRequest);
+  SIPResponse * response = new SIPResponse(endpoint, request, SIP_PDU::Failure_BadRequest);
 
   switch (status ) {
     case OpalIMContext::DispositionAccepted:
@@ -406,7 +405,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
   }
 
   // After this, response is owned by transaction layer and will be deleted there
-  response->Send(transport, pdu);
+  response->Send(request);
 }
 
 

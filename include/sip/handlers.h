@@ -48,7 +48,7 @@
 
 
 /// Separate base class to allow searching sorted list
-class SIPHandlerBase : public PSafeObject 
+class SIPHandlerBase : public virtual PSafeObject 
 {
     PCLASSINFO(SIPHandlerBase, PSafeObject);
 
@@ -75,7 +75,7 @@ class SIPHandlerBase : public PSafeObject
 /* Class to handle SIP REGISTER, SUBSCRIBE, MESSAGE, and renew
  * the 'bindings' before they expire.
  */
-class SIPHandler : public SIPHandlerBase 
+class SIPHandler : public SIPHandlerBase, public SIPTransactionOwner
 {
   PCLASSINFO(SIPHandler, SIPHandlerBase);
 
@@ -92,7 +92,10 @@ public:
 
   virtual Comparison Compare(const PObject & other) const;
 
-  virtual bool ShutDown();
+  // Overrides from SIPTransactionOwner
+  virtual SIPURL GetTargetURI() const { return m_remoteAddress; }
+  virtual PString GetAuthID() const        { return m_username; }
+  virtual PString GetPassword() const      { return m_password; }
 
   enum State {
     Subscribed,       // The registration is active
@@ -109,9 +112,6 @@ public:
 
   inline SIPHandler::State GetState() const
   { return m_state; }
-
-  virtual SIPAuthentication * GetAuthentication() const
-  { return m_authentication; }
 
   virtual const SIPURL & GetAddressOfRecord() const
     { return m_addressOfRecord; }
@@ -145,37 +145,24 @@ public:
   bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
-  SIPEndPoint & GetEndPoint() const { return m_endpoint; }
-
   SIP_PDU::StatusCodes GetLastResponseStatus() const { return m_lastResponseStatus; }
 
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
-  const PString & GetUsername() const     { return m_username; }
-  const PString & GetPassword() const     { return m_password; }
-  const PString & GetRealm() const        { return m_realm; }
+  const PString & GetRealm() const { return m_realm; }
   const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
-  const SIPURL & GetProxy() const         { return m_proxy; }
 
-  OpalTransport * GetTransport() const { return m_transport; }
+  virtual bool ShutDown();
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   void RetryLater(unsigned after);
   void OnExpireTimeout();
-  static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
-  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
+  PDECLARE_WriteConnectCallback(SIPHandler, WriteTransaction);
 
-  SIPEndPoint               & m_endpoint;
-
-  SIPAuthentication         * m_authentication;
-  unsigned                    m_authenticatedCseq;
   PString                     m_username;
   PString                     m_password;
   PString                     m_realm;
-
-  PSafeList<SIPTransaction>   m_transactions;
-  OpalTransport             * m_transport;
 
   const SIP_PDU::Methods      m_method;
   const SIPURL                m_addressOfRecord;
@@ -191,7 +178,6 @@ protected:
   std::queue<State>           m_stateQueue;
   bool                        m_receivedResponse;
   SIPPoolTimer<SIPHandler>    m_expireTimer; 
-  SIPURL                      m_proxy;
   OpalProductInfo             m_productInfo;
 };
 
@@ -236,9 +222,28 @@ protected:
 };
 
 
-class SIPSubscribeHandler : public SIPHandler
+class SIPHandlerWithDialog : public SIPHandler
 {
-  PCLASSINFO(SIPSubscribeHandler, SIPHandler);
+  PCLASSINFO(SIPHandlerWithDialog, SIPHandler);
+public:
+  SIPHandlerWithDialog(
+    SIP_PDU::Methods method,
+    SIPEndPoint & ep,
+    const SIPParameters & params,
+    const SIPDialogContext & dialog
+  );
+
+  virtual SIPURL GetTargetURI() const;
+  virtual bool IsDuplicateCSeq(unsigned sequenceNumber);
+
+protected:
+  SIPDialogContext m_dialog;
+};
+
+
+class SIPSubscribeHandler : public SIPHandlerWithDialog
+{
+  PCLASSINFO(SIPSubscribeHandler, SIPHandlerWithDialog);
 public:
   SIPSubscribeHandler(SIPEndPoint & ep, const SIPSubscribe::Params & params);
   ~SIPSubscribeHandler();
@@ -252,18 +257,15 @@ public:
 
   void UpdateParameters(const SIPSubscribe::Params & params);
 
-  virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
-
   const SIPSubscribe::Params & GetParams() const { return m_parameters; }
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
-  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
+  virtual void WriteTransaction(OpalTransport & transport, bool & succeeded);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
   bool DispatchNOTIFY(SIP_PDU & request);
 
   SIPSubscribe::Params     m_parameters;
-  SIPDialogContext         m_dialog;
   bool                     m_unconfirmed;
   SIPEventPackageHandler * m_packageHandler;
 
@@ -271,9 +273,9 @@ protected:
 };
 
 
-class SIPNotifyHandler : public SIPHandler
+class SIPNotifyHandler : public SIPHandlerWithDialog
 {
-  PCLASSINFO(SIPNotifyHandler, SIPHandler);
+  PCLASSINFO(SIPNotifyHandler, SIPHandlerWithDialog);
 public:
   SIPNotifyHandler(
     SIPEndPoint & ep,
@@ -288,7 +290,6 @@ public:
 
   virtual void SetBody(const PString & body) { m_body = body; }
 
-  virtual bool IsDuplicateCSeq(unsigned sequenceNumber) { return m_dialog.IsDuplicateCSeq(sequenceNumber); }
   virtual bool SendNotify(const PObject * body);
 
   enum Reasons {
@@ -302,10 +303,9 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
-  virtual bool WriteSIPHandler(OpalTransport & transport, bool forked);
+  virtual void WriteTransaction(OpalTransport & transport, bool & succeeded);
 
   SIPEventPackage          m_eventPackage;
-  SIPDialogContext         m_dialog;
   Reasons                  m_reason;
   SIPEventPackageHandler * m_packageHandler;
   PString                  m_body;

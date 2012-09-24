@@ -531,14 +531,17 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
 }
 
 
-PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
+void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr & transport)
 {
+  if (transport == NULL)
+    return;
+
   PTRACE(3, "H225\tAwaiting first PDU");
   transport->SetReadTimeout(15000); // Await 15 seconds after connect for first byte
   H323SignalPDU pdu;
   if (!pdu.Read(*transport)) {
     PTRACE(1, "H225\tFailed to get initial Q.931 PDU, connection not started.");
-    return PTrue;
+    return;
   }
 
   unsigned callReference = pdu.GetQ931().GetCallReference();
@@ -567,7 +570,7 @@ PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
     // All subsequent PDU's should wait forever
     transport->SetReadTimeout(PMaxTimeInterval);
     connection->HandleSignallingChannel();
-    return false;
+    return;
   }
 
   PTRACE(1, "H225\tEndpoint could not create connection, "
@@ -592,9 +595,6 @@ PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 
   // Send the PDU
   releaseComplete.Write(*transport);
-
-  // Return true, allowing caller to delete transport, if not attached to connection
-  return connection == NULL;
 }
 
 

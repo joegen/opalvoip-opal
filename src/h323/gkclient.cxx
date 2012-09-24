@@ -222,10 +222,8 @@ PBoolean H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 }
 
 
-static PBoolean WriteGRQ(H323Transport & transport, void * param)
+void H323RasPDU::WriteGRQ(H323Transport & transport, bool & succeeded)
 {
-  H323RasPDU & pdu = *(H323RasPDU *)param;
-
   OpalEndPoint & endpoint = transport.GetEndPoint();
 
   H323TransportAddress address = transport.GetLocalAddress();
@@ -234,7 +232,7 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
   PIPSocket::Address localAddress;
   WORD localPort;
   if (!address.GetIpAndPort(localAddress, localPort))
-    return false;
+    return;
 
   // Check if interface is used by signalling channel listeners
   OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &transport);
@@ -248,7 +246,7 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
   }
   if (notInterface) {
     PTRACE(3, "RAS\tNot sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
-    return true;
+    return;
   }
 
   // We also have to use the translated address if one is specified
@@ -258,9 +256,9 @@ static PBoolean WriteGRQ(H323Transport & transport, void * param)
     address = H323TransportAddress(localAddress, localPort);
 
   // Adjust out outgoing local address in PDU
-  H225_GatekeeperRequest & grq = pdu;
+  H225_GatekeeperRequest & grq = *this;
   address.SetPDU(grq.m_rasAddress);
-  return pdu.Write(transport);
+  succeeded = Write(transport);
 }
 
 
@@ -321,13 +319,13 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
                                  const H323TransportAddressArray & addresses, 
                                  PBoolean callback)
 {
-  PWaitAndSignal mutex(transport->GetWriteMutex());
+  PSafeLockReadWrite mutex(*transport);
 
   if (discoveryComplete || pdu.GetPDU().GetTag() != H225_RasMessage::e_gatekeeperRequest)
     return H323Transactor::WriteTo(pdu, addresses, callback);
 
   PString oldInterface = transport->GetInterface();
-  bool ok = transport->WriteConnect(WriteGRQ, &pdu.GetPDU());
+  bool ok = transport->WriteConnect(PCREATE_NOTIFIER_EXT(dynamic_cast<H323RasPDU&>(pdu.GetPDU()),H323RasPDU,WriteGRQ));
   transport->SetInterface(oldInterface);
 
   PTRACE_IF(1, !ok, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
@@ -396,7 +394,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   }
 
   {
-    PWaitAndSignal mutex(transport->GetWriteMutex());
+    PSafeLockReadWrite mutex(*transport);
 
     H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
     if (!transport->SetRemoteAddress(locatedAddress)) {
@@ -1722,12 +1720,13 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   if (oldAddress.IsEquivalent(replyAddress))
     return WritePDU(response);
 
-  transport->GetWriteMutex().Wait();
+  if (!transport->LockReadWrite())
+    return false;
 
   bool ok = transport->ConnectTo(replyAddress) && WritePDU(response);
   transport->ConnectTo(oldAddress);
 
-  transport->GetWriteMutex().Signal();
+  transport->UnlockReadWrite();
 
   return ok;
 }

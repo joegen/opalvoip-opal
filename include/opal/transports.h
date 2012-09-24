@@ -52,6 +52,8 @@ class OpalListener;
 class OpalTransport;
 class OpalInternalTransport;
 
+typedef PSafePtr<OpalTransport> OpalTransportPtr;
+
 
 ////////////////////////////////////////////////////////////////
 
@@ -178,6 +180,9 @@ class OpalTransportAddress : public PCaselessString
       WORD port,                      ///<  Default port number
       const char * proto = NULL       ///<  Default is "tcp"
     );
+
+    /// Clone function
+    virtual PObject * Clone() const { return new OpalTransportAddress(*this); }
   //@}
 
   /**@name Operations */
@@ -406,6 +411,10 @@ class OpalListener : public PObject
       SingleThreadMode
     };
 
+    typedef PNotifierTemplate<const OpalTransportPtr &> AcceptHandler;
+    #define PDECLARE_AcceptHandlerNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalListener, cls, fn, const OpalTransportPtr &)
+
+
     /** Open the listener.
         A thread is spawned to listen for incoming connections. The notifier
         function acceptHandler is called when a new connection is created. The
@@ -420,10 +429,10 @@ class OpalListener : public PObject
         created. That is only a single connection is ever created by this
         listener.
       */
-    virtual PBoolean Open(
-      const PNotifier & acceptHandler,  ///<  Handler function for new connections
+    virtual bool Open(
+      const AcceptHandler & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
-    ) = 0;
+    );
 
     /** Indicate if the listener is open.
       */
@@ -475,15 +484,12 @@ class OpalListener : public PObject
        Note this function does not return until the Close() function is called
        or there is some other error.
      */
-    PDECLARE_NOTIFIER(PThread, OpalListener, ListenForConnections);
-    PBoolean StartThread(
-      const PNotifier & acceptHandler,  ///<  Handler function for new connections
-      ThreadMode mode                   ///<  How handler function is called thread wise
-    );
+    void ListenForConnections();
+    void TransportThreadMain(OpalTransportPtr transport);
 
     OpalEndPoint & endpoint;
     PThread      * thread;
-    PNotifier      acceptHandler;
+    AcceptHandler  acceptHandler;
     ThreadMode     threadMode;
 };
 
@@ -591,8 +597,8 @@ class OpalListenerTCP : public OpalListenerIP
         that the caller is responsible for calling Accept() and waiting for
         the new connection.
       */
-    virtual PBoolean Open(
-      const PNotifier & acceptHandler,  ///<  Handler function for new connections
+    virtual bool Open(
+      const AcceptHandler & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
     );
 
@@ -673,8 +679,8 @@ class OpalListenerUDP : public OpalListenerIP
         that the caller is responsible for calling Accept() and waiting for
         the new connection.
       */
-    virtual PBoolean Open(
-      const PNotifier & acceptHandler,  ///<  Handler function for new connections
+    virtual bool Open(
+      const AcceptHandler & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
     );
 
@@ -733,15 +739,15 @@ class OpalListenerUDP : public OpalListenerIP
    A "transport" is an object that allows the transfer and processing of data
    from one entity to another.
  */
-class OpalTransport : public PIndirectChannel
+class OpalTransport : public PSafeObject
 {
-    PCLASSINFO(OpalTransport, PIndirectChannel);
+    PCLASSINFO(OpalTransport, PSafeObject);
   protected:
   /**@name Construction */
   //@{
     /**Create a new transport channel.
      */
-    OpalTransport(OpalEndPoint & endpoint);
+    OpalTransport(OpalEndPoint & endpoint, PChannel * channel);
 
   public:
     /** Destroy the transport channel.
@@ -920,7 +926,8 @@ class OpalTransport : public PIndirectChannel
       const PBYTEArray & pdu     ///<  Packet to write
     ) = 0;
 
-    typedef PBoolean (*WriteConnectCallback)(OpalTransport & transport, void * userData);
+    typedef PNotifierTemplate<bool &> WriteConnectCallback;
+    #define PDECLARE_WriteConnectCallback(cls, fn) PDECLARE_NOTIFIER2(OpalTransport, cls, fn, bool &)
 
     /**Write the first packet to the transport, after a connect.
        This will adjust the transport object and call the callback function,
@@ -934,9 +941,8 @@ class OpalTransport : public PIndirectChannel
 
        The default behaviour simply calls the WriteConnectCallback function.
       */
-    virtual PBoolean WriteConnect(
-      WriteConnectCallback function,  ///<  Function for writing data
-      void * userData                 ///<  user data to pass to write function
+    virtual bool WriteConnect(
+      const WriteConnectCallback & function  ///<  Function for writing data
     );
 
     /**Set keep alive time and data.
@@ -965,14 +971,33 @@ class OpalTransport : public PIndirectChannel
       */
     virtual const PCaselessString & GetProtoPrefix() const = 0;
 
-    PMutex & GetWriteMutex() { return m_writeMutex; }
+    bool IsOpen() const
+      { return m_channel != NULL && m_channel->IsOpen(); }
+
+    bool IsGood() const
+      { return IsOpen() && !m_channel->bad() && !m_channel->eof(); }
+
+    PChannel::Errors GetErrorCode(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
+      { return m_channel != NULL ? m_channel->GetErrorCode(group) : PChannel::NotOpen; }
+
+    PString GetErrorText(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
+      { return m_channel != NULL ? m_channel->GetErrorText(group) : PString::Empty(); }
+
+    int GetErrorNumber(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
+      { return m_channel != NULL ? m_channel->GetErrorNumber(group) : -1; }
+
+    void SetReadTimeout(const PTimeInterval & t)
+      { if (m_channel != NULL) m_channel->SetReadTimeout(t); }
+
+    PChannel * GetChannel() const { return m_channel; }
+    void SetChannel(PChannel * chan) { m_channel = chan; }
 
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
 
     OpalEndPoint & endpoint;
+    PChannel     * m_channel;
     PThread      * m_thread;      ///<  Thread handling the transport
-    PMutex         m_writeMutex;
     PTimer         m_keepAliveTimer;
     PBYTEArray     m_keepAliveData;
 };
@@ -980,19 +1005,21 @@ class OpalTransport : public PIndirectChannel
 
 class OpalTransportIP : public OpalTransport
 {
-  PCLASSINFO(OpalTransportIP, OpalTransport);
-  public:
+    PCLASSINFO(OpalTransportIP, OpalTransport);
+  protected:
   /**@name Construction */
   //@{
     /**Create a new transport channel.
      */
     OpalTransportIP(
       OpalEndPoint & endpoint,    ///<  Endpoint object
+      PChannel * channel,         ///<  Socket
       PIPSocket::Address binding, ///<  Local interface to use
       WORD port                   ///<  Local port to bind to
     );
   //@}
 
+  public:
   /**@name Operations */
   //@{
     /**Get the transport dependent name of the local endpoint.
@@ -1052,7 +1079,7 @@ class OpalTransportTCP : public OpalTransportIP
     );
     OpalTransportTCP(
       OpalEndPoint & endpoint,    ///<  Endpoint object
-      PTCPSocket * socket         ///<  Socket to use
+      PChannel * socket           ///<  Socket to use
     );
 
     /// Destroy the TCP channel
@@ -1273,9 +1300,8 @@ class OpalTransportUDP : public OpalTransportIP
        WriteConnect() calls WriteConnectCallback for each interface. The
        subsequent ReadPDU() returns the answer from the first interface.
       */
-    virtual PBoolean WriteConnect(
-      WriteConnectCallback function,  ///<  Function for writing data
-      void * userData                 ///<  User data to pass to write function
+    virtual bool WriteConnect(
+      const WriteConnectCallback & function  ///<  Function for writing data
     );
 
     /**Set the size of UDP packet reads.
@@ -1401,6 +1427,7 @@ typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP, OpalT
 #if OPAL_PTLIB_SSL
 
 class PSSLContext;
+class PSSLChannel;
 
 class OpalListenerTLS : public OpalListenerTCP
 {
@@ -1422,7 +1449,7 @@ class OpalListenerTLS : public OpalListenerTCP
       */
     ~OpalListenerTLS();
 
-    virtual PBoolean Open(const PNotifier & acceptHandler, ThreadMode mode = SpawnNewThreadMode);
+    virtual PBoolean Open(const AcceptHandler & acceptHandler, ThreadMode mode = SpawnNewThreadMode);
     virtual OpalTransport * Accept(const PTimeInterval & timeout);
     virtual const PCaselessString & GetProtoPrefix() const;
     virtual OpalTransport * CreateTransport(
@@ -1439,6 +1466,11 @@ class OpalTransportTLS : public OpalTransportTCP
 {
   PCLASSINFO(OpalTransportTLS, OpalTransportTCP);
     public:
+      OpalTransportTLS(
+        OpalEndPoint & endpoint,    ///<  Endpoint object
+        PSSLChannel * ssl
+      );
+
       OpalTransportTLS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use

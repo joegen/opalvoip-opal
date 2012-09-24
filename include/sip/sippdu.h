@@ -171,8 +171,13 @@ class SIPURL : public PURL
     PCaselessString GetTransportProto() const;
 
     /**Get the host and port as a transport address.
+       If \p dnsEntry is != P_MAX_INDEX, then follows the rules of RFC3263 to
+       get the remote server address, e.g. using DNS SRV records etc. If there
+       are multiple server addresses, then this gets the "entry"th entry.
       */
-    OpalTransportAddress GetHostAddress() const;
+    OpalTransportAddress GetTransportAddress(
+      PINDEX dnsEntry = P_MAX_INDEX
+    ) const;
 
     /**Set the host and port as a transport address.
       */
@@ -197,15 +202,6 @@ class SIPURL : public PURL
       */
     void Sanitise(
       UsageContext context  ///< Context for URI
-    );
-
-    /** This will adjust the current URL according to RFC3263, using DNS SRV records.
-
-        @return FALSE if DNS is available but entry is larger than last SRV record entry,
-                TRUE if DNS lookup fails or no DNS is available
-      */
-    PBoolean AdjustToDNS(
-      PINDEX entry = 0  /// Entry in the SRV record to adjust to
     );
 
     /// Generate a unique string suitable as a dialog tag
@@ -544,6 +540,7 @@ class SIP_PDU : public PSafeObject
       Local_CannotMapScheme,
       Local_TransportLost,
       Local_KeepAlive,
+      Local_NotAuthenticated,
 
       Information_Trying                  = 100,
       Information_Ringing                 = 180,
@@ -647,7 +644,6 @@ class SIP_PDU : public PSafeObject
     );
     void InitialiseHeaders(
       SIPConnection & connection,
-      const OpalTransport & transport,
       unsigned cseq = 0
     );
     void InitialiseHeaders(
@@ -667,18 +663,16 @@ class SIP_PDU : public PSafeObject
 
     /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
       */
-    void AdjustVia(OpalTransport & transport);
+    void AdjustVia();
 
-    PString CreateVia(
-      const OpalTransport & transport
-    );
+    PString CreateVia();
 
     /**Read PDU from the specified transport.
       */
     StatusCodes Read(
-      OpalTransport & transport
+      const OpalTransportPtr & transport
     );
-    StatusCodes Read(
+    StatusCodes Parse(
       istream & strm,
       bool truncated
       PTRACE_PARAM(, OpalTransport * transport = NULL)
@@ -687,23 +681,19 @@ class SIP_PDU : public PSafeObject
     /**Write the PDU to the transport.
       */
     PBoolean Write(
-      OpalTransport & transport,
-      const OpalTransportAddress & remoteAddress = OpalTransportAddress(),
-      const PString & localInterface = PString::Empty()
+      OpalTransport & transport
     );
 
     /**Write PDU as a response to a request.
     */
     bool SendResponse(
-      OpalTransport & transport,
-      StatusCodes code,
-      SIPEndPoint * endpoint = NULL
-    ) const;
+      SIPEndPoint & endpoint,
+      StatusCodes code
+    );
     bool SendResponse(
-      OpalTransport & transport,
-      SIP_PDU & response,
-      SIPEndPoint * endpoint = NULL
-    ) const;
+      SIPEndPoint & endpoint,
+      SIP_PDU & response
+    );
 
     /** Construct the PDU string to output.
         Returns the total length of the PDU.
@@ -730,6 +720,7 @@ class SIP_PDU : public PSafeObject
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
     bool DecodeSDP(const OpalMediaFormatList & masterList);
+    OpalTransport * GetTransport()  const    { return m_transport; }
 
   protected:
     Methods     m_method;                 // Request type, ==NumMethods for Response
@@ -743,6 +734,8 @@ class SIP_PDU : public PSafeObject
     PString     m_transactionID;
 
     SDPSessionDescription * m_SDP;
+
+    OpalTransportPtr m_transport;
 };
 
 
@@ -794,7 +787,7 @@ class SIPDialogContext
     const SIPURL & GetProxy() const { return m_proxy; }
     void SetProxy(const SIPURL & proxy, bool addToRouteSet);
 
-    void Update(OpalTransport & transport, const SIP_PDU & response);
+    void Update(const SIP_PDU & response);
 
     unsigned GetNextCSeq();
     void IncrementCSeq(unsigned inc) { m_lastSentCSeq += inc; }
@@ -809,7 +802,7 @@ class SIPDialogContext
              !m_remoteTag.IsEmpty();
     }
 
-    OpalTransportAddress GetRemoteTransportAddress() const;
+    OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
     const PString & GetInterface() const { return m_interface; }
 
     void SetForking(bool f) { m_forking = f; }
@@ -952,13 +945,62 @@ class SIPPoolTimer : public PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>,
 /////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
+class SIPTransactionOwner : public virtual PSafeObject
+{
+  public:
+    SIPTransactionOwner(
+      SIPEndPoint & endpoint
+    );
+    virtual ~SIPTransactionOwner();
+
+    virtual SIPURL GetTargetURI() const = 0;
+    virtual PString GetAuthID() const = 0;
+    virtual PString GetPassword() const { return PString::Empty(); }
+    virtual unsigned GetAllowedMethods() const;
+    virtual void OnStartTransaction(SIPTransaction & /*transaction*/) { }
+    virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
+    virtual void OnTransactionFailed(SIPTransaction & transaction);
+
+    bool CleanPendingTransactions();
+    void AbortPendingTransactions();
+
+    virtual SIP_PDU::StatusCodes StartTransaction(
+      const OpalTransport::WriteConnectCallback & function
+    );
+
+    SIP_PDU::StatusCodes HandleAuthentication(const SIP_PDU & response);
+
+    SIPEndPoint & GetEndPoint() const { return m_endpoint; }
+    const SIPURL & GetProxy() const { return m_proxy; }
+    const PString & GetInterface() const { return m_localInterface; }
+    void ResetInterface() { m_localInterface.MakeEmpty(); }
+    PINDEX GetDNSEntry() const { return m_dnsEntry; }
+    SIPAuthentication * GetAuthenticator() const { return m_authentication; }
+
+  protected:
+    SIPEndPoint       & m_endpoint;
+    SIPURL              m_proxy;
+    PString             m_localInterface;
+    PINDEX              m_dnsEntry;
+    SIPAuthentication * m_authentication;
+    unsigned            m_authenticatedCseq;
+
+    PSafeList<SIPTransaction> m_transactions;
+    PMutex m_forkingMutex;
+
+  friend class SIPTransaction;
+};
+
+
 class SIPTransactionBase : public SIP_PDU
 {
     PCLASSINFO(SIPTransactionBase, SIP_PDU);
-  public:
+  protected:
     SIPTransactionBase(
       Methods method
     ) : SIP_PDU(method) { }
+
+  public:
     SIPTransactionBase(
       const PString & transactionID
     ) { m_transactionID = transactionID; }
@@ -984,19 +1026,13 @@ class SIPTransactionBase : public SIP_PDU
 class SIPTransaction : public SIPTransactionBase
 {
     PCLASSINFO(SIPTransaction, SIPTransactionBase);
+  protected:
+    SIPTransaction(
+      Methods method,
+      SIPTransactionOwner * owner,
+      OpalTransport * transport
+    );
   public:
-    SIPTransaction(
-      Methods method,
-      SIPEndPoint   & endpoint,
-      OpalTransport & transport
-    );
-    /** Construct a transaction for requests in a dialog.
-     *  The transport is used to determine the local address
-     */
-    SIPTransaction(
-      Methods method,
-      SIPConnection & connection
-    );
     ~SIPTransaction();
 
     /* Under some circumstances a new transaction with all the same parameters
@@ -1019,10 +1055,9 @@ class SIPTransaction : public SIPTransactionBase
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
     virtual PBoolean OnCompleted(SIP_PDU & response);
 
-    OpalTransport & GetTransport()  const { return m_transport; }
-    SIPConnection * GetConnection() const { return m_connection; }
+    SIPEndPoint & GetEndPoint() const { return m_owner->GetEndPoint(); }
+    SIPConnection * GetConnection() const;
     PString         GetInterface()  const { return m_localInterface; }
-    void            SetInterface(const PString & localIf)  { m_localInterface = localIf; }
 
     static PString GenerateCallID();
 
@@ -1051,11 +1086,10 @@ class SIPTransaction : public SIPTransactionBase
     );
     virtual void SetTerminated(States newState);
 
-    SIPEndPoint           & m_endpoint;
-    OpalTransport         & m_transport;
-    PSafePtr<SIPConnection> m_connection;
-    PTimeInterval           m_retryTimeoutMin; 
-    PTimeInterval           m_retryTimeoutMax; 
+    PSafePtr<SIPTransactionOwner> m_owner;
+
+    PTimeInterval m_retryTimeoutMin; 
+    PTimeInterval m_retryTimeoutMax; 
 
     States     m_state;
     unsigned   m_retry;
@@ -1063,8 +1097,7 @@ class SIPTransaction : public SIPTransactionBase
     PoolTimer  m_completionTimer;
     PSyncPoint m_completed;
 
-    PString              m_localInterface;
-    OpalTransportAddress m_remoteAddress;
+    PString         m_localInterface;
 
   friend class SIPConnection;
 };
@@ -1084,13 +1117,14 @@ class SIPResponse : public SIPTransaction
     PCLASSINFO(SIPResponse, SIPTransaction);
   public:
     SIPResponse(
-      SIPEndPoint   & endpoint,
+      SIPEndPoint & endpoint,
+      const SIP_PDU & command,
       StatusCodes code
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
 
-    bool Send(OpalTransport & transport, const SIP_PDU & command);
+    bool Send(SIP_PDU & command);
 };
 
 
@@ -1107,7 +1141,8 @@ class SIPInvite : public SIPTransaction
     PCLASSINFO(SIPInvite, SIPTransaction);
   public:
     SIPInvite(
-      SIPConnection & connection
+      SIPConnection & connection,
+      OpalTransport * transport = NULL
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
@@ -1143,12 +1178,10 @@ class SIPAck : public SIP_PDU
 class SIPBye : public SIPTransaction
 {
     PCLASSINFO(SIPBye, SIPTransaction);
-    
   public:
     SIPBye(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
-      SIPDialogContext dialog
+      SIPEndPoint & endpoint,
+      SIPDialogContext & dialog
     );
     SIPBye(
       SIPConnection & conn
@@ -1206,7 +1239,7 @@ class SIPRegister : public SIPTransaction
     };
 
     SIPRegister(
-      SIPEndPoint   & endpoint,
+      SIPTransactionOwner & owner,
       OpalTransport & transport,
       const PString & callId,
       unsigned cseq,
@@ -1285,7 +1318,6 @@ class SIPSubscribe : public SIPTransaction
       NotifyCallbackInfo(
         SIPSubscribeHandler & handler,
         SIPEndPoint & ep,
-        OpalTransport & trans,
         SIP_PDU & request,
         SIP_PDU & response
       );
@@ -1305,7 +1337,6 @@ class SIPSubscribe : public SIPTransaction
 
       SIPSubscribeHandler & m_handler;
       SIPEndPoint         & m_endpoint;
-      OpalTransport       & m_transport;
       SIP_PDU             & m_request;
       SIP_PDU             & m_response;
       bool                  m_sendResponse;
@@ -1339,8 +1370,8 @@ class SIPSubscribe : public SIPTransaction
     };
 
     SIPSubscribe(
-        SIPEndPoint & ep,
-        OpalTransport & trans,
+        SIPTransactionOwner & owner,
+        OpalTransport & transport,
         SIPDialogContext & dialog,
         const Params & params
     );
@@ -1389,8 +1420,8 @@ class SIPNotify : public SIPTransaction
     PCLASSINFO(SIPNotify, SIPTransaction);
   public:
     SIPNotify(
-        SIPEndPoint & ep,
-        OpalTransport & trans,
+        SIPTransactionOwner & owner,
+        OpalTransport & transport,
         SIPDialogContext & dialog,
         const SIPEventPackage & eventPackage,
         const PString & state,
@@ -1408,8 +1439,8 @@ class SIPPublish : public SIPTransaction
     PCLASSINFO(SIPPublish, SIPTransaction);
   public:
     SIPPublish(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
+      SIPTransactionOwner & owner,
+      OpalTransport & transport,
       const PString & id,
       const PString & sipIfMatch,
       const SIPSubscribe::Params & params,
@@ -1478,8 +1509,8 @@ class SIPMessage : public SIPTransaction
     };
 
     SIPMessage(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
+      SIPTransactionOwner & owner,
+      OpalTransport & transport,
       const Params & params
     );
     SIPMessage(
@@ -1522,8 +1553,8 @@ class SIPOptions : public SIPTransaction
     };
 
     SIPOptions(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
+      SIPTransactionOwner & owner,
+      OpalTransport & transport,
       const PString & id,
       const Params & params
     );
@@ -1580,8 +1611,8 @@ class SIPPing : public SIPTransaction
 
   public:
     SIPPing(
-      SIPEndPoint & ep,
-      OpalTransport & trans,
+      SIPTransactionOwner & owner,
+      OpalTransport & transport,
       const SIPURL & address
     );
 
@@ -1600,6 +1631,7 @@ class SIPPrack : public SIPTransaction
   public:
     SIPPrack(
       SIPConnection & conn,
+      OpalTransport & transport,
       const PString & rack
     );
 

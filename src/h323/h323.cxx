@@ -203,8 +203,6 @@ H323Connection::H323Connection(OpalCall & call,
   , uuiesRequested(0) // Empty set
   , gkAccessTokenOID(ep.GetGkAccessTokenOID())
   , addAccessTokenToSetup(true) // Automatic inclusion of ACF access token in SETUP
-  , signallingChannel(NULL)
-  , controlChannel(NULL)
   , controlListener(NULL)
   , h245TunnelRxPDU(NULL)
   , h245TunnelTxPDU(NULL)
@@ -336,8 +334,6 @@ H323Connection::~H323Connection()
 #if OPAL_H450
   delete h450dispatcher;
 #endif
-  delete signallingChannel;
-  delete controlChannel;
   delete setupPDU;
   delete alertingPDU;
   delete connectPDU;
@@ -438,12 +434,12 @@ void H323Connection::OnReleased()
   }
 
   // Wait for control channel to be cleaned up (thread ended).
-  if (controlChannel != NULL)
-    controlChannel->CloseWait();
+  if (m_controlChannel != NULL)
+    m_controlChannel->CloseWait();
 
   // Wait for signalling channel to be cleaned up (thread ended).
-  if (signallingChannel != NULL)
-    signallingChannel->CloseWait();
+  if (m_signallingChannel != NULL)
+    m_signallingChannel->CloseWait();
 
   OpalRTPConnection::OnReleased();
 }
@@ -485,14 +481,13 @@ void H323Connection::AttachSignalChannel(const PString & token,
   if (!answeringCall)
     InternalSetAsOriginating();
 
-  if (signallingChannel != NULL && signallingChannel->IsOpen()) {
+  if (m_signallingChannel != NULL && m_signallingChannel->IsOpen()) {
     PAssertAlways(PLogicError);
     return;
   }
 
-  delete signallingChannel;
-  signallingChannel = channel;
-  PTRACE_CONTEXT_ID_TO(signallingChannel);
+  m_signallingChannel = channel;
+  PTRACE_CONTEXT_ID_TO(m_signallingChannel);
 
   // Set our call token for identification in endpoint dictionary
   callToken = token;
@@ -501,11 +496,11 @@ void H323Connection::AttachSignalChannel(const PString & token,
 
 PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 {
-  PAssert(signallingChannel != NULL, PLogicError);
+  PAssert(m_signallingChannel != NULL, PLogicError);
 
   lastPDUWasH245inSETUP = false;
 
-  if (signallingChannel != NULL && signallingChannel->IsOpen()) {
+  if (m_signallingChannel != NULL && m_signallingChannel->IsOpen()) {
     pdu.m_h323_uu_pdu.m_h245Tunneling = h245Tunneling;
 
     H323Gatekeeper * gk = endpoint.GetGatekeeper();
@@ -514,7 +509,7 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 
     pdu.SetQ931Fields(*this); // Make sure display name is the final value
 
-    if (pdu.Write(*signallingChannel))
+    if (pdu.Write(*m_signallingChannel))
       return true;
   }
 
@@ -525,22 +520,22 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 
 void H323Connection::HandleSignallingChannel()
 {
-  PAssert(signallingChannel != NULL, PLogicError);
+  PAssert(m_signallingChannel != NULL, PLogicError);
 
   PTRACE(3, "H225\tReading PDUs: callRef=" << callReference);
 
-  while (signallingChannel->IsOpen()) {
+  while (m_signallingChannel->IsOpen()) {
     H323SignalPDU pdu;
-    if (pdu.Read(*signallingChannel)) {
+    if (pdu.Read(*m_signallingChannel)) {
       if (!HandleSignalPDU(pdu)) {
         Release(EndedByTransportFail);
         break;
       }
     }
-    else if (signallingChannel->GetErrorCode() != PChannel::Timeout) {
-      if (controlChannel == NULL || !controlChannel->IsOpen())
+    else if (m_signallingChannel->GetErrorCode() != PChannel::Timeout) {
+      if (m_controlChannel == NULL || !m_controlChannel->IsOpen())
         Release(EndedByTransportFail);
-      signallingChannel->Close();
+      m_signallingChannel->Close();
       break;
     }
     else {
@@ -560,14 +555,14 @@ void H323Connection::HandleSignallingChannel()
       }
     }
 
-    if (controlChannel == NULL)
+    if (m_controlChannel == NULL)
       MonitorCallStatus();
   }
 
   // If we are the only link to the far end then indicate that we have
   // received endSession even if we hadn't, because we are now never going
   // to get one so there is no point in having CleanUpOnCallEnd wait.
-  if (controlChannel == NULL)
+  if (m_controlChannel == NULL)
     endSessionReceived.Signal();
 
   PTRACE(3, "H225\tSignal channel closed.");
@@ -1030,8 +1025,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
     // get the local and peer transport addresses
     PIPSocket::Address peerAddr, localAddr;
-    signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
-    signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
+    m_signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
+    m_signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
 
     // allow the application to determine if RTP NAT is enabled or not
     m_remoteBehindNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
@@ -1041,7 +1036,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
   if (!setupPDU->GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
     localDestinationAddress = setupPDU->GetDestinationAlias(true);
-    if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
+    if (m_signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
       localDestinationAddress = '*';
   }
   
@@ -1304,7 +1299,7 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
   PString remoteHostName;
   H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
   if (!gatekeeperRouted || gatekeeper == NULL)
-    remoteHostName = signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
+    remoteHostName = m_signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
   else {
     PString gkId, gkHost;
     if (gatekeeper->GetName().Split('@', gkId, gkHost))
@@ -1326,7 +1321,7 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
   else
     remotePartyURL += remotePartyNumber + '@' + remoteHostName;
 
-  remotePartyName = pdu.GetSourceAliases(signallingChannel);
+  remotePartyName = pdu.GetSourceAliases(m_signallingChannel);
   PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << '"');
 }
 
@@ -1481,7 +1476,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
   // have answer, so set timeout to interval for monitoring calls health
-  signallingChannel->SetReadTimeout(MonitorCallStatusTime);
+  m_signallingChannel->SetReadTimeout(MonitorCallStatusTime);
 
   // NOTE h323plus checks for faststart here
   // and bails if already started.
@@ -1527,7 +1522,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     return StartControlNegotiations();
   
   // Already started
-  if (controlChannel != NULL)
+  if (m_controlChannel != NULL)
     return true;
 
   // We have no tunnelling and not separate channel, but we really want one
@@ -1569,12 +1564,12 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 
   // Check that it has the H.245 channel connection info
   if (fac.HasOptionalField(H225_Facility_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled())) {
-    if (controlChannel != NULL) {
+    if (m_controlChannel != NULL) {
       // Fix race condition where both side want to open H.245 channel. we have
       // channel bit it is not open (ie we are listening) and the remote has
       // sent us an address to connect to. To resolve we compare the addresses.
 
-      H323TransportAddress h323Address = controlChannel->GetLocalAddress();
+      H323TransportAddress h323Address = m_controlChannel->GetLocalAddress();
       H225_TransportAddress myAddress;
       h323Address.SetPDU(myAddress);
       PPER_Stream myBuffer;
@@ -1585,9 +1580,8 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 
       if (myBuffer < otherBuffer) {
         PTRACE(2, "H225\tSimultaneous start of H.245 channel, connecting to remote.");
-        controlChannel->CloseWait();
-        delete controlChannel;
-        controlChannel = NULL;
+        m_controlChannel->CloseWait();
+        m_controlChannel.SetNULL();
       }
       else {
         PTRACE(2, "H225\tSimultaneous start of H.245 channel, using local listener.");
@@ -1675,7 +1669,7 @@ PBoolean H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
 
   H323SignalPDU reply;
   reply.BuildStatus(*this);
-  return reply.Write(*signallingChannel);
+  return reply.Write(*m_signallingChannel);
 }
 
 
@@ -1800,7 +1794,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 PString H323Connection::GetPrefixName() const
 {
 #if OPAL_PTLIB_SSL
-  if (signallingChannel != NULL && strchr(signallingChannel->GetProtoPrefix(), 's') != NULL)
+  if (m_signallingChannel != NULL && strchr(m_signallingChannel->GetProtoPrefix(), 's') != NULL)
     return OpalConnection::GetPrefixName()+'s';
 #endif
   return OpalConnection::GetPrefixName();
@@ -1813,7 +1807,7 @@ PBoolean H323Connection::SetUpConnection()
 
   OnApplyStringOptions();
 
-  signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
+  m_signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
   return true;
 }
 
@@ -1964,7 +1958,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     setup.m_tokens[last].m_nonStandard.m_data = gkAccessTokenData;
   }
 
-  if (!signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
+  if (!m_signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
     PTRACE(1, "H225\tInvalid "
            << (gatekeeperRoute != address ? "gatekeeper" : "user")
            << " supplied address: \"" << gatekeeperRoute << '"');
@@ -1982,7 +1976,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Release the mutex as can deadlock trying to clear call during connect.
   safeLock.Unlock();
 
-  PBoolean connectFailed = !signallingChannel->Connect();
+  bool connectFailed = !m_signallingChannel->Connect();
 
     // Lock while checking for shutting down.
   if (!safeLock.Lock())
@@ -1995,7 +1989,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   if (connectFailed) {
     connectionState = NoConnectionActive;
     SetPhase(UninitialisedPhase);
-    switch (signallingChannel->GetErrorNumber()) {
+    switch (m_signallingChannel->GetErrorNumber()) {
       case ENETUNREACH :
         return EndedByUnreachable;
       case ECONNREFUSED :
@@ -2010,11 +2004,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   connectionState = AwaitingSignalConnect;
 
   // Put in all the signalling addresses for link
-  H323TransportAddress transportAddress = signallingChannel->GetLocalAddress();
+  H323TransportAddress transportAddress = m_signallingChannel->GetLocalAddress();
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress);
   transportAddress.SetPDU(setup.m_sourceCallSignalAddress);
   if (!setup.HasOptionalField(H225_Setup_UUIE::e_destCallSignalAddress)) {
-    transportAddress = signallingChannel->GetRemoteAddress();
+    transportAddress = m_signallingChannel->GetRemoteAddress();
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
     transportAddress.SetPDU(setup.m_destCallSignalAddress);
   }
@@ -2088,7 +2082,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     lastPDUWasH245inSETUP = true;
 
   // Set timeout for remote party to answer the call
-  signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
+  m_signallingChannel->SetReadTimeout(endpoint.GetSignallingChannelCallTimeout());
 
   connectionState = AwaitingSignalConnect;
 
@@ -2199,7 +2193,7 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
         if (h245Tunneling) {
           if (!StartControlNegotiations())
             return false;
-        } else if (controlChannel == NULL) {
+        } else if (m_controlChannel == NULL) {
           if (!CreateIncomingControlChannel(alerting.m_h245Address))
             return false;
           alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
@@ -2290,7 +2284,7 @@ PBoolean H323Connection::SetConnected()
           return false;
       }
     }
-    else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
+    else if (m_controlChannel == NULL) { // Start separate H.245 channel if not tunneling.
       if (!CreateIncomingControlChannel(connect.m_h245Address))
         return false;
       connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
@@ -2350,7 +2344,7 @@ PBoolean H323Connection::SetProgressed()
           return false;
       }
     }
-    else if (!controlChannel) { // Start separate H.245 channel if not tunneling.
+    else if (!m_controlChannel) { // Start separate H.245 channel if not tunneling.
       if (!CreateIncomingControlChannel(progress.m_h245Address))
         return false;
       progress.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
@@ -2558,41 +2552,39 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddres
     return true;
   }
   // Already have the H245 channel up.
-  if (controlChannel != NULL)
+  if (m_controlChannel != NULL)
     return true;
 
   // Check that it is an IP address, all we support at the moment
-  controlChannel = signallingChannel->GetLocalAddress().CreateTransport(
+  m_controlChannel = m_signallingChannel->GetLocalAddress().CreateTransport(
                                   endpoint, OpalTransportAddress::HostOnly);
-  if (controlChannel == NULL) {
+  if (m_controlChannel == NULL) {
     PTRACE(1, "H225\tConnect of H245 failed: Unsupported transport");
     return false;
   }
 
-  PTRACE_CONTEXT_ID_TO(controlChannel);
+  PTRACE_CONTEXT_ID_TO(m_controlChannel);
 
-  if (!controlChannel->SetRemoteAddress(H323TransportAddress(h245Address))) {
+  if (!m_controlChannel->SetRemoteAddress(H323TransportAddress(h245Address))) {
     PTRACE(1, "H225\tCould not extract H245 address");
-    delete controlChannel;
-    controlChannel = NULL;
+    m_controlChannel.SetNULL();
     return false;
   }
 
-  if (!controlChannel->Connect()) {
-    PTRACE(1, "H225\tConnect of H245 failed: " << controlChannel->GetErrorText());
-    delete controlChannel;
-    controlChannel = NULL;
+  if (!m_controlChannel->Connect()) {
+    PTRACE(1, "H225\tConnect of H245 failed: " << m_controlChannel->GetErrorText());
+    m_controlChannel.SetNULL();
     return false;
   }
 
-  controlChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(NewOutgoingControlChannel), "H.245 Handler"));
+  m_controlChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(NewOutgoingControlChannel), "H.245 Handler"));
   return true;
 }
 
 
 void H323Connection::NewOutgoingControlChannel(PThread &, INT)
 {
-  if (PAssertNULL(controlChannel) == NULL)
+  if (PAssertNULL(m_controlChannel) == NULL)
     return;
 
   if (!SafeReference())
@@ -2605,7 +2597,7 @@ void H323Connection::NewOutgoingControlChannel(PThread &, INT)
 
 PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Address)
 {
-  PAssert(controlChannel == NULL, PLogicError);
+  PAssert(m_controlChannel == NULL, PLogicError);
 
   if (endpoint.IsH245Disabled()){
     PTRACE(2, "H225\tCreateIncomingControlChannel: do not create channel because h245 is disabled");
@@ -2613,7 +2605,7 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
   }
   
   if (controlListener == NULL) {
-    controlListener = signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
+    controlListener = m_signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return false;
 
@@ -2626,18 +2618,18 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
     }
   }
 
-  H323TransportAddress listeningAddress = controlListener->GetLocalAddress(signallingChannel->GetRemoteAddress());
+  H323TransportAddress listeningAddress = controlListener->GetLocalAddress(m_signallingChannel->GetRemoteAddress());
 
   // assign address into the PDU
   return listeningAddress.SetPDU(h245Address);
 }
 
 
-void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
+void H323Connection::NewIncomingControlChannel(OpalListener & listener, const OpalTransportPtr & transport)
 {
-  ((OpalListener&)listener).Close();
+  listener.Close();
 
-  if (param == 0) {
+  if (transport == NULL) {
     // If H.245 channel failed to connect and have no media (no fast start)
     // then clear the call as it is useless.
     if (mediaStreams.IsEmpty())
@@ -2648,7 +2640,7 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
   if (!SafeReference())
     return;
 
-  controlChannel = (H323Transport *)param;
+  m_controlChannel = transport;
   HandleControlChannel();
   SafeDereference();
 }
@@ -2663,15 +2655,15 @@ PBoolean H323Connection::WriteControlPDU(const H323ControlPDU & pdu)
   H323TraceDumpPDU("H245", true, strm, pdu, pdu, 0);
 
   if (!h245Tunneling) {
-    if (controlChannel == NULL) {
+    if (m_controlChannel == NULL) {
       PTRACE(1, "H245\tWrite PDU fail: no control channel.");
       return false;
     }
 
-    if (controlChannel->IsOpen() && controlChannel->WritePDU(strm))
+    if (m_controlChannel->IsOpen() && m_controlChannel->WritePDU(strm))
       return true;
 
-    PTRACE(1, "H245\tWrite PDU fail: " << controlChannel->GetErrorText(PChannel::LastWriteError));
+    PTRACE(1, "H245\tWrite PDU fail: " << m_controlChannel->GetErrorText(PChannel::LastWriteError));
     return false;
   }
 
@@ -2807,11 +2799,11 @@ PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stre
     else
       ok = InternalEndSessionCheck(strm);
   }
-  else if (controlChannel->GetErrorCode() == PChannel::Timeout) {
+  else if (m_controlChannel->GetErrorCode() == PChannel::Timeout) {
     ok = TRUE;
   }
   else {
-      PTRACE(1, "H245\tRead error: " << controlChannel->GetErrorText(PChannel::LastReadError)
+      PTRACE(1, "H245\tRead error: " << m_controlChannel->GetErrorText(PChannel::LastReadError)
           << " endSessionSent=" << endSessionSent);
     // If the connection is already shutting down then don't overwrite the
     // call end reason.  This could happen if the remote end point misbehaves
@@ -2838,8 +2830,8 @@ PBoolean H323Connection::StartHandleControlChannel()
   // Disable the signalling channels timeout for monitoring call status and
   // start up one in this thread instead. Then the Q.931 channel can be closed
   // without affecting the call.
-  signallingChannel->SetReadTimeout(PMaxTimeInterval);
-  controlChannel->SetReadTimeout(MonitorCallStatusTime);
+  m_signallingChannel->SetReadTimeout(PMaxTimeInterval);
+  m_controlChannel->SetReadTimeout(MonitorCallStatusTime);
 
   return TRUE;
 }
@@ -2853,7 +2845,7 @@ void H323Connection::EndHandleControlChannel()
   // endSession command then indicate that we have received endSession even
   // if we hadn't, because we are now never going to get one so there is no
   // point in having CleanUpOnCallEnd wait.
-  if (signallingChannel == NULL || endSessionSent == TRUE)
+  if (m_signallingChannel == NULL || endSessionSent == TRUE)
     endSessionReceived.Signal();
 }
 
@@ -2871,7 +2863,7 @@ void H323Connection::HandleControlChannel()
   while (ok) {
     MonitorCallStatus();
     PPER_Stream strm;
-    PBoolean readStatus = controlChannel->ReadPDU(strm);
+    bool readStatus = m_controlChannel->ReadPDU(strm);
     ok = HandleReceivedControlPDU(readStatus, strm);
   }
 
@@ -5478,12 +5470,12 @@ PBoolean H323Connection::GetAdmissionRequestAuthentication(const H225_AdmissionR
 
 const H323Transport & H323Connection::GetControlChannel() const
 {
-  return *(controlChannel != NULL ? controlChannel : signallingChannel);
+  return *(m_controlChannel != NULL ? m_controlChannel : m_signallingChannel);
 }
 
 OpalTransport & H323Connection::GetTransport() const
 {
-  return *(controlChannel != NULL ? controlChannel : signallingChannel);
+  return *(m_controlChannel != NULL ? m_controlChannel : m_signallingChannel);
 }
 
 void H323Connection::SetEnforcedDurationLimit(unsigned seconds)
