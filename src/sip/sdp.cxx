@@ -635,6 +635,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
     case 0 :
       PTRACE(3, "SDP\tIgnoring media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
+      m_transportAddress = PString::Empty();
       break;
 
     case 65535 :
@@ -647,7 +648,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
 
       PIPSocket::Address ip;
       if (m_transportAddress.GetIpAddress(ip))
-        m_transportAddress = OpalTransportAddress(ip, (WORD)m_port, OpalTransportAddress::UdpPrefix());
+        m_transportAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
   }
 
   CreateSDPMediaFormats(tokens);
@@ -685,7 +686,8 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       break;
       
     case 'c' : // connection information - optional if included at session-level
-      SetTransportAddress(ParseConnectAddress(value, m_port));
+      if (m_port != 0)
+        m_transportAddress = ParseConnectAddress(value, m_port);
       break;
 
     case 'a' : // zero or more media attribute lines
@@ -810,13 +812,6 @@ bool SDPMediaDescription::PreEncode()
 
 void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostream & strm) const
 {
-  PString connectString;
-  {
-    PIPSocket::Address commonIP, transportIP;
-    if (m_transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
-      connectString = GetConnectAddressString(m_transportAddress);
-  }
-
   /* output media header, note the order is important according to RFC!
      Must be icbka */
   strm << "m=" 
@@ -840,8 +835,9 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
   if (m_port == 0)
     return;
 
-  if (!connectString.IsEmpty())
-    strm << "c=" << connectString << "\r\n";
+  PIPSocket::Address commonIP, transportIP;
+  if (m_transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
+    strm << "c=" << GetConnectAddressString(m_transportAddress) << "\r\n";
 
   strm << m_bandwidth;
   OutputAttributes(strm);

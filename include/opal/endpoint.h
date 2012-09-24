@@ -205,19 +205,13 @@ class OpalEndPoint : public PObject
        This will either create a new connection object or utilise a previously
        created connection on the same transport address and reference number.
       */
-    PDECLARE_NOTIFIER(PThread, OpalEndPoint, ListenerCallback);
-
-    /**Handle new incoming connection from listener.
-
-       A return value of true indicates that the transport object should be
-       deleted by the caller. false indicates that something else (eg the
-       connection) has taken over responsibility for deleting the transport.
-
-       The default behaviour just returns true.
-      */
-    virtual PBoolean NewIncomingConnection(
-      OpalTransport * transport  ///<  Transport connection came in on
+#if DOXYGEN
+    virtual void NewIncomingConnection(
+      OpalListener & listener,            ///<  Listner that created transport
+      const OpalTransportPtr & transport  ///<  Transport connection came in on
     );
+#endif
+    PDECLARE_AcceptHandlerNotifier(OpalEndPoint, NewIncomingConnection);
 
     /**Call back for a new connection has been constructed.
        This is called after CreateConnection has returned a new connection.
@@ -943,6 +937,7 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL_VOID(AdjustMediaFormats(const OpalConnection &, OpalMediaFormatList &) const);
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(OpalConnection &, unsigned, const OpalMediaType &), NULL);
+    P_REMOVE_VIRTUAL(PBoolean, NewIncomingConnection(OpalTransport *), false);
 };
 
 

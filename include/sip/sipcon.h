@@ -107,7 +107,7 @@ class OpalSIPIMContext;
 /**Session Initiation Protocol connection.
  */
 
-class SIPConnection : public OpalRTPConnection
+class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 {
     PCLASSINFO(SIPConnection, OpalRTPConnection);
   public:
@@ -119,8 +119,6 @@ class SIPConnection : public OpalRTPConnection
         : m_call(call)
         , m_userData(NULL)
         , m_invite(NULL)
-        , m_transport(NULL)
-        , m_deleteTransport(true)
         , m_options(0)
         , m_stringOptions(NULL)
         { }
@@ -130,8 +128,6 @@ class SIPConnection : public OpalRTPConnection
       SIPURL m_address;           ///<  Destination address for outgoing call
       void * m_userData;          ///<  User data
       SIP_PDU * m_invite;         ///<  Invite packet
-      OpalTransport * m_transport; ///< Transport INVITE came in on
-      bool m_deleteTransport;     ///<  Transport is deleting when connection is deleted
       unsigned m_options;         ///<  Connection options
       OpalConnection::StringOptions * m_stringOptions;  ///<  complex string options
     };
@@ -596,10 +592,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
-    OpalTransport & GetTransport() const;
-    bool SetTransport(const SIPURL & destination);
-
-    SIPEndPoint & GetEndPoint() const { return endpoint; }
+    SIPEndPoint & GetEndPoint() const { return SIPTransactionOwner::m_endpoint; }
     SIPDialogContext & GetDialog() { return m_dialog; }
     const SIPDialogContext & GetDialog() const { return m_dialog; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
@@ -649,13 +642,18 @@ class SIPConnection : public OpalRTPConnection
       const OpalMediaCommand & command  ///< Media command being executed
     );
 
+    // Overrides from SIPTransactionOwner
+    virtual SIPURL GetTargetURI() const { return m_dialog.GetRequestURI(); }
+    virtual PString GetAuthID() const { return m_dialog.GetLocalURI().GetUserName(); }
+
+
     virtual void OnStartTransaction(SIPTransaction & transaction);
-
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
-
     virtual void OnReceivedSUBSCRIBE(SIP_PDU & pdu);
 
     PString GetLocalPartyURL() const;
+
+    virtual void PrintOn(ostream & strm) const { OpalRTPConnection::PrintOn(strm); }
 
   protected:
     virtual bool GarbageCollection();
@@ -709,8 +707,7 @@ class SIPConnection : public OpalRTPConnection
     bool StartPendingReINVITE();
 
     friend class SIPInvite;
-    static PBoolean WriteINVITE(OpalTransport & transport, void * param);
-    bool WriteINVITE();
+    PDECLARE_WriteConnectCallback(SIPConnection, WriteINVITE);
 
     virtual void SendDelayedACK(bool force);
     void OnDelayedAckTimeout();
@@ -725,6 +722,7 @@ class SIPConnection : public OpalRTPConnection
     );
 
     void UpdateRemoteAddresses();
+    bool SetNewTransportProto(const PString & proto);
 
     void NotifyDialogState(
       SIPDialogNotification::States state,
@@ -735,9 +733,6 @@ class SIPConnection : public OpalRTPConnection
     virtual bool InviteConferenceParticipant(const PString & conf, const PString & dest);
 
     // Member variables
-    SIPEndPoint         & endpoint;
-    OpalTransport       * m_transport;
-    bool                  m_deleteTransport;
     unsigned              m_allowedMethods;
     PStringSet            m_allowedEvents;
 
@@ -770,8 +765,6 @@ class SIPConnection : public OpalRTPConnection
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
     PString               m_alertInfo;
-    SIPAuthentication   * m_authentication;
-    unsigned              m_authenticatedCseq;
     PoolTimer             m_sessionTimer;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
@@ -787,7 +780,6 @@ class SIPConnection : public OpalRTPConnection
     bool                      m_referInProgress;
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
-    PSafeList<SIPTransaction> m_pendingTransactions;
 
     enum {
       ReleaseWithBYE,

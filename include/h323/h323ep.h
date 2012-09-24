@@ -422,8 +422,9 @@ class H323EndPoint : public OpalRTPEndPoint
   //@{
     /**Handle new incoming connetion from listener.
       */
-    virtual PBoolean NewIncomingConnection(
-      OpalTransport * transport  ///<  Transport connection came in on
+    virtual void NewIncomingConnection(
+      OpalListener & listener,            ///<  Listner that created transport
+      const OpalTransportPtr & transport  ///<  Transport connection came in on
     );
 
     /**Create a connection that uses the specified call.
