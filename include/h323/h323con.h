@@ -1974,7 +1974,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the signalling channel being used.
       */
-    const H323Transport * GetSignallingChannel() const { return signallingChannel; }
+    const H323Transport * GetSignallingChannel() const { return m_signallingChannel; }
 
     /**Get the signalling channel protocol version number.
       */
@@ -2186,7 +2186,7 @@ class H323Connection : public OpalRTPConnection
     void MonitorCallStatus();
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
-    PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
+    PDECLARE_AcceptHandlerNotifier(H323Connection, NewIncomingControlChannel);
 
     H323EndPoint & endpoint;
 
@@ -2211,8 +2211,8 @@ class H323Connection : public OpalRTPConnection
     PBYTEArray         gkAccessTokenData;
     bool               addAccessTokenToSetup;
 
-    H323Transport * signallingChannel;
-    H323Transport * controlChannel;
+    OpalTransportPtr m_signallingChannel;
+    OpalTransportPtr m_controlChannel;
     OpalListener  * controlListener;
     bool            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;

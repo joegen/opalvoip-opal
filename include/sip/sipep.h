@@ -49,19 +49,13 @@
 #include <sip/handlers.h> 
 
 
-//
-//  provide flag so applications know if presence is available
-//
-#define OPAL_HAS_SIP_PRESENCE   1
-
 /////////////////////////////////////////////////////////////////////////
 
 /**Session Initiation Protocol endpoint.
  */
 class SIPEndPoint : public OpalRTPEndPoint
 {
-  PCLASSINFO(SIPEndPoint, OpalRTPEndPoint);
-
+    PCLASSINFO(SIPEndPoint, OpalRTPEndPoint);
   public:
   /**@name Construction */
   //@{
@@ -99,11 +93,10 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) const;
 
     /**Handle new incoming connection from listener.
-
-       The default behaviour does nothing.
       */
-    virtual PBoolean NewIncomingConnection(
-      OpalTransport * transport  ///<  Transport connection came in on
+    virtual void NewIncomingConnection(
+      OpalListener & listener,            ///<  Listner that created transport
+      const OpalTransportPtr & transport  ///<  Transport connection came in on
     );
 
     /**Set up a connection to a remote party.
@@ -233,30 +226,28 @@ class SIPEndPoint : public OpalRTPEndPoint
   /**@name Protocol handling routines */
   //@{
 
-    /**Creates an OpalTransport instance, based on the
-       address is interpreted as the remote address to which the transport should connect
+    /**Find or create an OpalTransport instance.
+       A single transport exists to a specific remote system and all SIP entities
+       (connections or handlers) use transports out of this pool.
       */
-    OpalTransport * CreateTransport(
-      const SIPURL & remoteURL,
-      const PString & localInterface = PString::Empty(),
-      SIP_PDU::StatusCodes * reason = NULL
+    OpalTransportPtr GetTransport(
+      const SIPTransactionOwner & transactor,
+      SIP_PDU::StatusCodes & reason
     );
 
     virtual void HandlePDU(
-      OpalTransport & transport
+      const OpalTransportPtr & transport
     );
 
     /**Handle an incoming SIP PDU that has been full decoded
       */
-    virtual PBoolean OnReceivedPDU(
-      OpalTransport & transport,
+    virtual bool OnReceivedPDU(
       SIP_PDU * pdu
     );
 
     /**Handle an incoming SIP PDU not assigned to any connection
       */
     virtual bool OnReceivedConnectionlessPDU(
-      OpalTransport & transport, 
       SIP_PDU * pdu
     );
 
@@ -269,45 +260,39 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Handle an incoming INVITE request.
       */
-    virtual PBoolean OnReceivedINVITE(
-      OpalTransport & transport,
+    virtual bool OnReceivedINVITE(
       SIP_PDU * pdu
     );
 
     /**Handle an incoming NOTIFY PDU.
       */
-    virtual PBoolean OnReceivedNOTIFY(
-      OpalTransport & transport,
-      SIP_PDU & response
+    virtual bool OnReceivedNOTIFY(
+      SIP_PDU & request
     );
 
     /**Handle an incoming REGISTER PDU.
       */
-    virtual PBoolean OnReceivedREGISTER(
-      OpalTransport & transport, 
-      SIP_PDU & pdu
+    virtual bool OnReceivedREGISTER(
+      SIP_PDU & request
     );
 
     /**Handle an incoming SUBSCRIBE PDU.
       */
-    virtual PBoolean OnReceivedSUBSCRIBE(
-      OpalTransport & transport, 
-      SIP_PDU & pdu,
+    virtual bool OnReceivedSUBSCRIBE(
+      SIP_PDU & request,
       SIPDialogContext * dialog
     );
 
     /**Handle an incoming MESSAGE PDU.
       */
     virtual bool OnReceivedMESSAGE(
-      OpalTransport & transport,
-      SIP_PDU & response
+      SIP_PDU & request
     );
 
     /**Handle an incoming OPTIONS PDU.
       */
     virtual bool OnReceivedOPTIONS(
-      OpalTransport & transport,
-      SIP_PDU & response
+      SIP_PDU & request
     );
     
     /**Handle a SIP packet transaction failure
@@ -700,12 +685,11 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     struct ConnectionlessMessageInfo {
-      ConnectionlessMessageInfo(OpalTransport & transport, SIP_PDU & pdu)
-        : m_pdu(pdu), m_transport(transport), m_status(ResponseSent)
+      ConnectionlessMessageInfo(SIP_PDU & pdu)
+        : m_pdu(pdu), m_status(ResponseSent)
       { }
 
       SIP_PDU & m_pdu;
-      OpalTransport & m_transport;
       enum {
         NotHandled,
         SendOK,
@@ -799,9 +783,6 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     void SetDefaultPRACKMode(SIPConnection::PRACKMode mode) { m_defaultPrackMode = mode; }
 
-    void SetMIMEForm(PBoolean v) { mimeForm = v; }
-    PBoolean GetMIMEForm() const { return mimeForm; }
-
     void SetMaxRetries(unsigned r) { maxRetries = r; }
     unsigned GetMaxRetries() const { return maxRetries; }
 
@@ -847,19 +828,27 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) { notifierTimeToLive = t; }
     const PTimeInterval & GetNotifierTimeToLive() const { return notifierTimeToLive; }
     
-    void SetNATBindingTimeout(
+    P_DEPRECATED void SetNATBindingTimeout(
       const PTimeInterval & t
-    ) { natBindingTimeout = t; natBindingTimer.RunContinuous (natBindingTimeout); }
-    const PTimeInterval & GetNATBindingTimeout() const { return natBindingTimeout; }
+    ) { m_keepAliveTimeout = t; }
+    P_DEPRECATED const PTimeInterval & GetNATBindingTimeout() const { return m_keepAliveTimeout; }
 
+    /**Keep Alive Method
+     */
+    enum KeepAliveType {
+      NoKeepAlive,
+      KeepAliveByCRLF,
+      KeepAliveByOPTION,
+      NumMethods
+    };
     void GetKeepAlive(
-      PTimeInterval & keepAliveTimeout,
-      PBYTEArray & keepAliveData
-    ) { keepAliveTimeout = m_keepAliveTimeout; keepAliveData = m_keepAliveData; }
+      PTimeInterval & timeout,
+      KeepAliveType & type
+    ) { timeout = m_keepAliveTimeout; type = m_keepAliveType; }
     void SetKeepAlive(
-      const PTimeInterval & keepAliveTimeout,
-      const PBYTEArray & keepAliveData
-    ) { m_keepAliveTimeout = keepAliveTimeout; m_keepAliveData = keepAliveData; }
+      const PTimeInterval & timeout,
+      KeepAliveType type
+    ) { m_keepAliveTimeout = timeout; m_keepAliveType = type; }
 
 
     void AddTransaction(
@@ -871,7 +860,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     
     /**Return the next CSEQ for the next transaction.
      */
-    unsigned GetNextCSeq() { return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { return ++m_lastSentCSeq; }
 
     /**Set registration search mode.
        If true then only the user indicated as "local" address
@@ -883,13 +872,10 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     /**Return the SIPAuthentication for a specific realm.
      */
-    SIP_PDU::StatusCodes HandleAuthentication(
-      SIPAuthentication * & authentication,
-      unsigned & authenticatedCseq,
-      const SIP_PDU & response,
-      const SIPURL & proxyOverride,
-      const PString & username,
-      const PString & password
+    bool GetAuthentication(
+      const PString & realm,
+      PString & authId,
+      PString & password
     );
     
     /**Return the default Contact URL.
@@ -906,14 +892,14 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     void AdjustToRegistration(
       SIP_PDU & pdu,
-      const OpalTransport & transport,
-      const SIPConnection * connection
+      const SIPConnection * connection = NULL,
+      const OpalTransport * transport = NULL
     );
 
 
     /**Return the outbound proxy URL, if any.
      */
-    const SIPURL & GetProxy() const { return proxy; }
+    const SIPURL & GetProxy() const { return m_proxy; }
 
     /**Set the outbound proxy URL.
      */
@@ -946,7 +932,7 @@ class SIPEndPoint : public OpalRTPEndPoint
         
     /**Set the User Agent for the endpoint.
      */
-    void SetUserAgent(const PString & str) { userAgentString = str; }
+    void SetUserAgent(const PString & str) { m_userAgentString = str; }
 
 
     /** Return a bit mask of the allowed SIP methods.
@@ -954,19 +940,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual unsigned GetAllowedMethods() const;
 
 
-    /**NAT Binding Refresh Method
-     */
-    enum NATBindingRefreshMethod{
-      None,
-      Options,
-      EmptyRequest,
-      NumMethods
-    };
-
-
-    /**Set the NAT Binding Refresh Method
-     */
-    void SetNATBindingRefreshMethod(const NATBindingRefreshMethod m) { natMethod = m; }
+    typedef KeepAliveType NATBindingRefreshMethod;
+    P_DEPRECATED void SetNATBindingRefreshMethod(const NATBindingRefreshMethod type) { SetKeepAlive(m_keepAliveTimeout, type); }
 
     virtual SIPRegisterHandler * CreateRegisterHandler(const SIPRegister::Params & params);
 
@@ -984,16 +959,15 @@ class SIPEndPoint : public OpalRTPEndPoint
 
 
   protected:
-    PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
-    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
+    void AddTransport(const OpalTransportPtr & transport);
+    void TransportThreadMain(OpalTransportPtr transport);
 
-    SIPURL        proxy;
-    PString       userAgentString;
+    SIPURL        m_proxy;
+    PString       m_userAgentString;
     PStringSet    m_allowedEvents;
 
     SIPConnection::PRACKMode m_defaultPrackMode;
 
-    bool          mimeForm;
     unsigned      maxRetries;
     PTimeInterval retryTimeoutMin;   // T1
     PTimeInterval retryTimeoutMax;   // T2
@@ -1006,11 +980,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval notifierTimeToLive;
     PTimeInterval natBindingTimeout;
     PTimeInterval m_keepAliveTimeout;
-    PBYTEArray    m_keepAliveData;
+    KeepAliveType m_keepAliveType;
     bool          m_registeredUserMode;
+    bool          m_shuttingDown;
 
-    bool              m_shuttingDown;
+    // Transport management
+    PSafeDictionary<OpalTransportAddress, OpalTransport> m_transportsTable;
 
+    // Sub-protocol handlers
     SIPHandlersList   activeSIPHandlers;
     PSafePtr<SIPHandler> FindHandlerByPDU(const SIP_PDU & pdu, PSafetyMode mode);
 
@@ -1019,10 +996,8 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 
-    PTimer                  natBindingTimer;
-    NATBindingRefreshMethod natMethod;
-    PAtomicInteger          lastSentCSeq;
-    int                     m_defaultAppearanceCode;
+    PAtomicInteger m_lastSentCSeq;
+    int            m_defaultAppearanceCode;
 
     struct RegistrationCompletion {
       PSyncPoint           m_sync;
@@ -1068,6 +1043,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnReceivedOK(SIPTransaction &, SIP_PDU &));
     P_REMOVE_VIRTUAL_VOID(OnMessageFailed(const SIPURL &, SIP_PDU::StatusCodes));
     P_REMOVE_VIRTUAL(SIPConnection *,CreateConnection(OpalCall &, const PString &, void *, const SIPURL &, OpalTransport *, SIP_PDU *, unsigned, OpalConnection::StringOptions *), NULL);
+    P_REMOVE_VIRTUAL(PBoolean, OnReceivedPDU(OpalTransport &, SIP_PDU *), false);
+    P_REMOVE_VIRTUAL(bool, OnReceivedConnectionlessPDU(OpalTransport &,  SIP_PDU *), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnReceivedINVITE(OpalTransport &, SIP_PDU *), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnReceivedNOTIFY(OpalTransport &, SIP_PDU &), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnReceivedREGISTER(OpalTransport &, SIP_PDU &), false);
+    P_REMOVE_VIRTUAL(PBoolean, OnReceivedSUBSCRIBE(OpalTransport &, SIP_PDU &, SIPDialogContext *), false);
+    P_REMOVE_VIRTUAL(bool, OnReceivedMESSAGE(OpalTransport &, SIP_PDU &), false);
+    P_REMOVE_VIRTUAL(bool, OnReceivedOPTIONS(OpalTransport &, SIP_PDU &), false);
 };
 
 

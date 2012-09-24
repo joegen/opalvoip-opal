@@ -437,6 +437,8 @@ class H323RasPDU : public H225_RasMessage, public H323TransactionPDU
     virtual H323TransactionPDU * ClonePDU() const;
     virtual void DeletePDU();
 
+    PDECLARE_WriteConnectCallback(H323RasPDU, WriteGRQ);
+
     // new functions
     H225_GatekeeperRequest       & BuildGatekeeperRequest(unsigned seqNum);
     H225_GatekeeperConfirm       & BuildGatekeeperConfirm(unsigned seqNum);

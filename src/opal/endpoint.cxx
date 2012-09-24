@@ -212,7 +212,7 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
   // as the listener is not open, this will have the effect of immediately
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
-  if (!listener->Open(PCREATE_NOTIFIER(ListenerCallback))) {
+  if (!listener->Open(PCREATE_NOTIFIER(NewIncomingConnection))) {
     delete listener;
     return false;
   }
@@ -417,21 +417,8 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
 }
 
 
-void OpalEndPoint::ListenerCallback(PThread &, INT param)
+void OpalEndPoint::NewIncomingConnection(OpalListener & /*listener*/, const OpalTransportPtr & /*transport*/)
 {
-  // Error in accept, usually means listener thread stopped, so just exit
-  if (param == 0)
-    return;
-
-  OpalTransport * transport = (OpalTransport *)param;
-  if (NewIncomingConnection(transport))
-    delete transport;
-}
-
-
-PBoolean OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
-{
-  return PTrue;
 }
 
 

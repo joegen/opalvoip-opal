@@ -78,7 +78,6 @@ class OpalSIPIMContext : public OpalIMContext
     static void OnReceivedMESSAGE(
       SIPEndPoint & endpoint,
       SIPConnection * connection,
-      OpalTransport & transport,
       SIP_PDU & pdu
     );
 

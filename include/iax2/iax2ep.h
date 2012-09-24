@@ -120,14 +120,6 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**@name connection Connection handling */
   //@{
-  /**Handle new incoming connection from listener.
-
-  The default behaviour does nothing.
-  */
-  virtual PBoolean NewIncomingConnection(
-    OpalTransport * transport  /// Transport connection came in on
-  );
-  
   /**Set up a connection to a remote party.
      This is called from the OpalManager::MakeConnection() function once
      it has determined that this is the endpoint for the protocol.

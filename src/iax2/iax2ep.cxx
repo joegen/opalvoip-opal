@@ -128,15 +128,12 @@ IAX2EndPoint::~IAX2EndPoint()
   PTRACE(6, "Iax2Ep\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
 
+
 void IAX2EndPoint::ReportTransmitterLists(PString & answer, bool getFullReport)
 {
   transmitter->ReportLists(answer, getFullReport); 
 }
 
-PBoolean IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
-{
-  return PTrue;
-}
 
 void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
