@@ -305,7 +305,7 @@ void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 
   SIPMIMEInfo & mime = transaction->GetMIME();
 
-  if (!transport.IsReliable()) {
+  if (m_localInterface.IsEmpty()) {
     if (m_lastCseq == 0)
       m_lastCseq = mime.GetCSeqIndex();
     else
@@ -919,7 +919,7 @@ PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 
 void SIPSubscribeHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  m_dialog.SetForking(!transport.IsReliable());
+  m_dialog.SetForking(m_localInterface.IsEmpty());
   SIPHandler::WriteTransaction(transport, succeeded);
   m_dialog.SetForking(false);
 }
@@ -1824,7 +1824,7 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 
 void SIPNotifyHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  m_dialog.SetForking(!transport.IsReliable());
+  m_dialog.SetForking(m_localInterface.IsEmpty());
   SIPHandler::WriteTransaction(transport, succeeded);
   m_dialog.SetForking(false);
 }
