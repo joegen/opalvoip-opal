@@ -72,6 +72,7 @@
 #endif
 
 
+const PTimeInterval MonitorCallStartTime(0, 10); // Seconds
 const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
 
 #if OPAL_H239
@@ -1476,7 +1477,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
   // have answer, so set timeout to interval for monitoring calls health
-  m_signallingChannel->SetReadTimeout(MonitorCallStatusTime);
+  m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection ? MonitorCallStartTime : MonitorCallStatusTime);
 
   // NOTE h323plus checks for faststart here
   // and bails if already started.
