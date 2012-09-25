@@ -1525,7 +1525,7 @@ bool SIPConnection::StartPendingReINVITE()
 
 void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
 {
-  m_dialog.SetForking(!transport.IsReliable());
+  m_dialog.SetForking(m_localInterface.IsEmpty());
 
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())

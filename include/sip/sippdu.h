@@ -986,7 +986,6 @@ class SIPTransactionOwner : public virtual PSafeObject
     unsigned            m_authenticatedCseq;
 
     PSafeList<SIPTransaction> m_transactions;
-    PMutex m_forkingMutex;
 
   friend class SIPTransaction;
 };
