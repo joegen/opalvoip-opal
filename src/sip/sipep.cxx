@@ -323,7 +323,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
   if (!transport->Connect()) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = transport->GetErrorCode() == PChannel::Timeout  ? SIP_PDU::Local_Timeout : SIP_PDU::Local_BadTransportAddress;
-    delete transport;
+    transport->CloseWait();
     return NULL;
   }
 
@@ -331,7 +331,6 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = SIP_PDU::Local_NotAuthenticated;
     transport->CloseWait();
-    delete transport;
     return NULL;
   }
 

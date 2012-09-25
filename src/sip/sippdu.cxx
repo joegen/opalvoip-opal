@@ -2741,6 +2741,9 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
 
   PTRACE_CONTEXT_ID_TO(transport);
 
+  if (transport->IsReliable())
+    m_localInterface = transport->GetInterface();
+
   reason = SIP_PDU::Local_TransportError;
   if (m_localInterface.IsEmpty()) {
     // Restoring or first time, try every interface
