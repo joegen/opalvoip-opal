@@ -1174,6 +1174,8 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep,
 OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep, PChannel * channel)
   : OpalTransportIP(ep, channel, INADDR_ANY, 0)
 {
+  if (channel != NULL)
+    OnOpen();
 }
 
 
@@ -1206,6 +1208,7 @@ PBoolean OpalTransportTCP::Connect()
 
   PTCPSocket * socket = dynamic_cast<PTCPSocket *>(m_channel);
   socket->SetReadTimeout(10000);
+  socket->SetPort(remotePort);
 
   OpalManager & manager = endpoint.GetManager();
   localPort = manager.GetNextTCPPort();
