@@ -393,6 +393,7 @@ OpalMediaOption::H245GenericInfo::H245GenericInfo()
   , excludeTCS(false)
   , excludeOLC(false)
   , excludeReqMode(false)
+  , discriminator(false)
   , position(-1)
 {
 }
@@ -405,6 +406,7 @@ OpalMediaOption::H245GenericInfo::H245GenericInfo(unsigned mask, const char * df
   , excludeTCS((mask&PluginCodec_H245_TCS) == 0)
   , excludeOLC((mask&PluginCodec_H245_OLC) == 0)
   , excludeReqMode((mask&PluginCodec_H245_ReqMode) == 0)
+  , discriminator((mask&PluginCodec_H245_Discriminator) != 0)
   , position((mask&PluginCodec_H245_PositionMask)>>PluginCodec_H245_PositionShift)
   , defaultValue(dflt)
 {
