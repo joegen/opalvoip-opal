@@ -388,42 +388,42 @@ class OpalConnection : public virtual PSafeObject
        NOTE: if anything is added to this, you also need to add the field to
        the tables in connection.cxx and h323pdu.cxx.
       */
-    P_DECLARE_ENUM_EX(CallEndReasonCodes,NumCallEndReasons,
-      EndedByLocalUser,0,           ///< Local endpoint application cleared call
-      EndedByNoAccept,              ///< Local endpoint did not accept call OnIncomingCall()=false
-      EndedByAnswerDenied,          ///< Local endpoint declined to answer call
-      EndedByRemoteUser,            ///< Remote endpoint application cleared call
-      EndedByRefusal,               ///< Remote endpoint refused call
-      EndedByNoAnswer,              ///< Remote endpoint did not answer in required time
-      EndedByCallerAbort,           ///< Remote endpoint stopped calling
-      EndedByTransportFail,         ///< Transport error cleared call
-      EndedByConnectFail,           ///< Transport connection failed to establish call
-      EndedByGatekeeper,            ///< Gatekeeper has cleared call
-      EndedByNoUser,                ///< Call failed as could not find user (in GK)
-      EndedByNoBandwidth,           ///< Call failed as could not get enough bandwidth
-      EndedByCapabilityExchange,    ///< Could not find common capabilities
-      EndedByCallForwarded,         ///< Call was forwarded using FACILITY message
-      EndedBySecurityDenial,        ///< Call failed a security check and was ended
-      EndedByLocalBusy,             ///< Local endpoint busy
-      EndedByLocalCongestion,       ///< Local endpoint congested
-      EndedByRemoteBusy,            ///< Remote endpoint busy
-      EndedByRemoteCongestion,      ///< Remote endpoint congested
-      EndedByUnreachable,           ///< Could not reach the remote party
-      EndedByNoEndPoint,            ///< The remote party is not running an endpoint
-      EndedByHostOffline,           ///< The remote party host off line
-      EndedByTemporaryFailure,      ///< The remote failed temporarily app may retry
-      EndedByQ931Cause,             ///< The remote ended the call with unmapped Q.931 cause code
-      EndedByDurationLimit,         ///< Call cleared due to an enforced duration limit
-      EndedByInvalidConferenceID,   ///< Call cleared due to invalid conference ID
-      EndedByNoDialTone,            ///< Call cleared due to missing dial tone
-      EndedByNoRingBackTone,        ///< Call cleared due to missing ringback tone
-      EndedByOutOfService,          ///< Call cleared because the line is out of service, 
-      EndedByAcceptingCallWaiting,  ///< Call cleared because another call is answered
-      EndedByGkAdmissionFailed,     ///< Call cleared because gatekeeper admission request failed.
-      EndedByMediaFailed,           ///< Call cleared due to loss of media flow.
-      EndedByCallCompletedElsewhere,///< Call cleared because it was answered by another extension.
-      EndedByCertificateAuthority,  ///< When using TLS, the remote certifcate was not authenticated
-      EndedByIllegalAddress         ///< Destination Address  format was incorrect format
+    P_DECLARE_TRACED_ENUM_EX(CallEndReasonCodes,NumCallEndReasons,
+      EndedByLocalUser,0,            ///< Local endpoint application cleared call
+      EndedByNoAccept,               ///< Local endpoint did not accept call OnIncomingCall()=false
+      EndedByAnswerDenied,           ///< Local endpoint declined to answer call
+      EndedByRemoteUser,             ///< Remote endpoint application cleared call
+      EndedByRefusal,                ///< Remote endpoint refused call
+      EndedByNoAnswer,               ///< Remote endpoint did not answer in required time
+      EndedByCallerAbort,            ///< Remote endpoint stopped calling
+      EndedByTransportFail,          ///< Transport error cleared call
+      EndedByConnectFail,            ///< Transport connection failed to establish call
+      EndedByGatekeeper,             ///< Gatekeeper has cleared call
+      EndedByNoUser,                 ///< Call failed as could not find user (in GK)
+      EndedByNoBandwidth,            ///< Call failed as could not get enough bandwidth
+      EndedByCapabilityExchange,     ///< Could not find common capabilities
+      EndedByCallForwarded,          ///< Call was forwarded using FACILITY message
+      EndedBySecurityDenial,         ///< Call failed a security check and was ended
+      EndedByLocalBusy,              ///< Local endpoint busy
+      EndedByLocalCongestion,        ///< Local endpoint congested
+      EndedByRemoteBusy,             ///< Remote endpoint busy
+      EndedByRemoteCongestion,       ///< Remote endpoint congested
+      EndedByUnreachable,            ///< Could not reach the remote party
+      EndedByNoEndPoint,             ///< The remote party is not running an endpoint
+      EndedByHostOffline,            ///< The remote party host off line
+      EndedByTemporaryFailure,       ///< The remote failed temporarily app may retry
+      EndedByQ931Cause,              ///< The remote ended the call with unmapped Q.931 cause code
+      EndedByDurationLimit,          ///< Call cleared due to an enforced duration limit
+      EndedByInvalidConferenceID,    ///< Call cleared due to invalid conference ID
+      EndedByNoDialTone,             ///< Call cleared due to missing dial tone
+      EndedByNoRingBackTone,         ///< Call cleared due to missing ringback tone
+      EndedByOutOfService,           ///< Call cleared because the line is out of service, 
+      EndedByAcceptingCallWaiting,   ///< Call cleared because another call is answered
+      EndedByGkAdmissionFailed,      ///< Call cleared because gatekeeper admission request failed.
+      EndedByMediaFailed,            ///< Call cleared due to loss of media flow.
+      EndedByCallCompletedElsewhere, ///< Call cleared because it was answered by another extension.
+      EndedByCertificateAuthority,   ///< When using TLS, the remote certifcate was not authenticated
+      EndedByIllegalAddress          ///< Destination Address  format was incorrect format
     );
 
     struct CallEndReason {
