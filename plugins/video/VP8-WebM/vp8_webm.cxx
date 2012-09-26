@@ -446,8 +446,10 @@ class VP8EncoderOM : public VP8Encoder
     virtual void Packetise(PluginCodec_RTP & rtp)
     {
       size_t headerSize;
-      if (m_offset != 0)
+      if (m_offset != 0) {
         headerSize = 1;
+        rtp[0] = (uint8_t)m_currentGID; // No start bit or header extension bit
+      }
       else {
         headerSize = 2;
 
@@ -463,9 +465,9 @@ class VP8EncoderOM : public VP8Encoder
           rtp[1] |= 0x80; // Indicate is golden frame
           m_currentGID = (m_currentGID+1)&0x3f;
         }
-      }
 
-      rtp[0] |= m_currentGID;
+        rtp[0] |= m_currentGID;
+      }
 
       size_t fragmentSize = GetPacketSpace(rtp, m_packet->data.frame.sz - m_offset + headerSize) - headerSize;
       rtp.CopyPayload((char *)m_packet->data.frame.buf+m_offset, fragmentSize, headerSize);
@@ -525,9 +527,6 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
-        if ((flags&PluginCodec_CoderPacketLoss) != 0)
-          m_ignoreTillKeyFrame = true;
-
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         if (!Unpacketise(srcRTP)) {
           flags |= PluginCodec_ReturnCoderRequestIFrame;
@@ -547,7 +546,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
           case VPX_CODEC_CORRUPT_FRAME :
             PTRACE(4, MY_CODEC_LOG, "Decoder reported non-fatal error: " << err);
             flags |= PluginCodec_ReturnCoderRequestIFrame;
-            break;
+            m_ignoreTillKeyFrame = true;
+            return true;
 
           default :
             IsError(err, "vpx_codec_decode");
@@ -594,6 +594,9 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
     void Accumulate(const unsigned char * fragmentPtr, size_t fragmentLen)
     {
+      if (fragmentLen == 0)
+        return;
+
       size_t size = m_fullFrame.size();
       m_fullFrame.reserve(size+fragmentLen*2);
       m_fullFrame.resize(size+fragmentLen);
@@ -767,11 +770,9 @@ class VP8DecoderOM : public VP8Decoder
 
     virtual bool Unpacketise(const PluginCodec_RTP & rtp)
     {
-      if (rtp.GetPayloadSize() == 0)
-        return true;
-
-      if (rtp.GetPayloadSize() < 3)
-        return false;
+      size_t paylaodSize = rtp.GetPayloadSize();
+      if (paylaodSize < 2)
+        return paylaodSize == 0;
 
       bool first = (rtp[0]&0x40) != 0;
       if (first)
@@ -798,7 +799,7 @@ class VP8DecoderOM : public VP8Decoder
         }
       }
 
-      Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
+      Accumulate(rtp.GetPayloadPtr()+headerSize, paylaodSize-headerSize);
 
       unsigned gid = rtp[0]&0x3f;
       bool expected = m_expectedGID == UINT_MAX || m_expectedGID == gid;
