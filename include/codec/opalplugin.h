@@ -178,8 +178,11 @@ enum PluginCodec_Flags {
   PluginCodec_MediaExtensionMask     = 0x0400,
   PluginCodec_MediaTypeExtVideo      = 0x0400,
 
-  PluginCodec_ComfortNoiseMask       = 0x0800,
+  PluginCodec_ComfortNoiseMask       = 0x0800,  // Audio only
   PluginCodec_ComfortNoise           = 0x0800,
+
+  PluginCodec_ErrorConcealmentMask   = 0x0800,  // Video only
+  PluginCodec_ErrorConcealment       = 0x0800,
 
   PluginCodec_EmptyPayloadMask       = 0x1000,
   PluginCodec_EmptyPayload           = 0x1000,
