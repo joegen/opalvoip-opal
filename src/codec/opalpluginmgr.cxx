@@ -869,6 +869,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
 { 
   acceptEmptyPayload = (codecDef->flags & PluginCodec_EmptyPayloadMask) == PluginCodec_EmptyPayload;
   acceptOtherPayloads = (codecDef->flags & PluginCodec_OtherPayloadMask) == PluginCodec_OtherPayload;
+  m_errorConcealment = (codecDef->flags & PluginCodec_ErrorConcealmentMask) == PluginCodec_ErrorConcealment;
 }
 
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
@@ -1102,11 +1103,18 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     }
   }
 
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 || packetsLost) {
-    // Don't send lots of consecutive OpalVideoPictureLoss commands
-    PTRACE(3, "OpalPlugin\tCould not decode frame, sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
-    NotifyCommand(OpalVideoPictureLoss(sequenceNumber, src.GetTimestamp()));
+  PTRACE_IF(3, (flags & PluginCodec_ReturnCoderRequestIFrame) != 0, "OpalPlugin\tCould not decode frame"
+                          ", sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
+
+  if (packetsLost && HasErrorConcealment()) {
+    packetsLost = false;
+    PTRACE(4, "OpalPlugin\tSuppressing OpalVideoPictureLoss on packet loss, codec can do error concealment");
   }
+
+  PTRACE_IF(3, packetsLost, "OpalPlugin\tPackets lost"
+                          ", sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
+  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 || packetsLost)
+    NotifyCommand(OpalVideoPictureLoss(sequenceNumber, src.GetTimestamp()));
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
     lastFrameWasIFrame = true;
