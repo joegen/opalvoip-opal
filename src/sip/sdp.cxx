@@ -848,13 +848,15 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormatList list;
 
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
-    OpalMediaFormat mediaFormat = format->GetMediaFormat();
-    if (mediaFormat.IsValid())
-      list += mediaFormat;
-    else {
-      PTRACE(2, "SDP\tRTP payload type " << format->GetPayloadType() 
-             << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
+  if (m_port != 0) {
+    for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+      OpalMediaFormat mediaFormat = format->GetMediaFormat();
+      if (mediaFormat.IsValid())
+        list += mediaFormat;
+      else {
+        PTRACE(2, "SDP\tRTP payload type " << format->GetPayloadType() 
+               << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
+      }
     }
   }
 
