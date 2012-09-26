@@ -101,7 +101,8 @@ static struct PluginCodec_Option const Profile =
   // Enum values, single string of value separated by colons
   H264_PROFILE_STR_BASELINE ":"
   H264_PROFILE_STR_MAIN     ":"
-  H264_PROFILE_STR_EXTENDED
+  H264_PROFILE_STR_EXTENDED ":"
+  H264_PROFILE_STR_HIGH
 };                                  
 
 static struct PluginCodec_Option const Level =

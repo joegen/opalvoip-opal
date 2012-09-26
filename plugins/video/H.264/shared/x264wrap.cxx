@@ -163,8 +163,12 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
     case 77 : // Main
       profileIndex = 1;
       break;
-    case 88 : // High
+    case 88 : // Extended
       profileIndex = 2;
+      break;
+
+    case 100 : // High
+      profileIndex = 3;
       break;
   }
   x264_param_apply_profile(&m_context, x264_profile_names[profileIndex]);
