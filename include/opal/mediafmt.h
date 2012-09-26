@@ -385,6 +385,7 @@ class OpalMediaOption : public PObject
       bool    excludeTCS;
       bool    excludeOLC;
       bool    excludeReqMode;
+      bool    discriminator;
       int     position;     // Position in sequence for parameter
       PString defaultValue; // Do not include parameter if this value
     };

@@ -497,6 +497,7 @@ class H323GenericCapabilityInfo
     );
 
     PBoolean IsMatch(
+      const OpalMediaFormat & mediaFormat,
       const H245_GenericCapability & param  ///< Non standard field in PDU received
     ) const;
     PObject::Comparison CompareInfo(
