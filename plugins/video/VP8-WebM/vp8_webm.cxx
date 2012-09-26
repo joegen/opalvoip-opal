@@ -167,6 +167,7 @@ class VP8FormatOM : public PluginCodec_VideoFormat<VP8_CODEC>
     VP8FormatOM()
       : BaseClass("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", MaxBitRate, OptionTable)
     {
+      m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
     }
 
 
@@ -544,6 +545,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
           // Non fatal errors
           case VPX_CODEC_UNSUP_FEATURE :
           case VPX_CODEC_CORRUPT_FRAME :
+            PTRACE(4, MY_CODEC_LOG, "Decoder reported non-fatal error: " << err);
             flags |= PluginCodec_ReturnCoderRequestIFrame;
             break;
 
