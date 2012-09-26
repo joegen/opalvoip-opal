@@ -3598,27 +3598,42 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
   // Must always send OK, even if not OK
   request.SendResponse(*transport, SIP_PDU::Successful_OK);
 
+  // Ignore empty body
+  PCaselessString body = request.GetEntityBody();
+  if (body.IsEmpty())
+    return true;
+
+  bool ok = false;
+
 #if OPAL_PTLIB_EXPAT
 
   PXML xml;
-  PXMLElement * element;
-  if (xml.Load(request.GetEntityBody()) &&
-      xml.GetRootElement()->GetName() == "media_control" &&
-     (element =      xml.GetElement("vc_primitive")) != NULL &&
-     (element = element->GetElement("to_encoder")) != NULL &&
-                element->GetElement("picture_fast_update")  != NULL)
+  if (xml.Load(body) && xml.GetDocumentType() == "media_control") {
+    PXMLElement * element;
+    if ((element = xml.GetElement("general_error")) != NULL) {
+      PTRACE(2, "SIP\tReceived INFO message error from remote: \"" << element->GetData() << '"');
+      return true;
+    }
+
+    element =  xml.GetRootElement();
+    ok = (element = element->GetElement("vc_primitive"       )) != NULL &&
+         (element = element->GetElement("to_encoder"         )) != NULL &&
+                    element->GetElement("picture_fast_update")  != NULL;
+  }
 
 #else // OPAL_PTLIB_EXPAT
 
-  PCaselessString body = request.GetEntityBody();
-  PINDEX pos;
-  if ((pos = body.Find("media_control"           )) != P_MAX_INDEX &&
-      (pos = body.Find("vc_primitive"       , pos)) != P_MAX_INDEX &&
-      (pos = body.Find("to_encoder"         , pos)) != P_MAX_INDEX &&
-             body.Find("picture_fast_update", pos)  != P_MAX_INDEX)
+  if (body.Find("general_error") != P_MAX_INDEX)
+    return true;
+
+  ok = body.Find("media_control"      ) != P_MAX_INDEX &&
+       body.Find("vc_primitive"       ) != P_MAX_INDEX &&
+       body.Find("to_encoder"         ) != P_MAX_INDEX &&
+       body.Find("picture_fast_update") != P_MAX_INDEX;
 
 #endif // OPAL_PTLIB_EXPAT
 
+  if (ok)
     SendVideoUpdatePicture(0, 0);
   else {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
