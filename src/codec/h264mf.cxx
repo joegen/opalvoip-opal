@@ -62,7 +62,8 @@ class OpalH264Format : public OpalVideoFormatInternal
       static const char * const profiles[] = {
         H264_PROFILE_STR_BASELINE,
         H264_PROFILE_STR_MAIN,
-        H264_PROFILE_STR_EXTENDED
+        H264_PROFILE_STR_EXTENDED,
+        H264_PROFILE_STR_HIGH
       };
       AddOption(option = new OpalMediaOptionEnum(ProfileName, false, profiles, PARRAYSIZE(profiles), OpalMediaOption::MinMerge));
 
