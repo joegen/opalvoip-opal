@@ -3347,6 +3347,8 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
       recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
       recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
     }
+    else
+      SendReINVITE(PTRACE_PARAM("close after rx open fail"));
   }
 
   if (sendStream == NULL) {
@@ -3359,6 +3361,8 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #endif
                                            ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
         sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+      else
+        SendReINVITE(PTRACE_PARAM("close after tx open fail"));
     }
   }
 
