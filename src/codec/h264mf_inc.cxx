@@ -45,6 +45,7 @@
 
 static const char H264_Mode0_FormatName[] = OPAL_H264_MODE0;
 static const char H264_Mode1_FormatName[] = OPAL_H264_MODE1;
+static const char H264_High_FormatName[]  = OPAL_H264_High;
 
 static const char H264EncodingName[] = "H264";
 
@@ -52,10 +53,10 @@ static const char H264EncodingName[] = "H264";
 #define DefaultProfileStr          H264_PROFILE_STR_BASELINE
 #define DefaultProfileInt          H264_PROFILE_INT_BASELINE
 #define DefaultProfileH241         64
-#define DefaultLevelStr            H264_LEVEL_STR_3
-#define DefaultLevelInt            30
-#define DefaultLevelH241           64
-#define DefaultSDPProfileAndLevel  "42801e"
+#define DefaultLevelStr            H264_LEVEL_STR_3_1
+#define DefaultLevelInt            31
+#define DefaultLevelH241           71
+#define DefaultSDPProfileAndLevel  "42801f"
 
 #define DefaultSendAccessUnitDelimiters 0  // Many endpoints don't seem to like these, initially false
 
@@ -91,7 +92,7 @@ static const char H264EncodingName[] = "H264";
 
 enum
 {
-    H241_PROFILES                      = 41 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray | (1 << PluginCodec_H245_PositionShift) | PluginCodec_H245_Discriminator,
+    H241_PROFILES                      = 41 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray | (1 << PluginCodec_H245_PositionShift),
     H241_LEVEL                         = 42 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode                                 | (2 << PluginCodec_H245_PositionShift),
     H241_CustomMaxMBPS                 =  3 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     H241_CustomMaxFS                   =  4 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
