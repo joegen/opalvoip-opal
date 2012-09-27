@@ -1210,9 +1210,11 @@ void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPat
 }
 
 
-bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned, bool)
+bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned PTRACE_PARAM(sessionId), bool PTRACE_PARAM(source))
 {
-  connection.Release(OpalConnection::EndedByConnectFail);
+  PTRACE(2, "OpalMan\tSession " << sessionId << ' '
+         << (source ? "receive" : "transmit") << " media failed, releasing " << connection);
+  connection.Release(OpalConnection::EndedByMediaFailed);
   return true;
 }
 
