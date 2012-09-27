@@ -119,7 +119,7 @@ PObject::Comparison H323Capability::Compare(const PObject & obj) const
   if (st > ost)
     return GreaterThan;
 
-  return EqualTo;
+  return GetMediaFormat().ValidateMerge(other.GetMediaFormat()) ? EqualTo : GreaterThan;
 }
 
 
@@ -593,34 +593,11 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
   return PTrue;
 }
 
-
-static const H245_ParameterValue * H323GetGenericParameter(const H245_GenericCapability & pdu,
-                                                           const OpalMediaOption::H245GenericInfo & genericInfo)
+static void H323GenericCapabilityInfo_OnReceivedGenericPDU(OpalMediaFormat & mediaFormat,
+                                                           const H245_GenericCapability & pdu,
+                                                           H323Capability::CommandType type)
 {
-  if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {
-    if (pdu.HasOptionalField(H245_GenericCapability::e_collapsing))
-      return H323GetGenericParameter(pdu.m_collapsing, genericInfo.ordinal);
-  }
-  else {
-    if (pdu.HasOptionalField(H245_GenericCapability::e_nonCollapsing))
-      return H323GetGenericParameter(pdu.m_nonCollapsing, genericInfo.ordinal);
-  }
-
-  return NULL;
-}
-
-
-PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & mediaFormat,
-                                                     const H245_GenericCapability & pdu,
-                                                     H323Capability::CommandType type)
-{
-  if (H323GetCapabilityIdentifier(pdu.m_capabilityIdentifier) != m_identifier)
-    return false;
-
-  if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
-    m_maxBitRate = pdu.m_maxBitRate;
-    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate*100);
-  }
+  mediaFormat.MakeUnique();
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
@@ -642,10 +619,21 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
         break;
     }
 
+    const H245_ParameterValue * param;
+    if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {
+      if (!pdu.HasOptionalField(H245_GenericCapability::e_collapsing))
+        continue;
+      param = H323GetGenericParameter(pdu.m_collapsing, genericInfo.ordinal);
+    }
+    else {
+      if (!pdu.HasOptionalField(H245_GenericCapability::e_nonCollapsing))
+        continue;
+      param = H323GetGenericParameter(pdu.m_nonCollapsing, genericInfo.ordinal);
+    }
+
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
       ((OpalMediaOptionBoolean &)option).SetValue(false);
 
-    const H245_ParameterValue * param = H323GetGenericParameter(pdu, genericInfo);
     if (param == NULL)
       continue;
 
@@ -691,42 +679,35 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
     PTRACE(2, "H323\tInvalid generic parameter type (" << param->GetTagName()
            << ") for option \"" << option.GetName() << "\" (" << option.GetClass() << ')');
   }
-
-  return PTrue;
 }
 
 
-PBoolean H323GenericCapabilityInfo::IsMatch(const OpalMediaFormat & mediaFormat,
-                                            const H245_GenericCapability & pdu) const
+PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & mediaFormat,
+                                                     const H245_GenericCapability & pdu,
+                                                     H323Capability::CommandType type)
 {
   if (H323GetCapabilityIdentifier(pdu.m_capabilityIdentifier) != m_identifier)
     return false;
 
-  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
-    const OpalMediaOption & option = mediaFormat.GetOption(i);
-    OpalMediaOption::H245GenericInfo genericInfo = option.GetH245Generic();
-    if (genericInfo.discriminator) {
-      const H245_ParameterValue * param = H323GetGenericParameter(pdu, genericInfo);
-      if (param != NULL) {
-        switch (param->GetTag()) {
-          case H245_ParameterValue::e_unsignedMin :
-          case H245_ParameterValue::e_unsignedMax :
-          case H245_ParameterValue::e_unsigned32Min :
-          case H245_ParameterValue::e_unsigned32Max :
-            return dynamic_cast<const OpalMediaOptionUnsigned &>(option).GetValue() == (const PASN_Integer &)*param;
-
-          case H245_ParameterValue::e_octetString :
-            const PASN_OctetString & octetString = *param;
-            const OpalMediaOptionOctets * octetOption = dynamic_cast<const OpalMediaOptionOctets *>(&option);
-            if (octetOption != NULL)
-              return octetOption->GetValue() == octetString;
-            return option.AsString() == octetString.AsString();
-        }
-      }
-    }
+  if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
+    m_maxBitRate = pdu.m_maxBitRate;
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate*100);
   }
 
+  H323GenericCapabilityInfo_OnReceivedGenericPDU(mediaFormat, pdu, type);
   return true;
+}
+
+
+PBoolean H323GenericCapabilityInfo::IsMatch(const OpalMediaFormat & mediaFormat, const H245_GenericCapability & param) const
+{
+  if (H323GetCapabilityIdentifier(param.m_capabilityIdentifier) != m_identifier)
+    return false;
+
+  OpalMediaFormat testFormat = mediaFormat;
+  H323GenericCapabilityInfo_OnReceivedGenericPDU(testFormat, param, H323Capability::e_TCS);
+
+  return mediaFormat.ValidateMerge(testFormat);
 }
 
 
@@ -937,10 +918,11 @@ H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId
 
 PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) const
 {
-  if (!PIsDescendant(&obj, H323GenericAudioCapability))
-    return LessThan;
+  Comparison result = H323AudioCapability::Compare(obj);
+  if (result != NULL)
+    return result;
 
-  const H323GenericAudioCapability & other = (const H323GenericAudioCapability &)obj;
+  const H323GenericAudioCapability & other = dynamic_cast<const H323GenericAudioCapability &>(obj);
   if (m_fixedBitRate && m_maxBitRate != other.m_maxBitRate)
     return m_maxBitRate < other.m_maxBitRate ? PObject::LessThan : PObject::GreaterThan;
 
@@ -1272,10 +1254,11 @@ H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId
 
 PObject::Comparison H323GenericVideoCapability::Compare(const PObject & obj) const
 {
-  if (!PIsDescendant(&obj, H323GenericVideoCapability))
-    return LessThan;
+  Comparison result = H323VideoCapability::Compare(obj);
+  if (result != NULL)
+    return result;
 
-  return CompareInfo((const H323GenericVideoCapability &)obj);
+  return CompareInfo(dynamic_cast<const H323GenericVideoCapability &>(obj));
 }
 
 
@@ -1447,7 +1430,7 @@ PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Choice & subTypePDU, co
     return false;
 
   for (PINDEX i = 0; i < extcap.m_videoCapabilityExtension.GetSize(); ++i) {
-    if (H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), extcap.m_videoCapabilityExtension[i]))
+    if (H323GenericCapabilityInfo::IsMatch(OpalMediaFormat(GetFormatName()), extcap.m_videoCapabilityExtension[i]))
       return true;
   }
 
@@ -1761,10 +1744,11 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate
 
 PObject::Comparison H323NonStandardDataCapability::Compare(const PObject & obj) const
 {
-  if (!PIsDescendant(&obj, H323NonStandardDataCapability))
-    return PObject::LessThan;
+  Comparison result = H323DataCapability::Compare(obj);
+  if (result != NULL)
+    return result;
 
-  return CompareInfo((const H323NonStandardDataCapability &)obj);
+  return CompareInfo(dynamic_cast<const H323NonStandardDataCapability &>(obj));
 }
 
 

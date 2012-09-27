@@ -282,9 +282,8 @@ enum PluginCodec_OptionMerge {
 #define PluginCodec_H245_TCS           0x04000000
 #define PluginCodec_H245_OLC           0x02000000
 #define PluginCodec_H245_ReqMode       0x01000000
-#define PluginCodec_H245_Discriminator 0x00800000
 #define PluginCodec_H245_OrdinalMask   0x0000ffff
-#define PluginCodec_H245_PositionMask  0x007f0000
+#define PluginCodec_H245_PositionMask  0x00ff0000
 #define PluginCodec_H245_PositionShift 16
 
 typedef int (*PluginCodec_MergeFunction)(char ** result, const char * dest, const char * src);

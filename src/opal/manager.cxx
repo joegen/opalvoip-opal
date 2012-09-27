@@ -83,9 +83,9 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_G711_ULAW_64K,
   OPAL_G711_ALAW_64K,
 #if OPAL_VIDEO
-  OPAL_H264,        // H.323 version
-  OPAL_H264_MODE1,  // SIP version, packetisation mode 1
-  OPAL_H264_MODE0,  // SIP version, packetisation mode 0
+  OPAL_H264_High,   // High profile
+  OPAL_H264_MODE1,  // Packetisation mode 1
+  OPAL_H264_MODE0,  // Packetisation mode 0
   OPAL_MPEG4,
   OPAL_H263 "*",
   OPAL_H261,
@@ -109,6 +109,7 @@ static const char * const DefaultMediaFormatMask[] = {
 #if OPAL_HAS_MSRP
   OPAL_MSRP,
 #endif
+  OPAL_H264_High   // Do not include by default, interop issues.
 };
 
 // G.711 is *always* available

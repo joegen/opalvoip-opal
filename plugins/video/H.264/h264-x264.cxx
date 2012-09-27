@@ -93,7 +93,7 @@ static struct PluginCodec_Option const Profile =
   PluginCodec_EnumOption,             // Option type
   ProfileName,                        // User visible name
   false,                              // User Read/Only flag
-  PluginCodec_MinMerge,               // Merge mode
+  PluginCodec_EqualMerge,             // Merge mode
   DefaultProfileStr,                  // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
@@ -102,6 +102,20 @@ static struct PluginCodec_Option const Profile =
   H264_PROFILE_STR_BASELINE ":"
   H264_PROFILE_STR_MAIN     ":"
   H264_PROFILE_STR_EXTENDED ":"
+  H264_PROFILE_STR_HIGH
+};                                  
+
+static struct PluginCodec_Option const HiProfile =
+{
+  PluginCodec_EnumOption,             // Option type
+  ProfileName,                        // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  H264_PROFILE_STR_HIGH,              // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  // Enum values, single string of value separated by colons
   H264_PROFILE_STR_HIGH
 };                                  
 
@@ -134,12 +148,26 @@ static struct PluginCodec_Option const Level =
   H264_LEVEL_STR_5_1
 };
 
+static struct PluginCodec_Option const HiH241Profiles =
+{
+  PluginCodec_IntegerOption,          // Option type
+  H241ProfilesName,                   // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  STRINGIZE(8),                       // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H241_PROFILES,                      // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "127"                               // Maximum value
+};
+
 static struct PluginCodec_Option const H241Profiles =
 {
   PluginCodec_IntegerOption,          // Option type
   H241ProfilesName,                   // User visible name
   true,                               // User Read/Only flag
-  PluginCodec_MinMerge,               // Merge mode
+  PluginCodec_EqualMerge,             // Merge mode
   STRINGIZE(DefaultProfileH241),      // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
@@ -399,6 +427,28 @@ static struct PluginCodec_Option const SendAccessUnitDelimiters =
   STRINGIZE(DefaultSendAccessUnitDelimiters)      // Initial value
 };
 
+static struct PluginCodec_Option const * const MyOptionTable_High[] = {
+  &HiProfile,
+  &Level,
+  &HiH241Profiles,
+  &H241Level,
+  &SDPProfileAndLevel,
+  &MaxMBPS_H241,
+  &MaxMBPS_SDP,
+  &MaxSMBPS_H241,
+  &MaxSMBPS_SDP,
+  &MaxFS_H241,
+  &MaxFS_SDP,
+  &MaxBR_H241,
+  &MaxBR_SDP,
+  &MaxNaluSize,
+  &TemporalSpatialTradeOff,
+  &SendAccessUnitDelimiters,
+  &PacketizationModeSDP_1,
+  &MediaPacketizationsH323_1,  // Note: must be last entry
+  NULL
+};
+
 static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &Profile,
   &Level,
@@ -478,8 +528,9 @@ public:
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat MyMediaFormatInfo_0(H264_Mode0_FormatName, MyOptionTable_0);
-static H264_PluginMediaFormat MyMediaFormatInfo_1(H264_Mode1_FormatName, MyOptionTable_1);
+static H264_PluginMediaFormat MyMediaFormatInfo_Mode0(H264_Mode0_FormatName, MyOptionTable_0);
+static H264_PluginMediaFormat MyMediaFormatInfo_Mode1(H264_Mode1_FormatName, MyOptionTable_1);
+static H264_PluginMediaFormat MyMediaFormatInfo_High (H264_High_FormatName,  MyOptionTable_High);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -759,8 +810,9 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
 static struct PluginCodec_Definition CodecDefinition[] =
 {
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_0, H264_Encoder, H264_Decoder),
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_1, H264_Encoder, H264_Decoder)
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode0, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode1, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_High,  H264_Encoder, H264_Decoder)
 };
 
 
