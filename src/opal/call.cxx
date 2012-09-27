@@ -722,7 +722,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
   if (!startedOne) {
     if (sourceStream != NULL)
-      connection.RemoveMediaStream(*sourceStream);
+      connection.CloseMediaStream(*sourceStream);
     return false;
   }
 
