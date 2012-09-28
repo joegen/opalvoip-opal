@@ -4706,11 +4706,16 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
-  m_manager.m_NATHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
-  config->Write(NATHandlingKey, m_manager.m_NATHandling);
-  SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
-  SAVE_FIELD(NATRouter, m_manager.m_NATRouter = );
-  m_manager.SetNATHandling();
+  int natHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
+  if (m_manager.m_NATHandling != natHandling ||
+      m_manager.m_NATRouter != m_NATRouter ||
+      m_manager.m_STUNServer != m_STUNServer) {
+    m_manager.m_NATHandling = natHandling;
+    config->Write(NATHandlingKey, m_manager.m_NATHandling);
+    SAVE_FIELD(NATRouter, m_manager.m_NATRouter = );
+    SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
+    m_manager.SetNATHandling();
+  }
 
   config->DeleteGroup(LocalInterfacesGroup);
   config->SetPath(LocalInterfacesGroup);
