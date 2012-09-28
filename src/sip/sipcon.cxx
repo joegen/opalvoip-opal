@@ -1317,6 +1317,9 @@ bool SIPConnection::SetRemoteMediaFormats(SDPSessionDescription * sdp)
   if (sdp == NULL) {
     m_remoteFormatList = GetLocalMediaFormats();
     m_remoteFormatList.MakeUnique();
+#if OPAL_FAX
+    m_remoteFormatList += OpalT38; // Assume remote can do it.
+#endif
   }
   else {
     m_remoteFormatList = sdp->GetMediaFormats();
