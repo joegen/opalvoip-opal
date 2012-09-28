@@ -208,7 +208,7 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
 
 SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   : OpalRTPConnection(init.m_call, ep, init.m_token, init.m_options, init.m_stringOptions)
-  , SIPTransactionOwner(ep)
+  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
   , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
                      (1<<SIP_PDU::Method_ACK   )|
                      (1<<SIP_PDU::Method_CANCEL)|

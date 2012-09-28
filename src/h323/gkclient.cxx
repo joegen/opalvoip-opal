@@ -92,14 +92,8 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans)
   , discoveryComplete(false)
   , m_registrationFailReason(UnregisteredLocally)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-  , highPriorityMonitor(*this, HighPriority)
-  , lowPriorityMonitor(*this, LowPriority)
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
+  , P_DISABLE_MSVC_WARNINGS(4355, highPriorityMonitor(*this, HighPriority))
+  , P_DISABLE_MSVC_WARNINGS(4355, lowPriorityMonitor(*this, LowPriority))
   , alternatePermanent(false)
   , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())

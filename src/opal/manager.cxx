@@ -237,10 +237,6 @@ ostream & operator<<(ostream & strm, const OpalProductInfo & info)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-
 OpalManager::OpalManager()
   : productInfo(OpalProductInfo::Default())
   , defaultUserName(PProcess::Current().GetUserName())
@@ -266,7 +262,7 @@ OpalManager::OpalManager()
   , m_natMethod(NULL)
 #endif
   , interfaceMonitor(NULL)
-  , activeCalls(*this)
+  , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
   , garbageCollectSkip(false)
   , m_decoupledEventPool(5, 0, "Event Pool")
 #if OPAL_SCRIPT
@@ -306,10 +302,6 @@ OpalManager::OpalManager()
 
   PTRACE(4, "OpalMan\tCreated manager.");
 }
-
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
 
 
 OpalManager::~OpalManager()

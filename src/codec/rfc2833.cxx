@@ -212,13 +212,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx, const OpalMediaFormat &
   , m_txPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_rxPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_receiveNotifier(rx)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
   , m_receiveHandler(PCREATE_RTPFilterNotifier(ReceivedPacket))
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
   , m_receiveState(ReceiveIdle)
   , m_receivedTone('\0')
   , m_tonesReceived(0)

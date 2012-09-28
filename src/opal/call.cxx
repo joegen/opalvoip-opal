@@ -50,10 +50,6 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-
 OpalCall::OpalCall(OpalManager & mgr)
   : manager(mgr)
   , myToken(mgr.GetNextToken('C'))
@@ -87,10 +83,6 @@ OpalCall::OpalCall(OpalManager & mgr)
 
   PTRACE(3, "Call\tCreated " << *this);
 }
-
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
 
 
 OpalCall::~OpalCall()
