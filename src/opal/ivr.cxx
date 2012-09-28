@@ -176,14 +176,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   , endpoint(ep)
   , m_vxmlScript(vxml)
   , m_vxmlMediaFormats(IncludeMediaFormatsFromVXML(vxml))
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4355)
-#endif
-  , m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+  , P_DISABLE_MSVC_WARNINGS(4355, m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true))
 {
   PTRACE(4, "IVR\tConstructed");
 }

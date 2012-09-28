@@ -65,14 +65,8 @@ ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket)),
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
-  clockRate (8000)
+  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
+  , clockRate (8000)
 {
   // Initialise the adaptive threshold variables.
   SetParameters(theParam);

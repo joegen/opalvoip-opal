@@ -90,13 +90,7 @@ static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues
 
 MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
   : H323EndPoint(mgr)
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-  , m_gkServer(*this)
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
+  , P_DISABLE_MSVC_WARNINGS(4355, m_gkServer(*this))
 {
   terminalType = e_MCUWithAVMP;
 }

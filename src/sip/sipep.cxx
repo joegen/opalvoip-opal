@@ -85,18 +85,9 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
   , m_threadPool(maxThreads, "SIP Pool")
-
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-
-  , m_highPriorityMonitor(*this, HighPriority)
-  , m_lowPriorityMonitor(*this, LowPriority)
+  , P_DISABLE_MSVC_WARNINGS(4355, m_highPriorityMonitor(*this, HighPriority))
+  , P_DISABLE_MSVC_WARNINGS(4355, m_lowPriorityMonitor(*this, LowPriority))
   , m_disableTrying(true)
-
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
 {
   defaultSignalPort = SIPURL::DefaultPort;
   maxRetries = 10;

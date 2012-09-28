@@ -114,10 +114,6 @@ static POrdinalToString CallEndReasonStrings(PARRAYSIZE(CallEndReasonStringsInit
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-
 OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token,
@@ -232,9 +228,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   m_phaseTime[UninitialisedPhase].SetCurrentTime();
 }
 
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
 
 OpalConnection::~OpalConnection()
 {

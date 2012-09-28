@@ -48,7 +48,7 @@
 
 
 /// Separate base class to allow searching sorted list
-class SIPHandlerBase : public virtual PSafeObject 
+class SIPHandlerBase : public PSafeObject 
 {
     PCLASSINFO(SIPHandlerBase, PSafeObject);
 

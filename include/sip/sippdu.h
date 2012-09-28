@@ -945,10 +945,11 @@ class SIPPoolTimer : public PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>,
 /////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
-class SIPTransactionOwner : public virtual PSafeObject
+class SIPTransactionOwner
 {
   public:
     SIPTransactionOwner(
+      PSafeObject & object,
       SIPEndPoint & endpoint
     );
     virtual ~SIPTransactionOwner();
@@ -978,6 +979,7 @@ class SIPTransactionOwner : public virtual PSafeObject
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
   protected:
+    PSafeObject       & m_object;
     SIPEndPoint       & m_endpoint;
     SIPURL              m_proxy;
     PString             m_localInterface;
@@ -1028,8 +1030,9 @@ class SIPTransaction : public SIPTransactionBase
   protected:
     SIPTransaction(
       Methods method,
-      SIPTransactionOwner * owner,
-      OpalTransport * transport
+      SIPTransactionOwner & owner,
+      OpalTransport * transport,
+      bool deleteOwner = false
     );
   public:
     ~SIPTransaction();
@@ -1054,7 +1057,7 @@ class SIPTransaction : public SIPTransactionBase
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
     virtual PBoolean OnCompleted(SIP_PDU & response);
 
-    SIPEndPoint & GetEndPoint() const { return m_owner->GetEndPoint(); }
+    SIPEndPoint & GetEndPoint() const { return m_owner.GetEndPoint(); }
     SIPConnection * GetConnection() const;
     PString         GetInterface()  const { return m_localInterface; }
 
@@ -1085,7 +1088,8 @@ class SIPTransaction : public SIPTransactionBase
     );
     virtual void SetTerminated(States newState);
 
-    PSafePtr<SIPTransactionOwner> m_owner;
+    SIPTransactionOwner & m_owner;
+    bool                  m_deleteOwner;
 
     PTimeInterval m_retryTimeoutMin; 
     PTimeInterval m_retryTimeoutMax; 

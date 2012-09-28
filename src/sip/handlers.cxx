@@ -78,7 +78,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
                        const SIPParameters & params,
                        const PString & callID)
   : SIPHandlerBase(callID)
-  , SIPTransactionOwner(ep)
+  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
