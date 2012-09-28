@@ -55,14 +55,8 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalEchoCanceler::OpalEchoCanceler()
-#ifdef _MSC_VER
-#pragma warning(disable:4355)
-#endif
-  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket)),
-    sendHandler(PCREATE_NOTIFIER(SentPacket))
-#ifdef _MSC_VER
-#pragma warning(default:4355)
-#endif
+  : receiveHandler(PCREATE_NOTIFIER(ReceivedPacket))
+  , sendHandler(PCREATE_NOTIFIER(SentPacket))
 {
   echoState = NULL;
   preprocessState = NULL;

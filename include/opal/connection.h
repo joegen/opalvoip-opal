@@ -380,7 +380,7 @@ class OpalProductInfo
    When media streams are created they must make requests for bandwidth which
    is managed by the connection.
  */
-class OpalConnection : public virtual PSafeObject
+class OpalConnection : public PSafeObject
 {
     PCLASSINFO(OpalConnection, PSafeObject);
   public:
