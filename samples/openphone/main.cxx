@@ -1652,7 +1652,7 @@ bool MyManager::CanDoFax() const
 {
 #if OPAL_FAX
   return GetMediaFormatMask().GetValuesIndex(OpalT38.GetName()) == P_MAX_INDEX &&
-         OpalMediaFormat("TIFF-File").IsValid();
+         OpalMediaFormat(OPAL_FAX_TIFF_FILE).IsValid();
 #else
   return false;
 #endif
@@ -7598,16 +7598,6 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
   LogWindow << connection.GetRemotePartyName() << " is ringing on "
             << now.AsString("w h:mma") << " ..." << endl;
   return true;
-}
-
-
-OpalMediaFormatList MyPCSSEndPoint::GetMediaFormats() const
-{
-  OpalMediaFormatList list = OpalPCSSEndPoint::GetMediaFormats();
-#if OPAL_FAX
-  list += OpalT38;  // We can deal with T.38 so include it in list
-#endif
-  return list;
 }
 
 
