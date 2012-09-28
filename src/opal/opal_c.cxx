@@ -2086,16 +2086,20 @@ void OpalManager_C::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
+static const PConstCaselessString AllowOnUserInputString("OPAL-C-API-Allow-OnUserInputString");
+
 void OpalManager_C::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  OpalMessageBuffer message(OpalIndUserInput);
-  SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, value);
-  message->m_param.m_userInput.m_duration = 0;
-  PTRACE(4, "OpalC API\tOnUserInputString:"
-            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
-            " input=\"" << message->m_param.m_userInput.m_userInput << '"');
-  PostMessage(message);
+  if (connection.GetStringOptions().GetBoolean(AllowOnUserInputString, true)) {
+    OpalMessageBuffer message(OpalIndUserInput);
+    SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
+    SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, value);
+    message->m_param.m_userInput.m_duration = 0;
+    PTRACE(4, "OpalC API\tOnUserInputString:"
+              " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+              " input=\"" << message->m_param.m_userInput.m_userInput << '"');
+    PostMessage(message);
+  }
 
   OpalManager::OnUserInputString(connection, value);
 }
@@ -2103,22 +2107,22 @@ void OpalManager_C::OnUserInputString(OpalConnection & connection, const PString
 
 void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int duration)
 {
-  if (connection.IsNetworkConnection()) {
-    char input[2];
-    input[0] = tone;
-    input[1] = '\0';
+  char input[2];
+  input[0] = tone;
+  input[1] = '\0';
 
-    OpalMessageBuffer message(OpalIndUserInput);
-    SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
-    SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, input);
-    message->m_param.m_userInput.m_duration = duration;
-    PTRACE(4, "OpalC API\tOnUserInputTone:"
-              " token=\"" << message->m_param.m_userInput.m_callToken << "\""
-              " input=\"" << message->m_param.m_userInput.m_userInput << '"');
-    PostMessage(message);
-  }
+  OpalMessageBuffer message(OpalIndUserInput);
+  SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, input);
+  message->m_param.m_userInput.m_duration = duration;
+  PTRACE(4, "OpalC API\tOnUserInputTone:"
+            " token=\"" << message->m_param.m_userInput.m_callToken << "\""
+            " input=\"" << message->m_param.m_userInput.m_userInput << '"');
+  PostMessage(message);
 
+  connection.GetStringOptions().SetBoolean(AllowOnUserInputString, false);
   OpalManager::OnUserInputTone(connection, tone, duration);
+  connection.GetStringOptions().Remove(AllowOnUserInputString);
 }
 
 
