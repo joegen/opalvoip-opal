@@ -147,7 +147,7 @@ protected:
   SIPEndPoint               & endpoint;
 
   SIPAuthentication         * m_authentication;
-  unsigned                    m_authenticatedCseq;
+  unsigned                    m_authenticateErrors;
   PString                     m_username;
   PString                     m_password;
   PString                     m_realm;

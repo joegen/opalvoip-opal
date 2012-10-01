@@ -242,7 +242,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_symmetricOpenStream(false)
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
-  , m_authenticatedCseq(0)
+  , m_authenticateErrors(0)
   , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
@@ -2020,33 +2020,36 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
+  switch (response.GetStatusCode()) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      if (OnReceivedAuthenticationRequired(transaction, response))
+        return;
+      break;
+
+    default :
+      m_authenticateErrors = 0;
+  }
+
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
-    switch (response.GetStatusCode()) {
-      case SIP_PDU::Failure_UnAuthorised :
-      case SIP_PDU::Failure_ProxyAuthenticationRequired :
-        if (OnReceivedAuthenticationRequired(transaction, response))
-          return;
+    switch (responseClass) {
+      case 1 : // Treat all other provisional responses like a Trying.
+        OnReceivedTrying(transaction, response);
+        return;
+
+      case 2 : // Successful response - there really is only 200 OK
+        OnReceivedOK(transaction, response);
+        break;
 
       default :
-        switch (responseClass) {
-          case 1 : // Treat all other provisional responses like a Trying.
-            OnReceivedTrying(transaction, response);
-            return;
+        if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
+          m_referInProgress = false;
 
-          case 2 : // Successful response - there really is only 200 OK
-            OnReceivedOK(transaction, response);
-            break;
-
-          default :
-            if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
-              m_referInProgress = false;
-
-              PStringToString info;
-              info.SetAt("result", "error");
-              info.SetAt("party", "B");
-              info.SetAt("code", psprintf("%u", response.GetStatusCode()));
-              OnTransferNotify(info, this);
-            }
+          PStringToString info;
+          info.SetAt("result", "error");
+          info.SetAt("party", "B");
+          info.SetAt("code", psprintf("%u", response.GetStatusCode()));
+          OnTransferNotify(info, this);
         }
     }
 
@@ -2122,12 +2125,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     case SIP_PDU::Information_Session_Progress :
       OnReceivedSessionProgress(response);
       return;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      if (OnReceivedAuthenticationRequired(transaction, response))
-        return;
-      break;
 
     case SIP_PDU::Failure_MessageTooLarge :
     {
@@ -2812,7 +2809,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   SIP_PDU::StatusCodes status = endpoint.HandleAuthentication(m_authentication,
-                                                              m_authenticatedCseq,
+                                                              m_authenticateErrors,
                                                               response,
                                                               m_dialog.GetProxy(),
                                                               m_dialog.GetLocalURI().GetUserName(),
