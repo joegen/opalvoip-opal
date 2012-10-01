@@ -985,7 +985,7 @@ class SIPTransactionOwner
     PString             m_localInterface;
     PINDEX              m_dnsEntry;
     SIPAuthentication * m_authentication;
-    unsigned            m_authenticatedCseq;
+    unsigned            m_authenticateErrors;
 
     PSafeList<SIPTransaction> m_transactions;
 

@@ -2653,7 +2653,7 @@ SIPTransactionOwner::SIPTransactionOwner(PSafeObject & object, SIPEndPoint & end
   , m_endpoint(endpoint)
   , m_dnsEntry(0)
   , m_authentication(NULL)
-  , m_authenticatedCseq(0)
+  , m_authenticateErrors(0)
 {
   m_transactions.DisallowDeleteObjects();
 }
@@ -2689,6 +2689,15 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
   transport->UnlockReadOnly();
 
   m_endpoint.OnReceivedResponse(transaction, response);
+
+  switch (response.GetStatusCode()) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      break;
+
+    default :
+      m_authenticateErrors = 0;
+  }
 }
 
 
@@ -2809,8 +2818,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
   newAuthentication->SetPassword(password);
 
   // Only check for same credentials if same request (via CSeq)
-  unsigned cseq = response.GetMIME().GetCSeqIndex();
-  if (m_authenticatedCseq == cseq && m_authentication != NULL && *newAuthentication == *m_authentication) {
+  if (m_authenticateErrors > 1 && m_authentication != NULL && *newAuthentication == *m_authentication) {
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
     return SIP_PDU::Failure_UnAuthorised;
   }
@@ -2821,7 +2829,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
   // switch authentication schemes
   delete m_authentication;
   m_authentication = newAuthentication;
-  m_authenticatedCseq = cseq;
+  ++m_authenticateErrors;
   return SIP_PDU::Successful_OK;
 }
 
