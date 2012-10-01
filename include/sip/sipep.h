@@ -865,7 +865,7 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     SIP_PDU::StatusCodes HandleAuthentication(
       SIPAuthentication * & authentication,
-      unsigned & authenticatedCseq,
+      unsigned & authenticateErrors,
       const SIP_PDU & response,
       const SIPURL & proxyOverride,
       const PString & username,
