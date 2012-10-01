@@ -1663,7 +1663,7 @@ unsigned SIPEndPoint::GetAllowedMethods() const
 
 
 SIP_PDU::StatusCodes SIPEndPoint::HandleAuthentication(SIPAuthentication * & authentication,
-                                                       unsigned & authenticatedCseq,
+                                                       unsigned & authenticateErrors,
                                                        const SIP_PDU & response,
                                                        const SIPURL & proxyOverride,
                                                        const PString & user,
@@ -1723,8 +1723,7 @@ SIP_PDU::StatusCodes SIPEndPoint::HandleAuthentication(SIPAuthentication * & aut
   newAuthentication->SetPassword(password);
 
   // Only check for same credentials if same request (via CSeq)
-  unsigned cseq = response.GetMIME().GetCSeqIndex();
-  if (authenticatedCseq == cseq && authentication != NULL && *newAuthentication == *authentication) {
+  if (authenticateErrors > 1 && authentication != NULL && *newAuthentication == *authentication) {
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
     return SIP_PDU::Failure_UnAuthorised;
   }
@@ -1735,7 +1734,7 @@ SIP_PDU::StatusCodes SIPEndPoint::HandleAuthentication(SIPAuthentication * & aut
   // switch authentication schemes
   delete authentication;
   authentication = newAuthentication;
-  authenticatedCseq = cseq;
+  ++authenticateErrors;
   return SIP_PDU::Successful_OK;
 }
 

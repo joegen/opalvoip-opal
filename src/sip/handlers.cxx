@@ -76,7 +76,7 @@ ostream & operator<<(ostream & strm, SIPHandler::State state)
 SIPHandler::SIPHandler(SIP_PDU::Methods method, SIPEndPoint & ep, const SIPParameters & params)
   : endpoint(ep)
   , m_authentication(NULL)
-  , m_authenticatedCseq(0)
+  , m_authenticateErrors(0)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
@@ -422,7 +422,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       OnReceivedAuthenticationRequired(transaction, response);
-      break;
+      return;
 
     case SIP_PDU::Failure_IntervalTooBrief :
       OnReceivedIntervalTooBrief(transaction, response);
@@ -438,6 +438,8 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       else
         OnFailed(response);
   }
+
+  m_authenticateErrors = 0;
 }
 
 
@@ -462,7 +464,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // If either username or password blank, try and fine values from other
   // handlers which might be logged into the realm, or the proxy, if one.
   SIP_PDU::StatusCodes status = endpoint.HandleAuthentication(m_authentication,
-                                                              m_authenticatedCseq,
+                                                              m_authenticateErrors,
                                                               response,
                                                               GetProxy(),
                                                               m_username,

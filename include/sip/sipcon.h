@@ -730,7 +730,7 @@ class SIPConnection : public OpalRTPConnection
     int                   m_appearanceCode;
     PString               m_alertInfo;
     SIPAuthentication   * m_authentication;
-    unsigned              m_authenticatedCseq;
+    unsigned              m_authenticateErrors;
     PTimer                sessionTimer;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
