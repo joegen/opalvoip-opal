@@ -114,7 +114,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
       rtpUDP->SetJitterBufferSize(0, 0);
       m_consecutiveBadPackets  = 0;
-      m_oneGoodPacket          = false;
+      m_awaitingGoodPacket     = true;
       m_expectedSequenceNumber = 0;
       m_secondaryPacket        = -1;
 
@@ -399,27 +399,34 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
       PPER_Stream rawData(thisUDPTL, pduSize);
 
-      // Decode the PDU
-      if (!m_receivedPacket.Decode(rawData)) {
-  #if PTRACING
-        if (m_oneGoodPacket)
-          PTRACE(2, "T38_UDPTL\tRaw data decode failure:\n  "
-                 << setprecision(2) << rawData << "\n  UDPTL = "
-                 << setprecision(2) << m_receivedPacket);
-        else
-          PTRACE(2, "T38_UDPTL\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+      // Decode the PDU, but not if still receiving RTP
+      bool decodeBad = !m_receivedPacket.Decode(rawData);
+      if (decodeBad || (m_awaitingGoodPacket && m_receivedPacket.m_seq_number >= 32768)) {
+        if (++m_consecutiveBadPackets > 1000) {
+          PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
+          return RTP_Session::e_AbortTransport;
+        }
+
+ #if PTRACING
+        static const unsigned Level = 2;
+        if (PTrace::CanTrace(Level)) {
+          ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
+          trace << "T38_UDPTL\t";
+          if (m_awaitingGoodPacket)
+            trace << "Probable RTP packet: " << rawData.GetSize() << " bytes.";
+          else
+            trace << "Raw data decode failure:\n  "
+                  << setprecision(2) << rawData << "\n  UDPTL = "
+                  << setprecision(2) << m_receivedPacket;
+          trace << PTrace::End;
+        }
   #endif
 
-        m_consecutiveBadPackets++;
-        if (m_consecutiveBadPackets < 1000)
-          return RTP_Session::e_IgnorePacket;
-
-        PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
-        return RTP_Session::e_AbortTransport;
+        return RTP_Session::e_IgnorePacket;
       }
 
-      PTRACE_IF(3, !m_oneGoodPacket, "T38_UDPTL\tFirst decoded UDPTL packet");
-      m_oneGoodPacket = true;
+      PTRACE_IF(3, m_awaitingGoodPacket, "T38_UDPTL\tFirst decoded UDPTL packet");
+      m_awaitingGoodPacket = false;
       m_consecutiveBadPackets = 0;
 
       PTRACE(5, "T38_UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << m_receivedPacket);
@@ -448,7 +455,7 @@ class T38PseudoRTP_Handler : public RTP_Encoding
 
   protected:
     int             m_consecutiveBadPackets;
-    bool            m_oneGoodPacket;
+    bool            m_awaitingGoodPacket;
     T38_UDPTLPacket m_receivedPacket;
     unsigned        m_expectedSequenceNumber;
     int             m_secondaryPacket;
@@ -559,6 +566,7 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
   OpalMediaFormatList formats;
   formats += OpalT38;
   formats += TIFF_File_FormatName;
+PTRACE(4, "OpalFaxEndPoint\tGetMediaFormats for " << *this << "\n    " << setfill(',') << formats << setfill(' '));
   return formats;
 }
 
@@ -590,7 +598,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
 
   m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout));
 
-  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
+  PTRACE(3, "FAX\tCreated fax connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","
             " disabledT38=" << disableT38 << ","
             " filename=\"" << filename << '"');
