@@ -2203,8 +2203,11 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream,
   // Don't worry about body if was truncated packet
   if (!truncated) {
     if (contentLengthPresent) {
-      if (contentLength > 0)
+      if (contentLength > 0) {
         stream.read(m_entityBody.GetPointerAndSetLength(contentLength), contentLength);
+        if (stream.gcount() != contentLength)
+          truncated = true;
+      }
     }
     else {
       contentLength = 0;
