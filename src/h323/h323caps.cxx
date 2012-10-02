@@ -919,7 +919,7 @@ H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId
 PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) const
 {
   Comparison result = H323AudioCapability::Compare(obj);
-  if (result != NULL)
+  if (result != EqualTo)
     return result;
 
   const H323GenericAudioCapability & other = dynamic_cast<const H323GenericAudioCapability &>(obj);
@@ -1255,7 +1255,7 @@ H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId
 PObject::Comparison H323GenericVideoCapability::Compare(const PObject & obj) const
 {
   Comparison result = H323VideoCapability::Compare(obj);
-  if (result != NULL)
+  if (result != EqualTo)
     return result;
 
   return CompareInfo(dynamic_cast<const H323GenericVideoCapability &>(obj));
@@ -1745,7 +1745,7 @@ H323NonStandardDataCapability::H323NonStandardDataCapability(unsigned maxBitRate
 PObject::Comparison H323NonStandardDataCapability::Compare(const PObject & obj) const
 {
   Comparison result = H323DataCapability::Compare(obj);
-  if (result != NULL)
+  if (result != EqualTo)
     return result;
 
   return CompareInfo(dynamic_cast<const H323NonStandardDataCapability &>(obj));
