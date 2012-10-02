@@ -772,13 +772,9 @@ bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
   if (m_depacketizer->IsIntraFrame())
     flags |= PluginCodec_ReturnCoderIFrame;
 
-#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
-  // We have repuposed this variable as a count of decode errors
-  // detected by the FFMPEG logging intercept.
-  #define  decode_error_count  error_rate
-#endif
-
+#ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
   int error_before = m_context->decode_error_count;
+#endif
 
   PTRACE(5, m_prefix, "Decoding " << m_depacketizer->GetLength()  << " bytes");
   int gotPicture = 0;
@@ -790,9 +786,11 @@ bool H263_Base_DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
 
   m_depacketizer->NewFrame();
 
+#ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (error_before != m_context->decode_error_count)
     flags = PluginCodec_ReturnCoderRequestIFrame;
+#endif
 
   if (!gotPicture) {
     PTRACE(3, m_prefix, "Decoded "<< bytesDecoded << " bytes without getting a Picture"); 
