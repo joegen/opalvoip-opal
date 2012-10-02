@@ -171,6 +171,7 @@ class FFMPEGCodec
     uint8_t        * m_alignedInputYUV;
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
+    int              m_errorCount;
 
   public:
     FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
@@ -198,6 +199,8 @@ class FFMPEGCodec
     virtual bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags);
 
     EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
+
+    virtual void ErrorCallback(int level, const char * msg);
 
   protected:
     bool InitContext();
