@@ -141,7 +141,10 @@ void ReadPipe(void * data, unsigned bytes)
   if (read(downLink, data, bytes) == bytes)
     return;
 
-  PTRACE(1, HelperTraceName, "Error reading down link: " << strerror(errno));
+  if (errno != 0) {
+    PTRACE(1, HelperTraceName, "Error reading down link: " << strerror(errno));
+  }
+
   exit(1);
 }
 
