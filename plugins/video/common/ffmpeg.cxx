@@ -76,19 +76,10 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
   if (buffer[--len] == '\n')
     buffer[len] = '\0';
 
-  PTRACE(level, "FFMPEG", buffer);
-
-#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
-  if (level > 1 || avcl == NULL || strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") != 0)
-    return;
-
-  AVCodecContext * context = (AVCodecContext *)avcl;
-
-  // It is claimed this is only used by encoders for "Simulates errors
-  // in the bitstream to test error concealment." So, we repurpose it
-  // as a count of decode errors.
-  ++context->error_rate;
-#endif
+  if (avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0)
+    static_cast<FFMPEGCodec *>(static_cast<AVCodecContext *>(avcl)->opaque)->ErrorCallback(level, buffer);
+  else
+    PTRACE(level, "FFMPEG", buffer);
 }
 #endif
 
@@ -340,6 +331,7 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
   , m_alignedInputYUV(NULL)
   , m_alignedInputSize(0)
   , m_fullFrame(fullFrame)
+  , m_errorCount(0)
 {
   FFMPEGLibraryInstance.Load();
 }
@@ -389,6 +381,7 @@ bool FFMPEGCodec::InitContext()
     m_context->debug |= FF_DEBUG_BUGS | FF_DEBUG_BUFFERS;
 #endif
 
+  m_context->opaque = this;
   return true;
 }
 
@@ -417,7 +410,6 @@ bool FFMPEGCodec::InitEncoder(CodecID codecId)
   if (!InitContext())
     return false;
 
-  m_context->opaque = this;
   m_context->rtp_callback = &StaticRTPCallBack;
 
   m_context->flags = CODEC_FLAG_EMU_EDGE   // don't draw edges
@@ -723,19 +715,22 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 {
   PTRACE(5, m_prefix, "Decoding " << length << " bytes");
 
-#ifndef FFMPEG_HAS_DECODE_ERROR_COUNT
-  // We have re-purposed this variable as a count of decode errors
-  // detected by the FFMPEG logging intercept.
-  #define  decode_error_count  error_rate
+  int errorsBefore = m_errorCount;
+#ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
+  errorsBefore += m_context->decode_error_count
 #endif
 
-  int error_before = m_context->decode_error_count;
 
   int gotPicture = 0;
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, frame, length);
 
+  int errorsAfter = m_errorCount;
+#ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
+  errorsAfter += m_context->decode_error_count
+#endif
+
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
-  if (error_before != m_context->decode_error_count)
+  if (errorsAfter > errorsBefore)
     flags = PluginCodec_ReturnCoderRequestIFrame;
 
   if (gotPicture) {
@@ -824,3 +819,13 @@ bool FFMPEGCodec::EncodedFrame::IsIntraFrame() const
 void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
 {
 }
+
+
+void FFMPEGCodec::ErrorCallback(int level, const char * msg)
+{
+  PTRACE(level, m_prefix, msg);
+
+  if (level < 2)
+    ++m_errorCount;
+}
+
