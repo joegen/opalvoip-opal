@@ -494,6 +494,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
   protected:
     vpx_codec_ctx_t      m_codec;
+    vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
     bool                 m_ignoreTillKeyFrame;
@@ -501,11 +502,16 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
   public:
     VP8Decoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
+      , m_flags(0)
       , m_iterator(NULL)
       , m_ignoreTillKeyFrame(false)
     {
       memset(&m_codec, 0, sizeof(m_codec));
       m_fullFrame.reserve(10000);
+
+#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
+      m_flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
+#endif
     }
 
 
@@ -517,7 +523,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
     virtual bool Construct()
     {
-      if (IS_ERROR(vpx_codec_dec_init, (&m_codec, vpx_codec_vp8_dx(), NULL, 0)))
+      if (IS_ERROR(vpx_codec_dec_init, (&m_codec, vpx_codec_vp8_dx(), NULL, m_flags)))
         return false;
 
       PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str());
