@@ -4072,7 +4072,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 
 
 #if OPAL_T38_CAPABILITY
-bool H323Connection::SwitchT38(bool toT38)
+bool H323Connection::SwitchFaxMediaStreams(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
     PTRACE(2, "H323\tNested call to SwitchT38 on " << *this);
@@ -4986,7 +4986,7 @@ PBoolean H323Connection::OnStartLogicalChannel(H323Channel & channel)
         t38ModeChangeCapabilities.Replace(channel.GetCapability().GetMediaFormat().GetName(), PString::Empty());
         if (t38ModeChangeCapabilities.FindSpan(",") == P_MAX_INDEX) {
           PTRACE(4, "H323\tCompleted local switch of T.38");
-          OnSwitchedT38(channel.GetSessionID() == H323Capability::DefaultDataSessionID, true);
+          OnSwitchedFaxMediaStreams(channel.GetSessionID() == H323Capability::DefaultDataSessionID, true);
         }
       }
     }
@@ -5326,8 +5326,12 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
     }
     if (ok) {
 #if OPAL_T38_CAPABILITY
-      if (hasT38 != (GetMediaStream(OpalMediaType::Fax(), true) != NULL))
-        OnSwitchingT38(hasT38);
+      if (hasT38 != (GetMediaStream(OpalMediaType::Fax(), true) != NULL)) {
+        if (!OnSwitchingFaxMediaStreams(hasT38)) {
+          PTRACE(2, "H245\tMode change rejected by local connection");
+          return false;
+        }
+      }
 #endif
       return true;
     }
@@ -5425,18 +5429,26 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
                                      && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
 
-  bool switched = false;
+#if OPAL_T38_CAPABILITY
+  bool failed = false;
+#endif
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(formats[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur!
       OpalMediaFormat mediaFormat = capability->GetMediaFormat();
-      if (ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat))
-        switched = true;
-      else {
+      if (!ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat)) {
         PTRACE(2, "H245\tCould not open channel after T.38 mode change: " << *capability);
+#if OPAL_T38_CAPABILITY
+        failed = true;
+#endif
       }
     }
   }
+
+#if OPAL_T38_CAPABILITY
+  if (failed)
+    OnSwitchedFaxMediaStreams(ownerCall.IsSwitchingToT38(), false);
+#endif
 }
 
 
@@ -5445,7 +5457,7 @@ void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
   if (!t38ModeChangeCapabilities.IsEmpty()) {
     t38ModeChangeCapabilities.MakeEmpty();
 #if OPAL_T38_CAPABILITY
-    OnSwitchedT38(false, false);
+    OnSwitchedFaxMediaStreams(ownerCall.IsSwitchingToT38(), false);
 #endif
   }
 }

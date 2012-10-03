@@ -299,8 +299,8 @@ class H323Connection : public OpalRTPConnection
 #if OPAL_T38_CAPABILITY
     /**Switch to/from T.38 fax mode.
       */
-    virtual bool SwitchT38(
-      bool toT38  ///< T.38 or return to audio mode
+    virtual bool SwitchFaxMediaStreams(
+      bool toT38  ///< Enable T.38 or return to audio mode
     );
 #endif
 

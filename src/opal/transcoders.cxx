@@ -439,11 +439,11 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
     OpalMediaFormatList srcFormats = GetSourceFormats(*f);
     for (OpalMediaFormatList::iterator s = srcFormats.begin(); s != srcFormats.end(); ++s) {
       OpalMediaFormatList dstFormats = GetDestinationFormats(*s);
-      if (dstFormats.GetSize() > 0 && f->GetMediaType() == s->GetMediaType()) {
+      if (dstFormats.GetSize() > 0) {
         possibleFormats += *s;
 
         for (OpalMediaFormatList::iterator d = dstFormats.begin(); d != dstFormats.end(); ++d) {
-          if (d->IsValid() && s->GetMediaType() == d->GetMediaType())
+          if (d->IsValid())
             possibleFormats += *d;
         }
       }
