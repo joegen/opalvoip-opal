@@ -662,14 +662,14 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 
 
 #if OPAL_T38_CAPABILITY
-bool OpalConnection::SwitchT38(bool)
+bool OpalConnection::SwitchFaxMediaStreams(bool)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
 
-void OpalConnection::OnSwitchedT38(bool toT38, bool success)
+void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
   if (!PAssert(ownerCall.IsSwitchingT38(), PLogicError))
     return;
@@ -683,14 +683,14 @@ void OpalConnection::OnSwitchedT38(bool toT38, bool success)
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   if (other != NULL)
-    other->OnSwitchedT38(toT38, success);
+    other->OnSwitchedFaxMediaStreams(toT38, success);
 
   if (success || IsReleased())
     return;
 
   if (toT38) {
     PTRACE(4, "OpalCon\tSwitch request to fax failed, falling back to audio mode");
-    SwitchT38(false);
+    SwitchFaxMediaStreams(false);
   }
   else {
     PTRACE(3, "OpalCon\tSwitch request back to audio mode failed.");
@@ -698,19 +698,20 @@ void OpalConnection::OnSwitchedT38(bool toT38, bool success)
   }
 }
 
-void OpalConnection::OnSwitchingT38(bool toT38)
+bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
 {
-  if (ownerCall.IsSwitchingT38())
-    return;
+  if (ownerCall.IsSwitchingT38()) {
+    PTRACE(3, "OpalCon\tRemote requests switching media streams to "
+           << (toT38 ? "T.38" : "audio") << " on " << *this);
 
-  PTRACE(3, "OpalCon\tRemote requests switching media streams to "
-         << (toT38 ? "T.38" : "audio") << " on " << *this);
+    ownerCall.SetSwitchingT38(toT38);
 
-  ownerCall.SetSwitchingT38(toT38);
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other != NULL)
+      return other->OnSwitchingFaxMediaStreams(toT38);
+  }
 
-  PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL)
-    other->OnSwitchingT38(toT38);
+  return !toT38;
 }
 #endif // OPAL_T38_CAPABILITY
 

@@ -1048,10 +1048,18 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   if (replaceSession) {
     PTRACE(4, "SIP\tReplacing " << mediaSession->GetMediaType() << " session for " << mediaType);
 #if OPAL_T38_CAPABILITY
-    if (mediaType == OpalMediaType::Fax())
-      OnSwitchingT38(true);
-    else if (mediaSession->GetMediaType() == OpalMediaType::Fax())
-      OnSwitchingT38(false);
+    if (mediaType == OpalMediaType::Fax()) {
+      if (!OnSwitchingFaxMediaStreams(true)) {
+        PTRACE(2, "SIP\tSwitch to T.38 refused for " << *this);
+        return false;
+      }
+    }
+    else if (mediaSession->GetMediaType() == OpalMediaType::Fax()) {
+      if (!OnSwitchingFaxMediaStreams(false)) {
+        PTRACE(2, "SIP\tSwitch from T.38 refused for " << *this);
+        return false;
+      }
+    }
 #endif // OPAL_T38_CAPABILITY
     mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
                                             OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
@@ -2433,11 +2441,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 #if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
-    SDPSessionDescription * sdp = transaction.GetSDP();
-    bool toT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
-    sdp = response.GetSDP();
+    SDPSessionDescription * sdp = response.GetSDP();
     bool isT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
-    OnSwitchedT38(toT38, isT38 == toT38);
+    bool toT38 = ownerCall.IsSwitchingToT38();
+    OnSwitchedFaxMediaStreams(toT38, isT38 == toT38);
   }
 #endif // OPAL_T38_CAPABILITY
 
