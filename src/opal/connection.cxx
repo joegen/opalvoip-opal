@@ -700,7 +700,7 @@ void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 
 bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
 {
-  if (ownerCall.IsSwitchingT38()) {
+  if (!ownerCall.IsSwitchingT38()) {
     PTRACE(3, "OpalCon\tRemote requests switching media streams to "
            << (toT38 ? "T.38" : "audio") << " on " << *this);
 

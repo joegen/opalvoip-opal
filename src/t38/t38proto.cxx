@@ -1002,7 +1002,13 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 
 bool OpalFaxConnection::OnSwitchingFaxMediaStreams(bool toT38)
 {
-  return !(toT38 && m_disableT38);
+  if (toT38 && m_disableT38) {
+    PTRACE(3, "FAX\tRequest to switch to T.38 disabled");
+    return false;
+  }
+
+  PTRACE(4, "FAX\tRequest to switch to T.38 allowed");
+  return true;
 }
 
 
