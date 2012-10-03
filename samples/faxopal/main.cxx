@@ -162,18 +162,18 @@ void FaxOPAL::Main()
   }
 
   if (args.HasOption('F')) {
-    stringOptions.SetAt(OPAL_NO_G111_FAX, "true");
+    stringOptions.SetBoolean(OPAL_NO_G111_FAX, true);
     cout << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
   }
 
   if (args.HasOption('e')) {
-    stringOptions.SetAt(OPAL_SWITCH_ON_CED, "true");
+    stringOptions.SetBoolean(OPAL_SWITCH_ON_CED, true);
     cout << "Enabled switch to T.38 on receipt of CED\n";
   }
 
   if (args.HasOption('X')) {
     unsigned seconds = args.GetOptionString('X').AsUnsigned();
-    stringOptions.SetAt(OPAL_T38_SWITCH_TIME, seconds);
+    stringOptions.SetInteger(OPAL_T38_SWITCH_TIME, seconds);
     cout << "Switch to T.38 after " << seconds << "seconds\n";
   }
   else

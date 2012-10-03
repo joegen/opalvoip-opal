@@ -249,7 +249,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_responseRetryCount(0)
   , m_referInProgress(false)
 #if OPAL_FAX
-  , m_switchedToFaxMode(false)
+  , m_switchedToT38(false)
 #endif
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
@@ -1112,6 +1112,10 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
                                                               unsigned   rtpSessionId,
                                                  SDPSessionDescription & sdpOut)
 {
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+  if (otherParty == NULL)
+    return false;
+
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescriptionByIndex(rtpSessionId);
   if (!PAssert(incomingMedia != NULL, "SDP Media description list changed"))
     return false;
@@ -1129,6 +1133,21 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   OpalMediaSession * mediaSession = SetUpMediaSession(rtpSessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
   if (mediaSession == NULL)
     return false;
+
+#if OPAL_T38_CAPABILITY
+  if (mediaType == OpalMediaType::Fax()) {
+    if (!otherParty->OnSwitchingFaxMediaStreams(true)) {
+      PTRACE(2, "SIP\tSwitch to T.38 refused for " << *this);
+      return false;
+    }
+  }
+  else if (mediaSession->mediaType == OpalMediaType::Fax()) {
+    if (!otherParty->OnSwitchingFaxMediaStreams(false)) {
+      PTRACE(2, "SIP\tSwitch from T.38 refused for " << *this);
+      return false;
+    }
+  }
+#endif // OPAL_T38_CAPABILITY
 
   // For fax we have to translate the media type
   mediaSession->mediaType = mediaType;
@@ -1185,8 +1204,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
      We open tx (other party source) side first so we follow the remote
      endpoints preferences. */
   if (!incomingMedia->GetTransportAddress().IsEmpty()) {
-    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-    if (otherParty != NULL && sendStream == NULL) {
+    if (sendStream == NULL) {
       PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from SDP");
       if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, rtpSessionId)) {
         sendStream = GetMediaStream(rtpSessionId, false);
@@ -2201,10 +2219,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   if (GetPhase() == EstablishedPhase) {
     // Is a re-INVITE if in here, so don't kill the call becuase it failed.
 #if OPAL_FAX
-    SDPSessionDescription * sdp = transaction.GetSDP(m_localMediaFormats);
-    bool switchingToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
-    if (m_switchedToFaxMode != switchingToFax)
-      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
+    if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
+      bool switchingToT38 = (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams);
+      if (m_switchedToT38 != switchingToT38)
+        OnSwitchedFaxMediaStreams(switchingToT38, false);
+    }
 #endif
     return;
   }
@@ -2878,21 +2897,22 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   OnReceivedAnswerSDP(response);
 
 #if OPAL_FAX
-  SDPSessionDescription * sdp = transaction.GetSDP(m_localMediaFormats);
-  bool switchingToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+  if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
+    bool switchingToFax = (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams);
 
-  sdp = response.GetSDP(m_localMediaFormats);
-  bool switchedToFax = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
+    SDPSessionDescription * sdp = response.GetSDP(m_localMediaFormats);
+    bool switchedToT38 = sdp != NULL && sdp->GetMediaDescriptionByType(OpalMediaType::Fax()) != NULL;
 
-  // Attempted to change fax state, but the remote rudely ignored it!
-  if (switchingToFax != switchedToFax)
-    OnSwitchedFaxMediaStreams(m_switchedToFaxMode); // iIndicate no change of existing state
-  else {
-    // We asked for fax/audio, we got fax/audio
-    if (m_switchedToFaxMode != switchedToFax) {
-      // And wasn't a repeat ...
-      m_switchedToFaxMode = switchedToFax;
-      OnSwitchedFaxMediaStreams(m_switchedToFaxMode);
+    // Attempted to change fax state, but the remote rudely ignored it!
+    if (switchingToFax != switchedToT38)
+      OnSwitchedFaxMediaStreams(switchingToFax, false); // Indicate failed
+    else {
+      // We asked for fax/audio, we got fax/audio
+      if (m_switchedToT38 != switchedToT38) {
+        // And wasn't a repeat ...
+        m_switchedToT38 = switchedToT38;
+        OnSwitchedFaxMediaStreams(switchingToFax, true);
+      }
     }
   }
 #endif
