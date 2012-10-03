@@ -5328,7 +5328,7 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
 #if OPAL_T38_CAPABILITY
       if (hasT38 != (GetMediaStream(OpalMediaType::Fax(), true) != NULL)) {
         if (!OnSwitchingFaxMediaStreams(hasT38)) {
-          PTRACE(2, "H245\tMode change rejected by local connection");
+          PTRACE(2, "H245\tMode change to " << (hasT38 ? "T.38" : "audio") << " rejected by local connection");
           return false;
         }
       }
