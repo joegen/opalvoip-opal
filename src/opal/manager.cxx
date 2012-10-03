@@ -2325,6 +2325,7 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 
   if (!m_script->Load(script)) {
     delete m_script;
+    m_script = NULL;
     return false;
   }
 
