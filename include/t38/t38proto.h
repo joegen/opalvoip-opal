@@ -214,8 +214,9 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
-    virtual bool SwitchT38(bool toT38);
-    virtual void OnSwitchedT38(bool toT38, bool success);
+    virtual bool SwitchFaxMediaStreams(bool toT38);
+    virtual void OnSwitchedFaxMediaStreams(bool toT38, bool success);
+    virtual bool OnSwitchingFaxMediaStreams(bool toT38);
     virtual void OnApplyStringOptions();
   //@}
 
@@ -312,7 +313,7 @@ class OpalFaxSession : public OpalMediaSession
     PINDEX             m_datagramSize;
 
     int                m_consecutiveBadPackets;
-    bool               m_oneGoodPacket;
+    bool               m_awaitingGoodPacket;
     T38_UDPTLPacket  * m_receivedPacket;
     unsigned           m_expectedSequenceNumber;
     int                m_secondaryPacket;

@@ -124,7 +124,7 @@ OpalFaxSession::OpalFaxSession(const Init & init)
   , m_rawUDPTL(false)
   , m_datagramSize(528)
   , m_consecutiveBadPackets(0)
-  , m_oneGoodPacket(false)
+  , m_awaitingGoodPacket(false)
   , m_receivedPacket(new T38_UDPTLPacket)
   , m_expectedSequenceNumber(0)
   , m_secondaryPacket(-1)
@@ -557,27 +557,35 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 
   PPER_Stream rawData(thisUDPTL);
 
-      // Decode the PDU
-  if (!m_receivedPacket->Decode(rawData) || rawData.GetPosition() < pduSize) {
+  // Decode the PDU, but not if still receiving RTP
+  if (!m_receivedPacket->Decode(rawData) || rawData.GetPosition() < pduSize ||
+            (m_awaitingGoodPacket && m_receivedPacket->m_seq_number >= 32768)) {
+    if (++m_consecutiveBadPackets > 1000) {
+      PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
+      return false;
+    }
+
+
 #if PTRACING
-    if (m_oneGoodPacket)
-      PTRACE(2, "UDPTL\tRaw data decode failure:\n  "
-             << setprecision(2) << rawData << "\n  UDPTL = "
-             << setprecision(2) << m_receivedPacket);
-    else
-      PTRACE(2, "UDPTL\tRaw data decode failure: " << rawData.GetSize() << " bytes.");
+    static const unsigned Level = 2;
+    if (PTrace::CanTrace(Level)) {
+      ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
+      trace << "UDPTL\t";
+      if (m_awaitingGoodPacket)
+        trace << "Probable RTP packet: " << rawData.GetSize() << " bytes.";
+      else
+        trace << "Raw data decode failure:\n  "
+              << setprecision(2) << rawData << "\n  UDPTL = "
+              << setprecision(2) << m_receivedPacket;
+      trace << PTrace::End;
+    }
 #endif
 
-    m_consecutiveBadPackets++;
-    if (m_consecutiveBadPackets < 1000)
-      return true;
-
-    PTRACE(1, "UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
-    return false;
+    return true;
   }
 
-  PTRACE_IF(3, !m_oneGoodPacket, "UDPTL\tFirst decoded UDPTL packet");
-  m_oneGoodPacket = true;
+  PTRACE_IF(3, m_awaitingGoodPacket, "UDPTL\tFirst decoded UDPTL packet");
+  m_awaitingGoodPacket = false;
   m_consecutiveBadPackets = 0;
 
   PTRACE(5, "UDPTL\tDecoded UDPTL packet:\n  " << setprecision(2) << *m_receivedPacket);
@@ -727,7 +735,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
 
   m_switchTimer.SetNotifier(PCREATE_NOTIFIER(OnSwitchTimeout));
 
-  PTRACE(3, "FAX\tCreated FAX connection with token \"" << callToken << "\","
+  PTRACE(3, "FAX\tCreated fax connection with token \"" << callToken << "\","
             " receiving=" << receiving << ","
             " disabledT38=" << disableT38 << ","
             " filename=\"" << filename << '"'
@@ -966,14 +974,14 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 }
 
 
-bool OpalFaxConnection::SwitchT38(bool enable)
+bool OpalFaxConnection::SwitchFaxMediaStreams(bool enable)
 {
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  return other != NULL && other->SwitchT38(enable);
+  return other != NULL && other->SwitchFaxMediaStreams(enable);
 }
 
 
-void OpalFaxConnection::OnSwitchedT38(bool toT38, bool success)
+void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
   if (success) {
     m_switchTimer.Stop(false);
@@ -992,10 +1000,16 @@ void OpalFaxConnection::OnSwitchedT38(bool toT38, bool success)
 }
 
 
+bool OpalFaxConnection::OnSwitchingFaxMediaStreams(bool toT38)
+{
+  return !(toT38 && m_disableT38);
+}
+
+
 void OpalFaxConnection::OpenFaxStreams()
 {
   if (LockReadWrite()) {
-    SwitchT38(true);
+    SwitchFaxMediaStreams(true);
     UnlockReadWrite();
   }
 }
