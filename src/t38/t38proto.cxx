@@ -822,24 +822,29 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 }
 
 
-bool OpalFaxConnection::SwitchFaxMediaStreams(bool enableFax)
+bool OpalFaxConnection::SwitchFaxMediaStreams(bool toT38)
 {
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  if (other != NULL && other->SwitchFaxMediaStreams(enableFax))
+  if (other != NULL && other->SwitchFaxMediaStreams(toT38))
     return true;
 
-  PTRACE(1, "FAX\tMode change request to " << (enableFax ? "fax" : "audio") << " failed");
+  PTRACE(1, "FAX\tMode change request to " << (toT38 ? "T.38" : "audio") << " failed");
   return false;
 }
 
 
-void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
+void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
-  if (enabledFax) {
-    PTRACE(3, "FAX\tMode change request to fax succeeded");
+  if (!toT38) {
+    PTRACE(3, "FAX\tMode change request to audio");
+    return;
+  }
+
+  if (success) {
+    PTRACE(3, "FAX\tMode change request to T.38 succeeded");
   }
   else {
-    PTRACE(4, "FAX\tMode change request to fax failed, falling back to G.711");
+    PTRACE(4, "FAX\tMode change request to T.38 failed, falling back to G.711");
     if (m_stringOptions.GetBoolean(OPAL_NO_G111_FAX))
       OnFaxCompleted(true);
     else {
@@ -849,6 +854,12 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
   }
 
   m_state = e_CompletedSwitch;
+}
+
+
+bool OpalFaxConnection::OnSwitchingFaxMediaStreams(bool toT38)
+{
+  return !(toT38 && m_disableT38);
 }
 
 

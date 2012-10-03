@@ -749,7 +749,7 @@ class SIPConnection : public OpalRTPConnection
     PSafeList<SIPTransaction> m_pendingTransactions;
 
 #if OPAL_FAX
-    bool m_switchedToFaxMode;
+    bool m_switchedToT38;
 #endif
 
     enum {

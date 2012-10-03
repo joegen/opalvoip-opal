@@ -215,8 +215,9 @@ class OpalFaxConnection : public OpalLocalConnection
     virtual void OnStopMediaPatch(OpalMediaPatch & patch);
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
     virtual void OnUserInputTone(char tone, unsigned duration);
-    virtual bool SwitchFaxMediaStreams(bool enableFax);
-    virtual void OnSwitchedFaxMediaStreams(bool enabledFax);
+    virtual bool SwitchFaxMediaStreams(bool toT38);
+    virtual void OnSwitchedFaxMediaStreams(bool toT38, bool success);
+    virtual bool OnSwitchingFaxMediaStreams(bool toT38);
   //@}
 
   /**@name New operations */

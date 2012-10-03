@@ -3870,29 +3870,29 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 
 
 #if OPAL_FAX
-bool H323Connection::SwitchFaxMediaStreams(bool enableFax)
+bool H323Connection::SwitchFaxMediaStreams(bool toT38)
 {
   if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
     PTRACE(2, "H323\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
-  if (enableFax && remoteCapabilities.FindCapability(OpalT38) == NULL) {
+  if (toT38 && remoteCapabilities.FindCapability(OpalT38) == NULL) {
     PTRACE(3, "H323\tRemote does not have T.38 capabilities on " << *this);
     return false;
   }
 
-  if (enableFax ? (GetMediaStream(H323Capability::DefaultDataSessionID, true) != NULL)
-                : (GetMediaStream(H323Capability::DefaultAudioSessionID, true) != NULL)) {
-    PTRACE(3, "H323\tAlready switched media streams to " << (enableFax ? "fax" : "audio") << " on " << *this);
+  if (toT38 ? (GetMediaStream(H323Capability::DefaultDataSessionID, true) != NULL)
+            : (GetMediaStream(H323Capability::DefaultAudioSessionID, true) != NULL)) {
+    PTRACE(3, "H323\tAlready switched media streams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
     return false;
   }
 
-  PTRACE(3, "H323\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
-  if (!RequestModeChangeT38(enableFax ? OpalT38 : OpalG711uLaw))
+  PTRACE(3, "H323\tSwitchFaxMediaStreams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
+  if (!RequestModeChangeT38(toT38 ? OpalT38 : OpalG711uLaw))
     return false;
 
-  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
+  m_faxMediaStreamsSwitchState = toT38 ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
   return true;
 }
 #endif
@@ -4888,19 +4888,37 @@ PBoolean H323Connection::OnRequestModeChange(const H245_RequestMode & pdu,
                                          PINDEX & selectedMode)
 {
   for (selectedMode = 0; selectedMode < pdu.m_requestedModes.GetSize(); selectedMode++) {
-    PBoolean ok = PTrue;
+    bool ok = true;
+#if OPAL_T38_CAPABILITY
+    bool hasT38 = false;
+#endif
     for (PINDEX i = 0; i < pdu.m_requestedModes[selectedMode].GetSize(); i++) {
-      if (localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]) == NULL) {
-        ok = PFalse;
+      H323Capability * capability = localCapabilities.FindCapability(pdu.m_requestedModes[selectedMode][i]);
+      if (capability == NULL) {
+        ok = false;
         break;
       }
+#if OPAL_T38_CAPABILITY
+      if (capability->GetMediaFormat() == OpalT38)
+        hasT38 = true;
+#endif
     }
-    if (ok)
-      return PTrue;
+    if (ok) {
+#if OPAL_T38_CAPABILITY
+      if (hasT38 != (GetMediaStream(OpalMediaType::Fax(), true) != NULL)) {
+        PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+        if (otherParty != NULL && !otherParty->OnSwitchingFaxMediaStreams(hasT38)) {
+          PTRACE(2, "H245\tMode change rejected by local connection");
+          return false;
+        }
+      }
+#endif
+      return true;
+    }
   }
 
   PTRACE(2, "H245\tMode change rejected as does not have capabilities");
-  return PFalse;
+  return false;
 }
 
 
@@ -4991,13 +5009,13 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   PStringArray formats = modes[pdu.m_response.GetTag() != H245_RequestModeAck_response::e_willTransmitMostPreferredMode
 									 && modes.GetSize() > 1 ? 1 : 0].Tokenise('\t');
 
-  bool switched = false;
+  bool success = false;
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(formats[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur!
       OpalMediaFormat mediaFormat = capability->GetMediaFormat();
       if (ownerCall.OpenSourceMediaStreams(*otherConnection, mediaFormat.GetMediaType(), 0, mediaFormat))
-        switched = true;
+        success = true;
       else {
         PTRACE(2, "H245\tCould not open channel after T.38 mode change: " << *capability);
       }
@@ -5005,7 +5023,7 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   }
 
 #if OPAL_FAX
-  OnSwitchedFaxMediaStreams(switched);
+  OnSwitchedFaxMediaStreams(m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams, success);
 #endif
 }
 
@@ -5015,7 +5033,7 @@ void H323Connection::OnRefusedModeChange(const H245_RequestModeReject * /*pdu*/)
 #if OPAL_FAX
   if (!t38ModeChangeCapabilities.IsEmpty()) {
     t38ModeChangeCapabilities.MakeEmpty();
-    OnSwitchedFaxMediaStreams(false);
+    OnSwitchedFaxMediaStreams(m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams, false);
   }
 #endif
 }

@@ -998,18 +998,27 @@ class OpalConnection : public PSafeObject
     );
 
 #if OPAL_FAX
-    /**Switch to/from FAX mode.
+    /**Switch to/from T.38 mode.
       */
     virtual bool SwitchFaxMediaStreams(
-      bool enableFax  ///< Enable FAX or return to audio mode
+      bool toT38  ///< Enable T.38 or return to audio mode
     );
 
-    /**Indicate status of switch to/from FAX mode.
+    /**Indicate status of switch to/from T.38 mode.
 
        Default behaviour does nothing.
       */
     virtual void OnSwitchedFaxMediaStreams(
-      bool enabledFax  ///< Enabled FAX or audio mode
+      bool toT38,       ///< Were switching to T.38 or audio mode
+      bool success      ///< Switch succeeded or failed
+    );
+
+    /**Indicate remote is requesting switch to/from T.38 fax mode.
+
+       Default behaviour calls the same function on the other connection.
+      */
+    virtual bool OnSwitchingFaxMediaStreams(
+      bool toT38   ///< Is switching to T.38 or audio mode
     );
 #endif
 
@@ -1916,6 +1925,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(bool, IsConnectionOnHold(bool), false);
     P_REMOVE_VIRTUAL_VOID(ApplyStringOptions(OpalConnection::StringOptions &));
     P_REMOVE_VIRTUAL(bool, OnTransferNotify(const PStringToString &), false);
+    P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
