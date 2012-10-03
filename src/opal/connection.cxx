@@ -696,37 +696,44 @@ void OpalConnection::AutoStartMediaStreams(bool force)
 
 
 #if OPAL_FAX
-bool OpalConnection::SwitchFaxMediaStreams(bool enableFax)
+bool OpalConnection::SwitchFaxMediaStreams(bool toT38)
 {
   if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
     PTRACE(2, "OpalCon\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
-  PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (enableFax ? "fax" : "audio") << " on " << *this);
-  OpalMediaFormat format = enableFax ? OpalT38 : OpalG711uLaw;
+  PTRACE(3, "OpalCon\tSwitchFaxMediaStreams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
+  OpalMediaFormat format = toT38 ? OpalT38 : OpalG711uLaw;
   if (!ownerCall.OpenSourceMediaStreams(*this, format.GetMediaType(), 1, format))
     return false;
 
-  m_faxMediaStreamsSwitchState = enableFax ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
+  m_faxMediaStreamsSwitchState = toT38 ? e_SwitchingToFaxMediaStreams : e_SwitchingFromFaxMediaStreams;
   return true;
 }
 
 
-void OpalConnection::OnSwitchedFaxMediaStreams(bool enabledFax)
+void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
   if (m_faxMediaStreamsSwitchState != e_NotSwitchingFaxMediaStreams) {
     PTRACE(3, "OpalCon\tSwitch of media streams to "
-           << (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams ? "fax" : "audio") << ' '
-           << (enabledFax != (m_faxMediaStreamsSwitchState == e_SwitchingToFaxMediaStreams) ? "failed" : "succeeded")
+           << (toT38 ? "T.38" : "audio") << ' '
+           << (success ? "succeeded" : "failed")
            << " on " << *this);
 
     m_faxMediaStreamsSwitchState = e_NotSwitchingFaxMediaStreams;
 
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
     if (other != NULL)
-      other->OnSwitchedFaxMediaStreams(enabledFax);
+      other->OnSwitchedFaxMediaStreams(toT38, success);
   }
+}
+
+
+bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
+{
+  PTRACE(3, "OpalCon\tRemote switch of media streams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
+  return !toT38;
 }
 #endif
 
