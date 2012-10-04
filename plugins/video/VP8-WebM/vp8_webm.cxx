@@ -167,7 +167,10 @@ class VP8FormatOM : public PluginCodec_VideoFormat<VP8_CODEC>
     VP8FormatOM()
       : BaseClass("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", MaxBitRate, OptionTable)
     {
-      m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
+#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
+      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
+        m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
+#endif
     }
 
 
@@ -374,6 +377,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
           return false;
       }
 
+      flags = 0;
       if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0)
         flags |= PluginCodec_ReturnCoderIFrame;
 
@@ -503,7 +507,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
       if ((vpx_codec_get_caps(m_iface) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
-      m_flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
+        m_flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
 #endif
     }
 
@@ -531,6 +535,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
                              unsigned & flags)
     {
       vpx_image_t * image;
+
+      flags = 0;
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
