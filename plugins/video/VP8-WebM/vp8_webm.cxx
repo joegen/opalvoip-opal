@@ -292,7 +292,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (!OnChangedOptions())
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Encoder opened: " << vpx_codec_version_str());
+      PTRACE(4, MY_CODEC_LOG, "Encoder opened: " << vpx_codec_version_str() << ", revision $Revision$");
       return true;
     }
 
@@ -382,6 +382,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
           return false;
       }
 
+      flags = 0;
       if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0)
         flags |= PluginCodec_ReturnCoderIFrame;
 
@@ -491,6 +492,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     typedef PluginVideoDecoder<VP8_CODEC> BaseClass;
 
   protected:
+    vpx_codec_iface_t  * m_iface;
     vpx_codec_ctx_t      m_codec;
     vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
@@ -500,6 +502,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
   public:
     VP8Decoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
+      , m_iface(vpx_codec_vp8_dx())
       , m_flags(0)
       , m_iterator(NULL)
       , m_ignoreTillKeyFrame(false)
@@ -508,7 +511,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       m_fullFrame.reserve(10000);
 
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
-      m_flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
+      if ((vpx_codec_get_caps(m_iface) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
+        m_flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
 #endif
     }
 
@@ -521,10 +525,10 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
     virtual bool Construct()
     {
-      if (IS_ERROR(vpx_codec_dec_init, (&m_codec, vpx_codec_vp8_dx(), NULL, m_flags)))
+      if (IS_ERROR(vpx_codec_dec_init, (&m_codec, m_iface, NULL, m_flags)))
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str());
+      PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str() << ", revision $Revision$");
       return true;
     }
 
@@ -536,6 +540,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
                              unsigned & flags)
     {
       vpx_image_t * image;
+
+      flags = 0;
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
