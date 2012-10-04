@@ -1477,6 +1477,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     // Otherwise make sure fast started channels are open
     for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
       channel->Open();
+    m_fastStartChannels.RemoveAll();
 
     // We have fast start, can connect immediately, this starts the media streams.
     OnConnectedInternal();
@@ -2004,6 +2005,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       BuildFastStartList(*channel, setup.m_fastStart, H323Channel::IsReceiver);
     if (setup.m_fastStart.GetSize() > 0)
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
+    else
+      m_fastStartChannels.RemoveAll();
   }
 
   SetBearerCapabilities(setupPDU);
@@ -4113,9 +4116,11 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         iterChan->GetCapability().GetMediaFormat() == mediaFormat) {
       PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
       stream = CreateMediaStream(mediaFormat, sessionID, isSource);
-      iterChan->SetMediaStream(stream);
-      logicalChannels->Add(*iterChan);
-      break;
+      if (stream != NULL) {
+        iterChan->SetMediaStream(stream);
+        logicalChannels->Add(*iterChan);
+        break;
+      }
     }
   }
 

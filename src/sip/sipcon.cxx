@@ -755,7 +755,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     CreateMediaSessionsSecurity security = e_ClearMediaSession;
-    if (GetTargetURI().GetTransportProto() == "tls")
+    if (CanDoSRTP())
       security |= e_SecureMediaSession;
 
     vector<bool> sessions = CreateAllMediaSessions(security);
@@ -1019,7 +1019,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
 #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
-  if (!keys.IsEmpty() && GetTargetURI().GetTransportProto() != "tls") {
+  if (!keys.IsEmpty() && !CanDoSRTP()) {
     PTRACE(2, "SIP\tNo secure signaling, cannot use crypto for " << mediaType << " session " << sessionId);
     return false;
   }
@@ -1146,16 +1146,20 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   if (!incomingMedia->GetTransportAddress().IsEmpty()) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
-      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from offer SDP");
-      if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+      if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
+        PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from offer SDP");
+        if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
-            , incomingMedia->GetContentRole()
+              , incomingMedia->GetContentRole()
 #endif
-         ))
-        return false;
+           ))
+          return false;
 
-      sendStream = GetMediaStream(sessionId, false);
-      if (sendStream != NULL && (otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
+        if ((sendStream = GetMediaStream(sessionId, false)) == NULL)
+          return false;
+      }
+
+      if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
         newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
                                                                      : SDPMediaDescription::SendOnly;
     }
@@ -1166,16 +1170,20 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     }
 
     if (recvStream == NULL) {
-      PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from offer SDP");
-      if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+      if ((recvStream = GetMediaStream(sessionId, true)) == NULL) {
+        PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from offer SDP");
+        if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
 #if OPAL_VIDEO
-            , incomingMedia->GetContentRole()
+              , incomingMedia->GetContentRole()
 #endif
-         ))
-        return false;
+           ))
+          return false;
 
-      recvStream = GetMediaStream(sessionId, true);
-      if (recvStream != NULL && (otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+        if ((recvStream = GetMediaStream(sessionId, true)) == NULL)
+          return false;
+      }
+
+      if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
         newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
                                                                      : SDPMediaDescription::RecvOnly;
     }
@@ -1366,16 +1374,28 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
     sdp = m_delayedAckInviteResponse->GetSDP();
 
   if (sdp != NULL) {
-    SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
-    if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType)
-      sessionType = mediaDescription->GetSDPTransportType();
+    {
+      SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
+      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType
+#if OPAL_SRTP
+              && (CanDoSRTP() || mediaDescription->GetCryptoKeys().IsEmpty())
+#endif
+      )
+        sessionType = mediaDescription->GetSDPTransportType();
+    }
 
     if (sessionType.IsEmpty()) {
       const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
       for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-        if (mediaDescriptions[i].GetMediaType() == mediaType) {
-          sessionType = mediaDescriptions[i].GetSDPTransportType();
+        const SDPMediaDescription & mediaDescription = mediaDescriptions[i];
+        if (mediaDescription.GetMediaType() == mediaType
+#if OPAL_SRTP
+              && (CanDoSRTP() || mediaDescription.GetCryptoKeys().IsEmpty())
+#endif
+        ) {
+          sessionType = mediaDescription.GetSDPTransportType();
           sessionID = i+1;
+          break;
         }
       }
     }
