@@ -755,8 +755,10 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     CreateMediaSessionsSecurity security = e_ClearMediaSession;
+#if OPAL_SRTP
     if (CanDoSRTP())
       security |= e_SecureMediaSession;
+#endif
 
     vector<bool> sessions = CreateAllMediaSessions(security);
     for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
