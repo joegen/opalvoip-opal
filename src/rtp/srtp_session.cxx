@@ -560,7 +560,7 @@ OpalSRTPSession::~OpalSRTPSession()
 bool OpalSRTPSession::Close()
 {
   CloseCrypto();
-  return true;
+  return OpalRTPSession::Close();
 }
 
 
