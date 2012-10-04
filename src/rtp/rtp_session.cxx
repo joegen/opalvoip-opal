@@ -1800,6 +1800,10 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
 bool OpalRTPSession::IsOpen() const
 {
+  if (m_isExternalTransport)
+    return m_localAddress.IsValid() && m_localDataPort != 0 &&
+           m_remoteAddress.IsValid() && m_remoteDataPort != 0;;
+
   return m_dataSocket != NULL && m_dataSocket->IsOpen() &&
          m_controlSocket != NULL && m_controlSocket->IsOpen();
 }
