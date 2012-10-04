@@ -314,13 +314,11 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     virtual bool OnChangedOptions()
     {
-      if (m_keyFramePeriod != 0) {
-        m_config.kf_mode = VPX_KF_DISABLED;
+      m_config.kf_mode = VPX_KF_AUTO;
+      if (m_keyFramePeriod != 0)
         m_config.kf_min_dist = m_config.kf_max_dist = m_keyFramePeriod;
-      }
       else {
-        m_config.kf_mode = VPX_KF_AUTO;
-        m_config.kf_min_dist = 0;
+        m_config.kf_min_dist = 1;
         m_config.kf_max_dist = 10*MyClockRate/m_frameTime;  // No slower than once every 10 seconds
       }
 
