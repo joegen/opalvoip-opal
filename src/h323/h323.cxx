@@ -84,35 +84,6 @@ const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if PTRACING
-
-const char * H323Connection::GetConnectionStatesName(ConnectionStates s)
-{
-  static const char * const names[NumConnectionStates] = {
-    "NoConnectionActive",
-    "AwaitingGatekeeperAdmission",
-    "AwaitingTransportConnect",
-    "AwaitingSignalConnect",
-    "AwaitingLocalAnswer",
-    "HasExecutedSignalConnect",
-    "EstablishedConnection",
-    "ShuttingDownConnection"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-
-const char * H323Connection::GetFastStartStateName(FastStartStates s)
-{
-  static const char * const names[NumFastStartStates] = {
-    "FastStartDisabled",
-    "FastStartInitiate",
-    "FastStartResponse",
-    "FastStartAcknowledged"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-#endif
-
 #if OPAL_H460
 static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225_Setup_UUIE & pdu)
 {
@@ -268,15 +239,15 @@ H323Connection::H323Connection(OpalCall & call,
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
-      fastStartState = FastStartDisabled;
+      m_fastStartState = FastStartDisabled;
       break;
 
     case FastStartOptionEnable :
-      fastStartState = FastStartInitiate;
+      m_fastStartState = FastStartInitiate;
       break;
 
     default :
-      fastStartState = ep.IsFastStartDisabled() ? FastStartDisabled : FastStartInitiate;
+      m_fastStartState = ep.IsFastStartDisabled() ? FastStartDisabled : FastStartInitiate;
       break;
   }
 
@@ -404,9 +375,9 @@ void H323Connection::OnReleased()
 
   if (LockReadWrite()) {
     // Clean up any fast start "pending" channels we may have running.
-    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+    for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
       channel->Close();
-    fastStartChannels.RemoveAll();
+    m_fastStartChannels.RemoveAll();
 
     // Dispose of all the logical channels
     logicalChannels->RemoveAll();
@@ -1063,7 +1034,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
   if (!isConsultationTransfer) {
     if (OnSendCallProceeding(callProceedingPDU)) {
-      if (fastStartState == FastStartDisabled)
+      if (m_fastStartState == FastStartDisabled)
         callProceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_fastConnectRefused);
 
       if (!WriteSignalPDU(callProceedingPDU))
@@ -1149,10 +1120,10 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   // DO this handle in case a TCS is in the SETUP packet
   HandleTunnelPDU(NULL);
 
-  if (fastStartState != FastStartDisabled && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+  if (m_fastStartState != FastStartDisabled && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
     PTRACE(3, "H225\tFast start detected");
 
-    fastStartState = FastStartDisabled;
+    m_fastStartState = FastStartDisabled;
 
     // If we have not received caps from remote, we are going to build a
     // fake one from the fast connect data.
@@ -1193,8 +1164,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
             if (channel != NULL) {
               if (channel->GetDirection() == H323Channel::IsTransmitter)
                 channel->SetNumber(logicalChannels->GetNextChannelNumber());
-              fastStartChannels.Append(channel);
-              fastStartState = FastStartResponse;
+              m_fastStartChannels.Append(channel);
+              m_fastStartState = FastStartResponse;
             }
           }
         }
@@ -1204,7 +1175,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       }
     }
 
-    PTRACE(3, "H225\tFound " << fastStartChannels.GetSize() << " fast start channels");
+    PTRACE(3, "H225\tFound " << m_fastStartChannels.GetSize() << " fast start channels");
     PTRACE_IF(4, !capabilityExchangeProcedure->HasReceivedCapabilities(),
               "H323\tPreliminary remote capabilities generated from fast start:\n" << remoteCapabilities);
   }
@@ -1489,22 +1460,22 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // Check that it has the H.245 channel connection info
   if (connect.HasOptionalField(H225_Connect_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled())) {
     if (!endpoint.IsH245Disabled() && (!CreateOutgoingControlChannel(connect.m_h245Address))) {
-      if (fastStartState != FastStartAcknowledged)
+      if (m_fastStartState != FastStartAcknowledged)
         return false;
     }
   }
 
   // If didn't get fast start channels accepted by remote then clear our
   // proposed channels
-  if (fastStartState != FastStartAcknowledged) {
-    fastStartState = FastStartDisabled;
-    fastStartChannels.RemoveAll();
+  if (m_fastStartState != FastStartAcknowledged) {
+    m_fastStartState = FastStartDisabled;
+    m_fastStartChannels.RemoveAll();
   }
   else {
-    PTRACE(4, "H323\tOpening " << fastStartChannels.GetSize() << " fast connect channels");
+    PTRACE(4, "H323\tOpening " << m_fastStartChannels.GetSize() << " fast connect channels");
 
     // Otherwise make sure fast started channels are open
-    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+    for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
       channel->Open();
 
     // We have fast start, can connect immediately, this starts the media streams.
@@ -2020,16 +1991,16 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   OnSetLocalCapabilities();
 
   // Start channels, if allowed
-  fastStartChannels.RemoveAll();
-  if (fastStartState == FastStartInitiate) {
+  m_fastStartChannels.RemoveAll();
+  if (m_fastStartState == FastStartInitiate) {
     PTRACE(3, "H225\tFast connect by local endpoint");
     OnSelectLogicalChannels();
   }
 
   // If application called OpenLogicalChannel, put in the fastStart field
-  if (!fastStartChannels.IsEmpty()) {
+  if (!m_fastStartChannels.IsEmpty()) {
     PTRACE(3, "H225\tFast start begun by local endpoint");
-    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+    for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
       BuildFastStartList(*channel, setup.m_fastStart, H323Channel::IsReceiver);
     if (setup.m_fastStart.GetSize() > 0)
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
@@ -2045,7 +2016,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   setupPDU.SetQ931Fields(*this, true);
   setupPDU.GetQ931().GetCalledPartyNumber(remotePartyNumber);
 
-  fastStartState = FastStartDisabled;
+  m_fastStartState = FastStartDisabled;
   PBoolean set_lastPDUWasH245inSETUP = false;
 
   if (h245Tunneling && doH245inSETUP && !endpoint.IsH245Disabled()) {
@@ -2277,7 +2248,7 @@ PBoolean H323Connection::SetConnected()
       HandleTunnelPDU(connectPDU);
   
       // If no channels selected (or never provided) do traditional H245 start
-      if (fastStartState == FastStartDisabled) {
+      if (m_fastStartState == FastStartDisabled) {
         h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
         PBoolean ok = StartControlNegotiations();
         h245TunnelTxPDU = NULL;
@@ -2337,7 +2308,7 @@ PBoolean H323Connection::SetProgressed()
       HandleTunnelPDU(progressPDU);
   
       // If no channels selected (or never provided) do traditional H245 start
-      if (fastStartState == FastStartDisabled) {
+      if (m_fastStartState == FastStartDisabled) {
         h245TunnelTxPDU = progressPDU; // Piggy back H245 on this reply
         PBoolean ok = StartControlNegotiations();
         h245TunnelTxPDU = NULL;
@@ -2396,57 +2367,57 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
     return true;
   }
 
-  if (fastStartState == FastStartDisabled) {
+  if (m_fastStartState == FastStartDisabled) {
     PTRACE(4, "H323\tFast connect disabled, no acknowdgement");
     return false;
   }
 
-  if (fastStartState == FastStartAcknowledged) {
+  if (m_fastStartState == FastStartAcknowledged) {
     PTRACE(4, "H323\tFast connect already acknowdgement");
     return true;
   }
 
-  if (fastStartChannels.IsEmpty()) {
+  if (m_fastStartChannels.IsEmpty()) {
     // If we are capable of ANY of the fast start channels, don't do fast start
     PTRACE(4, "H323\tNo fast connect offerred");
-    fastStartState = FastStartDisabled;
+    m_fastStartState = FastStartDisabled;
     return false;
   }
 
   // See if we need to select our fast start channels
-  if (fastStartState == FastStartResponse)
+  if (m_fastStartState == FastStartResponse)
     OnSelectLogicalChannels();
 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
-  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ) {
+  for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ) {
     if (channel->IsOpen())
       ++channel;
     else
-      fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
+      m_fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
   }
 
   // None left, so didn't open any channels fast
-  if (fastStartChannels.IsEmpty()) {
+  if (m_fastStartChannels.IsEmpty()) {
     PTRACE(4, "H323\tCould not use any offerred fast connect channels");
-    fastStartState = FastStartDisabled;
+    m_fastStartState = FastStartDisabled;
     return false;
   }
 
   // The channels we just transferred to the logical channels dictionary
   // should not be deleted via this structure now.
-  fastStartChannels.DisallowDeleteObjects();
+  m_fastStartChannels.DisallowDeleteObjects();
 
-  PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
+  PTRACE(3, "H225\tAccepting fastStart for " << m_fastStartChannels.GetSize() << " channels");
 
-  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+  for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
     BuildFastStartList(*channel, fastStartReply, H323Channel::IsTransmitter);
 
   // Have moved open channels to logicalChannels structure, remove all others.
-  fastStartChannels.RemoveAll();
+  m_fastStartChannels.RemoveAll();
 
   // Set flag so internal establishment check does not require H.245
-  fastStartState = FastStartAcknowledged;
+  m_fastStartState = FastStartAcknowledged;
 
   return true;
 }
@@ -2454,7 +2425,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
 PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetString & array)
 {
-  if (fastStartChannels.IsEmpty()) {
+  if (m_fastStartChannels.IsEmpty()) {
     PTRACE(2, "H225\tFast start response with no channels to open");
     return false;
   }
@@ -2477,7 +2448,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
                                                : open.m_forwardLogicalChannelParameters.m_dataType;
       H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
       if (replyCapability != NULL) {
-        for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
+        for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
           H323Channel & channelToStart = *channel;
           H323Channel::Directions dir = channelToStart.GetDirection();
           if ((dir == H323Channel::IsReceiver) == reverse &&
@@ -2500,9 +2471,9 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
                   replyFastStartChannels.Append(&*channel);
-                  fastStartChannels.DisallowDeleteObjects();
-                  fastStartChannels.erase(channel);
-                  fastStartChannels.AllowDeleteObjects();
+                  m_fastStartChannels.DisallowDeleteObjects();
+                  m_fastStartChannels.erase(channel);
+                  m_fastStartChannels.AllowDeleteObjects();
                   break;
                 }
                 else
@@ -2524,14 +2495,14 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
   // The channels we just transferred to the logical channels dictionary
   // should not be deleted via this structure now.
-  fastStartChannels = replyFastStartChannels;
-  fastStartChannels.DisallowDeleteObjects();
+  m_fastStartChannels = replyFastStartChannels;
+  m_fastStartChannels.DisallowDeleteObjects();
 
-  PTRACE(3, "H225\tFast starting " << fastStartChannels.GetSize() << " channels");
-  if (fastStartChannels.IsEmpty())
+  PTRACE(3, "H225\tFast starting " << m_fastStartChannels.GetSize() << " channels");
+  if (m_fastStartChannels.IsEmpty())
     return false;
 
-  fastStartState = FastStartAcknowledged;
+  m_fastStartState = FastStartAcknowledged;
 
   return true;
 }
@@ -3950,7 +3921,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   PTRACE(3, "H323\tInternalEstablishedConnectionCheck: "
             "connectionState=" << connectionState << " "
-            "fastStartState=" << fastStartState << " "
+            "m_fastStartState=" << m_fastStartState << " "
             "H.245 is " << (h245_available ? "ready" : "unavailable"));
 
   if (h245_available)
@@ -3958,7 +3929,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
-  if (fastStartState != FastStartAcknowledged) {
+  if (m_fastStartState != FastStartAcknowledged) {
     if (!h245_available)
       return;
 
@@ -4136,8 +4107,8 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     return NULL;
   }
 
-  for (H323LogicalChannelList::iterator iterChan = fastStartChannels.begin();
-                                        iterChan != fastStartChannels.end(); ++iterChan) {
+  for (H323LogicalChannelList::iterator iterChan  = m_fastStartChannels.begin();
+                                        iterChan != m_fastStartChannels.end(); ++iterChan) {
     if (iterChan->GetDirection() == (isSource ? H323Channel::IsReceiver : H323Channel::IsTransmitter) &&
         iterChan->GetCapability().GetMediaFormat() == mediaFormat) {
       PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
@@ -4280,7 +4251,7 @@ bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
                                           OpalTransportAddressArray & transports) const
 {
   // If have fast connect, use addresses from them as don't have sessions yet
-  for (H323LogicalChannelList::const_iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
+  for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
     if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType) {
       OpalTransportAddress media, control;
       if (channel->GetMediaTransportAddress(media, control)) {
@@ -4299,7 +4270,7 @@ bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
 
 void H323Connection::OpenFastStartChannel(unsigned sessionID, H323Channel::Directions direction)
 {
-  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
+  for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
     if (channel->GetSessionID() == sessionID && channel->GetDirection() == direction) {
       unsigned error;
       if (OnCreateLogicalChannel(channel->GetCapability(), direction, error)) {
@@ -4314,7 +4285,7 @@ void H323Connection::OpenFastStartChannel(unsigned sessionID, H323Channel::Direc
 
 void H323Connection::OnSelectLogicalChannels()
 {
-  PTRACE(3, "H245\tDefault OnSelectLogicalChannels, " << fastStartState);
+  PTRACE(3, "H245\tDefault OnSelectLogicalChannels, " << m_fastStartState);
 
 #if OPAL_VIDEO
   OpalMediaType::AutoStartMode autoStartVideo = GetAutoStart(OpalMediaType::Video());
@@ -4327,7 +4298,7 @@ void H323Connection::OnSelectLogicalChannels()
 #endif
 
   // Select the first codec that uses the "standard" audio session.
-  switch (fastStartState) {
+  switch (m_fastStartState) {
     default : //FastStartDisabled :
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), H323Capability::DefaultAudioSessionID);
 #if OPAL_VIDEO
@@ -4454,7 +4425,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
 {
   PSafeLockReadWrite mutex(*this);
 
-  switch (fastStartState) {
+  switch (m_fastStartState) {
     default : // FastStartDisabled
       if (dir == H323Channel::IsReceiver)
         return false;
@@ -4485,7 +4456,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
   if (dir != H323Channel::IsReceiver)
     channel->SetNumber(logicalChannels->GetNextChannelNumber());
 
-  fastStartChannels.Append(channel);
+  m_fastStartChannels.Append(channel);
   return true;
 }
 
@@ -4500,9 +4471,9 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   PTRACE(4,"H323\tOnOpenLogicalChannel: sessionId=" << sessionID);
 
   // If get a OLC via H.245 stop trying to do fast start
-  fastStartState = FastStartDisabled;
-  if (!fastStartChannels.IsEmpty()) {
-    fastStartChannels.RemoveAll();
+  m_fastStartState = FastStartDisabled;
+  if (!m_fastStartChannels.IsEmpty()) {
+    m_fastStartChannels.RemoveAll();
 #if OPAL_H460_NAT
     m_NATSockets.clear();
 #endif // OPAL_H460_NAT

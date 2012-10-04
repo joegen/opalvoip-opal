@@ -2222,7 +2222,7 @@ class H323Connection : public OpalRTPConnection
     H323SignalPDU * connectPDU;
     H323SignalPDU * progressPDU;
 
-    enum ConnectionStates {
+    P_DECLARE_TRACED_ENUM(ConnectionStates,
       NoConnectionActive,
       AwaitingGatekeeperAdmission,
       AwaitingTransportConnect,
@@ -2230,9 +2230,9 @@ class H323Connection : public OpalRTPConnection
       AwaitingLocalAnswer,
       HasExecutedSignalConnect,
       EstablishedConnection,
-      ShuttingDownConnection,
-      NumConnectionStates
-    } connectionState;
+      ShuttingDownConnection
+    );
+    ConnectionStates connectionState;
 
     unsigned   h225version;
     unsigned   h245version;
@@ -2264,23 +2264,15 @@ class H323Connection : public OpalRTPConnection
     unsigned callIntrusionProtectionLevel;
 #endif
 
-    enum FastStartStates {
+    P_DECLARE_TRACED_ENUM(FastStartStates,
       FastStartDisabled,
       FastStartInitiate,
       FastStartResponse,
-      FastStartAcknowledged,
-      NumFastStartStates
-    };
-    FastStartStates        fastStartState;
-    H323LogicalChannelList fastStartChannels;
+      FastStartAcknowledged
+    );
+    FastStartStates        m_fastStartState;
+    H323LogicalChannelList m_fastStartChannels;
     
-#if PTRACING
-    static const char * GetConnectionStatesName(ConnectionStates s);
-    friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << GetConnectionStatesName(s); }
-    static const char * GetFastStartStateName(FastStartStates s);
-    friend ostream & operator<<(ostream & o, FastStartStates s) { return o << GetFastStartStateName(s); }
-#endif
-
 
     // The following pointers are to protocol procedures, they are pointers to
     // hide their complexity from the H323Connection classes users.
