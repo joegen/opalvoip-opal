@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Android">
+      <Configuration>Debug</Configuration>
+      <Platform>Android</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -9,6 +13,10 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="No Trace|Android">
+      <Configuration>No Trace</Configuration>
+      <Platform>Android</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="No Trace|Win32">
       <Configuration>No Trace</Configuration>
       <Platform>Win32</Platform>
@@ -16,6 +24,10 @@
     <ProjectConfiguration Include="No Trace|x64">
       <Configuration>No Trace</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Android">
+      <Configuration>Release</Configuration>
+      <Platform>Android</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -70,6 +82,15 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>Windows7.1SDK</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -98,7 +119,7 @@
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opald</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,7 +137,7 @@
     <OutDir>..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal</TargetName>
-    <IncludePath>$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -134,7 +155,7 @@
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opaln</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
@@ -145,6 +166,27 @@
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <IncludePath>$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
+    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
+    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <TargetName>opald</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
+    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
+    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <TargetName>opaln</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
+    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
+    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <TargetName>opal</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -318,6 +360,21 @@
       </LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
+    <Link>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
+    <Link>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
+    <Link>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2010.vcxproj">
       <Project>{85f4f26a-1a5d-4685-a48a-448102c5c5bc}</Project>
@@ -332,10 +389,18 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cxx" />
+    <ClCompile Include="dllmain.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="libver.rc" />
+    <ResourceCompile Include="libver.rc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\lib\Win32\Debug\opald.def">

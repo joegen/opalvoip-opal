@@ -329,7 +329,7 @@ dnl     ########################
 dnl     SRTP
 dnl     ########################
 dnl MSWIN_DISPLAY libsrtp,Cisco libSRTP support
-dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP
+dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP=2
 
 AC_ARG_ENABLE([srtp],
               [AC_HELP_STRING([--enable-srtp],[enable SRTP protocol support])],
@@ -670,7 +670,7 @@ dnl ########################################################################
 
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
-AC_CONFIG_HEADERS(include/opal/buildopts.h)
+AC_CONFIG_HEADERS(${LIBDIR}/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)

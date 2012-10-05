@@ -45,7 +45,7 @@
  */
 
 
-#include "sha1.h"
+#include "hmac.h"
 
 debug_module_t mod_sha1 = {
   0,                 /* debugging is off by default */
