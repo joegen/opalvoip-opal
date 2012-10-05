@@ -392,7 +392,7 @@ const static PASN_Names Names_GCC_Key[]={
 //
 
 GCC_Key::GCC_Key(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_Key,2
 #endif
@@ -428,14 +428,14 @@ PBoolean GCC_Key::CreateObject()
   switch (tag) {
     case e_object :
       choice = new PASN_ObjectId();
-      return PTrue;
+      return true;
     case e_h221NonStandard :
       choice = new GCC_H221NonStandardIdentifier();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -453,7 +453,7 @@ PObject * GCC_Key::Clone() const
 //
 
 GCC_NonStandardParameter::GCC_NonStandardParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -500,12 +500,12 @@ PINDEX GCC_NonStandardParameter::GetDataLength() const
 PBoolean GCC_NonStandardParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -818,7 +818,7 @@ PObject * GCC_UserData::Clone() const
 //
 
 GCC_Password::GCC_Password(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -867,12 +867,12 @@ PINDEX GCC_Password::GetDataLength() const
 PBoolean GCC_Password::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_numeric.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_text) && !m_text.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -911,7 +911,7 @@ const static PASN_Names Names_GCC_PasswordSelector[]={
 //
 
 GCC_PasswordSelector::GCC_PasswordSelector(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_PasswordSelector,2
 #endif
@@ -969,14 +969,14 @@ PBoolean GCC_PasswordSelector::CreateObject()
   switch (tag) {
     case e_numeric :
       choice = new GCC_SimpleNumericString();
-      return PTrue;
+      return true;
     case e_text :
       choice = new GCC_SimpleTextString();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1001,7 +1001,7 @@ const static PASN_Names Names_GCC_ChallengeResponseItem[]={
 //
 
 GCC_ChallengeResponseItem::GCC_ChallengeResponseItem(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ChallengeResponseItem,2
 #endif
@@ -1059,14 +1059,14 @@ PBoolean GCC_ChallengeResponseItem::CreateObject()
   switch (tag) {
     case e_passwordString :
       choice = new GCC_PasswordSelector();
-      return PTrue;
+      return true;
     case e_responseData :
       choice = new GCC_UserData();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1091,7 +1091,7 @@ const static PASN_Names Names_GCC_ChallengeResponseAlgorithm[]={
 //
 
 GCC_ChallengeResponseAlgorithm::GCC_ChallengeResponseAlgorithm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ChallengeResponseAlgorithm,2
 #endif
@@ -1127,14 +1127,14 @@ PBoolean GCC_ChallengeResponseAlgorithm::CreateObject()
   switch (tag) {
     case e_passwordInTheClear :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_nonStandardAlgorithm :
       choice = new GCC_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1152,7 +1152,7 @@ PObject * GCC_ChallengeResponseAlgorithm::Clone() const
 //
 
 GCC_ChallengeItem::GCC_ChallengeItem(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -1199,12 +1199,12 @@ PINDEX GCC_ChallengeItem::GetDataLength() const
 PBoolean GCC_ChallengeItem::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_responseAlgorithm.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_challengeData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1235,7 +1235,7 @@ PObject * GCC_ChallengeItem::Clone() const
 //
 
 GCC_ChallengeResponse::GCC_ChallengeResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -1286,14 +1286,14 @@ PINDEX GCC_ChallengeResponse::GetDataLength() const
 PBoolean GCC_ChallengeResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_challengeTag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_responseAlgorithm.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_responseItem.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1332,7 +1332,7 @@ const static PASN_Names Names_GCC_PasswordChallengeRequestResponse[]={
 //
 
 GCC_PasswordChallengeRequestResponse::GCC_PasswordChallengeRequestResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_PasswordChallengeRequestResponse,2
 #endif
@@ -1390,14 +1390,14 @@ PBoolean GCC_PasswordChallengeRequestResponse::CreateObject()
   switch (tag) {
     case e_passwordInTheClear :
       choice = new GCC_PasswordSelector();
-      return PTrue;
+      return true;
     case e_challengeRequestResponse :
       choice = new GCC_PasswordChallengeRequestResponse_challengeRequestResponse();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1415,7 +1415,7 @@ PObject * GCC_PasswordChallengeRequestResponse::Clone() const
 //
 
 GCC_ConferenceName::GCC_ConferenceName(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1464,12 +1464,12 @@ PINDEX GCC_ConferenceName::GetDataLength() const
 PBoolean GCC_ConferenceName::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_numeric.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_text) && !m_text.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1508,7 +1508,7 @@ const static PASN_Names Names_GCC_ConferenceNameSelector[]={
 //
 
 GCC_ConferenceNameSelector::GCC_ConferenceNameSelector(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceNameSelector,2
 #endif
@@ -1566,14 +1566,14 @@ PBoolean GCC_ConferenceNameSelector::CreateObject()
   switch (tag) {
     case e_numeric :
       choice = new GCC_SimpleNumericString();
-      return PTrue;
+      return true;
     case e_text :
       choice = new GCC_SimpleTextString();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1633,7 +1633,7 @@ const static PASN_Names Names_GCC_Privilege[]={
 //
 
 GCC_Privilege::GCC_Privilege(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 4, PTrue
+  : PASN_Enumeration(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_Privilege,5
 #endif
@@ -1669,7 +1669,7 @@ const static PASN_Names Names_GCC_TerminationMethod[]={
 //
 
 GCC_TerminationMethod::GCC_TerminationMethod(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_TerminationMethod,2
 #endif
@@ -1705,7 +1705,7 @@ const static PASN_Names Names_GCC_ConferencePriorityScheme[]={
 //
 
 GCC_ConferencePriorityScheme::GCC_ConferencePriorityScheme(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferencePriorityScheme,1
 #endif
@@ -1741,11 +1741,11 @@ PBoolean GCC_ConferencePriorityScheme::CreateObject()
   switch (tag) {
     case e_nonStandardScheme :
       choice = new GCC_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1763,7 +1763,7 @@ PObject * GCC_ConferencePriorityScheme::Clone() const
 //
 
 GCC_ConferencePriority::GCC_ConferencePriority(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -1811,12 +1811,12 @@ PINDEX GCC_ConferencePriority::GetDataLength() const
 PBoolean GCC_ConferencePriority::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_priority.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_scheme.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1886,7 +1886,7 @@ const static PASN_Names Names_GCC_NodeType[]={
 //
 
 GCC_NodeType::GCC_NodeType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_NodeType,3
 #endif
@@ -1916,7 +1916,7 @@ PObject * GCC_NodeType::Clone() const
 //
 
 GCC_NodeProperties::GCC_NodeProperties(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -1963,12 +1963,12 @@ PINDEX GCC_NodeProperties::GetDataLength() const
 PBoolean GCC_NodeProperties::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_managementDevice.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_peripheralDevice.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2007,7 +2007,7 @@ const static PASN_Names Names_GCC_AsymmetryIndicator[]={
 //
 
 GCC_AsymmetryIndicator::GCC_AsymmetryIndicator(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_AsymmetryIndicator,3
 #endif
@@ -2022,15 +2022,15 @@ PBoolean GCC_AsymmetryIndicator::CreateObject()
     case e_callingNode :
     case e_calledNode :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_unknown :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2054,7 +2054,7 @@ const static PASN_Names Names_GCC_AlternativeNodeID[]={
 //
 
 GCC_AlternativeNodeID::GCC_AlternativeNodeID(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_AlternativeNodeID,1
 #endif
@@ -2069,11 +2069,11 @@ PBoolean GCC_AlternativeNodeID::CreateObject()
     case e_h243NodeID :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 2);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2091,7 +2091,7 @@ PObject * GCC_AlternativeNodeID::Clone() const
 //
 
 GCC_ConferenceDescriptor::GCC_ConferenceDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 3, true, 1)
 {
   IncludeOptionalField(e_defaultConferenceFlag);
 }
@@ -2163,22 +2163,22 @@ PINDEX GCC_ConferenceDescriptor::GetDataLength() const
 PBoolean GCC_ConferenceDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameModifier) && !m_conferenceNameModifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceDescription) && !m_conferenceDescription.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lockedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_passwordInTheClearRequired.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_networkAddress) && !m_networkAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_defaultConferenceFlag, m_defaultConferenceFlag))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2217,7 +2217,7 @@ PObject * GCC_ConferenceDescriptor::Clone() const
 //
 
 GCC_SessionKey::GCC_SessionKey(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -2266,12 +2266,12 @@ PINDEX GCC_SessionKey::GetDataLength() const
 PBoolean GCC_SessionKey::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_applicationProtocolKey.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sessionID) && !m_sessionID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2311,7 +2311,7 @@ const static PASN_Names Names_GCC_ChannelType[]={
 //
 
 GCC_ChannelType::GCC_ChannelType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, PFalse
+  : PASN_Enumeration(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ChannelType,4
 #endif
@@ -2348,7 +2348,7 @@ const static PASN_Names Names_GCC_CapabilityID[]={
 //
 
 GCC_CapabilityID::GCC_CapabilityID(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_CapabilityID,2
 #endif
@@ -2385,14 +2385,14 @@ PBoolean GCC_CapabilityID::CreateObject()
     case e_standard :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return PTrue;
+      return true;
     case e_nonStandard :
       choice = new GCC_Key();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2418,7 +2418,7 @@ const static PASN_Names Names_GCC_CapabilityClass[]={
 //
 
 GCC_CapabilityClass::GCC_CapabilityClass(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_CapabilityClass,3
 #endif
@@ -2432,19 +2432,19 @@ PBoolean GCC_CapabilityClass::CreateObject()
   switch (tag) {
     case e_logical :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_unsignedMin :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
-      return PTrue;
+      return true;
     case e_unsignedMax :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2496,7 +2496,7 @@ PObject * GCC_EntityID::Clone() const
 //
 
 GCC_RegistryKey::GCC_RegistryKey(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_resourceID.SetConstraints(PASN_Object::FixedConstraint, 0, 64);
 }
@@ -2544,12 +2544,12 @@ PINDEX GCC_RegistryKey::GetDataLength() const
 PBoolean GCC_RegistryKey::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sessionKey.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_resourceID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2589,7 +2589,7 @@ const static PASN_Names Names_GCC_RegistryItem[]={
 //
 
 GCC_RegistryItem::GCC_RegistryItem(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryItem,4
 #endif
@@ -2647,21 +2647,21 @@ PBoolean GCC_RegistryItem::CreateObject()
   switch (tag) {
     case e_channelID :
       choice = new GCC_DynamicChannelID();
-      return PTrue;
+      return true;
     case e_tokenID :
       choice = new GCC_DynamicTokenID();
-      return PTrue;
+      return true;
     case e_parameter :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 64);
-      return PTrue;
+      return true;
     case e_vacant :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2686,7 +2686,7 @@ const static PASN_Names Names_GCC_RegistryEntryOwner[]={
 //
 
 GCC_RegistryEntryOwner::GCC_RegistryEntryOwner(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryEntryOwner,2
 #endif
@@ -2722,14 +2722,14 @@ PBoolean GCC_RegistryEntryOwner::CreateObject()
   switch (tag) {
     case e_owned :
       choice = new GCC_RegistryEntryOwner_owned();
-      return PTrue;
+      return true;
     case e_notOwned :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2754,7 +2754,7 @@ const static PASN_Names Names_GCC_RegistryModificationRights[]={
 //
 
 GCC_RegistryModificationRights::GCC_RegistryModificationRights(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PFalse
+  : PASN_Enumeration(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryModificationRights,3
 #endif
@@ -2784,7 +2784,7 @@ PObject * GCC_RegistryModificationRights::Clone() const
 //
 
 GCC_UserIDIndication::GCC_UserIDIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2827,10 +2827,10 @@ PINDEX GCC_UserIDIndication::GetDataLength() const
 PBoolean GCC_UserIDIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2860,7 +2860,7 @@ PObject * GCC_UserIDIndication::Clone() const
 //
 
 GCC_ConferenceQueryRequest::GCC_ConferenceQueryRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -2915,14 +2915,14 @@ PINDEX GCC_ConferenceQueryRequest::GetDataLength() const
 PBoolean GCC_ConferenceQueryRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_asymmetryIndicator) && !m_asymmetryIndicator.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2956,7 +2956,7 @@ PObject * GCC_ConferenceQueryRequest::Clone() const
 //
 
 GCC_ConferenceJoinRequest::GCC_ConferenceJoinRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 7, true, 0)
 {
 }
 
@@ -3037,22 +3037,22 @@ PINDEX GCC_ConferenceJoinRequest::GetDataLength() const
 PBoolean GCC_ConferenceJoinRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_conferenceName) && !m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameModifier) && !m_conferenceNameModifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tag) && !m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_convenerPassword) && !m_convenerPassword.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callerIdentifier) && !m_callerIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3095,7 +3095,7 @@ PObject * GCC_ConferenceJoinRequest::Clone() const
 //
 
 GCC_ConferenceAddRequest::GCC_ConferenceAddRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -3158,18 +3158,18 @@ PINDEX GCC_ConferenceAddRequest::GetDataLength() const
 PBoolean GCC_ConferenceAddRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_networkAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_requestingNode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_addingMCU) && !m_addingMCU.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3205,7 +3205,7 @@ PObject * GCC_ConferenceAddRequest::Clone() const
 //
 
 GCC_ConferenceLockRequest::GCC_ConferenceLockRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3230,7 +3230,7 @@ PINDEX GCC_ConferenceLockRequest::GetDataLength() const
 PBoolean GCC_ConferenceLockRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -3260,7 +3260,7 @@ PObject * GCC_ConferenceLockRequest::Clone() const
 //
 
 GCC_ConferenceLockIndication::GCC_ConferenceLockIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3285,7 +3285,7 @@ PINDEX GCC_ConferenceLockIndication::GetDataLength() const
 PBoolean GCC_ConferenceLockIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -3315,7 +3315,7 @@ PObject * GCC_ConferenceLockIndication::Clone() const
 //
 
 GCC_ConferenceUnlockRequest::GCC_ConferenceUnlockRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3340,7 +3340,7 @@ PINDEX GCC_ConferenceUnlockRequest::GetDataLength() const
 PBoolean GCC_ConferenceUnlockRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -3370,7 +3370,7 @@ PObject * GCC_ConferenceUnlockRequest::Clone() const
 //
 
 GCC_ConferenceUnlockIndication::GCC_ConferenceUnlockIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3395,7 +3395,7 @@ PINDEX GCC_ConferenceUnlockIndication::GetDataLength() const
 PBoolean GCC_ConferenceUnlockIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -3425,7 +3425,7 @@ PObject * GCC_ConferenceUnlockIndication::Clone() const
 //
 
 GCC_RegistryRegisterChannelRequest::GCC_RegistryRegisterChannelRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3476,14 +3476,14 @@ PINDEX GCC_RegistryRegisterChannelRequest::GetDataLength() const
 PBoolean GCC_RegistryRegisterChannelRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_channelID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3515,7 +3515,7 @@ PObject * GCC_RegistryRegisterChannelRequest::Clone() const
 //
 
 GCC_RegistryAssignTokenRequest::GCC_RegistryAssignTokenRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3562,12 +3562,12 @@ PINDEX GCC_RegistryAssignTokenRequest::GetDataLength() const
 PBoolean GCC_RegistryAssignTokenRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3598,7 +3598,7 @@ PObject * GCC_RegistryAssignTokenRequest::Clone() const
 //
 
 GCC_RegistrySetParameterRequest::GCC_RegistrySetParameterRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_parameter.SetConstraints(PASN_Object::FixedConstraint, 0, 64);
 }
@@ -3656,16 +3656,16 @@ PINDEX GCC_RegistrySetParameterRequest::GetDataLength() const
 PBoolean GCC_RegistrySetParameterRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_parameter.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_modificationRights) && !m_modificationRights.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3699,7 +3699,7 @@ PObject * GCC_RegistrySetParameterRequest::Clone() const
 //
 
 GCC_RegistryRetrieveEntryRequest::GCC_RegistryRetrieveEntryRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3746,12 +3746,12 @@ PINDEX GCC_RegistryRetrieveEntryRequest::GetDataLength() const
 PBoolean GCC_RegistryRetrieveEntryRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3782,7 +3782,7 @@ PObject * GCC_RegistryRetrieveEntryRequest::Clone() const
 //
 
 GCC_RegistryDeleteEntryRequest::GCC_RegistryDeleteEntryRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3829,12 +3829,12 @@ PINDEX GCC_RegistryDeleteEntryRequest::GetDataLength() const
 PBoolean GCC_RegistryDeleteEntryRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3865,7 +3865,7 @@ PObject * GCC_RegistryDeleteEntryRequest::Clone() const
 //
 
 GCC_RegistryMonitorEntryRequest::GCC_RegistryMonitorEntryRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3912,12 +3912,12 @@ PINDEX GCC_RegistryMonitorEntryRequest::GetDataLength() const
 PBoolean GCC_RegistryMonitorEntryRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3948,7 +3948,7 @@ PObject * GCC_RegistryMonitorEntryRequest::Clone() const
 //
 
 GCC_RegistryMonitorEntryIndication::GCC_RegistryMonitorEntryIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -4005,16 +4005,16 @@ PINDEX GCC_RegistryMonitorEntryIndication::GetDataLength() const
 PBoolean GCC_RegistryMonitorEntryIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_item.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_owner.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_modificationRights) && !m_modificationRights.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4048,7 +4048,7 @@ PObject * GCC_RegistryMonitorEntryIndication::Clone() const
 //
 
 GCC_RegistryAllocateHandleRequest::GCC_RegistryAllocateHandleRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_numberOfHandles.SetConstraints(PASN_Object::FixedConstraint, 1, 1024);
 }
@@ -4096,12 +4096,12 @@ PINDEX GCC_RegistryAllocateHandleRequest::GetDataLength() const
 PBoolean GCC_RegistryAllocateHandleRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_numberOfHandles.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4132,7 +4132,7 @@ PObject * GCC_RegistryAllocateHandleRequest::Clone() const
 //
 
 GCC_ConductorAssignIndication::GCC_ConductorAssignIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4175,10 +4175,10 @@ PINDEX GCC_ConductorAssignIndication::GetDataLength() const
 PBoolean GCC_ConductorAssignIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conductingNode.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4208,7 +4208,7 @@ PObject * GCC_ConductorAssignIndication::Clone() const
 //
 
 GCC_ConductorReleaseIndication::GCC_ConductorReleaseIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4233,7 +4233,7 @@ PINDEX GCC_ConductorReleaseIndication::GetDataLength() const
 PBoolean GCC_ConductorReleaseIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -4263,7 +4263,7 @@ PObject * GCC_ConductorReleaseIndication::Clone() const
 //
 
 GCC_ConductorPermissionAskIndication::GCC_ConductorPermissionAskIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4306,10 +4306,10 @@ PINDEX GCC_ConductorPermissionAskIndication::GetDataLength() const
 PBoolean GCC_ConductorPermissionAskIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_grantFlag.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4339,7 +4339,7 @@ PObject * GCC_ConductorPermissionAskIndication::Clone() const
 //
 
 GCC_ConferenceTimeRemainingIndication::GCC_ConferenceTimeRemainingIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -4388,12 +4388,12 @@ PINDEX GCC_ConferenceTimeRemainingIndication::GetDataLength() const
 PBoolean GCC_ConferenceTimeRemainingIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_timeRemaining.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nodeID) && !m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4425,7 +4425,7 @@ PObject * GCC_ConferenceTimeRemainingIndication::Clone() const
 //
 
 GCC_ConferenceTimeInquireIndication::GCC_ConferenceTimeInquireIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4468,10 +4468,10 @@ PINDEX GCC_ConferenceTimeInquireIndication::GetDataLength() const
 PBoolean GCC_ConferenceTimeInquireIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeSpecificTimeFlag.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4501,7 +4501,7 @@ PObject * GCC_ConferenceTimeInquireIndication::Clone() const
 //
 
 GCC_ConferenceTimeExtendIndication::GCC_ConferenceTimeExtendIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4548,12 +4548,12 @@ PINDEX GCC_ConferenceTimeExtendIndication::GetDataLength() const
 PBoolean GCC_ConferenceTimeExtendIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_timeToExtend.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeSpecificTimeFlag.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4584,7 +4584,7 @@ PObject * GCC_ConferenceTimeExtendIndication::Clone() const
 //
 
 GCC_ConferenceAssistanceIndication::GCC_ConferenceAssistanceIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -4629,10 +4629,10 @@ PINDEX GCC_ConferenceAssistanceIndication::GetDataLength() const
 PBoolean GCC_ConferenceAssistanceIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4663,7 +4663,7 @@ PObject * GCC_ConferenceAssistanceIndication::Clone() const
 //
 
 GCC_TextMessageIndication::GCC_TextMessageIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4706,10 +4706,10 @@ PINDEX GCC_TextMessageIndication::GetDataLength() const
 PBoolean GCC_TextMessageIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_message.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4739,7 +4739,7 @@ PObject * GCC_TextMessageIndication::Clone() const
 //
 
 GCC_NonStandardPDU::GCC_NonStandardPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4782,10 +4782,10 @@ PINDEX GCC_NonStandardPDU::GetDataLength() const
 PBoolean GCC_NonStandardPDU::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4815,7 +4815,7 @@ PObject * GCC_NonStandardPDU::Clone() const
 //
 
 GCC_ConnectData::GCC_ConnectData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -4862,12 +4862,12 @@ PINDEX GCC_ConnectData::GetDataLength() const
 PBoolean GCC_ConnectData::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_t124Identifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_connectPDU.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4911,7 +4911,7 @@ const static PASN_Names Names_GCC_ConnectGCCPDU[]={
 //
 
 GCC_ConnectGCCPDU::GCC_ConnectGCCPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConnectGCCPDU,8
 #endif
@@ -5101,32 +5101,32 @@ PBoolean GCC_ConnectGCCPDU::CreateObject()
   switch (tag) {
     case e_conferenceCreateRequest :
       choice = new GCC_ConferenceCreateRequest();
-      return PTrue;
+      return true;
     case e_conferenceCreateResponse :
       choice = new GCC_ConferenceCreateResponse();
-      return PTrue;
+      return true;
     case e_conferenceQueryRequest :
       choice = new GCC_ConferenceQueryRequest();
-      return PTrue;
+      return true;
     case e_conferenceQueryResponse :
       choice = new GCC_ConferenceQueryResponse();
-      return PTrue;
+      return true;
     case e_conferenceJoinRequest :
       choice = new GCC_ConferenceJoinRequest();
-      return PTrue;
+      return true;
     case e_conferenceJoinResponse :
       choice = new GCC_ConferenceJoinResponse();
-      return PTrue;
+      return true;
     case e_conferenceInviteRequest :
       choice = new GCC_ConferenceInviteRequest();
-      return PTrue;
+      return true;
     case e_conferenceInviteResponse :
       choice = new GCC_ConferenceInviteResponse();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5152,7 +5152,7 @@ const static PASN_Names Names_GCC_GCCPDU[]={
 //
 
 GCC_GCCPDU::GCC_GCCPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_GCCPDU,3
 #endif
@@ -5232,17 +5232,17 @@ PBoolean GCC_GCCPDU::CreateObject()
   switch (tag) {
     case e_request :
       choice = new GCC_RequestPDU();
-      return PTrue;
+      return true;
     case e_response :
       choice = new GCC_ResponsePDU();
-      return PTrue;
+      return true;
     case e_indication :
       choice = new GCC_IndicationPDU();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5280,7 +5280,7 @@ const static PASN_Names Names_GCC_RequestPDU[]={
 //
 
 GCC_RequestPDU::GCC_RequestPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 15, PTrue
+  : PASN_Choice(tag, tagClass, 15, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RequestPDU,15
 #endif
@@ -5624,53 +5624,53 @@ PBoolean GCC_RequestPDU::CreateObject()
   switch (tag) {
     case e_conferenceJoinRequest :
       choice = new GCC_ConferenceJoinRequest();
-      return PTrue;
+      return true;
     case e_conferenceAddRequest :
       choice = new GCC_ConferenceAddRequest();
-      return PTrue;
+      return true;
     case e_conferenceLockRequest :
       choice = new GCC_ConferenceLockRequest();
-      return PTrue;
+      return true;
     case e_conferenceUnlockRequest :
       choice = new GCC_ConferenceUnlockRequest();
-      return PTrue;
+      return true;
     case e_conferenceTerminateRequest :
       choice = new GCC_ConferenceTerminateRequest();
-      return PTrue;
+      return true;
     case e_conferenceEjectUserRequest :
       choice = new GCC_ConferenceEjectUserRequest();
-      return PTrue;
+      return true;
     case e_conferenceTransferRequest :
       choice = new GCC_ConferenceTransferRequest();
-      return PTrue;
+      return true;
     case e_registryRegisterChannelRequest :
       choice = new GCC_RegistryRegisterChannelRequest();
-      return PTrue;
+      return true;
     case e_registryAssignTokenRequest :
       choice = new GCC_RegistryAssignTokenRequest();
-      return PTrue;
+      return true;
     case e_registrySetParameterRequest :
       choice = new GCC_RegistrySetParameterRequest();
-      return PTrue;
+      return true;
     case e_registryRetrieveEntryRequest :
       choice = new GCC_RegistryRetrieveEntryRequest();
-      return PTrue;
+      return true;
     case e_registryDeleteEntryRequest :
       choice = new GCC_RegistryDeleteEntryRequest();
-      return PTrue;
+      return true;
     case e_registryMonitorEntryRequest :
       choice = new GCC_RegistryMonitorEntryRequest();
-      return PTrue;
+      return true;
     case e_registryAllocateHandleRequest :
       choice = new GCC_RegistryAllocateHandleRequest();
-      return PTrue;
+      return true;
     case e_nonStandardRequest :
       choice = new GCC_NonStandardPDU();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5704,7 +5704,7 @@ const static PASN_Names Names_GCC_ResponsePDU[]={
 //
 
 GCC_ResponsePDU::GCC_ResponsePDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 11, PTrue
+  : PASN_Choice(tag, tagClass, 11, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ResponsePDU,11
 #endif
@@ -5960,41 +5960,41 @@ PBoolean GCC_ResponsePDU::CreateObject()
   switch (tag) {
     case e_conferenceJoinResponse :
       choice = new GCC_ConferenceJoinResponse();
-      return PTrue;
+      return true;
     case e_conferenceAddResponse :
       choice = new GCC_ConferenceAddResponse();
-      return PTrue;
+      return true;
     case e_conferenceLockResponse :
       choice = new GCC_ConferenceLockResponse();
-      return PTrue;
+      return true;
     case e_conferenceUnlockResponse :
       choice = new GCC_ConferenceUnlockResponse();
-      return PTrue;
+      return true;
     case e_conferenceTerminateResponse :
       choice = new GCC_ConferenceTerminateResponse();
-      return PTrue;
+      return true;
     case e_conferenceEjectUserResponse :
       choice = new GCC_ConferenceEjectUserResponse();
-      return PTrue;
+      return true;
     case e_conferenceTransferResponse :
       choice = new GCC_ConferenceTransferResponse();
-      return PTrue;
+      return true;
     case e_registryResponse :
       choice = new GCC_RegistryResponse();
-      return PTrue;
+      return true;
     case e_registryAllocateHandleResponse :
       choice = new GCC_RegistryAllocateHandleResponse();
-      return PTrue;
+      return true;
     case e_functionNotSupportedResponse :
       choice = new GCC_FunctionNotSupportedResponse();
-      return PTrue;
+      return true;
     case e_nonStandardResponse :
       choice = new GCC_NonStandardPDU();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6036,7 +6036,7 @@ const static PASN_Names Names_GCC_IndicationPDU[]={
 //
 
 GCC_IndicationPDU::GCC_IndicationPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 19, PTrue
+  : PASN_Choice(tag, tagClass, 19, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_IndicationPDU,19
 #endif
@@ -6468,65 +6468,65 @@ PBoolean GCC_IndicationPDU::CreateObject()
   switch (tag) {
     case e_userIDIndication :
       choice = new GCC_UserIDIndication();
-      return PTrue;
+      return true;
     case e_conferenceLockIndication :
       choice = new GCC_ConferenceLockIndication();
-      return PTrue;
+      return true;
     case e_conferenceUnlockIndication :
       choice = new GCC_ConferenceUnlockIndication();
-      return PTrue;
+      return true;
     case e_conferenceTerminateIndication :
       choice = new GCC_ConferenceTerminateIndication();
-      return PTrue;
+      return true;
     case e_conferenceEjectUserIndication :
       choice = new GCC_ConferenceEjectUserIndication();
-      return PTrue;
+      return true;
     case e_conferenceTransferIndication :
       choice = new GCC_ConferenceTransferIndication();
-      return PTrue;
+      return true;
     case e_rosterUpdateIndication :
       choice = new GCC_RosterUpdateIndication();
-      return PTrue;
+      return true;
     case e_applicationInvokeIndication :
       choice = new GCC_ApplicationInvokeIndication();
-      return PTrue;
+      return true;
     case e_registryMonitorEntryIndication :
       choice = new GCC_RegistryMonitorEntryIndication();
-      return PTrue;
+      return true;
     case e_conductorAssignIndication :
       choice = new GCC_ConductorAssignIndication();
-      return PTrue;
+      return true;
     case e_conductorReleaseIndication :
       choice = new GCC_ConductorReleaseIndication();
-      return PTrue;
+      return true;
     case e_conductorPermissionAskIndication :
       choice = new GCC_ConductorPermissionAskIndication();
-      return PTrue;
+      return true;
     case e_conductorPermissionGrantIndication :
       choice = new GCC_ConductorPermissionGrantIndication();
-      return PTrue;
+      return true;
     case e_conferenceTimeRemainingIndication :
       choice = new GCC_ConferenceTimeRemainingIndication();
-      return PTrue;
+      return true;
     case e_conferenceTimeInquireIndication :
       choice = new GCC_ConferenceTimeInquireIndication();
-      return PTrue;
+      return true;
     case e_conferenceTimeExtendIndication :
       choice = new GCC_ConferenceTimeExtendIndication();
-      return PTrue;
+      return true;
     case e_conferenceAssistanceIndication :
       choice = new GCC_ConferenceAssistanceIndication();
-      return PTrue;
+      return true;
     case e_textMessageIndication :
       choice = new GCC_TextMessageIndication();
-      return PTrue;
+      return true;
     case e_nonStandardIndication :
       choice = new GCC_NonStandardPDU();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6544,7 +6544,7 @@ PObject * GCC_IndicationPDU::Clone() const
 //
 
 GCC_UserData_subtype::GCC_UserData_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -6593,12 +6593,12 @@ PINDEX GCC_UserData_subtype::GetDataLength() const
 PBoolean GCC_UserData_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_value) && !m_value.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6669,7 +6669,7 @@ const static PASN_Names Names_GCC_NetworkAddress_subtype[]={
 //
 
 GCC_NetworkAddress_subtype::GCC_NetworkAddress_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_NetworkAddress_subtype,3
 #endif
@@ -6749,17 +6749,17 @@ PBoolean GCC_NetworkAddress_subtype::CreateObject()
   switch (tag) {
     case e_aggregatedChannel :
       choice = new GCC_NetworkAddress_subtype_aggregatedChannel();
-      return PTrue;
+      return true;
     case e_transportConnection :
       choice = new GCC_NetworkAddress_subtype_transportConnection();
-      return PTrue;
+      return true;
     case e_nonStandard :
       choice = new GCC_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6870,7 +6870,7 @@ PObject * GCC_ApplicationInvokeSpecifier_expectedCapabilitySet::Clone() const
 //
 
 GCC_RegistryEntryOwner_owned::GCC_RegistryEntryOwner_owned(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -6917,12 +6917,12 @@ PINDEX GCC_RegistryEntryOwner_owned::GetDataLength() const
 PBoolean GCC_RegistryEntryOwner_owned::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6993,7 +6993,7 @@ const static PASN_Names Names_GCC_ConferenceCreateResponse_result[]={
 //
 
 GCC_ConferenceCreateResponse_result::GCC_ConferenceCreateResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 4, PTrue
+  : PASN_Enumeration(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceCreateResponse_result,5
 #endif
@@ -7060,7 +7060,7 @@ const static PASN_Names Names_GCC_ConferenceQueryResponse_result[]={
 //
 
 GCC_ConferenceQueryResponse_result::GCC_ConferenceQueryResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceQueryResponse_result,2
 #endif
@@ -7101,7 +7101,7 @@ const static PASN_Names Names_GCC_ConferenceJoinResponse_result[]={
 //
 
 GCC_ConferenceJoinResponse_result::GCC_ConferenceJoinResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 6, PTrue
+  : PASN_Enumeration(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceJoinResponse_result,7
 #endif
@@ -7137,7 +7137,7 @@ const static PASN_Names Names_GCC_ConferenceInviteResponse_result[]={
 //
 
 GCC_ConferenceInviteResponse_result::GCC_ConferenceInviteResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceInviteResponse_result,2
 #endif
@@ -7179,7 +7179,7 @@ const static PASN_Names Names_GCC_ConferenceAddResponse_result[]={
 //
 
 GCC_ConferenceAddResponse_result::GCC_ConferenceAddResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 7, PTrue
+  : PASN_Enumeration(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceAddResponse_result,8
 #endif
@@ -7216,7 +7216,7 @@ const static PASN_Names Names_GCC_ConferenceLockResponse_result[]={
 //
 
 GCC_ConferenceLockResponse_result::GCC_ConferenceLockResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceLockResponse_result,3
 #endif
@@ -7253,7 +7253,7 @@ const static PASN_Names Names_GCC_ConferenceUnlockResponse_result[]={
 //
 
 GCC_ConferenceUnlockResponse_result::GCC_ConferenceUnlockResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceUnlockResponse_result,3
 #endif
@@ -7289,7 +7289,7 @@ const static PASN_Names Names_GCC_ConferenceTerminateRequest_reason[]={
 //
 
 GCC_ConferenceTerminateRequest_reason::GCC_ConferenceTerminateRequest_reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceTerminateRequest_reason,2
 #endif
@@ -7325,7 +7325,7 @@ const static PASN_Names Names_GCC_ConferenceTerminateResponse_result[]={
 //
 
 GCC_ConferenceTerminateResponse_result::GCC_ConferenceTerminateResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceTerminateResponse_result,2
 #endif
@@ -7361,7 +7361,7 @@ const static PASN_Names Names_GCC_ConferenceTerminateIndication_reason[]={
 //
 
 GCC_ConferenceTerminateIndication_reason::GCC_ConferenceTerminateIndication_reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceTerminateIndication_reason,2
 #endif
@@ -7396,7 +7396,7 @@ const static PASN_Names Names_GCC_ConferenceEjectUserRequest_reason[]={
 //
 
 GCC_ConferenceEjectUserRequest_reason::GCC_ConferenceEjectUserRequest_reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 0, PTrue
+  : PASN_Enumeration(tag, tagClass, 0, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceEjectUserRequest_reason,1
 #endif
@@ -7433,7 +7433,7 @@ const static PASN_Names Names_GCC_ConferenceEjectUserResponse_result[]={
 //
 
 GCC_ConferenceEjectUserResponse_result::GCC_ConferenceEjectUserResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceEjectUserResponse_result,3
 #endif
@@ -7470,7 +7470,7 @@ const static PASN_Names Names_GCC_ConferenceEjectUserIndication_reason[]={
 //
 
 GCC_ConferenceEjectUserIndication_reason::GCC_ConferenceEjectUserIndication_reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceEjectUserIndication_reason,3
 #endif
@@ -7537,7 +7537,7 @@ const static PASN_Names Names_GCC_ConferenceTransferResponse_result[]={
 //
 
 GCC_ConferenceTransferResponse_result::GCC_ConferenceTransferResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_ConferenceTransferResponse_result,2
 #endif
@@ -7636,7 +7636,7 @@ const static PASN_Names Names_GCC_RegistryAllocateHandleResponse_result[]={
 //
 
 GCC_RegistryAllocateHandleResponse_result::GCC_RegistryAllocateHandleResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryAllocateHandleResponse_result,2
 #endif
@@ -7676,7 +7676,7 @@ const static PASN_Names Names_GCC_RegistryResponse_primitiveType[]={
 //
 
 GCC_RegistryResponse_primitiveType::GCC_RegistryResponse_primitiveType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 5, PTrue
+  : PASN_Enumeration(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryResponse_primitiveType,6
 #endif
@@ -7717,7 +7717,7 @@ const static PASN_Names Names_GCC_RegistryResponse_result[]={
 //
 
 GCC_RegistryResponse_result::GCC_RegistryResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 6, PTrue
+  : PASN_Enumeration(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RegistryResponse_result,7
 #endif
@@ -7747,7 +7747,7 @@ PObject * GCC_RegistryResponse_result::Clone() const
 //
 
 GCC_NetworkAddress_subtype_transportConnection::GCC_NetworkAddress_subtype_transportConnection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_nsapAddress.SetConstraints(PASN_Object::FixedConstraint, 1, 20);
 }
@@ -7797,12 +7797,12 @@ PINDEX GCC_NetworkAddress_subtype_transportConnection::GetDataLength() const
 PBoolean GCC_NetworkAddress_subtype_transportConnection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nsapAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_transportSelector) && !m_transportSelector.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7834,7 +7834,7 @@ PObject * GCC_NetworkAddress_subtype_transportConnection::Clone() const
 //
 
 GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::GCC_ApplicationRecord_nonCollapsingCapabilities_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -7883,12 +7883,12 @@ PINDEX GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::GetDataLength() 
 PBoolean GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_capabilityID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_applicationData) && !m_applicationData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7920,7 +7920,7 @@ PObject * GCC_ApplicationRecord_nonCollapsingCapabilities_subtype::Clone() const
 //
 
 GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -7967,12 +7967,12 @@ PINDEX GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::GetDataLeng
 PBoolean GCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_capabilityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_capabilityClass.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8011,7 +8011,7 @@ const static PASN_Names Names_GCC_RosterUpdateIndication_nodeInformation_nodeRec
 //
 
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList,3
 #endif
@@ -8069,17 +8069,17 @@ PBoolean GCC_RosterUpdateIndication_nodeInformation_nodeRecordList::CreateObject
   switch (tag) {
     case e_noChange :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_refresh :
       choice = new GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh();
-      return PTrue;
+      return true;
     case e_update :
       choice = new GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8097,7 +8097,7 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList::Clone() con
 //
 
 GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::GCC_NetworkAddress_subtype_aggregatedChannel_transferModes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -8208,44 +8208,44 @@ PINDEX GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::GetDataLength
 PBoolean GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_speech.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_voice_band.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_56k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_64k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_128k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_192k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_256k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_320k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_384k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_512k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_768k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_1152k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_1472k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_1536k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digital_1920k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_packet_mode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_frame_mode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atm.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8292,7 +8292,7 @@ PObject * GCC_NetworkAddress_subtype_aggregatedChannel_transferModes::Clone() co
 //
 
 GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -8359,22 +8359,22 @@ PINDEX GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::GetD
 PBoolean GCC_NetworkAddress_subtype_aggregatedChannel_highLayerCompatibility::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_telephony3kHz.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_telephony7kHz.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_videotelephony.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_videoconference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audiographic.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audiovisual.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_multimedia.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8482,7 +8482,7 @@ const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList,3
 #endif
@@ -8540,17 +8540,17 @@ PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRe
   switch (tag) {
     case e_noChange :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_refresh :
       choice = new GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh();
-      return PTrue;
+      return true;
     case e_update :
       choice = new GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8575,7 +8575,7 @@ const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList,2
 #endif
@@ -8611,14 +8611,14 @@ PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCa
   switch (tag) {
     case e_noChange :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_refresh :
       choice = new GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8739,7 +8739,7 @@ const static PASN_Names Names_GCC_RosterUpdateIndication_nodeInformation_nodeRec
 //
 
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype_nodeUpdate,3
 #endif
@@ -8776,14 +8776,14 @@ PBoolean GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtyp
     case e_addRecord :
     case e_replaceRecord :
       choice = new GCC_NodeRecord();
-      return PTrue;
+      return true;
     case e_removeRecord :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8801,7 +8801,7 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subty
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_numberOfEntities.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
 }
@@ -8853,14 +8853,14 @@ PINDEX GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapa
 PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationCapabilitiesList_refresh_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_capabilityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_capabilityClass.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_numberOfEntities.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8900,7 +8900,7 @@ const static PASN_Names Names_GCC_RosterUpdateIndication_applicationInformation_
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype_applicationUpdate,3
 #endif
@@ -8937,14 +8937,14 @@ PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRe
     case e_addRecord :
     case e_replaceRecord :
       choice = new GCC_ApplicationRecord();
-      return PTrue;
+      return true;
     case e_removeRecord :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8962,7 +8962,7 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationR
 //
 
 GCC_ChallengeRequest::GCC_ChallengeRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9009,12 +9009,12 @@ PINDEX GCC_ChallengeRequest::GetDataLength() const
 PBoolean GCC_ChallengeRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_challengeTag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_challengeSet.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9045,7 +9045,7 @@ PObject * GCC_ChallengeRequest::Clone() const
 //
 
 GCC_NodeRecord::GCC_NodeRecord(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 7, true, 0)
 {
 }
 
@@ -9134,26 +9134,26 @@ PINDEX GCC_NodeRecord::GetDataLength() const
 PBoolean GCC_NodeRecord::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_superiorNode) && !m_superiorNode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeProperties.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nodeName) && !m_nodeName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_participantsList) && !m_participantsList.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_siteInformation) && !m_siteInformation.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_networkAddress) && !m_networkAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_alternativeNodeID) && !m_alternativeNodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9198,7 +9198,7 @@ PObject * GCC_NodeRecord::Clone() const
 //
 
 GCC_ApplicationRecord::GCC_ApplicationRecord(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -9263,18 +9263,18 @@ PINDEX GCC_ApplicationRecord::GetDataLength() const
 PBoolean GCC_ApplicationRecord::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_applicationActive.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conductingOperationCapable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_startupChannel) && !m_startupChannel.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_applicationUserID) && !m_applicationUserID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonCollapsingCapabilities) && !m_nonCollapsingCapabilities.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9311,7 +9311,7 @@ PObject * GCC_ApplicationRecord::Clone() const
 //
 
 GCC_ApplicationInvokeSpecifier::GCC_ApplicationInvokeSpecifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -9370,16 +9370,16 @@ PINDEX GCC_ApplicationInvokeSpecifier::GetDataLength() const
 PBoolean GCC_ApplicationInvokeSpecifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sessionKey.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_expectedCapabilitySet) && !m_expectedCapabilitySet.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_startupChannel) && !m_startupChannel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_mandatoryFlag.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9414,7 +9414,7 @@ PObject * GCC_ApplicationInvokeSpecifier::Clone() const
 //
 
 GCC_ConferenceCreateRequest::GCC_ConferenceCreateRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 8, true, 1)
 {
 }
 
@@ -9523,36 +9523,36 @@ PINDEX GCC_ConferenceCreateRequest::GetDataLength() const
 PBoolean GCC_ConferenceCreateRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_convenerPassword) && !m_convenerPassword.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lockedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_listedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conductibleConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminationMethod.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductorPrivileges) && !m_conductorPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductedPrivileges) && !m_conductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonConductedPrivileges) && !m_nonConductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceDescription) && !m_conferenceDescription.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callerIdentifier) && !m_callerIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_conferencePriority, m_conferencePriority))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9603,7 +9603,7 @@ PObject * GCC_ConferenceCreateRequest::Clone() const
 //
 
 GCC_ConferenceCreateResponse::GCC_ConferenceCreateResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -9660,16 +9660,16 @@ PINDEX GCC_ConferenceCreateResponse::GetDataLength() const
 PBoolean GCC_ConferenceCreateResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9703,7 +9703,7 @@ PObject * GCC_ConferenceCreateResponse::Clone() const
 //
 
 GCC_ConferenceQueryResponse::GCC_ConferenceQueryResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 2, true, 2)
 {
 }
 
@@ -9770,22 +9770,22 @@ PINDEX GCC_ConferenceQueryResponse::GetDataLength() const
 PBoolean GCC_ConferenceQueryResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_asymmetryIndicator) && !m_asymmetryIndicator.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceList.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_waitForInvitationFlag, m_waitForInvitationFlag))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_noUnlistedConferenceFlag, m_noUnlistedConferenceFlag))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9823,7 +9823,7 @@ PObject * GCC_ConferenceQueryResponse::Clone() const
 //
 
 GCC_ConferenceJoinResponse::GCC_ConferenceJoinResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 8, true, 0)
 {
 }
 
@@ -9942,40 +9942,40 @@ PINDEX GCC_ConferenceJoinResponse::GetDataLength() const
 PBoolean GCC_ConferenceJoinResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nodeID) && !m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_topNodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameAlias) && !m_conferenceNameAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_passwordInTheClearRequired.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lockedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_listedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conductibleConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminationMethod.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductorPrivileges) && !m_conductorPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductedPrivileges) && !m_conductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonConductedPrivileges) && !m_nonConductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceDescription) && !m_conferenceDescription.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10028,7 +10028,7 @@ PObject * GCC_ConferenceJoinResponse::Clone() const
 //
 
 GCC_ConferenceInviteRequest::GCC_ConferenceInviteRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 6, true, 1)
 {
 }
 
@@ -10141,40 +10141,40 @@ PINDEX GCC_ConferenceInviteRequest::GetDataLength() const
 PBoolean GCC_ConferenceInviteRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_topNodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_passwordInTheClearRequired.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lockedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_listedConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conductibleConference.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminationMethod.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductorPrivileges) && !m_conductorPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conductedPrivileges) && !m_conductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonConductedPrivileges) && !m_nonConductedPrivileges.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceDescription) && !m_conferenceDescription.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callerIdentifier) && !m_callerIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_conferencePriority, m_conferencePriority))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10225,7 +10225,7 @@ PObject * GCC_ConferenceInviteRequest::Clone() const
 //
 
 GCC_ConferenceInviteResponse::GCC_ConferenceInviteResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -10274,12 +10274,12 @@ PINDEX GCC_ConferenceInviteResponse::GetDataLength() const
 PBoolean GCC_ConferenceInviteResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10311,7 +10311,7 @@ PObject * GCC_ConferenceInviteResponse::Clone() const
 //
 
 GCC_ConferenceAddResponse::GCC_ConferenceAddResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -10364,14 +10364,14 @@ PINDEX GCC_ConferenceAddResponse::GetDataLength() const
 PBoolean GCC_ConferenceAddResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_tag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_userData) && !m_userData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10404,7 +10404,7 @@ PObject * GCC_ConferenceAddResponse::Clone() const
 //
 
 GCC_ConferenceLockResponse::GCC_ConferenceLockResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10447,10 +10447,10 @@ PINDEX GCC_ConferenceLockResponse::GetDataLength() const
 PBoolean GCC_ConferenceLockResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10480,7 +10480,7 @@ PObject * GCC_ConferenceLockResponse::Clone() const
 //
 
 GCC_ConferenceUnlockResponse::GCC_ConferenceUnlockResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10523,10 +10523,10 @@ PINDEX GCC_ConferenceUnlockResponse::GetDataLength() const
 PBoolean GCC_ConferenceUnlockResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10556,7 +10556,7 @@ PObject * GCC_ConferenceUnlockResponse::Clone() const
 //
 
 GCC_ConferenceTerminateRequest::GCC_ConferenceTerminateRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10599,10 +10599,10 @@ PINDEX GCC_ConferenceTerminateRequest::GetDataLength() const
 PBoolean GCC_ConferenceTerminateRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10632,7 +10632,7 @@ PObject * GCC_ConferenceTerminateRequest::Clone() const
 //
 
 GCC_ConferenceTerminateResponse::GCC_ConferenceTerminateResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10675,10 +10675,10 @@ PINDEX GCC_ConferenceTerminateResponse::GetDataLength() const
 PBoolean GCC_ConferenceTerminateResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10708,7 +10708,7 @@ PObject * GCC_ConferenceTerminateResponse::Clone() const
 //
 
 GCC_ConferenceTerminateIndication::GCC_ConferenceTerminateIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10751,10 +10751,10 @@ PINDEX GCC_ConferenceTerminateIndication::GetDataLength() const
 PBoolean GCC_ConferenceTerminateIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10784,7 +10784,7 @@ PObject * GCC_ConferenceTerminateIndication::Clone() const
 //
 
 GCC_ConferenceEjectUserRequest::GCC_ConferenceEjectUserRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10831,12 +10831,12 @@ PINDEX GCC_ConferenceEjectUserRequest::GetDataLength() const
 PBoolean GCC_ConferenceEjectUserRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeToEject.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10867,7 +10867,7 @@ PObject * GCC_ConferenceEjectUserRequest::Clone() const
 //
 
 GCC_ConferenceEjectUserResponse::GCC_ConferenceEjectUserResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10914,12 +10914,12 @@ PINDEX GCC_ConferenceEjectUserResponse::GetDataLength() const
 PBoolean GCC_ConferenceEjectUserResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeToEject.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10950,7 +10950,7 @@ PObject * GCC_ConferenceEjectUserResponse::Clone() const
 //
 
 GCC_ConferenceEjectUserIndication::GCC_ConferenceEjectUserIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10997,12 +10997,12 @@ PINDEX GCC_ConferenceEjectUserIndication::GetDataLength() const
 PBoolean GCC_ConferenceEjectUserIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeToEject.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11033,7 +11033,7 @@ PObject * GCC_ConferenceEjectUserIndication::Clone() const
 //
 
 GCC_ConferenceTransferRequest::GCC_ConferenceTransferRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
   m_transferringNodes.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
 }
@@ -11101,18 +11101,18 @@ PINDEX GCC_ConferenceTransferRequest::GetDataLength() const
 PBoolean GCC_ConferenceTransferRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameModifier) && !m_conferenceNameModifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_networkAddress) && !m_networkAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_transferringNodes) && !m_transferringNodes.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11150,7 +11150,7 @@ PObject * GCC_ConferenceTransferRequest::Clone() const
 //
 
 GCC_ConferenceTransferResponse::GCC_ConferenceTransferResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
   m_transferringNodes.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
 }
@@ -11210,16 +11210,16 @@ PINDEX GCC_ConferenceTransferResponse::GetDataLength() const
 PBoolean GCC_ConferenceTransferResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameModifier) && !m_conferenceNameModifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_transferringNodes) && !m_transferringNodes.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11254,7 +11254,7 @@ PObject * GCC_ConferenceTransferResponse::Clone() const
 //
 
 GCC_ConferenceTransferIndication::GCC_ConferenceTransferIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
   m_transferringNodes.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
 }
@@ -11322,18 +11322,18 @@ PINDEX GCC_ConferenceTransferIndication::GetDataLength() const
 PBoolean GCC_ConferenceTransferIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceNameModifier) && !m_conferenceNameModifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_networkAddress) && !m_networkAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_transferringNodes) && !m_transferringNodes.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11371,7 +11371,7 @@ PObject * GCC_ConferenceTransferIndication::Clone() const
 //
 
 GCC_ApplicationInvokeIndication::GCC_ApplicationInvokeIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_applicationProtocolEntiyList.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
   m_destinationNodes.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
@@ -11422,12 +11422,12 @@ PINDEX GCC_ApplicationInvokeIndication::GetDataLength() const
 PBoolean GCC_ApplicationInvokeIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_applicationProtocolEntiyList.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destinationNodes) && !m_destinationNodes.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11459,7 +11459,7 @@ PObject * GCC_ApplicationInvokeIndication::Clone() const
 //
 
 GCC_RegistryAllocateHandleResponse::GCC_RegistryAllocateHandleResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_numberOfHandles.SetConstraints(PASN_Object::FixedConstraint, 1, 1024);
 }
@@ -11515,16 +11515,16 @@ PINDEX GCC_RegistryAllocateHandleResponse::GetDataLength() const
 PBoolean GCC_RegistryAllocateHandleResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_numberOfHandles.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_firstHandle.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11557,7 +11557,7 @@ PObject * GCC_RegistryAllocateHandleResponse::Clone() const
 //
 
 GCC_RegistryResponse::GCC_RegistryResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -11626,22 +11626,22 @@ PINDEX GCC_RegistryResponse::GetDataLength() const
 PBoolean GCC_RegistryResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_primitiveType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_key.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_item.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_owner.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_modificationRights) && !m_modificationRights.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_result.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11678,7 +11678,7 @@ PObject * GCC_RegistryResponse::Clone() const
 //
 
 GCC_ConductorPermissionGrantIndication::GCC_ConductorPermissionGrantIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_permissionList.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_waitingList.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
@@ -11729,12 +11729,12 @@ PINDEX GCC_ConductorPermissionGrantIndication::GetDataLength() const
 PBoolean GCC_ConductorPermissionGrantIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_permissionList.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_waitingList) && !m_waitingList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11766,7 +11766,7 @@ PObject * GCC_ConductorPermissionGrantIndication::Clone() const
 //
 
 GCC_FunctionNotSupportedResponse::GCC_FunctionNotSupportedResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -11809,10 +11809,10 @@ PINDEX GCC_FunctionNotSupportedResponse::GetDataLength() const
 PBoolean GCC_FunctionNotSupportedResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_request.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11842,7 +11842,7 @@ PObject * GCC_FunctionNotSupportedResponse::Clone() const
 //
 
 GCC_PasswordChallengeRequestResponse_challengeRequestResponse::GCC_PasswordChallengeRequestResponse_challengeRequestResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -11893,12 +11893,12 @@ PINDEX GCC_PasswordChallengeRequestResponse_challengeRequestResponse::GetDataLen
 PBoolean GCC_PasswordChallengeRequestResponse_challengeRequestResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_challengeRequest) && !m_challengeRequest.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_challengeResponse) && !m_challengeResponse.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11931,7 +11931,7 @@ PObject * GCC_PasswordChallengeRequestResponse_challengeRequestResponse::Clone()
 //
 
 GCC_RosterUpdateIndication_nodeInformation::GCC_RosterUpdateIndication_nodeInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_rosterInstanceNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -11987,16 +11987,16 @@ PINDEX GCC_RosterUpdateIndication_nodeInformation::GetDataLength() const
 PBoolean GCC_RosterUpdateIndication_nodeInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeRecordList.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rosterInstanceNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodesAdded.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodesRemoved.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12029,7 +12029,7 @@ PObject * GCC_RosterUpdateIndication_nodeInformation::Clone() const
 //
 
 GCC_NetworkAddress_subtype_aggregatedChannel::GCC_NetworkAddress_subtype_aggregatedChannel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -12094,18 +12094,18 @@ PINDEX GCC_NetworkAddress_subtype_aggregatedChannel::GetDataLength() const
 PBoolean GCC_NetworkAddress_subtype_aggregatedChannel::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_transferModes.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_internationalNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_subAddress) && !m_subAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extraDialing) && !m_extraDialing.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_highLayerCompatibility) && !m_highLayerCompatibility.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12142,7 +12142,7 @@ PObject * GCC_NetworkAddress_subtype_aggregatedChannel::Clone() const
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype::GCC_RosterUpdateIndication_applicationInformation_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_rosterInstanceNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -12206,20 +12206,20 @@ PINDEX GCC_RosterUpdateIndication_applicationInformation_subtype::GetDataLength(
 PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sessionKey.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_applicationRecordList.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_applicationCapabilitiesList.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rosterInstanceNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_peerEntitiesAdded.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_peerEntitiesRemoved.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12254,7 +12254,7 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype::Clone() con
 //
 
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -12301,12 +12301,12 @@ PINDEX GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype
 PBoolean GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeRecord.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12337,7 +12337,7 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_refresh_subt
 //
 
 GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype::GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -12384,12 +12384,12 @@ PINDEX GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype:
 PBoolean GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeUpdate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12420,7 +12420,7 @@ PObject * GCC_RosterUpdateIndication_nodeInformation_nodeRecordList_update_subty
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -12471,14 +12471,14 @@ PINDEX GCC_RosterUpdateIndication_applicationInformation_subtype_applicationReco
 PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_refresh_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_applicationRecord.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12510,7 +12510,7 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationR
 //
 
 GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype::GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -12561,14 +12561,14 @@ PINDEX GCC_RosterUpdateIndication_applicationInformation_subtype_applicationReco
 PBoolean GCC_RosterUpdateIndication_applicationInformation_subtype_applicationRecordList_update_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nodeID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_entityID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_applicationUpdate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12600,7 +12600,7 @@ PObject * GCC_RosterUpdateIndication_applicationInformation_subtype_applicationR
 //
 
 GCC_RosterUpdateIndication::GCC_RosterUpdateIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -12651,14 +12651,14 @@ PINDEX GCC_RosterUpdateIndication::GetDataLength() const
 PBoolean GCC_RosterUpdateIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_fullRefresh.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nodeInformation.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_applicationInformation.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

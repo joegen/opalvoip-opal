@@ -89,11 +89,11 @@ PString H323HTTPServiceControl::GetServiceControlType() const
 PBoolean H323HTTPServiceControl::OnReceivedPDU(const H225_ServiceControlDescriptor & contents)
 {
   if (contents.GetTag() != H225_ServiceControlDescriptor::e_url)
-    return PFalse;
+    return false;
 
   const PASN_IA5String & pdu = contents;
   url = pdu;
-  return PTrue;
+  return true;
 }
 
 
@@ -103,7 +103,7 @@ PBoolean H323HTTPServiceControl::OnSendingPDU(H225_ServiceControlDescriptor & co
   PASN_IA5String & pdu = contents;
   pdu = url;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -134,13 +134,13 @@ H323H248ServiceControl::H323H248ServiceControl(const H225_ServiceControlDescript
 PBoolean H323H248ServiceControl::OnReceivedPDU(const H225_ServiceControlDescriptor & contents)
 {
   if (contents.GetTag() != H225_ServiceControlDescriptor::e_signal)
-    return PFalse;
+    return false;
 
   const H225_H248SignalsDescriptor & pdu = contents;
 
   H248_SignalsDescriptor signal;
   if (!pdu.DecodeSubType(signal))
-    return PFalse;
+    return false;
 
   return OnReceivedPDU(signal);
 }
@@ -163,10 +163,10 @@ PBoolean H323H248ServiceControl::OnReceivedPDU(const H248_SignalsDescriptor & de
 {
   for (PINDEX i = 0; i < descriptor.GetSize(); i++) {
     if (!OnReceivedPDU(descriptor[i]))
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -205,7 +205,7 @@ PBoolean H323CallCreditServiceControl::IsValid() const
 PBoolean H323CallCreditServiceControl::OnReceivedPDU(const H225_ServiceControlDescriptor & contents)
 {
   if (contents.GetTag() != H225_ServiceControlDescriptor::e_callCreditServiceControl)
-    return PFalse;
+    return false;
 
   const H225_CallCreditServiceControl & credit = contents;
 
@@ -215,14 +215,14 @@ PBoolean H323CallCreditServiceControl::OnReceivedPDU(const H225_ServiceControlDe
   if (credit.HasOptionalField(H225_CallCreditServiceControl::e_billingMode))
     mode = credit.m_billingMode.GetTag() == H225_CallCreditServiceControl_billingMode::e_debit;
   else
-    mode = PTrue;
+    mode = true;
 
   if (credit.HasOptionalField(H225_CallCreditServiceControl::e_callDurationLimit))
     durationLimit = credit.m_callDurationLimit;
   else
     durationLimit = 0;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -244,7 +244,7 @@ PBoolean H323CallCreditServiceControl::OnSendingPDU(H225_ServiceControlDescripto
     credit.IncludeOptionalField(H225_CallCreditServiceControl::e_callDurationLimit);
     credit.m_callDurationLimit = durationLimit;
     credit.IncludeOptionalField(H225_CallCreditServiceControl::e_enforceCallDurationLimit);
-    credit.m_enforceCallDurationLimit = PTrue;
+    credit.m_enforceCallDurationLimit = true;
   }
 
   return !amount || durationLimit > 0;

@@ -152,7 +152,7 @@ OpalH224MediaFormat::OpalH224MediaFormat(
                     OpalH224MediaType::MediaType(),
                     rtpPayloadType,
                     "h224",
-                    PFalse,
+                    false,
                     6400,  // 6.4kbit/s as defined in RFC 4573
                     0,
                     0,
@@ -177,7 +177,7 @@ PBoolean OpalH224MediaFormat::IsValidForProtocol(const PString & protocol) const
 H224_Frame::H224_Frame(PINDEX size)
 : Q922_Frame(H224_MAX_HEADER_SIZE + size)
 {
-  SetHighPriority(PFalse);	
+  SetHighPriority(false);	
   SetControlFieldOctet(0x03); // UI-Mode
   SetDestinationTerminalAddress(OpalH224Handler::Broadcast);
   SetSourceTerminalAddress(OpalH224Handler::Broadcast);
@@ -186,10 +186,10 @@ H224_Frame::H224_Frame(PINDEX size)
   SetClientID(OpalH224Client::CMEClientID);
   
   // Setting ES / BS / C1 / C0 / Segment number to zero
-  SetBS(PFalse);
-  SetES(PFalse);
-  SetC1(PFalse);
-  SetC0(PFalse);
+  SetBS(false);
+  SetES(false);
+  SetC1(false);
+  SetC0(false);
   SetSegmentNumber(0x00);
   
   SetClientDataSize(size);
@@ -198,7 +198,7 @@ H224_Frame::H224_Frame(PINDEX size)
 H224_Frame::H224_Frame(const OpalH224Client & h224Client, PINDEX size)
 : Q922_Frame(H224_MAX_HEADER_SIZE + size)
 {
-  SetHighPriority(PFalse);	
+  SetHighPriority(false);	
   SetControlFieldOctet(0x03); // UI-Mode
   SetDestinationTerminalAddress(OpalH224Handler::Broadcast);
   SetSourceTerminalAddress(OpalH224Handler::Broadcast);
@@ -206,10 +206,10 @@ H224_Frame::H224_Frame(const OpalH224Client & h224Client, PINDEX size)
   SetClient(h224Client);
   
   // Setting ES / BS / C1 / C0 / Segment number to zero
-  SetBS(PFalse);
-  SetES(PFalse);
-  SetC1(PFalse);
-  SetC0(PFalse);
+  SetBS(false);
+  SetES(false);
+  SetC1(false);
+  SetC0(false);
   SetSegmentNumber(0x00);
   
   SetClientDataSize(size);
@@ -471,8 +471,8 @@ PBoolean H224_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 {
   PBoolean result = Q922_Frame::DecodeAnnexQ(data, size);
 	
-  if (result == PFalse) {
-    return PFalse;
+  if (result == false) {
+    return false;
   }
 	
   // doing some validity checks for H.224 frames
@@ -483,10 +483,10 @@ PBoolean H224_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
   if ((highOrderAddressOctet != 0x00) ||
       (!(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71)) ||
       (controlFieldOctet != 0x03)) {		
-	  return PFalse;
+	  return false;
   }
 	
-  return PTrue;
+  return true;
   
 }
 
@@ -494,8 +494,8 @@ PBoolean H224_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
 {
   PBoolean result = Q922_Frame::DecodeHDLC(data, size);
 	
-  if (result == PFalse) {
-    return PFalse;
+  if (result == false) {
+    return false;
   }
 	
   // doing some validity checks for H.224 frames
@@ -506,10 +506,10 @@ PBoolean H224_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
   if ((highOrderAddressOctet != 0x00) ||
      (!(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71)) ||
      (controlFieldOctet != 0x03)) {		
-	  return PFalse;
+	  return false;
   }
 	
-  return PTrue;
+  return true;
 }
 
 PINDEX H224_Frame::GetHeaderSize() const
@@ -532,13 +532,13 @@ OpalH224Handler::OpalH224Handler()
   transmitFrame(300),
   receiveFrame()
 {
-  canTransmit = PFalse;
+  canTransmit = false;
   transmitBitIndex = 7;
   transmitStartTime = NULL;
   transmitMediaStream = NULL;
   
-  transmitHDLCTunneling = PFalse;
-  receiveHDLCTunneling = PFalse;
+  transmitHDLCTunneling = false;
+  receiveHDLCTunneling = false;
   
   clients.DisallowDeleteObjects();
 }
@@ -550,22 +550,22 @@ OpalH224Handler::~OpalH224Handler()
 PBoolean OpalH224Handler::AddClient(OpalH224Client & client)
 {
   if (client.GetClientID() == OpalH224Client::CMEClientID) {
-    return PFalse; // No client may have CMEClientID
+    return false; // No client may have CMEClientID
   }
 	
   if (clients.GetObjectsIndex(&client) != P_MAX_INDEX) {
-    return PFalse; // Only allow one instance of a client
+    return false; // Only allow one instance of a client
   }
 	
   clients.Append(&client);
   client.SetH224Handler(this);
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::RemoveClient(OpalH224Client & client)
 {
   PBoolean result = clients.Remove(&client);
-  if (result == PTrue) {
+  if (result == true) {
     client.SetH224Handler(NULL);
   }
   return result;
@@ -598,11 +598,11 @@ void OpalH224Handler::StartTransmit()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if (canTransmit == PTrue) {
+  if (canTransmit == true) {
     return;
   }
 	
-  canTransmit = PTrue;
+  canTransmit = true;
   
   transmitBitIndex = 7;
   transmitStartTime = new PTime();
@@ -615,28 +615,28 @@ void OpalH224Handler::StopTransmit()
 {
   PWaitAndSignal m(transmitMutex);
   
-  if (canTransmit == PFalse) {
+  if (canTransmit == false) {
     return;
   }
 	
   delete transmitStartTime;
   transmitStartTime = NULL;
 	
-  canTransmit = PFalse;
+  canTransmit = false;
 }
 
 PBoolean OpalH224Handler::SendClientList()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if (canTransmit == PFalse) {
-    return PFalse;
+  if (canTransmit == false) {
+    return false;
   }
   
   // If all clients are non-standard, 5 octets per clients + 3 octets header information
   H224_Frame h224Frame = H224_Frame(5*clients.GetSize() + 3);
 	
-  h224Frame.SetHighPriority(PTrue);
+  h224Frame.SetHighPriority(true);
   h224Frame.SetDestinationTerminalAddress(Broadcast);
   h224Frame.SetSourceTerminalAddress(Broadcast);
 	
@@ -644,10 +644,10 @@ PBoolean OpalH224Handler::SendClientList()
   h224Frame.SetClientID(OpalH224Client::CMEClientID);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(PTrue);
-  h224Frame.SetES(PTrue);
-  h224Frame.SetC1(PFalse);
-  h224Frame.SetC0(PFalse);
+  h224Frame.SetBS(true);
+  h224Frame.SetES(true);
+  h224Frame.SetC1(false);
+  h224Frame.SetC0(false);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -695,7 +695,7 @@ PBoolean OpalH224Handler::SendClientList()
 	
   TransmitFrame(h224Frame);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::SendExtraCapabilities()
@@ -705,19 +705,19 @@ PBoolean OpalH224Handler::SendExtraCapabilities()
     client.SendExtraCapabilities();
   }
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::SendClientListCommand()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if (canTransmit == PFalse) {
-    return PFalse;
+  if (canTransmit == false) {
+    return false;
   }
 	
   H224_Frame h224Frame = H224_Frame(2);
-  h224Frame.SetHighPriority(PTrue);
+  h224Frame.SetHighPriority(true);
   h224Frame.SetDestinationTerminalAddress(OpalH224Handler::Broadcast);
   h224Frame.SetSourceTerminalAddress(OpalH224Handler::Broadcast);
 	
@@ -725,10 +725,10 @@ PBoolean OpalH224Handler::SendClientListCommand()
   h224Frame.SetClientID(OpalH224Client::CMEClientID);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(PTrue);
-  h224Frame.SetES(PTrue);
-  h224Frame.SetC1(PFalse);
-  h224Frame.SetC0(PFalse);
+  h224Frame.SetBS(true);
+  h224Frame.SetES(true);
+  h224Frame.SetC1(false);
+  h224Frame.SetC0(false);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -738,23 +738,23 @@ PBoolean OpalH224Handler::SendClientListCommand()
 	
   TransmitFrame(h224Frame);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::SendExtraCapabilitiesCommand(const OpalH224Client & client)
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if (canTransmit == PFalse) {
-    return PFalse;
+  if (canTransmit == false) {
+    return false;
   }
 	
   if (clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
-    return PFalse; // only allow if the client is really registered
+    return false; // only allow if the client is really registered
   }
 	
   H224_Frame h224Frame = H224_Frame(8);
-  h224Frame.SetHighPriority(PTrue);
+  h224Frame.SetHighPriority(true);
   h224Frame.SetDestinationTerminalAddress(OpalH224Handler::Broadcast);
   h224Frame.SetSourceTerminalAddress(OpalH224Handler::Broadcast);
 	
@@ -762,10 +762,10 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesCommand(const OpalH224Client & cl
   h224Frame.SetClientID(OpalH224Client::CMEClientID);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(PTrue);
-  h224Frame.SetES(PTrue);
-  h224Frame.SetC1(PFalse);
-  h224Frame.SetC0(PFalse);
+  h224Frame.SetBS(true);
+  h224Frame.SetES(true);
+  h224Frame.SetC1(false);
+  h224Frame.SetC0(false);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -799,7 +799,7 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesCommand(const OpalH224Client & cl
 	
   TransmitFrame(h224Frame);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & client, 
@@ -808,11 +808,11 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & cl
   PWaitAndSignal m(transmitMutex);
 	
   if (clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
-    return PFalse; // Only allow if the client is really registered
+    return false; // Only allow if the client is really registered
   }
 	
   H224_Frame h224Frame = H224_Frame(length+3);
-  h224Frame.SetHighPriority(PTrue);
+  h224Frame.SetHighPriority(true);
   h224Frame.SetDestinationTerminalAddress(OpalH224Handler::Broadcast);
   h224Frame.SetSourceTerminalAddress(OpalH224Handler::Broadcast);
 	
@@ -820,10 +820,10 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & cl
   h224Frame.SetClientID(OpalH224Client::CMEClientID);
 	
   // Begin and end of sequence, rest is zero
-  h224Frame.SetBS(PTrue);
-  h224Frame.SetES(PTrue);
-  h224Frame.SetC1(PFalse);
-  h224Frame.SetC0(PFalse);
+  h224Frame.SetBS(true);
+  h224Frame.SetES(true);
+  h224Frame.SetC1(false);
+  h224Frame.SetC0(false);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -859,24 +859,24 @@ PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & cl
 	
   TransmitFrame(h224Frame);
 	
-  return PTrue;	
+  return true;	
 }
 
 PBoolean OpalH224Handler::TransmitClientFrame(const OpalH224Client & client, H224_Frame & frame)
 {
   PWaitAndSignal m(transmitMutex);
   
-  if (canTransmit == PFalse) {
-    return PFalse;
+  if (canTransmit == false) {
+    return false;
   }
 	
   if (clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
-    return PFalse; // Only allow if the client is really registered
+    return false; // Only allow if the client is really registered
   }
   
   TransmitFrame(frame);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
@@ -884,7 +884,7 @@ PBoolean OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
   if (frame.GetDestinationTerminalAddress() != OpalH224Handler::Broadcast) {
     // only broadcast frames are handled at the moment
     PTRACE(3, "H.224\tReceived frame with non-broadcast address");
-    return PTrue;
+    return true;
   }
   BYTE clientID = frame.GetClientID();
 	
@@ -895,31 +895,31 @@ PBoolean OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
   for (PINDEX i = 0; i < clients.GetSize(); i++) {
     OpalH224Client & client = clients[i];
     if (client.GetClientID() == clientID) {
-      PBoolean found = PFalse;
+      PBoolean found = false;
       if (clientID < OpalH224Client::ExtendedClientID) {
-        found = PTrue;
+        found = true;
       } else if (clientID == OpalH224Client::ExtendedClientID) {
         if (client.GetExtendedClientID() == frame.GetExtendedClientID()) {
-          found = PTrue;
+          found = true;
         }
       } else {
         if (client.GetCountryCode() == frame.GetCountryCode() &&
            client.GetCountryCodeExtension() == frame.GetCountryCodeExtension() &&
            client.GetManufacturerCode() == frame.GetManufacturerCode() &&
            client.GetManufacturerClientID() == frame.GetManufacturerClientID()) {
-          found = PTrue;
+          found = true;
         }
       }
-      if (found == PTrue) {
+      if (found == true) {
         client.OnReceivedMessage(frame);
-        return PTrue;
+        return true;
       }
     }
   }
   
   // ignore if no client found
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
@@ -946,7 +946,7 @@ PBoolean OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
   }
 	
   // incorrect frames are simply ignored
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
@@ -955,7 +955,7 @@ PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
   for (PINDEX i = 0; i < clients.GetSize(); i++)
   {
     OpalH224Client & client = clients[i];
-    client.SetRemoteClientAvailable(PFalse, PFalse);
+    client.SetRemoteClientAvailable(false, false);
   }
   
   BYTE *data = frame.GetClientDataPtr();
@@ -967,7 +967,7 @@ PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
   while (numberOfClients > 0) {
 	  
     BYTE clientID = (data[dataIndex] & 0x7f);
-    PBoolean hasExtraCapabilities = (data[dataIndex] & 0x80) != 0 ? PTrue: PFalse;
+    PBoolean hasExtraCapabilities = (data[dataIndex] & 0x80) != 0 ? true: false;
     dataIndex++;
     BYTE extendedClientID = 0x00;
     BYTE countryCode = CountryCodeEscape;
@@ -991,25 +991,25 @@ PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
     
     for (PINDEX i = 0; i < clients.GetSize(); i++) {
       OpalH224Client & client = clients[i];
-      PBoolean found = PFalse;
+      PBoolean found = false;
       if (client.GetClientID() == clientID) {
         if (clientID < OpalH224Client::ExtendedClientID) {
-          found = PTrue;
+          found = true;
         } else if (clientID == OpalH224Client::ExtendedClientID) {
           if (client.GetExtendedClientID() == extendedClientID) {
-            found = PTrue;
+            found = true;
           }
         } else {
           if (client.GetCountryCode() == countryCode &&
              client.GetCountryCodeExtension() == countryCodeExtension &&
              client.GetManufacturerCode() == manufacturerCode &&
              client.GetManufacturerClientID() == manufacturerClientID) {
-            found = PTrue;
+            found = true;
           }
         }
       }
-      if (found == PTrue) {
-        client.SetRemoteClientAvailable(PTrue, hasExtraCapabilities);
+      if (found == true) {
+        client.SetRemoteClientAvailable(true, hasExtraCapabilities);
         break;
       }
     }
@@ -1017,13 +1017,13 @@ PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
   }
   
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedClientListCommand()
 {
   SendClientList();
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
@@ -1053,40 +1053,40 @@ PBoolean OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
   
   for (PINDEX i = 0; i < clients.GetSize(); i++) {
     OpalH224Client & client = clients[i];
-    PBoolean found = PFalse;
+    PBoolean found = false;
     if (client.GetClientID() == clientID) {
       if (clientID < OpalH224Client::ExtendedClientID) {
-        found = PTrue;
+        found = true;
       } else if (clientID == OpalH224Client::ExtendedClientID) {
         if (client.GetExtendedClientID() == extendedClientID) {
-          found = PTrue;
+          found = true;
         }
       } else {
         if (client.GetCountryCode() == countryCode &&
            client.GetCountryCodeExtension() == countryCodeExtension &&
            client.GetManufacturerCode() == manufacturerCode &&
            client.GetManufacturerClientID() == manufacturerClientID) {
-          found = PTrue;
+          found = true;
         }
       }
     }
     if (found) {
       PINDEX size = frame.GetClientDataSize() - dataIndex;
-      client.SetRemoteClientAvailable(PTrue, PTrue);
+      client.SetRemoteClientAvailable(true, true);
       client.OnReceivedExtraCapabilities((data + dataIndex), size);
-      return PTrue;
+      return true;
     }
   }
   
   // Simply ignore if no client is available for this clientID
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
 {
   SendExtraCapabilities();
-  return PTrue;
+  return true;
 }
 
 PBoolean OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
@@ -1097,7 +1097,7 @@ PBoolean OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
       return result;
     } else {
       PTRACE(1, "H224\tDecoding of the frame failed");
-      return PFalse;
+      return false;
     }
   } else {
     if (receiveFrame.DecodeAnnexQ(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize())) {
@@ -1105,7 +1105,7 @@ PBoolean OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
       return result;
     } else {
       PTRACE(1, "H224\tDecoding of the frame failed");
-      return PFalse;
+      return false;
     }
   }
 }
@@ -1135,7 +1135,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   transmitFrame.SetTimestamp((DWORD)timePassed.GetMilliSeconds() * 8);
   
   transmitFrame.SetPayloadSize(size);
-  transmitFrame.SetMarker(PTrue);
+  transmitFrame.SetMarker(true);
   
   if (transmitMediaStream != NULL) {
     transmitMediaStream->PushPacket(transmitFrame);
@@ -1152,7 +1152,7 @@ OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection,
 : OpalMediaStream(connection, mediaFormat, sessionID, isSource),
   h224Handler(handler)
 {
-  if (isSource == PTrue) {
+  if (isSource == true) {
     h224Handler.SetTransmitMediaFormat(mediaFormat);
     h224Handler.SetTransmitMediaStream(this);
   } else {
@@ -1183,7 +1183,7 @@ void OpalH224MediaStream::InternalClose()
 
 PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 {
-  return PFalse;
+  return false;
 }
 
 PBoolean OpalH224MediaStream::WritePacket(RTP_DataFrame & packet)
@@ -1195,8 +1195,8 @@ PBoolean OpalH224MediaStream::WritePacket(RTP_DataFrame & packet)
 
 OpalH224Client::OpalH224Client()
 {
-  remoteClientAvailable = PFalse;
-  remoteClientHasExtraCapabilities = PFalse;
+  remoteClientAvailable = false;
+  remoteClientHasExtraCapabilities = false;
   h224Handler = NULL;
 }
 

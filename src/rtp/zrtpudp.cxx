@@ -178,12 +178,12 @@ OpalZrtp_UDP::~OpalZrtp_UDP() {
 PBoolean OpalZrtp_UDP::WriteZrtpData(RTP_DataFrame & frame) {
 	if (shutdownWrite) {
 		shutdownWrite = FALSE;
-		return PFalse;
+		return false;
 	}
 
 	// Trying to send a PDU before we are set up!
 	if (!remoteAddress.IsValid() || remoteDataPort == 0) {
-		return PFalse; //libzrtp has to wait
+		return false; //libzrtp has to wait
 	}
 
 	while (!dataSocket->WriteTo(frame.GetPointer(), 
@@ -195,10 +195,10 @@ PBoolean OpalZrtp_UDP::WriteZrtpData(RTP_DataFrame & frame) {
 			case ECONNREFUSED :
     			break;
 			default:
-				return PFalse;
+				return false;
 		}
 	}
-	return PTrue;
+	return true;
 }
  
 
@@ -373,7 +373,7 @@ OpalMediaSession * LibZrtpSecurityMode_Base::CreateMediaSession(OpalRTPConnectio
  
 PBoolean LibZrtpSecurityMode_Base::Open() 
 {
-	return PTrue;
+	return true;
 }
 
 #endif

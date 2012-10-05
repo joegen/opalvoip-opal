@@ -43,7 +43,7 @@
 H281_Frame::H281_Frame()
 : H224_Frame(3)
 {
-  SetHighPriority(PTrue);
+  SetHighPriority(true);
 	
   BYTE *data = GetClientDataPtr();
 	
@@ -327,7 +327,7 @@ void H281_Frame::SetPresetNumber(BYTE presetNumber)
 H281VideoSource::H281VideoSource()
 {
   // disabled camera with no options
-  isEnabled = PFalse;
+  isEnabled = false;
   firstOctet = 0x00;
   secondOctet = 0x00;
 }
@@ -421,13 +421,13 @@ PBoolean H281VideoSource::Decode(const BYTE *data)
   // only accepting the standard video sources
   BYTE videoSourceNumber = (data[0] >> 4) & 0x0f;
   if (videoSourceNumber > 5)	{
-    return PFalse;
+    return false;
   }
 		
   firstOctet = data[0];
   secondOctet = data[1];
 	
-  return PTrue;
+  return true;
 }
 
 ///////////////////////////////
@@ -445,16 +445,16 @@ OpalH281Handler::OpalH281Handler()
 	
   // initiate the local cameras so that the main camera is enabled
   // and provides motion video (nothing more)
-  localVideoSources[MainCamera].SetEnabled(PTrue);
-  localVideoSources[MainCamera].SetCanMotionVideo(PTrue); 
-  //localVideoSources[MainCamera].SetCanPan(PTrue);
-  //localVideoSources[MainCamera].SetCanTilt(PTrue);
-  //localVideoSources[MainCamera].SetCanZoom(PTrue);
+  localVideoSources[MainCamera].SetEnabled(true);
+  localVideoSources[MainCamera].SetCanMotionVideo(true); 
+  //localVideoSources[MainCamera].SetCanPan(true);
+  //localVideoSources[MainCamera].SetCanTilt(true);
+  //localVideoSources[MainCamera].SetCanZoom(true);
 	
   transmitFrame.SetClient(*this);
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
-  transmitFrame.SetBS(PTrue);
-  transmitFrame.SetES(PTrue);
+  transmitFrame.SetBS(true);
+  transmitFrame.SetES(true);
 	
   transmitTimer.SetNotifier(PCREATE_NOTIFIER(ContinueAction));
 	
@@ -607,7 +607,7 @@ void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PIND
     BYTE videoSource = (capabilities[i] >> 4) & 0x0f;
 		
     if (videoSource <= 5) {
-      remoteVideoSources[videoSource].SetEnabled(PTrue);
+      remoteVideoSources[videoSource].SetEnabled(true);
       remoteVideoSources[videoSource].Decode(capabilities + i);
       i += 2;
 	  

@@ -10,7 +10,7 @@
 
 template <class ToBeSigned>
 H235_SIGNED<ToBeSigned>::H235_SIGNED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -69,16 +69,16 @@ template <class ToBeSigned>
 PBoolean H235_SIGNED<ToBeSigned>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_toBeSigned.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_algorithmOID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_paramS.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_signature.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -114,7 +114,7 @@ PObject * H235_SIGNED<ToBeSigned>::Clone() const
 
 template <class ToBeEncrypted>
 H235_ENCRYPTED<ToBeEncrypted>::H235_ENCRYPTED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -169,14 +169,14 @@ template <class ToBeEncrypted>
 PBoolean H235_ENCRYPTED<ToBeEncrypted>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_algorithmOID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_paramS.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_encryptedData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -211,7 +211,7 @@ PObject * H235_ENCRYPTED<ToBeEncrypted>::Clone() const
 
 template <class ToBeHashed>
 H235_HASHED<ToBeHashed>::H235_HASHED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -266,14 +266,14 @@ template <class ToBeHashed>
 PBoolean H235_HASHED<ToBeHashed>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_algorithmOID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_paramS.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_hash.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

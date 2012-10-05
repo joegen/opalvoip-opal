@@ -1257,7 +1257,7 @@ typedef struct OpalStatusCallCleared {
   */
 typedef enum OpalCallEndReason {
   OpalCallEndedByLocalUser,         /// Local endpoint application cleared call
-  OpalCallEndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=PFalse
+  OpalCallEndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=false
   OpalCallEndedByAnswerDenied,      /// Local endpoint declined to answer call
   OpalCallEndedByRemoteUser,        /// Remote endpoint application cleared call
   OpalCallEndedByRefusal,           /// Remote endpoint refused call

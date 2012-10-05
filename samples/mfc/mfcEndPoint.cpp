@@ -50,18 +50,18 @@ PBoolean CMfcManager::Initialise(CMfcDlg *dlg)
 void CMfcEndPoint::OnConnectionEstablished(H323Connection & connection, const PString & token)
 {
   m_dialog->m_token = token;
-  m_dialog->m_call.EnableWindow(PFalse);
-  m_dialog->m_answer.EnableWindow(PFalse);
-  m_dialog->m_refuse.EnableWindow(PFalse);
+  m_dialog->m_call.EnableWindow(false);
+  m_dialog->m_answer.EnableWindow(false);
+  m_dialog->m_refuse.EnableWindow(false);
   m_dialog->m_hangup.EnableWindow();
   m_dialog->m_caller.SetWindowText("In call with " + connection.GetRemotePartyName());
 }
 
 void CMfcEndPoint::OnConnectionCleared(H323Connection &, const PString &)
 {
-  m_dialog->m_answer.EnableWindow(PFalse);
-  m_dialog->m_refuse.EnableWindow(PFalse);
-  m_dialog->m_hangup.EnableWindow(PFalse);
+  m_dialog->m_answer.EnableWindow(false);
+  m_dialog->m_refuse.EnableWindow(false);
+  m_dialog->m_hangup.EnableWindow(false);
   m_dialog->m_call.EnableWindow();
   m_dialog->m_caller.SetWindowText("");
 }
@@ -72,7 +72,7 @@ H323Connection::AnswerCallResponse CMfcEndPoint::OnAnswerCall(H323Connection & c
   m_dialog->m_caller.SetWindowText(caller + " is calling.");
   m_dialog->m_answer.EnableWindow();
   m_dialog->m_refuse.EnableWindow();
-  m_dialog->m_call.EnableWindow(PFalse);
+  m_dialog->m_call.EnableWindow(false);
   return H323Connection::AnswerCallPending;
 }
 #endif

@@ -105,7 +105,7 @@ PBoolean IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   
   //check if the common method can process it?
   if (IAX2Processor::ProcessNetworkFrame(src))
-      return PTrue;
+      return true;
   
   switch (src->GetSubClass()) {
     case IAX2FullFrameProtocol::cmdPoke:
@@ -114,10 +114,10 @@ PBoolean IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     default:
       PTRACE(1, "Process Full Frame Protocol, Type not expected");
       SendUnsupportedFrame(src);
-      return PFalse;
+      return false;
   }
   
-  return PTrue;
+  return true;
 }
 
 void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol *src)

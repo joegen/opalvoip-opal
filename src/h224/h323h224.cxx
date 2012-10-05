@@ -104,7 +104,7 @@ PBoolean H323_H224_AnnexQCapability::OnSendingPDU(H245_DataApplicationCapability
   PASN_ObjectId & objectId = capabilityIdentifier;
   objectId.SetValue("0.0.8.224.1.0");
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean H323_H224_AnnexQCapability::OnSendingPDU(H245_DataMode & pdu) const
@@ -119,12 +119,12 @@ PBoolean H323_H224_AnnexQCapability::OnSendingPDU(H245_DataMode & pdu) const
   PASN_ObjectId & objectId = capabilityIdentifier;
   objectId.SetValue("0.0.8.224.1.0");
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean H323_H224_AnnexQCapability::OnReceivedPDU(const H245_DataApplicationCapability & /*pdu*/)
 {
-  return PTrue;
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -183,7 +183,7 @@ PBoolean H323_H224_HDLCTunnelingCapability::OnSendingPDU(H245_DataApplicationCap
   H245_DataProtocolCapability & dataProtocolCapability = pdu.m_application;
   dataProtocolCapability.SetTag(H245_DataProtocolCapability::e_hdlcFrameTunnelling);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean H323_H224_HDLCTunnelingCapability::OnSendingPDU(H245_DataMode & pdu) const
@@ -194,12 +194,12 @@ PBoolean H323_H224_HDLCTunnelingCapability::OnSendingPDU(H245_DataMode & pdu) co
   H245_DataProtocolCapability & dataProtocolCapability = pdu.m_application;
   dataProtocolCapability.SetTag(H245_DataProtocolCapability::e_hdlcFrameTunnelling);
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean H323_H224_HDLCTunnelingCapability::OnReceivedPDU(const H245_DataApplicationCapability & /*pdu*/)
 {
-  return PTrue;
+  return true;
 }
 
 

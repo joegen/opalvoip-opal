@@ -95,7 +95,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
   switch (pdu.m_body.GetTag()) {
     case H501_MessageBody::e_serviceRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveServiceRequest(pdu, pdu.m_body);
       break;
 
@@ -107,13 +107,13 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_serviceRelease :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveServiceRelease(pdu, pdu.m_body);
       break;
 
     case H501_MessageBody::e_descriptorRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveDescriptorRequest(pdu, pdu.m_body);
       break;
 
@@ -125,7 +125,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_descriptorIDRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveDescriptorIDRequest(pdu, pdu.m_body);
       break;
 
@@ -137,7 +137,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_descriptorUpdate :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveDescriptorUpdate(pdu, pdu.m_body);
       break;
 
@@ -146,7 +146,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_accessRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveAccessRequest(pdu, pdu.m_body);
       break;
 
@@ -161,7 +161,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_nonStandardRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveNonStandardRequest(pdu, pdu.m_body);
       break;
 
@@ -177,7 +177,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_usageRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveUsageRequest(pdu, pdu.m_body);
       break;
 
@@ -186,7 +186,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_usageIndication :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveUnknownMessageResponse(pdu, pdu.m_body);
       break;
 
@@ -201,7 +201,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_validationRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveValidationRequest(pdu, pdu.m_body);
       break;
 
@@ -213,7 +213,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
 
     case H501_MessageBody::e_authenticationRequest :
       if (SendCachedResponse(pdu))
-        return PFalse;
+        return false;
       OnReceiveAuthenticationRequest(pdu, pdu.m_body);
       break;
 
@@ -227,7 +227,7 @@ PBoolean H323_AnnexG::HandleTransaction(const PASN_Object & rawPDU)
       OnReceiveUnknown(pdu);
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -263,49 +263,49 @@ PBoolean H323_AnnexG::OnReceiveServiceRejection(const H501PDU & pdu, const H501_
 
 PBoolean H323_AnnexG::OnReceiveServiceRelease(const H501PDU & /*common*/, const H501_ServiceRelease & /*pdu*/)
 {
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorIDRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorIDRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorIDRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorIDConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorIDConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorIDConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorIDRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorIDRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorIDRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorUpdate(const H501PDU & PTRACE_PARAM(pdu), const H501_DescriptorUpdate & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveDescriptorUpdate - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, const H501_DescriptorUpdateAck & /*pdu*/)
@@ -317,7 +317,7 @@ PBoolean H323_AnnexG::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, const H5
 PBoolean H323_AnnexG::OnReceiveAccessRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_AccessRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveAccessRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveAccessConfirmation(const H501PDU & pdu, const H501_AccessConfirmation & /*pdu*/)
@@ -340,91 +340,91 @@ PBoolean H323_AnnexG::OnReceiveRequestInProgress(const H501PDU & pdu, const H501
 PBoolean H323_AnnexG::OnReceiveNonStandardRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_NonStandardRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveNonStandardRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveNonStandardConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_NonStandardConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveNonStandardConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveNonStandardRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_NonStandardRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveNonStandardRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUnknownMessageResponse(const H501PDU & PTRACE_PARAM(pdu), const H501_UnknownMessageResponse & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUnknownMessageResponse - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUsageRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_UsageRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUsageRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUsageConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_UsageConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUsageConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUsageIndicationConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_UsageIndicationConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUsageIndicationConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUsageIndicationRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_UsageIndicationRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUsageIndicationRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveUsageRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_UsageRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveUsageRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveValidationRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_ValidationRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveValidationRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveValidationConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_ValidationConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveValidationConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveValidationRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_ValidationRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveValidationRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveAuthenticationRequest(const H501PDU & PTRACE_PARAM(pdu), const H501_AuthenticationRequest & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveAuthenticationRequest - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveAuthenticationConfirmation(const H501PDU & PTRACE_PARAM(pdu), const H501_AuthenticationConfirmation & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveAuthenticationConfirmation - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 PBoolean H323_AnnexG::OnReceiveAuthenticationRejection(const H501PDU & PTRACE_PARAM(pdu), const H501_AuthenticationRejection & /*pdu*/)
 {
   PTRACE(3, "AnnexG\tOnReceiveAuthenticationRejection - seq: " << pdu.m_common.m_sequenceNumber);
-  return PFalse;
+  return false;
 }
 
 

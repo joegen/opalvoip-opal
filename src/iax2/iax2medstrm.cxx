@@ -79,7 +79,7 @@ OpalIAX2MediaStream::~OpalIAX2MediaStream()
 PBoolean OpalIAX2MediaStream::Open()
 {
   if (IsOpen())
-    return PTrue;
+    return true;
 
   PBoolean res = OpalMediaStream::Open();
   PTRACE(3, "Media\t" << *this << " is now open");
@@ -101,12 +101,12 @@ PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
-    return PFalse;
+    return false;
   }
 
   if (!IsOpen()) {
     PTRACE(3, "Media\tStream has been closed, so exit now");
-    return PFalse;
+    return false;
   }
     
   PBoolean success = connection.ReadSoundPacket(packet); 
@@ -126,7 +126,7 @@ PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
   written = 0;
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
-    return PFalse;
+    return false;
   }
   PTRACE(5, "Media\tSend data to the network : have " 
 	 << length << " bytes to send to remote host");
@@ -134,7 +134,7 @@ PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
   written = length;
   connection.PutSoundPacketToNetwork(sound);
 
-  return PTrue;
+  return true;
 }
 
 

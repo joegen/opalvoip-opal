@@ -48,7 +48,7 @@ IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
      endpoint(_newEndpoint),
      sock(_newSocket)
 {
-  keepGoing = PTrue;
+  keepGoing = true;
   fromNetworkFrames.Initialise();
   
   PTRACE(6, "IAX2 Rx\tReceiver Constructed just fine");
@@ -70,7 +70,7 @@ IAX2Receiver::~IAX2Receiver()
 void IAX2Receiver::Terminate()
 {
   PTRACE(5, "IAX2 Rx\tEnd receiver thread");
-  keepGoing = PFalse;
+  keepGoing = false;
   
   PIPSocket::Address addr;
   sock.GetLocalAddress(addr);
@@ -85,7 +85,7 @@ void IAX2Receiver::Main()
   while (keepGoing) {
     PBoolean res = ReadNetworkSocket();
     
-    if ((res == PFalse) || (keepGoing == PFalse)) {
+    if ((res == false) || (keepGoing == false)) {
       PTRACE(3, "IAX2 Rx\tNetwork socket has closed down, so exit");
       break;            /*Network socket has closed down*/
     }
@@ -117,19 +117,19 @@ PBoolean IAX2Receiver::ReadNetworkSocket()
   PTRACE(5, "IAX2 Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
   PBoolean res = frame->ReadNetworkPacket(sock);
   
-  if (res == PFalse) {
+  if (res == false) {
     PTRACE(3, "IAX2 Rx\tFailed to read network packet from socket for FrameID-->" << frame->IdString());
     delete frame;
-    return PFalse;
+    return false;
   }
   
   PTRACE(6, "IAX2 Rx\tHave read a frame from the network socket fro FrameID-->" 
 	 << frame->IdString() << endl  << *frame);
   
-  if(frame->ProcessNetworkPacket() == PFalse) {
+  if(frame->ProcessNetworkPacket() == false) {
     PTRACE(3, "IAX2 Rx\tFailed to interpret header for " << frame->IdString());
     delete frame;
-    return PTrue;
+    return true;
   }
   
   /* At this point, the IAX2Connection instance this frame belongs to is
@@ -142,7 +142,7 @@ PBoolean IAX2Receiver::ReadNetworkSocket()
      the chance of dropping a frame is less.*/
   AddNewReceivedFrame(frame);
   
-  return PTrue;
+  return true;
 }
 
 

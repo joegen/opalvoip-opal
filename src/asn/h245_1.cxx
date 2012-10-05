@@ -30,7 +30,7 @@ const static PASN_Names Names_H245_MultimediaSystemControlMessage[]={
 //
 
 H245_MultimediaSystemControlMessage::H245_MultimediaSystemControlMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultimediaSystemControlMessage,4
 #endif
@@ -132,20 +132,20 @@ PBoolean H245_MultimediaSystemControlMessage::CreateObject()
   switch (tag) {
     case e_request :
       choice = new H245_RequestMessage();
-      return PTrue;
+      return true;
     case e_response :
       choice = new H245_ResponseMessage();
-      return PTrue;
+      return true;
     case e_command :
       choice = new H245_CommandMessage();
-      return PTrue;
+      return true;
     case e_indication :
       choice = new H245_IndicationMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -184,7 +184,7 @@ const static PASN_Names Names_H245_RequestMessage[]={
 //
 
 H245_RequestMessage::H245_RequestMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 11, PTrue
+  : PASN_Choice(tag, tagClass, 11, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_RequestMessage,16
 #endif
@@ -550,56 +550,56 @@ PBoolean H245_RequestMessage::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_masterSlaveDetermination :
       choice = new H245_MasterSlaveDetermination();
-      return PTrue;
+      return true;
     case e_terminalCapabilitySet :
       choice = new H245_TerminalCapabilitySet();
-      return PTrue;
+      return true;
     case e_openLogicalChannel :
       choice = new H245_OpenLogicalChannel();
-      return PTrue;
+      return true;
     case e_closeLogicalChannel :
       choice = new H245_CloseLogicalChannel();
-      return PTrue;
+      return true;
     case e_requestChannelClose :
       choice = new H245_RequestChannelClose();
-      return PTrue;
+      return true;
     case e_multiplexEntrySend :
       choice = new H245_MultiplexEntrySend();
-      return PTrue;
+      return true;
     case e_requestMultiplexEntry :
       choice = new H245_RequestMultiplexEntry();
-      return PTrue;
+      return true;
     case e_requestMode :
       choice = new H245_RequestMode();
-      return PTrue;
+      return true;
     case e_roundTripDelayRequest :
       choice = new H245_RoundTripDelayRequest();
-      return PTrue;
+      return true;
     case e_maintenanceLoopRequest :
       choice = new H245_MaintenanceLoopRequest();
-      return PTrue;
+      return true;
     case e_communicationModeRequest :
       choice = new H245_CommunicationModeRequest();
-      return PTrue;
+      return true;
     case e_conferenceRequest :
       choice = new H245_ConferenceRequest();
-      return PTrue;
+      return true;
     case e_multilinkRequest :
       choice = new H245_MultilinkRequest();
-      return PTrue;
+      return true;
     case e_logicalChannelRateRequest :
       choice = new H245_LogicalChannelRateRequest();
-      return PTrue;
+      return true;
     case e_genericRequest :
       choice = new H245_GenericMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -647,7 +647,7 @@ const static PASN_Names Names_H245_ResponseMessage[]={
 //
 
 H245_ResponseMessage::H245_ResponseMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 19, PTrue
+  : PASN_Choice(tag, tagClass, 19, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ResponseMessage,25
 #endif
@@ -1211,83 +1211,83 @@ PBoolean H245_ResponseMessage::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_masterSlaveDeterminationAck :
       choice = new H245_MasterSlaveDeterminationAck();
-      return PTrue;
+      return true;
     case e_masterSlaveDeterminationReject :
       choice = new H245_MasterSlaveDeterminationReject();
-      return PTrue;
+      return true;
     case e_terminalCapabilitySetAck :
       choice = new H245_TerminalCapabilitySetAck();
-      return PTrue;
+      return true;
     case e_terminalCapabilitySetReject :
       choice = new H245_TerminalCapabilitySetReject();
-      return PTrue;
+      return true;
     case e_openLogicalChannelAck :
       choice = new H245_OpenLogicalChannelAck();
-      return PTrue;
+      return true;
     case e_openLogicalChannelReject :
       choice = new H245_OpenLogicalChannelReject();
-      return PTrue;
+      return true;
     case e_closeLogicalChannelAck :
       choice = new H245_CloseLogicalChannelAck();
-      return PTrue;
+      return true;
     case e_requestChannelCloseAck :
       choice = new H245_RequestChannelCloseAck();
-      return PTrue;
+      return true;
     case e_requestChannelCloseReject :
       choice = new H245_RequestChannelCloseReject();
-      return PTrue;
+      return true;
     case e_multiplexEntrySendAck :
       choice = new H245_MultiplexEntrySendAck();
-      return PTrue;
+      return true;
     case e_multiplexEntrySendReject :
       choice = new H245_MultiplexEntrySendReject();
-      return PTrue;
+      return true;
     case e_requestMultiplexEntryAck :
       choice = new H245_RequestMultiplexEntryAck();
-      return PTrue;
+      return true;
     case e_requestMultiplexEntryReject :
       choice = new H245_RequestMultiplexEntryReject();
-      return PTrue;
+      return true;
     case e_requestModeAck :
       choice = new H245_RequestModeAck();
-      return PTrue;
+      return true;
     case e_requestModeReject :
       choice = new H245_RequestModeReject();
-      return PTrue;
+      return true;
     case e_roundTripDelayResponse :
       choice = new H245_RoundTripDelayResponse();
-      return PTrue;
+      return true;
     case e_maintenanceLoopAck :
       choice = new H245_MaintenanceLoopAck();
-      return PTrue;
+      return true;
     case e_maintenanceLoopReject :
       choice = new H245_MaintenanceLoopReject();
-      return PTrue;
+      return true;
     case e_communicationModeResponse :
       choice = new H245_CommunicationModeResponse();
-      return PTrue;
+      return true;
     case e_conferenceResponse :
       choice = new H245_ConferenceResponse();
-      return PTrue;
+      return true;
     case e_multilinkResponse :
       choice = new H245_MultilinkResponse();
-      return PTrue;
+      return true;
     case e_logicalChannelRateAcknowledge :
       choice = new H245_LogicalChannelRateAcknowledge();
-      return PTrue;
+      return true;
     case e_logicalChannelRateReject :
       choice = new H245_LogicalChannelRateReject();
-      return PTrue;
+      return true;
     case e_genericResponse :
       choice = new H245_GenericMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1323,7 +1323,7 @@ const static PASN_Names Names_H245_CommandMessage[]={
 //
 
 H245_CommandMessage::H245_CommandMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, PTrue
+  : PASN_Choice(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_CommandMessage,13
 #endif
@@ -1623,47 +1623,47 @@ PBoolean H245_CommandMessage::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_maintenanceLoopOffCommand :
       choice = new H245_MaintenanceLoopOffCommand();
-      return PTrue;
+      return true;
     case e_sendTerminalCapabilitySet :
       choice = new H245_SendTerminalCapabilitySet();
-      return PTrue;
+      return true;
     case e_encryptionCommand :
       choice = new H245_EncryptionCommand();
-      return PTrue;
+      return true;
     case e_flowControlCommand :
       choice = new H245_FlowControlCommand();
-      return PTrue;
+      return true;
     case e_endSessionCommand :
       choice = new H245_EndSessionCommand();
-      return PTrue;
+      return true;
     case e_miscellaneousCommand :
       choice = new H245_MiscellaneousCommand();
-      return PTrue;
+      return true;
     case e_communicationModeCommand :
       choice = new H245_CommunicationModeCommand();
-      return PTrue;
+      return true;
     case e_conferenceCommand :
       choice = new H245_ConferenceCommand();
-      return PTrue;
+      return true;
     case e_h223MultiplexReconfiguration :
       choice = new H245_H223MultiplexReconfiguration();
-      return PTrue;
+      return true;
     case e_newATMVCCommand :
       choice = new H245_NewATMVCCommand();
-      return PTrue;
+      return true;
     case e_mobileMultilinkReconfigurationCommand :
       choice = new H245_MobileMultilinkReconfigurationCommand();
-      return PTrue;
+      return true;
     case e_genericCommand :
       choice = new H245_GenericMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1710,7 +1710,7 @@ const static PASN_Names Names_H245_IndicationMessage[]={
 //
 
 H245_IndicationMessage::H245_IndicationMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 14, PTrue
+  : PASN_Choice(tag, tagClass, 14, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_IndicationMessage,24
 #endif
@@ -2252,80 +2252,80 @@ PBoolean H245_IndicationMessage::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_functionNotUnderstood :
       choice = new H245_FunctionNotUnderstood();
-      return PTrue;
+      return true;
     case e_masterSlaveDeterminationRelease :
       choice = new H245_MasterSlaveDeterminationRelease();
-      return PTrue;
+      return true;
     case e_terminalCapabilitySetRelease :
       choice = new H245_TerminalCapabilitySetRelease();
-      return PTrue;
+      return true;
     case e_openLogicalChannelConfirm :
       choice = new H245_OpenLogicalChannelConfirm();
-      return PTrue;
+      return true;
     case e_requestChannelCloseRelease :
       choice = new H245_RequestChannelCloseRelease();
-      return PTrue;
+      return true;
     case e_multiplexEntrySendRelease :
       choice = new H245_MultiplexEntrySendRelease();
-      return PTrue;
+      return true;
     case e_requestMultiplexEntryRelease :
       choice = new H245_RequestMultiplexEntryRelease();
-      return PTrue;
+      return true;
     case e_requestModeRelease :
       choice = new H245_RequestModeRelease();
-      return PTrue;
+      return true;
     case e_miscellaneousIndication :
       choice = new H245_MiscellaneousIndication();
-      return PTrue;
+      return true;
     case e_jitterIndication :
       choice = new H245_JitterIndication();
-      return PTrue;
+      return true;
     case e_h223SkewIndication :
       choice = new H245_H223SkewIndication();
-      return PTrue;
+      return true;
     case e_newATMVCIndication :
       choice = new H245_NewATMVCIndication();
-      return PTrue;
+      return true;
     case e_userInput :
       choice = new H245_UserInputIndication();
-      return PTrue;
+      return true;
     case e_h2250MaximumSkewIndication :
       choice = new H245_H2250MaximumSkewIndication();
-      return PTrue;
+      return true;
     case e_mcLocationIndication :
       choice = new H245_MCLocationIndication();
-      return PTrue;
+      return true;
     case e_conferenceIndication :
       choice = new H245_ConferenceIndication();
-      return PTrue;
+      return true;
     case e_vendorIdentification :
       choice = new H245_VendorIdentification();
-      return PTrue;
+      return true;
     case e_functionNotSupported :
       choice = new H245_FunctionNotSupported();
-      return PTrue;
+      return true;
     case e_multilinkIndication :
       choice = new H245_MultilinkIndication();
-      return PTrue;
+      return true;
     case e_logicalChannelRateRelease :
       choice = new H245_LogicalChannelRateRelease();
-      return PTrue;
+      return true;
     case e_flowControlIndication :
       choice = new H245_FlowControlIndication();
-      return PTrue;
+      return true;
     case e_mobileMultilinkReconfigurationIndication :
       choice = new H245_MobileMultilinkReconfigurationIndication();
-      return PTrue;
+      return true;
     case e_genericIndication :
       choice = new H245_GenericMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2384,7 +2384,7 @@ const static PASN_Names Names_H245_NonStandardIdentifier[]={
 //
 
 H245_NonStandardIdentifier::H245_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_NonStandardIdentifier,2
 #endif
@@ -2420,14 +2420,14 @@ PBoolean H245_NonStandardIdentifier::CreateObject()
   switch (tag) {
     case e_object :
       choice = new PASN_ObjectId();
-      return PTrue;
+      return true;
     case e_h221NonStandard :
       choice = new H245_NonStandardIdentifier_h221NonStandard();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2445,7 +2445,7 @@ PObject * H245_NonStandardIdentifier::Clone() const
 //
 
 H245_MasterSlaveDetermination::H245_MasterSlaveDetermination(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_terminalType.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_statusDeterminationNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 16777215);
@@ -2494,12 +2494,12 @@ PINDEX H245_MasterSlaveDetermination::GetDataLength() const
 PBoolean H245_MasterSlaveDetermination::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminalType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_statusDeterminationNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2530,7 +2530,7 @@ PObject * H245_MasterSlaveDetermination::Clone() const
 //
 
 H245_MasterSlaveDeterminationRelease::H245_MasterSlaveDeterminationRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2555,7 +2555,7 @@ PINDEX H245_MasterSlaveDeterminationRelease::GetDataLength() const
 PBoolean H245_MasterSlaveDeterminationRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -2719,7 +2719,7 @@ const static PASN_Names Names_H245_Capability[]={
 //
 
 H245_Capability::H245_Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 12, PTrue
+  : PASN_Choice(tag, tagClass, 12, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_Capability,29
 #endif
@@ -3107,76 +3107,76 @@ PBoolean H245_Capability::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_receiveVideoCapability :
     case e_transmitVideoCapability :
     case e_receiveAndTransmitVideoCapability :
       choice = new H245_VideoCapability();
-      return PTrue;
+      return true;
     case e_receiveAudioCapability :
     case e_transmitAudioCapability :
     case e_receiveAndTransmitAudioCapability :
       choice = new H245_AudioCapability();
-      return PTrue;
+      return true;
     case e_receiveDataApplicationCapability :
     case e_transmitDataApplicationCapability :
     case e_receiveAndTransmitDataApplicationCapability :
       choice = new H245_DataApplicationCapability();
-      return PTrue;
+      return true;
     case e_h233EncryptionTransmitCapability :
       choice = new PASN_Boolean();
-      return PTrue;
+      return true;
     case e_h233EncryptionReceiveCapability :
       choice = new H245_Capability_h233EncryptionReceiveCapability();
-      return PTrue;
+      return true;
     case e_conferenceCapability :
       choice = new H245_ConferenceCapability();
-      return PTrue;
+      return true;
     case e_h235SecurityCapability :
       choice = new H245_H235SecurityCapability();
-      return PTrue;
+      return true;
     case e_maxPendingReplacementFor :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 255);
-      return PTrue;
+      return true;
     case e_receiveUserInputCapability :
     case e_transmitUserInputCapability :
     case e_receiveAndTransmitUserInputCapability :
       choice = new H245_UserInputCapability();
-      return PTrue;
+      return true;
     case e_genericControlCapability :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
     case e_receiveMultiplexedStreamCapability :
     case e_transmitMultiplexedStreamCapability :
     case e_receiveAndTransmitMultiplexedStreamCapability :
       choice = new H245_MultiplexedStreamCapability();
-      return PTrue;
+      return true;
     case e_receiveRTPAudioTelephonyEventCapability :
       choice = new H245_AudioTelephonyEventCapability();
-      return PTrue;
+      return true;
     case e_receiveRTPAudioToneCapability :
       choice = new H245_AudioToneCapability();
-      return PTrue;
+      return true;
     case e_depFecCapability :
       choice = new H245_DepFECCapability();
-      return PTrue;
+      return true;
     case e_multiplePayloadStreamCapability :
       choice = new H245_MultiplePayloadStreamCapability();
-      return PTrue;
+      return true;
     case e_fecCapability :
       choice = new H245_FECCapability();
-      return PTrue;
+      return true;
     case e_redundancyEncodingCap :
       choice = new H245_RedundancyEncodingCapability();
-      return PTrue;
+      return true;
     case e_oneOfCapabilities :
       choice = new H245_AlternativeCapabilitySet();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3205,7 +3205,7 @@ const static PASN_Names Names_H245_MultiplexCapability[]={
 //
 
 H245_MultiplexCapability::H245_MultiplexCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultiplexCapability,6
 #endif
@@ -3351,26 +3351,26 @@ PBoolean H245_MultiplexCapability::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_h222Capability :
       choice = new H245_H222Capability();
-      return PTrue;
+      return true;
     case e_h223Capability :
       choice = new H245_H223Capability();
-      return PTrue;
+      return true;
     case e_v76Capability :
       choice = new H245_V76Capability();
-      return PTrue;
+      return true;
     case e_h2250Capability :
       choice = new H245_H2250Capability();
-      return PTrue;
+      return true;
     case e_genericMultiplexCapability :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3388,7 +3388,7 @@ PObject * H245_MultiplexCapability::Clone() const
 //
 
 H245_H223AnnexCCapability::H245_H223AnnexCCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 0, true, 1)
 {
   m_maximumAL1MPDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_maximumAL2MSDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -3484,36 +3484,36 @@ PINDEX H245_H223AnnexCCapability::GetDataLength() const
 PBoolean H245_H223AnnexCCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_videoWithAL1M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_videoWithAL2M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_videoWithAL3M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioWithAL1M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioWithAL2M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioWithAL3M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_dataWithAL1M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_dataWithAL2M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_dataWithAL3M.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_alpduInterleaving.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumAL1MPDUSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumAL2MSDUSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumAL3MSDUSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_rsCodeCapability, m_rsCodeCapability))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3556,7 +3556,7 @@ PObject * H245_H223AnnexCCapability::Clone() const
 //
 
 H245_V75Capability::H245_V75Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3599,10 +3599,10 @@ PINDEX H245_V75Capability::GetDataLength() const
 PBoolean H245_V75Capability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioHeader.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3639,7 +3639,7 @@ const static PASN_Names Names_H245_QOSMode[]={
 //
 
 H245_QOSMode::H245_QOSMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_QOSMode,2
 #endif
@@ -3669,7 +3669,7 @@ PObject * H245_QOSMode::Clone() const
 //
 
 H245_ATMParameters::H245_ATMParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_maxNTUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -3733,20 +3733,20 @@ PINDEX H245_ATMParameters::GetDataLength() const
 PBoolean H245_ATMParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_maxNTUSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atmUBR.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atmrtVBR.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atmnrtVBR.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atmABR.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_atmCBR.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3788,7 +3788,7 @@ const static PASN_Names Names_H245_QOSType[]={
 //
 
 H245_QOSType::H245_QOSType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_QOSType,2
 #endif
@@ -3829,7 +3829,7 @@ const static PASN_Names Names_H245_QOSClass[]={
 //
 
 H245_QOSClass::H245_QOSClass(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, PTrue
+  : PASN_Choice(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_QOSClass,6
 #endif
@@ -3869,7 +3869,7 @@ const static PASN_Names Names_H245_MediaTransportType[]={
 //
 
 H245_MediaTransportType::H245_MediaTransportType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MediaTransportType,5
 #endif
@@ -3908,14 +3908,14 @@ PBoolean H245_MediaTransportType::CreateObject()
     case e_atm_AAL5_UNIDIR :
     case e_atm_AAL5_BIDIR :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_atm_AAL5_compressed :
       choice = new H245_MediaTransportType_atm_AAL5_compressed();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3933,7 +3933,7 @@ PObject * H245_MediaTransportType::Clone() const
 //
 
 H245_MediaChannelCapability::H245_MediaChannelCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -3978,10 +3978,10 @@ PINDEX H245_MediaChannelCapability::GetDataLength() const
 PBoolean H245_MediaChannelCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_mediaTransport) && !m_mediaTransport.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4020,7 +4020,7 @@ const static PASN_Names Names_H245_RedundancyEncodingMethod[]={
 //
 
 H245_RedundancyEncodingMethod::H245_RedundancyEncodingMethod(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_RedundancyEncodingMethod,3
 #endif
@@ -4078,17 +4078,17 @@ PBoolean H245_RedundancyEncodingMethod::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_rtpAudioRedundancyEncoding :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_rtpH263VideoRedundancyEncoding :
       choice = new H245_RTPH263VideoRedundancyEncoding();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -4118,7 +4118,7 @@ const static PASN_Names Names_H245_VideoCapability[]={
 //
 
 H245_VideoCapability::H245_VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_VideoCapability,7
 #endif
@@ -4286,29 +4286,29 @@ PBoolean H245_VideoCapability::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_h261VideoCapability :
       choice = new H245_H261VideoCapability();
-      return PTrue;
+      return true;
     case e_h262VideoCapability :
       choice = new H245_H262VideoCapability();
-      return PTrue;
+      return true;
     case e_h263VideoCapability :
       choice = new H245_H263VideoCapability();
-      return PTrue;
+      return true;
     case e_is11172VideoCapability :
       choice = new H245_IS11172VideoCapability();
-      return PTrue;
+      return true;
     case e_genericVideoCapability :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
     case e_extendedVideoCapability :
       choice = new H245_ExtendedVideoCapability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -4326,7 +4326,7 @@ PObject * H245_VideoCapability::Clone() const
 //
 
 H245_H261VideoCapability::H245_H261VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 2, true, 1)
 {
   m_qcifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 4);
   m_cifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 4);
@@ -4395,20 +4395,20 @@ PINDEX H245_H261VideoCapability::GetDataLength() const
 PBoolean H245_H261VideoCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_qcifMPI) && !m_qcifMPI.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cifMPI) && !m_cifMPI.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_temporalSpatialTradeOffCapability.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maxBitRate.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_stillImageTransmission.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_videoBadMBsCap, m_videoBadMBsCap))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4445,7 +4445,7 @@ PObject * H245_H261VideoCapability::Clone() const
 //
 
 H245_H262VideoCapability::H245_H262VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 6, false, 0)
 {
   m_videoBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 1073741823);
   m_vbvBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 262143);
@@ -4574,44 +4574,44 @@ PINDEX H245_H262VideoCapability::GetDataLength() const
 PBoolean H245_H262VideoCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_profileAndLevel_SPatML.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_MPatLL.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_MPatML.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_MPatH_14.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_MPatHL.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_SNRatLL.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_SNRatML.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_SpatialatH_14.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_HPatML.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_HPatH_14.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_profileAndLevel_HPatHL.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_videoBitRate) && !m_videoBitRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_vbvBufferSize) && !m_vbvBufferSize.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_samplesPerLine) && !m_samplesPerLine.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_linesPerFrame) && !m_linesPerFrame.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_framesPerSecond) && !m_framesPerSecond.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_luminanceSampleRate) && !m_luminanceSampleRate.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_videoBadMBsCap.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4664,7 +4664,7 @@ PObject * H245_H262VideoCapability::Clone() const
 //
 
 H245_TransparencyParameters::H245_TransparencyParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_presentationOrder.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_offset_x.SetConstraints(PASN_Object::FixedConstraint, -262144, 262143);
@@ -4728,18 +4728,18 @@ PINDEX H245_TransparencyParameters::GetDataLength() const
 PBoolean H245_TransparencyParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_presentationOrder.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_offset_x.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_offset_y.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_scale_x.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_scale_y.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4773,7 +4773,7 @@ PObject * H245_TransparencyParameters::Clone() const
 //
 
 H245_CustomPictureClockFrequency::H245_CustomPictureClockFrequency(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 5, true, 0)
 {
   m_clockConversionCode.SetConstraints(PASN_Object::FixedConstraint, 1000, 1001);
   m_clockDivisor.SetConstraints(PASN_Object::FixedConstraint, 1, 127);
@@ -4857,22 +4857,22 @@ PINDEX H245_CustomPictureClockFrequency::GetDataLength() const
 PBoolean H245_CustomPictureClockFrequency::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_clockConversionCode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_clockDivisor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sqcifMPI) && !m_sqcifMPI.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_qcifMPI) && !m_qcifMPI.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cifMPI) && !m_cifMPI.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cif4MPI) && !m_cif4MPI.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cif16MPI) && !m_cif16MPI.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4913,7 +4913,7 @@ PObject * H245_CustomPictureClockFrequency::Clone() const
 //
 
 H245_H263Version3Options::H245_H263Version3Options(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -4984,24 +4984,24 @@ PINDEX H245_H263Version3Options::GetDataLength() const
 PBoolean H245_H263Version3Options::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_dataPartitionedSlices.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fixedPointIDCT0.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_interlacedFields.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_currentPictureHeaderRepetition.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_previousPictureHeaderRepetition.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nextPictureHeaderRepetition.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_pictureNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_spareReferencePictures.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5038,7 +5038,7 @@ PObject * H245_H263Version3Options::Clone() const
 //
 
 H245_IS11172VideoCapability::H245_IS11172VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 6, true, 1)
 {
   m_videoBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 1073741823);
   m_vbvBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 262143);
@@ -5126,24 +5126,24 @@ PINDEX H245_IS11172VideoCapability::GetDataLength() const
 PBoolean H245_IS11172VideoCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_constrainedBitstream.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_videoBitRate) && !m_videoBitRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_vbvBufferSize) && !m_vbvBufferSize.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_samplesPerLine) && !m_samplesPerLine.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_linesPerFrame) && !m_linesPerFrame.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_pictureRate) && !m_pictureRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_luminanceSampleRate) && !m_luminanceSampleRate.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_videoBadMBsCap, m_videoBadMBsCap))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5216,7 +5216,7 @@ const static PASN_Names Names_H245_AudioCapability[]={
 //
 
 H245_AudioCapability::H245_AudioCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 14, PTrue
+  : PASN_Choice(tag, tagClass, 14, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_AudioCapability,25
 #endif
@@ -5472,91 +5472,91 @@ PBoolean H245_AudioCapability::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_g711Alaw64k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g711Alaw56k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g711Ulaw64k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g711Ulaw56k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g722_64k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g722_56k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g722_48k :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g7231 :
       choice = new H245_AudioCapability_g7231();
-      return PTrue;
+      return true;
     case e_g728 :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g729 :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g729AnnexA :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_is11172AudioCapability :
       choice = new H245_IS11172AudioCapability();
-      return PTrue;
+      return true;
     case e_is13818AudioCapability :
       choice = new H245_IS13818AudioCapability();
-      return PTrue;
+      return true;
     case e_g729wAnnexB :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g729AnnexAwAnnexB :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g7231AnnexCCapability :
       choice = new H245_G7231AnnexCCapability();
-      return PTrue;
+      return true;
     case e_gsmFullRate :
     case e_gsmHalfRate :
     case e_gsmEnhancedFullRate :
       choice = new H245_GSMAudioCapability();
-      return PTrue;
+      return true;
     case e_genericAudioCapability :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
     case e_g729Extensions :
       choice = new H245_G729Extensions();
-      return PTrue;
+      return true;
     case e_vbd :
       choice = new H245_VBDCapability();
-      return PTrue;
+      return true;
     case e_audioTelephonyEvent :
       choice = new H245_NoPTAudioTelephonyEventCapability();
-      return PTrue;
+      return true;
     case e_audioTone :
       choice = new H245_NoPTAudioToneCapability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5574,7 +5574,7 @@ PObject * H245_AudioCapability::Clone() const
 //
 
 H245_G729Extensions::H245_G729Extensions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_audioUnit.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -5648,24 +5648,24 @@ PINDEX H245_G729Extensions::GetDataLength() const
 PBoolean H245_G729Extensions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_audioUnit) && !m_audioUnit.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexA.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexB.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexD.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexE.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexF.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexG.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_annexH.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5703,7 +5703,7 @@ PObject * H245_G729Extensions::Clone() const
 //
 
 H245_IS11172AudioCapability::H245_IS11172AudioCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 448);
 }
@@ -5779,26 +5779,26 @@ PINDEX H245_IS11172AudioCapability::GetDataLength() const
 PBoolean H245_IS11172AudioCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioLayer1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioLayer2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioLayer3.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling32k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling44k1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling48k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_singleChannel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_twoChannels.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bitRate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5836,7 +5836,7 @@ PObject * H245_IS11172AudioCapability::Clone() const
 //
 
 H245_IS13818AudioCapability::H245_IS13818AudioCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 1130);
 }
@@ -5960,50 +5960,50 @@ PINDEX H245_IS13818AudioCapability::GetDataLength() const
 PBoolean H245_IS13818AudioCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioLayer1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioLayer2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioLayer3.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling16k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling22k05.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling24k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling32k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling44k1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioSampling48k.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_singleChannel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_twoChannels.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_threeChannels2_1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_threeChannels3_0.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fourChannels2_0_2_0.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fourChannels2_2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fourChannels3_1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fiveChannels3_0_2_0.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fiveChannels3_2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lowFrequencyEnhancement.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_multilingual.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bitRate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6053,7 +6053,7 @@ PObject * H245_IS13818AudioCapability::Clone() const
 //
 
 H245_GSMAudioCapability::H245_GSMAudioCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_audioUnitSize.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -6105,14 +6105,14 @@ PINDEX H245_GSMAudioCapability::GetDataLength() const
 PBoolean H245_GSMAudioCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioUnitSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_comfortNoise.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_scrambled.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6144,7 +6144,7 @@ PObject * H245_GSMAudioCapability::Clone() const
 //
 
 H245_VBDCapability::H245_VBDCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -6187,10 +6187,10 @@ PINDEX H245_VBDCapability::GetDataLength() const
 PBoolean H245_VBDCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_type.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6239,7 +6239,7 @@ const static PASN_Names Names_H245_DataProtocolCapability[]={
 //
 
 H245_DataProtocolCapability::H245_DataProtocolCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, PTrue
+  : PASN_Choice(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DataProtocolCapability,14
 #endif
@@ -6297,7 +6297,7 @@ PBoolean H245_DataProtocolCapability::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_v14buffered :
     case e_v42lapm :
     case e_hdlcFrameTunnelling :
@@ -6311,14 +6311,14 @@ PBoolean H245_DataProtocolCapability::CreateObject()
     case e_tcp :
     case e_udp :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_v76wCompression :
       choice = new H245_DataProtocolCapability_v76wCompression();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6342,7 +6342,7 @@ const static PASN_Names Names_H245_CompressionType[]={
 //
 
 H245_CompressionType::H245_CompressionType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_CompressionType,1
 #endif
@@ -6378,11 +6378,11 @@ PBoolean H245_CompressionType::CreateObject()
   switch (tag) {
     case e_v42bis :
       choice = new H245_V42bis();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6400,7 +6400,7 @@ PObject * H245_CompressionType::Clone() const
 //
 
 H245_V42bis::H245_V42bis(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_numberOfCodewords.SetConstraints(PASN_Object::FixedConstraint, 1, 65536);
   m_maximumStringLength.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -6449,12 +6449,12 @@ PINDEX H245_V42bis::GetDataLength() const
 PBoolean H245_V42bis::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_numberOfCodewords.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumStringLength.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6492,7 +6492,7 @@ const static PASN_Names Names_H245_T84Profile[]={
 //
 
 H245_T84Profile::H245_T84Profile(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_T84Profile,2
 #endif
@@ -6528,14 +6528,14 @@ PBoolean H245_T84Profile::CreateObject()
   switch (tag) {
     case e_t84Unrestricted :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_t84Restricted :
       choice = new H245_T84Profile_t84Restricted();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6560,7 +6560,7 @@ const static PASN_Names Names_H245_T38FaxRateManagement[]={
 //
 
 H245_T38FaxRateManagement::H245_T38FaxRateManagement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_T38FaxRateManagement,2
 #endif
@@ -6590,7 +6590,7 @@ PObject * H245_T38FaxRateManagement::Clone() const
 //
 
 H245_T38FaxTcpOptions::H245_T38FaxTcpOptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -6633,10 +6633,10 @@ PINDEX H245_T38FaxTcpOptions::GetDataLength() const
 PBoolean H245_T38FaxTcpOptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_t38TCPBidirectionalMode.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6705,7 +6705,7 @@ const static PASN_Names Names_H245_MediaEncryptionAlgorithm[]={
 //
 
 H245_MediaEncryptionAlgorithm::H245_MediaEncryptionAlgorithm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MediaEncryptionAlgorithm,2
 #endif
@@ -6741,14 +6741,14 @@ PBoolean H245_MediaEncryptionAlgorithm::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_algorithm :
       choice = new PASN_ObjectId();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6783,7 +6783,7 @@ const static PASN_Names Names_H245_UserInputCapability[]={
 //
 
 H245_UserInputCapability::H245_UserInputCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, PTrue
+  : PASN_Choice(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_UserInputCapability,12
 #endif
@@ -6842,7 +6842,7 @@ PBoolean H245_UserInputCapability::CreateObject()
     case e_nonStandard :
       choice = new H245_ArrayOf_NonStandardParameter();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 16);
-      return PTrue;
+      return true;
     case e_basicString :
     case e_iA5String :
     case e_generalString :
@@ -6854,14 +6854,14 @@ PBoolean H245_UserInputCapability::CreateObject()
     case e_encryptedGeneralString :
     case e_secureDTMF :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_genericUserInputCapability :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6888,7 +6888,7 @@ const static PASN_Names Names_H245_CapabilityIdentifier[]={
 //
 
 H245_CapabilityIdentifier::H245_CapabilityIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_CapabilityIdentifier,4
 #endif
@@ -6924,22 +6924,22 @@ PBoolean H245_CapabilityIdentifier::CreateObject()
   switch (tag) {
     case e_standard :
       choice = new PASN_ObjectId();
-      return PTrue;
+      return true;
     case e_h221NonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_uuid :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 16);
-      return PTrue;
+      return true;
     case e_domainBased :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 64);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -6966,7 +6966,7 @@ const static PASN_Names Names_H245_ParameterIdentifier[]={
 //
 
 H245_ParameterIdentifier::H245_ParameterIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ParameterIdentifier,4
 #endif
@@ -7003,22 +7003,22 @@ PBoolean H245_ParameterIdentifier::CreateObject()
     case e_standard :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 127);
-      return PTrue;
+      return true;
     case e_h221NonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_uuid :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 16);
-      return PTrue;
+      return true;
     case e_domainBased :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 64);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -7049,7 +7049,7 @@ const static PASN_Names Names_H245_ParameterValue[]={
 //
 
 H245_ParameterValue::H245_ParameterValue(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ParameterValue,8
 #endif
@@ -7085,37 +7085,37 @@ PBoolean H245_ParameterValue::CreateObject()
   switch (tag) {
     case e_logical :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_booleanArray :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 255);
-      return PTrue;
+      return true;
     case e_unsignedMin :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return PTrue;
+      return true;
     case e_unsignedMax :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return PTrue;
+      return true;
     case e_unsigned32Min :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
-      return PTrue;
+      return true;
     case e_unsigned32Max :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
-      return PTrue;
+      return true;
     case e_octetString :
       choice = new PASN_OctetString();
-      return PTrue;
+      return true;
     case e_genericParameter :
       choice = new H245_ArrayOf_GenericParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -7141,7 +7141,7 @@ const static PASN_Names Names_H245_MultiplexFormat[]={
 //
 
 H245_MultiplexFormat::H245_MultiplexFormat(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultiplexFormat,3
 #endif
@@ -7221,17 +7221,17 @@ PBoolean H245_MultiplexFormat::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_h222Capability :
       choice = new H245_H222Capability();
-      return PTrue;
+      return true;
     case e_h223Capability :
       choice = new H245_H223Capability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -7249,7 +7249,7 @@ PObject * H245_MultiplexFormat::Clone() const
 //
 
 H245_AudioTelephonyEventCapability::H245_AudioTelephonyEventCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_dynamicRTPPayloadType.SetConstraints(PASN_Object::FixedConstraint, 96, 127);
 }
@@ -7297,12 +7297,12 @@ PINDEX H245_AudioTelephonyEventCapability::GetDataLength() const
 PBoolean H245_AudioTelephonyEventCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_dynamicRTPPayloadType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_audioTelephoneEvent.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7333,7 +7333,7 @@ PObject * H245_AudioTelephonyEventCapability::Clone() const
 //
 
 H245_AudioToneCapability::H245_AudioToneCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_dynamicRTPPayloadType.SetConstraints(PASN_Object::FixedConstraint, 96, 127);
 }
@@ -7377,10 +7377,10 @@ PINDEX H245_AudioToneCapability::GetDataLength() const
 PBoolean H245_AudioToneCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_dynamicRTPPayloadType.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7410,7 +7410,7 @@ PObject * H245_AudioToneCapability::Clone() const
 //
 
 H245_NoPTAudioTelephonyEventCapability::H245_NoPTAudioTelephonyEventCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -7453,10 +7453,10 @@ PINDEX H245_NoPTAudioTelephonyEventCapability::GetDataLength() const
 PBoolean H245_NoPTAudioTelephonyEventCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioTelephoneEvent.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7486,7 +7486,7 @@ PObject * H245_NoPTAudioTelephonyEventCapability::Clone() const
 //
 
 H245_NoPTAudioToneCapability::H245_NoPTAudioToneCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -7511,7 +7511,7 @@ PINDEX H245_NoPTAudioToneCapability::GetDataLength() const
 PBoolean H245_NoPTAudioToneCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -7547,7 +7547,7 @@ const static PASN_Names Names_H245_DepFECCapability[]={
 //
 
 H245_DepFECCapability::H245_DepFECCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DepFECCapability,1
 #endif
@@ -7583,11 +7583,11 @@ PBoolean H245_DepFECCapability::CreateObject()
   switch (tag) {
     case e_rfc2733 :
       choice = new H245_DepFECCapability_rfc2733();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -7673,7 +7673,7 @@ PObject * H245_LogicalChannelNumber::Clone() const
 //
 
 H245_V75Parameters::H245_V75Parameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -7716,10 +7716,10 @@ PINDEX H245_V75Parameters::GetDataLength() const
 PBoolean H245_V75Parameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_audioHeaderPresent.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7767,7 +7767,7 @@ const static PASN_Names Names_H245_DataType[]={
 //
 
 H245_DataType::H245_DataType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, PTrue
+  : PASN_Choice(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DataType,13
 #endif
@@ -8024,44 +8024,44 @@ PBoolean H245_DataType::CreateObject()
     case e_nonStandard :
     case e_h235Control :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_nullData :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_videoData :
       choice = new H245_VideoCapability();
-      return PTrue;
+      return true;
     case e_audioData :
       choice = new H245_AudioCapability();
-      return PTrue;
+      return true;
     case e_data :
       choice = new H245_DataApplicationCapability();
-      return PTrue;
+      return true;
     case e_encryptionData :
       choice = new H245_EncryptionMode();
-      return PTrue;
+      return true;
     case e_h235Media :
       choice = new H245_H235Media();
-      return PTrue;
+      return true;
     case e_multiplexedStream :
       choice = new H245_MultiplexedStreamParameter();
-      return PTrue;
+      return true;
     case e_redundancyEncoding :
       choice = new H245_RedundancyEncoding();
-      return PTrue;
+      return true;
     case e_multiplePayloadStream :
       choice = new H245_MultiplePayloadStream();
-      return PTrue;
+      return true;
     case e_depFec :
       choice = new H245_DepFECData();
-      return PTrue;
+      return true;
     case e_fec :
       choice = new H245_FECData();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8079,7 +8079,7 @@ PObject * H245_DataType::Clone() const
 //
 
 H245_MultiplexedStreamParameter::H245_MultiplexedStreamParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -8126,12 +8126,12 @@ PINDEX H245_MultiplexedStreamParameter::GetDataLength() const
 PBoolean H245_MultiplexedStreamParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_multiplexFormat.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_controlOnMuxStream.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8162,7 +8162,7 @@ PObject * H245_MultiplexedStreamParameter::Clone() const
 //
 
 H245_H222LogicalChannelParameters::H245_H222LogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_resourceID.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_subChannelID.SetConstraints(PASN_Object::FixedConstraint, 0, 8191);
@@ -8230,18 +8230,18 @@ PINDEX H245_H222LogicalChannelParameters::GetDataLength() const
 PBoolean H245_H222LogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_resourceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_subChannelID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_pcr_pid) && !m_pcr_pid.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_programDescriptors) && !m_programDescriptors.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamDescriptors) && !m_streamDescriptors.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8286,7 +8286,7 @@ const static PASN_Names Names_H245_CRCLength[]={
 //
 
 H245_CRCLength::H245_CRCLength(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_CRCLength,3
 #endif
@@ -8316,7 +8316,7 @@ PObject * H245_CRCLength::Clone() const
 //
 
 H245_RedundancyEncodingElement::H245_RedundancyEncodingElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_payloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -8366,12 +8366,12 @@ PINDEX H245_RedundancyEncodingElement::GetDataLength() const
 PBoolean H245_RedundancyEncodingElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_dataType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_payloadType) && !m_payloadType.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8403,7 +8403,7 @@ PObject * H245_RedundancyEncodingElement::Clone() const
 //
 
 H245_MultiplePayloadStreamElement::H245_MultiplePayloadStreamElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_payloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -8453,12 +8453,12 @@ PINDEX H245_MultiplePayloadStreamElement::GetDataLength() const
 PBoolean H245_MultiplePayloadStreamElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_dataType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_payloadType) && !m_payloadType.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8496,7 +8496,7 @@ const static PASN_Names Names_H245_DepFECData[]={
 //
 
 H245_DepFECData::H245_DepFECData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PFalse
+  : PASN_Choice(tag, tagClass, 1, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DepFECData,1
 #endif
@@ -8532,11 +8532,11 @@ PBoolean H245_DepFECData::CreateObject()
   switch (tag) {
     case e_rfc2733 :
       choice = new H245_DepFECData_rfc2733();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8560,7 +8560,7 @@ const static PASN_Names Names_H245_FECData[]={
 //
 
 H245_FECData::H245_FECData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_FECData,1
 #endif
@@ -8596,11 +8596,11 @@ PBoolean H245_FECData::CreateObject()
   switch (tag) {
     case e_rfc2733 :
       choice = new H245_FECData_rfc2733();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8625,7 +8625,7 @@ const static PASN_Names Names_H245_TransportAddress[]={
 //
 
 H245_TransportAddress::H245_TransportAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_TransportAddress,2
 #endif
@@ -8683,14 +8683,14 @@ PBoolean H245_TransportAddress::CreateObject()
   switch (tag) {
     case e_unicastAddress :
       choice = new H245_UnicastAddress();
-      return PTrue;
+      return true;
     case e_multicastAddress :
       choice = new H245_MulticastAddress();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8720,7 +8720,7 @@ const static PASN_Names Names_H245_UnicastAddress[]={
 //
 
 H245_UnicastAddress::H245_UnicastAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_UnicastAddress,7
 #endif
@@ -8844,31 +8844,31 @@ PBoolean H245_UnicastAddress::CreateObject()
   switch (tag) {
     case e_iPAddress :
       choice = new H245_UnicastAddress_iPAddress();
-      return PTrue;
+      return true;
     case e_iPXAddress :
       choice = new H245_UnicastAddress_iPXAddress();
-      return PTrue;
+      return true;
     case e_iP6Address :
       choice = new H245_UnicastAddress_iP6Address();
-      return PTrue;
+      return true;
     case e_netBios :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 16);
-      return PTrue;
+      return true;
     case e_iPSourceRouteAddress :
       choice = new H245_UnicastAddress_iPSourceRouteAddress();
-      return PTrue;
+      return true;
     case e_nsap :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 20);
-      return PTrue;
+      return true;
     case e_nonStandardAddress :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -8895,7 +8895,7 @@ const static PASN_Names Names_H245_MulticastAddress[]={
 //
 
 H245_MulticastAddress::H245_MulticastAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MulticastAddress,4
 #endif
@@ -8975,21 +8975,21 @@ PBoolean H245_MulticastAddress::CreateObject()
   switch (tag) {
     case e_iPAddress :
       choice = new H245_MulticastAddress_iPAddress();
-      return PTrue;
+      return true;
     case e_iP6Address :
       choice = new H245_MulticastAddress_iP6Address();
-      return PTrue;
+      return true;
     case e_nsap :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 20);
-      return PTrue;
+      return true;
     case e_nonStandardAddress :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -9007,7 +9007,7 @@ PObject * H245_MulticastAddress::Clone() const
 //
 
 H245_EscrowData::H245_EscrowData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_escrowValue.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -9055,12 +9055,12 @@ PINDEX H245_EscrowData::GetDataLength() const
 PBoolean H245_EscrowData::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_escrowID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_escrowValue.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9091,7 +9091,7 @@ PObject * H245_EscrowData::Clone() const
 //
 
 H245_CloseLogicalChannelAck::H245_CloseLogicalChannelAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9134,10 +9134,10 @@ PINDEX H245_CloseLogicalChannelAck::GetDataLength() const
 PBoolean H245_CloseLogicalChannelAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9167,7 +9167,7 @@ PObject * H245_CloseLogicalChannelAck::Clone() const
 //
 
 H245_RequestChannelCloseAck::H245_RequestChannelCloseAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9210,10 +9210,10 @@ PINDEX H245_RequestChannelCloseAck::GetDataLength() const
 PBoolean H245_RequestChannelCloseAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9243,7 +9243,7 @@ PObject * H245_RequestChannelCloseAck::Clone() const
 //
 
 H245_RequestChannelCloseRelease::H245_RequestChannelCloseRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9286,10 +9286,10 @@ PINDEX H245_RequestChannelCloseRelease::GetDataLength() const
 PBoolean H245_RequestChannelCloseRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9353,7 +9353,7 @@ PObject * H245_MultiplexTableEntryNumber::Clone() const
 //
 
 H245_RequestModeRelease::H245_RequestModeRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9378,7 +9378,7 @@ PINDEX H245_RequestModeRelease::GetDataLength() const
 PBoolean H245_RequestModeRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -9456,7 +9456,7 @@ const static PASN_Names Names_H245_ModeElementType[]={
 //
 
 H245_ModeElementType::H245_ModeElementType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ModeElementType,11
 #endif
@@ -9712,41 +9712,41 @@ PBoolean H245_ModeElementType::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_videoMode :
       choice = new H245_VideoMode();
-      return PTrue;
+      return true;
     case e_audioMode :
       choice = new H245_AudioMode();
-      return PTrue;
+      return true;
     case e_dataMode :
       choice = new H245_DataMode();
-      return PTrue;
+      return true;
     case e_encryptionMode :
       choice = new H245_EncryptionMode();
-      return PTrue;
+      return true;
     case e_h235Mode :
       choice = new H245_H235Mode();
-      return PTrue;
+      return true;
     case e_multiplexedStreamMode :
       choice = new H245_MultiplexedStreamParameter();
-      return PTrue;
+      return true;
     case e_redundancyEncodingDTMode :
       choice = new H245_RedundancyEncodingDTMode();
-      return PTrue;
+      return true;
     case e_multiplePayloadStreamMode :
       choice = new H245_MultiplePayloadStreamMode();
-      return PTrue;
+      return true;
     case e_depFecMode :
       choice = new H245_DepFECMode();
-      return PTrue;
+      return true;
     case e_fecMode :
       choice = new H245_FECMode();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -9764,7 +9764,7 @@ PObject * H245_ModeElementType::Clone() const
 //
 
 H245_MultiplexedStreamModeParameters::H245_MultiplexedStreamModeParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9807,10 +9807,10 @@ PINDEX H245_MultiplexedStreamModeParameters::GetDataLength() const
 PBoolean H245_MultiplexedStreamModeParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_logicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9840,7 +9840,7 @@ PObject * H245_MultiplexedStreamModeParameters::Clone() const
 //
 
 H245_MultiplePayloadStreamElementMode::H245_MultiplePayloadStreamElementMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9883,10 +9883,10 @@ PINDEX H245_MultiplePayloadStreamElementMode::GetDataLength() const
 PBoolean H245_MultiplePayloadStreamElementMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_type.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9922,7 +9922,7 @@ const static PASN_Names Names_H245_DepFECMode[]={
 //
 
 H245_DepFECMode::H245_DepFECMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DepFECMode,1
 #endif
@@ -9958,11 +9958,11 @@ PBoolean H245_DepFECMode::CreateObject()
   switch (tag) {
     case e_rfc2733Mode :
       choice = new H245_DepFECMode_rfc2733Mode();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -9987,7 +9987,7 @@ const static PASN_Names Names_H245_V76ModeParameters[]={
 //
 
 H245_V76ModeParameters::H245_V76ModeParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_V76ModeParameters,2
 #endif
@@ -10028,7 +10028,7 @@ const static PASN_Names Names_H245_VideoMode[]={
 //
 
 H245_VideoMode::H245_VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_VideoMode,6
 #endif
@@ -10174,26 +10174,26 @@ PBoolean H245_VideoMode::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_h261VideoMode :
       choice = new H245_H261VideoMode();
-      return PTrue;
+      return true;
     case e_h262VideoMode :
       choice = new H245_H262VideoMode();
-      return PTrue;
+      return true;
     case e_h263VideoMode :
       choice = new H245_H263VideoMode();
-      return PTrue;
+      return true;
     case e_is11172VideoMode :
       choice = new H245_IS11172VideoMode();
-      return PTrue;
+      return true;
     case e_genericVideoMode :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -10211,7 +10211,7 @@ PObject * H245_VideoMode::Clone() const
 //
 
 H245_IS11172VideoMode::H245_IS11172VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 6, true, 0)
 {
   m_videoBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 1073741823);
   m_vbvBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 262143);
@@ -10296,22 +10296,22 @@ PINDEX H245_IS11172VideoMode::GetDataLength() const
 PBoolean H245_IS11172VideoMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_constrainedBitstream.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_videoBitRate) && !m_videoBitRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_vbvBufferSize) && !m_vbvBufferSize.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_samplesPerLine) && !m_samplesPerLine.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_linesPerFrame) && !m_linesPerFrame.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_pictureRate) && !m_pictureRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_luminanceSampleRate) && !m_luminanceSampleRate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10381,7 +10381,7 @@ const static PASN_Names Names_H245_AudioMode[]={
 //
 
 H245_AudioMode::H245_AudioMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 14, PTrue
+  : PASN_Choice(tag, tagClass, 14, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_AudioMode,23
 #endif
@@ -10593,7 +10593,7 @@ PBoolean H245_AudioMode::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_g711Alaw64k :
     case e_g711Alaw56k :
     case e_g711Ulaw64k :
@@ -10605,45 +10605,45 @@ PBoolean H245_AudioMode::CreateObject()
     case e_g729 :
     case e_g729AnnexA :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_g7231 :
       choice = new H245_AudioMode_g7231();
-      return PTrue;
+      return true;
     case e_is11172AudioMode :
       choice = new H245_IS11172AudioMode();
-      return PTrue;
+      return true;
     case e_is13818AudioMode :
       choice = new H245_IS13818AudioMode();
-      return PTrue;
+      return true;
     case e_g729wAnnexB :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g729AnnexAwAnnexB :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_g7231AnnexCMode :
       choice = new H245_G7231AnnexCMode();
-      return PTrue;
+      return true;
     case e_gsmFullRate :
     case e_gsmHalfRate :
     case e_gsmEnhancedFullRate :
       choice = new H245_GSMAudioCapability();
-      return PTrue;
+      return true;
     case e_genericAudioMode :
       choice = new H245_GenericCapability();
-      return PTrue;
+      return true;
     case e_g729Extensions :
       choice = new H245_G729Extensions();
-      return PTrue;
+      return true;
     case e_vbd :
       choice = new H245_VBDMode();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -10661,7 +10661,7 @@ PObject * H245_AudioMode::Clone() const
 //
 
 H245_VBDMode::H245_VBDMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10704,10 +10704,10 @@ PINDEX H245_VBDMode::GetDataLength() const
 PBoolean H245_VBDMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_type.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10744,7 +10744,7 @@ const static PASN_Names Names_H245_EncryptionMode[]={
 //
 
 H245_EncryptionMode::H245_EncryptionMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_EncryptionMode,2
 #endif
@@ -10780,14 +10780,14 @@ PBoolean H245_EncryptionMode::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_h233Encryption :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -10805,7 +10805,7 @@ PObject * H245_EncryptionMode::Clone() const
 //
 
 H245_RoundTripDelayRequest::H245_RoundTripDelayRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10848,10 +10848,10 @@ PINDEX H245_RoundTripDelayRequest::GetDataLength() const
 PBoolean H245_RoundTripDelayRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sequenceNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10881,7 +10881,7 @@ PObject * H245_RoundTripDelayRequest::Clone() const
 //
 
 H245_RoundTripDelayResponse::H245_RoundTripDelayResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10924,10 +10924,10 @@ PINDEX H245_RoundTripDelayResponse::GetDataLength() const
 PBoolean H245_RoundTripDelayResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sequenceNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10957,7 +10957,7 @@ PObject * H245_RoundTripDelayResponse::Clone() const
 //
 
 H245_MaintenanceLoopOffCommand::H245_MaintenanceLoopOffCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -10982,7 +10982,7 @@ PINDEX H245_MaintenanceLoopOffCommand::GetDataLength() const
 PBoolean H245_MaintenanceLoopOffCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -11012,7 +11012,7 @@ PObject * H245_MaintenanceLoopOffCommand::Clone() const
 //
 
 H245_CommunicationModeRequest::H245_CommunicationModeRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -11037,7 +11037,7 @@ PINDEX H245_CommunicationModeRequest::GetDataLength() const
 PBoolean H245_CommunicationModeRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -11073,7 +11073,7 @@ const static PASN_Names Names_H245_CommunicationModeResponse[]={
 //
 
 H245_CommunicationModeResponse::H245_CommunicationModeResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_CommunicationModeResponse,1
 #endif
@@ -11110,11 +11110,11 @@ PBoolean H245_CommunicationModeResponse::CreateObject()
     case e_communicationModeTable :
       choice = new H245_ArrayOf_CommunicationModeTableEntry();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -11153,7 +11153,7 @@ const static PASN_Names Names_H245_ConferenceRequest[]={
 //
 
 H245_ConferenceRequest::H245_ConferenceRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ConferenceRequest,16
 #endif
@@ -11263,26 +11263,26 @@ PBoolean H245_ConferenceRequest::CreateObject()
     case e_requestChairTokenOwner :
     case e_requestAllTerminalIDs :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_dropTerminal :
     case e_requestTerminalID :
     case e_makeTerminalBroadcaster :
     case e_sendThisSource :
       choice = new H245_TerminalLabel();
-      return PTrue;
+      return true;
     case e_requestTerminalCertificate :
       choice = new H245_ConferenceRequest_requestTerminalCertificate();
-      return PTrue;
+      return true;
     case e_broadcastMyLogicalChannel :
       choice = new H245_LogicalChannelNumber();
-      return PTrue;
+      return true;
     case e_remoteMCRequest :
       choice = new H245_RemoteMCRequest();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -11332,7 +11332,7 @@ PObject * H245_CertSelectionCriteria::Clone() const
 //
 
 H245_Criteria::H245_Criteria(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_value.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -11380,12 +11380,12 @@ PINDEX H245_Criteria::GetDataLength() const
 PBoolean H245_Criteria::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_field.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_value.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11505,7 +11505,7 @@ const static PASN_Names Names_H245_ConferenceResponse[]={
 //
 
 H245_ConferenceResponse::H245_ConferenceResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ConferenceResponse,16
 #endif
@@ -11827,55 +11827,55 @@ PBoolean H245_ConferenceResponse::CreateObject()
   switch (tag) {
     case e_mCTerminalIDResponse :
       choice = new H245_ConferenceResponse_mCTerminalIDResponse();
-      return PTrue;
+      return true;
     case e_terminalIDResponse :
       choice = new H245_ConferenceResponse_terminalIDResponse();
-      return PTrue;
+      return true;
     case e_conferenceIDResponse :
       choice = new H245_ConferenceResponse_conferenceIDResponse();
-      return PTrue;
+      return true;
     case e_passwordResponse :
       choice = new H245_ConferenceResponse_passwordResponse();
-      return PTrue;
+      return true;
     case e_terminalListResponse :
       choice = new H245_ArrayOf_TerminalLabel();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
     case e_videoCommandReject :
     case e_terminalDropReject :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_makeMeChairResponse :
       choice = new H245_ConferenceResponse_makeMeChairResponse();
-      return PTrue;
+      return true;
     case e_extensionAddressResponse :
       choice = new H245_ConferenceResponse_extensionAddressResponse();
-      return PTrue;
+      return true;
     case e_chairTokenOwnerResponse :
       choice = new H245_ConferenceResponse_chairTokenOwnerResponse();
-      return PTrue;
+      return true;
     case e_terminalCertificateResponse :
       choice = new H245_ConferenceResponse_terminalCertificateResponse();
-      return PTrue;
+      return true;
     case e_broadcastMyLogicalChannelResponse :
       choice = new H245_ConferenceResponse_broadcastMyLogicalChannelResponse();
-      return PTrue;
+      return true;
     case e_makeTerminalBroadcasterResponse :
       choice = new H245_ConferenceResponse_makeTerminalBroadcasterResponse();
-      return PTrue;
+      return true;
     case e_sendThisSourceResponse :
       choice = new H245_ConferenceResponse_sendThisSourceResponse();
-      return PTrue;
+      return true;
     case e_requestAllTerminalIDsResponse :
       choice = new H245_RequestAllTerminalIDsResponse();
-      return PTrue;
+      return true;
     case e_remoteMCResponse :
       choice = new H245_RemoteMCResponse();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12078,7 +12078,7 @@ const static PASN_Names Names_H245_RemoteMCRequest[]={
 //
 
 H245_RemoteMCRequest::H245_RemoteMCRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_RemoteMCRequest,3
 #endif
@@ -12115,7 +12115,7 @@ const static PASN_Names Names_H245_RemoteMCResponse[]={
 //
 
 H245_RemoteMCResponse::H245_RemoteMCResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_RemoteMCResponse,2
 #endif
@@ -12151,14 +12151,14 @@ PBoolean H245_RemoteMCResponse::CreateObject()
   switch (tag) {
     case e_accept :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_reject :
       choice = new H245_RemoteMCResponse_reject();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12186,7 +12186,7 @@ const static PASN_Names Names_H245_MultilinkRequest[]={
 //
 
 H245_MultilinkRequest::H245_MultilinkRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultilinkRequest,5
 #endif
@@ -12310,23 +12310,23 @@ PBoolean H245_MultilinkRequest::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_callInformation :
       choice = new H245_MultilinkRequest_callInformation();
-      return PTrue;
+      return true;
     case e_addConnection :
       choice = new H245_MultilinkRequest_addConnection();
-      return PTrue;
+      return true;
     case e_removeConnection :
       choice = new H245_MultilinkRequest_removeConnection();
-      return PTrue;
+      return true;
     case e_maximumHeaderInterval :
       choice = new H245_MultilinkRequest_maximumHeaderInterval();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12354,7 +12354,7 @@ const static PASN_Names Names_H245_MultilinkResponse[]={
 //
 
 H245_MultilinkResponse::H245_MultilinkResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultilinkResponse,5
 #endif
@@ -12478,23 +12478,23 @@ PBoolean H245_MultilinkResponse::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_callInformation :
       choice = new H245_MultilinkResponse_callInformation();
-      return PTrue;
+      return true;
     case e_addConnection :
       choice = new H245_MultilinkResponse_addConnection();
-      return PTrue;
+      return true;
     case e_removeConnection :
       choice = new H245_MultilinkResponse_removeConnection();
-      return PTrue;
+      return true;
     case e_maximumHeaderInterval :
       choice = new H245_MultilinkResponse_maximumHeaderInterval();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12520,7 +12520,7 @@ const static PASN_Names Names_H245_MultilinkIndication[]={
 //
 
 H245_MultilinkIndication::H245_MultilinkIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultilinkIndication,3
 #endif
@@ -12600,17 +12600,17 @@ PBoolean H245_MultilinkIndication::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_crcDesired :
       choice = new H245_MultilinkIndication_crcDesired();
-      return PTrue;
+      return true;
     case e_excessiveError :
       choice = new H245_MultilinkIndication_excessiveError();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12636,7 +12636,7 @@ const static PASN_Names Names_H245_DialingInformation[]={
 //
 
 H245_DialingInformation::H245_DialingInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DialingInformation,3
 #endif
@@ -12694,19 +12694,19 @@ PBoolean H245_DialingInformation::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_differential :
       choice = new H245_ArrayOf_DialingInformationNumber();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
-      return PTrue;
+      return true;
     case e_infoNotAvailable :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12733,7 +12733,7 @@ const static PASN_Names Names_H245_DialingInformationNetworkType[]={
 //
 
 H245_DialingInformationNetworkType::H245_DialingInformationNetworkType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DialingInformationNetworkType,4
 #endif
@@ -12769,16 +12769,16 @@ PBoolean H245_DialingInformationNetworkType::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardMessage();
-      return PTrue;
+      return true;
     case e_n_isdn :
     case e_gstn :
     case e_mobile :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -12796,7 +12796,7 @@ PObject * H245_DialingInformationNetworkType::Clone() const
 //
 
 H245_ConnectionIdentifier::H245_ConnectionIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_channelTag.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
   m_sequenceNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
@@ -12845,12 +12845,12 @@ PINDEX H245_ConnectionIdentifier::GetDataLength() const
 PBoolean H245_ConnectionIdentifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_channelTag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sequenceNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12915,7 +12915,7 @@ PObject * H245_MaximumBitRate::Clone() const
 //
 
 H245_LogicalChannelRateRequest::H245_LogicalChannelRateRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -12966,14 +12966,14 @@ PINDEX H245_LogicalChannelRateRequest::GetDataLength() const
 PBoolean H245_LogicalChannelRateRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sequenceNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_logicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumBitRate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13005,7 +13005,7 @@ PObject * H245_LogicalChannelRateRequest::Clone() const
 //
 
 H245_LogicalChannelRateAcknowledge::H245_LogicalChannelRateAcknowledge(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -13056,14 +13056,14 @@ PINDEX H245_LogicalChannelRateAcknowledge::GetDataLength() const
 PBoolean H245_LogicalChannelRateAcknowledge::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sequenceNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_logicalChannelNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumBitRate.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13102,7 +13102,7 @@ const static PASN_Names Names_H245_LogicalChannelRateRejectReason[]={
 //
 
 H245_LogicalChannelRateRejectReason::H245_LogicalChannelRateRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_LogicalChannelRateRejectReason,2
 #endif
@@ -13132,7 +13132,7 @@ PObject * H245_LogicalChannelRateRejectReason::Clone() const
 //
 
 H245_LogicalChannelRateRelease::H245_LogicalChannelRateRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -13157,7 +13157,7 @@ PINDEX H245_LogicalChannelRateRelease::GetDataLength() const
 PBoolean H245_LogicalChannelRateRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
 
   return UnknownExtensionsDecode(strm);
@@ -13194,7 +13194,7 @@ const static PASN_Names Names_H245_SendTerminalCapabilitySet[]={
 //
 
 H245_SendTerminalCapabilitySet::H245_SendTerminalCapabilitySet(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_SendTerminalCapabilitySet,2
 #endif
@@ -13230,14 +13230,14 @@ PBoolean H245_SendTerminalCapabilitySet::CreateObject()
   switch (tag) {
     case e_specificRequest :
       choice = new H245_SendTerminalCapabilitySet_specificRequest();
-      return PTrue;
+      return true;
     case e_genericRequest :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -13263,7 +13263,7 @@ const static PASN_Names Names_H245_EncryptionCommand[]={
 //
 
 H245_EncryptionCommand::H245_EncryptionCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_EncryptionCommand,3
 #endif
@@ -13299,17 +13299,17 @@ PBoolean H245_EncryptionCommand::CreateObject()
   switch (tag) {
     case e_encryptionSE :
       choice = new PASN_OctetString();
-      return PTrue;
+      return true;
     case e_encryptionIVRequest :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_encryptionAlgorithmID :
       choice = new H245_EncryptionCommand_encryptionAlgorithmID();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -13337,7 +13337,7 @@ const static PASN_Names Names_H245_EndSessionCommand[]={
 //
 
 H245_EndSessionCommand::H245_EndSessionCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_EndSessionCommand,5
 #endif
@@ -13439,23 +13439,23 @@ PBoolean H245_EndSessionCommand::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_disconnect :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_gstnOptions :
       choice = new H245_EndSessionCommand_gstnOptions();
-      return PTrue;
+      return true;
     case e_isdnOptions :
       choice = new H245_EndSessionCommand_isdnOptions();
-      return PTrue;
+      return true;
     case e_genericInformation :
       choice = new H245_ArrayOf_GenericInformation();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -13486,7 +13486,7 @@ const static PASN_Names Names_H245_ConferenceCommand[]={
 //
 
 H245_ConferenceCommand::H245_ConferenceCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, PTrue
+  : PASN_Choice(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ConferenceCommand,8
 #endif
@@ -13567,23 +13567,23 @@ PBoolean H245_ConferenceCommand::CreateObject()
     case e_broadcastMyLogicalChannel :
     case e_cancelBroadcastMyLogicalChannel :
       choice = new H245_LogicalChannelNumber();
-      return PTrue;
+      return true;
     case e_makeTerminalBroadcaster :
     case e_sendThisSource :
       choice = new H245_TerminalLabel();
-      return PTrue;
+      return true;
     case e_cancelMakeTerminalBroadcaster :
     case e_cancelSendThisSource :
     case e_dropConference :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_substituteConferenceIDCommand :
       choice = new H245_SubstituteConferenceIDCommand();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -13601,7 +13601,7 @@ PObject * H245_ConferenceCommand::Clone() const
 //
 
 H245_SubstituteConferenceIDCommand::H245_SubstituteConferenceIDCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_conferenceIdentifier.SetConstraints(PASN_Object::FixedConstraint, 16);
 }
@@ -13645,10 +13645,10 @@ PINDEX H245_SubstituteConferenceIDCommand::GetDataLength() const
 PBoolean H245_SubstituteConferenceIDCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_conferenceIdentifier.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13685,7 +13685,7 @@ const static PASN_Names Names_H245_EncryptionUpdateDirection[]={
 //
 
 H245_EncryptionUpdateDirection::H245_EncryptionUpdateDirection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_EncryptionUpdateDirection,2
 #endif
@@ -13715,7 +13715,7 @@ PObject * H245_EncryptionUpdateDirection::Clone() const
 //
 
 H245_KeyProtectionMethod::H245_KeyProtectionMethod(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -13766,14 +13766,14 @@ PINDEX H245_KeyProtectionMethod::GetDataLength() const
 PBoolean H245_KeyProtectionMethod::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_secureChannel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sharedSecret.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_certProtectedKey.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13805,7 +13805,7 @@ PObject * H245_KeyProtectionMethod::Clone() const
 //
 
 H245_EncryptionUpdateRequest::H245_EncryptionUpdateRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 1, true, 1)
 {
   m_synchFlag.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -13853,12 +13853,12 @@ PINDEX H245_EncryptionUpdateRequest::GetDataLength() const
 PBoolean H245_EncryptionUpdateRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_keyProtectionMethod) && !m_keyProtectionMethod.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_synchFlag, m_synchFlag))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13897,7 +13897,7 @@ const static PASN_Names Names_H245_PictureReference[]={
 //
 
 H245_PictureReference::H245_PictureReference(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_PictureReference,2
 #endif
@@ -13912,15 +13912,15 @@ PBoolean H245_PictureReference::CreateObject()
     case e_pictureNumber :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 1023);
-      return PTrue;
+      return true;
     case e_longTermPictureIndex :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 255);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -13945,7 +13945,7 @@ const static PASN_Names Names_H245_H223MultiplexReconfiguration[]={
 //
 
 H245_H223MultiplexReconfiguration::H245_H223MultiplexReconfiguration(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_H223MultiplexReconfiguration,2
 #endif
@@ -14003,14 +14003,14 @@ PBoolean H245_H223MultiplexReconfiguration::CreateObject()
   switch (tag) {
     case e_h223ModeChange :
       choice = new H245_H223MultiplexReconfiguration_h223ModeChange();
-      return PTrue;
+      return true;
     case e_h223AnnexADoubleFlag :
       choice = new H245_H223MultiplexReconfiguration_h223AnnexADoubleFlag();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -14036,7 +14036,7 @@ const static PASN_Names Names_H245_FunctionNotUnderstood[]={
 //
 
 H245_FunctionNotUnderstood::H245_FunctionNotUnderstood(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_FunctionNotUnderstood,3
 #endif
@@ -14116,17 +14116,17 @@ PBoolean H245_FunctionNotUnderstood::CreateObject()
   switch (tag) {
     case e_request :
       choice = new H245_RequestMessage();
-      return PTrue;
+      return true;
     case e_response :
       choice = new H245_ResponseMessage();
-      return PTrue;
+      return true;
     case e_command :
       choice = new H245_CommandMessage();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -14163,7 +14163,7 @@ const static PASN_Names Names_H245_ConferenceIndication[]={
 //
 
 H245_ConferenceIndication::H245_ConferenceIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 10, PTrue
+  : PASN_Choice(tag, tagClass, 10, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_ConferenceIndication,14
 #endif
@@ -14244,14 +14244,14 @@ PBoolean H245_ConferenceIndication::CreateObject()
     case e_sbeNumber :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 9);
-      return PTrue;
+      return true;
     case e_terminalNumberAssign :
     case e_terminalJoinedConference :
     case e_terminalLeftConference :
     case e_terminalYouAreSeeing :
     case e_floorRequested :
       choice = new H245_TerminalLabel();
-      return PTrue;
+      return true;
     case e_seenByAtLeastOneOther :
     case e_cancelSeenByAtLeastOneOther :
     case e_seenByAll :
@@ -14259,17 +14259,17 @@ PBoolean H245_ConferenceIndication::CreateObject()
     case e_requestForFloor :
     case e_withdrawChairToken :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_terminalYouAreSeeingInSubPictureNumber :
       choice = new H245_TerminalYouAreSeeingInSubPictureNumber();
-      return PTrue;
+      return true;
     case e_videoIndicateCompose :
       choice = new H245_VideoIndicateCompose();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -14287,7 +14287,7 @@ PObject * H245_ConferenceIndication::Clone() const
 //
 
 H245_TerminalYouAreSeeingInSubPictureNumber::H245_TerminalYouAreSeeingInSubPictureNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_subPictureNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -14335,12 +14335,12 @@ PINDEX H245_TerminalYouAreSeeingInSubPictureNumber::GetDataLength() const
 PBoolean H245_TerminalYouAreSeeingInSubPictureNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminalNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_subPictureNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14371,7 +14371,7 @@ PObject * H245_TerminalYouAreSeeingInSubPictureNumber::Clone() const
 //
 
 H245_VideoIndicateCompose::H245_VideoIndicateCompose(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_compositionNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -14415,10 +14415,10 @@ PINDEX H245_VideoIndicateCompose::GetDataLength() const
 PBoolean H245_VideoIndicateCompose::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_compositionNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14448,7 +14448,7 @@ PObject * H245_VideoIndicateCompose::Clone() const
 //
 
 H245_H223SkewIndication::H245_H223SkewIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_skew.SetConstraints(PASN_Object::FixedConstraint, 0, 4095);
 }
@@ -14500,14 +14500,14 @@ PINDEX H245_H223SkewIndication::GetDataLength() const
 PBoolean H245_H223SkewIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_logicalChannelNumber1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_logicalChannelNumber2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_skew.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14539,7 +14539,7 @@ PObject * H245_H223SkewIndication::Clone() const
 //
 
 H245_H2250MaximumSkewIndication::H245_H2250MaximumSkewIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_maximumSkew.SetConstraints(PASN_Object::FixedConstraint, 0, 4095);
 }
@@ -14591,14 +14591,14 @@ PINDEX H245_H2250MaximumSkewIndication::GetDataLength() const
 PBoolean H245_H2250MaximumSkewIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_logicalChannelNumber1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_logicalChannelNumber2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumSkew.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14630,7 +14630,7 @@ PObject * H245_H2250MaximumSkewIndication::Clone() const
 //
 
 H245_MCLocationIndication::H245_MCLocationIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -14673,10 +14673,10 @@ PINDEX H245_MCLocationIndication::GetDataLength() const
 PBoolean H245_MCLocationIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_signalAddress.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14706,7 +14706,7 @@ PObject * H245_MCLocationIndication::Clone() const
 //
 
 H245_VendorIdentification::H245_VendorIdentification(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
   m_productNumber.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_versionNumber.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -14763,14 +14763,14 @@ PINDEX H245_VendorIdentification::GetDataLength() const
 PBoolean H245_VendorIdentification::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_vendor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_productNumber) && !m_productNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_versionNumber) && !m_versionNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14922,7 +14922,7 @@ PObject * H245_IV16::Clone() const
 //
 
 H245_Params::H245_Params(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -14979,14 +14979,14 @@ PINDEX H245_Params::GetDataLength() const
 PBoolean H245_Params::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_iv8) && !m_iv8.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_iv16) && !m_iv16.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_iv) && !m_iv.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15034,7 +15034,7 @@ const static PASN_Names Names_H245_UserInputIndication[]={
 //
 
 H245_UserInputIndication::H245_UserInputIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_UserInputIndication,8
 #endif
@@ -15202,32 +15202,32 @@ PBoolean H245_UserInputIndication::CreateObject()
   switch (tag) {
     case e_nonStandard :
       choice = new H245_NonStandardParameter();
-      return PTrue;
+      return true;
     case e_alphanumeric :
       choice = new PASN_GeneralString();
-      return PTrue;
+      return true;
     case e_userInputSupportIndication :
       choice = new H245_UserInputIndication_userInputSupportIndication();
-      return PTrue;
+      return true;
     case e_signal :
       choice = new H245_UserInputIndication_signal();
-      return PTrue;
+      return true;
     case e_signalUpdate :
       choice = new H245_UserInputIndication_signalUpdate();
-      return PTrue;
+      return true;
     case e_extendedAlphanumeric :
       choice = new H245_UserInputIndication_extendedAlphanumeric();
-      return PTrue;
+      return true;
     case e_encryptedAlphanumeric :
       choice = new H245_UserInputIndication_encryptedAlphanumeric();
-      return PTrue;
+      return true;
     case e_genericInformation :
       choice = new H245_ArrayOf_GenericInformation();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -15245,7 +15245,7 @@ PObject * H245_UserInputIndication::Clone() const
 //
 
 H245_MobileMultilinkReconfigurationIndication::H245_MobileMultilinkReconfigurationIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_sampleSize.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_samplesPerFrame.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -15294,12 +15294,12 @@ PINDEX H245_MobileMultilinkReconfigurationIndication::GetDataLength() const
 PBoolean H245_MobileMultilinkReconfigurationIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sampleSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_samplesPerFrame.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15361,7 +15361,7 @@ PObject * H245_ArrayOf_GenericParameter::Clone() const
 //
 
 H245_NonStandardIdentifier_h221NonStandard::H245_NonStandardIdentifier_h221NonStandard(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_t35CountryCode.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_t35Extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -15415,14 +15415,14 @@ PINDEX H245_NonStandardIdentifier_h221NonStandard::GetDataLength() const
 PBoolean H245_NonStandardIdentifier_h221NonStandard::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_t35CountryCode.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_t35Extension.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_manufacturerCode.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15461,7 +15461,7 @@ const static PASN_Names Names_H245_MasterSlaveDeterminationAck_decision[]={
 //
 
 H245_MasterSlaveDeterminationAck_decision::H245_MasterSlaveDeterminationAck_decision(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MasterSlaveDeterminationAck_decision,2
 #endif
@@ -15497,7 +15497,7 @@ const static PASN_Names Names_H245_MasterSlaveDeterminationReject_cause[]={
 //
 
 H245_MasterSlaveDeterminationReject_cause::H245_MasterSlaveDeterminationReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, PTrue
+  : PASN_Choice(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MasterSlaveDeterminationReject_cause,1
 #endif
@@ -15660,7 +15660,7 @@ const static PASN_Names Names_H245_TerminalCapabilitySetReject_cause[]={
 //
 
 H245_TerminalCapabilitySetReject_cause::H245_TerminalCapabilitySetReject_cause(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_TerminalCapabilitySetReject_cause,4
 #endif
@@ -15698,14 +15698,14 @@ PBoolean H245_TerminalCapabilitySetReject_cause::CreateObject()
     case e_undefinedTableEntryUsed :
     case e_descriptorCapacityExceeded :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_tableEntryCapacityExceeded :
       choice = new H245_TerminalCapabilitySetReject_cause_tableEntryCapacityExceeded();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -15723,7 +15723,7 @@ PObject * H245_TerminalCapabilitySetReject_cause::Clone() const
 //
 
 H245_Capability_h233EncryptionReceiveCapability::H245_Capability_h233EncryptionReceiveCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_h233IVResponseTime.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -15767,10 +15767,10 @@ PINDEX H245_Capability_h233EncryptionReceiveCapability::GetDataLength() const
 PBoolean H245_Capability_h233EncryptionReceiveCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_h233IVResponseTime.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15831,7 +15831,7 @@ PObject * H245_ArrayOf_VCCapability::Clone() const
 //
 
 H245_VCCapability_aal1::H245_VCCapability_aal1(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -15906,26 +15906,26 @@ PINDEX H245_VCCapability_aal1::GetDataLength() const
 PBoolean H245_VCCapability_aal1::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nullClockRecovery.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_srtsClockRecovery.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_adaptiveClockRecovery.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nullErrorCorrection.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_longInterleaver.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_shortInterleaver.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_errorCorrectionOnly.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_structuredDataTransfer.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_partiallyFilledCells.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15963,7 +15963,7 @@ PObject * H245_VCCapability_aal1::Clone() const
 //
 
 H245_VCCapability_aal5::H245_VCCapability_aal5(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_forwardMaximumSDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_backwardMaximumSDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -16012,12 +16012,12 @@ PINDEX H245_VCCapability_aal5::GetDataLength() const
 PBoolean H245_VCCapability_aal5::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_forwardMaximumSDUSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_backwardMaximumSDUSize.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16055,7 +16055,7 @@ const static PASN_Names Names_H245_H223Capability_h223MultiplexTableCapability[]
 //
 
 H245_H223Capability_h223MultiplexTableCapability::H245_H223Capability_h223MultiplexTableCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_H223Capability_h223MultiplexTableCapability,2
 #endif
@@ -16091,14 +16091,14 @@ PBoolean H245_H223Capability_h223MultiplexTableCapability::CreateObject()
   switch (tag) {
     case e_basic :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_enhanced :
       choice = new H245_H223Capability_h223MultiplexTableCapability_enhanced();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -16116,7 +16116,7 @@ PObject * H245_H223Capability_h223MultiplexTableCapability::Clone() const
 //
 
 H245_H223Capability_mobileOperationTransmitCapability::H245_H223Capability_mobileOperationTransmitCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -16175,18 +16175,18 @@ PINDEX H245_H223Capability_mobileOperationTransmitCapability::GetDataLength() co
 PBoolean H245_H223Capability_mobileOperationTransmitCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_modeChangeCapability.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h223AnnexA.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h223AnnexADoubleFlag.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h223AnnexB.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h223AnnexBwithHeader.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16220,7 +16220,7 @@ PObject * H245_H223Capability_mobileOperationTransmitCapability::Clone() const
 //
 
 H245_H223Capability_mobileMultilinkFrameCapability::H245_H223Capability_mobileMultilinkFrameCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_maximumSampleSize.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_maximumPayloadLength.SetConstraints(PASN_Object::FixedConstraint, 1, 65025);
@@ -16269,12 +16269,12 @@ PINDEX H245_H223Capability_mobileMultilinkFrameCapability::GetDataLength() const
 PBoolean H245_H223Capability_mobileMultilinkFrameCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_maximumSampleSize.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_maximumPayloadLength.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16305,7 +16305,7 @@ PObject * H245_H223Capability_mobileMultilinkFrameCapability::Clone() const
 //
 
 H245_H2250Capability_mcCapability::H245_H2250Capability_mcCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -16352,12 +16352,12 @@ PINDEX H245_H2250Capability_mcCapability::GetDataLength() const
 PBoolean H245_H2250Capability_mcCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_centralizedConferenceMC.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_decentralizedConferenceMC.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16450,7 +16450,7 @@ PObject * H245_ArrayOf_RTPPayloadType::Clone() const
 //
 
 H245_MediaTransportType_atm_AAL5_compressed::H245_MediaTransportType_atm_AAL5_compressed(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -16493,10 +16493,10 @@ PINDEX H245_MediaTransportType_atm_AAL5_compressed::GetDataLength() const
 PBoolean H245_MediaTransportType_atm_AAL5_compressed::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_variable_delta.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16626,7 +16626,7 @@ const static PASN_Names Names_H245_RTPH263VideoRedundancyEncoding_frameToThreadM
 //
 
 H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping::H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping,2
 #endif
@@ -16662,15 +16662,15 @@ PBoolean H245_RTPH263VideoRedundancyEncoding_frameToThreadMapping::CreateObject(
   switch (tag) {
     case e_roundrobin :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
     case e_custom :
       choice = new H245_ArrayOf_RTPH263VideoRedundancyFrameMapping();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 

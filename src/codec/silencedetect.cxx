@@ -213,7 +213,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
       levelThreshold = level/2;
       PTRACE(4, "Silence\tThreshold initialised to: " << levelThreshold);
     }
-    // inTalkBurst always PFalse here, so return silent
+    // inTalkBurst always false here, so return silent
     frame.SetPayloadSize(0);
     return;
   }

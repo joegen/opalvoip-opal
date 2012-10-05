@@ -302,7 +302,7 @@ PBoolean OpalPCSSEndPoint::RejectIncomingConnection(const PString & token, const
 
 PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -414,11 +414,11 @@ PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return PFalse;
+    return false;
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
-    return PFalse;
+    return false;
 
   return channel->SetVolume(percentage);
 }
@@ -427,11 +427,11 @@ PBoolean OpalPCSSConnection::GetAudioVolume(PBoolean source, unsigned & percenta
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return PFalse;
+    return false;
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
-    return PFalse;
+    return false;
 
   return channel->GetVolume(percentage);
 }
@@ -441,11 +441,11 @@ bool OpalPCSSConnection::SetAudioMute(bool source, bool mute)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return PFalse;
+    return false;
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
-    return PFalse;
+    return false;
 
   return channel->SetMute(mute);
 }
@@ -455,11 +455,11 @@ bool OpalPCSSConnection::GetAudioMute(bool source, bool & mute)
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
   if (stream == NULL)
-    return PFalse;
+    return false;
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
-    return PFalse;
+    return false;
 
   return channel->GetMute(mute);
 }

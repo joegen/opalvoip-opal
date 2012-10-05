@@ -395,7 +395,7 @@ bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
     rtpPacketization.m_payloadType = payloadType;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -685,7 +685,7 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   H323EndPoint & endpoint = connection.GetEndPoint();
 
   q931pdu.BuildSetup(connection.GetCallReference());
-  SetQ931Fields(connection, PTrue);
+  SetQ931Fields(connection, true);
 
   m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_setup);
   H225_Setup_UUIE & setup = m_h323_uu_pdu.m_h323_message_body;
@@ -703,8 +703,8 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   setup.m_callType.SetTag(H225_CallType::e_pointToPoint);
 
   setup.m_callIdentifier.m_guid = connection.GetCallIdentifier();
-  setup.m_mediaWaitForConnect = PFalse;
-  setup.m_canOverlapSend = PFalse;
+  setup.m_mediaWaitForConnect = false;
+  setup.m_canOverlapSend = false;
 
   if (!destAddr) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
@@ -1131,14 +1131,14 @@ PBoolean H323SignalPDU::Read(H323Transport & transport)
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::Timeout,
               "H225\tRead error (" << transport.GetErrorNumber(PChannel::LastReadError)
               << "): " << transport.GetErrorText(PChannel::LastReadError));
-    return PFalse;
+    return false;
   }
 
   if (!q931pdu.Decode(rawData)) {
     PTRACE(1, "H225\tParse error of Q931 PDU:\n" << hex << setfill('0')
                                                  << setprecision(2) << rawData
                                                  << dec << setfill(' '));
-    return PFalse;
+    return false;
   }
 
   if (!q931pdu.HasIE(Q931::UserUserIE)) {
@@ -1148,7 +1148,7 @@ PBoolean H323SignalPDU::Read(H323Transport & transport)
                              << setprecision(2) << rawData
                              << dec << setfill(' ') <<
               "\nQ.931 PDU:\n  " << setprecision(2) << q931pdu);
-    return PTrue;
+    return true;
   }
 
   PPER_Stream strm = q931pdu.GetIE(Q931::UserUserIE);
@@ -1160,11 +1160,11 @@ PBoolean H323SignalPDU::Read(H323Transport & transport)
               "\nQ.931 PDU:\n  " << setprecision(2) << q931pdu <<
               "\nPartial PDU:\n  " << setprecision(2) << *this);
     m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_empty);
-    return PTrue;
+    return true;
   }
 
-  H323TraceDumpPDU("H225", PFalse, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
-  return PTrue;
+  H323TraceDumpPDU("H225", false, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
+  return true;
 }
 
 
@@ -1175,17 +1175,17 @@ PBoolean H323SignalPDU::Write(H323Transport & transport)
 
   PBYTEArray rawData;
   if (!q931pdu.Encode(rawData))
-    return PFalse;
+    return false;
 
-  H323TraceDumpPDU("H225", PTrue, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
+  H323TraceDumpPDU("H225", true, rawData, *this, m_h323_uu_pdu.m_h323_message_body, 0);
 
   if (transport.WritePDU(rawData))
-    return PTrue;
+    return true;
 
   PTRACE(1, "H225\tWrite PDU failed ("
          << transport.GetErrorNumber(PChannel::LastWriteError)
          << "): " << transport.GetErrorText(PChannel::LastWriteError));
-  return PFalse;
+  return false;
 }
 
 
@@ -1213,7 +1213,7 @@ PString H323SignalPDU::GetSourceAliases(const H323Transport * transport) const
 
     if (setup.m_sourceAddress.GetSize() > 0) {
       PBoolean needParen = !aliases.IsEmpty();
-      PBoolean needComma = PFalse;
+      PBoolean needComma = false;
       for (PINDEX i = 0; i < setup.m_sourceAddress.GetSize(); i++) {
         PString alias = H323GetAliasAddressString(setup.m_sourceAddress[i]);
         if (alias != displayName && alias != remoteHostName) {
@@ -1222,7 +1222,7 @@ PString H323SignalPDU::GetSourceAliases(const H323Transport * transport) const
           else if (needParen)
             aliases << " (";
           aliases << alias;
-          needComma = PTrue;
+          needComma = true;
         }
       }
       if (needParen && needComma)
@@ -1278,20 +1278,20 @@ PString H323SignalPDU::GetDestinationAlias(PBoolean firstAliasOnly) const
 PBoolean H323SignalPDU::GetSourceE164(PString & number) const
 {
   if (GetQ931().GetCallingPartyNumber(number))
-    return PTrue;
+    return true;
 
   if (m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
-    return PFalse;
+    return false;
 
   const H225_Setup_UUIE & setup = m_h323_uu_pdu.m_h323_message_body;
   if (!setup.HasOptionalField(H225_Setup_UUIE::e_sourceAddress))
-    return PFalse;
+    return false;
 
   PINDEX i;
   for (i = 0; i < setup.m_sourceAddress.GetSize(); i++) {
     if (setup.m_sourceAddress[i].GetTag() == H225_AliasAddress::e_dialedDigits) {
       number = (PASN_IA5String &)setup.m_sourceAddress[i];
-      return PTrue;
+      return true;
     }
   }
 
@@ -1299,31 +1299,31 @@ PBoolean H323SignalPDU::GetSourceE164(PString & number) const
     PString str = H323GetAliasAddressString(setup.m_sourceAddress[i]);
     if (OpalIsE164(str)) {
       number = str;
-      return PTrue;
+      return true;
     }
   }
 
-  return PFalse;
+  return false;
 }
 
 
 PBoolean H323SignalPDU::GetDestinationE164(PString & number) const
 {
   if (GetQ931().GetCalledPartyNumber(number))
-    return PTrue;
+    return true;
 
   if (m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
-    return PFalse;
+    return false;
 
   const H225_Setup_UUIE & setup = m_h323_uu_pdu.m_h323_message_body;
   if (!setup.HasOptionalField(H225_Setup_UUIE::e_destinationAddress))
-    return PFalse;
+    return false;
 
   PINDEX i;
   for (i = 0; i < setup.m_destinationAddress.GetSize(); i++) {
     if (setup.m_destinationAddress[i].GetTag() == H225_AliasAddress::e_dialedDigits) {
       number = (PASN_IA5String &)setup.m_destinationAddress[i];
-      return PTrue;
+      return true;
     }
   }
 
@@ -1331,11 +1331,11 @@ PBoolean H323SignalPDU::GetDestinationE164(PString & number) const
     PString str = H323GetAliasAddressString(setup.m_destinationAddress[i]);
     if (OpalIsE164(str)) {
       number = str;
-      return PTrue;
+      return true;
     }
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -1502,7 +1502,7 @@ H245_TerminalCapabilitySet &
   h225_0.m_receiveMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_transmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
   h225_0.m_receiveAndTransmitMultipointCapability.m_mediaDistributionCapability.SetSize(1);
-  h225_0.m_t120DynamicPortCapability = PTrue;
+  h225_0.m_t120DynamicPortCapability = true;
 
   // Set the table of capabilities
   connection.GetLocalCapabilities().BuildPDU(connection, cap);

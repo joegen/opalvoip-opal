@@ -222,7 +222,7 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
 
   // Initialise the core of the system
   if (!manager.Initialise(cfg, rsrc))
-    return PFalse;
+    return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
   PServiceHTML html("System Parameters");
@@ -233,7 +233,7 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, PTrue), PHTTPSpace::Overwrite);
+    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -260,11 +260,11 @@ PBoolean OpalEcho::Initialise(const char * initMsg)
     PSYSTEMLOG(Info, "Opened master socket(s) for HTTP: " << httpPort);
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP");
-    return PFalse;
+    return false;
   }
 
   PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
-  return PTrue;
+  return true;
 }
 
 
@@ -336,7 +336,7 @@ cout << "setting frame size to " << width << "x" << height << endl;
     echoEP = new EchoEndPoint(*this);
 
   // General parameters for all endpoint types
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), true);
   PStringArray formats = fieldArray->GetStrings(cfg);
   if (formats.GetSize() > 0)
     SetMediaFormatOrder(formats);
@@ -344,7 +344,7 @@ cout << "setting frame size to " << width << "x" << height << endl;
     fieldArray->SetStrings(cfg, GetMediaFormatOrder());
   rsrc->Add(fieldArray);
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), PTrue);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), true);
   SetMediaFormatMask(fieldArray->GetStrings(cfg));
   rsrc->Add(fieldArray);
 
@@ -377,7 +377,7 @@ cout << "setting frame size to " << width << "x" << height << endl;
     PSYSTEMLOG(Error, "No legal entries in dial peers!");
   }
 
-  return PTrue;
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////

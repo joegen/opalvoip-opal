@@ -102,14 +102,14 @@ PBoolean Q922_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 {
   // Q922-frames must not exceed an information field size of 260 octets
   if (size >= 260+Q922_HEADER_SIZE || size <= Q922_HEADER_SIZE)
-    return PFalse;
+    return false;
   
   SetMinSize(size);
   memcpy(theArray, data, size);
   
   SetInformationFieldSize(size - Q922_HEADER_SIZE);
   
-  return PTrue;
+  return true;
 }
 
 PINDEX Q922_Frame::GetAnnexQEncodedSize() const
@@ -122,7 +122,7 @@ PBoolean Q922_Frame::EncodeAnnexQ(BYTE *data, PINDEX & size) const
 {
   size = GetAnnexQEncodedSize();
   memcpy(data, theArray, size);
-  return PTrue;
+  return true;
 }
 
 PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
@@ -132,24 +132,24 @@ PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
   // a valid frame must contain at least 2xFLAG, 3 octets Q922 header,
   // 2 octets FCS and at least 1 octet information
   if (size < 2+3+2+1)
-    return PFalse;
+    return false;
 
   PINDEX octetIndex = 0;
   BYTE bitIndex = 7;
   BYTE onesCounter = 0;
 
   if (!FindFlagEnd(data, size, octetIndex, bitIndex))
-    return PFalse;
+    return false;
 
   BYTE firstOctet;
   BYTE secondOctet;
 
   // read the two first octets
   if (octetIndex >= size || DecodeOctet(data, &firstOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
-    return PFalse;
+    return false;
 
   if (octetIndex >= size || DecodeOctet(data, &secondOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
-    return PFalse;
+    return false;
 
   PINDEX arrayIndex = 0;
   while (octetIndex < size) {
@@ -158,7 +158,7 @@ PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
     BYTE result = DecodeOctet(data, &decodedByte, octetIndex, bitIndex, onesCounter);
 
     if (result == Q922_ERROR)
-      return PFalse;
+      return false;
 
     if (result == Q922_FLAG) {
 
@@ -171,15 +171,15 @@ PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
 
       if (fcs != calculatedFCS) {
         PTRACE(2, "Q.922\tFrame has incorrect checksum");
-        return PFalse;
+        return false;
       }
 
       if (arrayIndex > Q922_HEADER_SIZE) {
         SetInformationFieldSize(arrayIndex - Q922_HEADER_SIZE);
-        return PTrue;
+        return true;
       }
 
-      return PFalse;
+      return false;
     }
 
     theArray[arrayIndex] = firstOctet;
@@ -190,10 +190,10 @@ PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
 
     // Q922-frames must not exceed an information field size of 260 octets
     if (arrayIndex >= 260+Q922_HEADER_SIZE)
-      return PFalse;
+      return false;
   }
 
-  return PFalse;
+  return false;
 }
 
 PINDEX Q922_Frame::GetHDLCEncodedSize() const
@@ -221,7 +221,7 @@ PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size) const
 PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
 {
   if (informationFieldSize == 0)	{
-    return PFalse;
+    return false;
   }
 	
   PINDEX octetIndex = 0;
@@ -269,7 +269,7 @@ PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & theBitIndex)
   size = octetIndex;
   theBitIndex = bitIndex;
 	
-  return PTrue;
+  return true;
 }
 
 PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer, 
@@ -305,11 +305,11 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
           positionsCorrect = 0xff;
         } else {
           // got 0x7f, ABORT sequence
-          return PFalse;
+          return false;
         }
         break;
       default:
-        return PFalse;
+        return false;
     }
 		
     if (positionsCorrect == 0xff) {
@@ -318,7 +318,7 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
   }
 	
   if (positionsCorrect != 0xff) {
-    return PFalse;
+    return false;
   }
 	
   // First FLAG sequence found, bit index determined.
@@ -359,22 +359,22 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
         case 7:
           if (bit == 1) {
             // 0x7f read
-            return PFalse;
+            return false;
           }
           break;
         default:
-          return PFalse;
+          return false;
       }
 			
       if (positionsCorrect == 0xf0) {
         octetIndex = startOctetIndex;
         bitIndex = startBitIndex;
-        return PTrue;
+        return true;
       }
     }
   }
 	
-  return PFalse;
+  return false;
 }
 
 BYTE Q922_Frame::DecodeOctet(const BYTE *buffer, 

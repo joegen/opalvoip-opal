@@ -99,12 +99,12 @@ void IAX2RegProcessor::OnNoResponseTimeout()
     registrationState = registrationWait;
     registrationTimer = registrationRefreshTime;
     
-    endpoint.OnRegistered(host, userName, PTrue);
+    endpoint.OnRegistered(host, userName, true);
   }
   
   if (registrationState == registrationUnregistering) {
     registrationState = registrationUnregistered;
-    endpoint.OnUnregistered(host, userName, PTrue);
+    endpoint.OnUnregistered(host, userName, true);
     Terminate();
   }
 }
@@ -168,7 +168,7 @@ PBoolean IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   
   //check if the common method can process it?
   if (IAX2Processor::ProcessNetworkFrame(src))
-    return PTrue;
+    return true;
   
   if (registrationState == registrationHappening) {
     switch (src->GetSubClass()) {
@@ -201,10 +201,10 @@ PBoolean IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     default:
       PTRACE(1, "Process Full Frame Protocol unregistering, Type not expected");
       delete src;
-      return PFalse;
+      return false;
     }
   }  
-  return PTrue;
+  return true;
 }
 
 void IAX2RegProcessor::ProcessIaxCmdRegAuth(IAX2FullFrameProtocol *src)
@@ -247,7 +247,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegAck(IAX2FullFrameProtocol * src)
     << (minRefreshTime + randomPart));
   registrationTimer = PTimeInterval(minRefreshTime + randomPart);
   
-  endpoint.OnRegistered(host, userName, PFalse);
+  endpoint.OnRegistered(host, userName, false);
   registrationState = registrationWait;
   
   SendAckFrame(src);
@@ -259,7 +259,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegRej(IAX2FullFrameProtocol * src)
   PTRACE(3, "ProcessIaxCmdRej(IAX2FullFrameProtocol * src)");
   
   StopNoResponseTimer();
-  endpoint.OnRegistered(host, userName, PTrue);
+  endpoint.OnRegistered(host, userName, true);
   /* This is an optimistic approach - retrying the registration
      once the timer event is triggered. even though our password
      failed.*/
@@ -295,7 +295,7 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol *src)
   SendAckFrame(src);
   
   registrationState = registrationUnregistered;
-  endpoint.OnUnregistered(host, userName, PFalse);
+  endpoint.OnUnregistered(host, userName, false);
   Terminate();
   delete src;
 }
@@ -308,7 +308,7 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol *src)
   //just ditch it.
   StopNoResponseTimer();  
   registrationState = registrationUnregistered;
-  endpoint.OnUnregistered(host, userName, PTrue);
+  endpoint.OnUnregistered(host, userName, true);
   Terminate();
   delete src;
 }

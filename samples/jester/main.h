@@ -107,7 +107,7 @@ class JesterProcess : public PProcess
     PINDEX m_bytesPerBlock;
 
     /**Flag to indicate if we do, or do not, simulate silence suppression. If
-       PTrue, we do silence suppresion and send packets in bursts of onnnn,
+       true, we do silence suppresion and send packets in bursts of onnnn,
        nothing, onnn, nothing..*/
     bool m_silenceSuppression;
 
@@ -117,7 +117,7 @@ class JesterProcess : public PProcess
     /**Flag to indicate if we do, or do not fiddle with the operaiton of
        silence suppression function. When doing silence suppression, the start
        of each talk burst has the marker bit turned on. If this flag is set
-       PTrue, then some of those marker bits (half of them) are
+       true, then some of those marker bits (half of them) are
        suppressed. This flag therefore tests the operation of the jitter
        buffer, to see if it copes with the dropping of the first packet in
        each voice stream */

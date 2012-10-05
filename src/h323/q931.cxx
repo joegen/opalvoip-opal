@@ -206,7 +206,7 @@ void Q931::BuildSetupAcknowledge(int callRef)
 {
   messageType = SetupAckMsg;
   callReference = callRef;
-  fromDestination = PTrue;
+  fromDestination = true;
   informationElements.RemoveAll();
 }
 
@@ -215,7 +215,7 @@ void Q931::BuildCallProceeding(int callRef)
 {
   messageType = CallProceedingMsg;
   callReference = callRef;
-  fromDestination = PTrue;
+  fromDestination = true;
   informationElements.RemoveAll();
 }
 
@@ -224,7 +224,7 @@ void Q931::BuildAlerting(int callRef)
 {
   messageType = AlertingMsg;
   callReference = callRef;
-  fromDestination = PTrue;
+  fromDestination = true;
   informationElements.RemoveAll();
 }
 
@@ -246,7 +246,7 @@ void Q931::BuildConnect(int callRef)
 {
   messageType = ConnectMsg;
   callReference = callRef;
-  fromDestination = PTrue;
+  fromDestination = true;
   informationElements.RemoveAll();
   SetBearerCapabilities(TransferSpeech, 1);
 }
@@ -337,7 +337,7 @@ PBoolean Q931::Decode(const PBYTEArray & data)
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -704,7 +704,7 @@ PBoolean Q931::GetBearerCapabilities(InformationTransferCapability & capability,
   if (userInfoLayer1 != NULL)
     *userInfoLayer1 = data.GetSize() >= nextByte && ((data[nextByte]>>5)&3) == 1 ? (data[nextByte]&0x1f) : 0;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -839,7 +839,7 @@ PBoolean Q931::GetProgressIndicator(unsigned & description,
     *location = data[0]&0x0f;
   description = data[1]&0x7f;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1172,7 +1172,7 @@ PBoolean Q931::GetChannelIdentification(unsigned * interfaceType,
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 

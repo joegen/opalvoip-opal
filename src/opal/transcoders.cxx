@@ -187,7 +187,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   if (formatPayloadType != RTP_DataFrame::MaxPayloadType && packetPayloadType != formatPayloadType && input.GetPayloadSize() > 0) {
     PTRACE(2, "Opal\tExpected payload type " << formatPayloadType << ", but received " << packetPayloadType << ". Ignoring packet");
     output.RemoveAll();
-    return PTrue;
+    return true;
   }
 
   return Convert(input, output.front());
@@ -369,7 +369,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
     }
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -396,7 +396,7 @@ bool OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
     }
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -603,13 +603,13 @@ PBoolean OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*co
 
 PBoolean OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outputPtr*/)
 {
-  return PFalse;
+  return false;
 }
 
 PBoolean OpalFramedTranscoder::ConvertSilentFrame(BYTE *dst)
 {
   memset(dst, 0, outputBytesPerFrame);
-  return PTrue;
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -702,7 +702,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return PFalse;
+          return false;
       }
       break;
 
@@ -747,7 +747,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return PFalse;
+          return false;
       }
       break;
 
@@ -774,7 +774,7 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return PFalse;
+          return false;
       }
       break;
 
@@ -810,16 +810,16 @@ PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return PFalse;
+          return false;
       }
       break;
 
     default :
       PAssertAlways("Unsupported bit size");
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
