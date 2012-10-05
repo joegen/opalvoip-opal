@@ -208,7 +208,7 @@ const static PASN_Names Names_H248_MId[]={
 //
 
 H248_MId::H248_MId(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_MId,5
 #endif
@@ -310,24 +310,24 @@ PBoolean H248_MId::CreateObject()
   switch (tag) {
     case e_ip4Address :
       choice = new H248_IP4Address();
-      return PTrue;
+      return true;
     case e_ip6Address :
       choice = new H248_IP6Address();
-      return PTrue;
+      return true;
     case e_domainName :
       choice = new H248_DomainName();
-      return PTrue;
+      return true;
     case e_deviceName :
       choice = new H248_PathName();
-      return PTrue;
+      return true;
     case e_mtpAddress :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 2, 4);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -345,7 +345,7 @@ PObject * H248_MId::Clone() const
 //
 
 H248_DomainName::H248_DomainName(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_portNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -395,12 +395,12 @@ PINDEX H248_DomainName::GetDataLength() const
 PBoolean H248_DomainName::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_name.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_portNumber) && !m_portNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -432,7 +432,7 @@ PObject * H248_DomainName::Clone() const
 //
 
 H248_IP4Address::H248_IP4Address(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_address.SetConstraints(PASN_Object::FixedConstraint, 4);
   m_portNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -483,12 +483,12 @@ PINDEX H248_IP4Address::GetDataLength() const
 PBoolean H248_IP4Address::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_address.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_portNumber) && !m_portNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -520,7 +520,7 @@ PObject * H248_IP4Address::Clone() const
 //
 
 H248_IP6Address::H248_IP6Address(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_address.SetConstraints(PASN_Object::FixedConstraint, 16);
   m_portNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -571,12 +571,12 @@ PINDEX H248_IP6Address::GetDataLength() const
 PBoolean H248_IP6Address::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_address.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_portNumber) && !m_portNumber.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -651,7 +651,7 @@ const static PASN_Names Names_H248_Transaction[]={
 //
 
 H248_Transaction::H248_Transaction(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, PTrue
+  : PASN_Choice(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_Transaction,4
 #endif
@@ -753,20 +753,20 @@ PBoolean H248_Transaction::CreateObject()
   switch (tag) {
     case e_transactionRequest :
       choice = new H248_TransactionRequest();
-      return PTrue;
+      return true;
     case e_transactionPending :
       choice = new H248_TransactionPending();
-      return PTrue;
+      return true;
     case e_transactionReply :
       choice = new H248_TransactionReply();
-      return PTrue;
+      return true;
     case e_transactionResponseAck :
       choice = new H248_TransactionResponseAck();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -818,7 +818,7 @@ PObject * H248_TransactionId::Clone() const
 //
 
 H248_TransactionPending::H248_TransactionPending(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -861,10 +861,10 @@ PINDEX H248_TransactionPending::GetDataLength() const
 PBoolean H248_TransactionPending::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_transactionId.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -925,7 +925,7 @@ PObject * H248_TransactionResponseAck::Clone() const
 //
 
 H248_TransactionAck::H248_TransactionAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -974,12 +974,12 @@ PINDEX H248_TransactionAck::GetDataLength() const
 PBoolean H248_TransactionAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_firstAck.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_lastAck) && !m_lastAck.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1112,7 +1112,7 @@ PObject * H248_ContextID::Clone() const
 //
 
 H248_ContextAttrAuditRequest::H248_ContextAttrAuditRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -1169,14 +1169,14 @@ PINDEX H248_ContextAttrAuditRequest::GetDataLength() const
 PBoolean H248_ContextAttrAuditRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_topology) && !m_topology.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_emergency) && !m_emergency.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_priority) && !m_priority.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1224,7 +1224,7 @@ const static PASN_Names Names_H248_Command[]={
 //
 
 H248_Command::H248_Command(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_Command,8
 #endif
@@ -1350,24 +1350,24 @@ PBoolean H248_Command::CreateObject()
     case e_moveReq :
     case e_modReq :
       choice = new H248_AmmRequest();
-      return PTrue;
+      return true;
     case e_subtractReq :
       choice = new H248_SubtractRequest();
-      return PTrue;
+      return true;
     case e_auditCapRequest :
     case e_auditValueRequest :
       choice = new H248_AuditRequest();
-      return PTrue;
+      return true;
     case e_notifyReq :
       choice = new H248_NotifyRequest();
-      return PTrue;
+      return true;
     case e_serviceChangeReq :
       choice = new H248_ServiceChangeRequest();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1398,7 +1398,7 @@ const static PASN_Names Names_H248_CommandReply[]={
 //
 
 H248_CommandReply::H248_CommandReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_CommandReply,8
 #endif
@@ -1503,21 +1503,21 @@ PBoolean H248_CommandReply::CreateObject()
     case e_modReply :
     case e_subtractReply :
       choice = new H248_AmmsReply();
-      return PTrue;
+      return true;
     case e_auditCapReply :
     case e_auditValueReply :
       choice = new H248_AuditReply();
-      return PTrue;
+      return true;
     case e_notifyReply :
       choice = new H248_NotifyReply();
-      return PTrue;
+      return true;
     case e_serviceChangeReply :
       choice = new H248_ServiceChangeReply();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1548,7 +1548,7 @@ const static PASN_Names Names_H248_AmmDescriptor[]={
 //
 
 H248_AmmDescriptor::H248_AmmDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, PTrue
+  : PASN_Choice(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_AmmDescriptor,8
 #endif
@@ -1738,32 +1738,32 @@ PBoolean H248_AmmDescriptor::CreateObject()
   switch (tag) {
     case e_mediaDescriptor :
       choice = new H248_MediaDescriptor();
-      return PTrue;
+      return true;
     case e_modemDescriptor :
       choice = new H248_ModemDescriptor();
-      return PTrue;
+      return true;
     case e_muxDescriptor :
       choice = new H248_MuxDescriptor();
-      return PTrue;
+      return true;
     case e_eventsDescriptor :
       choice = new H248_EventsDescriptor();
-      return PTrue;
+      return true;
     case e_eventBufferDescriptor :
       choice = new H248_EventBufferDescriptor();
-      return PTrue;
+      return true;
     case e_signalsDescriptor :
       choice = new H248_SignalsDescriptor();
-      return PTrue;
+      return true;
     case e_digitMapDescriptor :
       choice = new H248_DigitMapDescriptor();
-      return PTrue;
+      return true;
     case e_auditDescriptor :
       choice = new H248_AuditDescriptor();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1789,7 +1789,7 @@ const static PASN_Names Names_H248_AuditReply[]={
 //
 
 H248_AuditReply::H248_AuditReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_AuditReply,3
 #endif
@@ -1869,17 +1869,17 @@ PBoolean H248_AuditReply::CreateObject()
   switch (tag) {
     case e_contextAuditResult :
       choice = new H248_TerminationIDList();
-      return PTrue;
+      return true;
     case e_error :
       choice = new H248_ErrorDescriptor();
-      return PTrue;
+      return true;
     case e_auditResult :
       choice = new H248_AuditResult();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1945,7 +1945,7 @@ const static PASN_Names Names_H248_AuditReturnParameter[]={
 //
 
 H248_AuditReturnParameter::H248_AuditReturnParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 12, PTrue
+  : PASN_Choice(tag, tagClass, 12, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_AuditReturnParameter,12
 #endif
@@ -2223,44 +2223,44 @@ PBoolean H248_AuditReturnParameter::CreateObject()
   switch (tag) {
     case e_errorDescriptor :
       choice = new H248_ErrorDescriptor();
-      return PTrue;
+      return true;
     case e_mediaDescriptor :
       choice = new H248_MediaDescriptor();
-      return PTrue;
+      return true;
     case e_modemDescriptor :
       choice = new H248_ModemDescriptor();
-      return PTrue;
+      return true;
     case e_muxDescriptor :
       choice = new H248_MuxDescriptor();
-      return PTrue;
+      return true;
     case e_eventsDescriptor :
       choice = new H248_EventsDescriptor();
-      return PTrue;
+      return true;
     case e_eventBufferDescriptor :
       choice = new H248_EventBufferDescriptor();
-      return PTrue;
+      return true;
     case e_signalsDescriptor :
       choice = new H248_SignalsDescriptor();
-      return PTrue;
+      return true;
     case e_digitMapDescriptor :
       choice = new H248_DigitMapDescriptor();
-      return PTrue;
+      return true;
     case e_observedEventsDescriptor :
       choice = new H248_ObservedEventsDescriptor();
-      return PTrue;
+      return true;
     case e_statisticsDescriptor :
       choice = new H248_StatisticsDescriptor();
-      return PTrue;
+      return true;
     case e_packagesDescriptor :
       choice = new H248_PackagesDescriptor();
-      return PTrue;
+      return true;
     case e_emptyDescriptors :
       choice = new H248_AuditDescriptor();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2290,7 +2290,7 @@ const static PASN_Names Names_H248_IndAuditParameter[]={
 //
 
 H248_IndAuditParameter::H248_IndAuditParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, PTrue
+  : PASN_Choice(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_IndAuditParameter,7
 #endif
@@ -2458,29 +2458,29 @@ PBoolean H248_IndAuditParameter::CreateObject()
   switch (tag) {
     case e_indaudmediaDescriptor :
       choice = new H248_IndAudMediaDescriptor();
-      return PTrue;
+      return true;
     case e_indaudeventsDescriptor :
       choice = new H248_IndAudEventsDescriptor();
-      return PTrue;
+      return true;
     case e_indaudeventBufferDescriptor :
       choice = new H248_IndAudEventBufferDescriptor();
-      return PTrue;
+      return true;
     case e_indaudsignalsDescriptor :
       choice = new H248_IndAudSignalsDescriptor();
-      return PTrue;
+      return true;
     case e_indauddigitMapDescriptor :
       choice = new H248_IndAudDigitMapDescriptor();
-      return PTrue;
+      return true;
     case e_indaudstatisticsDescriptor :
       choice = new H248_IndAudStatisticsDescriptor();
-      return PTrue;
+      return true;
     case e_indaudpackagesDescriptor :
       choice = new H248_IndAudPackagesDescriptor();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2536,7 +2536,7 @@ const static PASN_Names Names_H248_IndAudSignalsDescriptor[]={
 //
 
 H248_IndAudSignalsDescriptor::H248_IndAudSignalsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_IndAudSignalsDescriptor,2
 #endif
@@ -2594,14 +2594,14 @@ PBoolean H248_IndAudSignalsDescriptor::CreateObject()
   switch (tag) {
     case e_signal :
       choice = new H248_IndAudSignal();
-      return PTrue;
+      return true;
     case e_seqSigList :
       choice = new H248_IndAudSeqSigList();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2626,7 +2626,7 @@ const static PASN_Names Names_H248_ServiceChangeResult[]={
 //
 
 H248_ServiceChangeResult::H248_ServiceChangeResult(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_ServiceChangeResult,2
 #endif
@@ -2684,14 +2684,14 @@ PBoolean H248_ServiceChangeResult::CreateObject()
   switch (tag) {
     case e_errorDescriptor :
       choice = new H248_ErrorDescriptor();
-      return PTrue;
+      return true;
     case e_serviceChangeResParms :
       choice = new H248_ServiceChangeResParm();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -2808,7 +2808,7 @@ const static PASN_Names Names_H248_StreamMode[]={
 //
 
 H248_StreamMode::H248_StreamMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 4, PTrue
+  : PASN_Enumeration(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_StreamMode,5
 #endif
@@ -2963,7 +2963,7 @@ const static PASN_Names Names_H248_Relation[]={
 //
 
 H248_Relation::H248_Relation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_Relation,3
 #endif
@@ -3030,7 +3030,7 @@ const static PASN_Names Names_H248_EventBufferControl[]={
 //
 
 H248_EventBufferControl::H248_EventBufferControl(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_EventBufferControl,2
 #endif
@@ -3067,7 +3067,7 @@ const static PASN_Names Names_H248_ServiceState[]={
 //
 
 H248_ServiceState::H248_ServiceState(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_ServiceState,3
 #endif
@@ -3106,7 +3106,7 @@ const static PASN_Names Names_H248_MuxType[]={
 //
 
 H248_MuxType::H248_MuxType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 4, PTrue
+  : PASN_Enumeration(tag, tagClass, 4, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_MuxType,5
 #endif
@@ -3177,7 +3177,7 @@ const static PASN_Names Names_H248_EventDM[]={
 //
 
 H248_EventDM::H248_EventDM(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_EventDM,2
 #endif
@@ -3235,14 +3235,14 @@ PBoolean H248_EventDM::CreateObject()
   switch (tag) {
     case e_digitMapName :
       choice = new H248_DigitMapName();
-      return PTrue;
+      return true;
     case e_digitMapValue :
       choice = new H248_DigitMapValue();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3329,7 +3329,7 @@ const static PASN_Names Names_H248_SignalRequest[]={
 //
 
 H248_SignalRequest::H248_SignalRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_SignalRequest,2
 #endif
@@ -3387,14 +3387,14 @@ PBoolean H248_SignalRequest::CreateObject()
   switch (tag) {
     case e_signal :
       choice = new H248_Signal();
-      return PTrue;
+      return true;
     case e_seqSigList :
       choice = new H248_SeqSigList();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3419,7 +3419,7 @@ const static PASN_Names Names_H248_SignalType[]={
 //
 
 H248_SignalType::H248_SignalType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_SignalType,3
 #endif
@@ -3573,7 +3573,7 @@ const static PASN_Names Names_H248_ModemType[]={
 //
 
 H248_ModemType::H248_ModemType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 8, PTrue
+  : PASN_Enumeration(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_ModemType,9
 #endif
@@ -3661,7 +3661,7 @@ PObject * H248_DigitMapName::Clone() const
 //
 
 H248_DigitMapValue::H248_DigitMapValue(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 3, true, 1)
 {
   m_startTimer.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
   m_shortTimer.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
@@ -3728,18 +3728,18 @@ PINDEX H248_DigitMapValue::GetDataLength() const
 PBoolean H248_DigitMapValue::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_startTimer) && !m_startTimer.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_shortTimer) && !m_shortTimer.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_longTimer) && !m_longTimer.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_digitMapBody.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_durationTimer, m_durationTimer))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3787,7 +3787,7 @@ const static PASN_Names Names_H248_ServiceChangeAddress[]={
 //
 
 H248_ServiceChangeAddress::H248_ServiceChangeAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, PTrue
+  : PASN_Choice(tag, tagClass, 6, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_ServiceChangeAddress,6
 #endif
@@ -3890,27 +3890,27 @@ PBoolean H248_ServiceChangeAddress::CreateObject()
     case e_portNumber :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return PTrue;
+      return true;
     case e_ip4Address :
       choice = new H248_IP4Address();
-      return PTrue;
+      return true;
     case e_ip6Address :
       choice = new H248_IP6Address();
-      return PTrue;
+      return true;
     case e_domainName :
       choice = new H248_DomainName();
-      return PTrue;
+      return true;
     case e_deviceName :
       choice = new H248_PathName();
-      return PTrue;
+      return true;
     case e_mtpAddress :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 2, 4);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -3938,7 +3938,7 @@ const static PASN_Names Names_H248_ServiceChangeMethod[]={
 //
 
 H248_ServiceChangeMethod::H248_ServiceChangeMethod(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 5, PTrue
+  : PASN_Enumeration(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_ServiceChangeMethod,6
 #endif
@@ -3968,7 +3968,7 @@ PObject * H248_ServiceChangeMethod::Clone() const
 //
 
 H248_ServiceChangeProfile::H248_ServiceChangeProfile(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_profileName.SetConstraints(PASN_Object::FixedConstraint, 1, 67);
 }
@@ -4012,10 +4012,10 @@ PINDEX H248_ServiceChangeProfile::GetDataLength() const
 PBoolean H248_ServiceChangeProfile::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_profileName.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4076,7 +4076,7 @@ PObject * H248_PackagesDescriptor::Clone() const
 //
 
 H248_PackagesItem::H248_PackagesItem(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_packageVersion.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
 }
@@ -4124,12 +4124,12 @@ PINDEX H248_PackagesItem::GetDataLength() const
 PBoolean H248_PackagesItem::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_packageName.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_packageVersion.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4199,7 +4199,7 @@ const static PASN_Names Names_H248_NonStandardIdentifier[]={
 //
 
 H248_NonStandardIdentifier::H248_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_NonStandardIdentifier,3
 #endif
@@ -4235,18 +4235,18 @@ PBoolean H248_NonStandardIdentifier::CreateObject()
   switch (tag) {
     case e_object :
       choice = new PASN_ObjectId();
-      return PTrue;
+      return true;
     case e_h221NonStandard :
       choice = new H248_H221NonStandard();
-      return PTrue;
+      return true;
     case e_experimental :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 8);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -4264,7 +4264,7 @@ PObject * H248_NonStandardIdentifier::Clone() const
 //
 
 H248_H221NonStandard::H248_H221NonStandard(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_t35CountryCode1.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_t35CountryCode2.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -4323,16 +4323,16 @@ PINDEX H248_H221NonStandard::GetDataLength() const
 PBoolean H248_H221NonStandard::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_t35CountryCode1.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_t35CountryCode2.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_t35Extension.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_manufacturerCode.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4365,7 +4365,7 @@ PObject * H248_H221NonStandard::Clone() const
 //
 
 H248_TimeNotation::H248_TimeNotation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_date.SetConstraints(PASN_Object::FixedConstraint, 8);
   m_time.SetConstraints(PASN_Object::FixedConstraint, 8);
@@ -4414,12 +4414,12 @@ PINDEX H248_TimeNotation::GetDataLength() const
 PBoolean H248_TimeNotation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_date.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_time.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4488,7 +4488,7 @@ const static PASN_Names Names_H248_Message_messageBody[]={
 //
 
 H248_Message_messageBody::H248_Message_messageBody(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_Message_messageBody,2
 #endif
@@ -4546,14 +4546,14 @@ PBoolean H248_Message_messageBody::CreateObject()
   switch (tag) {
     case e_messageError :
       choice = new H248_ErrorDescriptor();
-      return PTrue;
+      return true;
     case e_transactions :
       choice = new H248_ArrayOf_Transaction();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -4609,7 +4609,7 @@ const static PASN_Names Names_H248_TransactionReply_transactionResult[]={
 //
 
 H248_TransactionReply_transactionResult::H248_TransactionReply_transactionResult(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_TransactionReply_transactionResult,2
 #endif
@@ -4667,14 +4667,14 @@ PBoolean H248_TransactionReply_transactionResult::CreateObject()
   switch (tag) {
     case e_transactionError :
       choice = new H248_ErrorDescriptor();
-      return PTrue;
+      return true;
     case e_actionReplies :
       choice = new H248_ArrayOf_ActionReply();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -4792,7 +4792,7 @@ const static PASN_Names Names_H248_TopologyRequest_topologyDirection[]={
 //
 
 H248_TopologyRequest_topologyDirection::H248_TopologyRequest_topologyDirection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PFalse
+  : PASN_Enumeration(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_TopologyRequest_topologyDirection,3
 #endif
@@ -4891,7 +4891,7 @@ const static PASN_Names Names_H248_IndAudMediaDescriptor_streams[]={
 //
 
 H248_IndAudMediaDescriptor_streams::H248_IndAudMediaDescriptor_streams(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_IndAudMediaDescriptor_streams,2
 #endif
@@ -4949,14 +4949,14 @@ PBoolean H248_IndAudMediaDescriptor_streams::CreateObject()
   switch (tag) {
     case e_oneStream :
       choice = new H248_IndAudStreamParms();
-      return PTrue;
+      return true;
     case e_multiStream :
       choice = new H248_ArrayOf_IndAudStreamDescriptor();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5075,7 +5075,7 @@ const static PASN_Names Names_H248_EventParameter_extraInfo[]={
 //
 
 H248_EventParameter_extraInfo::H248_EventParameter_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_EventParameter_extraInfo,3
 #endif
@@ -5111,15 +5111,15 @@ PBoolean H248_EventParameter_extraInfo::CreateObject()
   switch (tag) {
     case e_relation :
       choice = new H248_Relation();
-      return PTrue;
+      return true;
     case e_range :
     case e_sublist :
       choice = new PASN_Boolean();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5175,7 +5175,7 @@ const static PASN_Names Names_H248_MediaDescriptor_streams[]={
 //
 
 H248_MediaDescriptor_streams::H248_MediaDescriptor_streams(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_MediaDescriptor_streams,2
 #endif
@@ -5233,14 +5233,14 @@ PBoolean H248_MediaDescriptor_streams::CreateObject()
   switch (tag) {
     case e_oneStream :
       choice = new H248_StreamParms();
-      return PTrue;
+      return true;
     case e_multiStream :
       choice = new H248_ArrayOf_StreamDescriptor();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5328,7 +5328,7 @@ const static PASN_Names Names_H248_PropertyParm_extraInfo[]={
 //
 
 H248_PropertyParm_extraInfo::H248_PropertyParm_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_PropertyParm_extraInfo,3
 #endif
@@ -5364,15 +5364,15 @@ PBoolean H248_PropertyParm_extraInfo::CreateObject()
   switch (tag) {
     case e_relation :
       choice = new H248_Relation();
-      return PTrue;
+      return true;
     case e_range :
     case e_sublist :
       choice = new PASN_Boolean();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5584,7 +5584,7 @@ const static PASN_Names Names_H248_SigParameter_extraInfo[]={
 //
 
 H248_SigParameter_extraInfo::H248_SigParameter_extraInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H248_SigParameter_extraInfo,3
 #endif
@@ -5620,15 +5620,15 @@ PBoolean H248_SigParameter_extraInfo::CreateObject()
   switch (tag) {
     case e_relation :
       choice = new H248_Relation();
-      return PTrue;
+      return true;
     case e_range :
     case e_sublist :
       choice = new PASN_Boolean();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -5801,7 +5801,7 @@ PObject * H248_ArrayOf_StreamDescriptor::Clone() const
 //
 
 H248_AuthenticationHeader::H248_AuthenticationHeader(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -5852,14 +5852,14 @@ PINDEX H248_AuthenticationHeader::GetDataLength() const
 PBoolean H248_AuthenticationHeader::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_secParmIndex.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_seqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_ad.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5891,7 +5891,7 @@ PObject * H248_AuthenticationHeader::Clone() const
 //
 
 H248_Message::H248_Message(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_version.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
 }
@@ -5943,14 +5943,14 @@ PINDEX H248_Message::GetDataLength() const
 PBoolean H248_Message::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_version.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_mId.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_messageBody.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5982,7 +5982,7 @@ PObject * H248_Message::Clone() const
 //
 
 H248_TransactionRequest::H248_TransactionRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -6029,12 +6029,12 @@ PINDEX H248_TransactionRequest::GetDataLength() const
 PBoolean H248_TransactionRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_transactionId.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_actions.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6065,7 +6065,7 @@ PObject * H248_TransactionRequest::Clone() const
 //
 
 H248_TransactionReply::H248_TransactionReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -6118,14 +6118,14 @@ PINDEX H248_TransactionReply::GetDataLength() const
 PBoolean H248_TransactionReply::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_transactionId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_immAckRequired) && !m_immAckRequired.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_transactionResult.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6158,7 +6158,7 @@ PObject * H248_TransactionReply::Clone() const
 //
 
 H248_ErrorDescriptor::H248_ErrorDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -6207,12 +6207,12 @@ PINDEX H248_ErrorDescriptor::GetDataLength() const
 PBoolean H248_ErrorDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_errorCode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_errorText) && !m_errorText.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6244,7 +6244,7 @@ PObject * H248_ErrorDescriptor::Clone() const
 //
 
 H248_ContextRequest::H248_ContextRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 15);
 }
@@ -6302,14 +6302,14 @@ PINDEX H248_ContextRequest::GetDataLength() const
 PBoolean H248_ContextRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_priority) && !m_priority.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_emergency) && !m_emergency.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_topologyReq) && !m_topologyReq.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6344,7 +6344,7 @@ PObject * H248_ContextRequest::Clone() const
 //
 
 H248_CommandRequest::H248_CommandRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -6399,14 +6399,14 @@ PINDEX H248_CommandRequest::GetDataLength() const
 PBoolean H248_CommandRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_command.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_optional) && !m_optional.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_wildcardReturn) && !m_wildcardReturn.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6440,7 +6440,7 @@ PObject * H248_CommandRequest::Clone() const
 //
 
 H248_AmmRequest::H248_AmmRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -6487,12 +6487,12 @@ PINDEX H248_AmmRequest::GetDataLength() const
 PBoolean H248_AmmRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_descriptors.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6523,7 +6523,7 @@ PObject * H248_AmmRequest::Clone() const
 //
 
 H248_AmmsReply::H248_AmmsReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -6572,12 +6572,12 @@ PINDEX H248_AmmsReply::GetDataLength() const
 PBoolean H248_AmmsReply::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminationAudit) && !m_terminationAudit.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6609,7 +6609,7 @@ PObject * H248_AmmsReply::Clone() const
 //
 
 H248_AuditDescriptor::H248_AuditDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 1, true, 1)
 {
 }
 
@@ -6656,12 +6656,12 @@ PINDEX H248_AuditDescriptor::GetDataLength() const
 PBoolean H248_AuditDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_auditToken) && !m_auditToken.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_auditPropertyToken, m_auditPropertyToken))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6693,7 +6693,7 @@ PObject * H248_AuditDescriptor::Clone() const
 //
 
 H248_IndAudLocalControlDescriptor::H248_IndAudLocalControlDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
 }
 
@@ -6756,16 +6756,16 @@ PINDEX H248_IndAudLocalControlDescriptor::GetDataLength() const
 PBoolean H248_IndAudLocalControlDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_streamMode) && !m_streamMode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_reserveValue) && !m_reserveValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_reserveGroup) && !m_reserveGroup.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_propertyParms) && !m_propertyParms.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6802,7 +6802,7 @@ PObject * H248_IndAudLocalControlDescriptor::Clone() const
 //
 
 H248_IndAudPropertyParm::H248_IndAudPropertyParm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -6845,10 +6845,10 @@ PINDEX H248_IndAudPropertyParm::GetDataLength() const
 PBoolean H248_IndAudPropertyParm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_name.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6878,7 +6878,7 @@ PObject * H248_IndAudPropertyParm::Clone() const
 //
 
 H248_IndAudLocalRemoteDescriptor::H248_IndAudLocalRemoteDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_propGroupID.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -6928,12 +6928,12 @@ PINDEX H248_IndAudLocalRemoteDescriptor::GetDataLength() const
 PBoolean H248_IndAudLocalRemoteDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_propGroupID) && !m_propGroupID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_propGrps.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6965,7 +6965,7 @@ PObject * H248_IndAudLocalRemoteDescriptor::Clone() const
 //
 
 H248_IndAudTerminationStateDescriptor::H248_IndAudTerminationStateDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -7020,14 +7020,14 @@ PINDEX H248_IndAudTerminationStateDescriptor::GetDataLength() const
 PBoolean H248_IndAudTerminationStateDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_propertyParms.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventBufferControl) && !m_eventBufferControl.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceState) && !m_serviceState.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7061,7 +7061,7 @@ PObject * H248_IndAudTerminationStateDescriptor::Clone() const
 //
 
 H248_IndAudEventsDescriptor::H248_IndAudEventsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -7116,14 +7116,14 @@ PINDEX H248_IndAudEventsDescriptor::GetDataLength() const
 PBoolean H248_IndAudEventsDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_requestID) && !m_requestID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_pkgdName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7157,7 +7157,7 @@ PObject * H248_IndAudEventsDescriptor::Clone() const
 //
 
 H248_IndAudEventBufferDescriptor::H248_IndAudEventBufferDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -7206,12 +7206,12 @@ PINDEX H248_IndAudEventBufferDescriptor::GetDataLength() const
 PBoolean H248_IndAudEventBufferDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_eventName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7243,7 +7243,7 @@ PObject * H248_IndAudEventBufferDescriptor::Clone() const
 //
 
 H248_IndAudSignal::H248_IndAudSignal(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -7292,12 +7292,12 @@ PINDEX H248_IndAudSignal::GetDataLength() const
 PBoolean H248_IndAudSignal::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_signalName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7329,7 +7329,7 @@ PObject * H248_IndAudSignal::Clone() const
 //
 
 H248_IndAudDigitMapDescriptor::H248_IndAudDigitMapDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -7374,10 +7374,10 @@ PINDEX H248_IndAudDigitMapDescriptor::GetDataLength() const
 PBoolean H248_IndAudDigitMapDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_digitMapName) && !m_digitMapName.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7408,7 +7408,7 @@ PObject * H248_IndAudDigitMapDescriptor::Clone() const
 //
 
 H248_IndAudStatisticsDescriptor::H248_IndAudStatisticsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -7451,10 +7451,10 @@ PINDEX H248_IndAudStatisticsDescriptor::GetDataLength() const
 PBoolean H248_IndAudStatisticsDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_statName.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7484,7 +7484,7 @@ PObject * H248_IndAudStatisticsDescriptor::Clone() const
 //
 
 H248_IndAudPackagesDescriptor::H248_IndAudPackagesDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_packageVersion.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
 }
@@ -7532,12 +7532,12 @@ PINDEX H248_IndAudPackagesDescriptor::GetDataLength() const
 PBoolean H248_IndAudPackagesDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_packageName.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_packageVersion.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7568,7 +7568,7 @@ PObject * H248_IndAudPackagesDescriptor::Clone() const
 //
 
 H248_NotifyReply::H248_NotifyReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -7617,12 +7617,12 @@ PINDEX H248_NotifyReply::GetDataLength() const
 PBoolean H248_NotifyReply::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_errorDescriptor) && !m_errorDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7654,7 +7654,7 @@ PObject * H248_NotifyReply::Clone() const
 //
 
 H248_ObservedEventsDescriptor::H248_ObservedEventsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -7701,12 +7701,12 @@ PINDEX H248_ObservedEventsDescriptor::GetDataLength() const
 PBoolean H248_ObservedEventsDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestId.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_observedEventLst.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7795,7 +7795,7 @@ PObject * H248_EventName::Clone() const
 //
 
 H248_EventParameter::H248_EventParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -7848,14 +7848,14 @@ PINDEX H248_EventParameter::GetDataLength() const
 PBoolean H248_EventParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_eventParameterName.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_value.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extraInfo) && !m_extraInfo.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7888,7 +7888,7 @@ PObject * H248_EventParameter::Clone() const
 //
 
 H248_ServiceChangeReply::H248_ServiceChangeReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -7935,12 +7935,12 @@ PINDEX H248_ServiceChangeReply::GetDataLength() const
 PBoolean H248_ServiceChangeReply::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_serviceChangeResult.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7971,7 +7971,7 @@ PObject * H248_ServiceChangeReply::Clone() const
 //
 
 H248_TerminationID::H248_TerminationID(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_id.SetConstraints(PASN_Object::FixedConstraint, 1, 8);
 }
@@ -8019,12 +8019,12 @@ PINDEX H248_TerminationID::GetDataLength() const
 PBoolean H248_TerminationID::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_wildcard.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8055,7 +8055,7 @@ PObject * H248_TerminationID::Clone() const
 //
 
 H248_LocalControlDescriptor::H248_LocalControlDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -8116,16 +8116,16 @@ PINDEX H248_LocalControlDescriptor::GetDataLength() const
 PBoolean H248_LocalControlDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_streamMode) && !m_streamMode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_reserveValue) && !m_reserveValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_reserveGroup) && !m_reserveGroup.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_propertyParms.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8161,7 +8161,7 @@ PObject * H248_LocalControlDescriptor::Clone() const
 //
 
 H248_PropertyParm::H248_PropertyParm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8214,14 +8214,14 @@ PINDEX H248_PropertyParm::GetDataLength() const
 PBoolean H248_PropertyParm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_name.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_value.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extraInfo) && !m_extraInfo.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8254,7 +8254,7 @@ PObject * H248_PropertyParm::Clone() const
 //
 
 H248_LocalRemoteDescriptor::H248_LocalRemoteDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -8297,10 +8297,10 @@ PINDEX H248_LocalRemoteDescriptor::GetDataLength() const
 PBoolean H248_LocalRemoteDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_propGrps.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8330,7 +8330,7 @@ PObject * H248_LocalRemoteDescriptor::Clone() const
 //
 
 H248_TerminationStateDescriptor::H248_TerminationStateDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -8385,14 +8385,14 @@ PINDEX H248_TerminationStateDescriptor::GetDataLength() const
 PBoolean H248_TerminationStateDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_propertyParms.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventBufferControl) && !m_eventBufferControl.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceState) && !m_serviceState.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8426,7 +8426,7 @@ PObject * H248_TerminationStateDescriptor::Clone() const
 //
 
 H248_EventsDescriptor::H248_EventsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8475,12 +8475,12 @@ PINDEX H248_EventsDescriptor::GetDataLength() const
 PBoolean H248_EventsDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_requestID) && !m_requestID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_eventList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8512,7 +8512,7 @@ PObject * H248_EventsDescriptor::Clone() const
 //
 
 H248_SecondEventsDescriptor::H248_SecondEventsDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8561,12 +8561,12 @@ PINDEX H248_SecondEventsDescriptor::GetDataLength() const
 PBoolean H248_SecondEventsDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_requestID) && !m_requestID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_eventList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8598,7 +8598,7 @@ PObject * H248_SecondEventsDescriptor::Clone() const
 //
 
 H248_SecondRequestedActions::H248_SecondRequestedActions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -8655,14 +8655,14 @@ PINDEX H248_SecondRequestedActions::GetDataLength() const
 PBoolean H248_SecondRequestedActions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_keepActive) && !m_keepActive.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventDM) && !m_eventDM.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_signalsDescriptor) && !m_signalsDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8697,7 +8697,7 @@ PObject * H248_SecondRequestedActions::Clone() const
 //
 
 H248_EventSpec::H248_EventSpec(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8750,14 +8750,14 @@ PINDEX H248_EventSpec::GetDataLength() const
 PBoolean H248_EventSpec::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_eventName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_eventParList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8790,7 +8790,7 @@ PObject * H248_EventSpec::Clone() const
 //
 
 H248_SeqSigList::H248_SeqSigList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_id.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -8838,12 +8838,12 @@ PINDEX H248_SeqSigList::GetDataLength() const
 PBoolean H248_SeqSigList::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_signalList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8874,7 +8874,7 @@ PObject * H248_SeqSigList::Clone() const
 //
 
 H248_Signal::H248_Signal(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 5, true, 0)
 {
   m_duration.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -8952,22 +8952,22 @@ PINDEX H248_Signal::GetDataLength() const
 PBoolean H248_Signal::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_signalName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sigType) && !m_sigType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_duration) && !m_duration.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_notifyCompletion) && !m_notifyCompletion.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_keepActive) && !m_keepActive.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sigParList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9008,7 +9008,7 @@ PObject * H248_Signal::Clone() const
 //
 
 H248_SigParameter::H248_SigParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -9061,14 +9061,14 @@ PINDEX H248_SigParameter::GetDataLength() const
 PBoolean H248_SigParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sigParameterName.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_value.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extraInfo) && !m_extraInfo.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9101,7 +9101,7 @@ PObject * H248_SigParameter::Clone() const
 //
 
 H248_DigitMapDescriptor::H248_DigitMapDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 2, false, 0)
 {
 }
 
@@ -9152,12 +9152,12 @@ PINDEX H248_DigitMapDescriptor::GetDataLength() const
 PBoolean H248_DigitMapDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_digitMapName) && !m_digitMapName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_digitMapValue) && !m_digitMapValue.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9190,7 +9190,7 @@ PObject * H248_DigitMapDescriptor::Clone() const
 //
 
 H248_ServiceChangeResParm::H248_ServiceChangeResParm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 5, true, 0)
 {
   m_serviceChangeVersion.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
 }
@@ -9260,18 +9260,18 @@ PINDEX H248_ServiceChangeResParm::GetDataLength() const
 PBoolean H248_ServiceChangeResParm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_serviceChangeMgcId) && !m_serviceChangeMgcId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeAddress) && !m_serviceChangeAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeVersion) && !m_serviceChangeVersion.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeProfile) && !m_serviceChangeProfile.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_timestamp) && !m_timestamp.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9310,7 +9310,7 @@ PObject * H248_ServiceChangeResParm::Clone() const
 //
 
 H248_StatisticsParameter::H248_StatisticsParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -9359,12 +9359,12 @@ PINDEX H248_StatisticsParameter::GetDataLength() const
 PBoolean H248_StatisticsParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_statName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_statValue) && !m_statValue.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9396,7 +9396,7 @@ PObject * H248_StatisticsParameter::Clone() const
 //
 
 H248_NonStandardData::H248_NonStandardData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -9443,12 +9443,12 @@ PINDEX H248_NonStandardData::GetDataLength() const
 PBoolean H248_NonStandardData::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nonStandardIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9479,7 +9479,7 @@ PObject * H248_NonStandardData::Clone() const
 //
 
 H248_MegacoMessage::H248_MegacoMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -9528,12 +9528,12 @@ PINDEX H248_MegacoMessage::GetDataLength() const
 PBoolean H248_MegacoMessage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_authHeader) && !m_authHeader.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_mess.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9565,7 +9565,7 @@ PObject * H248_MegacoMessage::Clone() const
 //
 
 H248_ActionRequest::H248_ActionRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 2, false, 0)
 {
 }
 
@@ -9624,16 +9624,16 @@ PINDEX H248_ActionRequest::GetDataLength() const
 PBoolean H248_ActionRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_contextId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_contextRequest) && !m_contextRequest.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_contextAttrAuditReq) && !m_contextAttrAuditReq.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_commandRequests.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9668,7 +9668,7 @@ PObject * H248_ActionRequest::Clone() const
 //
 
 H248_ActionReply::H248_ActionReply(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 2, false, 0)
 {
 }
 
@@ -9727,16 +9727,16 @@ PINDEX H248_ActionReply::GetDataLength() const
 PBoolean H248_ActionReply::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_contextId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_errorDescriptor) && !m_errorDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_contextReply) && !m_contextReply.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_commandReply.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9771,7 +9771,7 @@ PObject * H248_ActionReply::Clone() const
 //
 
 H248_TopologyRequest::H248_TopologyRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 0, true, 1)
 {
 }
 
@@ -9824,16 +9824,16 @@ PINDEX H248_TopologyRequest::GetDataLength() const
 PBoolean H248_TopologyRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationFrom.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminationTo.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_topologyDirection.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_streamID, m_streamID))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9866,7 +9866,7 @@ PObject * H248_TopologyRequest::Clone() const
 //
 
 H248_SubtractRequest::H248_SubtractRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -9915,12 +9915,12 @@ PINDEX H248_SubtractRequest::GetDataLength() const
 PBoolean H248_SubtractRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_auditDescriptor) && !m_auditDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9952,7 +9952,7 @@ PObject * H248_SubtractRequest::Clone() const
 //
 
 H248_AuditRequest::H248_AuditRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -9999,12 +9999,12 @@ PINDEX H248_AuditRequest::GetDataLength() const
 PBoolean H248_AuditRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_auditDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10035,7 +10035,7 @@ PObject * H248_AuditRequest::Clone() const
 //
 
 H248_AuditResult::H248_AuditResult(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -10082,12 +10082,12 @@ PINDEX H248_AuditResult::GetDataLength() const
 PBoolean H248_AuditResult::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminationAuditResult.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10118,7 +10118,7 @@ PObject * H248_AuditResult::Clone() const
 //
 
 H248_IndAudMediaDescriptor::H248_IndAudMediaDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -10169,12 +10169,12 @@ PINDEX H248_IndAudMediaDescriptor::GetDataLength() const
 PBoolean H248_IndAudMediaDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_termStateDescr) && !m_termStateDescr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streams) && !m_streams.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10207,7 +10207,7 @@ PObject * H248_IndAudMediaDescriptor::Clone() const
 //
 
 H248_IndAudStreamParms::H248_IndAudStreamParms(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -10264,14 +10264,14 @@ PINDEX H248_IndAudStreamParms::GetDataLength() const
 PBoolean H248_IndAudStreamParms::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_localControlDescriptor) && !m_localControlDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_localDescriptor) && !m_localDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_remoteDescriptor) && !m_remoteDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10306,7 +10306,7 @@ PObject * H248_IndAudStreamParms::Clone() const
 //
 
 H248_IndAudSeqSigList::H248_IndAudSeqSigList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_id.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -10356,12 +10356,12 @@ PINDEX H248_IndAudSeqSigList::GetDataLength() const
 PBoolean H248_IndAudSeqSigList::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_signalList) && !m_signalList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10393,7 +10393,7 @@ PObject * H248_IndAudSeqSigList::Clone() const
 //
 
 H248_NotifyRequest::H248_NotifyRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -10446,14 +10446,14 @@ PINDEX H248_NotifyRequest::GetDataLength() const
 PBoolean H248_NotifyRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_observedEventsDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_errorDescriptor) && !m_errorDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10486,7 +10486,7 @@ PObject * H248_NotifyRequest::Clone() const
 //
 
 H248_ObservedEvent::H248_ObservedEvent(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -10545,16 +10545,16 @@ PINDEX H248_ObservedEvent::GetDataLength() const
 PBoolean H248_ObservedEvent::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_eventName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_eventParList.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_timeNotation) && !m_timeNotation.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10589,7 +10589,7 @@ PObject * H248_ObservedEvent::Clone() const
 //
 
 H248_MediaDescriptor::H248_MediaDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -10640,12 +10640,12 @@ PINDEX H248_MediaDescriptor::GetDataLength() const
 PBoolean H248_MediaDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_termStateDescr) && !m_termStateDescr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streams) && !m_streams.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10678,7 +10678,7 @@ PObject * H248_MediaDescriptor::Clone() const
 //
 
 H248_StreamParms::H248_StreamParms(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -10735,14 +10735,14 @@ PINDEX H248_StreamParms::GetDataLength() const
 PBoolean H248_StreamParms::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_localControlDescriptor) && !m_localControlDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_localDescriptor) && !m_localDescriptor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_remoteDescriptor) && !m_remoteDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10777,7 +10777,7 @@ PObject * H248_StreamParms::Clone() const
 //
 
 H248_MuxDescriptor::H248_MuxDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -10830,14 +10830,14 @@ PINDEX H248_MuxDescriptor::GetDataLength() const
 PBoolean H248_MuxDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_muxType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_termList.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10870,7 +10870,7 @@ PObject * H248_MuxDescriptor::Clone() const
 //
 
 H248_RequestedActions::H248_RequestedActions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
 }
 
@@ -10933,16 +10933,16 @@ PINDEX H248_RequestedActions::GetDataLength() const
 PBoolean H248_RequestedActions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_keepActive) && !m_keepActive.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventDM) && !m_eventDM.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_secondEvent) && !m_secondEvent.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_signalsDescriptor) && !m_signalsDescriptor.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10979,7 +10979,7 @@ PObject * H248_RequestedActions::Clone() const
 //
 
 H248_SecondRequestedEvent::H248_SecondRequestedEvent(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -11038,16 +11038,16 @@ PINDEX H248_SecondRequestedEvent::GetDataLength() const
 PBoolean H248_SecondRequestedEvent::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_pkgdName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventAction) && !m_eventAction.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_evParList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11082,7 +11082,7 @@ PObject * H248_SecondRequestedEvent::Clone() const
 //
 
 H248_ModemDescriptor::H248_ModemDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -11135,14 +11135,14 @@ PINDEX H248_ModemDescriptor::GetDataLength() const
 PBoolean H248_ModemDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_mtl.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_mpl.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11175,7 +11175,7 @@ PObject * H248_ModemDescriptor::Clone() const
 //
 
 H248_ServiceChangeParm::H248_ServiceChangeParm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 7, true, 1)
 {
   m_serviceChangeVersion.SetConstraints(PASN_Object::FixedConstraint, 0, 99);
   m_serviceChangeDelay.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
@@ -11268,28 +11268,28 @@ PINDEX H248_ServiceChangeParm::GetDataLength() const
 PBoolean H248_ServiceChangeParm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_serviceChangeMethod.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeAddress) && !m_serviceChangeAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeVersion) && !m_serviceChangeVersion.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeProfile) && !m_serviceChangeProfile.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_serviceChangeReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeDelay) && !m_serviceChangeDelay.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_serviceChangeMgcId) && !m_serviceChangeMgcId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_timeStamp) && !m_timeStamp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceChangeInfo, m_serviceChangeInfo))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11335,7 +11335,7 @@ PObject * H248_ServiceChangeParm::Clone() const
 //
 
 H248_IndAudStreamDescriptor::H248_IndAudStreamDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -11382,12 +11382,12 @@ PINDEX H248_IndAudStreamDescriptor::GetDataLength() const
 PBoolean H248_IndAudStreamDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_streamParms.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11418,7 +11418,7 @@ PObject * H248_IndAudStreamDescriptor::Clone() const
 //
 
 H248_ServiceChangeRequest::H248_ServiceChangeRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -11465,12 +11465,12 @@ PINDEX H248_ServiceChangeRequest::GetDataLength() const
 PBoolean H248_ServiceChangeRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_terminationID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_serviceChangeParms.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11501,7 +11501,7 @@ PObject * H248_ServiceChangeRequest::Clone() const
 //
 
 H248_StreamDescriptor::H248_StreamDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -11548,12 +11548,12 @@ PINDEX H248_StreamDescriptor::GetDataLength() const
 PBoolean H248_StreamDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_streamParms.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11584,7 +11584,7 @@ PObject * H248_StreamDescriptor::Clone() const
 //
 
 H248_RequestedEvent::H248_RequestedEvent(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -11643,16 +11643,16 @@ PINDEX H248_RequestedEvent::GetDataLength() const
 PBoolean H248_RequestedEvent::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_pkgdName.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_streamID) && !m_streamID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_eventAction) && !m_eventAction.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_evParList.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

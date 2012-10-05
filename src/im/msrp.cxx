@@ -960,7 +960,7 @@ bool MSRPProtocol::ReadMessage(int & command,
   do {
     if (!ReadLine(line, false)) {
       PTRACE(2, "MSRP\tError while reading MSRP command");
-      return PFalse;
+      return false;
     }
   } while (line.IsEmpty());
 

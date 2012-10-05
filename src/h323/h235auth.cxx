@@ -52,7 +52,7 @@
 
 H235Authenticator::H235Authenticator()
 {
-  enabled = PTrue;
+  enabled = true;
   sentRandomSequenceNumber = PRandom::Number()&INT_MAX;
   lastRandomSequenceNumber = 0;
   lastTimestamp = 0;
@@ -84,7 +84,7 @@ PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
   PWaitAndSignal m(mutex);
 
   if (!IsActive())
-    return PFalse;
+    return false;
 
   H235_ClearToken * clearToken = CreateClearToken();
   if (clearToken != NULL) {
@@ -110,7 +110,7 @@ PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
   if ((cryptoToken = CreateCryptoToken(true)) != NULL)
     cryptoTokens.Append(cryptoToken);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -128,7 +128,7 @@ H225_CryptoH323Token * H235Authenticator::CreateCryptoToken(bool)
 
 PBoolean H235Authenticator::Finalise(PBYTEArray & /*rawPDU*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -176,13 +176,13 @@ H235Authenticator::ValidationResult H235Authenticator::ValidateCryptoToken(
 
 PBoolean H235Authenticator::UseGkAndEpIdentifiers() const
 {
-  return PFalse;
+  return false;
 }
 
 
 PBoolean H235Authenticator::IsSecuredPDU(unsigned, PBoolean) const
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -202,7 +202,7 @@ PBoolean H235Authenticator::AddCapability(unsigned mechanism,
   if (!IsActive()) {
     PTRACE(2, "RAS\tAuthenticator " << *this
             << " not active during GRQ SetCapability negotiation");
-    return PFalse;
+    return false;
   }
 
   PINDEX i;
@@ -226,7 +226,7 @@ PBoolean H235Authenticator::AddCapability(unsigned mechanism,
     algorithmOIDs[size] = oid;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -245,7 +245,7 @@ void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
   cryptoTokens.RemoveAll();
 
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PFalse) &&
+    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), false) &&
         iterAuth->PrepareTokens(clearTokens, cryptoTokens)) {
       PTRACE(4, "H235RAS\tPrepared PDU with authenticator " << *iterAuth);
     }
@@ -268,10 +268,10 @@ H235Authenticator::ValidationResult
                                        unsigned cryptoOptionalField,
                                        const PBYTEArray & rawPDU)
 {
-  PBoolean noneActive = PTrue;
+  PBoolean noneActive = true;
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsActive() && iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
-      noneActive = PFalse;
+    if (iterAuth->IsActive() && iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), true)) {
+      noneActive = false;
       break;
     }
   }
@@ -289,7 +289,7 @@ H235Authenticator::ValidationResult
   }
 
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
+    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), true)) {
       H235Authenticator::ValidationResult result = iterAuth->ValidateTokens(clearTokens, cryptoTokens, rawPDU);
       switch (result) {
         case H235Authenticator::e_OK :
@@ -484,7 +484,7 @@ PBoolean H235AuthSimpleMD5::IsSecuredPDU(unsigned rasPDU, PBoolean received) con
       return received ? !remoteId.IsEmpty() : !localId.IsEmpty();
 
     default :
-      return PFalse;
+      return false;
   }
 }
 
@@ -634,7 +634,7 @@ PBoolean H235AuthCAT::IsCapability(const H235_AuthenticationMechanism & mechanis
 {
   if (mechanism.GetTag() != H235_AuthenticationMechanism::e_authenticationBES ||
          algorithmOID.AsString() != OID_CAT)
-    return PFalse;
+    return false;
 
   const H235_AuthenticationBES & bes = mechanism;
   return bes.GetTag() == H235_AuthenticationBES::e_radius;
@@ -646,11 +646,11 @@ PBoolean H235AuthCAT::SetCapability(H225_ArrayOf_AuthenticationMechanism & mecha
 {
   if (!AddCapability(H235_AuthenticationMechanism::e_authenticationBES, OID_CAT,
                      mechanisms, algorithmOIDs))
-    return PFalse;
+    return false;
 
   H235_AuthenticationBES & bes = mechanisms[mechanisms.GetSize()-1];
   bes.SetTag(H235_AuthenticationBES::e_radius);
-  return PTrue;
+  return true;
 }
 
 
@@ -662,7 +662,7 @@ PBoolean H235AuthCAT::IsSecuredPDU(unsigned rasPDU, PBoolean received) const
       return received ? !remoteId.IsEmpty() : !localId.IsEmpty();
 
     default :
-      return PFalse;
+      return false;
   }
 }
 

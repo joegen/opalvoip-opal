@@ -388,7 +388,7 @@ class H46019UDPSocket : public PUDPSocket
     void SetTTL(unsigned val);
 
      /**Read a datagram from a remote computer
-       @return PTrue if any bytes were sucessfully read.
+       @return true if any bytes were sucessfully read.
        */
     virtual PBoolean ReadFrom(
       void * buf,     ///< Data to be written as URGENT TCP data.
@@ -398,7 +398,7 @@ class H46019UDPSocket : public PUDPSocket
     );
 
     /**Write a datagram to a remote computer.
-       @return PTrue if all the bytes were sucessfully written.
+       @return true if all the bytes were sucessfully written.
      */
     virtual PBoolean WriteTo(
       const void * buf,     ///< Data to be written as URGENT TCP data.
@@ -468,7 +468,7 @@ class H46019UDPSocket : public PUDPSocket
     PMutex probeMutex;
 
     /**Write a datagram to a remote computer.
-       @return PTrue if all the bytes were sucessfully written.
+       @return true if all the bytes were sucessfully written.
      */
     virtual PBoolean Internal_WriteTo(
       const Slice * slices, ///< Data to be written as array of slices.
@@ -478,7 +478,7 @@ class H46019UDPSocket : public PUDPSocket
     );
   
     /**Write a datagram to a remote computer.
-   @return PTrue if all the bytes were sucessfully written.
+   @return true if all the bytes were sucessfully written.
      */
     virtual PBoolean Internal_WriteTo(
       const void * buf,     ///< Data to be written.

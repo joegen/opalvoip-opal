@@ -28,7 +28,7 @@ const static PASN_Names Names_T38_Type_of_msg[]={
 //
 
 T38_Type_of_msg::T38_Type_of_msg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_Type_of_msg,2
 #endif
@@ -86,14 +86,14 @@ PBoolean T38_Type_of_msg::CreateObject()
   switch (tag) {
     case e_t30_indicator :
       choice = new T38_Type_of_msg_t30_indicator();
-      return PTrue;
+      return true;
     case e_data :
       choice = new T38_Type_of_msg_data();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -193,7 +193,7 @@ const static PASN_Names Names_T38_Type_of_msg_t30_indicator[]={
 //
 
 T38_Type_of_msg_t30_indicator::T38_Type_of_msg_t30_indicator(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 15, PTrue
+  : PASN_Enumeration(tag, tagClass, 15, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_Type_of_msg_t30_indicator,16
 #endif
@@ -236,7 +236,7 @@ const static PASN_Names Names_T38_Type_of_msg_data[]={
 //
 
 T38_Type_of_msg_data::T38_Type_of_msg_data(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 8, PTrue
+  : PASN_Enumeration(tag, tagClass, 8, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_Type_of_msg_data,9
 #endif
@@ -273,7 +273,7 @@ const static PASN_Names Names_T38_UDPTLPacket_error_recovery[]={
 //
 
 T38_UDPTLPacket_error_recovery::T38_UDPTLPacket_error_recovery(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_UDPTLPacket_error_recovery,2
 #endif
@@ -331,14 +331,14 @@ PBoolean T38_UDPTLPacket_error_recovery::CreateObject()
   switch (tag) {
     case e_secondary_ifp_packets :
       choice = new T38_UDPTLPacket_error_recovery_secondary_ifp_packets();
-      return PTrue;
+      return true;
     case e_fec_info :
       choice = new T38_UDPTLPacket_error_recovery_fec_info();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -368,7 +368,7 @@ const static PASN_Names Names_T38_Data_Field_subtype_field_type[]={
 //
 
 T38_Data_Field_subtype_field_type::T38_Data_Field_subtype_field_type(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 7, PTrue
+  : PASN_Enumeration(tag, tagClass, 7, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_Data_Field_subtype_field_type,8
 #endif
@@ -410,7 +410,7 @@ const static PASN_Names Names_T38_PreCorrigendum_Data_Field_subtype_field_type[]
 //
 
 T38_PreCorrigendum_Data_Field_subtype_field_type::T38_PreCorrigendum_Data_Field_subtype_field_type(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 7, PFalse
+  : PASN_Enumeration(tag, tagClass, 7, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_T38_PreCorrigendum_Data_Field_subtype_field_type,8
 #endif
@@ -502,7 +502,7 @@ PObject * T38_ArrayOf_PASN_OctetString::Clone() const
 //
 
 T38_IFPPacket::T38_IFPPacket(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -551,12 +551,12 @@ PINDEX T38_IFPPacket::GetDataLength() const
 PBoolean T38_IFPPacket::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_type_of_msg.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_data_field) && !m_data_field.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -588,7 +588,7 @@ PObject * T38_IFPPacket::Clone() const
 //
 
 T38_PreCorrigendum_IFPPacket::T38_PreCorrigendum_IFPPacket(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
 }
 
@@ -637,12 +637,12 @@ PINDEX T38_PreCorrigendum_IFPPacket::GetDataLength() const
 PBoolean T38_PreCorrigendum_IFPPacket::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_type_of_msg.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_data_field) && !m_data_field.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -674,7 +674,7 @@ PObject * T38_PreCorrigendum_IFPPacket::Clone() const
 //
 
 T38_Data_Field_subtype::T38_Data_Field_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_field_data.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -724,12 +724,12 @@ PINDEX T38_Data_Field_subtype::GetDataLength() const
 PBoolean T38_Data_Field_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_field_type.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_field_data) && !m_field_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -761,7 +761,7 @@ PObject * T38_Data_Field_subtype::Clone() const
 //
 
 T38_PreCorrigendum_Data_Field_subtype::T38_PreCorrigendum_Data_Field_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 1, false, 0)
 {
   m_field_data.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -811,12 +811,12 @@ PINDEX T38_PreCorrigendum_Data_Field_subtype::GetDataLength() const
 PBoolean T38_PreCorrigendum_Data_Field_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_field_type.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_field_data) && !m_field_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -867,7 +867,7 @@ PObject * T38_UDPTLPacket_primary_ifp_packet::Clone() const
 //
 
 T38_UDPTLPacket_error_recovery_fec_info::T38_UDPTLPacket_error_recovery_fec_info(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -914,12 +914,12 @@ PINDEX T38_UDPTLPacket_error_recovery_fec_info::GetDataLength() const
 PBoolean T38_UDPTLPacket_error_recovery_fec_info::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_fec_npackets.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_fec_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -969,7 +969,7 @@ PObject * T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype::Clone() 
 //
 
 T38_UDPTLPacket::T38_UDPTLPacket(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
   m_seq_number.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -1021,14 +1021,14 @@ PINDEX T38_UDPTLPacket::GetDataLength() const
 PBoolean T38_UDPTLPacket::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_seq_number.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_primary_ifp_packet.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_error_recovery.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

@@ -49,7 +49,7 @@ OpalPluginLIDManager::OpalPluginLIDManager(PPluginManager * mgr)
   : PPluginModuleManager(PLUGIN_LID_GET_LIDS_FN_STR, mgr)
 {
   // cause the plugin manager to load all dynamic plugins
-  pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), PTrue);
+  pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), true);
 }
 
 
@@ -223,7 +223,7 @@ PluginLID_Errors OpalPluginLID::CheckError(PluginLID_Errors error, const char * 
 PBoolean OpalPluginLID::Open(const PString & device)
 {
   if (BAD_FN(Open))
-    return PFalse;
+    return false;
 
   Close();
 
@@ -243,28 +243,28 @@ PBoolean OpalPluginLID::Open(const PString & device)
 
         if (!m_player.Open(soundDevice, PSoundChannel::Player)) {
           PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
-          return PFalse;
+          return false;
         }
 
         if (!m_recorder.Open(soundDevice, PSoundChannel::Recorder)) {
           PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
-          return PFalse;
+          return false;
         }
       }
       break;
 
     case PluginLID_NoSuchDevice :
       PTRACE(1, "LID Plugin\tNo such device as \"" << device << "\" in " << m_definition.name);
-      return PFalse;
+      return false;
 
     default :
       PTRACE(1, "LID Plugin\tOpen of \"" << device << "\" in " << m_definition.name << " returned error " << osError);
-      return PFalse;
+      return false;
   }
 
   m_deviceName = device;
   os_handle = 1;
-  return PTrue;
+  return true;
 }
 
 
@@ -277,7 +277,7 @@ PBoolean OpalPluginLID::Close()
   m_recorder.Close();
 
   if (BAD_FN(Close))
-    return PFalse;
+    return false;
 
   return m_definition.Close(m_context) == PluginLID_NoError;
 }
@@ -359,11 +359,11 @@ PBoolean OpalPluginLID::HookFlash(unsigned line, unsigned flashTime)
       return OpalLineInterfaceDevice::HookFlash(line, flashTime);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -384,7 +384,7 @@ PBoolean OpalPluginLID::IsLineRinging(unsigned line, DWORD * cadence)
   if (CHECK_FN(IsLineRinging, (m_context, line, (unsigned long *)cadence)) == PluginLID_NoError)
     return *cadence != 0;
 
-  return PFalse;
+  return false;
 }
 
 
@@ -423,7 +423,7 @@ PBoolean OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, const unsigned 
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -438,7 +438,7 @@ PBoolean OpalPluginLID::SetLineConnected(unsigned line)
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -454,7 +454,7 @@ PBoolean OpalPluginLID::IsLineConnected(unsigned line)
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -470,7 +470,7 @@ PBoolean OpalPluginLID::IsLineDisconnected(unsigned line, PBoolean checkForWink)
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -527,11 +527,11 @@ PBoolean OpalPluginLID::SetReadFormat(unsigned line, const OpalMediaFormat & med
       return mediaFormat == OPAL_PCM16;
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -542,11 +542,11 @@ PBoolean OpalPluginLID::SetWriteFormat(unsigned line, const OpalMediaFormat & me
       return mediaFormat == OPAL_PCM16;
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -591,11 +591,11 @@ PBoolean OpalPluginLID::StopReading(unsigned line)
       return m_recorder.Abort();
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -610,11 +610,11 @@ PBoolean OpalPluginLID::StopWriting(unsigned line)
       return m_player.Abort();
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -625,11 +625,11 @@ PBoolean OpalPluginLID::SetReadFrameSize(unsigned line, PINDEX frameSize)
       return m_recorder.SetBuffers(frameSize, 2000/frameSize+2); // Want about 250ms of buffering
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -642,11 +642,11 @@ PBoolean OpalPluginLID::SetWriteFrameSize(unsigned line, PINDEX frameSize)
       return m_player.SetBuffers(frameSize, 1000/frameSize+2); // Want about 125ms of buffering
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
    default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -691,17 +691,17 @@ PBoolean OpalPluginLID::ReadFrame(unsigned line, void * buffer, PINDEX & count)
     case PluginLID_UnimplementedFunction :
       count = GetReadFrameSize(line);
       if (!m_recorder.Read(buffer, count))
-        return PFalse;
+        return false;
       count = m_recorder.GetLastReadCount();
-      return PTrue;
+      return true;
 
     case PluginLID_NoError :
       count = uiCount;
-      return PTrue;
+      return true;
 
    default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -714,17 +714,17 @@ PBoolean OpalPluginLID::WriteFrame(unsigned line, const void * buffer, PINDEX co
   switch (CHECK_FN(WriteFrame, (m_context, line, buffer, count, &uiCount))) {
     case PluginLID_UnimplementedFunction :
       if (!m_player.Write(buffer, count))
-        return PFalse;
+        return false;
       written = m_player.GetLastWriteCount();
-      return PTrue;
+      return true;
 
     case PluginLID_NoError :
       written = uiCount;
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -743,11 +743,11 @@ PBoolean OpalPluginLID::EnableAudio(unsigned line, PBoolean enable)
       return OpalLineInterfaceDevice::EnableAudio(line, enable);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -767,11 +767,11 @@ PBoolean OpalPluginLID::SetRecordVolume(unsigned line, unsigned volume)
       return m_recorder.SetVolume(volume);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -782,11 +782,11 @@ PBoolean OpalPluginLID::SetPlayVolume(unsigned line, unsigned volume)
       return m_player.SetVolume(volume);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -797,11 +797,11 @@ PBoolean OpalPluginLID::GetRecordVolume(unsigned line, unsigned & volume)
       return m_recorder.GetVolume(volume);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default : ;
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -812,12 +812,12 @@ PBoolean OpalPluginLID::GetPlayVolume(unsigned line, unsigned & volume)
       return m_player.GetVolume(volume);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
       default:;
 
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -863,7 +863,7 @@ PBoolean OpalPluginLID::GetCallerID(unsigned line, PString & idString, PBoolean 
 PBoolean OpalPluginLID::SetCallerID(unsigned line, const PString & idString)
 {
   if (idString.IsEmpty())
-    return PFalse;
+    return false;
 
   return CHECK_FN(SetCallerID, (m_context, line, idString)) == PluginLID_NoError;
 }
@@ -927,13 +927,13 @@ PBoolean OpalPluginLID::WaitForTone(unsigned line, CallProgressTones tone, unsig
       return OpalLineInterfaceDevice::WaitForTone(line, tone, timeout);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default:
       break;
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -1033,13 +1033,13 @@ PBoolean OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
       return StartTonePlayerThread(tone);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default:
       break;
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -1059,7 +1059,7 @@ PBoolean OpalPluginLID::StopTone(unsigned line)
   switch (CHECK_FN(StopTone, (m_context, line))) {
     case PluginLID_UnimplementedFunction :
     case PluginLID_NoError :
-      return PTrue;
+      return true;
     default:
       break;
   }
@@ -1125,13 +1125,13 @@ PBoolean OpalPluginLID::SetCountryCode(T35CountryCodes country)
       return OpalLineInterfaceDevice::SetCountryCode(country);
 
     case PluginLID_NoError :
-      return PTrue;
+      return true;
 
     default:
       break;
   }
 
-  return PFalse;
+  return false;
 }
 
 

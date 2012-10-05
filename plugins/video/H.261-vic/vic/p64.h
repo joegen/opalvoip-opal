@@ -105,7 +105,7 @@ class P64Decoder{
 	virtual bool decode(
     const unsigned char *hdrPtr, // points to RTP H261 header at start of packet
     int buffLen, // length of RTP H261 packet to decode, including header
-    bool lostPreviousPacket); // PTrue if previous packet lost or out of order
+    bool lostPreviousPacket); // true if previous packet lost or out of order
 	virtual void sync();
 	inline void bb(int& x, int& y, int& w, int& h) {
 		x = bbx_; y = bby_; w = bbw_; h = bbh_;

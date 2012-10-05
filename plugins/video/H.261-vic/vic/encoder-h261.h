@@ -223,17 +223,17 @@ class H261Encoder :public  Encoder {
 	u_int blkno_[12];	/* for CR */
 
   const VideoFrame *gVf; // current video frame YUV data
-  bool gPicture; // if PTrue, send picture layer header
+  bool gPicture; // if true, send picture layer header
   int gHdrGOBN; // next GOB number for last encoded MB
   int gNxtGOB; // GOB number for next marcroblock to be considered for encoding
   int gGobMax; // maximum GOB number in frame
-  bool gGOBhdrNxt; // set PTrue when GOB header is next data
-  bool gSendGOBhdr; // set PTrue when GOB header must be encoded before next MB
+  bool gGOBhdrNxt; // set true when GOB header is next data
+  bool gSendGOBhdr; // set true when GOB header must be encoded before next MB
   int gHdrMBAP; // address of last macroblock encoded in previous packet 1..33
   int gNxtMBA; // address of next macroblock to be considered for encoding
   int gHdrQUANT; // QUANT in effect for next MB in buffer
   int gStep; // Macro Block step size
-  bool gDone; // Set PTrue when encoding of frame is done
+  bool gDone; // Set true when encoding of frame is done
   int gDbase;  //offset from gData where valid data starts
   int gNbytes; // number of bytes in gData buffer from previous packet
   u_int gloff;

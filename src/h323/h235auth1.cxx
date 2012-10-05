@@ -235,7 +235,7 @@ H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken(bool digits)
 PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
 {
   if (!IsActive())
-    return PFalse;
+    return false;
 
   // Find the pattern
 
@@ -250,7 +250,7 @@ PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   if (foundat == -1) {
     //Can't find the search pattern in the ASN1 packet.
     PTRACE(1, "H235RAS\tPDU not prepared for H235AuthProcedure1");
-    return PFalse;
+    return false;
   }
   
   // Zero out the search pattern
@@ -272,27 +272,27 @@ PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
   PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed: \"" << password << '"');
-  return PTrue;
+  return true;
 }
 
 
 static PBoolean CheckOID(const PASN_ObjectId & oid1, const PASN_ObjectId & oid2)
 {
   if (oid1.GetSize() != oid2.GetSize())
-    return PFalse;
+    return false;
 
   PINDEX i;
   for (i = 0; i < OID_VERSION_OFFSET; i++) {
     if (oid1[i] != oid2[i])
-      return PFalse;
+      return false;
   }
 
   for (i++; i < oid1.GetSize(); i++) {
     if (oid1[i] != oid2[i])
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -478,7 +478,7 @@ PBoolean H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism 
 
 PBoolean H235AuthProcedure1::UseGkAndEpIdentifiers() const
 {
-  return PTrue;
+  return true;
 }
 
 

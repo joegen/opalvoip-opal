@@ -37,7 +37,7 @@ const static PASN_Names Names_H4503_H323CallDiversionOperations[]={
 //
 
 H4503_H323CallDiversionOperations::H4503_H323CallDiversionOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 100, PFalse
+  : PASN_Enumeration(tag, tagClass, 100, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_H323CallDiversionOperations,10
 #endif
@@ -74,7 +74,7 @@ const static PASN_Names Names_H4503_RESULT_activateDiversionQ[]={
 //
 
 H4503_RESULT_activateDiversionQ::H4503_RESULT_activateDiversionQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_RESULT_activateDiversionQ,2
 #endif
@@ -132,14 +132,14 @@ PBoolean H4503_RESULT_activateDiversionQ::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -164,7 +164,7 @@ const static PASN_Names Names_H4503_RESULT_deactivateDiversionQ[]={
 //
 
 H4503_RESULT_deactivateDiversionQ::H4503_RESULT_deactivateDiversionQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_RESULT_deactivateDiversionQ,2
 #endif
@@ -222,14 +222,14 @@ PBoolean H4503_RESULT_deactivateDiversionQ::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -254,7 +254,7 @@ const static PASN_Names Names_H4503_RESULT_checkRestriction[]={
 //
 
 H4503_RESULT_checkRestriction::H4503_RESULT_checkRestriction(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_RESULT_checkRestriction,2
 #endif
@@ -312,14 +312,14 @@ PBoolean H4503_RESULT_checkRestriction::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -344,7 +344,7 @@ const static PASN_Names Names_H4503_RESULT_callRerouting[]={
 //
 
 H4503_RESULT_callRerouting::H4503_RESULT_callRerouting(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_RESULT_callRerouting,2
 #endif
@@ -402,14 +402,14 @@ PBoolean H4503_RESULT_callRerouting::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -434,7 +434,7 @@ const static PASN_Names Names_H4503_ARGUMENT_cfnrDivertedLegFailed[]={
 //
 
 H4503_ARGUMENT_cfnrDivertedLegFailed::H4503_ARGUMENT_cfnrDivertedLegFailed(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_cfnrDivertedLegFailed,2
 #endif
@@ -492,14 +492,14 @@ PBoolean H4503_ARGUMENT_cfnrDivertedLegFailed::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -525,7 +525,7 @@ const static PASN_Names Names_H4503_DiversionReason[]={
 //
 
 H4503_DiversionReason::H4503_DiversionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, PTrue
+  : PASN_Enumeration(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_DiversionReason,4
 #endif
@@ -594,7 +594,7 @@ const static PASN_Names Names_H4503_Procedure[]={
 //
 
 H4503_Procedure::H4503_Procedure(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_Procedure,3
 #endif
@@ -631,7 +631,7 @@ const static PASN_Names Names_H4503_SubscriptionOption[]={
 //
 
 H4503_SubscriptionOption::H4503_SubscriptionOption(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2, PTrue
+  : PASN_Enumeration(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_SubscriptionOption,3
 #endif
@@ -672,7 +672,7 @@ const static PASN_Names Names_H4503_CallDiversionErrors[]={
 //
 
 H4503_CallDiversionErrors::H4503_CallDiversionErrors(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1008, PFalse
+  : PASN_Enumeration(tag, tagClass, 1008, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_CallDiversionErrors,7
 #endif
@@ -707,7 +707,7 @@ const static PASN_Names Names_H4503_BasicService[]={
 //
 
 H4503_BasicService::H4503_BasicService(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 0, PTrue
+  : PASN_Enumeration(tag, tagClass, 0, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_BasicService,1
 #endif
@@ -775,7 +775,7 @@ const static PASN_Names Names_H4503_ARGUMENT_activateDiversionQ_extension[]={
 //
 
 H4503_ARGUMENT_activateDiversionQ_extension::H4503_ARGUMENT_activateDiversionQ_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_activateDiversionQ_extension,2
 #endif
@@ -833,14 +833,14 @@ PBoolean H4503_ARGUMENT_activateDiversionQ_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -865,7 +865,7 @@ const static PASN_Names Names_H4503_ARGUMENT_deactivateDiversionQ_extension[]={
 //
 
 H4503_ARGUMENT_deactivateDiversionQ_extension::H4503_ARGUMENT_deactivateDiversionQ_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_deactivateDiversionQ_extension,2
 #endif
@@ -923,14 +923,14 @@ PBoolean H4503_ARGUMENT_deactivateDiversionQ_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -955,7 +955,7 @@ const static PASN_Names Names_H4503_ARGUMENT_interrogateDiversionQ_extension[]={
 //
 
 H4503_ARGUMENT_interrogateDiversionQ_extension::H4503_ARGUMENT_interrogateDiversionQ_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_interrogateDiversionQ_extension,2
 #endif
@@ -1013,14 +1013,14 @@ PBoolean H4503_ARGUMENT_interrogateDiversionQ_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1045,7 +1045,7 @@ const static PASN_Names Names_H4503_ARGUMENT_checkRestriction_extension[]={
 //
 
 H4503_ARGUMENT_checkRestriction_extension::H4503_ARGUMENT_checkRestriction_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_checkRestriction_extension,2
 #endif
@@ -1103,14 +1103,14 @@ PBoolean H4503_ARGUMENT_checkRestriction_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1135,7 +1135,7 @@ const static PASN_Names Names_H4503_ARGUMENT_callRerouting_extension[]={
 //
 
 H4503_ARGUMENT_callRerouting_extension::H4503_ARGUMENT_callRerouting_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_callRerouting_extension,2
 #endif
@@ -1193,14 +1193,14 @@ PBoolean H4503_ARGUMENT_callRerouting_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1225,7 +1225,7 @@ const static PASN_Names Names_H4503_ARGUMENT_divertingLegInformation1_extension[
 //
 
 H4503_ARGUMENT_divertingLegInformation1_extension::H4503_ARGUMENT_divertingLegInformation1_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_divertingLegInformation1_extension,2
 #endif
@@ -1283,14 +1283,14 @@ PBoolean H4503_ARGUMENT_divertingLegInformation1_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1315,7 +1315,7 @@ const static PASN_Names Names_H4503_ARGUMENT_divertingLegInformation2_extension[
 //
 
 H4503_ARGUMENT_divertingLegInformation2_extension::H4503_ARGUMENT_divertingLegInformation2_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_divertingLegInformation2_extension,2
 #endif
@@ -1373,14 +1373,14 @@ PBoolean H4503_ARGUMENT_divertingLegInformation2_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1405,7 +1405,7 @@ const static PASN_Names Names_H4503_ARGUMENT_divertingLegInformation3_extension[
 //
 
 H4503_ARGUMENT_divertingLegInformation3_extension::H4503_ARGUMENT_divertingLegInformation3_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_divertingLegInformation3_extension,2
 #endif
@@ -1463,14 +1463,14 @@ PBoolean H4503_ARGUMENT_divertingLegInformation3_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1495,7 +1495,7 @@ const static PASN_Names Names_H4503_ARGUMENT_divertingLegInformation4_extension[
 //
 
 H4503_ARGUMENT_divertingLegInformation4_extension::H4503_ARGUMENT_divertingLegInformation4_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_ARGUMENT_divertingLegInformation4_extension,2
 #endif
@@ -1553,14 +1553,14 @@ PBoolean H4503_ARGUMENT_divertingLegInformation4_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1585,7 +1585,7 @@ const static PASN_Names Names_H4503_IntResult_extension[]={
 //
 
 H4503_IntResult_extension::H4503_IntResult_extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4503_IntResult_extension,2
 #endif
@@ -1643,14 +1643,14 @@ PBoolean H4503_IntResult_extension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4503_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1668,7 +1668,7 @@ PObject * H4503_IntResult_extension::Clone() const
 //
 
 H4503_ARGUMENT_activateDiversionQ::H4503_ARGUMENT_activateDiversionQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1733,20 +1733,20 @@ PINDEX H4503_ARGUMENT_activateDiversionQ::GetDataLength() const
 PBoolean H4503_ARGUMENT_activateDiversionQ::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_procedure.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_divertedToAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_activatingUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1782,7 +1782,7 @@ PObject * H4503_ARGUMENT_activateDiversionQ::Clone() const
 //
 
 H4503_ARGUMENT_deactivateDiversionQ::H4503_ARGUMENT_deactivateDiversionQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1843,18 +1843,18 @@ PINDEX H4503_ARGUMENT_deactivateDiversionQ::GetDataLength() const
 PBoolean H4503_ARGUMENT_deactivateDiversionQ::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_procedure.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_deactivatingUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1889,7 +1889,7 @@ PObject * H4503_ARGUMENT_deactivateDiversionQ::Clone() const
 //
 
 H4503_ARGUMENT_interrogateDiversionQ::H4503_ARGUMENT_interrogateDiversionQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1950,18 +1950,18 @@ PINDEX H4503_ARGUMENT_interrogateDiversionQ::GetDataLength() const
 PBoolean H4503_ARGUMENT_interrogateDiversionQ::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_procedure.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_interrogatingUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1996,7 +1996,7 @@ PObject * H4503_ARGUMENT_interrogateDiversionQ::Clone() const
 //
 
 H4503_ARGUMENT_checkRestriction::H4503_ARGUMENT_checkRestriction(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -2053,16 +2053,16 @@ PINDEX H4503_ARGUMENT_checkRestriction::GetDataLength() const
 PBoolean H4503_ARGUMENT_checkRestriction::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_divertedToNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2096,7 +2096,7 @@ PObject * H4503_ARGUMENT_checkRestriction::Clone() const
 //
 
 H4503_ARGUMENT_callRerouting::H4503_ARGUMENT_callRerouting(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 7, true, 0)
 {
   m_diversionCounter.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
   m_callingInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -2209,36 +2209,36 @@ PINDEX H4503_ARGUMENT_callRerouting::GetDataLength() const
 PBoolean H4503_ARGUMENT_callRerouting::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_reroutingReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalReroutingReason) && !m_originalReroutingReason.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_calledAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_diversionCounter.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h225InfoElement.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_lastReroutingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_subscriptionOption.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callingPartySubaddress) && !m_callingPartySubaddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callingNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callingInfo) && !m_callingInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalCalledNr) && !m_originalCalledNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectingInfo) && !m_redirectingInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalCalledInfo) && !m_originalCalledInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2288,7 +2288,7 @@ PObject * H4503_ARGUMENT_callRerouting::Clone() const
 //
 
 H4503_ARGUMENT_divertingLegInformation1::H4503_ARGUMENT_divertingLegInformation1(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
   m_nominatedInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
   m_redirectingInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -2365,22 +2365,22 @@ PINDEX H4503_ARGUMENT_divertingLegInformation1::GetDataLength() const
 PBoolean H4503_ARGUMENT_divertingLegInformation1::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_diversionReason.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_subscriptionOption.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nominatedNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nominatedInfo) && !m_nominatedInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectingNr) && !m_redirectingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectingInfo) && !m_redirectingInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2420,7 +2420,7 @@ PObject * H4503_ARGUMENT_divertingLegInformation1::Clone() const
 //
 
 H4503_ARGUMENT_divertingLegInformation2::H4503_ARGUMENT_divertingLegInformation2(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 6, true, 0)
 {
   m_diversionCounter.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
   m_redirectingInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -2506,24 +2506,24 @@ PINDEX H4503_ARGUMENT_divertingLegInformation2::GetDataLength() const
 PBoolean H4503_ARGUMENT_divertingLegInformation2::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_diversionCounter.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_diversionReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalDiversionReason) && !m_originalDiversionReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_divertingNr) && !m_divertingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalCalledNr) && !m_originalCalledNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectingInfo) && !m_redirectingInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originalCalledInfo) && !m_originalCalledInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2566,7 +2566,7 @@ PObject * H4503_ARGUMENT_divertingLegInformation2::Clone() const
 //
 
 H4503_ARGUMENT_divertingLegInformation3::H4503_ARGUMENT_divertingLegInformation3(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_redirectionInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -2628,16 +2628,16 @@ PINDEX H4503_ARGUMENT_divertingLegInformation3::GetDataLength() const
 PBoolean H4503_ARGUMENT_divertingLegInformation3::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_presentationAllowedIndicator.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectionNr) && !m_redirectionNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectionInfo) && !m_redirectionInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2673,7 +2673,7 @@ PObject * H4503_ARGUMENT_divertingLegInformation3::Clone() const
 //
 
 H4503_ARGUMENT_divertingLegInformation4::H4503_ARGUMENT_divertingLegInformation4(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_callingInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
   m_nominatedInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -2748,22 +2748,22 @@ PINDEX H4503_ARGUMENT_divertingLegInformation4::GetDataLength() const
 PBoolean H4503_ARGUMENT_divertingLegInformation4::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_diversionReason.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_subscriptionOption.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callingInfo) && !m_callingInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nominatedNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nominatedInfo) && !m_nominatedInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2802,7 +2802,7 @@ PObject * H4503_ARGUMENT_divertingLegInformation4::Clone() const
 //
 
 H4503_IntResult::H4503_IntResult(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -2867,20 +2867,20 @@ PINDEX H4503_IntResult::GetDataLength() const
 PBoolean H4503_IntResult::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_procedure.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_divertedToAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_remoteEnabled.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

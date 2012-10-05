@@ -653,7 +653,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
 
   CreateSDPMediaFormats(tokens);
 
-  return PTrue;
+  return true;
 }
 
 

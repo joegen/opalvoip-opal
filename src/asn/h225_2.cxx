@@ -362,7 +362,7 @@ PObject * H225_ArrayOf_RasUsageSpecification::Clone() const
 //
 
 H225_RegistrationRejectReason_invalidTerminalAliases::H225_RegistrationRejectReason_invalidTerminalAliases(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -419,14 +419,14 @@ PINDEX H225_RegistrationRejectReason_invalidTerminalAliases::GetDataLength() con
 PBoolean H225_RegistrationRejectReason_invalidTerminalAliases::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_terminalAlias) && !m_terminalAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminalAliasPattern) && !m_terminalAliasPattern.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_supportedPrefixes) && !m_supportedPrefixes.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -651,7 +651,7 @@ PObject * H225_InfoRequestResponse_perCallInfo::Clone() const
 //
 
 H225_ServiceControlIndication_callSpecific::H225_ServiceControlIndication_callSpecific(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -702,14 +702,14 @@ PINDEX H225_ServiceControlIndication_callSpecific::GetDataLength() const
 PBoolean H225_ServiceControlIndication_callSpecific::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_answeredCall.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -751,7 +751,7 @@ const static PASN_Names Names_H225_ServiceControlResponse_result[]={
 //
 
 H225_ServiceControlResponse_result::H225_ServiceControlResponse_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, PTrue
+  : PASN_Choice(tag, tagClass, 5, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ServiceControlResponse_result,5
 #endif
@@ -821,7 +821,7 @@ const static PASN_Names Names_H225_TransportAddress_ipSourceRoute_routing[]={
 //
 
 H225_TransportAddress_ipSourceRoute_routing::H225_TransportAddress_ipSourceRoute_routing(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_TransportAddress_ipSourceRoute_routing,2
 #endif
@@ -975,7 +975,7 @@ PObject * H225_InfoRequestResponse_perCallInfo_subtype_pdu::Clone() const
 //
 
 H225_Status_UUIE::H225_Status_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -1034,16 +1034,16 @@ PINDEX H225_Status_UUIE::GetDataLength() const
 PBoolean H225_Status_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1078,7 +1078,7 @@ PObject * H225_Status_UUIE::Clone() const
 //
 
 H225_StatusInquiry_UUIE::H225_StatusInquiry_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -1137,16 +1137,16 @@ PINDEX H225_StatusInquiry_UUIE::GetDataLength() const
 PBoolean H225_StatusInquiry_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1181,7 +1181,7 @@ PObject * H225_StatusInquiry_UUIE::Clone() const
 //
 
 H225_SetupAcknowledge_UUIE::H225_SetupAcknowledge_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -1240,16 +1240,16 @@ PINDEX H225_SetupAcknowledge_UUIE::GetDataLength() const
 PBoolean H225_SetupAcknowledge_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1284,7 +1284,7 @@ PObject * H225_SetupAcknowledge_UUIE::Clone() const
 //
 
 H225_Notify_UUIE::H225_Notify_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -1343,16 +1343,16 @@ PINDEX H225_Notify_UUIE::GetDataLength() const
 PBoolean H225_Notify_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1387,7 +1387,7 @@ PObject * H225_Notify_UUIE::Clone() const
 //
 
 H225_VendorIdentifier::H225_VendorIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 2, true, 1)
 {
   m_productId.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_versionId.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -1446,16 +1446,16 @@ PINDEX H225_VendorIdentifier::GetDataLength() const
 PBoolean H225_VendorIdentifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_vendor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_productId) && !m_productId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_versionId) && !m_versionId.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_enterpriseNumber, m_enterpriseNumber))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1490,7 +1490,7 @@ PObject * H225_VendorIdentifier::Clone() const
 //
 
 H225_TunnelledProtocol::H225_TunnelledProtocol(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_subIdentifier.SetConstraints(PASN_Object::FixedConstraint, 1, 64);
 }
@@ -1540,12 +1540,12 @@ PINDEX H225_TunnelledProtocol::GetDataLength() const
 PBoolean H225_TunnelledProtocol::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_subIdentifier) && !m_subIdentifier.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1577,7 +1577,7 @@ PObject * H225_TunnelledProtocol::Clone() const
 //
 
 H225_NonStandardParameter::H225_NonStandardParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -1624,12 +1624,12 @@ PINDEX H225_NonStandardParameter::GetDataLength() const
 PBoolean H225_NonStandardParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nonStandardIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1660,7 +1660,7 @@ PObject * H225_NonStandardParameter::Clone() const
 //
 
 H225_PublicPartyNumber::H225_PublicPartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -1707,12 +1707,12 @@ PINDEX H225_PublicPartyNumber::GetDataLength() const
 PBoolean H225_PublicPartyNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_publicTypeOfNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_publicNumberDigits.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1743,7 +1743,7 @@ PObject * H225_PublicPartyNumber::Clone() const
 //
 
 H225_PrivatePartyNumber::H225_PrivatePartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -1790,12 +1790,12 @@ PINDEX H225_PrivatePartyNumber::GetDataLength() const
 PBoolean H225_PrivatePartyNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_privateTypeOfNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_privateNumberDigits.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1826,7 +1826,7 @@ PObject * H225_PrivatePartyNumber::Clone() const
 //
 
 H225_ANSI_41_UIM::H225_ANSI_41_UIM(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 11, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 11, true, 0)
 {
   m_imsi.SetConstraints(PASN_Object::FixedConstraint, 3, 16);
   m_min.SetConstraints(PASN_Object::FixedConstraint, 3, 16);
@@ -1946,32 +1946,32 @@ PINDEX H225_ANSI_41_UIM::GetDataLength() const
 PBoolean H225_ANSI_41_UIM::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_imsi) && !m_imsi.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_min) && !m_min.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_mdn) && !m_mdn.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_msisdn) && !m_msisdn.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_esn) && !m_esn.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_mscid) && !m_mscid.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_system_id.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_systemMyTypeCode) && !m_systemMyTypeCode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_systemAccessType) && !m_systemAccessType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_qualificationInformationCode) && !m_qualificationInformationCode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sesn) && !m_sesn.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_soc) && !m_soc.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2023,7 +2023,7 @@ PObject * H225_ANSI_41_UIM::Clone() const
 //
 
 H225_IsupPublicPartyNumber::H225_IsupPublicPartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2070,12 +2070,12 @@ PINDEX H225_IsupPublicPartyNumber::GetDataLength() const
 PBoolean H225_IsupPublicPartyNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_natureOfAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_address.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2106,7 +2106,7 @@ PObject * H225_IsupPublicPartyNumber::Clone() const
 //
 
 H225_IsupPrivatePartyNumber::H225_IsupPrivatePartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2153,12 +2153,12 @@ PINDEX H225_IsupPrivatePartyNumber::GetDataLength() const
 PBoolean H225_IsupPrivatePartyNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_privateTypeOfNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_address.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2189,7 +2189,7 @@ PObject * H225_IsupPrivatePartyNumber::Clone() const
 //
 
 H225_AlternateTransportAddresses::H225_AlternateTransportAddresses(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 1, true, 1)
 {
 }
 
@@ -2236,12 +2236,12 @@ PINDEX H225_AlternateTransportAddresses::GetDataLength() const
 PBoolean H225_AlternateTransportAddresses::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_annexE) && !m_annexE.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_sctp, m_sctp))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2273,7 +2273,7 @@ PObject * H225_AlternateTransportAddresses::Clone() const
 //
 
 H225_AlternateGK::H225_AlternateGK(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -2331,16 +2331,16 @@ PINDEX H225_AlternateGK::GetDataLength() const
 PBoolean H225_AlternateGK::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_needToRegister.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_priority.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2374,7 +2374,7 @@ PObject * H225_AlternateGK::Clone() const
 //
 
 H225_AltGKInfo::H225_AltGKInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2421,12 +2421,12 @@ PINDEX H225_AltGKInfo::GetDataLength() const
 PBoolean H225_AltGKInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_alternateGatekeeper.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_altGKisPermanent.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2457,7 +2457,7 @@ PObject * H225_AltGKInfo::Clone() const
 //
 
 H225_SecurityCapabilities::H225_SecurityCapabilities(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -2514,16 +2514,16 @@ PINDEX H225_SecurityCapabilities::GetDataLength() const
 PBoolean H225_SecurityCapabilities::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_encryption.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_authenticaton.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_integrity.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2557,7 +2557,7 @@ PObject * H225_SecurityCapabilities::Clone() const
 //
 
 H225_QseriesOptions::H225_QseriesOptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2628,24 +2628,24 @@ PINDEX H225_QseriesOptions::GetDataLength() const
 PBoolean H225_QseriesOptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_q932Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q951Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q952Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q953Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q955Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q956Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q957Full.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_q954Info.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2682,7 +2682,7 @@ PObject * H225_QseriesOptions::Clone() const
 //
 
 H225_DataRate::H225_DataRate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
   m_channelMultiplier.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -2738,14 +2738,14 @@ PINDEX H225_DataRate::GetDataLength() const
 PBoolean H225_DataRate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_channelRate.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_channelMultiplier) && !m_channelMultiplier.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2779,7 +2779,7 @@ PObject * H225_DataRate::Clone() const
 //
 
 H225_SupportedPrefix::H225_SupportedPrefix(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -2828,12 +2828,12 @@ PINDEX H225_SupportedPrefix::GetDataLength() const
 PBoolean H225_SupportedPrefix::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_prefix.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2865,7 +2865,7 @@ PObject * H225_SupportedPrefix::Clone() const
 //
 
 H225_CapacityReportingSpecification::H225_CapacityReportingSpecification(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -2908,10 +2908,10 @@ PINDEX H225_CapacityReportingSpecification::GetDataLength() const
 PBoolean H225_CapacityReportingSpecification::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_when.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2941,7 +2941,7 @@ PObject * H225_CapacityReportingSpecification::Clone() const
 //
 
 H225_CallCapacityInfo::H225_CallCapacityInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 11, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 11, true, 1)
 {
 }
 
@@ -3048,32 +3048,32 @@ PINDEX H225_CallCapacityInfo::GetDataLength() const
 PBoolean H225_CallCapacityInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_voiceGwCallsAvailable) && !m_voiceGwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h310GwCallsAvailable) && !m_h310GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h320GwCallsAvailable) && !m_h320GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h321GwCallsAvailable) && !m_h321GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h322GwCallsAvailable) && !m_h322GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h323GwCallsAvailable) && !m_h323GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h324GwCallsAvailable) && !m_h324GwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_t120OnlyGwCallsAvailable) && !m_t120OnlyGwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_t38FaxAnnexbOnlyGwCallsAvailable) && !m_t38FaxAnnexbOnlyGwCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminalCallsAvailable) && !m_terminalCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_mcuCallsAvailable) && !m_mcuCallsAvailable.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_sipGwCallsAvailable, m_sipGwCallsAvailable))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3125,7 +3125,7 @@ PObject * H225_CallCapacityInfo::Clone() const
 //
 
 H225_CallsAvailable::H225_CallsAvailable(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 1, true, 1)
 {
   m_calls.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
   m_group.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -3178,14 +3178,14 @@ PINDEX H225_CallsAvailable::GetDataLength() const
 PBoolean H225_CallsAvailable::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_calls.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_group) && !m_group.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_carrier, m_carrier))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3218,7 +3218,7 @@ PObject * H225_CallsAvailable::Clone() const
 //
 
 H225_CicInfo::H225_CicInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_pointCode.SetConstraints(PASN_Object::FixedConstraint, 2, 5);
 }
@@ -3266,12 +3266,12 @@ PINDEX H225_CicInfo::GetDataLength() const
 PBoolean H225_CicInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_cic.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_pointCode.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3302,7 +3302,7 @@ PObject * H225_CicInfo::Clone() const
 //
 
 H225_GroupID::H225_GroupID(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_group.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -3352,12 +3352,12 @@ PINDEX H225_GroupID::GetDataLength() const
 PBoolean H225_GroupID::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_member) && !m_member.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_group.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3389,7 +3389,7 @@ PObject * H225_GroupID::Clone() const
 //
 
 H225_ServiceControlSession::H225_ServiceControlSession(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_sessionId.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -3443,14 +3443,14 @@ PINDEX H225_ServiceControlSession::GetDataLength() const
 PBoolean H225_ServiceControlSession::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sessionId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_contents) && !m_contents.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3483,7 +3483,7 @@ PObject * H225_ServiceControlSession::Clone() const
 //
 
 H225_RasUsageInfoTypes::H225_RasUsageInfoTypes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -3544,16 +3544,16 @@ PINDEX H225_RasUsageInfoTypes::GetDataLength() const
 PBoolean H225_RasUsageInfoTypes::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nonStandardUsageTypes.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_startTime) && !m_startTime.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endTime) && !m_endTime.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminationCause) && !m_terminationCause.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3589,7 +3589,7 @@ PObject * H225_RasUsageInfoTypes::Clone() const
 //
 
 H225_RasUsageSpecification::H225_RasUsageSpecification(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -3642,14 +3642,14 @@ PINDEX H225_RasUsageSpecification::GetDataLength() const
 PBoolean H225_RasUsageSpecification::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_when.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callStartingPoint) && !m_callStartingPoint.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_required.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3682,7 +3682,7 @@ PObject * H225_RasUsageSpecification::Clone() const
 //
 
 H225_RasUsageInformation::H225_RasUsageInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -3743,16 +3743,16 @@ PINDEX H225_RasUsageInformation::GetDataLength() const
 PBoolean H225_RasUsageInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_nonStandardUsageFields.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_alertingTime) && !m_alertingTime.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_connectTime) && !m_connectTime.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endTime) && !m_endTime.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3788,7 +3788,7 @@ PObject * H225_RasUsageInformation::Clone() const
 //
 
 H225_BandwidthDetails::H225_BandwidthDetails(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
 }
 
@@ -3843,16 +3843,16 @@ PINDEX H225_BandwidthDetails::GetDataLength() const
 PBoolean H225_BandwidthDetails::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_sender.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_multicast.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandwidth.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rtcpAddresses.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3885,7 +3885,7 @@ PObject * H225_BandwidthDetails::Clone() const
 //
 
 H225_CallCreditServiceControl::H225_CallCreditServiceControl(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 5, true, 0)
 {
   m_amountString.SetConstraints(PASN_Object::FixedConstraint, 1, 512);
   m_callDurationLimit.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
@@ -3956,18 +3956,18 @@ PINDEX H225_CallCreditServiceControl::GetDataLength() const
 PBoolean H225_CallCreditServiceControl::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_amountString) && !m_amountString.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_billingMode) && !m_billingMode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callDurationLimit) && !m_callDurationLimit.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_enforceCallDurationLimit) && !m_enforceCallDurationLimit.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callStartingPoint) && !m_callStartingPoint.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4006,7 +4006,7 @@ PObject * H225_CallCreditServiceControl::Clone() const
 //
 
 H225_GenericData::H225_GenericData(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
   m_parameters.SetConstraints(PASN_Object::FixedConstraint, 1, 512);
 }
@@ -4056,12 +4056,12 @@ PINDEX H225_GenericData::GetDataLength() const
 PBoolean H225_GenericData::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_parameters) && !m_parameters.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4093,7 +4093,7 @@ PObject * H225_GenericData::Clone() const
 //
 
 H225_EnumeratedParameter::H225_EnumeratedParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -4142,12 +4142,12 @@ PINDEX H225_EnumeratedParameter::GetDataLength() const
 PBoolean H225_EnumeratedParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_id.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_content) && !m_content.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4179,7 +4179,7 @@ PObject * H225_EnumeratedParameter::Clone() const
 //
 
 H225_FeatureSet::H225_FeatureSet(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -4240,16 +4240,16 @@ PINDEX H225_FeatureSet::GetDataLength() const
 PBoolean H225_FeatureSet::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_replacementFeatureSet.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_neededFeatures) && !m_neededFeatures.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_desiredFeatures) && !m_desiredFeatures.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_supportedFeatures) && !m_supportedFeatures.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4285,7 +4285,7 @@ PObject * H225_FeatureSet::Clone() const
 //
 
 H225_RTPSession::H225_RTPSession(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 0, true, 2)
 {
   m_ssrc.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
   m_sessionId.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -4354,24 +4354,24 @@ PINDEX H225_RTPSession::GetDataLength() const
 PBoolean H225_RTPSession::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_rtpAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rtcpAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_cname.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_ssrc.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sessionId.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_associatedSessionIds.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multicast, m_multicast))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_bandwidth, m_bandwidth))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4408,7 +4408,7 @@ PObject * H225_RTPSession::Clone() const
 //
 
 H225_GatekeeperConfirm::H225_GatekeeperConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 11)
+  : PASN_Sequence(tag, tagClass, 2, true, 11)
 {
 }
 
@@ -4493,40 +4493,40 @@ PINDEX H225_GatekeeperConfirm::GetDataLength() const
 PBoolean H225_GatekeeperConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateGatekeeper, m_alternateGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_authenticationMode, m_authenticationMode))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_algorithmOID, m_algorithmOID))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrity, m_integrity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_rehomingModel, m_rehomingModel))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4573,7 +4573,7 @@ PObject * H225_GatekeeperConfirm::Clone() const
 //
 
 H225_GatekeeperReject::H225_GatekeeperReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 6)
+  : PASN_Sequence(tag, tagClass, 2, true, 6)
 {
 }
 
@@ -4648,30 +4648,30 @@ PINDEX H225_GatekeeperReject::GetDataLength() const
 PBoolean H225_GatekeeperReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4713,7 +4713,7 @@ PObject * H225_GatekeeperReject::Clone() const
 //
 
 H225_RegistrationReject::H225_RegistrationReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 7)
+  : PASN_Sequence(tag, tagClass, 2, true, 7)
 {
 }
 
@@ -4790,32 +4790,32 @@ PINDEX H225_RegistrationReject::GetDataLength() const
 PBoolean H225_RegistrationReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4858,7 +4858,7 @@ PObject * H225_RegistrationReject::Clone() const
 //
 
 H225_UnregistrationRequest::H225_UnregistrationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 11)
+  : PASN_Sequence(tag, tagClass, 3, true, 11)
 {
 }
 
@@ -4945,40 +4945,40 @@ PINDEX H225_UnregistrationRequest::GetDataLength() const
 PBoolean H225_UnregistrationRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointAlias) && !m_endpointAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointIdentifier) && !m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateEndpoints, m_alternateEndpoints))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatekeeperIdentifier, m_gatekeeperIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_reason, m_reason))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_endpointAliasPattern, m_endpointAliasPattern))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateGatekeeper, m_alternateGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5026,7 +5026,7 @@ PObject * H225_UnregistrationRequest::Clone() const
 //
 
 H225_UnregistrationConfirm::H225_UnregistrationConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 5)
+  : PASN_Sequence(tag, tagClass, 1, true, 5)
 {
 }
 
@@ -5085,22 +5085,22 @@ PINDEX H225_UnregistrationConfirm::GetDataLength() const
 PBoolean H225_UnregistrationConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5137,7 +5137,7 @@ PObject * H225_UnregistrationConfirm::Clone() const
 //
 
 H225_UnregistrationReject::H225_UnregistrationReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 5)
+  : PASN_Sequence(tag, tagClass, 1, true, 5)
 {
 }
 
@@ -5200,24 +5200,24 @@ PINDEX H225_UnregistrationReject::GetDataLength() const
 PBoolean H225_UnregistrationReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5255,7 +5255,7 @@ PObject * H225_UnregistrationReject::Clone() const
 //
 
 H225_AdmissionReject::H225_AdmissionReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 9)
+  : PASN_Sequence(tag, tagClass, 1, true, 9)
 {
 }
 
@@ -5326,32 +5326,32 @@ PINDEX H225_AdmissionReject::GetDataLength() const
 PBoolean H225_AdmissionReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callSignalAddress, m_callSignalAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5393,7 +5393,7 @@ PObject * H225_AdmissionReject::Clone() const
 //
 
 H225_BandwidthReject::H225_BandwidthReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 5)
+  : PASN_Sequence(tag, tagClass, 1, true, 5)
 {
 }
 
@@ -5460,26 +5460,26 @@ PINDEX H225_BandwidthReject::GetDataLength() const
 PBoolean H225_BandwidthReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_allowedBandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5518,7 +5518,7 @@ PObject * H225_BandwidthReject::Clone() const
 //
 
 H225_LocationReject::H225_LocationReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 7)
+  : PASN_Sequence(tag, tagClass, 1, true, 7)
 {
 }
 
@@ -5585,28 +5585,28 @@ PINDEX H225_LocationReject::GetDataLength() const
 PBoolean H225_LocationReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5646,7 +5646,7 @@ PObject * H225_LocationReject::Clone() const
 //
 
 H225_DisengageReject::H225_DisengageReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 5)
+  : PASN_Sequence(tag, tagClass, 1, true, 5)
 {
 }
 
@@ -5709,24 +5709,24 @@ PINDEX H225_DisengageReject::GetDataLength() const
 PBoolean H225_DisengageReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rejectReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_altGKInfo, m_altGKInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5764,7 +5764,7 @@ PObject * H225_DisengageReject::Clone() const
 //
 
 H225_InfoRequest::H225_InfoRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 12)
+  : PASN_Sequence(tag, tagClass, 2, true, 12)
 {
   IncludeOptionalField(e_callIdentifier);
   m_nextSegmentRequested.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -5849,40 +5849,40 @@ PINDEX H225_InfoRequest::GetDataLength() const
 PBoolean H225_InfoRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callReferenceValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_replyAddress) && !m_replyAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_uuiesRequested, m_uuiesRequested))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageInfoRequested, m_usageInfoRequested))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_segmentedResponseSupported, m_segmentedResponseSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_nextSegmentRequested, m_nextSegmentRequested))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacityInfoRequested, m_capacityInfoRequested))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5929,7 +5929,7 @@ PObject * H225_InfoRequest::Clone() const
 //
 
 H225_InfoRequestAck::H225_InfoRequestAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
 }
 
@@ -5996,18 +5996,18 @@ PINDEX H225_InfoRequestAck::GetDataLength() const
 PBoolean H225_InfoRequestAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6045,7 +6045,7 @@ PObject * H225_InfoRequestAck::Clone() const
 //
 
 H225_InfoRequestNak::H225_InfoRequestNak(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 5, true, 0)
 {
 }
 
@@ -6122,22 +6122,22 @@ PINDEX H225_InfoRequestNak::GetDataLength() const
 PBoolean H225_InfoRequestNak::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nakReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_altGKInfo) && !m_altGKInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6178,7 +6178,7 @@ PObject * H225_InfoRequestNak::Clone() const
 //
 
 H225_NonStandardMessage::H225_NonStandardMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 5)
+  : PASN_Sequence(tag, tagClass, 0, true, 5)
 {
 }
 
@@ -6235,22 +6235,22 @@ PINDEX H225_NonStandardMessage::GetDataLength() const
 PBoolean H225_NonStandardMessage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6286,7 +6286,7 @@ PObject * H225_NonStandardMessage::Clone() const
 //
 
 H225_UnknownMessageResponse::H225_UnknownMessageResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 4)
+  : PASN_Sequence(tag, tagClass, 0, true, 4)
 {
   IncludeOptionalField(e_messageNotUnderstood);
 }
@@ -6338,18 +6338,18 @@ PINDEX H225_UnknownMessageResponse::GetDataLength() const
 PBoolean H225_UnknownMessageResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_messageNotUnderstood, m_messageNotUnderstood))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6383,7 +6383,7 @@ PObject * H225_UnknownMessageResponse::Clone() const
 //
 
 H225_RequestInProgress::H225_RequestInProgress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 4, true, 0)
 {
   m_delay.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -6455,20 +6455,20 @@ PINDEX H225_RequestInProgress::GetDataLength() const
 PBoolean H225_RequestInProgress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_delay.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6507,7 +6507,7 @@ PObject * H225_RequestInProgress::Clone() const
 //
 
 H225_ResourcesAvailableConfirm::H225_ResourcesAvailableConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 4, true, 1)
 {
 }
 
@@ -6580,22 +6580,22 @@ PINDEX H225_ResourcesAvailableConfirm::GetDataLength() const
 PBoolean H225_ResourcesAvailableConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6635,7 +6635,7 @@ PObject * H225_ResourcesAvailableConfirm::Clone() const
 //
 
 H225_ServiceControlIndication::H225_ServiceControlIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 8, true, 0)
 {
 }
 
@@ -6730,28 +6730,28 @@ PINDEX H225_ServiceControlIndication::GetDataLength() const
 PBoolean H225_ServiceControlIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_serviceControl.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointIdentifier) && !m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callSpecific) && !m_callSpecific.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_featureSet) && !m_featureSet.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_genericData) && !m_genericData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6798,7 +6798,7 @@ PObject * H225_ServiceControlIndication::Clone() const
 //
 
 H225_ServiceControlResponse::H225_ServiceControlResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 7, true, 0)
 {
 }
 
@@ -6883,24 +6883,24 @@ PINDEX H225_ServiceControlResponse::GetDataLength() const
 PBoolean H225_ServiceControlResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_result) && !m_result.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_featureSet) && !m_featureSet.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_genericData) && !m_genericData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6944,7 +6944,7 @@ PObject * H225_ServiceControlResponse::Clone() const
 //
 
 H225_H323_UU_PDU_tunnelledSignallingMessage::H225_H323_UU_PDU_tunnelledSignallingMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -7003,16 +7003,16 @@ PINDEX H225_H323_UU_PDU_tunnelledSignallingMessage::GetDataLength() const
 PBoolean H225_H323_UU_PDU_tunnelledSignallingMessage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_tunnelledProtocolID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_messageContent.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tunnellingRequired) && !m_tunnellingRequired.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7047,7 +7047,7 @@ PObject * H225_H323_UU_PDU_tunnelledSignallingMessage::Clone() const
 //
 
 H225_TransportAddress_ipSourceRoute::H225_TransportAddress_ipSourceRoute(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_ip.SetConstraints(PASN_Object::FixedConstraint, 4);
   m_port.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -7104,16 +7104,16 @@ PINDEX H225_TransportAddress_ipSourceRoute::GetDataLength() const
 PBoolean H225_TransportAddress_ipSourceRoute::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_ip.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_port.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_route.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_routing.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7146,7 +7146,7 @@ PObject * H225_TransportAddress_ipSourceRoute::Clone() const
 //
 
 H225_RegistrationConfirm_preGrantedARQ::H225_RegistrationConfirm_preGrantedARQ(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 4)
+  : PASN_Sequence(tag, tagClass, 0, true, 4)
 {
   m_irrFrequencyInCall.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -7210,24 +7210,24 @@ PINDEX H225_RegistrationConfirm_preGrantedARQ::GetDataLength() const
 PBoolean H225_RegistrationConfirm_preGrantedARQ::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_makeCall.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_useGKCallSignalAddressToMakeCall.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_answerCall.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_useGKCallSignalAddressToAnswer.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_irrFrequencyInCall, m_irrFrequencyInCall))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_totalBandwidthRestriction, m_totalBandwidthRestriction))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateTransportAddresses, m_alternateTransportAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_useSpecifiedTransport, m_useSpecifiedTransport))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7264,7 +7264,7 @@ PObject * H225_RegistrationConfirm_preGrantedARQ::Clone() const
 //
 
 H225_StimulusControl::H225_StimulusControl(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -7321,14 +7321,14 @@ PINDEX H225_StimulusControl::GetDataLength() const
 PBoolean H225_StimulusControl::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_isText) && !m_isText.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h248Message) && !m_h248Message.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7363,7 +7363,7 @@ PObject * H225_StimulusControl::Clone() const
 //
 
 H225_ConferenceList::H225_ConferenceList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -7420,14 +7420,14 @@ PINDEX H225_ConferenceList::GetDataLength() const
 PBoolean H225_ConferenceList::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_conferenceID) && !m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceAlias) && !m_conferenceAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7462,7 +7462,7 @@ PObject * H225_ConferenceList::Clone() const
 //
 
 H225_GatewayInfo::H225_GatewayInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -7513,12 +7513,12 @@ PINDEX H225_GatewayInfo::GetDataLength() const
 PBoolean H225_GatewayInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_protocol) && !m_protocol.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7551,7 +7551,7 @@ PObject * H225_GatewayInfo::Clone() const
 //
 
 H225_H310Caps::H225_H310Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -7601,14 +7601,14 @@ PINDEX H225_H310Caps::GetDataLength() const
 PBoolean H225_H310Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7641,7 +7641,7 @@ PObject * H225_H310Caps::Clone() const
 //
 
 H225_H320Caps::H225_H320Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -7691,14 +7691,14 @@ PINDEX H225_H320Caps::GetDataLength() const
 PBoolean H225_H320Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7731,7 +7731,7 @@ PObject * H225_H320Caps::Clone() const
 //
 
 H225_H321Caps::H225_H321Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -7781,14 +7781,14 @@ PINDEX H225_H321Caps::GetDataLength() const
 PBoolean H225_H321Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7821,7 +7821,7 @@ PObject * H225_H321Caps::Clone() const
 //
 
 H225_H322Caps::H225_H322Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -7871,14 +7871,14 @@ PINDEX H225_H322Caps::GetDataLength() const
 PBoolean H225_H322Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7911,7 +7911,7 @@ PObject * H225_H322Caps::Clone() const
 //
 
 H225_H323Caps::H225_H323Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -7961,14 +7961,14 @@ PINDEX H225_H323Caps::GetDataLength() const
 PBoolean H225_H323Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8001,7 +8001,7 @@ PObject * H225_H323Caps::Clone() const
 //
 
 H225_H324Caps::H225_H324Caps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -8051,14 +8051,14 @@ PINDEX H225_H324Caps::GetDataLength() const
 PBoolean H225_H324Caps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8091,7 +8091,7 @@ PObject * H225_H324Caps::Clone() const
 //
 
 H225_VoiceCaps::H225_VoiceCaps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -8141,14 +8141,14 @@ PINDEX H225_VoiceCaps::GetDataLength() const
 PBoolean H225_VoiceCaps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8181,7 +8181,7 @@ PObject * H225_VoiceCaps::Clone() const
 //
 
 H225_T120OnlyCaps::H225_T120OnlyCaps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 1, true, 2)
 {
   IncludeOptionalField(e_supportedPrefixes);
 }
@@ -8231,14 +8231,14 @@ PINDEX H225_T120OnlyCaps::GetDataLength() const
 PBoolean H225_T120OnlyCaps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_dataRatesSupported, m_dataRatesSupported))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8271,7 +8271,7 @@ PObject * H225_T120OnlyCaps::Clone() const
 //
 
 H225_NonStandardProtocol::H225_NonStandardProtocol(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -8326,14 +8326,14 @@ PINDEX H225_NonStandardProtocol::GetDataLength() const
 PBoolean H225_NonStandardProtocol::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_dataRatesSupported) && !m_dataRatesSupported.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_supportedPrefixes.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8367,7 +8367,7 @@ PObject * H225_NonStandardProtocol::Clone() const
 //
 
 H225_T38FaxAnnexbOnlyCaps::H225_T38FaxAnnexbOnlyCaps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -8430,18 +8430,18 @@ PINDEX H225_T38FaxAnnexbOnlyCaps::GetDataLength() const
 PBoolean H225_T38FaxAnnexbOnlyCaps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_dataRatesSupported) && !m_dataRatesSupported.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_supportedPrefixes.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_t38FaxProtocol.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_t38FaxProfile.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8477,7 +8477,7 @@ PObject * H225_T38FaxAnnexbOnlyCaps::Clone() const
 //
 
 H225_SIPCaps::H225_SIPCaps(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -8534,14 +8534,14 @@ PINDEX H225_SIPCaps::GetDataLength() const
 PBoolean H225_SIPCaps::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_dataRatesSupported) && !m_dataRatesSupported.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_supportedPrefixes) && !m_supportedPrefixes.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8576,7 +8576,7 @@ PObject * H225_SIPCaps::Clone() const
 //
 
 H225_McuInfo::H225_McuInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 1, true, 1)
 {
 }
 
@@ -8623,12 +8623,12 @@ PINDEX H225_McuInfo::GetDataLength() const
 PBoolean H225_McuInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_protocol, m_protocol))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8660,7 +8660,7 @@ PObject * H225_McuInfo::Clone() const
 //
 
 H225_TerminalInfo::H225_TerminalInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8705,10 +8705,10 @@ PINDEX H225_TerminalInfo::GetDataLength() const
 PBoolean H225_TerminalInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8739,7 +8739,7 @@ PObject * H225_TerminalInfo::Clone() const
 //
 
 H225_GatekeeperInfo::H225_GatekeeperInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -8784,10 +8784,10 @@ PINDEX H225_GatekeeperInfo::GetDataLength() const
 PBoolean H225_GatekeeperInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8837,7 +8837,7 @@ PObject * H225_FeatureDescriptor::Clone() const
 //
 
 H225_CallCapacity::H225_CallCapacity(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -8888,12 +8888,12 @@ PINDEX H225_CallCapacity::GetDataLength() const
 PBoolean H225_CallCapacity::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_maximumCallCapacity) && !m_maximumCallCapacity.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_currentCallCapacity) && !m_currentCallCapacity.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8926,7 +8926,7 @@ PObject * H225_CallCapacity::Clone() const
 //
 
 H225_CircuitIdentifier::H225_CircuitIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
+  : PASN_Sequence(tag, tagClass, 2, true, 1)
 {
 }
 
@@ -8979,14 +8979,14 @@ PINDEX H225_CircuitIdentifier::GetDataLength() const
 PBoolean H225_CircuitIdentifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_cic) && !m_cic.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_group) && !m_group.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_carrier, m_carrier))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9020,7 +9020,7 @@ PObject * H225_CircuitIdentifier::Clone() const
 //
 
 H225_RegistrationConfirm::H225_RegistrationConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 20)
+  : PASN_Sequence(tag, tagClass, 3, true, 20)
 {
   IncludeOptionalField(e_willRespondToIRR);
   IncludeOptionalField(e_maintainConnection);
@@ -9135,62 +9135,62 @@ PINDEX H225_RegistrationConfirm::GetDataLength() const
 PBoolean H225_RegistrationConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminalAlias) && !m_terminalAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateGatekeeper, m_alternateGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_timeToLive, m_timeToLive))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_willRespondToIRR, m_willRespondToIRR))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_preGrantedARQ, m_preGrantedARQ))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsAdditiveRegistration, m_supportsAdditiveRegistration))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_terminalAliasPattern, m_terminalAliasPattern))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedPrefixes, m_supportedPrefixes))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageSpec, m_usageSpec))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureServerAlias, m_featureServerAlias))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacityReportingSpec, m_capacityReportingSpec))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_rehomingModel, m_rehomingModel))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9249,7 +9249,7 @@ PObject * H225_RegistrationConfirm::Clone() const
 //
 
 H225_BandwidthRequest::H225_BandwidthRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 12)
+  : PASN_Sequence(tag, tagClass, 2, true, 12)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_answeredCall);
@@ -9346,46 +9346,46 @@ PINDEX H225_BandwidthRequest::GetDataLength() const
 PBoolean H225_BandwidthRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callReferenceValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callType) && !m_callType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatekeeperIdentifier, m_gatekeeperIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_answeredCall, m_answeredCall))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageInformation, m_usageInformation))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_bandwidthDetails, m_bandwidthDetails))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9435,7 +9435,7 @@ PObject * H225_BandwidthRequest::Clone() const
 //
 
 H225_BandwidthConfirm::H225_BandwidthConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 6)
+  : PASN_Sequence(tag, tagClass, 1, true, 6)
 {
 }
 
@@ -9500,26 +9500,26 @@ PINDEX H225_BandwidthConfirm::GetDataLength() const
 PBoolean H225_BandwidthConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9558,7 +9558,7 @@ PObject * H225_BandwidthConfirm::Clone() const
 //
 
 H225_ResourcesAvailableIndicate::H225_ResourcesAvailableIndicate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 4, true, 2)
 {
 }
 
@@ -9645,30 +9645,30 @@ PINDEX H225_ResourcesAvailableIndicate::GetDataLength() const
 PBoolean H225_ResourcesAvailableIndicate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocols.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_almostOutOfResources.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9712,7 +9712,7 @@ PObject * H225_ResourcesAvailableIndicate::Clone() const
 //
 
 H225_H323_UU_PDU::H225_H323_UU_PDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 9)
+  : PASN_Sequence(tag, tagClass, 1, true, 9)
 {
   IncludeOptionalField(e_h245Tunneling);
 }
@@ -9780,30 +9780,30 @@ PINDEX H225_H323_UU_PDU::GetDataLength() const
 PBoolean H225_H323_UU_PDU::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_h323_message_body.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h4501SupplementaryService, m_h4501SupplementaryService))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245Tunneling, m_h245Tunneling))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245Control, m_h245Control))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_nonStandardControl, m_nonStandardControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tunnelledSignallingMessage, m_tunnelledSignallingMessage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_provisionalRespToH245Tunneling, m_provisionalRespToH245Tunneling))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_stimulusControl, m_stimulusControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9844,7 +9844,7 @@ PObject * H225_H323_UU_PDU::Clone() const
 //
 
 H225_ReleaseComplete_UUIE::H225_ReleaseComplete_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 9)
+  : PASN_Sequence(tag, tagClass, 1, true, 9)
 {
   IncludeOptionalField(e_callIdentifier);
 }
@@ -9912,30 +9912,30 @@ PINDEX H225_ReleaseComplete_UUIE::GetDataLength() const
 PBoolean H225_ReleaseComplete_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_reason) && !m_reason.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_busyAddress, m_busyAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_presentationIndicator, m_presentationIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_screeningIndicator, m_screeningIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9976,7 +9976,7 @@ PObject * H225_ReleaseComplete_UUIE::Clone() const
 //
 
 H225_EndpointType::H225_EndpointType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 2)
+  : PASN_Sequence(tag, tagClass, 6, true, 2)
 {
   m_set.SetConstraints(PASN_Object::FixedConstraint, 32);
 }
@@ -10064,28 +10064,28 @@ PINDEX H225_EndpointType::GetDataLength() const
 PBoolean H225_EndpointType::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_vendor) && !m_vendor.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeper) && !m_gatekeeper.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gateway) && !m_gateway.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_mcu) && !m_mcu.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminal) && !m_terminal.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_mc.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_undefinedNode.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_set, m_set))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedTunnelledProtocols, m_supportedTunnelledProtocols))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10130,7 +10130,7 @@ PObject * H225_EndpointType::Clone() const
 //
 
 H225_CircuitInfo::H225_CircuitInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -10187,14 +10187,14 @@ PINDEX H225_CircuitInfo::GetDataLength() const
 PBoolean H225_CircuitInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_sourceCircuitID) && !m_sourceCircuitID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destinationCircuitID) && !m_destinationCircuitID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_genericData) && !m_genericData.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10229,7 +10229,7 @@ PObject * H225_CircuitInfo::Clone() const
 //
 
 H225_GatekeeperRequest::H225_GatekeeperRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, PTrue, 12)
+  : PASN_Sequence(tag, tagClass, 4, true, 12)
 {
 //  Removed for backwards interoperabililty. Problems with the messages being parsed on previous versions
 //  IncludeOptionalField(e_supportsAssignedGK);
@@ -10334,48 +10334,48 @@ PINDEX H225_GatekeeperRequest::GetDataLength() const
 PBoolean H225_GatekeeperRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callServices) && !m_callServices.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointAlias) && !m_endpointAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateEndpoints, m_alternateEndpoints))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_authenticationCapability, m_authenticationCapability))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_algorithmOIDs, m_algorithmOIDs))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrity, m_integrity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsAltGK, m_supportsAltGK))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsAssignedGK, m_supportsAssignedGK))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10428,7 +10428,7 @@ PObject * H225_GatekeeperRequest::Clone() const
 //
 
 H225_RegistrationRequest::H225_RegistrationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 27)
+  : PASN_Sequence(tag, tagClass, 3, true, 27)
 {
   IncludeOptionalField(e_keepAlive);
   IncludeOptionalField(e_willSupplyUUIEs);
@@ -10572,82 +10572,82 @@ PINDEX H225_RegistrationRequest::GetDataLength() const
 PBoolean H225_RegistrationRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_discoveryComplete.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_terminalType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_terminalAlias) && !m_terminalAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_gatekeeperIdentifier) && !m_gatekeeperIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointVendor.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateEndpoints, m_alternateEndpoints))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_timeToLive, m_timeToLive))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_keepAlive, m_keepAlive))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_endpointIdentifier, m_endpointIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_willSupplyUUIEs, m_willSupplyUUIEs))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateTransportAddresses, m_alternateTransportAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_additiveRegistration, m_additiveRegistration))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_terminalAliasPattern, m_terminalAliasPattern))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsAltGK, m_supportsAltGK))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageReportingCapability, m_usageReportingCapability))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedH248Packages, m_supportedH248Packages))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callCreditCapability, m_callCreditCapability))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacityReportingCapability, m_capacityReportingCapability))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_restart, m_restart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsACFSequences, m_supportsACFSequences))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportsAssignedGK, m_supportsAssignedGK))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_language, m_language))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10716,7 +10716,7 @@ PObject * H225_RegistrationRequest::Clone() const
 //
 
 H225_AdmissionRequest::H225_AdmissionRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 19)
+  : PASN_Sequence(tag, tagClass, 7, true, 19)
 {
   IncludeOptionalField(e_canMapAlias);
   IncludeOptionalField(e_callIdentifier);
@@ -10875,78 +10875,78 @@ PINDEX H225_AdmissionRequest::GetDataLength() const
 PBoolean H225_AdmissionRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callModel) && !m_callModel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destinationInfo) && !m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destCallSignalAddress) && !m_destCallSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destExtraCallInfo) && !m_destExtraCallInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_srcInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_srcCallSignalAddress) && !m_srcCallSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callReferenceValue.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callServices) && !m_callServices.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_activeMC.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_answerCall.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_canMapAlias, m_canMapAlias))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_srcAlternatives, m_srcAlternatives))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destAlternatives, m_destAlternatives))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatekeeperIdentifier, m_gatekeeperIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_willSupplyUUIEs, m_willSupplyUUIEs))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatewayDataRate, m_gatewayDataRate))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredProtocols, m_desiredProtocols))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredTunnelledProtocol, m_desiredTunnelledProtocol))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_canMapSrcAlias, m_canMapSrcAlias))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11017,7 +11017,7 @@ PObject * H225_AdmissionRequest::Clone() const
 //
 
 H225_AdmissionConfirm::H225_AdmissionConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 23)
+  : PASN_Sequence(tag, tagClass, 2, true, 23)
 {
   m_irrFrequency.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
   IncludeOptionalField(e_willRespondToIRR);
@@ -11133,66 +11133,66 @@ PINDEX H225_AdmissionConfirm::GetDataLength() const
 PBoolean H225_AdmissionConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callModel.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destCallSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_irrFrequency) && !m_irrFrequency.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destinationInfo, m_destinationInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destExtraCallInfo, m_destExtraCallInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destinationType, m_destinationType))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_remoteExtensionAddress, m_remoteExtensionAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateEndpoints, m_alternateEndpoints))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_transportQOS, m_transportQOS))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_willRespondToIRR, m_willRespondToIRR))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_uuiesRequested, m_uuiesRequested))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_language, m_language))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateTransportAddresses, m_alternateTransportAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_useSpecifiedTransport, m_useSpecifiedTransport))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageSpec, m_usageSpec))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedProtocols, m_supportedProtocols))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_modifiedSrcInfo, m_modifiedSrcInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11252,7 +11252,7 @@ PObject * H225_AdmissionConfirm::Clone() const
 //
 
 H225_LocationRequest::H225_LocationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 17)
+  : PASN_Sequence(tag, tagClass, 2, true, 17)
 {
   IncludeOptionalField(e_canMapAlias);
   m_hopCount.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -11352,52 +11352,52 @@ PINDEX H225_LocationRequest::GetDataLength() const
 PBoolean H225_LocationRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointIdentifier) && !m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_replyAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_sourceInfo, m_sourceInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_canMapAlias, m_canMapAlias))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatekeeperIdentifier, m_gatekeeperIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredProtocols, m_desiredProtocols))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredTunnelledProtocol, m_desiredTunnelledProtocol))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_hopCount, m_hopCount))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_bandWidth, m_bandWidth))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_sourceEndpointInfo, m_sourceEndpointInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_canMapSrcAlias, m_canMapSrcAlias))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_language, m_language))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11450,7 +11450,7 @@ PObject * H225_LocationRequest::Clone() const
 //
 
 H225_LocationConfirm::H225_LocationConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 17)
+  : PASN_Sequence(tag, tagClass, 1, true, 17)
 {
 }
 
@@ -11541,50 +11541,50 @@ PINDEX H225_LocationConfirm::GetDataLength() const
 PBoolean H225_LocationConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destinationInfo, m_destinationInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destExtraCallInfo, m_destExtraCallInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destinationType, m_destinationType))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_remoteExtensionAddress, m_remoteExtensionAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateEndpoints, m_alternateEndpoints))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateTransportAddresses, m_alternateTransportAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedProtocols, m_supportedProtocols))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_modifiedSrcInfo, m_modifiedSrcInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_bandWidth, m_bandWidth))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11635,7 +11635,7 @@ PObject * H225_LocationConfirm::Clone() const
 //
 
 H225_DisengageRequest::H225_DisengageRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 13)
+  : PASN_Sequence(tag, tagClass, 1, true, 13)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_answeredCall);
@@ -11728,46 +11728,46 @@ PINDEX H225_DisengageRequest::GetDataLength() const
 PBoolean H225_DisengageRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callReferenceValue.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_disengageReason.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_gatekeeperIdentifier, m_gatekeeperIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_answeredCall, m_answeredCall))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageInformation, m_usageInformation))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_terminationCause, m_terminationCause))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11816,7 +11816,7 @@ PObject * H225_DisengageRequest::Clone() const
 //
 
 H225_DisengageConfirm::H225_DisengageConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 8)
+  : PASN_Sequence(tag, tagClass, 1, true, 8)
 {
 }
 
@@ -11881,28 +11881,28 @@ PINDEX H225_DisengageConfirm::GetDataLength() const
 PBoolean H225_DisengageConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageInformation, m_usageInformation))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_assignedGatekeeper, m_assignedGatekeeper))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11942,7 +11942,7 @@ PObject * H225_DisengageConfirm::Clone() const
 //
 
 H225_InfoRequestResponse::H225_InfoRequestResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 8)
+  : PASN_Sequence(tag, tagClass, 3, true, 8)
 {
   IncludeOptionalField(e_needResponse);
   IncludeOptionalField(e_unsolicited);
@@ -12037,40 +12037,40 @@ PINDEX H225_InfoRequestResponse::GetDataLength() const
 PBoolean H225_InfoRequestResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_requestSeqNum.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_endpointIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointAlias) && !m_endpointAlias.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_perCallInfo) && !m_perCallInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_integrityCheckValue, m_integrityCheckValue))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_needResponse, m_needResponse))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_irrStatus, m_irrStatus))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_unsolicited, m_unsolicited))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12118,7 +12118,7 @@ PObject * H225_InfoRequestResponse::Clone() const
 //
 
 H225_InfoRequestResponse_perCallInfo_subtype::H225_InfoRequestResponse_perCallInfo_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 8)
+  : PASN_Sequence(tag, tagClass, 5, true, 8)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_substituteConfIDs);
@@ -12233,48 +12233,48 @@ PINDEX H225_InfoRequestResponse_perCallInfo_subtype::GetDataLength() const
 PBoolean H225_InfoRequestResponse_perCallInfo_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callReferenceValue.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originator) && !m_originator.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_audio) && !m_audio.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_video) && !m_video.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_data) && !m_data.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_h245.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callSignaling.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callType.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_bandWidth.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callModel.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_substituteConfIDs, m_substituteConfIDs))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_pdu, m_pdu))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callLinkage, m_callLinkage))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_usageInformation, m_usageInformation))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12328,7 +12328,7 @@ PObject * H225_InfoRequestResponse_perCallInfo_subtype::Clone() const
 //
 
 H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
+  : PASN_Sequence(tag, tagClass, 0, false, 0)
 {
 }
 
@@ -12375,12 +12375,12 @@ PINDEX H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::GetDataLength()
 PBoolean H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_h323pdu.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sent.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12411,7 +12411,7 @@ PObject * H225_InfoRequestResponse_perCallInfo_subtype_pdu_subtype::Clone() cons
 //
 
 H225_H323_UserInformation::H225_H323_UserInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -12460,12 +12460,12 @@ PINDEX H225_H323_UserInformation::GetDataLength() const
 PBoolean H225_H323_UserInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_h323_uu_pdu.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_user_data) && !m_user_data.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12497,7 +12497,7 @@ PObject * H225_H323_UserInformation::Clone() const
 //
 
 H225_Alerting_UUIE::H225_Alerting_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 14)
+  : PASN_Sequence(tag, tagClass, 1, true, 14)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_multipleCalls);
@@ -12581,42 +12581,42 @@ PINDEX H225_Alerting_UUIE::GetDataLength() const
 PBoolean H225_Alerting_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245Address) && !m_h245Address.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245SecurityMode, m_h245SecurityMode))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alertingAddress, m_alertingAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_presentationIndicator, m_presentationIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_screeningIndicator, m_screeningIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12663,7 +12663,7 @@ PObject * H225_Alerting_UUIE::Clone() const
 //
 
 H225_CallProceeding_UUIE::H225_CallProceeding_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 9)
+  : PASN_Sequence(tag, tagClass, 1, true, 9)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_multipleCalls);
@@ -12737,32 +12737,32 @@ PINDEX H225_CallProceeding_UUIE::GetDataLength() const
 PBoolean H225_CallProceeding_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245Address) && !m_h245Address.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245SecurityMode, m_h245SecurityMode))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12804,7 +12804,7 @@ PObject * H225_CallProceeding_UUIE::Clone() const
 //
 
 H225_Connect_UUIE::H225_Connect_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 15)
+  : PASN_Sequence(tag, tagClass, 1, true, 15)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_multipleCalls);
@@ -12894,46 +12894,46 @@ PINDEX H225_Connect_UUIE::GetDataLength() const
 PBoolean H225_Connect_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245Address) && !m_h245Address.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245SecurityMode, m_h245SecurityMode))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_language, m_language))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_connectedAddress, m_connectedAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_presentationIndicator, m_presentationIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_screeningIndicator, m_screeningIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12982,7 +12982,7 @@ PObject * H225_Connect_UUIE::Clone() const
 //
 
 H225_Information_UUIE::H225_Information_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 6)
+  : PASN_Sequence(tag, tagClass, 0, true, 6)
 {
   IncludeOptionalField(e_callIdentifier);
 }
@@ -13038,22 +13038,22 @@ PINDEX H225_Information_UUIE::GetDataLength() const
 PBoolean H225_Information_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13089,7 +13089,7 @@ PObject * H225_Information_UUIE::Clone() const
 //
 
 H225_Setup_UUIE::H225_Setup_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 27)
+  : PASN_Sequence(tag, tagClass, 7, true, 27)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_mediaWaitForConnect);
@@ -13254,88 +13254,88 @@ PINDEX H225_Setup_UUIE::GetDataLength() const
 PBoolean H225_Setup_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245Address) && !m_h245Address.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sourceAddress) && !m_sourceAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_sourceInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destinationAddress) && !m_destinationAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destCallSignalAddress) && !m_destCallSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destExtraCallInfo) && !m_destExtraCallInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destExtraCRV) && !m_destExtraCRV.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_activeMC.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_conferenceGoal.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callServices) && !m_callServices.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callType.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_sourceCallSignalAddress, m_sourceCallSignalAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_remoteExtensionAddress, m_remoteExtensionAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245SecurityCapability, m_h245SecurityCapability))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_mediaWaitForConnect, m_mediaWaitForConnect))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_canOverlapSend, m_canOverlapSend))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_endpointIdentifier, m_endpointIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_connectionParameters, m_connectionParameters))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_language, m_language))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_presentationIndicator, m_presentationIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_screeningIndicator, m_screeningIndicator))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_symmetricOperationRequired, m_symmetricOperationRequired))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_capacity, m_capacity))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredProtocols, m_desiredProtocols))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_neededFeatures, m_neededFeatures))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_desiredFeatures, m_desiredFeatures))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_supportedFeatures, m_supportedFeatures))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_parallelH245Control, m_parallelH245Control))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_additionalSourceAddresses, m_additionalSourceAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_hopCount, m_hopCount))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13411,7 +13411,7 @@ PObject * H225_Setup_UUIE::Clone() const
 //
 
 H225_Facility_UUIE::H225_Facility_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 16)
+  : PASN_Sequence(tag, tagClass, 3, true, 16)
 {
   IncludeOptionalField(e_callIdentifier);
   IncludeOptionalField(e_multipleCalls);
@@ -13511,50 +13511,50 @@ PINDEX H225_Facility_UUIE::GetDataLength() const
 PBoolean H225_Facility_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_alternativeAddress) && !m_alternativeAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_alternativeAliasAddress) && !m_alternativeAliasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_conferenceID) && !m_conferenceID.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reason.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_callIdentifier, m_callIdentifier))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destExtraCallInfo, m_destExtraCallInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_remoteExtensionAddress, m_remoteExtensionAddress))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_tokens, m_tokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_cryptoTokens, m_cryptoTokens))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_conferences, m_conferences))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245Address, m_h245Address))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastStart, m_fastStart))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_destinationInfo, m_destinationInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_h245SecurityMode, m_h245SecurityMode))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13607,7 +13607,7 @@ PObject * H225_Facility_UUIE::Clone() const
 //
 
 H225_Progress_UUIE::H225_Progress_UUIE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, PTrue, 3)
+  : PASN_Sequence(tag, tagClass, 5, true, 3)
 {
   IncludeOptionalField(e_multipleCalls);
   IncludeOptionalField(e_maintainConnection);
@@ -13696,30 +13696,30 @@ PINDEX H225_Progress_UUIE::GetDataLength() const
 PBoolean H225_Progress_UUIE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_protocolIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_destinationInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245Address) && !m_h245Address.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callIdentifier.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_h245SecurityMode) && !m_h245SecurityMode.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_fastStart) && !m_fastStart.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_maintainConnection, m_maintainConnection))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_fastConnectRefused, m_fastConnectRefused))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13764,7 +13764,7 @@ PObject * H225_Progress_UUIE::Clone() const
 //
 
 H225_Endpoint::H225_Endpoint(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 10, PTrue, 3)
+  : PASN_Sequence(tag, tagClass, 10, true, 3)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -13870,34 +13870,34 @@ PINDEX H225_Endpoint::GetDataLength() const
 PBoolean H225_Endpoint::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_aliasAddress) && !m_aliasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callSignalAddress) && !m_callSignalAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_rasAddress) && !m_rasAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_endpointType) && !m_endpointType.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_priority) && !m_priority.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_remoteExtensionAddress) && !m_remoteExtensionAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_destExtraCallInfo) && !m_destExtraCallInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_alternateTransportAddresses, m_alternateTransportAddresses))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_circuitInfo, m_circuitInfo))
-    return PFalse;
+    return false;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

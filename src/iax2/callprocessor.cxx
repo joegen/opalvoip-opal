@@ -79,23 +79,23 @@ IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   
   selectedCodec = 0;
   
-  audioCanFlow = PFalse;
-  audioFramesNotStarted = PTrue;
-  suppressHangupFrame = PFalse;
+  audioCanFlow = false;
+  audioFramesNotStarted = true;
+  suppressHangupFrame = false;
   con = NULL;
 
-  firstMediaFrame = PTrue;
-  answerCallNow = PFalse;
+  firstMediaFrame = true;
+  answerCallNow = false;
   audioFrameDuration = 0;
   audioCompressedBytes = 0;
   
-  holdCall = PFalse;
-  holdReleaseCall = PFalse;
+  holdCall = false;
+  holdReleaseCall = false;
   
-  doTransfer = PFalse;
+  doTransfer = false;
   
   statusCheckTimer.SetNotifier(PCREATE_NOTIFIER(OnStatusCheck));
-  statusCheckOtherEnd = PFalse;
+  statusCheckOtherEnd = false;
   
   soundBufferState = BufferToSmall;
   callStartTick = PTimer::Tick();
@@ -202,7 +202,7 @@ void IAX2CallProcessor::CheckForHangupMessages()
   if (hangList.IsEmpty()) 
     return;
 
-  if (suppressHangupFrame == PTrue) {
+  if (suppressHangupFrame == true) {
     Terminate();
     return;
   }
@@ -467,12 +467,12 @@ void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
   currentSoundTimeStamp = thisTimeStamp;
 
   if (sendFullFrame) {
-    audioFramesNotStarted = PFalse;
+    audioFramesNotStarted = false;
     IAX2FullFrameVoice *f = new IAX2FullFrameVoice(this, *sound, thisTimeStamp);
     PTRACE(5, "Send a full audio frame" << thisTimeStamp << " On " << f->IdString());
     TransmitFrameToRemoteEndpoint(f);
   } else {
-    IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, PTrue, thisTimeStamp & 0xffff);
+    IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, true, thisTimeStamp & 0xffff);
     TransmitFrameToRemoteEndpoint(f);
   }
   
@@ -495,12 +495,12 @@ void IAX2CallProcessor::SendText(const PString & text)
 
 void IAX2CallProcessor::SendHold()
 {
-  holdCall = PTrue;
+  holdCall = true;
 }
 
 void IAX2CallProcessor::SendHoldRelease()
 {
-  holdReleaseCall = PTrue;
+  holdReleaseCall = true;
 }
 
 void IAX2CallProcessor::SendTransfer(
@@ -509,7 +509,7 @@ void IAX2CallProcessor::SendTransfer(
 {
   {
     PWaitAndSignal m(transferMutex);
-    doTransfer = PTrue;
+    doTransfer = true;
     transferCalledNumber = calledNumber;
     transferCalledContext = calledContext;
   }
@@ -535,7 +535,7 @@ void IAX2CallProcessor::SendTransferMessage()
       f->AppendIe(new IAX2IeCalledContext(transferCalledContext));
     TransmitFrameToRemoteEndpoint(f);
     
-    doTransfer = PFalse;
+    doTransfer = false;
   }
 }
 
@@ -548,7 +548,7 @@ void IAX2CallProcessor::SendTextMessage(PString & message)
 
 void IAX2CallProcessor::SendQuelchMessage()
 {
-  holdCall = PFalse;
+  holdCall = false;
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdQuelch);
   //we'll request that music is played to them because everyone likes music when they're on hold ;)
@@ -558,7 +558,7 @@ void IAX2CallProcessor::SendQuelchMessage()
 
 void IAX2CallProcessor::SendUnQuelchMessage()
 {
-  holdReleaseCall = PFalse;
+  holdReleaseCall = false;
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnquelch); 
   TransmitFrameToRemoteEndpoint(f);
@@ -620,7 +620,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameVoice * src)
 {
   if (firstMediaFrame) {
     PTRACE(5, "Processor\tReceived first voice media frame " << src->IdString());
-    firstMediaFrame = PFalse;
+    firstMediaFrame = false;
   }
   PTRACE(5, "ProcessNetworkFrame(IAX2FullFrameVoice * src)" << src->IdString());
   SendAckFrame(src);
@@ -633,7 +633,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameVideo * src)
 {
   if (firstMediaFrame) {
     PTRACE(5, "Processor\tReceived first video media frame ");
-    firstMediaFrame = PFalse;
+    firstMediaFrame = false;
   }
 
   PTRACE(5, "ProcessNetworkFrame(IAX2FullFrameVideo * src)");
@@ -656,7 +656,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   
   switch(src->GetSubClass()) {
   case IAX2FullFrameSessionControl::hangup:          // Other end has hungup
-    SetCallTerminating(PTrue);
+    SetCallTerminating(true);
     //cout << "Other end has hungup, so exit" << endl;
     con->EndCallNow();
     break;
@@ -740,7 +740,7 @@ PBoolean IAX2CallProcessor::SetUpConnection()
   callList.AppendString(con->GetRemotePartyAddress());
   
   CleanPendingLists();
-  return PTrue;
+  return true;
 }
 
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameNull * src)
@@ -761,7 +761,7 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   
   //check if the common method can process it?
   if (IAX2Processor::ProcessNetworkFrame(src)) {
-    return PTrue;
+    return true;
   }
 
   switch(src->GetSubClass()) {
@@ -853,7 +853,7 @@ PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     SendUnsupportedFrame(src);   //This method will delete the frame src.
   };
   
-  return PFalse;
+  return false;
 }
 
 
@@ -913,10 +913,10 @@ PBoolean IAX2CallProcessor::RemoteSelectedCodecOk()
     reply->AppendIe(new IAX2IeCauseCode(IAX2IeCauseCode::BearerCapabilityNotAvail));
     TransmitFrameToRemoteEndpoint(reply);
     con->ClearCall(OpalConnection::EndedByCapabilityExchange);
-    return PFalse;
+    return false;
   }
   
-  return PTrue;
+  return true;
 }
   
 
@@ -1052,13 +1052,13 @@ void IAX2CallProcessor::AcceptIncomingCall()
 {
   PTRACE(4, "AcceptIncomingCall()");
 
-  answerCallNow = PTrue;
+  answerCallNow = true;
   CleanPendingLists();
 }
 
 void IAX2CallProcessor::SendAnswerMessageToRemoteNode()
 {
-  answerCallNow = PFalse;
+  answerCallNow = false;
   if (!IsCallAnswered()) {
     SetCallAnswered(true);
     PTRACE(4, "Processor\tSend Answer message");
@@ -1071,13 +1071,13 @@ void IAX2CallProcessor::SendAnswerMessageToRemoteNode()
 PBoolean IAX2CallProcessor::SetAlerting(const PString & PTRACE_PARAM(calleeName), PBoolean /*withMedia*/)
 {
   PTRACE(3, "Processor\tSetAlerting from " << calleeName);
-  return PTrue;
+  return true;
 }
 
 /*The remote node has told us to hangup and go away */
 void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 { 
-  SetCallTerminating(PTrue);
+  SetCallTerminating(true);
 
   PTRACE(3, "Processor\tProcessIaxCmdHangup(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
@@ -1091,7 +1091,7 @@ void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 
 void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
 {
-  suppressHangupFrame = PTrue;
+  suppressHangupFrame = true;
   PTRACE(3, "Processor\tProcessIaxCmdReject(IAX2FullFrameProtocol *src)");
   //cout << "Remote endpoint has rejected our call " << endl;
   //cout << "Cause \"" << ieData.cause << "\"" << endl;
@@ -1115,7 +1115,7 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
   /* Other end has acknowledged our request to make a call.
      Tell our connection that the phone is ringing at the other end. */
   PString calleeName = con->GetRemotePartyName();
-  con->SetAlerting(calleeName, PTrue);
+  con->SetAlerting(calleeName, true);
 
   SendAckFrame(src);
   SetCallAccepted();
@@ -1311,7 +1311,7 @@ void IAX2CallProcessor::StartStatusCheckTimer(PINDEX msToWait)
   PTRACE(4, "Processor\tStatusCheck time. Now set flag to send a ping+lagrq packets");
   PTRACE(4, "Processor\tStatusCheck timer set to " << msToWait << "  ms");
   statusCheckTimer = PTimeInterval(msToWait); 
-  statusCheckOtherEnd = PTrue;
+  statusCheckOtherEnd = true;
   CleanPendingLists();
 }
 
@@ -1329,7 +1329,7 @@ void IAX2CallProcessor::RemoteNodeIsRinging()
 
 void IAX2CallProcessor::DoStatusCheck()
 {
-  statusCheckOtherEnd = PFalse;
+  statusCheckOtherEnd = false;
   if (IsCallTerminating())
     return;
 
@@ -1370,18 +1370,18 @@ PBoolean IAX2CallProcessor::IncomingMessageOutOfOrder(IAX2FullFrame *f)
 	  PTRACE(4, "Skipped frame, received frame is " << f->GetSequenceInfo().AsString());
 	  SendVnakFrame(f);
 	  delete f;
-	  return PTrue;
+	  return true;
       } 
 	  break;
       case IAX2SequenceNumbers::RepeatedFrame: {
 	  SendAckFrame(f);
 	  delete f;
-	  return PTrue;
+	  return true;
       }
   }
   
   /*The frame is ok, and the order is "good". so leave it alone for later processing */
-  return PFalse;
+  return false;
 }
 
 #endif // OPAL_IAX2

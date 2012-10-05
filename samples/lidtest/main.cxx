@@ -190,7 +190,7 @@ void TestButtons(OpalLineInterfaceDevice * device)
 void LidTest::Main()
 {
   cout << GetName()
-       << " Version " << GetVersion(PTrue)
+       << " Version " << GetVersion(true)
        << " by " << GetManufacturer()
        << " on " << GetOSClass() << ' ' << GetOSName()
        << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
@@ -209,7 +209,7 @@ void LidTest::Main()
              "t-trace."
              "o-output:"
 #endif
-             , PFalse);
+             , false);
 
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),

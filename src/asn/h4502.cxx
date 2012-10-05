@@ -30,7 +30,7 @@ const static PASN_Names Names_H4502_DummyArg[]={
 //
 
 H4502_DummyArg::H4502_DummyArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_DummyArg,2
 #endif
@@ -88,14 +88,14 @@ PBoolean H4502_DummyArg::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -120,7 +120,7 @@ const static PASN_Names Names_H4502_DummyRes[]={
 //
 
 H4502_DummyRes::H4502_DummyRes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_DummyRes,2
 #endif
@@ -178,14 +178,14 @@ PBoolean H4502_DummyRes::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -209,7 +209,7 @@ const static PASN_Names Names_H4502_EndDesignation[]={
 //
 
 H4502_EndDesignation::H4502_EndDesignation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_EndDesignation,2
 #endif
@@ -245,7 +245,7 @@ const static PASN_Names Names_H4502_CallStatus[]={
 //
 
 H4502_CallStatus::H4502_CallStatus(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1, PTrue
+  : PASN_Enumeration(tag, tagClass, 1, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CallStatus,2
 #endif
@@ -352,7 +352,7 @@ const static PASN_Names Names_H4502_CallTransferOperation[]={
 //
 
 H4502_CallTransferOperation::H4502_CallTransferOperation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 14, PFalse
+  : PASN_Enumeration(tag, tagClass, 14, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CallTransferOperation,8
 #endif
@@ -390,7 +390,7 @@ const static PASN_Names Names_H4502_CallTransferErrors[]={
 //
 
 H4502_CallTransferErrors::H4502_CallTransferErrors(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1008, PFalse
+  : PASN_Enumeration(tag, tagClass, 1008, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CallTransferErrors,4
 #endif
@@ -427,7 +427,7 @@ const static PASN_Names Names_H4502_CTInitiateArg_argumentExtension[]={
 //
 
 H4502_CTInitiateArg_argumentExtension::H4502_CTInitiateArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTInitiateArg_argumentExtension,2
 #endif
@@ -485,14 +485,14 @@ PBoolean H4502_CTInitiateArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -517,7 +517,7 @@ const static PASN_Names Names_H4502_CTSetupArg_argumentExtension[]={
 //
 
 H4502_CTSetupArg_argumentExtension::H4502_CTSetupArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTSetupArg_argumentExtension,2
 #endif
@@ -575,14 +575,14 @@ PBoolean H4502_CTSetupArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -607,7 +607,7 @@ const static PASN_Names Names_H4502_CTIdentifyRes_resultExtension[]={
 //
 
 H4502_CTIdentifyRes_resultExtension::H4502_CTIdentifyRes_resultExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTIdentifyRes_resultExtension,2
 #endif
@@ -665,14 +665,14 @@ PBoolean H4502_CTIdentifyRes_resultExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -697,7 +697,7 @@ const static PASN_Names Names_H4502_CTUpdateArg_argumentExtension[]={
 //
 
 H4502_CTUpdateArg_argumentExtension::H4502_CTUpdateArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTUpdateArg_argumentExtension,2
 #endif
@@ -755,14 +755,14 @@ PBoolean H4502_CTUpdateArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -787,7 +787,7 @@ const static PASN_Names Names_H4502_SubaddressTransferArg_argumentExtension[]={
 //
 
 H4502_SubaddressTransferArg_argumentExtension::H4502_SubaddressTransferArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_SubaddressTransferArg_argumentExtension,2
 #endif
@@ -845,14 +845,14 @@ PBoolean H4502_SubaddressTransferArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -877,7 +877,7 @@ const static PASN_Names Names_H4502_CTCompleteArg_argumentExtension[]={
 //
 
 H4502_CTCompleteArg_argumentExtension::H4502_CTCompleteArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTCompleteArg_argumentExtension,2
 #endif
@@ -935,14 +935,14 @@ PBoolean H4502_CTCompleteArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -967,7 +967,7 @@ const static PASN_Names Names_H4502_CTActiveArg_argumentExtension[]={
 //
 
 H4502_CTActiveArg_argumentExtension::H4502_CTActiveArg_argumentExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PFalse
+  : PASN_Choice(tag, tagClass, 2, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4502_CTActiveArg_argumentExtension,2
 #endif
@@ -1025,14 +1025,14 @@ PBoolean H4502_CTActiveArg_argumentExtension::CreateObject()
   switch (tag) {
     case e_extensionSeq :
       choice = new H4502_ExtensionSeq();
-      return PTrue;
+      return true;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -1050,7 +1050,7 @@ PObject * H4502_CTActiveArg_argumentExtension::Clone() const
 //
 
 H4502_CTInitiateArg::H4502_CTInitiateArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1103,14 +1103,14 @@ PINDEX H4502_CTInitiateArg::GetDataLength() const
 PBoolean H4502_CTInitiateArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_callIdentity.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reroutingNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1143,7 +1143,7 @@ PObject * H4502_CTInitiateArg::Clone() const
 //
 
 H4502_CTSetupArg::H4502_CTSetupArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -1198,14 +1198,14 @@ PINDEX H4502_CTSetupArg::GetDataLength() const
 PBoolean H4502_CTSetupArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_callIdentity.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_transferringNumber) && !m_transferringNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1239,7 +1239,7 @@ PObject * H4502_CTSetupArg::Clone() const
 //
 
 H4502_CTIdentifyRes::H4502_CTIdentifyRes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1292,14 +1292,14 @@ PINDEX H4502_CTIdentifyRes::GetDataLength() const
 PBoolean H4502_CTIdentifyRes::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_callIdentity.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_reroutingNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_resultExtension) && !m_resultExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1332,7 +1332,7 @@ PObject * H4502_CTIdentifyRes::Clone() const
 //
 
 H4502_CTUpdateArg::H4502_CTUpdateArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_redirectionInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -1394,16 +1394,16 @@ PINDEX H4502_CTUpdateArg::GetDataLength() const
 PBoolean H4502_CTUpdateArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_redirectionNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectionInfo) && !m_redirectionInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_basicCallInfoElements) && !m_basicCallInfoElements.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1439,7 +1439,7 @@ PObject * H4502_CTUpdateArg::Clone() const
 //
 
 H4502_SubaddressTransferArg::H4502_SubaddressTransferArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 1, true, 0)
 {
 }
 
@@ -1488,12 +1488,12 @@ PINDEX H4502_SubaddressTransferArg::GetDataLength() const
 PBoolean H4502_SubaddressTransferArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_redirectionSubaddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1525,7 +1525,7 @@ PObject * H4502_SubaddressTransferArg::Clone() const
 //
 
 H4502_CTCompleteArg::H4502_CTCompleteArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_redirectionInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -1595,20 +1595,20 @@ PINDEX H4502_CTCompleteArg::GetDataLength() const
 PBoolean H4502_CTCompleteArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_endDesignation.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_redirectionNumber.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_basicCallInfoElements) && !m_basicCallInfoElements.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_redirectionInfo) && !m_redirectionInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_callStatus.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1646,7 +1646,7 @@ PObject * H4502_CTCompleteArg::Clone() const
 //
 
 H4502_CTActiveArg::H4502_CTActiveArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_connectedInfo.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -1708,16 +1708,16 @@ PINDEX H4502_CTActiveArg::GetDataLength() const
 PBoolean H4502_CTActiveArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_connectedAddress.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_basicCallInfoElements) && !m_basicCallInfoElements.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_connectedInfo) && !m_connectedInfo.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_argumentExtension) && !m_argumentExtension.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

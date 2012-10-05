@@ -73,7 +73,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr, unsigned short port)
 
   IAX2IeCallToken::InitialiseKey();
   //We handle the deletion of regProcessor objects.
-  regProcessors.AllowDeleteObjects(PFalse);
+  regProcessors.AllowDeleteObjects(false);
 
   Initialise();
   PTRACE(5, "Iax2Ep\tCreated endpoint.");
@@ -227,7 +227,7 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
   PBoolean res = connectionsActive.Contains(frameToken);
   if (res) {
-    return PTrue;
+    return true;
   }
 
   mutexTokenTable.StartRead();
@@ -236,18 +236,18 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
   if (tokenTranslated.IsEmpty()) {
     PTRACE(4, "No matching translation table entry token for \"" << frameToken << "\"");
-    return PFalse;
+    return false;
   }
 
   res = connectionsActive.Contains(tokenTranslated);
   if (res) {
     PTRACE(5, "Found \"" << tokenTranslated << "\" in the connectionsActive table");
-    return PTrue;
+    return true;
   }
 
   PTRACE(6, "ERR Could not find matching connection for \"" << tokenTranslated 
 	 << "\" or \"" << frameToken << "\"");
-  return PFalse;
+  return false;
 }
 
 void IAX2EndPoint::ReportStoredConnections()
@@ -464,7 +464,7 @@ PBoolean IAX2EndPoint::Initialise()
   if (!sock->Listen(INADDR_ANY, 0, localPort)) {
     PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << localPort);
     PTRACE(3, "Receiver\tFailed because the socket:::" << sock->GetErrorText());
-    return PFalse;
+    return false;
   }
   
   PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << localPort);
@@ -472,7 +472,7 @@ PBoolean IAX2EndPoint::Initialise()
   transmitter = new IAX2Transmit(*this, *sock);
   receiver    = new IAX2Receiver(*this, *sock);
   
-  return PTrue;
+  return true;
 }
 
 PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
@@ -492,7 +492,7 @@ PBoolean IAX2EndPoint::ProcessInConnectionTestAll(IAX2Frame *frame)
     // Do Not have a FullFrame, so dont add a translation entry.
     // Only process miniframes when the call is setup, when we have a 
     // translation table in place and working...
-    return PFalse;
+    return false;
   }
      
   PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  
@@ -521,7 +521,7 @@ PBoolean IAX2EndPoint::ProcessInConnectionTestAll(IAX2Frame *frame)
 
   if (callToken.IsEmpty()) {
     PTRACE(3, "Iax2Ep\tFail to find home for the frame " << *frame);
-    return PFalse;
+    return false;
   }
 
   PTRACE(5, "Iax2Ep\tProcess " << *frame << " in connection" << callToken);
@@ -544,7 +544,7 @@ PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
   if (tokenTranslated.IsEmpty()) {
     PTRACE(3, "Distribution\tERR Could not find matching connection "
 	   << "for incoming frame of " << f->GetRemoteInfo());
-    return PFalse;
+    return false;
   }
 
   return ProcessFrameInConnection(f, tokenTranslated);
@@ -559,12 +559,12 @@ PBoolean IAX2EndPoint::ProcessFrameInConnection(IAX2Frame *f,
   if (connection != NULL) {
     PTRACE(5, "Distribution\tHave a connection for " << f->GetRemoteInfo());
     connection->IncomingEthernetFrame(f);
-    return PTrue;
+    return true;
   }
   
   PTRACE(3, "Distribution\tERR Could not find matching connection for \"" 
 	 << token << "\" or \"" << f->GetConnectionToken() << "\"");
-  return PFalse;
+  return false;
 }
 
 //The receiving thread has finished reading a frame, and has droppped it here.
@@ -799,11 +799,11 @@ PBoolean IAX2EndPoint::IsRegistered(const PString & host, const PString & userna
       
     if (regProcessor->GetHost() == host &&
       regProcessor->GetUserName() == username) {
-      return PTrue;
+      return true;
     }
   }
   
-  return PFalse;
+  return false;
 }
 
 PINDEX IAX2EndPoint::GetRegistrationsCount() {
@@ -816,7 +816,7 @@ PINDEX IAX2EndPoint::GetRegistrationsCount() {
 IAX2IncomingEthernetFrames::IAX2IncomingEthernetFrames() 
   : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX Incoming")
 {
-  keepGoing = PTrue;
+  keepGoing = true;
 }
 
 void IAX2IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
@@ -828,7 +828,7 @@ void IAX2IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
 void IAX2IncomingEthernetFrames::Terminate()
 {
   PTRACE(3, "Distribute\tEnd of thread - have received a terminate signal");
-  keepGoing = PFalse;
+  keepGoing = false;
   ProcessList();
 }
 

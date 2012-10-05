@@ -84,7 +84,7 @@ PObject * H235_SRTP_SrtpKeys::Clone() const
 //
 
 H235_SRTP_FecOrder::H235_SRTP_FecOrder(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -135,12 +135,12 @@ PINDEX H235_SRTP_FecOrder::GetDataLength() const
 PBoolean H235_SRTP_FecOrder::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_fecBeforeSrtp) && !m_fecBeforeSrtp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_fecAfterSrtp) && !m_fecAfterSrtp.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -180,7 +180,7 @@ const static PASN_Names Names_H235_SRTP_SrtpKeyParameters_lifetime[]={
 //
 
 H235_SRTP_SrtpKeyParameters_lifetime::H235_SRTP_SrtpKeyParameters_lifetime(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_SRTP_SrtpKeyParameters_lifetime,2
 #endif
@@ -195,11 +195,11 @@ PBoolean H235_SRTP_SrtpKeyParameters_lifetime::CreateObject()
     case e_powerOfTwo :
     case e_specific :
       choice = new PASN_Integer();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -217,7 +217,7 @@ PObject * H235_SRTP_SrtpKeyParameters_lifetime::Clone() const
 //
 
 H235_SRTP_SrtpKeyParameters_mki::H235_SRTP_SrtpKeyParameters_mki(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 0, true, 0)
 {
   m_length.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
 }
@@ -265,12 +265,12 @@ PINDEX H235_SRTP_SrtpKeyParameters_mki::GetDataLength() const
 PBoolean H235_SRTP_SrtpKeyParameters_mki::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_length.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_value.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -332,7 +332,7 @@ PObject * H235_SRTP_ArrayOf_GenericData::Clone() const
 //
 
 H235_SRTP_SrtpKeyParameters::H235_SRTP_SrtpKeyParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
 {
 }
 
@@ -391,16 +391,16 @@ PINDEX H235_SRTP_SrtpKeyParameters::GetDataLength() const
 PBoolean H235_SRTP_SrtpKeyParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_masterKey.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_masterSalt.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_lifetime) && !m_lifetime.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_mki) && !m_mki.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -435,7 +435,7 @@ PObject * H235_SRTP_SrtpKeyParameters::Clone() const
 //
 
 H235_SRTP_SrtpSessionParameters::H235_SRTP_SrtpSessionParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 7, true, 0)
 {
   m_kdr.SetConstraints(PASN_Object::FixedConstraint, 0, 24);
   m_windowSizeHint.SetConstraints(PASN_Object::FixedConstraint, 64, 65535);
@@ -518,22 +518,22 @@ PINDEX H235_SRTP_SrtpSessionParameters::GetDataLength() const
 PBoolean H235_SRTP_SrtpSessionParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_kdr) && !m_kdr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_unencryptedSrtp) && !m_unencryptedSrtp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_unencryptedSrtcp) && !m_unencryptedSrtcp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_unauthenticatedSrtp) && !m_unauthenticatedSrtp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_fecOrder) && !m_fecOrder.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_windowSizeHint) && !m_windowSizeHint.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_newParameter) && !m_newParameter.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -576,7 +576,7 @@ PObject * H235_SRTP_SrtpSessionParameters::Clone() const
 //
 
 H235_SRTP_SrtpCryptoInfo::H235_SRTP_SrtpCryptoInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
 }
 
@@ -633,14 +633,14 @@ PINDEX H235_SRTP_SrtpCryptoInfo::GetDataLength() const
 PBoolean H235_SRTP_SrtpCryptoInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (HasOptionalField(e_cryptoSuite) && !m_cryptoSuite.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_sessionParams) && !m_sessionParams.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_allowMKI) && !m_allowMKI.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
