@@ -45,8 +45,8 @@ extern "C" {
 #include <speex_preprocess.h>
 #endif
 #else
-#include "../src/codec/speex/libspeex/speex_echo.h"
-#include "../src/codec/speex/libspeex/speex_preprocess.h"
+#include "speex/libspeex/speex_echo.h"
+#include "speex/libspeex/speex_preprocess.h"
 #endif
 };
 

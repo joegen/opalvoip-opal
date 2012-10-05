@@ -59,7 +59,7 @@ class PNatMethod;
 // Will use OS installed version for Linux, for DevStudio uses built in version
 //
 
-#ifdef _MSC_VER
+#if OPAL_SRTP==2
 #include <srtp.h>
 #pragma warning(default:LIBSRTP_DISABLED_MSVC_WARNINGS)
 #pragma comment(lib, "ws2_32.lib") // As libsrtp uses htonl etc
