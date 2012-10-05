@@ -97,7 +97,7 @@
     <OutDir>..\..\bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
     <TargetName>simple</TargetName>
-    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>

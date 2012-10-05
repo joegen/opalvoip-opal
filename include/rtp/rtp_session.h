@@ -55,6 +55,8 @@ class PNatMethod;
 class RTCP_XR_Metrics;
 
 
+#if P_QOS
+
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // class to hold the QoS definitions for an RTP channel
@@ -66,6 +68,8 @@ class RTP_QOS : public PObject
     PQoS dataQoS;
     PQoS ctrlQoS;
 };
+
+#endif // P_QOS
 
 
 ///////////////////////////////////////////////////////////////////////////////

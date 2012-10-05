@@ -45,7 +45,6 @@
 
 
 #include "aes.h"
-#include "err.h"
 
 /* 
  * we use the tables T0, T1, T2, T3, and T4 to compute AES, and 
