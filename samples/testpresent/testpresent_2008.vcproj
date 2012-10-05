@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="testpresent"
 	ProjectGUID="{1650298C-5F43-47B8-974E-155D1FA0D672}"
 	RootNamespace="testpresent"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_DEBUG;PTRACING=2"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -116,7 +116,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="NDEBUG;PTRACING=2"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -169,9 +169,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\Console_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+			RelativePathToProject=".\src\win32\opal_lib_2008.vcproj"
 		/>
 	</References>
 	<Files>
