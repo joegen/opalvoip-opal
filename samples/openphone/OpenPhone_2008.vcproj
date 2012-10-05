@@ -53,7 +53,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=2"
+				PreprocessorDefinitions="NDEBUG;PTRACING=2"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -149,7 +149,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswud&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;PTRACING=2"
+				PreprocessorDefinitions="_DEBUG;PTRACING=2"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
@@ -312,13 +312,13 @@
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
 			UseDependenciesInBuild="false"
-			RelativePathToProject="..\..\src\win32\opal_dll_2008.vcproj"
+			RelativePathToProject=".\src\win32\opal_dll_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
 			UseInBuild="false"
 			UseDependenciesInBuild="false"
-			RelativePathToProject="..\..\..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 	</References>
 	<Files>
