@@ -627,6 +627,9 @@
     <ClCompile Include="..\codec\h264mf.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\ep\GstEndPoint.cxx">
+      <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
     <ClCompile Include="..\ep\ivr.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
@@ -1165,6 +1168,9 @@
     </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\include\ut_sim.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ep\GstEndPoint.h">
+      <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\ep\ivr.h">
       <Filter>Header Files\Endpoints</Filter>
