@@ -36,8 +36,8 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/rtpconn.h>
-#include <opal/rtpep.h>
+#include <rtp/rtpconn.h>
+#include <rtp/rtpep.h>
 #include <opal/manager.h>
 #include <codec/rfc2833.h>
 #include <t38/t38proto.h>

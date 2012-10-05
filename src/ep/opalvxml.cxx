@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/ivr.h>
+#include <ep/ivr.h>
 
 #include <opal/call.h>
 #include <codec/opalwavfile.h>

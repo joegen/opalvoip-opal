@@ -34,7 +34,7 @@
 #endif
 
 #include <codec/rfc2833.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 #include <rtp/rtp.h>
 
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!                Y   X";

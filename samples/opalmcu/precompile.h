@@ -29,9 +29,9 @@
 #include <ptlib.h>
 #include <ptclib/cli.h>
 #include <opal/console_mgr.h>
-#include <opal/opalmixer.h>
-#include <opal/ivr.h>
-#include <opal/pcss.h>
+#include <ep/opalmixer.h>
+#include <ep/ivr.h>
+#include <ep/pcss.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
 

@@ -44,7 +44,7 @@
 
 #if OPAL_SIP
 
-#include <opal/rtpep.h>
+#include <rtp/rtpep.h>
 #include <sip/sipcon.h>
 #include <sip/handlers.h> 
 

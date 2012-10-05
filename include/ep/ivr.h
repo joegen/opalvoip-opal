@@ -40,8 +40,8 @@
 
 #if OPAL_IVR
 
-#include <opal/opalvxml.h>
-#include <opal/localep.h>
+#include <ep/opalvxml.h>
+#include <ep/localep.h>
 
 class OpalIVRConnection;
 

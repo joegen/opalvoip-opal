@@ -38,17 +38,14 @@
 #include <opal.h>
 #include <opal/manager.h>
 
-#if OPAL_HAS_PCSS
-#include <opal/pcss.h>
-#endif
-
-#include <opal/localep.h>
+#include <ep/pcss.h>
+#include <ep/localep.h>
 #include <h323/h323ep.h>
 #include <sip/sipep.h>
 #include <iax2/iax2ep.h>
 #include <lids/lidep.h>
 #include <t38/t38proto.h>
-#include <opal/ivr.h>
+#include <ep/ivr.h>
 
 #include <queue>
 

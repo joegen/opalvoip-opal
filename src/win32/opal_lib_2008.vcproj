@@ -1403,11 +1403,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\ivr.cxx"
+					RelativePath="..\ep\ivr.cxx"
 					>
 				</File>
 				<File
-					RelativePath="..\opal\localep.cxx"
+					RelativePath="..\ep\localep.cxx"
 					>
 				</File>
 				<File
@@ -1435,11 +1435,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\opalmixer.cxx"
+					RelativePath="..\ep\opalmixer.cxx"
 					>
 				</File>
 				<File
-					RelativePath="..\opal\opalvxml.cxx"
+					RelativePath="..\ep\opalvxml.cxx"
 					>
 				</File>
 				<File
@@ -1451,7 +1451,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\pcss.cxx"
+					RelativePath="..\ep\pcss.cxx"
 					>
 				</File>
 				<File
@@ -1463,11 +1463,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\opal\rtpconn.cxx"
+					RelativePath="..\rtp\rtpconn.cxx"
 					>
 				</File>
 				<File
-					RelativePath="..\opal\rtpep.cxx"
+					RelativePath="..\rtp\rtpep.cxx"
 					>
 				</File>
 				<File
@@ -4573,11 +4573,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\ivr.h"
+					RelativePath="..\..\include\ep\ivr.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\localep.h"
+					RelativePath="..\..\include\ep\localep.h"
 					>
 				</File>
 				<File
@@ -4609,11 +4609,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\opalmixer.h"
+					RelativePath="..\..\include\ep\opalmixer.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\opalvxml.h"
+					RelativePath="..\..\include\ep\opalvxml.h"
 					>
 				</File>
 				<File
@@ -4621,7 +4621,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\pcss.h"
+					RelativePath="..\..\include\ep\pcss.h"
 					>
 				</File>
 				<File
@@ -4633,11 +4633,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\rtpconn.h"
+					RelativePath="..\..\include\rtp\rtpconn.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\opal\rtpep.h"
+					RelativePath="..\..\include\rtp\rtpep.h"
 					>
 				</File>
 				<File

@@ -40,8 +40,8 @@
 #include <rtp/rtp_session.h>
 
 #include <opal/endpoint.h>
-#include <opal/rtpep.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpep.h>
+#include <rtp/rtpconn.h>
 #include <rtp/jitter.h>
 #include <rtp/metrics.h>
 

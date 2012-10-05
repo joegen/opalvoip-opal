@@ -28,7 +28,7 @@
 
 #include <ptlib.h>
 #include <opal/console_mgr.h>
-#include <opal/ivr.h>
+#include <ep/ivr.h>
 #include <sip/sipep.h>
 #include <h323/h323ep.h>
 

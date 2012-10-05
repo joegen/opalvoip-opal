@@ -37,7 +37,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/mediatype.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 #include <opal/call.h>
 #include <opal/endpoint.h>
 #include <opal/manager.h>

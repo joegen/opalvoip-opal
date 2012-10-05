@@ -147,10 +147,7 @@ VPATH_C := $(OPAL_SRCDIR)/codec
 
 SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/endpoint.cxx \
-           $(OPAL_SRCDIR)/opal/rtpep.cxx \
            $(OPAL_SRCDIR)/opal/connection.cxx \
-           $(OPAL_SRCDIR)/opal/rtpconn.cxx \
-           $(OPAL_SRCDIR)/opal/localep.cxx \
            $(OPAL_SRCDIR)/opal/call.cxx \
            $(OPAL_SRCDIR)/opal/mediafmt.cxx \
            $(OPAL_SRCDIR)/opal/mediatype.cxx \
@@ -165,6 +162,9 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
            $(OPAL_SRCDIR)/rtp/metrics.cxx \
            $(OPAL_SRCDIR)/rtp/pcapfile.cxx \
+           $(OPAL_SRCDIR)/rtp/rtpep.cxx \
+           $(OPAL_SRCDIR)/rtp/rtpconn.cxx \
+           $(OPAL_SRCDIR)/ep/localep.cxx \
            $(OPAL_SRCDIR)/opal/opal_c.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
@@ -173,21 +173,21 @@ SOURCES	+= $(OPAL_SRCDIR)/opal/console_mgr.cxx
 endif
 
 ifeq ($(OPAL_IVR), yes)
-SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
-           $(OPAL_SRCDIR)/opal/opalvxml.cxx 
+SOURCES += $(OPAL_SRCDIR)/ep/ivr.cxx \
+           $(OPAL_SRCDIR)/ep/opalvxml.cxx 
 endif
 
 
 ifeq ($(OPAL_HAS_MIXER), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
-           $(OPAL_SRCDIR)/opal/opalmixer.cxx
+           $(OPAL_SRCDIR)/ep/opalmixer.cxx
 ifeq ($(target_os),mingw)
 LIBS += -lvfw32
 endif
 endif
 
 ifeq ($(OPAL_HAS_PCSS), yes)
-SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx
+SOURCES += $(OPAL_SRCDIR)/ep/pcss.cxx
 endif
 
 ########################################

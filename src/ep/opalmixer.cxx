@@ -32,7 +32,7 @@
 
 #include <ptlib.h>
 
-#include <opal/opalmixer.h>
+#include <ep/opalmixer.h>
 
 #if OPAL_HAS_MIXER
 

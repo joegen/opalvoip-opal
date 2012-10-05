@@ -45,7 +45,7 @@
 #include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 
 #if OPAL_SRTP
 
