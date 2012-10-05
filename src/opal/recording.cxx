@@ -35,7 +35,7 @@
 
 #if defined(OPAL_HAS_MIXER) && defined(P_WAVFILE)
 
-#include <opal/opalmixer.h>
+#include <ep/opalmixer.h>
 #include <opal/recording.h>
 #include <codec/opalwavfile.h>
 

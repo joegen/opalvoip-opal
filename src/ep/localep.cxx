@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/localep.h>
+#include <ep/localep.h>
 #include <opal/call.h>
 
 

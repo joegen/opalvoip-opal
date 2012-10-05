@@ -46,7 +46,7 @@ typedef PHTTPServiceProcess MyProcessAncestor;
 #include <sip/sip.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
-#include <opal/ivr.h>
+#include <ep/ivr.h>
 
 
 

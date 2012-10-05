@@ -34,8 +34,8 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/rtpep.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpep.h>
+#include <rtp/rtpconn.h>
 
 
 OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all endpoints.

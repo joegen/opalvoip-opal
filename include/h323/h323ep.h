@@ -42,7 +42,7 @@
 
 #if OPAL_H323
 
-#include <opal/rtpep.h>
+#include <rtp/rtpep.h>
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <opal/transports.h>

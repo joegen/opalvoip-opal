@@ -42,7 +42,7 @@
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
 #include <opal/mediasession.h>
-#include <opal/localep.h>
+#include <ep/localep.h>
 
 
 class OpalTransport;

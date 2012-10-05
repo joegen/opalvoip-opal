@@ -42,7 +42,7 @@
 #if OPAL_HAS_PCSS
 
 #include <ptlib/sound.h>
-#include <opal/localep.h>
+#include <ep/localep.h>
 
 
 class OpalPCSSConnection;

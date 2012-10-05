@@ -2205,7 +2205,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream,
     if (contentLengthPresent) {
       if (contentLength > 0) {
         stream.read(m_entityBody.GetPointerAndSetLength(contentLength), contentLength);
-        if (stream.gcount() != contentLength)
+        if (stream.gcount() != (std::streamsize)contentLength)
           truncated = true;
       }
     }
