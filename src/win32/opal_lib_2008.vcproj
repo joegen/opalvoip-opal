@@ -4376,6 +4376,179 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\..\revision.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\revision.h.in"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Setting SVN revision include file."
+						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						AdditionalDependencies="$(InputDir).svn\wc.db"
+						Outputs="$(InputDir)revision.h"
+					/>
+				</FileConfiguration>
+			</File>
 			<Filter
 				Name="Opal Headers"
 				>
@@ -6180,179 +6353,6 @@
 		<File
 			RelativePath="..\..\configure.ac"
 			>
-		</File>
-		<File
-			RelativePath="..\..\revision.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\revision.h.in"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Windows Mobile 6 Professional SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Windows Mobile 6 Standard SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Windows Mobile 6 Professional SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Windows Mobile 6 Standard SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Windows Mobile 6 Professional SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="No Trace|Windows Mobile 6 Standard SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Setting SVN revision include file."
-					CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
-					AdditionalDependencies="$(InputDir).svn\wc.db"
-					Outputs="$(InputDir)revision.h"
-				/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
