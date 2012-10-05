@@ -105,6 +105,7 @@ ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
 
 VPATH_CXX := $(OPAL_SRCDIR)/opal \
+	     $(OPAL_SRCDIR)/ep \
 	     $(OPAL_SRCDIR)/rtp \
 	     $(OPAL_SRCDIR)/lids \
 	     $(OPAL_SRCDIR)/codec \
