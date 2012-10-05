@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OPAL_dll"
 	ProjectGUID="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
 	RootNamespace="OPAL_dll"
@@ -62,7 +62,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				PreprocessorDefinitions="NDEBUG;_DLL;_LIB;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -100,6 +100,198 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary=".\..\..\lib/opaln.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\..\..\lib"
+			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\..\lib/opal_dll.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="_DEBUG;_DLL;_LIB;PTRACING=2"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="true"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				BrowseInformation="1"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opalsd.lib ptlibd.lib"
+				OutputFile="$(OutDir)\opald.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;..\..\..\ptlib\Lib"
+				ModuleDefinitionFile="$(IntDir)\opald.def"
+				DelayLoadDLLs=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary=".\..\..\lib/opald.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory=".\..\..\lib"
+			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\..\lib\opal_dll.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
+				PreprocessorDefinitions="NDEBUG;_DLL;_LIB;PTRACING=2"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="ptlib.h"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="1"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="3081"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="opals.lib ptlib.lib"
+				OutputFile="$(OutDir)\opal.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;..\..\..\ptlib\Lib"
+				ModuleDefinitionFile="$(IntDir)\opal.def"
+				DelayLoadDLLs=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary=".\..\..\lib/opal.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -339,100 +531,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\..\..\lib"
-			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\..\..\lib/opal_dll.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="_DEBUG"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="true"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				BrowseInformation="1"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opalsd.lib ptlibd.lib"
-				OutputFile="$(OutDir)\opald.dll"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;..\..\..\ptlib\Lib"
-				ModuleDefinitionFile="$(IntDir)\opald.def"
-				DelayLoadDLLs=""
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary=".\..\..\lib/opald.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 			OutputDirectory="..\..\lib\wm5ppc"
 			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
@@ -636,104 +734,6 @@
 				AdditionalFiles=""
 			/>
 			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\..\..\lib"
-			IntermediateDirectory="$(OutDir)\$(ConfigurationName)"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\..\..\lib\opal_dll.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
-				PreprocessorDefinitions="NDEBUG"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="ptlib.h"
-				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
-				WarningLevel="4"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="1"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="3081"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="opals.lib ptlib.lib"
-				OutputFile="$(OutDir)\opal.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;..\..\..\ptlib\Lib"
-				ModuleDefinitionFile="$(IntDir)\opal.def"
-				DelayLoadDLLs=""
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary=".\..\..\lib/opal.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -1571,11 +1571,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
-			RelativePathToProject=".\libs\opal\src\win32\opal_lib_2008.vcproj"
+			RelativePathToProject=".\src\win32\opal_lib_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject=".\libs\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 	</References>
 	<Files>
@@ -1588,6 +1588,21 @@
 				<FileConfiguration
 					Name="No Trace|Win32"
 					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1610,14 +1625,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -1628,13 +1635,6 @@
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
 					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1717,6 +1717,25 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Merging exported library symbols"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
+						Outputs="$(IntDir)\$(TargetName).def"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -1726,14 +1745,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1754,17 +1765,6 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Merging exported library symbols"
-						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
-						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1844,6 +1844,21 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -1860,13 +1875,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -1876,14 +1884,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1967,6 +1967,25 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Merging exported library symbols"
+						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
+						Outputs="$(IntDir)\$(TargetName).def"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -1983,17 +2002,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Merging exported library symbols"
-						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -I &quot;$(_ACP_LIB);..\..\..\ptlib\lib&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
-						Outputs="$(IntDir)\$(TargetName).def"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2003,14 +2011,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2093,6 +2093,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2109,14 +2125,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2126,14 +2134,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2220,6 +2220,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2236,14 +2252,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2253,14 +2261,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2348,6 +2348,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2364,14 +2380,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2381,14 +2389,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2478,6 +2478,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2487,14 +2503,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2521,14 +2529,6 @@
 						CommandLine="PATH=%PATH%;..\..\..\ptlib\lib&#x0D;&#x0A;MergeSym -x &quot;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5sp\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -2608,6 +2608,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					>
 					<Tool
@@ -2630,14 +2646,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -2647,14 +2655,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -2741,6 +2741,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -2757,14 +2773,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -2774,14 +2782,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -2864,6 +2864,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -2880,14 +2896,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -2896,14 +2904,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -2987,6 +2987,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						>
 						<Tool
@@ -2995,14 +3011,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -3019,14 +3027,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -3114,6 +3114,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3130,14 +3146,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3147,14 +3155,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -3237,6 +3237,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3253,14 +3269,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3270,14 +3278,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
 						>
 						<Tool
 							Name="VCCustomBuildTool"
@@ -3360,6 +3360,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3375,14 +3391,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3392,14 +3400,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -3488,6 +3488,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3504,14 +3520,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3521,14 +3529,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -3618,6 +3618,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3634,14 +3650,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3651,14 +3659,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -3748,6 +3748,22 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3764,14 +3780,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 					ExcludedFromBuild="true"
 					>
@@ -3781,14 +3789,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -3881,6 +3881,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3897,14 +3913,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -3914,14 +3922,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4004,6 +4004,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4020,14 +4036,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4037,14 +4045,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4127,6 +4127,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4143,14 +4159,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4160,14 +4168,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4254,6 +4254,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4270,14 +4286,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4287,14 +4295,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4377,6 +4377,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4393,14 +4409,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4410,14 +4418,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4500,6 +4500,22 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
 						Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4516,14 +4532,6 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 						ExcludedFromBuild="true"
 						>
@@ -4533,14 +4541,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -4627,6 +4627,25 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					PreprocessorDefinitions="_DEBUG;$(NoInherit)"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					PreprocessorDefinitions="NDEBUG;$(NoInherit)"
+					UsePrecompiledHeader="0"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
 				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 				>
 				<Tool
@@ -4647,15 +4666,6 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					PreprocessorDefinitions="_DEBUG;$(NoInherit)"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
 				Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 				>
 				<Tool
@@ -4671,16 +4681,6 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					PreprocessorDefinitions="NDEBUG;$(NoInherit)"
-					UsePrecompiledHeader="0"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -4777,6 +4777,20 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
 				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 				>
 				<Tool
@@ -4791,13 +4805,6 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
 				Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 				>
 				<Tool
@@ -4806,13 +4813,6 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Windows Mobile 5.0 Smartphone SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
 				>
 				<Tool
 					Name="VCCustomBuildTool"
