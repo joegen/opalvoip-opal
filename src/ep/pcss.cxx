@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/pcss.h>
+#include <ep/pcss.h>
 
 #if OPAL_HAS_PCSS
 

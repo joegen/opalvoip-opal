@@ -46,7 +46,7 @@
 #include <ptclib/pxml.h>
 #include <ptclib/threadpool.h>
 #include <opal/transports.h>
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 
  
 class OpalMediaFormatList;

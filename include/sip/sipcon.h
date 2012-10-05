@@ -40,7 +40,7 @@
 
 #if OPAL_SIP
 
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
 

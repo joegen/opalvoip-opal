@@ -31,8 +31,8 @@
 
 #include <ptclib/ipacl.h>
 #include <opal/manager.h>
-#include <opal/pcss.h>
-#include <opal/ivr.h>
+#include <ep/pcss.h>
+#include <ep/ivr.h>
 
 
 #ifndef OPAL_PTLIB_AUDIO

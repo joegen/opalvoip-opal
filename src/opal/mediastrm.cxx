@@ -48,8 +48,8 @@
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
-#include <opal/rtpconn.h>
-#include <opal/rtpep.h>
+#include <rtp/rtpconn.h>
+#include <rtp/rtpep.h>
 #include <opal/call.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10

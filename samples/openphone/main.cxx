@@ -58,8 +58,8 @@
 
 #include <opal/mediasession.h>
 #include <opal/transcoders.h>
-#include <opal/ivr.h>
-#include <opal/opalmixer.h>
+#include <ep/ivr.h>
+#include <ep/opalmixer.h>
 #include <sip/sippres.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>

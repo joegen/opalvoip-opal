@@ -47,7 +47,7 @@
 #error Cannot compile without PTLib sound channel support!
 #endif
 
-#include <opal/pcss.h>
+#include <ep/pcss.h>
 
 #include <h323/h323.h>
 #include <h323/gkclient.h>

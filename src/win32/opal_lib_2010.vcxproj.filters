@@ -456,10 +456,10 @@
     <ClCompile Include="..\opal\transports.cxx">
       <Filter>Source Files\OPAL</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\rtpconn.cxx">
+    <ClCompile Include="..\rtp\rtpconn.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\rtpep.cxx">
+    <ClCompile Include="..\rtp\rtpep.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
     <ClCompile Include="..\rtp\jitter.cxx">
@@ -627,19 +627,19 @@
     <ClCompile Include="..\codec\h264mf.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\ivr.cxx">
+    <ClCompile Include="..\ep\ivr.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\localep.cxx">
+    <ClCompile Include="..\ep\localep.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\pcss.cxx">
+    <ClCompile Include="..\ep\pcss.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\opalvxml.cxx">
+    <ClCompile Include="..\ep\opalvxml.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
-    <ClCompile Include="..\opal\opalmixer.cxx">
+    <ClCompile Include="..\ep\opalmixer.cxx">
       <Filter>Source Files\Endpoints</Filter>
     </ClCompile>
     <ClCompile Include="..\codec\h261mf.cxx">
@@ -971,10 +971,10 @@
     <ClInclude Include="..\..\include\opal\transports.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\rtpconn.h">
+    <ClInclude Include="..\..\include\rtp\rtpconn.h">
       <Filter>Header Files\RTP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\rtpep.h">
+    <ClInclude Include="..\..\include\rtp\rtpep.h">
       <Filter>Header Files\RTP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\asn\gcc.h">
@@ -1166,19 +1166,19 @@
     <ClInclude Include="..\rtp\libsrtp\include\ut_sim.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\ivr.h">
+    <ClInclude Include="..\..\include\ep\ivr.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\localep.h">
+    <ClInclude Include="..\..\include\ep\localep.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\pcss.h">
+    <ClInclude Include="..\..\include\ep\pcss.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\opalvxml.h">
+    <ClInclude Include="..\..\include\ep\opalvxml.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\opalmixer.h">
+    <ClInclude Include="..\..\include\ep\opalmixer.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
   </ItemGroup>

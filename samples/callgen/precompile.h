@@ -33,7 +33,7 @@
 #include <ptclib/delaychan.h>
 
 #include <opal/manager.h>
-#include <opal/ivr.h>
+#include <ep/ivr.h>
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
 #include <sip/sipep.h>

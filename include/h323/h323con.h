@@ -42,7 +42,7 @@
 
 #if OPAL_H323
 
-#include <opal/rtpconn.h>
+#include <rtp/rtpconn.h>
 #include <opal/guid.h>
 #include <opal/buildopts.h>
 #include <h323/h323caps.h>
