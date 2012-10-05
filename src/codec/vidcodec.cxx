@@ -121,7 +121,7 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   PWaitAndSignal mutex(updateMutex);
 
   if (!OpalTranscoder::UpdateMediaFormats(input, output))
-    return PFalse;
+    return false;
 
   SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), inDataSize);
   SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      outDataSize);
@@ -131,7 +131,7 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
     outputMediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), maxOutputSize);
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -152,7 +152,7 @@ PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
   if (outputMediaFormat != OpalYUV420P && PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE_IF(3, !forceIFrame, "Media\tI-Frame forced in video stream");
     forceIFrame = true; // Reset when I-Frame is sent
-    return PTrue;
+    return true;
   }
 
   return OpalTranscoder::ExecuteCommand(command);
@@ -162,7 +162,7 @@ PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
                                   RTP_DataFrame & /*output*/)
 {
-  return PFalse;
+  return false;
 }
 
 

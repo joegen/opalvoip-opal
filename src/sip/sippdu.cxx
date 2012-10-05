@@ -936,7 +936,7 @@ bool SIPMIMEInfo::GetViaList(PStringList & viaList) const
   if (s.FindOneOf("\r\n") != P_MAX_INDEX)
     viaList = s.Lines();
   else
-    viaList = s.Tokenise(",", PFalse);
+    viaList = s.Tokenise(",", false);
 
   return !viaList.IsEmpty();
 }
@@ -2154,7 +2154,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream,
   }
   else {
     // parse the method, URI and version
-    PStringArray cmds = cmd.Tokenise( ' ', PFalse);
+    PStringArray cmds = cmd.Tokenise( ' ', false);
     if (cmds.GetSize() < 3) {
       PTRACE(2, "SIP\tBad Request-Line \"" << cmd << "\" received" << transportName);
       return SIP_PDU::Failure_BadRequest;
@@ -2291,7 +2291,7 @@ PBoolean SIP_PDU::Write(OpalTransport & transport)
 
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to write PDU to closed transport " << transport);
-    return PFalse;
+    return false;
   }
 
   PString pduStr;
@@ -2936,7 +2936,7 @@ PBoolean SIPTransaction::Start()
 
   if (m_state != NotStarted) {
     PAssertAlways(PLogicError);
-    return PFalse;
+    return false;
   }
 
   m_owner.m_transactions.Append(this);
@@ -2958,7 +2958,7 @@ PBoolean SIPTransaction::Start()
   // Use the connection transport to send the request
   if (!Write(*m_transport)) {
     SetTerminated(Terminated_TransportError);
-    return PFalse;
+    return false;
   }
 
   m_retryTimer = m_retryTimeoutMin;
@@ -2991,7 +2991,7 @@ PBoolean SIPTransaction::Cancel()
 
   if (m_state == NotStarted || m_state >= Cancelling) {
     PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cannot be cancelled as in state " << m_state);
-    return PFalse;
+    return false;
   }
 
   PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cancelled.");
@@ -3052,7 +3052,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
      and wait for the 487 Request Terminated to come in */
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
     m_completionTimer = GetEndPoint().GetPduCleanUpTimeout();
-    return PFalse;
+    return false;
   }
 
   // Something wrong here, response is not for the request we made!
@@ -3061,12 +3061,12 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     // Restart timer as haven't finished yet
     m_retryTimer = m_retryTimer.GetResetTime();
     m_completionTimer = m_completionTimer.GetResetTime();
-    return PFalse;
+    return false;
   }
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
-    return PFalse;
+    return false;
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one

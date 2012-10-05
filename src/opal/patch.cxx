@@ -258,7 +258,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
     if (!stream->SetDataSize(primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
       PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
-              << primaryCodec->GetOptimalDataFrameSize(PFalse));
+              << primaryCodec->GetOptimalDataFrameSize(false));
       return false;
     }
     primaryCodec->SetMaxOutputSize(stream->GetDataSize());
@@ -314,7 +314,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
   if (!stream->SetDataSize(secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
     PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
-            << secondaryCodec->GetOptimalDataFrameSize(PFalse));
+            << secondaryCodec->GetOptimalDataFrameSize(false));
     return false;
   }
   secondaryCodec->SetMaxOutputSize(stream->GetDataSize());
@@ -816,7 +816,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
 bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PBoolean atLeastOne = PFalse;
+  PBoolean atLeastOne = false;
 
   if (secondaryCodec != NULL)
     atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;

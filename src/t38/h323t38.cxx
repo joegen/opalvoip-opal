@@ -161,7 +161,7 @@ PBoolean H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
     profile.m_t38FaxTcpOptions.m_t38TCPBidirectionalMode = mode == e_SingleTCP;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -170,7 +170,7 @@ PBoolean H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability 
   PTRACE(3, "H323T38\tOnRecievedPDU for capability");
 
   if (cap.m_application.GetTag() != H245_DataApplicationCapability_application::e_t38fax)
-    return PFalse;
+    return false;
 
   const H245_DataApplicationCapability_application_t38fax & fax = cap.m_application;
   const H245_DataProtocolCapability & proto = fax.m_t38FaxProtocol;
@@ -206,7 +206,7 @@ PBoolean H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability 
       mode = e_DualTCP;
   }
 
-  return PTrue;
+  return true;
 }
 
 

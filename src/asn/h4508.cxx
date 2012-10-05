@@ -31,7 +31,7 @@ const static PASN_Names Names_H4508_NameOperations[]={
 //
 
 H4508_NameOperations::H4508_NameOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, PFalse
+  : PASN_Enumeration(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NameOperations,4
 #endif
@@ -69,7 +69,7 @@ const static PASN_Names Names_H4508_Name[]={
 //
 
 H4508_Name::H4508_Name(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_Name,3
 #endif
@@ -127,17 +127,17 @@ PBoolean H4508_Name::CreateObject()
   switch (tag) {
     case e_namePresentationAllowed :
       choice = new H4508_NamePresentationAllowed();
-      return PTrue;
+      return true;
     case e_namePresentationRestricted :
       choice = new H4508_NamePresentationRestricted();
-      return PTrue;
+      return true;
     case e_nameNotAvailable :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -162,7 +162,7 @@ const static PASN_Names Names_H4508_NamePresentationAllowed[]={
 //
 
 H4508_NamePresentationAllowed::H4508_NamePresentationAllowed(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, PTrue
+  : PASN_Choice(tag, tagClass, 2, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NamePresentationAllowed,2
 #endif
@@ -220,14 +220,14 @@ PBoolean H4508_NamePresentationAllowed::CreateObject()
   switch (tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
-      return PTrue;
+      return true;
     case e_extendedName :
       choice = new H4508_ExtendedName();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -253,7 +253,7 @@ const static PASN_Names Names_H4508_NamePresentationRestricted[]={
 //
 
 H4508_NamePresentationRestricted::H4508_NamePresentationRestricted(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PTrue
+  : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NamePresentationRestricted,3
 #endif
@@ -311,17 +311,17 @@ PBoolean H4508_NamePresentationRestricted::CreateObject()
   switch (tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
-      return PTrue;
+      return true;
     case e_extendedName :
       choice = new H4508_ExtendedName();
-      return PTrue;
+      return true;
     case e_restrictedNull :
       choice = new PASN_Null();
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 

@@ -79,12 +79,12 @@ PBoolean SafeStrings::GetNextString(PString & nextString)
   PWaitAndSignal m(accessMutex);
   
   if (data.GetSize() == 0)
-    return PFalse;
+    return false;
   
   nextString = data[0];
   data.RemoveAt(0);
   
-  return PTrue;
+  return true;
 }
 
 

@@ -516,7 +516,7 @@ PBoolean SIPEndPoint::GarbageCollection()
 
 PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -575,14 +575,14 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
   init.m_address = forwardParty;
   SIPConnection * conn = CreateConnection(init);
   if (!AddConnection(conn))
-    return PFalse;
+    return false;
 
   call.OnReleased(connection);
   
   conn->SetUpConnection();
   connection.Release(OpalConnection::EndedByCallForwarded);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -612,7 +612,7 @@ bool SIPEndPoint::ClearDialogContext(SIPDialogContext & context)
 bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
 {
   if (PAssertNULL(pdu) == NULL)
-    return PFalse;
+    return false;
 
   const SIPMIMEInfo & mime = pdu->GetMIME();
 
@@ -978,7 +978,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
     request->SendResponse(*this, SIP_PDU::Failure_NotFound);
-    return PFalse;
+    return false;
   }
 
   // m_receivedConnectionMutex already set
@@ -988,7 +988,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
   // Get the connection to handle the rest of the INVITE in the thread pool
   new SIP_PDU_Work(*this, token, request);
 
-  return PTrue;
+  return true;
 }
 
 

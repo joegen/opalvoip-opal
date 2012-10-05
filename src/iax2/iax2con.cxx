@@ -86,8 +86,8 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   AdjustMediaFormats(true, NULL, localMediaFormats);
   PTRACE(5, "Local ordered codecs are " << localMediaFormats);
   
-  local_hold = PFalse;
-  remote_hold = PFalse;
+  local_hold = false;
+  remote_hold = false;
 
  
   PTRACE(6, "IAX2Connection class has been initialised, and is ready to run");
@@ -189,12 +189,12 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
   {
     PSafeLockReadWrite safeLock(*this);
     if (!safeLock.IsLocked())
-      return PFalse;
+      return false;
     
     PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
     
     if (GetPhase() == AlertingPhase)
-      return PFalse;
+      return false;
     
     SetPhase(AlertingPhase);
   }
@@ -202,7 +202,7 @@ PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), P
   OpalConnection::OnAlerting();
 //Which puts the other Connection in this call to AlertingPhase
 
-  return PTrue;
+  return true;
 }
 
 void IAX2Connection::OnConnected()
@@ -239,7 +239,7 @@ PBoolean IAX2Connection::SendUserInputString(const PString & value)
 
   if (mode == SendUserInputAsString) {
     iax2Processor.SendText(value); 
-    return PTrue;
+    return true;
   }
 
   return OpalConnection::SendUserInputString(value);
@@ -249,7 +249,7 @@ PBoolean IAX2Connection::SendUserInputString(const PString & value)
 PBoolean IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
 { 
   iax2Processor.SendDtmf(tone); 
-  return PTrue;
+  return true;
 }
 
 void IAX2Connection::OnEstablished()
@@ -452,7 +452,7 @@ PBoolean IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 {
   PTRACE(3, "Forward call to " + forwardParty);
   //we can not currently forward calls that have not been accepted.
-  return PFalse;
+  return false;
 }
 
 void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
@@ -469,7 +469,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
     RTP_DataFrame mediaFrame(soundFrame->GetMediaDataSize());
     mediaFrame.SetTimestamp(soundFrame->GetTimeStamp() * 8);
-    mediaFrame.SetMarker(PFalse);
+    mediaFrame.SetMarker(false);
     mediaFrame.SetPayloadType(opalPayloadType);
 
     mediaFrame.SetSize(mediaFrame.GetPayloadSize() + mediaFrame.GetHeaderSize());
@@ -489,11 +489,11 @@ PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
     PINDEX zeroBytes = packet.GetSize() - packet.GetHeaderSize();
     memset(packet.GetPayloadPtr() + packet.GetHeaderSize(), 0, zeroBytes);
     PTRACE(5, "Iax2Con\t faulty  read from  jitter buffer"); 
-    return PFalse;
+    return false;
   }
 
   packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
-  return PTrue;
+  return true;
 }
 
 

@@ -324,7 +324,7 @@ void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 
 PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 {
-  return PFalse;
+  return false;
 }
 
 

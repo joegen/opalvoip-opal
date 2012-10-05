@@ -78,7 +78,7 @@ SimpleOpalProcess::SimpleOpalProcess()
 void SimpleOpalProcess::Main()
 {
   cout << GetName()
-       << " Version " << GetVersion(PTrue)
+       << " Version " << GetVersion(true)
        << " by " << GetManufacturer()
        << " on " << GetOSClass() << ' ' << GetOSName()
        << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
@@ -178,7 +178,7 @@ void SimpleOpalProcess::Main()
 #if OPAL_CAPI
              "-no-capi."
 #endif
-          , PFalse);
+          , false);
 
 
   if (args.HasOption('h') || (!args.HasOption('l') && args.GetCount() == 0)) {
@@ -411,7 +411,7 @@ MyManager::MyManager()
   faxEP = NULL;
 #endif
 
-  pauseBeforeDialing = PFalse;
+  pauseBeforeDialing = false;
 }
 
 
@@ -449,7 +449,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (!SetVideoInputDevice(video)) {
       cerr << "Unknown grabber device " << video.deviceName << "\n"
               "Available devices are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
-      return PFalse;
+      return false;
     }
   }
 
@@ -461,7 +461,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (!SetVideoOutputDevice(video)) {
       cerr << "Unknown display device " << video.deviceName << "\n"
               "Available devices are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
-      return PFalse;
+      return false;
     }
   }
 
@@ -473,7 +473,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 	if (!SetVideoPreviewDevice(video)) {
       cerr << "Unknown preview device " << video.deviceName << "\n"
               "Available devices are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
-      return PFalse;
+      return false;
     }
   }
 #endif
@@ -494,7 +494,7 @@ PBoolean MyManager::Initialise(PArgList & args)
       SetAudioJitterDelay(minJitter, maxJitter);
     else {
       cerr << "Jitter should be between 20 and 1000 milliseconds.\n";
-      return PFalse;
+      return false;
     }
   }
 
@@ -537,7 +537,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
     if (tos > 255) {
       cerr << "IP Type Of Service bits must be 0 to 255.\n";
-      return PFalse;
+      return false;
     }
     SetMediaTypeOfService(tos);
   }
@@ -607,13 +607,13 @@ PBoolean MyManager::Initialise(PArgList & args)
     cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
           
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Recorder))
-      return PFalse;
+      return false;
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Player))
-      return PFalse;
+      return false;
     if (!pcssEP->SetSoundDevice(args, "sound-in", PSoundChannel::Recorder))
-      return PFalse;
+      return false;
     if (!pcssEP->SetSoundDevice(args, "sound-out", PSoundChannel::Player))
-      return PFalse;
+      return false;
 
     allMediaFormats += pcssEP->GetMediaFormats();
 
@@ -634,7 +634,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
     if (!InitialiseH323EP(args, false, h323EP))
-      return PFalse;
+      return false;
   }
 
 #endif
@@ -657,7 +657,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (!iax2EP->InitialisedOK()) {
       cerr << "IAX2 Endpoint is not initialised correctly" << endl;
       cerr << "Is there another application using the iax port? " << endl;
-      return PFalse;
+      return false;
     }
 
     if (args.HasOption('p'))
@@ -715,7 +715,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     if (!sipEP->StartListeners(listeners)) {
       cerr <<  "Could not open any SIP listener from "
             << setfill(',') << listeners << endl;
-      return PFalse;
+      return false;
     }
     cout <<  "SIP started on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
 
@@ -734,7 +734,7 @@ PBoolean MyManager::Initialise(PArgList & args)
         cout << "Using SIP registrar " << params.m_registrarAddress << " for " << aor << endl;
       else
         cout << "Could not use SIP registrar " << params.m_registrarAddress << endl;
-      pauseBeforeDialing = PTrue;
+      pauseBeforeDialing = true;
     }
   }
 
@@ -778,7 +778,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (args.HasOption('d')) {
     if (!SetRouteTable(args.GetOptionString('d').Lines())) {
       cerr <<  "No legal entries in dial peer!" << endl;
-      return PFalse;
+      return false;
     }
   }
 
@@ -966,7 +966,7 @@ PBoolean MyManager::Initialise(PArgList & args)
     allMediaFormats[i].PrintOptions(traceStream);
   traceStream << PTrace::End;
 #endif
-  return PTrue;
+  return true;
 }
 
 #if OPAL_H323
@@ -990,7 +990,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
     OpalBandwidth initialBandwidth = args.GetOptionString('b').AsUnsigned();
     if (initialBandwidth == 0) {
       cerr << "Illegal bandwidth specified." << endl;
-      return PFalse;
+      return false;
     }
     h323EP->SetInitialBandwidth(OpalBandwidth::RxTx, initialBandwidth);
   }
@@ -1010,7 +1010,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
   if (!h323EP->StartListeners(listeners)) {
     cerr <<  "Could not open any " << prefix << " listener from "
          << setfill(',') << listeners << endl;
-    return PFalse;
+    return false;
   }
   cout << prefix << " listeners: " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
 
@@ -1057,10 +1057,10 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
       }
       cerr << '.' << endl;
       if (args.HasOption("require-gatekeeper")) 
-        return PFalse;
+        return false;
     }
   }
-  return PTrue;
+  return true;
 }
 
 #endif  //OPAL_H323
@@ -1522,7 +1522,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection,
                                   OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return PFalse;
+    return false;
 
   cout << "Started ";
 
@@ -1537,7 +1537,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection,
 
   cout << endl;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1570,7 +1570,7 @@ PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
          << ", answer (Yes/No/Busy)? " << flush;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1579,7 +1579,7 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
   PTime now;
   cout << connection.GetRemotePartyName() << " is ringing on "
        << now.AsString("w h:mma") << " ..." << endl;
-  return PTrue;
+  return true;
 }
 
 
@@ -1588,17 +1588,17 @@ PBoolean MyPCSSEndPoint::SetSoundDevice(PArgList & args,
                                     PSoundChannel::Directions dir)
 {
   if (!args.HasOption(optionName))
-    return PTrue;
+    return true;
 
   PString dev = args.GetOptionString(optionName);
 
   if (dir == PSoundChannel::Player) {
     if (SetSoundChannelPlayDevice(dev))
-      return PTrue;
+      return true;
   }
   else {
     if (SetSoundChannelRecordDevice(dev))
-      return PTrue;
+      return true;
   }
 
   cerr << "Device for " << optionName << " (\"" << dev << "\") must be one of:\n";
@@ -1607,7 +1607,7 @@ PBoolean MyPCSSEndPoint::SetSoundDevice(PArgList & args,
   for (PINDEX i = 0; i < names.GetSize(); i++)
     cerr << "  \"" << names[i] << "\"\n";
 
-  return PFalse;
+  return false;
 }
 
 // End of File ///////////////////////////////////////////////////////////////

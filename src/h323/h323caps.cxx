@@ -233,7 +233,7 @@ PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /
 
 PBoolean H323Capability::IsUsable(const H323Connection &) const
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -371,10 +371,10 @@ PBoolean H323NonStandardCapabilityInfo::OnSendingPDU(PBYTEArray & data) const
 PBoolean H323NonStandardCapabilityInfo::OnReceivedPDU(const PBYTEArray & data)
 {
   if (CompareData(data) != PObject::EqualTo)
-    return PFalse;
+    return false;
 
   nonStandardData = data;
-  return PTrue;
+  return true;
 }
 
 
@@ -383,7 +383,7 @@ PBoolean H323NonStandardCapabilityInfo::OnSendingNonStandardPDU(PASN_Choice & pd
 {
   PBYTEArray data;
   if (!OnSendingPDU(data))
-    return PFalse;
+    return false;
 
   pdu.SetTag(nonStandardTag);
   H245_NonStandardParameter & param = (H245_NonStandardParameter &)pdu.GetObject();
@@ -410,12 +410,12 @@ PBoolean H323NonStandardCapabilityInfo::OnReceivedNonStandardPDU(const PASN_Choi
                                                              unsigned nonStandardTag)
 {
   if (pdu.GetTag() != nonStandardTag)
-    return PFalse;
+    return false;
 
   const H245_NonStandardParameter & param = (const H245_NonStandardParameter &)pdu.GetObject();
 
   if (CompareParam(param) != PObject::EqualTo)
-    return PFalse;
+    return false;
 
   return OnReceivedPDU(param.m_data);
 }
@@ -590,7 +590,7 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
   if (pdu.m_nonCollapsing.GetSize() > 0)
     pdu.IncludeOptionalField(H245_GenericCapability::e_nonCollapsing);
 
-  return PTrue;
+  return true;
 }
 
 static void H323GenericCapabilityInfo_OnReceivedGenericPDU(OpalMediaFormat & mediaFormat,
@@ -785,7 +785,7 @@ PBoolean H323AudioCapability::OnSendingPDU(H245_AudioCapability & pdu,
   // Set the maximum number of frames
   PASN_Integer & value = pdu;
   value = packetSize;
-  return PTrue;
+  return true;
 }
 
 
@@ -826,10 +826,10 @@ PBoolean H323AudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
 
   unsigned subType = GetSubType();
   if (subType >= PARRAYSIZE(AudioTable))
-    return PFalse;
+    return false;
 
   pdu.SetTag(AudioTable[subType]);
-  return PTrue;
+  return true;
 }
 
 
@@ -837,12 +837,12 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
 {
   if (cap.GetTag() != H245_Capability::e_receiveAudioCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitAudioCapability)
-    return PFalse;
+    return false;
 
   unsigned txFramesInPacket = GetTxFramesInPacket();
   unsigned packetSize = GetRxFramesInPacket();
   if (!OnReceivedPDU((const H245_AudioCapability &)cap, packetSize, e_TCS))
-    return PFalse;
+    return false;
 
   // Clamp our transmit size to maximum allowed
   if (txFramesInPacket > packetSize) {
@@ -862,12 +862,12 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
 PBoolean H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
   if (dataType.GetTag() != H245_DataType::e_audioData)
-    return PFalse;
+    return false;
 
   unsigned xFramesInPacket = receiver ? GetRxFramesInPacket() : GetTxFramesInPacket();
   unsigned packetSize = xFramesInPacket;
   if (!OnReceivedPDU((const H245_AudioCapability &)dataType, packetSize, e_OLC))
-    return PFalse;
+    return false;
 
   // Clamp our transmit size to maximum allowed
   if (xFramesInPacket > packetSize) {
@@ -889,13 +889,13 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
                                         unsigned & packetSize)
 {
   if (pdu.GetTag() != GetSubType())
-    return PFalse;
+    return false;
 
   const PASN_Integer & value = pdu;
 
   // Get the maximum number of frames
   packetSize = value;
-  return PTrue;
+  return true;
 }
 
 
@@ -951,12 +951,12 @@ PBoolean H323GenericAudioCapability::OnSendingPDU(H245_AudioMode & pdu) const
 PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu, unsigned & packetSize, CommandType type)
 {
   if( pdu.GetTag() != H245_AudioCapability::e_genericAudioCapability)
-    return PFalse;
+    return false;
   if (!OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type))
-    return PFalse;
+    return false;
 
   packetSize = GetRxFramesInPacket();
-  return PTrue;
+  return true;
 }
 
 PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
@@ -1088,7 +1088,7 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & /*pdu*/) const
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1127,7 +1127,7 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 {
   if (cap.GetTag() != H245_Capability::e_receiveVideoCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitVideoCapability)
-    return PFalse;
+    return false;
 
   return OnReceivedPDU((const H245_VideoCapability &)cap, e_TCS) && H323Capability::OnReceivedPDU(cap);
 }
@@ -1137,7 +1137,7 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoo
 {
   if (dataType.GetTag() != H245_DataType::e_videoData) {
     PTRACE(5, "H323\tdataType.GetTag() " << dataType.GetTag() << " != H245_DataType::e_videoData");
-    return PFalse;
+    return false;
   }
 
   return OnReceivedPDU((const H245_VideoCapability &)dataType, e_OLC) &&
@@ -1147,7 +1147,7 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoo
 
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_VideoCapability &)
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1283,7 +1283,7 @@ PBoolean H323GenericVideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
 PBoolean H323GenericVideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, CommandType type)
 {
   if (pdu.GetTag() != H245_VideoCapability::e_genericVideoCapability)
-    return PFalse;
+    return false;
   return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type);
 }
 
@@ -1648,7 +1648,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 
 PBoolean H323DataCapability::OnSendingPDU(H245_DataApplicationCapability &) const
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1671,7 +1671,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 {
   if (cap.GetTag() != H245_Capability::e_receiveDataApplicationCapability &&
       cap.GetTag() != H245_Capability::e_receiveAndTransmitDataApplicationCapability)
-    return PFalse;
+    return false;
 
   const H245_DataApplicationCapability & app = cap;
   maxBitRate = app.m_maxBitRate;
@@ -1683,7 +1683,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
   if (dataType.GetTag() != H245_DataType::e_data)
-    return PFalse;
+    return false;
 
   const H245_DataApplicationCapability & app = dataType;
   maxBitRate = app.m_maxBitRate;
@@ -1693,7 +1693,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBool
 
 PBoolean H323DataCapability::OnReceivedPDU(const H245_DataApplicationCapability &)
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1848,7 +1848,7 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
     UIISubTypeNames[H323_UserInputCapability::type], \
-    OpalMediaType::UserInput(), RTP_DataFrame::IllegalPayloadType, NULL, PFalse, 1, 0, 0, 0 \
+    OpalMediaType::UserInput(), RTP_DataFrame::IllegalPayloadType, NULL, false, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, UIISubTypeNames[H323_UserInputCapability::type]) \
 
@@ -1937,14 +1937,14 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_DataType &) const
 {
   PTRACE(1, "H323\tCannot have UserInputCapability in DataType");
-  return PFalse;
+  return false;
 }
 
 
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_ModeElement &) const
 {
   PTRACE(1, "H323\tCannot have UserInputCapability in ModeElement");
-  return PFalse;
+  return false;
 }
 
 
@@ -1961,7 +1961,7 @@ PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 
   if (pdu.GetTag() != H245_Capability::e_receiveUserInputCapability &&
       pdu.GetTag() != H245_Capability::e_receiveAndTransmitUserInputCapability)
-    return PFalse;
+    return false;
 
   const H245_UserInputCapability & ui = pdu;
   return ui.GetTag() == UserInputCapabilitySubTypeCodes[subType] && H323Capability::OnReceivedPDU(pdu);
@@ -1971,17 +1971,17 @@ PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_Capability & pdu)
 PBoolean H323_UserInputCapability::OnReceivedPDU(const H245_DataType &, PBoolean)
 {
   PTRACE(1, "H323\tCannot have UserInputCapability in DataType");
-  return PFalse;
+  return false;
 }
 
 
 PBoolean H323_UserInputCapability::IsUsable(const H323Connection & connection) const
 {
   if (connection.GetControlVersion() >= 7)
-    return PTrue;
+    return true;
 
   if (connection.HasCompatibilityIssue(H323Connection::e_NoUserInputCapability))
-    return PFalse;
+    return false;
 
   return subType != SignalToneRFC2833;
 }
@@ -2031,7 +2031,7 @@ PBoolean H323SimultaneousCapabilities::SetSize(PINDEX newSize)
   PINDEX oldSize = GetSize();
 
   if (!H323CapabilitiesListArray::SetSize(newSize))
-    return PFalse;
+    return false;
 
   while (oldSize < newSize) {
     H323CapabilitiesList * list = new H323CapabilitiesList;
@@ -2040,7 +2040,7 @@ PBoolean H323SimultaneousCapabilities::SetSize(PINDEX newSize)
     SetAt(oldSize++, list);
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -2049,12 +2049,12 @@ PBoolean H323CapabilitiesSet::SetSize(PINDEX newSize)
   PINDEX oldSize = GetSize();
 
   if (!H323CapabilitiesSetArray::SetSize(newSize))
-    return PFalse;
+    return false;
 
   while (oldSize < newSize)
     SetAt(oldSize++, new H323SimultaneousCapabilities);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -2242,7 +2242,7 @@ static PBoolean MatchWildcard(const PCaselessString & str, const PStringArray & 
     else {
       PINDEX next = str.Find(wildcard[i], last);
       if (next == P_MAX_INDEX)
-        return PFalse;
+        return false;
       last = next + wildcard[i].GetLength();
     }
   }
@@ -2286,7 +2286,7 @@ PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
 {
   PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
-  PStringArray wildcard = name.Tokenise('*', PFalse);
+  PStringArray wildcard = name.Tokenise('*', false);
 
   H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
   H323CapabilityFactory::KeyList_T::const_iterator r;
@@ -2437,7 +2437,7 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
                                                   H323Capability::CapabilityDirection direction,
                                                   PBoolean exact) const
 {
-  PStringArray wildcard = formatName.Tokenise('*', PFalse);
+  PStringArray wildcard = formatName.Tokenise('*', false);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     PCaselessString str = table[i].GetFormatName();
@@ -2614,7 +2614,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 
     if (checkExact) {
       H323Capability * compare = (H323Capability *)capability.Clone();
-      if (compare->OnReceivedPDU(dataType, PFalse)) {
+      if (compare->OnReceivedPDU(dataType, false)) {
         if (*compare == capability) {
           delete compare;
           return &capability;
@@ -2860,7 +2860,7 @@ void H323Capabilities::Reorder(const PStringArray & preferenceOrder)
   PINDEX base = 0;
 
   for (preference = 0; preference < preferenceOrder.GetSize(); preference++) {
-    PStringArray wildcard = preferenceOrder[preference].Tokenise('*', PFalse);
+    PStringArray wildcard = preferenceOrder[preference].Tokenise('*', false);
     for (PINDEX idx = base; idx < table.GetSize(); idx++) {
       PCaselessString str = table[idx].GetFormatName();
       if (MatchWildcard(str, wildcard)) {
@@ -2905,12 +2905,12 @@ PBoolean H323Capabilities::IsAllowed(const unsigned a_capno)
       PINDEX innerSize = set[outer][middle].GetSize();
       for (PINDEX inner = 0; inner < innerSize; inner++) {
         if (a_capno == set[outer][middle][inner].GetCapabilityNumber()) {
-          return PTrue;
+          return true;
         }
       }
     }
   }
-  return PFalse;
+  return false;
 }
 
 
@@ -2926,7 +2926,7 @@ PBoolean H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_c
 {
   if (a_capno1 == a_capno2) {
     PTRACE(2, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
-    return PTrue;
+    return true;
   }
 
   PINDEX outerSize = set.GetSize();
@@ -2942,7 +2942,7 @@ PBoolean H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_c
               PINDEX innerSize2 = set[outer][middle2].GetSize();
               for (PINDEX inner2 = 0; inner2 < innerSize2; ++inner2) {
                 if (a_capno2 == set[outer][middle2][inner2].GetCapabilityNumber()) {
-                  return PTrue;
+                  return true;
                 }
               }
             }
@@ -2951,7 +2951,7 @@ PBoolean H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_c
       }
     }
   }
-  return PFalse;
+  return false;
 }
 
 

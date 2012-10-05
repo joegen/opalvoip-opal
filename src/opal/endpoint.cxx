@@ -142,15 +142,15 @@ PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
   if (interfaces.IsEmpty()) {
     interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
-      return PFalse;
+      return false;
   }
 
-  PBoolean startedOne = PFalse;
+  PBoolean startedOne = false;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
     if (interfaces[i].Find('$') != P_MAX_INDEX) {
       if (StartListener(interfaces[i]))
-        startedOne = PTrue;
+        startedOne = true;
     }
     else {
       PStringArray transports = GetDefaultTransport().Tokenise(',');
@@ -164,7 +164,7 @@ PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
         }
         OpalTransportAddress iface(interfaces[i], port, transport);
         if (StartListener(iface))
-          startedOne = PTrue;
+          startedOne = true;
       }
     }
   }
@@ -182,21 +182,21 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
   if (iface.IsEmpty()) {
     PStringArray interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
-      return PFalse;
+      return false;
     iface = OpalTransportAddress(interfaces[0], GetDefaultSignalPort());
   }
 
   listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
   if (listener == NULL) {
     PTRACE(1, "OpalEP\tCould not create listener: " << iface);
-    return PFalse;
+    return false;
   }
 
   if (StartListener(listener))
-    return PTrue;
+    return true;
 
   PTRACE(1, "OpalEP\tCould not start listener: " << iface);
-  return PFalse;
+  return false;
 }
 
 
@@ -276,7 +276,7 @@ PBoolean OpalEndPoint::RemoveListener(OpalListener * listener)
     return listeners.Remove(listener);
 
   listeners.RemoveAll();
-  return PTrue;
+  return true;
 }
 
 
@@ -493,7 +493,7 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
 PBoolean OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
-  return PTrue;
+  return true;
 }
 
 

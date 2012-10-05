@@ -481,7 +481,7 @@ PString OpalConnection::GetDestinationAddress()
 
 PBoolean OpalConnection::ForwardCall(const PString & /*forwardParty*/)
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -530,11 +530,11 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallAlertWithMedia :
-      SetAlerting(GetLocalPartyName(), PTrue);
+      SetAlerting(GetLocalPartyName(), true);
       break;
 
     case AnswerCallPending :
-      SetAlerting(GetLocalPartyName(), PFalse);
+      SetAlerting(GetLocalPartyName(), false);
       break;
 
     case AnswerCallNow: 
@@ -836,7 +836,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 
         PVideoOutputDevice * previewDevice;
         PBoolean autoDeletePreview;
-        if (CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDeletePreview))
+        if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
           PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
         else
           previewDevice = NULL;
@@ -847,7 +847,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
     else {
       PVideoOutputDevice * videoDevice;
       PBoolean autoDelete;
-      if (CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete)) {
+      if (CreateVideoOutputDevice(mediaFormat, false, videoDevice, autoDelete)) {
         PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
       }
@@ -872,10 +872,10 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, uns
 PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 {
   if (!endpoint.OnOpenMediaStream(*this, stream))
-    return PFalse;
+    return false;
 
   if (!LockReadWrite())
-    return PFalse;
+    return false;
 
   if (GetPhase() == ConnectedPhase) {
     SetPhase(EstablishedPhase);
@@ -884,7 +884,7 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 
   UnlockReadWrite();
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1163,7 +1163,7 @@ void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, boo
 
 PBoolean OpalConnection::SetAudioVolume(PBoolean /*source*/, unsigned /*percentage*/)
 {
-  return PFalse;
+  return false;
 }
 
 PBoolean OpalConnection::GetAudioVolume(PBoolean /*source*/, unsigned & /*percentage*/)
@@ -1292,9 +1292,9 @@ PBoolean OpalConnection::SendUserInputString(const PString & value)
 {
   for (const char * c = value; *c != '\0'; c++) {
     if (!SendUserInputTone(*c, 0))
-      return PFalse;
+      return false;
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -1392,7 +1392,7 @@ PString OpalConnection::ReadUserInput(const char * terminators,
 
 PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 {
-  return PTrue;
+  return true;
 }
 
 

@@ -329,7 +329,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
                                  const PString & localAddress)
 {
   if (gatekeeper != NULL) {
-    PBoolean same = PTrue;
+    PBoolean same = true;
 
     if (!address && address != "*")
       same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(address);
@@ -342,7 +342,7 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
     if (same) {
       PTRACE(3, "H323\tUsing existing gatekeeper " << *gatekeeper);
-      return PTrue;
+      return true;
     }
   }
 
@@ -448,7 +448,7 @@ H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 PBoolean H323EndPoint::IsRegisteredWithGatekeeper() const
 {
   if (gatekeeper == NULL)
-    return PFalse;
+    return false;
 
   return gatekeeper->IsRegistered();
 }
@@ -456,7 +456,7 @@ PBoolean H323EndPoint::IsRegisteredWithGatekeeper() const
 
 PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 {
-  PBoolean ok = PTrue;
+  PBoolean ok = true;
 
   if (gatekeeper == NULL)
     return ok;
@@ -564,7 +564,7 @@ void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr 
 
   // Make sure transport is attached before AddConnection()
   if (connection != NULL)
-    connection->AttachSignalChannel(token, transport, PTrue);
+    connection->AttachSignalChannel(token, transport, true);
 
   if (AddConnection(connection) != NULL && connection->HandleSignalPDU(pdu)) {
     // All subsequent PDU's should wait forever
@@ -578,7 +578,7 @@ void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr 
 
   H323SignalPDU releaseComplete;
   Q931 &q931PDU = releaseComplete.GetQ931();
-  q931PDU.BuildReleaseComplete(callReference, PTrue);
+  q931PDU.BuildReleaseComplete(callReference, true);
   releaseComplete.m_h323_uu_pdu.m_h323_message_body.SetTag(H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
 
   H225_ReleaseComplete_UUIE &release = releaseComplete.m_h323_uu_pdu.m_h323_message_body;
@@ -621,7 +621,7 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
   PSafePtr<OpalConnection> otherConnection =
     GetConnectionWithLock(oldToken, PSafeReference);
   if (otherConnection == NULL) {
-    return PFalse;
+    return false;
   }
 
   OpalCall & call = otherConnection->GetCall();
@@ -687,7 +687,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
     return NULL;
   }
 
-  connection->AttachSignalChannel(newToken, transport, PFalse);
+  connection->AttachSignalChannel(newToken, transport, false);
 
 #if OPAL_H450
   if (!callIdentity) {
@@ -757,19 +757,19 @@ PBoolean H323EndPoint::OnSendConnect(H323Connection & /*connection*/,
                                  H323SignalPDU & /*connectPDU*/
                                 )
 {
-  return PTrue;
+  return true;
 }
 
 PBoolean H323EndPoint::OnSendSignalSetup(H323Connection & /*connection*/,
                                      H323SignalPDU & /*setupPDU*/)
 {
-  return PTrue;
+  return true;
 }
 
 PBoolean H323EndPoint::OnSendCallProceeding(H323Connection & /*connection*/,
                                         H323SignalPDU & /*callProceedingPDU*/)
 {
-  return PTrue;
+  return true;
 }
 
 void H323EndPoint::OnReceivedInitiateReturnError()
@@ -829,11 +829,11 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 
   if (alias.IsEmpty() && address.IsEmpty()) {
     PTRACE(1, "H323\tAttempt to use invalid URL \"" << remoteParty << '"');
-    return PFalse;
+    return false;
   }
 
-  PBoolean gatekeeperSpecified = PFalse;
-  PBoolean gatewaySpecified = PFalse;
+  PBoolean gatekeeperSpecified = false;
+  PBoolean gatewaySpecified = false;
 
   PCaselessString type = url.GetParamVars()("type");
 
@@ -845,26 +845,26 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       if (server.IsEmpty())
         server = GetDefaultILSServer();
       if (server.IsEmpty())
-        return PFalse;
+        return false;
 
       PILSSession ils;
       if (!ils.Open(server, url.GetPort())) {
         PTRACE(1, "H323\tCould not open ILS server at \"" << server
                << "\" - " << ils.GetErrorText());
-        return PFalse;
+        return false;
       }
 
       PILSSession::RTPerson person;
       if (!ils.SearchPerson(alias, person)) {
         PTRACE(1, "H323\tCould not find "
                << server << '/' << alias << ": " << ils.GetErrorText());
-        return PFalse;
+        return false;
       }
 
       if (!person.sipAddress.IsValid()) {
         PTRACE(1, "H323\tILS user " << server << '/' << alias
                << " does not have a valid IP address");
-        return PFalse;
+        return false;
       }
 
       // Get the IP address
@@ -879,23 +879,23 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       }
 
       alias = PString::Empty(); // No alias for ILS lookup, only host
-      return PTrue;
+      return true;
 #else
-      return PFalse;
+      return false;
 #endif
     }
 
     if (url.GetParamVars().Contains("gateway"))
-      gatewaySpecified = PTrue;
+      gatewaySpecified = true;
   }
   else if (url.GetScheme() == "h323") {
     if (type == "gw")
-      gatewaySpecified = PTrue;
+      gatewaySpecified = true;
     else if (type == "gk")
-      gatekeeperSpecified = PTrue;
+      gatekeeperSpecified = true;
     else if (!type) {
       PTRACE(1, "H323\tUnsupported host type \"" << type << "\" in h323 URL");
-      return PFalse;
+      return false;
     }
   }
 
@@ -903,12 +903,12 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   if (gatekeeperSpecified) {
     if (alias.IsEmpty()) {
       PTRACE(1, "H323\tAttempt to use explict gatekeeper without alias!");
-      return PFalse;
+      return false;
     }
 
     if (address.IsEmpty()) {
       PTRACE(1, "H323\tAttempt to use explict gatekeeper without address!");
-      return PFalse;
+      return false;
     }
 
     H323TransportAddress gkAddr = address;
@@ -946,12 +946,12 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       address = H323TransportAddress(alias, GetDefaultSignalPort(), transports[0]);
       alias = PString::Empty();
     }
-    return PTrue;
+    return true;
   }
 
   // We have a gatekeeper and user provided a host, all done
   if (!address)
-    return PTrue;
+    return true;
 
   // We have a gk and user did not explicitly supply a host, so lets
   // do a check to see if it is an IP address 
@@ -969,7 +969,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     }
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1003,13 +1003,13 @@ PBoolean H323EndPoint::OnIncomingCall(H323Connection & connection,
 PBoolean H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
                                           const PString & /*remoteParty*/)
 {
-  return PTrue;
+  return true;
 }
 
 
 PBoolean H323EndPoint::OnCallTransferIdentify(H323Connection & /*connection*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -1042,7 +1042,7 @@ PBoolean H323EndPoint::OnAlerting(H323Connection & connection,
 {
   PTRACE(3, "H225\tReceived alerting PDU.");
   ((OpalConnection&)connection).OnAlerting();
-  return PTrue;
+  return true;
 }
 
 PBoolean H323EndPoint::OnSendAlerting(H323Connection & PTRACE_PARAM(connection),
@@ -1052,20 +1052,20 @@ PBoolean H323EndPoint::OnSendAlerting(H323Connection & PTRACE_PARAM(connection),
                                   )
 {
   PTRACE(3, "H225\tOnSendAlerting conn = " << connection);
-  return PTrue;
+  return true;
 }
 
 PBoolean H323EndPoint::OnSentAlerting(H323Connection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "H225\tOnSentAlerting conn = " << connection);
-  return PTrue;
+  return true;
 }
 
 PBoolean H323EndPoint::OnConnectionForwarded(H323Connection & /*connection*/,
                                          const PString & /*forwardParty*/,
                                          const H323SignalPDU & /*pdu*/)
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -1079,11 +1079,11 @@ PBoolean H323EndPoint::ForwardConnection(H323Connection & connection,
                        UINT_MAX,
                        forwardParty,
                        NULL) == NULL)
-    return PFalse;
+    return false;
 
   connection.SetCallEndReason(H323Connection::EndedByCallForwarded);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1104,7 +1104,7 @@ PBoolean H323EndPoint::OnOutgoingCall(H323Connection & /*connection*/,
                                   const H323SignalPDU & /*connectPDU*/)
 {
   PTRACE(3, "H225\tReceived connect PDU.");
-  return PTrue;
+  return true;
 }
 
 
@@ -1139,7 +1139,7 @@ PBoolean H323EndPoint::OnStartLogicalChannel(H323Connection & /*connection*/,
 #if PTRACING
   OnStartStopChannel("Start", channel);
 #endif
-  return PTrue;
+  return true;
 }
 
 
@@ -1181,12 +1181,12 @@ void H323EndPoint::OnServiceControlSession(unsigned type,
 
 PBoolean H323EndPoint::OnCallIndependentSupplementaryService(const H323SignalPDU & /* setupPDU */)
 {
-  return PFalse;
+  return false;
 }
 
 PBoolean H323EndPoint::OnNegotiateConferenceCapabilities(const H323SignalPDU & /* setupPDU */)
 {
-  return PFalse;
+  return false;
 }
 
 H323ServiceControlSession * H323EndPoint::CreateServiceControlSession(const H225_ServiceControlDescriptor & contents)
@@ -1226,10 +1226,10 @@ PBoolean H323EndPoint::AddAliasName(const PString & name)
   PAssert(!name, "Must have non-empty string in AliasAddress!");
 
   if (localAliasNames.find(name) != localAliasNames.end())
-    return PFalse;
+    return false;
 
   localAliasNames.AppendString(name);
-  return PTrue;
+  return true;
 }
 
 
@@ -1237,13 +1237,13 @@ PBoolean H323EndPoint::RemoveAliasName(const PString & name)
 {
   PStringList::iterator pos = localAliasNames.find(name);
   if (pos == localAliasNames.end())
-    return PFalse;
+    return false;
 
   if (!PAssert(localAliasNames.GetSize() > 1, "Must have at least one AliasAddress!"))
-    return PFalse;
+    return false;
 
   localAliasNames.erase(pos);
-  return PTrue;
+  return true;
 }
 
 
@@ -1264,10 +1264,10 @@ PBoolean H323EndPoint::IsTerminal() const
   switch (terminalType) {
     case e_TerminalOnly :
     case e_TerminalAndMC :
-      return PTrue;
+      return true;
 
     default :
-      return PFalse;
+      return false;
   }
 }
 
@@ -1280,10 +1280,10 @@ PBoolean H323EndPoint::IsGateway() const
     case e_GatewayAndMCWithDataMP :
     case e_GatewayAndMCWithAudioMP :
     case e_GatewayAndMCWithAVMP :
-      return PTrue;
+      return true;
 
     default :
-      return PFalse;
+      return false;
   }
 }
 
@@ -1295,10 +1295,10 @@ PBoolean H323EndPoint::IsGatekeeper() const
     case e_GatekeeperWithDataMP :
     case e_GatekeeperWithAudioMP :
     case e_GatekeeperWithAVMP :
-      return PTrue;
+      return true;
 
     default :
-      return PFalse;
+      return false;
   }
 }
 
@@ -1310,10 +1310,10 @@ PBoolean H323EndPoint::IsMCU() const
     case e_MCUWithDataMP :
     case e_MCUWithAudioMP :
     case e_MCUWithAVMP :
-      return PTrue;
+      return true;
 
     default :
-      return PFalse;
+      return false;
   }
 }
 

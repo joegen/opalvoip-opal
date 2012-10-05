@@ -333,7 +333,7 @@ void H450ServiceAPDU::AttachSupplementaryServiceAPDU(H323SignalPDU & pdu)
 PBoolean H450ServiceAPDU::WriteFacilityPDU(H323Connection & connection)
 {
   H323SignalPDU facilityPDU;
-  facilityPDU.BuildFacility(connection, PTrue);
+  facilityPDU.BuildFacility(connection, true);
 
   AttachSupplementaryServiceAPDU(facilityPDU);
 
@@ -426,7 +426,7 @@ void H450xDispatcher::AttachToReleaseComplete(H323SignalPDU & pdu)
 
 PBoolean H450xDispatcher::HandlePDU(const H323SignalPDU & pdu)
 {
-PBoolean result = PTrue;
+PBoolean result = true;
   for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_h4501SupplementaryService.GetSize(); i++) {
     H4501_SupplementaryService supplementaryService;
 
@@ -480,7 +480,7 @@ PBoolean result = PTrue;
 
 PBoolean H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_InterpretationApdu & interpretation)
 {
-  PBoolean result = PTrue;
+  PBoolean result = true;
   // Get the invokeId
   int invokeId = invoke.m_invokeId.GetValue();
 
@@ -504,7 +504,7 @@ PBoolean H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_Interpret
       if (interpretation.GetTag() != H4501_InterpretationApdu::e_discardAnyUnrecognizedInvokePdu)
         SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
       if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
-        result = PFalse;
+        result = false;
     }
     else
       result = opcodeHandler[opcode].OnReceivedInvoke(opcode, invokeId, linkedId, argument);
@@ -514,7 +514,7 @@ PBoolean H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_Interpret
       SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
     PTRACE(2, "H4501\tInvoke of unsupported global opcode:\n  " << invoke);
     if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
-      result = PFalse;
+      result = false;
   }
   return result;
 }
@@ -530,13 +530,13 @@ PBoolean H450xDispatcher::OnReceivedReturnResult(X880_ReturnResult & returnResul
       break;
     }
   }
-  return PTrue;
+  return true;
 }
 
 
 PBoolean H450xDispatcher::OnReceivedReturnError(X880_ReturnError & returnError)
 {
-  PBoolean result=PTrue;
+  PBoolean result=true;
   unsigned invokeId = returnError.m_invokeId.GetValue();
   int errorCode = 0;
 
@@ -598,7 +598,7 @@ PBoolean H450xDispatcher::OnReceivedReject(X880_Reject & reject)
       break;
     }
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -699,21 +699,21 @@ void H450xHandler::AttachToReleaseComplete(H323SignalPDU &)
 
 PBoolean H450xHandler::OnReceivedReturnResult(X880_ReturnResult & /*returnResult*/)
 {
-  return PTrue;
+  return true;
 }
 
 
 PBoolean H450xHandler::OnReceivedReturnError(int /*errorCode*/,
                                         X880_ReturnError & /*returnError*/)
 {
-  return PTrue;
+  return true;
 }
 
 
 PBoolean H450xHandler::OnReceivedReject(int /*problemType*/,
                                    int /*problemNumber*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -759,19 +759,19 @@ PBoolean H450xHandler::DecodeArguments(PASN_OctetString * argString,
   if (argString == NULL) {
     if (absentErrorCode >= 0)
       SendReturnError(absentErrorCode);
-    return PFalse;
+    return false;
   }
 
   PPER_Stream argStream(*argString);
   if (argObject.Decode(argStream)) {
     PTRACE(4, "H4501\tSupplementary service argument:\n  "
            << setprecision(2) << argObject);
-    return PTrue;
+    return true;
   }
 
   PTRACE(1, "H4501\tInvalid supplementary service argument:\n  "
          << setprecision(2) << argObject);
-  return PFalse;
+  return false;
 }
 
 
@@ -791,9 +791,9 @@ H4502Handler::H4502Handler(H323Connection & conn, H450xDispatcher & disp)
 
   transferringCallToken = "";
   ctState = e_ctIdle;
-  ctResponseSent = PFalse;
+  ctResponseSent = false;
   CallToken = PString();
-  consultationTransfer = PFalse;
+  consultationTransfer = false;
 
   ctTimer.SetNotifier(PCREATE_NOTIFIER(OnCallTransferTimeOut));
 }
@@ -826,7 +826,7 @@ void H4502Handler::AttachToAlerting(H323SignalPDU & pdu)
   H450ServiceAPDU serviceAPDU;
   serviceAPDU.BuildReturnResult(currentInvokeId);
   serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
-  ctResponseSent = PTrue;
+  ctResponseSent = true;
   currentInvokeId = 0;
 }
 
@@ -840,7 +840,7 @@ void H4502Handler::AttachToConnect(H323SignalPDU & pdu)
   H450ServiceAPDU serviceAPDU;
   serviceAPDU.BuildReturnResult(currentInvokeId);
   serviceAPDU.AttachSupplementaryServiceAPDU(pdu);
-  ctResponseSent = PTrue;
+  ctResponseSent = true;
   currentInvokeId = 0;
 }
 
@@ -859,12 +859,12 @@ void H4502Handler::AttachToReleaseComplete(H323SignalPDU & pdu)
 
   if (ctResponseSent) {
     serviceAPDU.BuildReturnResult(currentInvokeId);
-    ctResponseSent = PFalse;
+    ctResponseSent = false;
     currentInvokeId = 0;
   }
   else {
     serviceAPDU.BuildReturnError(currentInvokeId, H4501_GeneralErrorList::e_notAvailable);
-    ctResponseSent = PTrue;
+    ctResponseSent = true;
     currentInvokeId = 0;
   }
 
@@ -914,10 +914,10 @@ PBoolean H4502Handler::OnReceivedInvoke(int opcode,
 
     default:
       currentInvokeId = 0;
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1010,7 +1010,7 @@ void H4502Handler::OnReceivedCallTransferInitiate(int /*linkedId*/,
                        H4502_CallTransferErrors::e_invalidReroutingNumber))
     return;
 
-  ctResponseSent = PTrue;
+  ctResponseSent = true;
 
   PString remoteParty;
   H450ServiceAPDU::ParseEndpointAddress(ctInitiateArg.m_reroutingNumber, remoteParty);
@@ -1128,7 +1128,7 @@ PBoolean H4502Handler::OnReceivedReturnResult(X880_ReturnResult & returnResult)
         break;
     }
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -1216,7 +1216,7 @@ PBoolean H4502Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &re
         break;
     }
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -1497,10 +1497,10 @@ PBoolean H4504Handler::OnReceivedInvoke(int opcode,
 
     default:
       currentInvokeId = 0;
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1600,10 +1600,10 @@ PBoolean H4506Handler::OnReceivedInvoke(int opcode,
 
     default:
       currentInvokeId = 0;
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -1671,10 +1671,10 @@ PBoolean H4507Handler::OnReceivedInvoke(int opcode,
     default:
       PTRACE(2, "H450.7\tOnReceivedInvoke, not an interrogate");
       currentInvokeId = 0;
-      return PFalse;
+      return false;
   }
   
-  return PTrue;
+  return true;
 }
 
 
@@ -1755,7 +1755,7 @@ PBoolean H45011Handler::OnReceivedInvoke(int opcode,
                                     int linkedId,
                                     PASN_OctetString * argument)
 {
-  PBoolean result = PTrue;
+  PBoolean result = true;
   currentInvokeId = invokeId;
 
   switch (opcode) {
@@ -1801,7 +1801,7 @@ PBoolean H45011Handler::OnReceivedInvoke(int opcode,
     
     default:
       currentInvokeId = 0;
-      return PFalse;
+      return false;
   }
 
   return result;
@@ -2075,13 +2075,13 @@ void H45011Handler::OnReceivedCallIntrusionIsolate(int /*linkedId*/,
 PBoolean H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
                                                          PASN_OctetString *argument)
 {
-  PBoolean result = PTrue;
+  PBoolean result = true;
   PTRACE(4, "H450.11\tReceived ForcedRelease Invoke");
 
   H45011_CIFrcRelArg ciArg;
 
   if(!DecodeArguments(argument, ciArg, -1))
-    return PFalse;
+    return false;
 
   PStringList tokens = endpoint.GetAllConnections();
 
@@ -2095,10 +2095,10 @@ PBoolean H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
               activeCallToken = conn->GetCallToken();
               intrudingCallToken = connection.GetCallToken();
               conn->GetRemoteCallIntrusionProtectionLevel(connection.GetCallToken(), (unsigned)ciArg.m_ciCapabilityLevel);
-              result = PTrue;
+              result = true;
               break;
             }
-            result = PFalse;
+            result = false;
           }
         }
       }
@@ -2230,7 +2230,7 @@ PBoolean H45011Handler::OnReceivedReturnResult(X880_ReturnResult & returnResult)
         break;
     }
   }
-  return PTrue;
+  return true;
 }
 
 
@@ -2299,7 +2299,7 @@ void H45011Handler::OnReceivedCIGetCIPLResult(X880_ReturnResult & returnResult)
 
 PBoolean H45011Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &returnError)
 {
-  PBoolean result = PTrue;
+  PBoolean result = true;
   PTRACE(4, "H450.11\tReceived Return Error CODE=" <<errorCode << ", InvokeId=" <<returnError.m_invokeId.GetValue());
   if (currentInvokeId == returnError.m_invokeId.GetValue()) {
     switch (ciState) {
@@ -2319,7 +2319,7 @@ PBoolean H45011Handler::OnReceivedReturnError(int errorCode, X880_ReturnError &r
 
 PBoolean H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerExpiry)
 {
-  PBoolean result = PFalse;
+  PBoolean result = false;
   PTRACE(4, "H450.11\tOnReceivedInvokeReturnError CODE =" << errorCode);
   if (!timerExpiry) {
     // stop timer CI-T1
@@ -2336,14 +2336,14 @@ PBoolean H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool ti
   switch(errorCode){
     case H45011_CallIntrusionErrors::e_notBusy :
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::e_notBusy");
-      result = PTrue;
+      result = true;
       break;
     case H45011_CallIntrusionErrors::e_temporarilyUnavailable :
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::e_temporarilyUnavailable");
       break;
     case H45011_CallIntrusionErrors::e_notAuthorized :
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::e_notAuthorized");
-      result = PTrue;
+      result = true;
       break;
     default:
       PTRACE(4, "H450.11\tH45011_CallIntrusionErrors::DEFAULT");
@@ -2385,7 +2385,7 @@ PBoolean H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_PARAM(errorCode)
   ciSendState = e_ci_sAttachToReleseComplete;
   ciReturnState = e_ci_rCallForceReleased;
       
-  return PFalse;
+  return false;
 }
 
 
@@ -2420,12 +2420,12 @@ PBoolean H45011Handler::GetRemoteCallIntrusionProtectionLevel(const PString & to
   serviceAPDU.BuildCallIntrusionGetCIPL(currentInvokeId);
 
   if (!serviceAPDU.WriteFacilityPDU(connection))
-    return PFalse;
+    return false;
 
   PTRACE(4, "H450.11\tStarting timer CI-T5");
   StartciTimer(connection.GetEndPoint().GetCallIntrusionT5());
   ciState = e_ci_GetCIPL;
-  return PTrue;
+  return true;
 }
 
 
@@ -2521,7 +2521,7 @@ PBoolean H45011Handler::OnReceivedReject(int PTRACE_PARAM(problemType), int PTRA
       break;
   }
   ciState = e_ci_Idle;
-  return PTrue;
+  return true;
 };
 
 #endif // OPAL_H450

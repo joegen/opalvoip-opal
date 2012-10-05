@@ -30,7 +30,7 @@ const static PASN_Names Names_H4507_H323_MWI_Operations[]={
 //
 
 H4507_H323_MWI_Operations::H4507_H323_MWI_Operations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 82, PFalse
+  : PASN_Enumeration(tag, tagClass, 82, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4507_H323_MWI_Operations,3
 #endif
@@ -132,7 +132,7 @@ const static PASN_Names Names_H4507_MsgCentreId[]={
 //
 
 H4507_MsgCentreId::H4507_MsgCentreId(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, PFalse
+  : PASN_Choice(tag, tagClass, 3, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4507_MsgCentreId,3
 #endif
@@ -169,18 +169,18 @@ PBoolean H4507_MsgCentreId::CreateObject()
     case e_integer :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return PTrue;
+      return true;
     case e_partyNumber :
       choice = new H4501_EndpointAddress();
-      return PTrue;
+      return true;
     case e_numericString :
       choice = new PASN_NumericString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 10);
-      return PTrue;
+      return true;
   }
 
   choice = NULL;
-  return PFalse;
+  return false;
 }
 
 
@@ -259,7 +259,7 @@ const static PASN_Names Names_H4507_MessageWaitingIndicationErrors[]={
 //
 
 H4507_MessageWaitingIndicationErrors::H4507_MessageWaitingIndicationErrors(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 2002, PFalse
+  : PASN_Enumeration(tag, tagClass, 2002, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4507_MessageWaitingIndicationErrors,3
 #endif
@@ -302,7 +302,7 @@ const static PASN_Names Names_H4507_BasicService[]={
 //
 
 H4507_BasicService::H4507_BasicService(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 36, PFalse
+  : PASN_Enumeration(tag, tagClass, 36, false
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4507_BasicService,9
 #endif
@@ -363,7 +363,7 @@ PObject * H4507_ArrayOf_MixedExtension::Clone() const
 //
 
 H4507_MWIActivateArg::H4507_MWIActivateArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 6, true, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 9);
   m_extensionArg.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -448,24 +448,24 @@ PINDEX H4507_MWIActivateArg::GetDataLength() const
 PBoolean H4507_MWIActivateArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_msgCentreId) && !m_msgCentreId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nbOfMessages) && !m_nbOfMessages.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originatingNr) && !m_originatingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_timestamp) && !m_timestamp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_priority) && !m_priority.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extensionArg) && !m_extensionArg.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -508,7 +508,7 @@ PObject * H4507_MWIActivateArg::Clone() const
 //
 
 H4507_MWIDeactivateArg::H4507_MWIDeactivateArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_extensionArg.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -574,18 +574,18 @@ PINDEX H4507_MWIDeactivateArg::GetDataLength() const
 PBoolean H4507_MWIDeactivateArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_msgCentreId) && !m_msgCentreId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callbackReq) && !m_callbackReq.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extensionArg) && !m_extensionArg.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -622,7 +622,7 @@ PObject * H4507_MWIDeactivateArg::Clone() const
 //
 
 H4507_MWIInterrogateArg::H4507_MWIInterrogateArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 3, true, 0)
 {
   m_extensionArg.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -688,18 +688,18 @@ PINDEX H4507_MWIInterrogateArg::GetDataLength() const
 PBoolean H4507_MWIInterrogateArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_servedUserNr.Decode(strm))
-    return PFalse;
+    return false;
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_msgCentreId) && !m_msgCentreId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_callbackReq) && !m_callbackReq.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extensionArg) && !m_extensionArg.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -736,7 +736,7 @@ PObject * H4507_MWIInterrogateArg::Clone() const
 //
 
 H4507_MWIInterrogateResElt::H4507_MWIInterrogateResElt(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
+  : PASN_Sequence(tag, tagClass, 6, true, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 9);
   m_extensionArg.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -817,22 +817,22 @@ PINDEX H4507_MWIInterrogateResElt::GetDataLength() const
 PBoolean H4507_MWIInterrogateResElt::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return PFalse;
+    return false;
 
   if (!m_basicService.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_msgCentreId) && !m_msgCentreId.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_nbOfMessages) && !m_nbOfMessages.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_originatingNr) && !m_originatingNr.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_timestamp) && !m_timestamp.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_priority) && !m_priority.Decode(strm))
-    return PFalse;
+    return false;
   if (HasOptionalField(e_extensionArg) && !m_extensionArg.Decode(strm))
-    return PFalse;
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }

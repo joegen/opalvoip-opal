@@ -81,15 +81,15 @@ PBoolean IAX2WaitingForAck::MatchingAckPacket(IAX2FullFrame *f)
   PTRACE(4, "MatchingAck\tCompare " << timeStamp << " and " << seqNo);
   if (f->GetTimeStamp() != timeStamp) {
     PTRACE(4, "MatchingAck\tTimstamps differ");
-    return PFalse;
+    return false;
   }
 
   if (f->GetSequenceInfo().OutSeqNo() != seqNo) {
     PTRACE(4, "MatchingAck\tOut seqnos differ");    
-    return PFalse;
+    return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 void IAX2WaitingForAck::PrintOn(ostream & strm) const
@@ -116,7 +116,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX2 Processor"),
     endpoint(ep)
 {
-  endThread = PFalse;
+  endThread = false;
   
   remote.SetDestCallNumber(0);
   remote.SetRemoteAddress(0);
@@ -125,7 +125,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   nextTask.ZeroValues();
   noResponseTimer.SetNotifier(PCREATE_NOTIFIER(OnNoResponseTimeoutStart));
   
-  specialPackets = PFalse;
+  specialPackets = false;
 
   currentSoundTimeStamp = 0;
 }
@@ -162,7 +162,7 @@ void IAX2Processor::Main()
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
 
-  while(endThread == PFalse) {
+  while(endThread == false) {
     activate.Wait();
     ProcessLists();
   }
@@ -174,24 +174,24 @@ void IAX2Processor::Main()
 PBoolean IAX2Processor::IsStatusQueryEthernetFrame(IAX2Frame *frame)
 {
   if (!PIsDescendant(frame, IAX2FullFrame))
-    return PFalse;
+    return false;
    
   IAX2FullFrame *f = (IAX2FullFrame *)frame;
   if (f->GetFrameType() != IAX2FullFrame::iax2ProtocolType)
-    return PFalse;
+    return false;
    
   PINDEX subClass = f->GetSubClass();
    
   if (subClass == IAX2FullFrameProtocol::cmdLagRq) {
     PTRACE(4, "Special packet of  lagrq to process");
-    return PTrue;
+    return true;
   }
    
   if (subClass == IAX2FullFrameProtocol::cmdPing) {
     PTRACE(4, "Special packet of Ping to process");
-    return PTrue;
+    return true;
   }
-  return PFalse;
+  return false;
 }
 
 void IAX2Processor::IncomingEthernetFrame(IAX2Frame *frame)
@@ -232,7 +232,7 @@ void IAX2Processor::Activate()
 
 void IAX2Processor::Terminate()
 {
-  endThread = PTrue;
+  endThread = true;
   if (IsSuspended())
     Resume();
 
@@ -246,7 +246,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
 {  
   IAX2Frame *frame = frameList.GetLastFrame();
   if (frame == NULL) {
-    return PFalse;
+    return false;
   }
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
@@ -257,7 +257,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
     delete frame;
     
     if (af == NULL)
-      return PTrue;  
+      return true;  
       
     frame = af;  
   }  
@@ -265,7 +265,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (PIsDescendant(frame, IAX2MiniFrame)) {
     PTRACE(5, "Processor\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((IAX2MiniFrame *)frame);
-    return PTrue;
+    return true;
   }
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
@@ -287,7 +287,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (IncomingMessageOutOfOrder(f)) {
     PTRACE(5, "Processor\tFullFrame incoming frame " 
 	   << frame->GetRemoteInfo() << " is out of order");
-    return PTrue;
+    return true;
   }
 
   // sequence numbers are Ok. Good.
@@ -301,7 +301,7 @@ PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (f != NULL)
     delete f;
 
-  return PTrue;   /*There could be more frames to process. */
+  return true;   /*There could be more frames to process. */
 }
 
 void IAX2Processor::TransmitFrameNow(IAX2Frame *src)
@@ -341,14 +341,14 @@ void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrame *src,
 
 PBoolean IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & password)
 {
-  PBoolean processed = PFalse;
+  PBoolean processed = false;
   IAX2IeAuthMethods ie(ieData.authMethods);
   
   if (ie.IsMd5Authentication()) {
     PTRACE(5, "Processor\tMD5 Authentiction yes, make reply up");
     IAX2IeMd5Result *res = new IAX2IeMd5Result(ieData.challenge, password);
     reply->AppendIe(res);
-    processed = PTrue;
+    processed = true;
     encryption.SetChallengeKey(ieData.challenge);
     encryption.SetEncryptionKey(password);
   } else  {
@@ -357,12 +357,12 @@ PBoolean IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & pas
 	allowing md5 passwords.  This would make
 	injecting plain auth IEs useless.*/
       reply->AppendIe(new IAX2IePassword(password));
-      processed = PTrue;
+      processed = true;
     } else 
       if (ie.IsRsaAuthentication()) {
 	PTRACE(4, "Processor\tDO NOT handle RSA authentication ");
 	reply->SetSubClass(IAX2FullFrameProtocol::cmdInval);
-	processed = PTrue;
+	processed = true;
       }
   }
   
@@ -431,10 +431,10 @@ PBoolean IAX2Processor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     ProcessIaxCmdPong(src);
     break;
   default:
-    return PFalse;
+    return false;
   }
   
-  return PTrue;
+  return true;
 }
 
 void IAX2Processor::ProcessIaxCmdPing(IAX2FullFrameProtocol *src)

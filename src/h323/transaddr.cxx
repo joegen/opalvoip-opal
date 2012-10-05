@@ -145,7 +145,7 @@ PBoolean H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort)
       for (PINDEX i = 0; i < ip.GetSize(); i++)
         addr.m_ip[i] = ip[i];
       addr.m_port = port;
-      return PTrue;
+      return true;
     }
 #endif
 
@@ -156,10 +156,10 @@ PBoolean H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort)
     for (PINDEX i = 0; i < 4; i++)
       addr.m_ip[i] = ip[i];
     addr.m_port = port;
-    return PTrue;
+    return true;
   }
 
-  return PFalse;
+  return false;
 }
 
 
@@ -182,7 +182,7 @@ PBoolean H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort)
       for (PINDEX i = 0; i < ip.GetSize(); i++)
         addr.m_network[i] = ip[i];
       addr.m_tsapIdentifier = port;
-      return PTrue;
+      return true;
     }
 #endif
 
@@ -191,10 +191,10 @@ PBoolean H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort)
     for (PINDEX i = 0; i < 4; i++)
       addr.m_network[i] = ip[i];
     addr.m_tsapIdentifier = port;
-    return PTrue;
+    return true;
   }
 
-  return PFalse;
+  return false;
 }
 
 

@@ -172,7 +172,7 @@ PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 
   //((OpalConnection &)connection).AddIMListener(PCREATE_NOTIFIER(OnReceiveIM));
 
-  return PTrue;
+  return true;
 }
 
 
@@ -184,7 +184,7 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
   cout << "Outgoing call connected" << endl;
   mgr.m_connected.Signal();
-  return PTrue;
+  return true;
 }
 
 void MyPCSSEndPoint::OnReceiveIM(OpalConnection::IMInfo & im, INT)

@@ -551,17 +551,17 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
 {
   if (IsOriginating() || m_lastReceivedINVITE == NULL) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
-    return PTrue;
+    return true;
   }
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
-    return PFalse;
+    return false;
   
   PTRACE(3, "SIP\tSetAlerting");
 
   if (GetPhase() >= AlertingPhase) 
-    return PFalse;
+    return false;
 
   if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
@@ -569,16 +569,16 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     if (!OnSendAnswerSDP(sdpOut)) {
       Release(EndedByCapabilityExchange);
-      return PFalse;
+      return false;
     }
     if (!SendInviteResponse(SIP_PDU::Information_Session_Progress, &sdpOut))
-      return PFalse;
+      return false;
   }
 
   SetPhase(AlertingPhase);
   NotifyDialogState(SIPDialogNotification::Early);
 
-  return PTrue;
+  return true;
 }
 
 
@@ -586,16 +586,16 @@ PBoolean SIPConnection::SetConnected()
 {
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated " << *this);
-    return PTrue;
+    return true;
   }
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
-    return PFalse;
+    return false;
   
   if (GetPhase() >= ConnectedPhase) {
     PTRACE(2, "SIP\tSetConnected ignored on already connected call " << *this);
-    return PFalse;
+    return false;
   }
   
   PTRACE(3, "SIP\tSetConnected " << *this);
@@ -3651,7 +3651,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
         char tone = -1;
         int duration = -1;
         for (i = 0; i < lines.GetSize(); ++i) {
-          PStringArray tokens = lines[i].Tokenise('=', PFalse);
+          PStringArray tokens = lines[i].Tokenise('=', false);
           PString val;
           if (tokens.GetSize() > 1)
             val = tokens[1].Trim();

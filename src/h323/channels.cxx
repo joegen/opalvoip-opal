@@ -178,7 +178,7 @@ bool H323Channel::SetSessionID(unsigned /*sessionID*/)
 PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
                                                OpalTransportAddress & /*control*/) const
 {
-  return PFalse;
+  return false;
 }
 
 
@@ -214,13 +214,13 @@ void H323Channel::SetMediaStream(OpalMediaStreamPtr)
 PBoolean H323Channel::OnReceivedPDU(const H245_OpenLogicalChannel & /*pdu*/,
                                 unsigned & /*errorCode*/)
 {
-  return PTrue;
+  return true;
 }
 
 
 PBoolean H323Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*pdu*/)
 {
-  return PTrue;
+  return true;
 }
 
 
@@ -297,11 +297,11 @@ PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
   PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", used=" << m_bandwidthUsed);
   if (!connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, bandwidth)) {
     m_bandwidthUsed = 0;
-    return PFalse;
+    return false;
   }
 
   m_bandwidthUsed = bandwidth;
-  return PTrue;
+  return true;
 }
 
 
@@ -314,18 +314,18 @@ bool H323Channel::PreOpen()
 PBoolean H323Channel::Open()
 {
   if (opened)
-    return PTrue;
+    return true;
 
   // Give the connection (or endpoint) a chance to do something with
   // the opening of the codec.
   if (!connection.OnStartLogicalChannel(*this)) {
     PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
            << " open failed (OnStartLogicalChannel fail)");
-    return PFalse;
+    return false;
   }
 
-  opened = PTrue;
-  return PTrue;
+  opened = true;
+  return true;
 }
 
 
@@ -470,7 +470,7 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
                     ::e_h2250LogicalChannelParameters);
 
     // NOTE Two callbacks?  This may be supposed to fit somewhere else
-    connection.OnSendH245_OpenLogicalChannel(open, PFalse);
+    connection.OnSendH245_OpenLogicalChannel(open, false);
     return OnSendingPDU(open.m_reverseLogicalChannelParameters.m_multiplexParameters);
   }
   else {
@@ -482,7 +482,7 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
     if (OnSendingAltPDU(open.m_genericInformation))
         open.IncludeOptionalField(H245_OpenLogicalChannel::e_genericInformation);
 
-    connection.OnSendH245_OpenLogicalChannel(open, PTrue);
+    connection.OnSendH245_OpenLogicalChannel(open, true);
     return OnSendingPDU(open.m_forwardLogicalChannelParameters.m_multiplexParameters);
   }
 }
@@ -536,7 +536,7 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
                                          unsigned & errorCode)
 {
   if (receiver)
-    number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, PTrue);
+    number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, true);
 
   PTRACE(3, "H323RTP\tOnReceivedPDU for channel: " << number);
 
@@ -547,7 +547,7 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
   if (!capability->OnReceivedPDU(dataType, receiver)) {
     PTRACE(1, "H323RTP\tData type not supported");
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
-    return PFalse;
+    return false;
   }
 
   if (reverse) {
@@ -563,7 +563,7 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
 
   PTRACE(1, "H323RTP\tOnly H.225.0 multiplex supported");
   errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
-  return PFalse;
+  return false;
 }
 
 
@@ -597,13 +597,13 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
 
   if (!ack.HasOptionalField(H245_OpenLogicalChannelAck::e_forwardMultiplexAckParameters)) {
     PTRACE(1, "H323RTP\tNo forwardMultiplexAckParameters");
-    return PFalse;
+    return false;
   }
 
   if (ack.m_forwardMultiplexAckParameters.GetTag() !=
             H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters) {
     PTRACE(1, "H323RTP\tOnly H.225.0 multiplex supported");
-    return PFalse;
+    return false;
   }
 
   if (ack.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation))
@@ -658,10 +658,10 @@ H323DataChannel::H323DataChannel(H323Connection & conn,
 {
   sessionID = id;
   listener = NULL;
-  autoDeleteListener = PTrue;
+  autoDeleteListener = true;
   transport = NULL;
-  autoDeleteTransport = PTrue;
-  separateReverseChannel = PFalse;
+  autoDeleteTransport = true;
+  separateReverseChannel = false;
 }
 
 
@@ -708,7 +708,7 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
   fparam.m_sessionID = GetSessionID();
 
   if (separateReverseChannel)
-    return PTrue;
+    return true;
 
   open.IncludeOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
   open.m_reverseLogicalChannelParameters.IncludeOptionalField(
@@ -764,30 +764,30 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
 PBoolean H323DataChannel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
                                     unsigned & errorCode)
 {
-  number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, PTrue);
+  number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, true);
 
   PTRACE(3, "LogChan\tOnReceivedPDU for data channel: " << number);
 
   if (!CreateListener()) {
     PTRACE(1, "LogChan\tCould not create listener");
     errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-    return PFalse;
+    return false;
   }
 
   if (separateReverseChannel &&
       open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
     PTRACE(1, "LogChan\tOnReceivedPDU has unexpected reverse parameters");
-    return PFalse;
+    return false;
   }
 
   if (!capability->OnReceivedPDU(open.m_forwardLogicalChannelParameters.m_dataType, receiver)) {
     PTRACE(1, "H323RTP\tData type not supported");
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
-    return PFalse;
+    return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -801,47 +801,47 @@ PBoolean H323DataChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & ac
       PTRACE(3, "LogChan\tseparateReverseChannels");
     if (!ack.HasOptionalField(H245_OpenLogicalChannelAck::e_forwardMultiplexAckParameters)) {
       PTRACE(1, "LogChan\tNo forwardMultiplexAckParameters");
-      return PFalse;
+      return false;
     }
 
     if (ack.m_forwardMultiplexAckParameters.GetTag() !=
               H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters) {
       PTRACE(1, "LogChan\tOnly H.225.0 multiplex supported");
-      return PFalse;
+      return false;
     }
 
     const H245_H2250LogicalChannelAckParameters & param = ack.m_forwardMultiplexAckParameters;
 
     if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
       PTRACE(1, "LogChan\tNo media channel address provided");
-      return PFalse;
+      return false;
     }
 
     address = &param.m_mediaChannel;
 
     if (ack.HasOptionalField(H245_OpenLogicalChannelAck::e_reverseLogicalChannelParameters)) {
       PTRACE(3, "LogChan\treverseLogicalChannelParameters set");
-      reverseChannel = H323ChannelNumber(ack.m_reverseLogicalChannelParameters.m_reverseLogicalChannelNumber, PTrue);
+      reverseChannel = H323ChannelNumber(ack.m_reverseLogicalChannelParameters.m_reverseLogicalChannelNumber, true);
     }
   }
   else {
     if (!ack.HasOptionalField(H245_OpenLogicalChannelAck::e_reverseLogicalChannelParameters)) {
       PTRACE(1, "LogChan\tNo reverseLogicalChannelParameters");
-      return PFalse;
+      return false;
     }
 
     if (ack.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() !=
               H245_OpenLogicalChannelAck_reverseLogicalChannelParameters_multiplexParameters
                               ::e_h2250LogicalChannelParameters) {
       PTRACE(1, "LogChan\tOnly H.225.0 multiplex supported");
-      return PFalse;
+      return false;
     }
 
     const H245_H2250LogicalChannelParameters & param = ack.m_reverseLogicalChannelParameters.m_multiplexParameters;
 
     if (!param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
       PTRACE(1, "LogChan\tNo media channel address provided");
-      return PFalse;
+      return false;
     }
 
     address = &param.m_mediaChannel;
@@ -849,15 +849,15 @@ PBoolean H323DataChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & ac
 
   if (!CreateTransport()) {
     PTRACE(1, "LogChan\tCould not create transport");
-    return PFalse;
+    return false;
   }
 
   if (!transport->ConnectTo(H323TransportAddress(*address))) {
     PTRACE(1, "LogChan\tCould not connect to remote transport address: " << *address);
-    return PFalse;
+    return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -867,7 +867,7 @@ PBoolean H323DataChannel::CreateListener()
     listener = connection.GetControlChannel().GetLocalAddress().CreateListener(
                           connection.GetEndPoint(), OpalTransportAddress::HostOnly);
     if (listener == NULL)
-      return PFalse;
+      return false;
 
     PTRACE(3, "LogChan\tCreated listener for data channel: " << *listener);
   }
@@ -882,7 +882,7 @@ PBoolean H323DataChannel::CreateTransport()
     transport = connection.GetControlChannel().GetLocalAddress().CreateTransport(
                           connection.GetEndPoint(), OpalTransportAddress::HostOnly);
     if (transport == NULL)
-      return PFalse;
+      return false;
 
     PTRACE(3, "LogChan\tCreated transport for data channel: " << *transport);
   }
