@@ -26,6 +26,7 @@
 
 #include <ptclib/gstreamer.h>
 
+#if P_GSTREAMER
 
 /**Endpoint for access via gstreamer.
   */
@@ -152,5 +153,6 @@ class GstMediaStream : public OpalMediaStream
     PGstPipeline m_pipeline;
 };
 
+#endif // P_GSTREAMER
 
 #endif // GSTREAMER_GSTENDPOINT_H
