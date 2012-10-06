@@ -13,6 +13,7 @@
 #include <ep/GstEndPoint.h>
 #include <codec/vidcodec.h>
 
+#if P_GSTREAMER
 
 static char const PipelineSourceName[] = "PipelineSource";
 static char const PipelineSinkName[] = "PipelineSink";
@@ -445,3 +446,4 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
   return false;
 }
 
+#endif // P_GSTREAMER
