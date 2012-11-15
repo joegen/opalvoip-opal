@@ -5,10 +5,10 @@ dnl extract recommended PTLIB version from parent directory
 if test \! -e ../configure ; then
   echo "ERROR: unable to find '../configure'"
 else
-  PTLIB_REC_VERSION=`grep '^PTLIB_REC_VERSION=' ../configure | sed -e 's/^PTLIB_REC_VERSION=//' -e 's/\"//g'`
-  echo PTLIB_REC_VERSION $PTLIB_REC_VERSION
-  if test "x$PTLIB_REC_VERSION" = "x" ; then
-    echo "ERROR: unable to extract PTLIB_REC_VERSION from ../configure"
+  PTLIB_REQUIRED_VERSION=`grep '^PTLIB_REQUIRED_VERSION=' ../configure | sed -e 's/^PTLIB_REQUIRED_VERSION=//' -e 's/\"//g'`
+  echo PTLIB_REQUIRED_VERSION $PTLIB_REQUIRED_VERSION
+  if test "x$PTLIB_REQUIRED_VERSION" = "x" ; then
+    echo "ERROR: unable to extract PTLIB_REQUIRED_VERSION from ../configure"
     exit -1
   fi
 fi

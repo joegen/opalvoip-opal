@@ -2320,7 +2320,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
   LogWindow << endl;
   SetBalloonText(balloon);
 
-  m_LastReceived = connection->GetRemotePartyAddress();
+  m_LastReceived = connection->GetRemotePartyURL();
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(GeneralGroup);
   config->Write(LastReceivedKey, m_LastDialed);

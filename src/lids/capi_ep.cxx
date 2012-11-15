@@ -1071,7 +1071,6 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
       PINDEX pos = sizeof(OpalCapiMessage::Header) + sizeof(message.param.connect_ind);
       message.Get(pos, NULL, 1, m_calledPartyNumber); // Called party address
       message.Get(pos, NULL, 2, remotePartyNumber); // Calling party address
-      remotePartyAddress = remotePartyNumber;
 
       OnApplyStringOptions();
       if (OnIncomingConnection(0, NULL))

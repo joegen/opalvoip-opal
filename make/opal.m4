@@ -226,15 +226,10 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix $3 --libs`
            fi
 
-
-           AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-                            #include <ptbuildopts.h>
-                            #include <ptlib.h>]],
-                            [[
-                              PString str("");
-                           ]])], 
-                           [found=1],
-                           [found=0])
+           AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <ptlib.h>]],
+                                           [[PString str;]])], 
+                          [found=1],
+                          [found=0])
 
           ])
 
@@ -277,20 +272,17 @@ AC_DEFUN([OPAL_FIND_PTLIB],
             echo "Found PTLIB in PTLIBDIR ${PTLIBDIR}"
           fi
 
-          echo PTLIB_REC_VERSION = $PTLIB_REC_VERSION
+          echo PTLIB_REQUIRED_VERSION = $PTLIB_REQUIRED_VERSION
           if test "x${PTLIB_VERSION_CHECK}" = "xyes" ; then
-            PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REC_VERSION})
+            PKG_CHECK_MODULES(PTLIB, ptlib >= ${PTLIB_REQUIRED_VERSION})
           else
             PKG_CHECK_MODULES(PTLIB, ptlib)
           fi            
 
           PTLIB_VERSION=`$PKG_CONFIG ptlib --modversion`
-          PTLIB_CFLAGS=`$PKG_CONFIG ptlib --cflags`
           PTLIB_CXXFLAGS=`$PKG_CONFIG ptlib --variable=cxxflags` 
-          PTLIB_LIBS=`$PKG_CONFIG ptlib --libs`
           RELEASE_LIBS="$PTLIB_LIBS"
           DEBUG_LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=_d --libs`
-
 
           dnl determine which variant of ptlib is installed (static/dynamic, release/debug)
           
@@ -304,7 +296,6 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           AC_MSG_CHECKING([linkable PTLib])
 
-          RELEASE_LIBS=`$PKG_CONFIG ptlib --libs`
           OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
           if test "x$found" = "x1" ; then
             DEFAULT_LIBS=$LIBS
@@ -328,6 +319,10 @@ AC_DEFUN([OPAL_FIND_PTLIB],
                   AC_MSG_RESULT([debug, static])
                 else
                   AC_MSG_RESULT([not found])
+                  echo PTLIB_VERSION=$PTLIB_VERSION
+                  echo PTLIB_CFLAGS=$PTLIB_CFLAGS
+                  echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
+                  echo PTLIB_LIBS=$PTLIB_LIBS
                   exit -1
                 fi
               fi

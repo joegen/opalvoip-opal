@@ -124,7 +124,7 @@ void IAX2CallProcessor::AssignConnection(IAX2Connection * _con)
 
 void IAX2CallProcessor::PrintOn(ostream & strm) const
 {
-  strm << "In call with " << con->GetRemotePartyAddress() << "  " << remotePhoneNumber << " " << callToken  << endl
+  strm << "In call with " << con->GetRemotePartyURL() << "  " << remotePhoneNumber << " " << callToken  << endl
        << "  Call has been up for " << setprecision(0) << setw(8)
        << (PTimer::Tick() - callStartTick) << " milliseconds" << endl
        << "  Control frames sent " << controlFramesSent    << endl
@@ -735,9 +735,9 @@ PBoolean IAX2CallProcessor::SetUpConnection()
 {
   PTRACE(3, "IAX2\tSet Up Connection to remote node " 
 	 << con->GetRemotePartyName() << " " 
-	 << con->GetRemotePartyAddress());
+	 << con->GetRemotePartyURL());
    
-  callList.AppendString(con->GetRemotePartyAddress());
+  callList.AppendString(con->GetRemotePartyURL());
   
   CleanPendingLists();
   return true;
@@ -1040,7 +1040,7 @@ void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
 
 void IAX2CallProcessor::RingingWasAcked()
 {
-  PTRACE(4, "Processor\t Remote node " << con->GetRemotePartyAddress() << " knows our phone is ringing");
+  PTRACE(4, "Processor\t Remote node " << con->GetRemotePartyURL() << " knows our phone is ringing");
 }
 
 void IAX2CallProcessor::AnswerWasAcked()
@@ -1082,7 +1082,7 @@ void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
   PTRACE(3, "Processor\tProcessIaxCmdHangup(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
 
-  PTRACE(1, "The remote node (" << con->GetRemotePartyAddress()  << ") has closed the call");
+  PTRACE(1, "The remote node (" << con->GetRemotePartyURL()  << ") has closed the call");
 
   con->EndCallNow(OpalConnection::EndedByRemoteUser);
 

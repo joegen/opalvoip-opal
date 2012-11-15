@@ -213,11 +213,13 @@ H323Connection::H323Connection(OpalCall & call,
   localAliasNames.MakeUnique();
   gkAccessTokenOID.MakeUnique();
 
+  m_remotePartyURL = GetPrefixName() + ':';
+  remotePartyName = address.GetHostName(true);
   if (alias.IsEmpty())
-    remotePartyName = remotePartyAddress = address.GetHostName(true);
+    m_remotePartyURL += remotePartyName;
   else {
+    m_remotePartyURL += alias + '@' + remotePartyName;
     remotePartyName = alias;
-    remotePartyAddress = alias + '@' + address.GetHostName(true);
   }
 
   if (OpalIsE164(remotePartyName))
@@ -1239,6 +1241,7 @@ void H323Connection::SetLocalPartyName(const PString & name)
 void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
 {
   const Q931 & q931 = pdu.GetQ931();
+  PString remotePartyAddress;
 
   q931.GetCalledPartyNumber(m_calledPartyNumber);
 
@@ -1281,17 +1284,19 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
     remoteHostName += ";type=gk";
   }
 
-  remotePartyURL = GetPrefixName() + ':';
-  if (remotePartyAddress.IsEmpty()) {
-    remotePartyAddress = remoteHostName;
-    remotePartyURL += remoteHostName;
+  if (!IsOriginating() || m_remotePartyURL.IsEmpty()) {
+    m_remotePartyURL = GetPrefixName() + ':';
+    if (remotePartyAddress.IsEmpty()) {
+      remotePartyAddress = remoteHostName;
+      m_remotePartyURL += remoteHostName;
+    }
+    else if (remotePartyAddress == remoteHostName || remotePartyAddress.Find('@') != P_MAX_INDEX)
+      m_remotePartyURL += remotePartyAddress;
+    else if (remotePartyNumber.IsEmpty())
+      m_remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation) + '@' + remoteHostName;
+    else
+      m_remotePartyURL += remotePartyNumber + '@' + remoteHostName;
   }
-  else if (remotePartyAddress == remoteHostName || remotePartyAddress.Find('@') != P_MAX_INDEX)
-    remotePartyURL += remotePartyAddress;
-  else if (remotePartyNumber.IsEmpty())
-    remotePartyURL += PURL::TranslateString(remotePartyAddress, PURL::LoginTranslation) + '@' + remoteHostName;
-  else
-    remotePartyURL += remotePartyNumber + '@' + remoteHostName;
 
   remotePartyName = pdu.GetSourceAliases(m_signallingChannel);
   PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << '"');
