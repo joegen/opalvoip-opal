@@ -170,7 +170,7 @@ void OpalMediaPatch::Close()
   while (sinks.GetSize() > 0) {
     OpalMediaStreamPtr stream = sinks.front().stream;
     UnlockReadWrite();
-    if (!stream->Close()) {
+    if (stream == NULL || !stream->Close()) {
       // The only way we can get here is if the sink is in the proccess of being closed
       // but is blocked on the mutex waiting to remove the sink from this patch.
       // Se we unlock it, and wait for it to do it in the other thread.
