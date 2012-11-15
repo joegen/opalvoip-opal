@@ -613,7 +613,7 @@ OpalIMContext::MessageDisposition
   if (context == NULL) {
     // create a context based on the connection
     if (connection != NULL)
-      context = InternalCreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyCallbackURL(), NULL, true, &connection->GetCall());
+      context = InternalCreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyURL(), NULL, true, &connection->GetCall());
     else
       context = InternalCreateContext(message.m_to, message.m_from, NULL, true, NULL);
 

@@ -175,6 +175,10 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       */
     virtual PBoolean SetUpConnection();
 
+    /** Get the remote transport address
+      */
+    virtual OpalTransportAddress GetRemoteAddress() const { return m_remoteAddress; }
+
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
        get the fields from the H.225 SETUP pdu in a H.323 connection.
@@ -750,6 +754,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     HoldState             m_holdToRemote;
     bool                  m_holdFromRemote;
     PString               m_forwardParty;
+    OpalTransportAddress  m_remoteAddress;
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
 

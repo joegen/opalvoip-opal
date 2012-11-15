@@ -71,7 +71,6 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 {  
   opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
-  remotePartyAddress = "iax2:" + inRemoteParty;
   if (inRemotePartyName.IsEmpty())
     remotePartyName = inRemoteParty;
   else

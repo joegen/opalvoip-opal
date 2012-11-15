@@ -215,7 +215,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
                      (1<<SIP_PDU::Method_BYE   )) // Minimum set
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
-  , m_lastReceivedINVITE(init.m_invite != NULL ? new SIP_PDU(*init.m_invite) : NULL)
+  , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
   , m_delayedAckTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnDelayedAckTimeout)
   , m_delayedAckTimeout(0, 1) // 1 second
@@ -268,8 +268,12 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   m_dialog.SetRequestURI(adjustedDestination);
   m_dialog.SetRemoteURI(adjustedDestination);
   m_dialog.SetLocalTag(GetToken());
-  if (m_lastReceivedINVITE != NULL)
+
+  if (init.m_invite != NULL) {
+    m_remoteAddress = init.m_invite->GetTransport()->GetRemoteAddress();
+    m_lastReceivedINVITE = new SIP_PDU(*init.m_invite);
     m_dialog.Update(*m_lastReceivedINVITE);
+  }
 
   // Update remote party parameters
   UpdateRemoteAddresses();
@@ -1721,17 +1725,6 @@ PBoolean SIPConnection::SetUpConnection()
     m_dialog.SetRouteSet(mime.GetRoute());
   }
 
-  SIPURL transportAddress;
-
-  if (!m_dialog.GetRouteSet().empty()) 
-    transportAddress = m_dialog.GetRouteSet().front();
-  else if (!m_dialog.GetProxy().IsEmpty())
-    transportAddress = m_dialog.GetProxy();
-  else {
-    transportAddress = m_dialog.GetRequestURI();
-    PTRACE(4, "SIP\tConnecting to " << m_dialog.GetRequestURI());
-  }
-
   ++m_sdpVersion;
 
   if (!SetRemoteMediaFormats(m_lastReceivedINVITE))
@@ -1940,6 +1933,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 
   if (m_localInterface.IsEmpty())
     m_localInterface = pdu.GetTransport()->GetInterface();
+
+  if (m_remoteAddress.IsEmpty())
+    m_remoteAddress = pdu.GetTransport()->GetRemoteAddress();
 
   // Prevent retries from getting through to processing
   unsigned sequenceNumber = pdu.GetMIME().GetCSeqIndex();
@@ -2222,14 +2218,10 @@ void SIPConnection::UpdateRemoteAddresses()
   if (!OpalIsE164(remotePartyNumber))
     remotePartyNumber.MakeEmpty();
 
-  remotePartyAddress = remote.AsString();
   remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
     remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
-
-  SIPURL request = m_dialog.GetRequestURI();
-  request.Sanitise(SIPURL::ExternalURI);
-  remotePartyURL = request.AsString();
+  m_remotePartyURL = remote.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())

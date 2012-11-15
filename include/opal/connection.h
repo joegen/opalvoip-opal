@@ -1621,16 +1621,8 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
 
-    /**Get the remote party address.
-       This is typically a URL like sip:user\@hostname, though it may be just a host
-       address. It should not be used as a "call back" address, use the
-       GetRemotePartyURL() function for that purpose.
-      */
-    const PString & GetRemotePartyAddress() const { return remotePartyAddress; }
-
-    /**Set the remote party address.
-      */
-    void SetRemotePartyAddress(const PString & addr) { remotePartyAddress = addr; }
+    // Deprecated - backward compatibility only
+    P_DEPRECATED PString GetRemotePartyAddress() const { return GetRemotePartyURL(); }
 
     /**Get the remote party address as URL.
        This will return the "best guess" at an address to use in a
@@ -1651,7 +1643,7 @@ class OpalConnection : public PSafeObject
     void SetRedirectingParty(const PString & party) { m_redirectingParty = party; }
 
     // Deprecated - backward compatibility only
-    const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
+    P_DEPRECATED const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
 
     /**Get the remote application description. This is for backward
        compatibility and has been supercedded by GeREmoteProductInfo();
@@ -1662,6 +1654,9 @@ class OpalConnection : public PSafeObject
       */
     const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
 
+    /** Get the remote transport address
+      */
+    virtual OpalTransportAddress GetRemoteAddress() const { return OpalTransportAddress(); }
 
     /**Get the called alias name (for incoming calls). This is useful for gateway
        applications where the destination name may not be the same as the local name.
@@ -1850,10 +1845,9 @@ class OpalConnection : public PSafeObject
     PString              localPartyName;
     PString              displayName;
     PString              remotePartyName;
-    PString              remotePartyURL;
+    PString              m_remotePartyURL;
     OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
-    PString              remotePartyAddress;
     PString              m_redirectingParty;
     CallEndReason        callEndReason;
     PString              m_calledPartyNumber;
