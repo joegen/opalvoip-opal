@@ -502,7 +502,7 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
   else if (incomingMSRP.m_command == MSRPProtocol::SEND) {
     PTRACE(3, "MSRP\tMediaStream " << *this << " received SEND");
     OpalIM im;
-    im.m_from = connection.GetRemotePartyCallbackURL();
+    im.m_from = connection.GetRemotePartyURL();
     im.m_to = connection.GetLocalPartyURL();
 
     T140String t140(incomingMSRP.m_body);
