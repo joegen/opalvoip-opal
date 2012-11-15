@@ -236,6 +236,10 @@ class H323Connection : public OpalRTPConnection
       */
     virtual void OnReleased();
 
+    /** Get the remote transport address
+      */
+    virtual OpalTransportAddress GetRemoteAddress() const { return GetTransport().GetRemoteAddress(); }
+
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
        get the fields from the H.225 SETUP pdu in a H.323 connection.
