@@ -164,7 +164,7 @@ bool OpalT140MediaStream::WritePacket(RTP_DataFrame & frame)
   PString str;
   if (imFrame.GetContent(str)) {
     OpalIM message;
-    message.m_from = connection.GetRemotePartyCallbackURL();
+    message.m_from = connection.GetRemotePartyURL();
     message.m_to = connection.GetLocalPartyURL();
     message.m_bodies[imFrame.GetContentType()] = str;
 

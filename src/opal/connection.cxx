@@ -1483,10 +1483,16 @@ static PString MakeURL(const PString & prefix, const PString & partyName)
 
 PString OpalConnection::GetRemotePartyURL() const
 {
-  if (!remotePartyURL.IsEmpty())
-    return remotePartyURL;
+  if (!m_remotePartyURL.IsEmpty())
+    return m_remotePartyURL;
 
-  return MakeURL(GetPrefixName(), GetRemotePartyAddress());
+  if (!remotePartyNumber.IsEmpty())
+    return MakeURL(GetPrefixName(), remotePartyNumber);
+
+  if (!remotePartyName.IsEmpty())
+    return MakeURL(GetPrefixName(), remotePartyName);
+
+  return PString::Empty();
 }
 
 
@@ -1500,8 +1506,7 @@ void OpalConnection::CopyPartyNames(const OpalConnection & other)
 {
   remotePartyName     = other.remotePartyName;
   remotePartyNumber   = other.remotePartyNumber;
-  remotePartyAddress  = other.remotePartyAddress;
-  remotePartyURL      = other.remotePartyURL;
+  m_remotePartyURL    = other.m_remotePartyURL;
   m_calledPartyName   = other.m_calledPartyName;
   m_calledPartyNumber = other.m_calledPartyNumber;
   remoteProductInfo   = other.remoteProductInfo;
