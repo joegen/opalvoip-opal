@@ -2060,18 +2060,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
   switch (socket.GetErrorNumber(PChannel::LastReadError)) {
     case ECONNRESET :
     case ECONNREFUSED :
-      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << " port on remote not ready.");
-      if (++m_noTransmitErrors == 1)
-        m_noTransmitTimer = m_maxNoTransmitTime;
-      else {
-        if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
-          return e_IgnorePacket;
-        PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << ' '
-               << m_maxNoTransmitTime << " seconds of transmit fails - informing connection");
-        if (m_connection.OnMediaFailed(m_sessionId, false))
-          return e_AbortTransport;
-      }
-      return e_IgnorePacket;
+      return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
 
     case EMSGSIZE :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
@@ -2090,6 +2079,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
              << socket.GetErrorText(PChannel::LastReadError));
       return e_AbortTransport;
   }
+}
+
+
+bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
+{
+  if (++m_noTransmitErrors == 1) {
+    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << " port on remote not ready.");
+    m_noTransmitTimer = m_maxNoTransmitTime;
+    return true;
+  }
+
+  if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
+    return true;
+
+  PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName << ' '
+         << m_maxNoTransmitTime << " seconds of transmit fails - informing connection");
+  if (m_connection.OnMediaFailed(m_sessionId, false))
+    return false;
+
+  m_noTransmitErrors = 0;
+  return true;
 }
 
 
@@ -2209,13 +2219,14 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
 {
   PUDPSocket & socket = *(toDataChannel ? m_dataSocket : m_controlSocket);
   WORD port = toDataChannel ? m_remoteDataPort : m_remoteControlPort;
-  int retry = 0;
 
   while (!socket.WriteTo(framePtr, frameSize, m_remoteAddress, port)) {
     switch (socket.GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        break;
+        if (HandleUnreachable(PTRACE_PARAM(toDataChannel ? "Data" : "Control")))
+          break;
+        return false;
 
       default:
         PTRACE(1, "RTP_UDP\tSession " << m_sessionId
@@ -2225,14 +2236,8 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
                << socket.GetErrorText(PChannel::LastWriteError));
         return false;
     }
-
-    if (++retry >= 10)
-      break;
   }
 
-  PTRACE_IF(2, retry > 0, "RTP_UDP\tSession " << m_sessionId << ", " << (toDataChannel ? "data" : "control")
-            << " port on remote not ready " << retry << " time" << (retry > 1 ? "s" : "")
-            << (retry < 10 ? "" : ", data never sent"));
   return true;
 }
 
