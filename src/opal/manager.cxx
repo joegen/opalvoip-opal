@@ -262,7 +262,6 @@ OpalManager::OpalManager()
   , m_natMethods(new PNatStrategy)
   , m_natMethod(NULL)
 #endif
-  , interfaceMonitor(NULL)
   , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
   , garbageCollectSkip(false)
   , m_decoupledEventPool(5, 0, "Event Pool")
@@ -301,6 +300,10 @@ OpalManager::OpalManager()
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
+#if P_NAT
+  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
+#endif
+
   PTRACE(4, "OpalMan\tCreated manager.");
 }
 
@@ -323,10 +326,10 @@ OpalManager::~OpalManager()
   delete garbageCollector;
 
 #if P_NAT
+  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
   delete m_natMethod;
   delete m_natMethods;
 #endif
-  delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
 }
@@ -1884,9 +1887,7 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
   if (m_natMethod != NULL) {
     PInterfaceMonitor::GetInstance().OnRemoveNatMethod(m_natMethod);
     delete m_natMethod;
-    delete interfaceMonitor;
     m_natMethod = NULL;
-    interfaceMonitor = NULL;
   }
 
   m_natMethod = PNatMethod::Create(natType);
@@ -1899,8 +1900,6 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
     m_natMethod = NULL;
     return false;
   }
-
-  interfaceMonitor = new InterfaceMonitor(*this);
 
   PNatMethod::NatTypes type = m_natMethod->GetNatType();
   PIPSocket::Address stunExternalAddress;
@@ -2329,42 +2328,21 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalManager::InterfaceMonitor::InterfaceMonitor(OpalManager & manager)
-  : PInterfaceMonitorClient(OpalManagerInterfaceMonitorClientPriority)
-  , m_manager(manager)
-{
-}
-
-
 #if P_NAT
-void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
+void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
-  PNatMethod * nat = m_manager.GetNatMethod();
+  PNatMethod * nat = GetNatMethod();
   if (nat != NULL) {
-    PIPSocket::Address addr;
-    if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
-      nat->Open(entry.GetAddress());
+      PIPSocket::Address addr;
+    if (entry.m_added) {
+      if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
+        nat->Open(entry.GetAddress());
+    }
+    else {
+      if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
+        nat->Close();
+    }
   }
-}
-
-
-void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
-{
-  PNatMethod * nat = m_manager.GetNatMethod();
-  if (nat != NULL) {
-    PIPSocket::Address addr;
-    if (nat->GetInterfaceAddress(addr) && entry.GetAddress() == addr)
-      nat->Close();
-  }
-}
-#else // P_NAT
-void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry &)
-{
-}
-
-
-void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry &)
-{
 }
 #endif // P_NAT
 
