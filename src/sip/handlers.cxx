@@ -434,11 +434,11 @@ void SIPHandler::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respon
 
 void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
-  if (m_transactions.Remove(&transaction)) {
-    OnFailed(transaction.GetStatusCode());
-    if (!transaction.IsCanceled())
-      RetryLater(m_offlineExpireTime);
-  }
+  SIPTransactionOwner::OnTransactionFailed(transaction);
+
+  OnFailed(transaction.GetStatusCode());
+  if (!transaction.IsCanceled())
+    RetryLater(m_offlineExpireTime);
 }
 
 
