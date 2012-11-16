@@ -547,7 +547,9 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
   PSafeLockReadOnly mutex(*this);
 
   if (fromSink) {
-    OpalMediaPatch * patch = m_bypassToPatch != NULL ? m_bypassToPatch : this;
+    OpalMediaPatch * patch = m_bypassToPatch;
+    if (patch == NULL)
+      patch = this;
     PTRACE(5, "Patch\tExecute command \"" << command << "\" "
            << (m_bypassToPatch != NULL ? "bypassed" : "on") << ' ' << *this);
     return patch->source.ExecuteCommand(command);
@@ -719,7 +721,7 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
     if (!PAssert(m_bypassToPatch->m_bypassFromPatch == this, PLogicError))
       return false;
 
-    m_bypassToPatch->m_bypassFromPatch = NULL;
+    m_bypassToPatch->m_bypassFromPatch.SetNULL();
     m_bypassToPatch->m_bypassEnded.Signal();
   }
 
