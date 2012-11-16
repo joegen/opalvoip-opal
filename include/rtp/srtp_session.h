@@ -116,28 +116,14 @@ class OpalLibSRTP
     OpalLibSRTP();
     ~OpalLibSRTP();
 
-    struct Context {
-      Context();
-      ~Context() { Close(); }
-      void Close();
-
-      struct srtp_ctx_t * m_ctx;
-      BYTE m_key_salt[32]; // libsrtp vague on size, looking at source code, says 32 bytes
-#if PTRACING
-      bool m_firstRTP;
-      bool m_firstRTCP;
-#endif
-    };
-
-    bool OpenCrypto(Context & ctx, DWORD ssrc, OpalMediaCryptoKeyList & keys);
-    void CloseCrypto();
-
     bool ProtectRTP(RTP_DataFrame & frame);
     bool ProtectRTCP(RTP_ControlFrame & frame);
     bool UnprotectRTP(RTP_DataFrame & frame);
     bool UnprotectRTCP(RTP_ControlFrame & frame);
 
-    Context m_rx, m_tx;
+    struct Context;
+    Context * m_rx;
+    Context * m_tx;
 };
 
 
