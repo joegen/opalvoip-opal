@@ -156,8 +156,8 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
       continue;
     }
 
-    for (PINDEX csIdx = cryptoSuites.GetSize(); csIdx > 0; --csIdx) {
-      PCaselessString cryptoSuiteName = cryptoSuites[csIdx-1];
+    for (PINDEX csIdx = 0; csIdx < cryptoSuites.GetSize(); ++csIdx) {
+      PCaselessString cryptoSuiteName = cryptoSuites[csIdx];
       if (security == (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() ? e_ClearMediaSession : e_SecureMediaSession))
         continue;
 
