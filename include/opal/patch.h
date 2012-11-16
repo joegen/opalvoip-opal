@@ -220,7 +220,7 @@ class OpalMediaPatch : public PSafeObject
        @return true if bypass was set, false if conflict with another bypass.
       */
     bool SetBypassPatch(
-      OpalMediaPatch * patch
+      const OpalMediaPatchPtr & patch
     );
 
     /**Get the transcoder used within a sink stream
@@ -288,9 +288,9 @@ class OpalMediaPatch : public PSafeObject
     };
     PList<Filter> filters;
 
-    OpalMediaPatch * m_bypassToPatch;
-    OpalMediaPatch * m_bypassFromPatch;
-    PSyncPoint       m_bypassEnded;
+    OpalMediaPatchPtr m_bypassToPatch;
+    OpalMediaPatchPtr m_bypassFromPatch;
+    PSyncPoint        m_bypassEnded;
 
     class Thread : public PThread {
         PCLASSINFO(Thread, PThread);

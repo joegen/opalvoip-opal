@@ -963,13 +963,13 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
     return false;
   }
 
-  OpalMediaPatch * sourcePatch = source->GetPatch();
+  OpalMediaPatchPtr sourcePatch = source->GetPatch();
   if (sourcePatch == NULL) {
     PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source patch does not exist");
     return false;
   }
 
-  OpalMediaPatch * sinkPatch = sink->GetPatch();
+  OpalMediaPatchPtr sinkPatch = sink->GetPatch();
   if (sinkPatch == NULL) {
     PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink patch does not exist");
     return false;
