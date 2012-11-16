@@ -1131,17 +1131,8 @@ class OpalTransportTCP : public OpalTransportIP
       */
     virtual const PCaselessString & GetProtoPrefix() const;
 
-    /**This callback is executed when the Open() function is called with
-       open channels. It may be used by descendent channels to do any
-       handshaking required by the protocol that channel embodies.
-
-       The default behaviour is to simply return true.
-
-       @return
-       Returns true if the protocol handshaking is successful.
-     */
-    virtual PBoolean OnOpen();
-
+    bool ConnectSocket(PTCPSocket * socket);
+    bool OnConnectedSocket(PTCPSocket * socket);
 
     PBoolean reuseAddressFlag;
 };
@@ -1484,7 +1475,6 @@ class OpalTransportTLS : public OpalTransportTCP
       // Overrides
       virtual PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
       virtual PBoolean Connect();
-      virtual PBoolean OnOpen();
       virtual const PCaselessString & GetProtoPrefix() const;
       virtual bool IsAuthenticated(const PString & domain) const;
 };

@@ -1809,15 +1809,25 @@ class OpalManager : public PObject
       PBoolean mode ///<  New default mode
     ) { disableDetectInBandDTMF = mode; } 
 
-    /**Get the amount of time with no media that should cause a call to clear
+    /**Get the amount of time with no media that will cause a call to clear
      */
-    const PTimeInterval & GetNoMediaTimeout() const { return noMediaTimeout; }
+    const PTimeInterval & GetNoMediaTimeout() const { return m_noMediaTimeout; }
 
-    /**Set the amount of time with no media that should cause a call to clear
+    /**Set the amount of time with no media that will cause a call to clear
      */
-    PBoolean SetNoMediaTimeout(
+    void SetNoMediaTimeout(
       const PTimeInterval & newInterval  ///<  New timeout for media
-    );
+    ) { m_noMediaTimeout = newInterval; }
+
+    /**Get the amount of time to wait on signaling channel
+     */
+    const PTimeInterval & GetSignalingTimeout() const { return m_signalingTimeout; }
+
+    /**Set the amount of time to wait on signaling channel
+     */
+    void SetSignalingTimeout(
+      const PTimeInterval & newInterval  ///<  New timeout for signaling
+    ) { m_signalingTimeout = newInterval; }
 
     /**Get the default ILS server to use for user lookup.
       */
@@ -1911,7 +1921,8 @@ class OpalManager : public PObject
     PStringArray  mediaFormatOrder;
     PStringArray  mediaFormatMask;
     bool          disableDetectInBandDTMF;
-    PTimeInterval noMediaTimeout;
+    PTimeInterval m_noMediaTimeout;
+    PTimeInterval m_signalingTimeout;
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;
