@@ -1953,23 +1953,6 @@ class OpalManager : public PObject
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
     
-    class InterfaceMonitor : public PInterfaceMonitorClient
-    {
-      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
-      
-      enum {
-        OpalManagerInterfaceMonitorClientPriority = 100,
-      };
-      public:
-        InterfaceMonitor(OpalManager & manager);
-        
-      protected:
-        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
-        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
-        
-        OpalManager & m_manager;
-    };
-
 #if OPAL_PTLIB_SSL
     PString   m_caFiles;
     PFilePath m_certificateFile;
@@ -1983,8 +1966,8 @@ class OpalManager : public PObject
     PString            m_natServer;
     PNatStrategy     * m_natMethods;
     PNatMethod       * m_natMethod;
+    PDECLARE_InterfaceNotifier(OpalManager, OnInterfaceChange);
 #endif
-    InterfaceMonitor * interfaceMonitor;
 
     RouteTable m_routeTable;
     PMutex     m_routeMutex;

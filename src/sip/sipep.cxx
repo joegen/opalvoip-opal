@@ -85,8 +85,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
   , m_threadPool(maxThreads, "SIP Pool")
-  , P_DISABLE_MSVC_WARNINGS(4355, m_highPriorityMonitor(*this, HighPriority))
-  , P_DISABLE_MSVC_WARNINGS(4355, m_lowPriorityMonitor(*this, LowPriority))
   , m_disableTrying(true)
 {
   defaultSignalPort = SIPURL::DefaultPort;
@@ -107,12 +105,17 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   manager.AttachEndPoint(this, "sips");
 #endif
 
+  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
+  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 30);
+
   PTRACE(4, "SIP\tCreated endpoint.");
 }
 
 
 SIPEndPoint::~SIPEndPoint()
 {
+  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange));
+  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange));
 }
 
 
@@ -1972,21 +1975,9 @@ void SIP_PDU_Work::Work()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-SIPEndPoint::InterfaceMonitor::InterfaceMonitor(SIPEndPoint & ep, PINDEX priority)
-  : PInterfaceMonitorClient(priority) 
-  , m_endpoint(ep)
+void SIPEndPoint::OnHighPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
-}
-
-        
-void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
-{
-  if (priority == SIPEndPoint::LowPriority) {
-    for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
-      if (handler->GetState() == SIPHandler::Unavailable)
-        handler->ActivateState(SIPHandler::Restoring);
-    }
-  } else {
+  if (entry.m_added) {
     // special case if interface filtering is used: A new interface may 'hide' the old interface.
     // If this is the case, remove the transport interface. 
     //
@@ -1995,7 +1986,7 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
     // the transport will still listen on the old interface only. Therefore, clear the
     // socket binding BEFORE the monitored sockets update their interfaces.
     if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
-      for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
+      for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
         if (handler->GetInterface() == entry.GetName()) {
           handler->ResetInterface();
           handler->SetState(SIPHandler::Unavailable);
@@ -2006,10 +1997,14 @@ void SIPEndPoint::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEnt
 }
 
 
-void SIPEndPoint::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
+void SIPEndPoint::OnLowPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
-  if (priority == SIPEndPoint::LowPriority) {
-    for (PSafePtr<SIPHandler> handler = m_endpoint.activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
+  for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); handler != NULL; ++handler) {
+    if (entry.m_added) {
+      if (handler->GetState() == SIPHandler::Unavailable)
+        handler->ActivateState(SIPHandler::Restoring);
+    }
+    else {
       if (handler->GetInterface() == entry.GetName()) {
         handler->ResetInterface();
         if (handler->GetState() == SIPHandler::Subscribed)

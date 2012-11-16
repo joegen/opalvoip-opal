@@ -92,8 +92,6 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans)
   , discoveryComplete(false)
   , m_registrationFailReason(UnregisteredLocally)
-  , P_DISABLE_MSVC_WARNINGS(4355, highPriorityMonitor(*this, HighPriority))
-  , P_DISABLE_MSVC_WARNINGS(4355, lowPriorityMonitor(*this, LowPriority))
   , alternatePermanent(false)
   , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())
@@ -117,11 +115,17 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   features->AttachEndPoint(&ep);
   features->LoadFeatureSet(H460_Feature::FeatureRas);
 #endif
+
+  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
+  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 40);
 }
 
 
 H323Gatekeeper::~H323Gatekeeper()
 {
+  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange));
+  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange));
+
   if (monitor != NULL) {
     monitorStop = true;
     monitorTickle.Signal();
@@ -1998,11 +2002,9 @@ H323Transport * H323Gatekeeper::CreateTransport(PIPSocket::Address binding, WORD
 }
 
 
-void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/, PINDEX priority)
+void H323Gatekeeper::OnHighPriorityInterfaceChange(PInterfaceMonitor & monitor, PInterfaceMonitor::InterfaceChange entry)
 {
-  if (priority != HighPriority)
-    UpdateConnectionStatus();
-  else {
+  if (entry.m_added) {
     // special case if interface filtering is used: A new interface may 'hide' the old interface.
     // If this is the case, remove the transport interface and do a full rediscovery. 
     //
@@ -2019,40 +2021,32 @@ void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & /*entry*/,
       if (!transport->GetRemoteAddress().GetIpAddress(addr))
         return;
       
-      PStringArray ifaces = lowPriorityMonitor.GetInterfaces(false, addr);
+      PStringArray ifaces = monitor.GetInterfaces(false, addr);
       
       if (ifaces.GetStringsIndex(iface) == P_MAX_INDEX) { // original interface no longer available
         transport->SetInterface(PString::Empty());
       }
     }
   }
-}
-
-
-void H323Gatekeeper::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
-{
-  if (priority == LowPriority) {
-    UpdateConnectionStatus();
-    return;
-  }
+  else {
+    if (transport == NULL)
+      return;
   
-  if (transport == NULL)
-    return;
+    PString iface = transport->GetInterface();
+    if (iface.IsEmpty()) // not connected.
+      return;
   
-  PString iface = transport->GetInterface();
-  if (iface.IsEmpty()) // not connected.
-    return;
-  
-  if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
-    // currently used interface went down. make transport listen
-    // on all available interfaces.
-    transport->SetInterface(PString::Empty());
-    PTRACE(3, "RAS\tInterface gatekeeper is bound to has gone down, restarting discovery");
+    if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
+      // currently used interface went down. make transport listen
+      // on all available interfaces.
+      transport->SetInterface(PString::Empty());
+      PTRACE(3, "RAS\tInterface gatekeeper is bound to has gone down, restarting discovery");
+    }
   }
 }
 
 
-void H323Gatekeeper::UpdateConnectionStatus()
+void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, PInterfaceMonitor::InterfaceChange entry)
 {
   // sanity check
   if (transport == NULL)
@@ -2068,7 +2062,7 @@ void H323Gatekeeper::UpdateConnectionStatus()
   if (!transport->GetRemoteAddress().GetIpAddress(addr))
     return;
   
-  if (lowPriorityMonitor.GetInterfaces(false, addr).GetSize() > 0) {
+  if (monitor.GetInterfaces(false, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
     discoveryComplete = false;
     reregisterNow = true;
@@ -2136,24 +2130,6 @@ void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
   if (priority > 0)
     strm << ";priority=" << priority;
 }
-
-/////////////////////////////////////////////////////////////////////////////
-
-H323Gatekeeper::InterfaceMonitor::InterfaceMonitor(H323Gatekeeper & _gk, PINDEX priority)
-: PInterfaceMonitorClient(priority), gk(_gk)
-{
-}
-
-void H323Gatekeeper::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
-{
-  gk.OnAddInterface(entry, priority);
-}
-
-void H323Gatekeeper::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
-{
-  gk.OnRemoveInterface(entry, priority);
-}
-
 
 #if OPAL_H460
 

@@ -1014,27 +1014,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     SIPThreadPool m_threadPool;
 
     // Network interface checking
-    enum {
-      HighPriority = 80,
-      LowPriority  = 30,
-    };
-    class InterfaceMonitor : public PInterfaceMonitorClient
-    {
-        PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
-      public:
-        InterfaceMonitor(SIPEndPoint & manager, PINDEX priority);
-        
-        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
-        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
-
-      protected:
-        SIPEndPoint & m_endpoint;
-    };
-    InterfaceMonitor m_highPriorityMonitor;
-    InterfaceMonitor m_lowPriorityMonitor;
-
-    friend void InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry);
-    friend void InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+    PDECLARE_InterfaceNotifier(SIPEndPoint, OnHighPriorityInterfaceChange);
+    PDECLARE_InterfaceNotifier(SIPEndPoint, OnLowPriorityInterfaceChange);
 
     bool m_disableTrying;
 
