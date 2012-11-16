@@ -703,7 +703,7 @@ void OpalMediaPatch::Main()
 }
 
 
-bool OpalMediaPatch::SetBypassPatch(OpalMediaPatch * patch)
+bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
 {
   PSafeLockReadWrite mutex(*this);
 
@@ -775,7 +775,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     UnlockReadOnly();
   }
   else {
-    PSafePtr<OpalMediaPatch> bypassToPatch = m_bypassToPatch;
+    OpalMediaPatchPtr bypassToPatch = m_bypassToPatch;
     UnlockReadOnly();
 
     PSafeLockReadOnly guard(*bypassToPatch);
