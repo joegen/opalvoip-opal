@@ -246,9 +246,12 @@ PBoolean OpalMediaStream::Close()
 
   connection.OnClosedMediaStream(*this);
   SetPatch(NULL);
-  connection.RemoveMediaStream(*this);
 
   PTRACE(5, "Media\tClosed stream " << *this);
+
+  connection.RemoveMediaStream(*this);
+  // Don't do anything after above as object may be deleted
+
   return true;
 }
 
