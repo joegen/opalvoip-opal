@@ -675,6 +675,8 @@ PString SIPURL::GetTag() const
 
 bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, bool reversed)
 {
+  clear();
+
   PStringArray lines = str.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     PString line = lines[i];
