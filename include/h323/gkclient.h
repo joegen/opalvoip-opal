@@ -341,7 +341,6 @@ class H323Gatekeeper : public H225_RAS
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
-    void UpdateConnectionStatus();
     bool SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu);
 
     // Gatekeeper registration state variables
@@ -351,25 +350,8 @@ class H323Gatekeeper : public H225_RAS
     void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
     void SetRegistrationFailReason(RegistrationFailReasons reason);
     
-    enum {
-      HighPriority = 80,
-      LowPriority  = 40,
-    };
-    class InterfaceMonitor : public PInterfaceMonitorClient
-    {
-      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
-      
-      public:
-        InterfaceMonitor(H323Gatekeeper & gk, PINDEX priority);
-      
-      protected:
-        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
-        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
-        
-        H323Gatekeeper & gk;
-    };
-    InterfaceMonitor highPriorityMonitor;
-    InterfaceMonitor lowPriorityMonitor;
+    PDECLARE_InterfaceNotifier(H323Gatekeeper, OnHighPriorityInterfaceChange);
+    PDECLARE_InterfaceNotifier(H323Gatekeeper, OnLowPriorityInterfaceChange);
     
     class AlternateInfo : public PObject {
       PCLASSINFO(AlternateInfo, PObject);
