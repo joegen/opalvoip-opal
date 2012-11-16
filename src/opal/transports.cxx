@@ -1174,8 +1174,7 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep,
 OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep, PChannel * channel)
   : OpalTransportIP(ep, channel, INADDR_ANY, 0)
 {
-  if (channel != NULL)
-    OnOpen();
+  OnConnectedSocket(dynamic_cast<PTCPSocket *>(channel));
 }
 
 
@@ -1205,12 +1204,20 @@ PBoolean OpalTransportTCP::Connect()
     return true;
 
   PSafeLockReadWrite mutex(*this);
+  return ConnectSocket(dynamic_cast<PTCPSocket *>(m_channel));
+}
 
-  PTCPSocket * socket = dynamic_cast<PTCPSocket *>(m_channel);
-  socket->SetReadTimeout(10000);
+
+bool OpalTransportTCP::ConnectSocket(PTCPSocket * socket)
+{
+  if (socket == NULL)
+    return false;
+
   socket->SetPort(remotePort);
 
   OpalManager & manager = endpoint.GetManager();
+  socket->SetReadTimeout(manager.GetSignalingTimeout());
+
   localPort = manager.GetNextTCPPort();
   WORD firstPort = localPort;
   for (;;) {
@@ -1237,9 +1244,7 @@ PBoolean OpalTransportTCP::Connect()
     }
   }
 
-  socket->SetReadTimeout(PMaxTimeInterval);
-
-  return OnOpen();
+  return OnConnectedSocket(socket);
 }
 
 
@@ -1261,8 +1266,8 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   // Save timeout
   PTimeInterval oldTimeout = m_channel->GetReadTimeout();
 
-  // Should get all of PDU in 5 seconds or something is seriously wrong,
-  SetReadTimeout(5000);
+  // Should get all of PDU in reasonable time or something is seriously wrong,
+  SetReadTimeout(endpoint.GetManager().GetSignalingTimeout());
 
   // Get TPKT length
   BYTE header[3];
@@ -1304,9 +1309,17 @@ PBoolean OpalTransportTCP::WritePDU(const PBYTEArray & pdu)
 }
 
 
-PBoolean OpalTransportTCP::OnOpen()
+bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
 {
-  PIPSocket * socket = dynamic_cast<PIPSocket *>(m_channel);
+  if (socket == NULL)
+    return false;
+
+  // If write take longer than this, something is wrong
+  const PTimeInterval timeout = endpoint.GetManager().GetSignalingTimeout();
+  socket->SetWriteTimeout(timeout);
+
+  // Initial read is infinite though
+  socket->SetReadTimeout(PMaxTimeInterval);
 
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
@@ -1327,14 +1340,14 @@ PBoolean OpalTransportTCP::OnOpen()
   }
 
   // make sure do not lose outgoing packets on close
-  const linger ling = { 1, 3 };
+  const linger ling = { 1, (u_short)timeout.GetSeconds() };
   if (!socket->SetOption(SO_LINGER, &ling, sizeof(ling))) {
     PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
     return false;
   }
 #endif
 
-  PTRACE(3, "OpalTCP\tStarted connection to "
+    PTRACE(3, "OpalTCP\tStarted connection to "
          << remoteAddress.AsString(true) << ':' << remotePort
          << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
 
@@ -1667,94 +1680,27 @@ PBoolean OpalTransportTLS::Connect()
   PTCPSocket * socket = new PTCPSocket(remotePort);
 
   PSafeLockReadWrite mutex(*this);
-
-  socket->SetReadTimeout(10000);
-
-  OpalManager & manager = endpoint.GetManager();
-  localPort = manager.GetNextTCPPort();
-  WORD firstPort = localPort;
-  for (;;) {
-    PTRACE(4, "OpalTLS\tConnecting to "
-           << remoteAddress.AsString(true) << ':' << remotePort
-           << " (local port=" << localPort << ')');
-    if (socket->Connect(localAddress, localPort, remoteAddress))
-      break;
-
-    int errnum = socket->GetErrorNumber();
-    if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
-      PTRACE(1, "OpalTLS\tCould not connect to "
-                << remoteAddress.AsString(true) << ':' << remotePort
-                << " (local port=" << localPort << ") - "
-                << socket->GetErrorText() << '(' << errnum << ')');
-      return false;
-    }
-
-    localPort = manager.GetNextTCPPort();
-    if (localPort == firstPort) {
-      PTRACE(1, "OpalTCP\tCould not bind to any port in range " <<
-                manager.GetTCPPortBase() << " to " << manager.GetTCPPortMax());
-      return false;
-    }
+  if (!ConnectSocket(socket)) {
+    delete socket;
+    return false;
   }
 
   PSSLContext * context = new PSSLContext();
   if (!endpoint.GetSSLCredentials(*context, false)) {
     delete context;
+    delete socket;
     return false;
   }
 
   PSSLChannel * sslChannel = new PSSLChannel(context, true);
   if (sslChannel->Connect(socket)) {
-    socket->SetReadTimeout(PMaxTimeInterval);
     m_channel = sslChannel;
-    return OnOpen();
+    return true;
   }
 
   PTRACE(1, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
-  delete sslChannel;
+  delete sslChannel; // Deletes socket and context
   return false;
-}
-
-
-PBoolean OpalTransportTLS::OnOpen()
-{
-  PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(m_channel);
-  if (sslChannel == NULL)
-    return false;
-
-  PIPSocket * socket = dynamic_cast<PIPSocket *>(sslChannel->GetReadChannel());
-
-  // Get name of the remote computer for information purposes
-  if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
-    PTRACE(1, "OpalTLS\tGetPeerAddress() failed: " << socket->GetErrorText());
-    return false;
-  }
-
-  // get local address of incoming socket to ensure that multi-homed machines
-  // use a NIC address that is guaranteed to be addressable to destination
-  if (!socket->GetLocalAddress(localAddress, localPort)) {
-    PTRACE(1, "OpalTLS\tGetLocalAddress() failed: " << socket->GetErrorText());
-    return false;
-  }
-
-#ifndef __BEOS__
-  if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
-    PTRACE(1, "OpalTLS\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
-  }
-
-  // make sure do not lose outgoing packets on close
-  const linger ling = { 1, 3 };
-  if (!socket->SetOption(SO_LINGER, &ling, sizeof(ling))) {
-    PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
-    return false;
-  }
-#endif
-
-  PTRACE(3, "OpalTLS\tStarted connection to "
-         << remoteAddress.AsString(true) << ':' << remotePort
-         << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
-
-  return true;
 }
 
 
