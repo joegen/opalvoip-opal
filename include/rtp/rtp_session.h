@@ -581,7 +581,7 @@ class OpalRTPSession : public OpalMediaSession
       PINDEX frameSize,
       bool fromDataChannel
     );
-
+    virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
     virtual bool WriteDataOrControlPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
