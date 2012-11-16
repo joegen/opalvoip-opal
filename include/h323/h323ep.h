@@ -1242,9 +1242,9 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Set the amount of time with no media that should cause call to clear
      */
-    PBoolean SetNoMediaTimeout(
+    void SetNoMediaTimeout(
       const PTimeInterval & newInterval  ///<  New timeout for media
-    ) { return manager.SetNoMediaTimeout(newInterval); }
+    ) { manager.SetNoMediaTimeout(newInterval); }
 
     /**Get the default timeout for GatekeeperRequest and Gatekeeper discovery.
      */
