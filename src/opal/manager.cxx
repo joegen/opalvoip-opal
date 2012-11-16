@@ -249,7 +249,8 @@ OpalManager::OpalManager()
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
   , mediaFormatMask(PARRAYSIZE(DefaultMediaFormatMask), DefaultMediaFormatMask)
   , disableDetectInBandDTMF(false)
-  , noMediaTimeout(0, 0, 5)     // Minutes
+  , m_noMediaTimeout(0, 0, 5)     // Minutes
+  , m_signalingTimeout(0, 10)     // Seconds
 #if OPAL_PTLIB_SSL
   , m_caFiles(".")
   , m_certificateFile("opal_certificate.pem")
@@ -2102,16 +2103,7 @@ PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
   return SetVideoDevice<PVideoOutputDevice>(args, videoOutputDevice);
 }
 
-#endif
-
-PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval) 
-{
-  if (newInterval < 10)
-    return false;
-
-  noMediaTimeout = newInterval; 
-  return true; 
-}
+#endif // OPAL_VIDEO
 
 
 void OpalManager::GarbageCollection()
