@@ -594,7 +594,27 @@ bool VideoThread::Initialise(PArgList & args)
     cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << m_display->GetDeviceName() << "\" opened." << endl;
 
-  // Configure sizes/speeds
+  // Configure formats/sizes/speeds
+  cout << "Grabber colour format set to " << m_grabber->GetColourFormat() << " (";
+  if (m_grabber->GetColourFormat() == "YUV420P")
+    cout << "native";
+  else
+    cout << "converted to YUV420P";
+  cout << ')' << endl;
+
+  if (!m_display->SetColourFormatConverter("YUV420P")) {
+    cerr << "Video display device could not be set to colour format YUV420P" << endl;
+    return false;
+  }
+
+  cout << "Display colour format set to " << m_display->GetColourFormat() << " (";
+  if (m_display->GetColourFormat() == "YUV420P")
+    cout << "native";
+  else
+    cout << "converted from YUV420P";
+  cout << ')' << endl;
+
+
   unsigned width, height;
   if (args.HasOption("frame-size")) {
     PString sizeString = args.GetOptionString("frame-size");
@@ -629,26 +649,6 @@ bool VideoThread::Initialise(PArgList & args)
     cerr << "Video grabber device could not be set to colour format YUV420P" << endl;
     return false;
   }
-
-  cout << "Grabber colour format set to " << m_grabber->GetColourFormat() << " (";
-  if (m_grabber->GetColourFormat() == "YUV420P")
-    cout << "native";
-  else
-    cout << "converted to YUV420P";
-  cout << ')' << endl;
-
-  if (!m_display->SetColourFormatConverter("YUV420P")) {
-    cerr << "Video display device could not be set to colour format YUV420P" << endl;
-    return false;
-  }
-
-  cout << "Display colour format set to " << m_display->GetColourFormat() << " (";
-  if (m_display->GetColourFormat() == "YUV420P")
-    cout << "native";
-  else
-    cout << "converted from YUV420P";
-  cout << ')' << endl;
-
 
   if (args.HasOption("bit-rate")) {
     PString str = args.GetOptionString("bit-rate");

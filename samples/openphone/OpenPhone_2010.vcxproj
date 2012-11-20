@@ -266,15 +266,18 @@ exit 1
     <None Include="openphone.wxg" />
     <CustomBuild Include="openphone.xrc">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating C++ source from XML resource file</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%WXDIR%\bin\wxrc -c %(FullPath)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PATH=%PATH%;%WXDIR%\bin
+wxrc -c %(FullPath)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">resource.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Creating C++ source from XML resource file</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%WXDIR%\bin\wxrc -c %(FullPath)
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PATH=%PATH%;%WXDIR%\bin
+wxrc -c %(FullPath)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">resource.cpp;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating C++ source from XML resource file</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%WXDIR%\bin\wxrc -c %(FullPath)
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH=%PATH%;%WXDIR%\bin
+wxrc -c %(FullPath)
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">resource.cpp;%(Outputs)</Outputs>
     </CustomBuild>
