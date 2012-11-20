@@ -40,7 +40,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Codec Test", "samples\codec
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regtest", "samples\regtest\regtest_2010.vcxproj", "{80E8E641-6F16-4960-90C1-49B622259C6F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "samples\externrtp\ExternRTP_2010.vcxproj", "{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "samples\externrtp\ExternRTP_2010.vcxproj", "{764B6AB8-9D73-97FC-6708-C78E76B512DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -265,15 +265,15 @@ Global
 		{80E8E641-6F16-4960-90C1-49B622259C6F}.Release|Win32.Build.0 = Release|Win32
 		{80E8E641-6F16-4960-90C1-49B622259C6F}.Release|x64.ActiveCfg = Release|x64
 		{80E8E641-6F16-4960-90C1-49B622259C6F}.Release|x64.Build.0 = Release|x64
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Debug|Win32.Build.0 = Debug|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Debug|x64.ActiveCfg = Debug|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.No Trace|Win32.ActiveCfg = Release|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.No Trace|Win32.Build.0 = Release|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.No Trace|x64.ActiveCfg = Release|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Release|Win32.ActiveCfg = Release|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Release|Win32.Build.0 = Release|Win32
-		{F8094709-B4CE-A062-0ACB-4AA8B88A1FF7}.Release|x64.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Debug|Win32.Build.0 = Debug|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Debug|x64.ActiveCfg = Debug|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.Build.0 = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|x64.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.Build.0 = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
