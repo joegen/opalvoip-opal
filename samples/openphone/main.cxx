@@ -7647,42 +7647,61 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 }
 
 
+static void OutputStatus(ostream & strm, SIP_PDU::StatusCodes reason)
+{
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      strm << " successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      strm << " proxy";
+    case SIP_PDU::Local_Timeout :
+      strm << " time out";
+      break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+      strm << " has invalid credentials";
+      break;
+
+    case SIP_PDU::Local_NotAuthenticated :
+      strm << " has invalid certificates";
+      break;
+
+    case SIP_PDU::Local_NoCompatibleListener :
+      strm << " has no compatible listener";
+      break;
+
+    default :
+      strm << " failed (" << reason << ')';
+  }
+}
+
+
 void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   SIPEndPoint::OnRegistrationStatus(status);
 
-  if (status.m_reason < 200 || (status.m_reRegistering && status.m_reason < 300))
+  unsigned reasonClass = status.m_reason/100;
+  if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
     return;
 
   SIPURL aor = status.m_addressofRecord;
   aor.Sanitise(SIPURL::ExternalURI);
 
+  PStringStream reasonStr;
+  OutputStatus(reasonStr, status.m_reason);
+
   LogWindow << "SIP ";
   if (!status.m_wasRegistering)
     LogWindow << "un";
-  LogWindow << "registration of " << aor << ' ';
+  LogWindow << "registration of " << aor << reasonStr << '.' << endl;;
+
   PString tipText = status.m_wasRegistering ? "Register" : "Unregister";
-  switch (status.m_reason) {
-    case SIP_PDU::Successful_OK :
-      LogWindow << "successful";
-      tipText += "ed";
-      break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      LogWindow << "timed out";
-      tipText += " time out";
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-      LogWindow << "has invalid credentials";
-      tipText += " has invalid credentials";
-      break;
-
-    default :
-      LogWindow << "failed (" << status.m_reason << ')';
-      tipText += " failed";
-  }
-  LogWindow << '.' << endl;
+  if (status.m_reason == SIP_PDU::Successful_OK)
+    tipText += "ed";
+  else
+    tipText += reasonStr;
   m_manager.SetTrayTipText(tipText);
 
   if (!status.m_wasRegistering)
@@ -7694,7 +7713,8 @@ void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
 {
   SIPEndPoint::OnSubscriptionStatus(status);
 
-  if (status.m_reason < 200 || (status.m_reSubscribing && status.m_reason < 300))
+  unsigned reasonClass = status.m_reason/100;
+  if (reasonClass == 1 || (status.m_reSubscribing && reasonClass == 2))
     return;
 
   SIPURL uri = status.m_addressofRecord;
@@ -7703,23 +7723,8 @@ void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
   LogWindow << "SIP ";
   if (!status.m_wasSubscribing)
     LogWindow << "un";
-  LogWindow << "subscription of " << uri << " to " << status.m_handler->GetEventPackage() << " events ";
-  switch (status.m_reason) {
-    case SIP_PDU::Successful_OK :
-      LogWindow << "successful";
-      break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      LogWindow << "timed out";
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-      LogWindow << "has invalid credentials";
-      break;
-
-    default :
-      LogWindow << "failed (" << status.m_reason << ')';
-  }
+  LogWindow << "subscription of " << uri << " to " << status.m_handler->GetEventPackage() << " events";
+  OutputStatus(LogWindow, status.m_reason);
   LogWindow << '.' << endl;
 
   if (!status.m_wasSubscribing)
