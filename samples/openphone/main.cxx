@@ -7570,7 +7570,7 @@ void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
   bool inUse = newName != m_Name && m_manager.HasSpeedDialName(newName);
   m_inUse->Show(inUse);
 
-  m_ok->Enable(!inUse && !newName.IsEmpty() && !m_addressCtrl->GetValue().IsEmpty());
+  m_ok->Enable(!inUse && !newName.IsEmpty() && newName.find_first_of(wxT("/\\:")) == wxString::npos && !m_addressCtrl->GetValue().IsEmpty());
 
   m_ambiguous->Show(m_manager.HasSpeedDialNumber(m_numberCtrl->GetValue(), m_Number));
 }
