@@ -368,8 +368,8 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
 {
-  PString playDevice = soundChannelPlayDevice;
-  PString recordDevice = soundChannelRecordDevice;
+  PString playDevice = endpoint.GetSoundChannelPlayDevice();
+  PString recordDevice = endpoint.GetSoundChannelRecordDevice();
   if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "transfer"))
     return false;
 

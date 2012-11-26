@@ -2546,10 +2546,15 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
 
   LogWindow << "Remote " << connection.GetRemotePartyName() << " has been "
             << (onHold ? "put on" : "released from") << " hold." << endl;
-  if (onHold)
+  if (onHold) {
+    if (!connection.GetCall().Transfer("pc:*|moh.wav*"))
+      connection.GetCall().Transfer("pc:*|Null Audio");
     PostEvent(wxEvtOnHold, ID_ON_HOLD);
-  else
+  }
+  else {
+    connection.GetCall().Transfer("pc:*");
     PostEvent(wxEvtEstablished, ID_ESTABLISHED, connection.GetCall().GetToken());
+  }
 }
 
 
