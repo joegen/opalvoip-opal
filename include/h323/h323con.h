@@ -700,47 +700,6 @@ class H323Connection : public OpalRTPConnection
       H323Connection & secondaryCall  ///<  Secondary call for consultation
     );
 
-    /**Place the call on hold, suspending all media channels (H.450.4).  Note it is the responsibility 
-       of the application layer to delete the MOH Channel if music on hold is provided to the remote
-       endpoint.  So far only Local Hold has been implemented. 
-     */
-    bool HoldCall(
-      PBoolean localHold   ///<  true for Local Hold, false for Remote Hold
-    );
-
-    /**Retrieve the call from hold, activating all media channels (H.450.4).
-       This method examines the call hold state and performs the necessary
-       actions required to retrieve a Near-end or Remote-end call on hold.
-       NOTE: Only Local Hold is implemented so far. 
-    */
-    bool RetrieveCall();
-
-    /**Set the alternative media channel.  This channel can be used to provide
-       Media On Hold (MOH) for a near end call hold operation or to provide
-       Recorded Voice Anouncements (RVAs).  If this method is not called before
-       a call hold operation is attempted, no media on hold will be provided
-       for the held endpoint.
-      */
-    void SetHoldMedia(
-      PChannel * audioChannel
-    );
-
-    /**Determine if Meadia On Hold is enabled.
-      */
-    PBoolean IsMediaOnHold() const;
-
-    /**Determine if held.
-      */
-    PBoolean IsLocalHold() const;
-
-    /**Determine if held.
-      */
-    PBoolean IsRemoteHold() const;
-
-    /**Determine if the current call is held or in the process of being held.
-      */
-    PBoolean IsCallOnHold() const;
-
     /**Begin a call intrusion request.
        Calls h45011handler->IntrudeCall where SS pdu is added to Call Setup
        message.
@@ -2255,9 +2214,6 @@ class H323Connection : public OpalRTPConnection
     bool       endSessionNeeded;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
-
-    // Used as part of a local call hold operation involving MOH
-    PChannel * holdMediaChannel;
     bool       isConsultationTransfer;
 
     ConferenceGoal m_conferenceGoal;
@@ -2330,8 +2286,6 @@ class H323Connection : public OpalRTPConnection
 #endif // OPAL_H460_NAT
 
   private:
-    PChannel * SwapHoldMediaChannels(PChannel * newChannel);
-
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
     P_REMOVE_VIRTUAL_VOID(OnCleared());
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
