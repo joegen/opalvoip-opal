@@ -208,7 +208,6 @@ H323Connection::H323Connection(OpalCall & call,
   , remoteTransmitPaused(false)
   , earlyStart(false)
   , endSessionNeeded(false)
-  , holdMediaChannel(NULL)
   , isConsultationTransfer(false)
   , isCallIntrusion(false)
 #if OPAL_H450
@@ -313,7 +312,6 @@ H323Connection::~H323Connection()
   delete alertingPDU;
   delete connectPDU;
   delete progressPDU;
-  delete holdMediaChannel;
 #if OPAL_H460
   delete features;
 #endif
@@ -3234,16 +3232,23 @@ bool H323Connection::Hold(bool fromRemote, bool placeOnHold)
 {
   if (fromRemote) {
 #if OPAL_H450
-    if (!HoldCall(false))
-      return false;
+    if (h4504handler->HoldCall(false))
+      return true;
 #endif
+
     PTRACE(2, "H323\tCannot place/retrieve call from remote hold");
     return false;
   }
 
 #if OPAL_H450
-  if (!(placeOnHold ? HoldCall(true) : RetrieveCall()))
-    return false;
+  if (placeOnHold) {
+    if (h4504handler->GetState() != H4504Handler::e_ch_NE_Held && !h4504handler->HoldCall(true))
+      return false;
+  }
+  else {
+    if (h4504handler->GetState() == H4504Handler::e_ch_NE_Held && !h4504handler->RetrieveCall())
+      return false;
+  }
 #endif
 
   if (!SendCapabilitySet(placeOnHold))
@@ -3259,7 +3264,8 @@ PBoolean H323Connection::IsOnHold(bool fromRemote)
 {
 #if OPAL_H450
   // Yes this looks around the wrong way, it isn't!
-  return fromRemote ? (transmitterSidePaused || IsLocalHold()) : (remoteTransmitPaused || IsRemoteHold());
+  return fromRemote ? (transmitterSidePaused || h4504handler->GetState() == H4504Handler::e_ch_NE_Held)
+                    : (remoteTransmitPaused || h4504handler->GetState() == H4504Handler::e_ch_RE_Held);
 #else
   return fromRemote ? transmitterSidePaused : remoteTransmitPaused;
 #endif
@@ -3299,8 +3305,8 @@ bool H323Connection::TransferCall(const PString & remoteParty,
 {
   // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
   // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
-  if (!callIdentity.IsEmpty() && IsLocalHold())
-    RetrieveCall();
+  if (!callIdentity.IsEmpty() && h4504handler->GetState() == H4504Handler::e_ch_NE_Held)
+    h4504handler->RetrieveCall();
 
   return h4502handler->TransferCall(remoteParty, callIdentity);
 }
@@ -3368,117 +3374,6 @@ void H323Connection::SetAssociatedCallToken(const PString& token)
 void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCall*/)
 {
    h4502handler->SetConsultationTransferSuccess();
-}
-
-
-bool H323Connection::HoldCall(PBoolean localHold)
-{
-  if (!h4504handler->HoldCall(localHold))
-    return false;
-
-  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  return true;
-}
-
-
-bool H323Connection::RetrieveCall()
-{
-  if (IsRemoteHold()) {
-    PTRACE(4, "H4504\tRemote-end Call Hold not implemented.");
-    return false;
-  }
-
-  // Is the current call on hold?
-  if (!IsLocalHold())
-    return true;
-
-  if (!h4504handler->RetrieveCall())
-    return false;
-
-  holdMediaChannel = SwapHoldMediaChannels(holdMediaChannel);
-  
-  // Signal the manager that there is a retrieve 
-  OnHold(false, false);
-  return true;
-}
-
-
-void H323Connection::SetHoldMedia(PChannel * audioChannel)
-{
-  holdMediaChannel = PAssertNULL(audioChannel);
-}
-
-
-PBoolean H323Connection::IsMediaOnHold() const
-{
-  return holdMediaChannel != NULL;
-}
-
-
-PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
-{
-  PSafeLockReadWrite mutex(*this);
-  if (IsMediaOnHold()) {
-    if (PAssertNULL(newChannel) == NULL)
-      return NULL;
-  }
-
-  PChannel * existingTransmitChannel = NULL;
-
-  PINDEX count = logicalChannels->GetSize();
-
-  for (PINDEX i = 0; i < count; ++i) {
-    H323Channel* channel = logicalChannels->GetChannelAt(i);
-    if (!channel)
-      return NULL;
-
-    unsigned int session_id = channel->GetSessionID();
-    if (session_id == H323Capability::DefaultAudioSessionID || session_id == H323Capability::DefaultVideoSessionID) {
-      const H323ChannelNumber & channelNumber = channel->GetNumber();
-
-      H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
-
-      if (!channelNumber.IsFromRemote()) { // Transmit channel
-        OpalMediaStreamPtr stream = GetMediaStream(session_id, false);
-        if (IsMediaOnHold()) {
-//          H323Codec & codec = *channel->GetCodec();
-//          existingTransmitChannel = codec.GetRawDataChannel();
-      //FIXME
-        }
-        else {
-          // Enable/mute the transmit channel depending on whether the remote end is held
-          chan2->SetPause(IsLocalHold());
-          stream->SetPaused(IsLocalHold());
-        }
-      }
-      else {
-        OpalMediaStreamPtr stream = GetMediaStream(session_id, true);
-        // Enable/mute the receive channel depending on whether the remote endis held
-        chan2->SetPause(IsLocalHold());
-        stream->SetPaused(IsLocalHold());
-      }
-    }
-  }
-
-  return existingTransmitChannel;
-}
-
-
-PBoolean H323Connection::IsLocalHold() const
-{
-  return h4504handler->GetState() == H4504Handler::e_ch_NE_Held;
-}
-
-
-PBoolean H323Connection::IsRemoteHold() const
-{
-  return h4504handler->GetState() == H4504Handler::e_ch_RE_Held;
-}
-
-
-PBoolean H323Connection::IsCallOnHold() const
-{
-  return h4504handler->GetState() != H4504Handler::e_ch_Idle;
 }
 
 
