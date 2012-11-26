@@ -52,7 +52,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include;&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="NDEBUG;PTRACING=2"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -83,7 +83,7 @@
 				AdditionalDependencies="opal.lib ptlib.lib wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregexu.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib;$(WXDIR)\lib\vc_lib"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -148,7 +148,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswud&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include;&quot;$(WXDIR)\lib\vc_lib\mswud&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="_DEBUG;PTRACING=2"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -180,7 +180,7 @@
 				AdditionalDependencies="opald.lib ptlibd.lib wxmsw$(WXVER)ud_xrc.lib wxmsw$(WXVER)ud_html.lib wxmsw$(WXVER)ud_adv.lib wxmsw$(WXVER)ud_core.lib wxbase$(WXVER)ud_xml.lib wxbase$(WXVER)ud.lib wxexpatd.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexud.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib;$(WXDIR)\lib\vc_lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
@@ -247,7 +247,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include;&quot;$(WXDIR)\lib\vc_lib\mswu&quot;;&quot;$(WXDIR)\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -278,7 +278,7 @@
 				AdditionalDependencies="opaln.lib ptlibn.lib wxmsw$(WXVER)u_xrc.lib wxmsw$(WXVER)u_html.lib wxmsw$(WXVER)u_adv.lib wxmsw$(WXVER)u_core.lib wxbase$(WXVER)u_xml.lib wxbase$(WXVER)u.lib wxexpat.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregexu.lib wsock32.lib comctl32.lib rpcrt4.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib;$(WXDIR)\lib\vc_lib"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -396,7 +396,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating C++ source from XML resource file"
-						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;%WXDIR%\bin&#x0D;&#x0A;wxrc -c $(InputPath)&#x0D;&#x0A;"
 						Outputs="resource.cpp"
 					/>
 				</FileConfiguration>
@@ -406,7 +406,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating C++ source from XML resource file"
-						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;%WXDIR%\bin&#x0D;&#x0A;wxrc -c $(InputPath)&#x0D;&#x0A;"
 						Outputs="resource.cpp"
 					/>
 				</FileConfiguration>
@@ -416,7 +416,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating C++ source from XML resource file"
-						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)&#x0D;&#x0A;"
+						CommandLine="PATH=%PATH%;%WXDIR%\bin&#x0D;&#x0A;wxrc -c $(InputPath)&#x0D;&#x0A;"
 						Outputs="resource.cpp"
 					/>
 				</FileConfiguration>
