@@ -1204,12 +1204,8 @@ PBoolean OpalTransportTCP::Connect()
     return true;
 
   PSafeLockReadWrite mutex(*this);
-  return ConnectSocket(dynamic_cast<PTCPSocket *>(m_channel));
-}
 
-
-bool OpalTransportTCP::ConnectSocket(PTCPSocket * socket)
-{
+  PTCPSocket * socket = dynamic_cast<PTCPSocket *>(m_channel);
   if (socket == NULL)
     return false;
 
@@ -1677,30 +1673,22 @@ PBoolean OpalTransportTLS::Connect()
   if (IsOpen())
     return true;
 
-  PTCPSocket * socket = new PTCPSocket(remotePort);
-
   PSafeLockReadWrite mutex(*this);
-  if (!ConnectSocket(socket)) {
-    delete socket;
+
+  delete m_channel;
+  m_channel = new PTCPSocket(remotePort);
+  if (!OpalTransportTCP::Connect())
     return false;
-  }
 
   PSSLContext * context = new PSSLContext();
-  if (!endpoint.GetSSLCredentials(*context, false)) {
-    delete context;
-    delete socket;
-    return false;
-  }
-
+  endpoint.GetSSLCredentials(*context, false);
   PSSLChannel * sslChannel = new PSSLChannel(context, true);
-  if (sslChannel->Connect(socket)) {
-    m_channel = sslChannel;
-    return true;
-  }
 
-  PTRACE(1, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
-  delete sslChannel; // Deletes socket and context
-  return false;
+  bool ok = sslChannel->Connect(m_channel);
+  PTRACE_IF(1, !ok, "OpalTLS\tConnect failed: " << sslChannel->GetErrorText());
+  m_channel = sslChannel;
+
+  return ok;
 }
 
 

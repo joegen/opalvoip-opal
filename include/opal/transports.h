@@ -1131,7 +1131,6 @@ class OpalTransportTCP : public OpalTransportIP
       */
     virtual const PCaselessString & GetProtoPrefix() const;
 
-    bool ConnectSocket(PTCPSocket * socket);
     bool OnConnectedSocket(PTCPSocket * socket);
 
     PBoolean reuseAddressFlag;
