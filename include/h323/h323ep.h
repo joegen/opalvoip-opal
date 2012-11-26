@@ -494,14 +494,6 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & secondaryCallToken  ///<  Token of secondary call
     );
 
-    /**Place the call on hold, suspending all media channels (H.450.4)
-    * NOTE: Only Local Hold is implemented so far. 
-    */
-    void HoldCall(
-      const PString & token,        ///<  Existing connection to be transferred
-      PBoolean localHold   ///<  true for Local Hold, false for Remote Hold
-    );
-
     /** Initiate Call intrusion
         Designed similar to MakeCall function
       */

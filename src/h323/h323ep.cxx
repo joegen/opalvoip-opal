@@ -721,14 +721,6 @@ void H323EndPoint::ConsultationTransfer(const PString & primaryCallToken,
 }
 
 
-void H323EndPoint::HoldCall(const PString & token, PBoolean localHold)
-{
-  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
-  if (connection != NULL)
-    connection->HoldCall(localHold);
-}
-
-
 PBoolean H323EndPoint::IntrudeCall(const PString & remoteParty,
                                unsigned capabilityLevel,
                                void * userData)
