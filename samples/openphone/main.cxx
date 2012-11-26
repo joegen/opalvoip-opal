@@ -2407,6 +2407,14 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
     PostEvent(wxEvtOnHold, ID_ON_HOLD);
   else
     PostEvent(wxEvtEstablished, ID_ESTABLISHED, connection.GetCall().GetToken());
+
+  // Pause the outging media, this is where "Music on Hold" would be
+  OpalMediaStreamPtr strm = connection.GetMediaStream(OpalMediaType::Audio(), false);
+  if (strm != NULL)
+    strm->SetPaused(onHold);
+  strm = connection.GetMediaStream(OpalMediaType::Video(), false);
+  if (strm != NULL)
+    strm->SetPaused(onHold);
 }
 
 
