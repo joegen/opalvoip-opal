@@ -316,7 +316,16 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
   // Link just created or was closed/lost
   if (!transport->Connect()) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
-    reason = transport->GetErrorCode() == PChannel::Timeout  ? SIP_PDU::Local_Timeout : SIP_PDU::Local_BadTransportAddress;
+    switch (transport->GetErrorCode()) {
+      case PChannel::Timeout :
+        reason = SIP_PDU::Local_Timeout;
+        break;
+      case PChannel::AccessDenied :
+        reason = SIP_PDU::Local_NotAuthenticated;
+        break;
+      default :
+        reason = SIP_PDU::Local_TransportError;
+    }
     transport->CloseWait();
     return NULL;
   }
