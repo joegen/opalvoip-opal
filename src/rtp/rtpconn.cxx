@@ -138,7 +138,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
 
   const PStringArray cryptoSuites = endpoint.GetMediaCryptoSuites();
 
-  vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize());
+  vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize()+1);
 
   for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
     const OpalMediaType & mediaType = *iterMediaType;
