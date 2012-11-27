@@ -200,8 +200,14 @@ int OpalPCAPFile::GetIP(PBYTEArray & payload)
   if (GetDataLink(ip) != 0x800) // IPv4
     return -1;
 
+  PINDEX totalLength = (ip[2]<<8)|ip[3]; // Total length of packet
+  if (totalLength > ip.GetSize()) {
+    PTRACE(2, "Truncated IP packet, expected " << totalLength << ", got " << ip.GetSize());
+    return -1;
+  }
+
   PINDEX headerLength = (ip[0]&0xf)*4; // low 4 bits in DWORDS, is this in bytes
-  payload.Attach(&ip[headerLength], ip.GetSize()-headerLength);
+  payload.Attach(&ip[headerLength], totalLength-headerLength);
 
   m_packetSrcIP = PIPSocket::Address(4, ip+12);
   if (!m_filterSrcIP.IsAny() && m_filterSrcIP != m_packetSrcIP)
