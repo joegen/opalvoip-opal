@@ -2,7 +2,7 @@
 <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
 <?define SaslDir = "C:\Tools" ?>
 <?define LDAPDir = "C:\Tools" ?>
-<?define SSLDir = "$(env.windir)\SYSTEM32" ?>
+<?define SSLDir = "C:\Tools" ?>
 <?define OPALDir = "..\.." ?>
 <?define PTLibDir = "..\..\..\ptlib" ?>
 <?define PluginDir = "C:\PTLib_Plugins" ?>
