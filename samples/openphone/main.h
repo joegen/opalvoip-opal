@@ -622,9 +622,12 @@ class OptionsDialog : public wxDialog
     wxButton      * m_AddInterface;
     wxButton      * m_RemoveInterface;
     void BandwidthClass(wxCommandEvent & /*event*/);
+
+#if OPAL_PTLIB_SSL
     void FindCertificateAuthority(wxCommandEvent & /*event*/);
     void FindLocalCertificate(wxCommandEvent & /*event*/);
     void FindPrivateKey(wxCommandEvent & /*event*/);
+#endif
     void NATHandling(wxCommandEvent & /*event*/);
     void SelectedLocalInterface(wxCommandEvent & /*event*/);
     void ChangedInterfaceInfo(wxCommandEvent & /*event*/);

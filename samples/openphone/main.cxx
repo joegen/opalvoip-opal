@@ -149,11 +149,9 @@ DEF_FIELD(RxBandwidth);
 DEF_FIELD(TxBandwidth);
 DEF_FIELD(RTPTOS);
 DEF_FIELD(MaxRtpPayloadSize);
-#if OPAL_PTLIB_SSL
 DEF_FIELD(CertificateAuthority);
 DEF_FIELD(LocalCertificate);
 DEF_FIELD(PrivateKey);
-#endif
 DEF_FIELD(TCPPortBase);
 DEF_FIELD(TCPPortMax);
 DEF_FIELD(UDPPortBase);
@@ -228,10 +226,8 @@ DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
-#if OPAL_PTLIB_SSL
 DEF_FIELD(H323SignalingSecurity);
 DEF_FIELD(H323MediaCryptoSuites);
-#endif
 
 
 static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
@@ -244,10 +240,8 @@ DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
 DEF_FIELD(SIPUserInputMode);
 DEF_FIELD(SIPPRACKMode);
-#if OPAL_PTLIB_SSL
 DEF_FIELD(SIPSignalingSecurity);
 DEF_FIELD(SIPMediaCryptoSuites);
-#endif
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -3928,9 +3922,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_RADIOBUTTON(XRCID("NoNATUsed"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
+#if OPAL_PTLIB_SSL
   EVT_BUTTON(XRCID("FindCertificateAuthority"), OptionsDialog::FindCertificateAuthority)
   EVT_BUTTON(XRCID("FindLocalCertificate"), OptionsDialog::FindLocalCertificate)
   EVT_BUTTON(XRCID("FindPrivateKey"), OptionsDialog::FindPrivateKey)
+#endif
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
   EVT_CHOICE(XRCID("InterfaceProtocol"), OptionsDialog::ChangedInterfaceInfo)
   EVT_TEXT(XRCID("InterfaceAddress"), OptionsDialog::ChangedInterfaceInfo)
@@ -4138,6 +4134,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(CertificateAuthority, m_manager.GetSSLCertificateAuthorityFiles());
   INIT_FIELD(LocalCertificate, m_manager.GetSSLCertificateFile());
   INIT_FIELD(PrivateKey, m_manager.GetSSLPrivateKeyFile());
+#else
+  FindWindow(CertificateAuthorityKey)->Disable();
+  FindWindow(LocalCertificateKey)->Disable();
+  FindWindow(PrivateKeyKey)->Disable();
 #endif
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, m_manager.GetTCPPortMax());
@@ -5125,6 +5125,7 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 }
 
 
+#if OPAL_PTLIB_SSL
 void OptionsDialog::FindCertificateAuthority(wxCommandEvent &)
 {
   wxString newFile = wxFileSelector(wxT("File or directory for Certificate Authority"),
@@ -5168,6 +5169,7 @@ void OptionsDialog::FindPrivateKey(wxCommandEvent &)
     TransferDataToWindow();
   }
 }
+#endif // OPAL_PTLIB_SSL
 
 
 void OptionsDialog::NATHandling(wxCommandEvent &)
