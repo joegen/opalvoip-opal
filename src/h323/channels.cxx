@@ -294,12 +294,13 @@ void H323Channel::OnJitterIndication(DWORD PTRACE_PARAM(jitter),
 
 PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
 {
-  PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", used=" << m_bandwidthUsed);
   if (!connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, bandwidth)) {
     m_bandwidthUsed = 0;
+    PTRACE(2, "LogChan\tFailed bandwidth request=" << bandwidth << ", used=" << m_bandwidthUsed);
     return false;
   }
 
+  PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", used=" << m_bandwidthUsed);
   m_bandwidthUsed = bandwidth;
   return true;
 }
@@ -353,12 +354,12 @@ H323Channel::Directions H323UnidirectionalChannel::GetDirection() const
 
 PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
-  unsigned bandwidth = 0;
+  OpalBandwidth bandwidth;
   if (GetDirection() == IsTransmitter)
     bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
   if (bandwidth == 0)
     bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::MaxBitRateOption());
-  return SetBandwidthUsed(bandwidth/100);
+  return SetBandwidthUsed(bandwidth);
 }
 
 
