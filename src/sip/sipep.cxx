@@ -214,6 +214,7 @@ void SIPEndPoint::AddTransport(const OpalTransportPtr & transport)
   }
 
   m_transportsTable.SetAt(transport->GetRemoteAddress(), transport);
+  PTRACE(4, "SIP\tRemembering transport " << *transport);
 }
 
 
@@ -509,9 +510,15 @@ PBoolean SIPEndPoint::GarbageCollection()
     PWaitAndSignal mutex(m_transportsTable.GetMutex());
     PArray<OpalTransportAddress> keys = m_transportsTable.GetKeys();
     for (PINDEX i = 0; i < keys.GetSize(); ++i) {
-      PSafePtr<OpalTransport> transport = m_transportsTable.FindWithLock(keys[i], PSafeReference);
-      if (transport != NULL && transport->GetSafeReferenceCount() == 1)
-        m_transportsTable.RemoveAt(keys[i]);
+      const OpalTransportAddress & addr = keys[i];
+      PSafePtr<OpalTransport> transport = m_transportsTable.FindWithLock(addr, PSafeReference);
+      if (transport != NULL) {
+        PWaitAndSignal mutex(m_transportsTable.GetMutex());
+        if (transport->GetSafeReferenceCount() == 1) {
+          PTRACE(3, "SIP\tRemoving transport to " << addr);
+          m_transportsTable.RemoveAt(addr);
+        }
+      }
     }
   }
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
