@@ -31,7 +31,7 @@
 
 
 extern const char Manufacturer[] = "Vox Gratia";
-extern const char Application[] = "ConfOPAL";
+extern const char Application[] = "OPAL Conference";
 typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
 PCREATE_PROCESS(MyApp);
 

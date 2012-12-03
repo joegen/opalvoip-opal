@@ -59,7 +59,6 @@ class OpalManagerConsole : public OpalManager
     OpalManagerConsole();
 
     virtual PString GetArgumentSpec() const;
-    virtual PString GetArgumentUsage() const;
     virtual void Usage(ostream & strm, const PArgList & args);
 
     virtual bool Initialise(
@@ -173,6 +172,15 @@ class OpalConsoleProcess : public PProcess
         this->SetTerminationValue(0);
         this->m_manager->Run();
       }
+    }
+
+    virtual bool OnInterrupt(bool)
+    {
+      if (this->m_manager == NULL)
+        return false;
+
+      this->m_manager->EndRun();
+      return true;
     }
 
   private:

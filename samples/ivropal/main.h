@@ -51,26 +51,9 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
-    virtual PString GetArgumentUsage() const;
+    virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
     virtual void Usage(ostream & strm, const PArgList & args);
     virtual void OnClearedCall(OpalCall & call); // Callback override
-
-    PSyncPoint m_completed;
-};
-
-
-class IvrOPAL : public PProcess
-{
-    PCLASSINFO(IvrOPAL, PProcess)
-
-  public:
-    IvrOPAL();
-
-    virtual void Main();
-    virtual bool OnInterrupt(bool);
-
-  private:
-    MyManager * m_manager;
 };
 
 

@@ -29,94 +29,80 @@
 #include "precompile.h"
 #include "main.h"
 
+
 // Debug: -ttttodebugstream file:../callgen/ogm.wav sip:10.0.1.12
 //        -ttttodebugstream "repeat=10;file:../callgen/ogm.wav"
 //        -ttttodebugstream file:test.vxml
 
 
-PCREATE_PROCESS(IvrOPAL);
+extern const char Manufacturer[] = "Vox Gratia";
+extern const char Application[] = "OPAL IVR";
+typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
+PCREATE_PROCESS(MyApp);
 
 
-IvrOPAL::IvrOPAL()
-  : PProcess("Vox Gratia", "IvrOPAL", 1, 0, ReleaseCode, 0)
-  , m_manager(NULL)
+bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 {
-}
-
-
-void IvrOPAL::Main()
-{
-  PArgList & args = GetArguments();
-
-  m_manager = new MyManager();
-  if (!m_manager->Initialise(args, true, "ivr:"))
-    return;
-
+  if (!OpalManagerConsole::Initialise(args, verbose, "ivr:"))
+    return false;
 
   // Set up IVR
-  MyIVREndPoint * ivr  = new MyIVREndPoint(*m_manager);
+  MyIVREndPoint * ivr  = new MyIVREndPoint(*this);
   ivr->SetDefaultVXML(args[0]);
 
 
-  if (args.GetCount() == 1)
-    cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ... " << flush;
-  else {
-    PString token;
-    if (!m_manager->SetUpCall("ivr:", args[1], token)) {
+  switch (args.GetCount()) {
+  default :
+    break;
+
+    case 1 :
+      cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ... " << flush;
+      return true;
+
+    case 2 :
+      PString token;
+      if (SetUpCall("ivr:", args[1], token)) {
+        cout << "Playing " << args[0] << " to " << args[1] << " ... " << flush;
+        return true;
+      }
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
-      return;
-    }
-    cout << "Playing " << args[0] << " to " << args[1] << " ... " << flush;
   }
 
-  // Wait for call to come in and finish
-  m_manager->m_completed.Wait();
-  cout << "Completed." << endl;
-
-  MyManager * mgr = m_manager;
-  m_manager = NULL;
-  delete mgr;
-}
-
-
-PString MyManager::GetArgumentUsage() const
-{
-  return "[ options ] vxml [ url ]\n\n"
-          "where vxml is a VXML script, a URL to a VXML script or a WAV file, or a\n"
-          "series of commands separated by ';'.";
+  return false;
 }
 
 
 void MyManager::Usage(ostream & strm, const PArgList & args)
 {
-  OpalManagerConsole::Usage(strm, args);
-  strm << "\n"
-          "Commands are:\n"
-          "  repeat=n    Repeat next WAV file n times.\n"
-          "  delay=n     Delay after repeats n milliseconds.\n"
-          "  voice=name  Set Text To Speech voice to name\n"
-          "  tone=t      Emit DTMF tone t\n"
-          "  silence=n   Emit silence for n milliseconds\n"
-          "  speak=text  Speak the text using the Text To Speech system.\n"
-          "  speak=$var  Speak the internal variable using the Text To Speech system.\n"
-          "\n"
-          "Variables may be one of:\n"
-          "  Time\n"
-          "  Originator-Address\n"
-          "  Remote-Address\n"
-          "  Source-IP-Address\n"
-          "\n"
-          "If a second parameter is provided and outgoing call is made and when answered\n"
-          "the script is executed. If no second paramter is provided then the program\n"
-          "will continuosly listen for incoming calls and execute the script on each\n"
-          "call. Simultaneous calls to the limits of the operating system arre possible.\n"
-          "\n";
-
-  PString name = PProcess::Current().GetFile().GetTitle();
-  strm << "e.g. " << name << " file://message.wav sip:fred@bloggs.com\n"
-          "     " << name << " http://voicemail.vxml\n"
-          "     " << name << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
-          "\n";
+  args.Usage(strm,
+             "[ options ] vxml [ url ]") << "\n"
+             "where vxml is a VXML script, a URL to a VXML script or a WAV file, or a\n"
+             "series of commands separated by ';'."
+             "\n"
+             "Commands are:\n"
+             "  repeat=n    Repeat next WAV file n times.\n"
+             "  delay=n     Delay after repeats n milliseconds.\n"
+             "  voice=name  Set Text To Speech voice to name\n"
+             "  tone=t      Emit DTMF tone t\n"
+             "  silence=n   Emit silence for n milliseconds\n"
+             "  speak=text  Speak the text using the Text To Speech system.\n"
+             "  speak=$var  Speak the internal variable using the Text To Speech system.\n"
+             "\n"
+             "Variables may be one of:\n"
+             "  Time\n"
+             "  Originator-Address\n"
+             "  Remote-Address\n"
+             "  Source-IP-Address\n"
+             "\n"
+             "If a second parameter is provided and outgoing call is made and when answered\n"
+             "the script is executed. If no second paramter is provided then the program\n"
+             "will continuosly listen for incoming calls and execute the script on each\n"
+             "call. Simultaneous calls to the limits of the operating system are possible.\n"
+             "\n"
+             "e.g. " << args.GetCommandName() << " file://message.wav sip:fred@bloggs.com\n"
+             "     " << args.GetCommandName() << " http://voicemail.vxml\n"
+             "     " << args.GetCommandName() << " \"repeat=5;delay=2000;speak=Hello, this is IVR!\"\n"
+             "\n";
 
 }
 
@@ -124,7 +110,7 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 void MyManager::OnClearedCall(OpalCall & call)
 {
   if (call.GetPartyA().NumCompare("ivr") == EqualTo)
-    m_completed.Signal();
+    EndRun();
 }
 
 
@@ -134,16 +120,6 @@ void MyIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
 
   // Do default action which is to clear the call.
   OpalIVREndPoint::OnEndDialog(connection);
-}
-
-
-bool IvrOPAL::OnInterrupt(bool)
-{
-  if (m_manager == NULL)
-    return false;
-
-  m_manager->m_completed.Signal();
-  return true;
 }
 
 
