@@ -32,8 +32,8 @@
 #include <ptclib/pwavfile.h>
 #include <ptclib/delaychan.h>
 
-#include <opal/manager.h>
-#include <ep/ivr.h>
+#include <opal/console_mgr.h>
+#include <ep/pcss.h>
 #include <h323/h323ep.h>
 #include <h323/gkclient.h>
 #include <sip/sipep.h>
