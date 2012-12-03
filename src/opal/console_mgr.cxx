@@ -94,6 +94,7 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManagerConsole::OpalManagerConsole()
+  : m_interrupted(false)
 {
 }
 
@@ -528,8 +529,9 @@ void OpalManagerConsole::Run()
 }
 
 
-void OpalManagerConsole::EndRun()
+void OpalManagerConsole::EndRun(bool interrupt)
 {
+  m_interrupted = interrupt;
   m_endRun.Signal();
 }
 
@@ -675,11 +677,12 @@ void OpalManagerCLI::Run()
 }
 
 
-void OpalManagerCLI::EndRun()
+void OpalManagerCLI::EndRun(bool interrupt)
 {
   if (m_cli != NULL)
     m_cli->Stop();
-  OpalManagerConsole::EndRun();
+
+  OpalManagerConsole::EndRun(interrupt);
 }
 
 

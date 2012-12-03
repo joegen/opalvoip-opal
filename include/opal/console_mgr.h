@@ -67,7 +67,7 @@ class OpalManagerConsole : public OpalManager
       const PString & defaultRoute = PString::Empty()
     );
     virtual void Run();
-    virtual void EndRun();
+    virtual void EndRun(bool interrupt = false);
 
   protected:
 #if OPAL_SIP
@@ -84,6 +84,7 @@ class OpalManagerConsole : public OpalManager
 #endif
 
     PSyncPoint m_endRun;
+    bool       m_interrupted;
 };
 
 
@@ -108,7 +109,7 @@ class OpalManagerCLI : public OpalManagerConsole
       const PString & defaultRoute = PString::Empty()
     );
     virtual void Run();
-    virtual void EndRun();
+    virtual void EndRun(bool interrupt);
 
   protected:
     PCLI * CreatePCLI(
@@ -179,7 +180,7 @@ class OpalConsoleProcess : public PProcess
       if (this->m_manager == NULL)
         return false;
 
-      this->m_manager->EndRun();
+      this->m_manager->EndRun(true);
       return true;
     }
 
