@@ -1132,6 +1132,9 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
+  if (args.deviceName.IsEmpty() && args.driverName.IsEmpty())
+    return NULL; // Disabled
+
   mediaFormat.AdjustVideoArgs(args);
 
   PINDEX start = args.deviceName.Find("TITLE=\"");
