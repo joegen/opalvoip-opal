@@ -25,10 +25,52 @@
  */
 
 
+class MyManager;
+
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyManager;
-class CallThread;
+struct CallParams
+{
+  CallParams(MyManager & mgr)
+    : m_callgen(mgr) { }
+
+  MyManager & m_callgen;
+
+  unsigned      m_repeat;
+  PTimeInterval m_tmax_est;
+  PTimeInterval m_tmin_call;
+  PTimeInterval m_tmax_call;
+  PTimeInterval m_tmin_wait;
+  PTimeInterval m_tmax_wait;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class CallThread : public PThread
+{
+    PCLASSINFO(CallThread, PThread);
+  public:
+    CallThread(
+      unsigned index,
+      const PStringArray & destinations,
+      const CallParams & params
+    );
+
+    void Main();
+    void Stop();
+
+    PStringArray m_destinations;
+    unsigned     m_index;
+    CallParams   m_params;
+    bool         m_running;
+    PSyncPoint   m_exit;
+};
+
+PLIST(CallThreadList, CallThread);
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 class MyCall : public OpalCall
 {
@@ -54,92 +96,39 @@ class MyCall : public OpalCall
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyManager : public OpalManager
+class MyPCSSEndPoint : public OpalPCSSEndPoint
 {
-    PCLASSINFO(MyManager, OpalManager);
+    PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
   public:
+    MyPCSSEndPoint(OpalManager & mgr) : OpalPCSSEndPoint(mgr) { }
+    virtual PBoolean OnShowIncoming(const OpalPCSSConnection &);
+    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection &);
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class MyManager : public OpalManagerConsole
+{
+    PCLASSINFO(MyManager, OpalManagerConsole);
+  public:
+    MyManager();
     ~MyManager();
+
+    virtual PString GetArgumentSpec() const;
+    virtual void Usage(ostream & strm, const PArgList & args);
+    virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
+    virtual void Run();
 
     virtual OpalCall * CreateCall(void * userData);
 
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
 
     PINDEX GetActiveCalls() const { return activeCalls.GetSize(); }
-};
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-class CallGen;
-
-struct CallParams
-{
-  CallParams(CallGen & app)
-    : callgen(app) { }
-
-  CallGen & callgen;
-
-  unsigned repeat;
-  PTimeInterval tmax_est;
-  PTimeInterval tmin_call;
-  PTimeInterval tmax_call;
-  PTimeInterval tmin_wait;
-  PTimeInterval tmax_wait;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class CallThread : public PThread
-{
-  PCLASSINFO(CallThread, PThread);
-  public:
-    CallThread(
-      unsigned index,
-      const PStringArray & destinations,
-      const CallParams & params
-    );
-
-    void Main();
-    void Stop();
-
-    PStringArray m_destinations;
-    unsigned     m_index;
-    CallParams   m_params;
-    bool         m_running;
-    PSyncPoint   m_exit;
-};
-
-PLIST(CallThreadList, CallThread);
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-class CallGen : public PProcess 
-{
-  PCLASSINFO(CallGen, PProcess)
-
-  public:
-    CallGen();
-    ~CallGen();
-
-    virtual void Main();
-    virtual bool OnInterrupt(bool);
-
-    static CallGen & Current() { return (CallGen&)PProcess::Current(); }
-
-    MyManager  m_manager;
-    PURL       m_outgoingMessageFile;
-    PString    m_incomingAudioDirectory;
-    PTextFile  m_cdrFile;
-
-    PSyncPoint m_signalMain;
-    bool       m_interrupted;
-    unsigned   m_totalCalls;
-    unsigned   m_totalEstablished;
-    bool       m_quietMode;
-    PMutex     m_coutMutex;
-
+    PTextFile      m_cdrFile;
+    unsigned       m_totalCalls;
+    unsigned       m_totalEstablished;
     CallThreadList m_threadList;
 };
 
