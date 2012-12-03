@@ -1426,9 +1426,7 @@ void MyManager::SetNATHandling()
 {
   switch (m_NATHandling) {
     case 1 :
-      if (!m_NATRouter.IsEmpty())
-        SetTranslationHost(m_NATRouter);
-      SetSTUNServer(PString::Empty());
+      SetNATServer("Fixed", m_NATRouter);
       break;
       
     case 2 :
@@ -1437,7 +1435,7 @@ void MyManager::SetNATHandling()
         GetEventHandler()->ProcessPendingEvents();
         Update();
 
-        if (!SetNATServer("STUN", m_STUNServer))
+        if (!SetNATServer(PSTUNClient::GetNatMethodName(), m_STUNServer))
           LogWindow << "STUN server offline or unsuitable NAT type";
         else {
           LogWindow << "STUN server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
@@ -1447,12 +1445,10 @@ void MyManager::SetNATHandling()
         }
         LogWindow << endl;
       }
-      SetTranslationHost(PString::Empty());
       break;
 
     default :
-      SetTranslationHost(PString::Empty());
-      SetSTUNServer(PString::Empty());
+      SetNATServer(PString::Empty(), PString::Empty());
   }
 }
 

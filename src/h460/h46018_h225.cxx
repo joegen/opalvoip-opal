@@ -469,6 +469,8 @@ void H46018Handler::H46024ADirect(bool /*reply*/, const PString & /*token*/)
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+static PConstCaselessString H46019Name("H46019");
+
 PNatMethod_H46019::PNatMethod_H46019()
 {
   handler = NULL;
@@ -479,6 +481,30 @@ PNatMethod_H46019::PNatMethod_H46019()
 
 PNatMethod_H46019::~PNatMethod_H46019()
 {
+}
+
+
+PString PNatMethod_H46019::GetNatMethodName()
+{
+  return H46019Name;
+}
+
+
+PString PNatMethod_H46019::GetName() const
+{
+  return H46019Name;
+}
+
+
+PString PNatMethod_H46019::GetServer() const
+{
+  return PString::Empty();
+}
+
+
+PNatMethod::NatTypes PNatMethod_H46019::InternalGetNatType(bool, const PTimeInterval &)
+{
+  return OpenNat;
 }
 
 
@@ -518,14 +544,6 @@ void PNatMethod_H46019::AttachHandler(H46018Handler * _handler)
   pairedPortInfo.mutex.Signal();
 
   available = FALSE;
-}
-
-
-PBoolean PNatMethod_H46019::GetExternalAddress(PIPSocket::Address & /*externalAddress*/, /// External address of router
-                                               const PTimeInterval & /* maxAge */         /// Maximum age for caching
-                                               )
-{
-  return FALSE;
 }
 
 
