@@ -364,12 +364,7 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
       natMethod->GetInterfaceAddress(natInterfaceIP);
       natMethod->GetExternalAddress(natExternalIP);
     }
-    else
 #endif
-    if (manager.HasTranslationAddress()) {
-      natInterfaceIP = PIPSocket::GetDefaultIpAny();
-      natExternalIP = manager.GetTranslationAddress();
-    }
   }
 
   OpalListenerList::const_iterator listener;

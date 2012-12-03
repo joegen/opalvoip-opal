@@ -257,7 +257,6 @@ OpalManager::OpalManager()
   , m_privateKeyFile("opal_private_key.pem")
   , m_autoCreateCertificate(true)
 #endif
-  , translationAddress(0, NULL)       // Invalid address to disable
 #if P_NAT
   , m_natMethods(new PNatStrategy)
   , m_natMethod(NULL)
@@ -1815,54 +1814,20 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
   if (IsLocalAddress(remoteAddress))
     return false; // Does not need to be translated
 
-  if (HasTranslationAddress()) {
-    localAddress = translationAddress; // Translate it!
-    return true;
-  }
-
-#ifdef P_STUN
+#ifdef P_NAT
   PIPSocket::Address stunInterface;
-  PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); 
-  if (stun != NULL &&
-      stun->GetNatType() != PSTUNClient::BlockedNat &&
-      stun->GetInterfaceAddress(stunInterface) &&
+  if (m_natMethod != NULL &&
+      m_natMethod->GetNatType() != PSTUNClient::BlockedNat &&
+      m_natMethod->GetInterfaceAddress(stunInterface) &&
       stunInterface == localAddress)
-    return stun->GetExternalAddress(localAddress); // Translate it!
+    return m_natMethod->GetExternalAddress(localAddress); // Translate it!
 #endif
 
   return false; // Have nothing to translate it to
 }
 
 
-bool OpalManager::SetTranslationHost(const PString & host)
-{
-  if (PIPSocket::GetHostAddress(host, translationAddress)) {
-    translationHost = host;
-    return true;
-  }
-
-  translationHost = PString::Empty();
-  translationAddress = PIPSocket::GetInvalidAddress();
-  return false;
-}
-
-
-void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
-{
-  translationAddress = address;
-  translationHost = PIPSocket::GetHostName(address);
-}
-
-
 #if P_NAT
-
-#if P_STUN
-
-PNatMethod::NatTypes OpalManager::SetSTUNServer(const PString & server)
-{
-  return SetNATServer("STUN", server) ? m_natMethod->GetNatType() : PSTUNClient::UnknownNat;
-}
-#endif
 
 PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & remoteAddress) const
 {
@@ -1909,6 +1874,31 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
   PTRACE(3, "OPAL\tNAT \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
 
   return type;
+}
+
+
+PString OpalManager::GetTranslationHost() const
+{
+  PNatMethod_Fixed * nat = dynamic_cast<PNatMethod_Fixed *>(m_natMethod);
+  return nat == NULL ? PString::Empty() : nat->GetExternalHost();
+}
+
+
+bool OpalManager::SetTranslationHost(const PString & host)
+{
+  return SetNATServer(PNatMethod_Fixed::GetNatMethodName(), host);
+}
+
+
+void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
+{
+  SetNATServer(PNatMethod_Fixed::GetNatMethodName(), address.AsString());
+}
+
+
+bool OpalManager::HasTranslationAddress() const
+{
+  return dynamic_cast<PNatMethod_Fixed *>(m_natMethod) != NULL;
 }
 
 #endif  // P_NAT

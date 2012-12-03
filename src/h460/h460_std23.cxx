@@ -89,6 +89,8 @@
 
 PCREATE_NAT_PLUGIN(H46024);
 
+static PConstCaselessString H46024Name("H46024");
+
 
 PNatMethod_H46024::PNatMethod_H46024()
   : PThread(1000, NoAutoDeleteThread, LowPriority ,"H.460.24")
@@ -103,6 +105,18 @@ PNatMethod_H46024::PNatMethod_H46024()
 PNatMethod_H46024::~PNatMethod_H46024()
 {
   natType = PSTUNClient::UnknownNat;
+}
+
+
+PString PNatMethod_H46024::GetNatMethodName()
+{
+  return H46024Name;
+}
+
+
+PString PNatMethod_H46024::GetName() const
+{
+  return H46024Name;
 }
 
 
