@@ -43,6 +43,7 @@
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
+#include <ptclib/pstun.h>
 
 
 static void PrintVersion(ostream & strm)
@@ -94,6 +95,7 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManagerConsole::OpalManagerConsole()
+  : m_interrupted(false)
 {
 }
 
@@ -147,10 +149,14 @@ PString OpalManagerConsole::GetArgumentSpec() const
 #endif
 
          "[IP options:]"
-#ifdef P_STUN
+#if P_NAT
+         "-nat-method:       Set NAT method, defaults to STUN\n"
+         "-nat-server:       Set NAT server for the above method\n"
+#if P_STUN
          "-stun:             Set NAT traversal STUN server\n"
 #endif
          "-translate:        Set external IP address if masqueraded\n"
+#endif
          "-portbase:         Set TCP/UDP/RTP port base\n"
          "-portmax:          Set TCP/UDP/RTP port max\n"
          "-tcp-base:         Set TCP port base (default 0)\n"
@@ -170,26 +176,20 @@ PString OpalManagerConsole::GetArgumentSpec() const
 }
 
 
-PString OpalManagerConsole::GetArgumentUsage() const
-{
-  return "[ options ... ]";
-}
-
-
 void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 {
-  args.Usage(strm, GetArgumentUsage());
+  args.Usage(strm, "[ options ... ]");
 }
 
 
 bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  if (!args.IsParsed()) {
+  if (!args.IsParsed())
     args.Parse(GetArgumentSpec());
-    if (!args.IsParsed() || args.HasOption("help")) {
-      Usage(cerr, args);
-      return false;
-    }
+
+  if (!args.IsParsed() || args.HasOption("help")) {
+    Usage(cerr, args);
+    return false;
   }
 
   if (args.HasOption("version")) {
@@ -240,12 +240,6 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
   }
 
-  if (args.HasOption("translate")) {
-    SetTranslationAddress(args.GetOptionString("translate"));
-    if (verbose)
-      cout << "External address set to " << GetTranslationAddress() << '\n';
-  }
-
   if (args.HasOption("portbase")) {
     unsigned portbase = args.GetOptionString("portbase").AsUnsigned();
     unsigned portmax  = args.GetOptionString("portmax").AsUnsigned();
@@ -291,16 +285,35 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
             "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
             "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
-#ifdef P_STUN
-  if (args.HasOption("stun")) {
+#if P_NAT
+  PString natMethod, natServer;
+  if (args.HasOption("translate")) {
+    natMethod = PNatMethod_Fixed::GetNatMethodName();
+    natServer = args.GetOptionString("translate");
+  }
+  else if (args.HasOption("stun")) {
+    natMethod = PSTUNClient::GetNatMethodName();
+    natServer = args.GetOptionString("stun");
+  }
+  else if (args.HasOption("nat-method")) {
+    natMethod = args.GetOptionString("nat-method");
+    natServer = args.GetOptionString("nat-server");
+  }
+  else if (args.HasOption("nat-method")) {
+    natMethod = PSTUNClient::GetNatMethodName();
+    natServer = args.GetOptionString("nat-server");
+  }
+
+  if (!natMethod.IsEmpty()) {
     if (verbose)
-      cout << "STUN server: " << flush;
-    PSTUNClient::NatTypes natType = SetSTUNServer(args.GetOptionString("stun"));
+      cout << natMethod << " server: " << flush;
+    SetNATServer(natMethod, natServer);
     if (verbose) {
       PNatMethod * natMethod = GetNatMethod();
       if (natMethod == NULL)
         cout << "Unavailable";
       else {
+        PNatMethod::NatTypes natType = natMethod->GetNatType();
         cout << '"' << natMethod->GetServer() << "\" replies " << natType;
         PIPSocket::Address externalAddress;
         if (natType != PSTUNClient::BlockedNat && natMethod->GetExternalAddress(externalAddress))
@@ -309,7 +322,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       cout << endl;
     }
   }
-#endif
+#endif // P_NAT
 
   if (args.HasOption("user"))
     SetDefaultUserName(args.GetOptionString("user"));
@@ -517,8 +530,9 @@ void OpalManagerConsole::Run()
 }
 
 
-void OpalManagerConsole::EndRun()
+void OpalManagerConsole::EndRun(bool interrupt)
 {
+  m_interrupted = interrupt;
   m_endRun.Signal();
 }
 
@@ -604,7 +618,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
       return false;
   }
 
-  m_cli->SetPrompt(PProcess::Current().GetName());
+  m_cli->SetPrompt(args.GetCommandName());
 
 #if OPAL_SIP
   m_cli->SetCommand("register", PCREATE_NOTIFIER(CmdRegister),
@@ -664,11 +678,12 @@ void OpalManagerCLI::Run()
 }
 
 
-void OpalManagerCLI::EndRun()
+void OpalManagerCLI::EndRun(bool interrupt)
 {
   if (m_cli != NULL)
     m_cli->Stop();
-  OpalManagerConsole::EndRun();
+
+  OpalManagerConsole::EndRun(interrupt);
 }
 
 

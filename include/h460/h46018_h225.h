@@ -212,9 +212,9 @@ class H46018Handler : public PObject
 };
 
 
-class PNatMethod_H46019  : public PNatMethod_Null
+class PNatMethod_H46019  : public PNatMethod
 {
-    PCLASSINFO(PNatMethod_H46019,PNatMethod_Null);
+    PCLASSINFO(PNatMethod_H46019,PNatMethod);
 
   public:
     /**@name Construction */
@@ -228,30 +228,17 @@ class PNatMethod_H46019  : public PNatMethod_Null
     ~PNatMethod_H46019();
     //@}
 
-    /**@name General Functions */
+    /**@name Overrides from PNatMethod */
     //@{
-    /**  AttachEndpoint
-        Attach endpoint reference
+    /**  GetMethodName
+        Get the NAT method name 
     */
-    void AttachHandler(H46018Handler * _handler);
+    static PString GetNatMethodName();
+    virtual PString GetName() const;
 
-    /**  GetExternalAddress
-        Get the external address.
-        This function is not used in H46019
-    */
-    virtual PBoolean GetExternalAddress(
-      PIPSocket::Address & externalAddress, ///< External address of router
-      const PTimeInterval & maxAge = 1000   ///< Maximum age for caching
-    );
-
-    /**  CreateSocketPair
-        Create the UDP Socket pair (does nothing)
-    */
-    virtual PBoolean CreateSocketPair(
-      PUDPSocket * & /*socket1*/,            ///< Created DataSocket
-      PUDPSocket * & /*socket2*/,            ///< Created ControlSocket
-      const PIPSocket::Address & /*binding*/
-    ) {  return false; }
+    /**Get the current server address name.
+      */
+    virtual PString GetServer() const;
 
     /**  CreateSocketPair
         Create the UDP Socket pair
@@ -288,16 +275,17 @@ class PNatMethod_H46019  : public PNatMethod_Null
         Create a single UDP Socket 
     */
     PBoolean OpenSocket(PUDPSocket & socket, PortInfo & portInfo, const PIPSocket::Address & binding) const;
+    //@}
 
-    /**  GetMethodName
-        Get the NAT method name 
+    /**@name General Functions */
+    //@{
+    /**  AttachEndpoint
+        Attach endpoint reference
     */
-    static PStringList GetNatMethodName() {  return PStringArray("H46019"); };
-
-    virtual PString GetName() const
-    { return GetNatMethodName()[0]; }
+    void AttachHandler(H46018Handler * _handler);
 
   protected:
+    virtual NatTypes InternalGetNatType(bool forced, const PTimeInterval & maxAge);
 
 #if OPAL_H460_NAT
     /**@name General Functions */

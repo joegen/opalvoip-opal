@@ -81,26 +81,10 @@ class MyManager : public OpalManagerConsole
     PCLASSINFO(MyManager, OpalManagerConsole)
 
   public:
+    virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
     virtual MediaTransferMode GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const;
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
-
-    PSyncPoint m_completed;
-};
-
-
-class MyProcess : public PProcess
-{
-    PCLASSINFO(MyProcess, PProcess)
-
-  public:
-    MyProcess();
-
-    virtual void Main();
-    virtual bool OnInterrupt(bool);
-
-  private:
-    MyManager * m_manager;
 };
 
 

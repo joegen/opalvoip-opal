@@ -710,7 +710,7 @@ install:
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(datarootdir)/opal/make
 	mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir)
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)
-	( for dir in asn codec h323 h460 iax2 im lids opal rtp sip t120 t38; \
+	( for dir in asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38; \
 		do mkdir -p $(DESTDIR)$(includedir)/$$dir ; chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
 		( for fn in include/$$dir/*.h ; do \
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/$$dir ; \
