@@ -1000,7 +1000,7 @@ void TranscoderThread::Main()
           if (g_infoCount > 2) {
             cout << "\n   data=";
             cout << hex << setfill('0') << ::setw(2);
-            for (PINDEX i = 0; i < PMIN(10, rtp.GetPayloadSize()); ++i)
+            for (PINDEX i = 0; i < std::min((PINDEX)10, rtp.GetPayloadSize()); ++i)
               cout << (int)rtp.GetPayloadPtr()[i] << ' ';
             cout << dec << setfill(' ') << ::setw(0);
           }
