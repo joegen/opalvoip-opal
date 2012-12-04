@@ -409,10 +409,8 @@ void SIPConnection::OnReleased()
     case ReleaseWithBYE :
       // create BYE now & delete it later to prevent memory access errors
       bye = new SIPBye(*this);
-      if (!bye->Start()) {
-        delete bye;
+      if (!bye->Start())
         bye.SetNULL();
-      }
       break;
 
     case ReleaseWithCANCEL :

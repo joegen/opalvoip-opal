@@ -1135,25 +1135,30 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
   }
 
-  SET_MESSAGE_STRING(response, m_param.m_general.m_natRouter, GetTranslationHost());
-  if (!IsNullString(command.m_param.m_general.m_natRouter)) {
-    if (!SetTranslationHost(command.m_param.m_general.m_natRouter)) {
-      response.SetError("Could not set NAT router address.");
+#if P_NAT
+  PNatMethod * nat = GetNatMethod();
+  if (nat != NULL) {
+    SET_MESSAGE_STRING(response, m_param.m_general.m_natMethod, nat->GetName());
+    SET_MESSAGE_STRING(response, m_param.m_general.m_natServer, nat->GetServer());
+  }
+
+  if (!IsNullString(command.m_param.m_general.m_natMethod)) {
+    if (!SetNATServer(command.m_param.m_general.m_natMethod, command.m_param.m_general.m_natServer)) {
+      PIPSocket::Address ip;
+      if (PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
+        SetNATServer("STUN", command.m_param.m_general.m_natMethod);
+    }
+    if ((nat = GetNatMethod()) == NULL) {
+      response.SetError("Could not set NAT router method.");
+      return;
+    }
+    else if (nat->GetNatType() == PSTUNClient::BlockedNat) {
+      response.SetError(nat->GetName() + " indicates Blocked NAT.");
       return;
     }
   }
 
-#ifdef P_STUN
-  SET_MESSAGE_STRING(response, m_param.m_general.m_stunServer, GetSTUNServer());
-  if (!IsNullString(command.m_param.m_general.m_stunServer)) {
-    if (!SetSTUNServer(command.m_param.m_general.m_stunServer)) {
-      response.SetError("Could not set STUN server address.");
-      return;
-    }
-    if (GetSTUNClient()->GetNatType() == PSTUNClient::BlockedNat)
-      response.SetError("STUN indicates Blocked NAT.");
-  }
-#endif
+#endif // P_NAT
 
   response->m_param.m_general.m_tcpPortBase = GetTCPPortBase();
   response->m_param.m_general.m_tcpPortMax = GetTCPPortMax();

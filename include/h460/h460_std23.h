@@ -59,10 +59,8 @@ class PNatMethod_H46024  : public PSTUNClient, public PThread
 
     ~PNatMethod_H46024();
 
-    static PStringList GetNatMethodName() {  return PStringArray("H46024"); };
-
-    virtual PString GetName() const
-    { return GetNatMethodName()[0]; }
+    static PString GetNatMethodName();
+    virtual PString GetName() const;
 
     // Start the Nat Method testing
     void Start(const PString & server,H460_FeatureStd23 * _feat);

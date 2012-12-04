@@ -213,7 +213,8 @@ int InitialiseOPAL()
   command.m_type = OpalCmdSetGeneralParameters;
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
-  command.m_param.m_general.m_stunServer = "stun.voxgratia.org";
+  command.m_param.m_general.m_natMethod = "STUN";
+  command.m_param.m_general.m_natServer = "stun.voxgratia.org";
   command.m_param.m_general.m_mediaMask = "RFC4175*";
 
 #if LOCAL_MEDIA

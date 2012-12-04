@@ -584,10 +584,12 @@ typedef struct OpalParamGeneral {
                                            which may automatically be transmitted automatically. If NULL
                                            no change is made, but if "" then all media is prevented from
                                            auto-starting.  */
-  const char * m_natRouter;           /**< The host name or IP address of the Network Address Translation
-                                           router which may be between the endpoint and the Internet. */
-  const char * m_stunServer;          /**< The host name or IP address of the STUN server which may be
-                                           used to determine the NAT router characteristics automatically. */
+  const char * m_natMethod;           /**< The Network Address Translation method to use. If an empty string
+                                           and m_natServer is not empty, then "STUN" is assumed. For backward
+                                           compatibility, if this is a host name or IP address of then a
+                                           "Fixed" method for the NAT router is used. */
+  const char * m_natServer;           /**< The host name or IP address of the NAT (e.g. STUN) server which may
+                                           be used to determine the NAT router characteristics automatically. */
   unsigned     m_tcpPortBase;         /**< Base of range of ports to use for TCP communications. This may
                                            be required by some firewalls. */
   unsigned     m_tcpPortMax;          /**< Max of range of ports to use for TCP communications. This may

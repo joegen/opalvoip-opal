@@ -33,120 +33,110 @@
 // -ttttt c:\temp\testfax.tif sip:fax@10.0.1.11
 // -ttttt c:\temp\incoming.tif
 
-PCREATE_PROCESS(FaxOPAL);
+extern const char Manufacturer[] = "Vox Gratia";
+extern const char Application[] = "OPAL Fax";
+typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
+PCREATE_PROCESS(MyApp);
 
 
-FaxOPAL::FaxOPAL()
-  : PProcess("OPAL T.38 Fax", "FaxOPAL", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
-  , m_manager(NULL)
+static void PrintOption(ostream & strm, const char * name, const char * type)
 {
-}
-
-
-FaxOPAL::~FaxOPAL()
-{
-  delete m_manager;
-}
-
-
-static void PrintOption(const char * name, const char * type)
-{
-  cerr << "  " << setw(22) << name << ' ' << type << " (";
+  strm << "  " << setw(22) << name << ' ' << type << " (";
   if (strcmp(type, "string") == 0)
-    cerr << OpalT38.GetOptionString(name).ToLiteral();
+    strm << OpalT38.GetOptionString(name).ToLiteral();
   else if (strcmp(type, "bool") == 0)
-    cerr << (OpalT38.GetOptionBoolean(name) ? "true" : "false");
+    strm << (OpalT38.GetOptionBoolean(name) ? "true" : "false");
   else {
     PString value;
     OpalT38.GetOptionValue(name, value);
-    cerr << value;
+    strm << value;
   }
-  cerr << ")\n";
+  strm << ")\n";
 }
 
 
-void FaxOPAL::Main()
+PString MyManager::GetArgumentSpec() const
 {
-  SetTerminationValue(1);
-
-  m_manager = new MyManager();
-
-  PArgList & args = GetArguments();
-
-  if (!args.Parse("[Available options are:]"
-            "d-directory: Set default directory for fax receive.\n"
-            "-station-id: Set T.30 Station Identifier string.\n"
-            "-header-info: Set transmitted fax page header string.\n"
-            "a-audio. Send fax as G.711 audio.\n"
-            "A-no-audio. No audio phase at all, starts T.38 immediately.\n"
-            "F-no-fallback. Do not fall back to audio if T.38 switch fails.\n"
-            "e-switch-on-ced. Switch to T.38 on receipt of CED tone as caller.\n"
-            "X-switch-time: Set fail safe T.38 switch time in seconds.\n"
-            "T-timeout: Set timeout to wait for fax rx/tx to complete in seconds.\n"
-            "q-quiet. Only output error conditions.\n"
+  return "[Fax options:]"
+         "d-directory: Set default directory for fax receive.\n"
+         "-station-id: Set T.30 Station Identifier string.\n"
+         "-header-info: Set transmitted fax page header string.\n"
+         "a-audio. Send fax as G.711 audio.\n"
+         "A-no-audio. No audio phase at all, starts T.38 immediately.\n"
+         "F-no-fallback. Do not fall back to audio if T.38 switch fails.\n"
+         "e-switch-on-ced. Switch to T.38 on receipt of CED tone as caller.\n"
+         "X-switch-time: Set fail safe T.38 switch time in seconds.\n"
+         "T-timeout: Set timeout to wait for fax rx/tx to complete in seconds.\n"
+         "q-quiet. Only output error conditions.\n"
 #if OPAL_STATISTICS
-            "v-verbose. Output statistics during fax operation\n"
+         "v-verbose. Output statistics during fax operation\n"
 #endif
-            + m_manager->GetArgumentSpec(), false) || args.HasOption('h')) {
-    args.Usage(cerr, "[ options ] filename [ remote-url ]") << "\n"
+       + OpalManagerConsole::GetArgumentSpec();
+}
+
+
+void MyManager::Usage(ostream & strm, const PArgList & args)
+{
+  args.Usage(strm,
+             "[ options ] filename [ remote-url ]") << "\n"
             "Specific T.38 format options (using -O/--option):\n";
-    PrintOption("Station-Identifier",    "string");
-    PrintOption("Header-Info",           "string");
-    PrintOption("Use-ECM",               "bool");
-    PrintOption("T38FaxVersion",         "integer");
-    PrintOption("T38FaxRateManagement",  "localTCF or transferredTCF");
-    PrintOption("T38MaxBitRate",         "integer");
-    PrintOption("T38FaxMaxBuffer",       "integer");
-    PrintOption("T38FaxMaxDatagram",     "integer");
-    PrintOption("T38FaxUdpEC",           "t38UDPFEC or t38UDPRedundancy");
-    PrintOption("T38FaxFillBitRemoval",  "bool");
-    PrintOption("T38FaxTranscodingMMR",  "bool");
-    PrintOption("T38FaxTranscodingJBIG", "bool");
-    cerr << "\n"
-            "e.g. " << GetFile().GetTitle() << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
-            "\n"
-            "     " << GetFile().GetTitle() << " received_fax.tif\n\n";
-    return;
+  PrintOption(strm, "Station-Identifier",    "string");
+  PrintOption(strm, "Header-Info",           "string");
+  PrintOption(strm, "Use-ECM",               "bool");
+  PrintOption(strm, "T38FaxVersion",         "integer");
+  PrintOption(strm, "T38FaxRateManagement",  "localTCF or transferredTCF");
+  PrintOption(strm, "T38MaxBitRate",         "integer");
+  PrintOption(strm, "T38FaxMaxBuffer",       "integer");
+  PrintOption(strm, "T38FaxMaxDatagram",     "integer");
+  PrintOption(strm, "T38FaxUdpEC",           "t38UDPFEC or t38UDPRedundancy");
+  PrintOption(strm, "T38FaxFillBitRemoval",  "bool");
+  PrintOption(strm, "T38FaxTranscodingMMR",  "bool");
+  PrintOption(strm, "T38FaxTranscodingJBIG", "bool");
+  strm << "\n"
+          "e.g. " << args.GetCommandName() << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
+          "\n"
+          "     " << args.GetCommandName() << " received_fax.tif\n\n";
+}
+
+
+bool MyManager::Initialise(PArgList & args, bool, const PString &)
+{
+  if (!args.Parse(GetArgumentSpec())) {
+    Usage(cerr, args);
+    return false;
   }
 
-  PTRACE_INITIALISE(args);
-
-  static char const * FormatMask[] = { "!G.711*", "!@fax" };
-  m_manager->SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
-
-  PString prefix;
+  PString prefix = args.HasOption('a') && !args.HasOption('A') ?  "fax" : "t38";
 
   if (args.HasOption('q'))
     cout.rdbuf(NULL);
+
+  if (!OpalManagerConsole::Initialise(args, !args.HasOption('q'), prefix + ":" + args[0] + ";receive"))
+    return false;
+
+  static char const * FormatMask[] = { "!G.711*", "!@fax" };
+  SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
 
   cout << "Fax Mode: ";
   if (args.HasOption('A')) {
     OpalMediaType::Fax()->SetAutoStart(OpalMediaType::ReceiveTransmit);
     OpalMediaType::Audio()->SetAutoStart(OpalMediaType::DontOffer);
     cout << "Offer T.38 only";
-    prefix = "t38";
   }
-  else if (args.HasOption('a')) {
+  else if (args.HasOption('a'))
     cout << "Audio Only";
-    prefix = "fax";
-  }
-  else {
+  else
     cout << "Switch to T.38";
-    prefix = "t38";
-  }
   cout << '\n';
 
-  if (!m_manager->Initialise(args, !args.HasOption('q'), prefix + ":" + args[0] + ";receive"))
-    return;
-
   // Create audio or T.38 fax endpoint.
-  MyFaxEndPoint * fax  = new MyFaxEndPoint(*m_manager);
+  MyFaxEndPoint * fax  = new MyFaxEndPoint(*this);
   if (args.HasOption('d'))
     fax->SetDefaultDirectory(args.GetOptionString('d'));
 
   if (!fax->IsAvailable()) {
     cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
-    return;
+    return false;
   }
 
   OpalConnection::StringOptions stringOptions;
@@ -181,11 +171,13 @@ void FaxOPAL::Main()
   else
     cout << "No T.38 switch timeout set\n";
 
-  m_manager->SetDefaultConnectionOptions(stringOptions);
+  SetDefaultConnectionOptions(stringOptions);
+
+  m_showProgress = args.HasOption('v');
 
   // Wait for call to come in and finish (default one year)
-  PSimpleTimer timeout(args.GetOptionString('T', "365:0:0:0"));
-  cout << "Completion timeout is " << timeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
+  m_competionTimeout = PTimeInterval(args.GetOptionString('T', "365:0:0:0"));
+  cout << "Completion timeout is " << m_competionTimeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
 
   if (args.GetCount() == 1)
     cout << "Receive directory: " << fax->GetDefaultDirectory() << "\n"
@@ -193,31 +185,35 @@ void FaxOPAL::Main()
             "Awaiting incoming fax, saving as " << args[0];
   else {
     cout << '\n';
-    if (m_manager->SetUpCall(prefix + ":" + args[0], args[1]) == NULL) {
+    if (SetUpCall(prefix + ":" + args[0], args[1]) == NULL) {
       cerr << "Could not start call to \"" << args[1] << '"' << endl;
-      return;
+      return false;
     }
     cout << "Sending " << args[0] << " to " << args[1];
   }
   cout << " ..." << endl;
 
-  SetTerminationValue(2);
+  return true;
+}
 
+
+void MyManager::Run()
+{
 #if OPAL_STATISTICS
   map<PString, OpalMediaStatistics> lastStatisticsByToken;
 #endif
 
-  while (!m_manager->m_completed.Wait(1000)) {
-    if (timeout.HasExpired()) {
+  while (!m_endRun.Wait(1000)) {
+    if (m_competionTimeout.HasExpired()) {
       cout << " no call";
       break;
     }
 
 #if OPAL_STATISTICS
-    if (args.HasOption('v')) {
-      PArray<PString> tokens = m_manager->GetAllCalls();
+    if (m_showProgress) {
+      PArray<PString> tokens = GetAllCalls();
       for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
-        PSafePtr<OpalCall> call = m_manager->FindCallWithLock(tokens[i], PSafeReadOnly);
+        PSafePtr<OpalCall> call = FindCallWithLock(tokens[i], PSafeReadOnly);
         if (call != NULL) {
           PSafePtr<OpalFaxConnection> connection = call->GetConnectionAs<OpalFaxConnection>();
           if (connection != NULL) {
@@ -252,16 +248,6 @@ void FaxOPAL::Main()
 }
 
 
-bool FaxOPAL::OnInterrupt(bool)
-{
-  if (m_manager == NULL)
-    return false;
-
-  m_manager->m_completed.Signal();
-  return true;
-}
-
-
 void MyManager::OnClearedCall(OpalCall & call)
 {
   switch (call.GetCallEndReason()) {
@@ -273,7 +259,7 @@ void MyManager::OnClearedCall(OpalCall & call)
       cerr << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
-  m_completed.Signal();
+  EndRun();
 }
 
 

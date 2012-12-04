@@ -509,8 +509,8 @@ PBoolean MyManager::Initialise(PArgList & args)
   cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n";
 
   if (args.HasOption("translate")) {
-    SetTranslationAddress(args.GetOptionString("translate"));
-    cout << "External address set to " << GetTranslationAddress() << '\n';
+    SetNATServer("Fixed", args.GetOptionString("translate"));
+    cout << "External address set to " << GetNATServer() << '\n';
   }
 
   if (args.HasOption("portbase")) {
@@ -553,7 +553,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
 #ifdef P_STUN
   if (args.HasOption("stun"))
-    SetSTUNServer(args.GetOptionString("stun"));
+    SetNATServer("STUN", args.GetOptionString("stun"));
 
   if (m_natMethod != NULL)
     cout << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatTypeName();

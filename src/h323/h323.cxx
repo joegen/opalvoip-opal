@@ -3867,9 +3867,19 @@ void H323Connection::InternalEstablishedConnectionCheck()
     case SetUpPhase :
     case ProceedingPhase :
     case AlertingPhase :
-      if ( connectionState == HasExecutedSignalConnect &&
-           FindChannel(H323Capability::DefaultAudioSessionID, true) != NULL)
-        OnConnectedInternal();
+      if (connectionState == HasExecutedSignalConnect) {
+        bool hasEstablishedChannel = false;
+        bool inProgressChannel = false;
+        for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                              it != logicalChannels->GetChannels().end(); ++it) {
+          if (it->second.IsEstablished())
+            hasEstablishedChannel = true;
+          if (it->second.IsAwaitingEstablishment())
+            inProgressChannel = true;
+        }
+        if (hasEstablishedChannel && !inProgressChannel)
+          OnConnectedInternal();
+      }
       break;
 
     case ConnectedPhase :
