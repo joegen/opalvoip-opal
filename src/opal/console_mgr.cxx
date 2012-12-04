@@ -43,6 +43,7 @@
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
+#include <ptclib/pstun.h>
 
 
 static void PrintVersion(ostream & strm)
