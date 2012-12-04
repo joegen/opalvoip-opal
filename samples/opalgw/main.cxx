@@ -58,7 +58,11 @@ static const char UDPPortMaxKey[] = "UDP Port Max";
 static const char RTPPortBaseKey[] = "RTP Port Base";
 static const char RTPPortMaxKey[] = "RTP Port Max";
 static const char RTPTOSKey[] = "RTP Type of Service";
+#if P_NAT
+static const char NATMethodKey[] = "NAT Method";
+static const char NATServerKey[] = "NAT Server";
 static const char STUNServerKey[] = "STUN Server";
+#endif
 
 #if OPAL_SIP
 static const char SIPUsernameKey[] = "SIP User Name";
@@ -445,10 +449,17 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService(),
             "", "Value for DIFSERV Quality of Service"));
 
-  PString STUNServer = cfg.GetString(STUNServerKey, GetSTUNServer());
-  SetSTUNServer(STUNServer);
-  rsrc->Add(new PHTTPStringField(STUNServerKey, 25, STUNServer,
-            "STUN server IP/hostname for NAT traversal"));
+#if P_NAT
+  {
+    PString method = cfg.GetString(NATMethodKey, PSTUNClient::GetNatMethodName());
+    PString server = cfg.GetString(NATServerKey, cfg.GetString(STUNServerKey, GetNATServer()));
+    SetNATServer(method, server);
+    rsrc->Add(new PHTTPStringField(NATMethodKey, 25, method,
+              "Mothod for NAT traversal"));
+    rsrc->Add(new PHTTPStringField(NATServerKey, 25, server,
+              "Server IP/hostname for NAT traversal"));
+  }
+#endif // P_NAT
 
 #if OPAL_H323
   if (!m_h323EP->Initialise(cfg, rsrc))

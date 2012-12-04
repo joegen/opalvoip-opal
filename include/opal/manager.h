@@ -1430,30 +1430,6 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress
     );
 
-    /**Get the translation host to use for TranslateIPAddress().
-      */
-    const PString & GetTranslationHost() const { return translationHost; }
-
-    /**Set the translation host to use for TranslateIPAddress().
-      */
-    bool SetTranslationHost(
-      const PString & host
-    );
-
-    /**Get the translation address to use for TranslateIPAddress().
-      */
-    const PIPSocket::Address & GetTranslationAddress() const { return translationAddress; }
-
-    /**Test if the translation address to use for TranslateIPAddress() is usable.
-      */
-    bool HasTranslationAddress() const { return translationAddress.IsValid() && !translationAddress.IsAny(); }
-
-    /**Set the translation address to use for TranslateIPAddress().
-      */
-    void SetTranslationAddress(
-      const PIPSocket::Address & address
-    );
-
 #if P_NAT
     /** Get all NAT Methods
       */
@@ -1468,39 +1444,65 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
 
+    /**Set the NAT method to use.
+      */
     bool SetNATServer(
       const PString & method,
       const PString & server
     );
 
-
     /**Get the current host name and optional port for the STUN server.
       */
     PString GetNATServer() const 
     { 
-      return (m_natMethod == NULL) ? PString::Empty() : m_natServer; 
+      return (m_natMethod == NULL) ? PString::Empty() : m_natMethod->GetServer();
     }
 
-#ifdef P_STUN
+    /**Get the translation host to use for TranslateIPAddress().
+      */
+    P_DEPRECATED PString GetTranslationHost() const;
 
+    /**Set the translation host to use for TranslateIPAddress().
+      */
+    P_DEPRECATED bool SetTranslationHost(
+      const PString & host
+    );
+
+    /**Get the translation address to use for TranslateIPAddress().
+      */
+    P_DEPRECATED PIPSocket::Address GetTranslationAddress() const;
+
+    /**Set the translation address to use for TranslateIPAddress().
+      */
+    P_DEPRECATED void SetTranslationAddress(
+      const PIPSocket::Address & address
+    );
+
+    /**Test if the translation address to use for TranslateIPAddress() is usable.
+      */
+    P_DEPRECATED bool HasTranslationAddress() const;
+
+#ifdef P_STUN
     /**Set the STUN server address, is of the form host[:port]
        Note that if the STUN server is found then the translationAddress
        is automatically set to the router address as determined by STUN.
       */
-    PSTUNClient::NatTypes SetSTUNServer(
+    P_DEPRECATED PSTUNClient::NatTypes SetSTUNServer(
       const PString & server
-    );
+    ) {
+      return SetNATServer(PSTUNClient::GetNatMethodName(), server) ? m_natMethod->GetNatType() : PSTUNClient::UnknownNat;
+    }
 
     /**Get the current host name and optional port for the STUN server.
       */
-    PString GetSTUNServer() const 
+    P_DEPRECATED PString GetSTUNServer() const 
     { 
-      return (dynamic_cast<PSTUNClient *>(m_natMethod) == NULL) ? PString::Empty() : m_natServer; 
+      return (dynamic_cast<PSTUNClient *>(m_natMethod) == NULL) ? PString::Empty() : m_natMethod->GetServer(); 
     }
 
     /**Return the STUN client instance in use.
       */
-    PSTUNClient * GetSTUNClient() const { PSTUNClient * stun = dynamic_cast<PSTUNClient *>(m_natMethod); return stun; }
+    P_DEPRECATED PSTUNClient * GetSTUNClient() const { return dynamic_cast<PSTUNClient *>(m_natMethod); }
 #endif // P_STUN
 #endif // P_NAT
 
@@ -1960,10 +1962,7 @@ class OpalManager : public PObject
     bool      m_autoCreateCertificate;
 #endif
 
-    PString            translationHost;
-    PIPSocket::Address translationAddress;
 #if P_NAT
-    PString            m_natServer;
     PNatStrategy     * m_natMethods;
     PNatMethod       * m_natMethod;
     PDECLARE_InterfaceNotifier(OpalManager, OnInterfaceChange);

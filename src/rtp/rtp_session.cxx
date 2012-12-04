@@ -1865,6 +1865,7 @@ bool OpalRTPSession::Shutdown(bool reading)
         if (!m_dataSocket->WriteTo("", 1, addrAndPort)) {
           PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not write to unblock read socket: "
                  << m_dataSocket->GetErrorText(PChannel::LastReadError));
+          m_dataSocket->Close();
         }
       }
     }
@@ -2077,6 +2078,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
       PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
+      m_connection.OnMediaFailed(m_sessionId, true);
       return e_AbortTransport;
   }
 }
@@ -2221,7 +2223,7 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
   WORD port = toDataChannel ? m_remoteDataPort : m_remoteControlPort;
 
   while (!socket.WriteTo(framePtr, frameSize, m_remoteAddress, port)) {
-    switch (socket.GetErrorNumber()) {
+    switch (socket.GetErrorNumber(PChannel::LastWriteError)) {
       case ECONNRESET :
       case ECONNREFUSED :
         if (HandleUnreachable(PTRACE_PARAM(toDataChannel ? "Data" : "Control")))
@@ -2234,6 +2236,7 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
                << (toDataChannel ? "data" : "control") << " port ("
                << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
                << socket.GetErrorText(PChannel::LastWriteError));
+        m_connection.OnMediaFailed(m_sessionId, false);
         return false;
     }
   }

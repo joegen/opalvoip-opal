@@ -30,63 +30,37 @@
 #include "main.h"
 
 
+extern const char Manufacturer[] = "Vox Gratia";
+extern const char Application[] = "OPAL External RTP";
+typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
+PCREATE_PROCESS(MyApp);
 
-PCREATE_PROCESS(MyProcess);
 
-
-MyProcess::MyProcess()
-  : PProcess("Vox Gratia", "MyProcess", 1, 0, ReleaseCode, 0)
-  , m_manager(NULL)
+bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 {
-}
-
-
-void MyProcess::Main()
-{
-  m_manager = new MyManager();
-
-  PArgList & args = GetArguments();
-
-  if (!args.Parse(m_manager->GetArgumentSpec()) || args.HasOption('h') || args.GetCount() == 0) {
-    PString name = GetFile().GetTitle();
-    cerr << "usage: " << name << " [ options ] [ -l | url ]\n"
-            "\n"
-            "Available options are:\n"
-         << m_manager->GetArgumentUsage()
-         << "\n"
-            "\n";
-    return;
-  }
-
-  if (!m_manager->Initialise(args, true))
-    return;
-
+  if (!OpalManagerConsole::Initialise(args, verbose, EXTERNAL_SCHEME ":"))
+    return false;
 
   // Set up local endpoint
-  new MyLocalEndPoint(*m_manager);
+  new MyLocalEndPoint(*this);
 
 
-  m_manager->AddRouteEntry("sip.*:.* = " EXTERNAL_SCHEME ":");
-  m_manager->AddRouteEntry("h323.*:.* = " EXTERNAL_SCHEME ":");
-
-
-  if (args.HasOption('l'))
+  if (args.HasOption('l')) {
     cout << "Awaiting incoming call ... " << flush;
-  else {
-    PString token;
-    if (!m_manager->SetUpCall(EXTERNAL_SCHEME ":", args[0], token)) {
-      cerr << "Could not start call to \"" << args[0] << '"' << endl;
-      return;
-    }
+    return true;
   }
 
-  // Wait for call to come in and finish
-  m_manager->m_completed.Wait();
-  cout << "Completed." << endl;
+  if (args.GetCount() == 0) {
+    Usage(cerr, args);
+    return false;
+  }
 
-  MyManager * mgr = m_manager;
-  m_manager = NULL;
-  delete mgr;
+  PString token;
+  if (SetUpCall(EXTERNAL_SCHEME ":", args[0], token))
+    return true;
+
+  cerr << "Could not start call to \"" << args[0] << '"' << endl;
+  return false;
 }
 
 
@@ -110,17 +84,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 void MyManager::OnClearedCall(OpalCall & call)
 {
   if (call.GetPartyA().NumCompare(EXTERNAL_SCHEME) == EqualTo)
-    m_completed.Signal();
-}
-
-
-bool MyProcess::OnInterrupt(bool)
-{
-  if (m_manager == NULL)
-    return false;
-
-  m_manager->m_completed.Signal();
-  return true;
+    EndRun();
 }
 
 

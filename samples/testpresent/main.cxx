@@ -28,7 +28,7 @@
 
 #include <ptlib.h>
 
-#include <ptclib/cli.h>
+#include <opal/console_mgr.h>
 #include <sip/sippres.h>
 
 #if P_EXPAT
@@ -44,43 +44,35 @@
 
 //////////////////////////////////////////////////////////////
 
-class MyManager : public OpalManager
+class MyManager : public OpalManagerCLI
 {
-  PCLASSINFO(MyManager, OpalManager)
+  PCLASSINFO(MyManager, OpalManagerCLI)
   public:
-};
+    MyManager();
+    ~MyManager();
 
+    PString GetArgumentSpec() const;
+    void Usage(ostream & strm, const PArgList & args);
+    bool Initialise(PArgList & args, bool verbose);
+    void AddPresentityCmd(PArgList & args);
 
-class TestPresEnt : public PProcess
-{
-  PCLASSINFO(TestPresEnt, PProcess)
-
-  public:
-    TestPresEnt();
-    ~TestPresEnt();
-
-    PDECLARE_AuthorisationRequestNotifier(TestPresEnt, AuthorisationRequest);
-    PDECLARE_PresenceChangeNotifier(TestPresEnt, PresenceChange);
-
-    virtual void Main();
-
-    void AddPresentity(PArgList & args);
+    PDECLARE_AuthorisationRequestNotifier(MyManager, AuthorisationRequest);
+    PDECLARE_PresenceChangeNotifier(MyManager, PresenceChange);
 
   private:
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdCreate);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdList);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSubscribeToPresence);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdUnsubscribeToPresence);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdPresenceAuthorisation);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdSetLocalPresence);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyList);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyAdd);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddyRemove);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdBuddySusbcribe);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdDelay);
-    PDECLARE_NOTIFIER(PCLI::Arguments, TestPresEnt, CmdQuit);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdCreate);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdList);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSubscribeToPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdUnsubscribeToPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdPresenceAuthorisation);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSetLocalPresence);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdBuddyList);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdBuddyAdd);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdBuddyRemove);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdBuddySusbcribe);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdDelay);
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdQuit);
 
-    MyManager * m_manager;
     PString     m_presenceAgent;
     PString     m_xcapRoot;
     PString     m_xcapAuthID;
@@ -89,26 +81,112 @@ class TestPresEnt : public PProcess
 };
 
 
-PCREATE_PROCESS(TestPresEnt);
+extern const char Manufacturer[] = "Vox Gratia";
+extern const char Application[] = "OPAL Test Presentity";
+typedef OpalConsoleProcess<MyManager, Manufacturer, Application> MyApp;
+PCREATE_PROCESS(MyApp);
 
-TestPresEnt::TestPresEnt()
-  : PProcess("OPAL Test Presentity", "TestPresEnt", OPAL_MAJOR, OPAL_MINOR, ReleaseCode, OPAL_BUILD)
-  , m_manager(NULL)
+
+#define URL_OPTIONS "[Available URL options are:]" \
+                    "a-auth-id: Authorisation ID, default to URL username.\n" \
+                    "p-password: Authorisation password.\n" \
+                    "s-sub-protocol: set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
+
+PString MyManager::GetArgumentSpec() const
+{
+  PString spec = OpalManagerCLI::GetArgumentSpec();
+  PINDEX pos = spec.Find("p-password");
+  spec.Delete(pos, spec.Find('\n', pos)-pos);
+  return "[Application options:]"
+         "A-presence-agent: set presence agent default address.\n"
+         "X-xcap-server: set XCAP server root URL.\n"
+         "-xcap-auth-id: set XCAP server authorisation ID.\n"
+         "-xcap-password: set XCAP server authorisation password.\n"
+         URL_OPTIONS
+         + spec;
+}
+
+
+void MyManager::Usage(ostream & strm, const PArgList & args)
+{
+  args.Usage(strm,
+             "[ global-options ] { [ url-options ] url } ...") << "\n"
+             "e.g. " << args.GetCommandName() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
+             ;
+}
+
+
+bool MyManager::Initialise(PArgList & args, bool verbose)
+{
+  if (!OpalManagerCLI::Initialise(args, verbose))
+    return false;
+
+  m_presenceAgent = args.GetOptionString('P');
+  m_xcapRoot = args.GetOptionString('X');
+  m_xcapAuthID = args.GetOptionString("xcap-auth-id");
+  m_xcapPassword = args.GetOptionString("xcap-password");
+
+  if (args.GetCount() != 0) {
+    do {
+      AddPresentityCmd(args);
+    } while (args.Parse(URL_OPTIONS));
+
+    if (m_presentities.GetSize() == 0) {
+      cerr << "error: no presentities available" << endl;
+      return false;
+    }
+  }
+
+  m_cli->SetPrompt("PRES> ");
+  m_cli->SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
+                    "Create presentity.",
+                    "[ -a -p -s ] <url>", URL_OPTIONS);
+  m_cli->SetCommand("show", PCREATE_NOTIFIER(CmdList),
+                    "Show presentities.");
+  m_cli->SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
+                    "Subscribe to presence state for presentity.",
+                    "<url-watcher> <url-watched>");
+  m_cli->SetCommand("unsubscribe", PCREATE_NOTIFIER(CmdUnsubscribeToPresence),
+                    "Subscribe to presence state for presentity.",
+                    "<url-watcher> <url-watched>");
+  m_cli->SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
+                    "Authorise a presentity to see local presence.",
+                    "<url-watched> <url-watcher> [ deny | deny-politely | remove ]");
+  m_cli->SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
+                    "Publish local presence state for presentity.",
+                    "<url> { available | unavailable | busy } [ <note> ]");
+  m_cli->SetCommand("buddy list\nshow buddies", PCREATE_NOTIFIER(CmdBuddyList),
+                    "Show buddy list for presentity.",
+                    "<presentity>");
+  m_cli->SetCommand("buddy add\nadd buddy", PCREATE_NOTIFIER(CmdBuddyAdd),
+                    "Add buddy to list for presentity.",
+                    "<presentity> <url-buddy> <display-name>");
+  m_cli->SetCommand("buddy remove\ndel buddy", PCREATE_NOTIFIER(CmdBuddyRemove),
+                    "Delete buddy from list for presentity.",
+                    "<presentity> <url-buddy>");
+  m_cli->SetCommand("buddy subscribe", PCREATE_NOTIFIER(CmdBuddySusbcribe),
+                    "Susbcribe to all URIs in the buddy list for presentity.",
+                    "<presentity>");
+
+  return true;
+}
+
+
+MyManager::MyManager()
 {
   m_presentities.DisallowDeleteObjects();
 }
 
 
-TestPresEnt::~TestPresEnt()
+MyManager::~MyManager()
 {
   m_presentities.RemoveAll();
-  delete m_manager; 
 }
 
 
-void TestPresEnt::AddPresentity(PArgList & args)
+void MyManager::AddPresentityCmd(PArgList & args)
 {
-  PSafePtr<OpalPresentity> presentity = m_manager->AddPresentity(args[0]);
+  PSafePtr<OpalPresentity> presentity = AddPresentity(args[0]);
   if (presentity == NULL) {
     cerr << "error: cannot create presentity for \"" << args[0] << '"' << endl;
     return;
@@ -139,156 +217,23 @@ void TestPresEnt::AddPresentity(PArgList & args)
   }
   else {
     cerr << "error: cannot open presentity \"" << args[0] << '"' << endl;
-    m_manager->RemovePresentity(args[0]);
+    RemovePresentity(args[0]);
   }
 }
 
 
-void TestPresEnt::Main()
-{
-  PArgList & args = GetArguments();
-#define URL_OPTIONS "[Available URL options are:]" \
-                    "a-auth-id: Authorisation ID, default to URL username.\n" \
-                    "p-password: Authorisation password.\n" \
-                    "s-sub-protocol: set sub-protocol, one of PeerToPeer, Agent, XCAP or OMA\n"
-  args.Parse("[Available global options are:]"
-             "f-file: name of script file to execute.\n"
-             "L-listener: set listener address:port.\n"
-             "P-presence-agent: set presence agent default address.\n"
-#if OPAL_PTLIB_STUN
-             "S-stun: set STUN server address.\n"
-#endif
-             "T-translation: set NAT translation address.\n"
-             "X-xcap-server: set XCAP server root URL.\n"
-             "-xcap-auth-id: set XCAP server authorisation ID.\n"
-             "-xcap-password: set XCAP server authorisation password.\n"
-             "-proxy: set outbound proxy.\n"
-             URL_OPTIONS
-             "[Debugging]"
-             PTRACE_ARGLIST
-             "h-help.");
-  if (!args.IsParsed() || args.HasOption('h')) {
-    args.Usage(cerr, "[ global-options ] { [ url-options ] url } ...") << "\n"
-               "e.g. " << GetFile().GetTitle() << " -X http://xcap.bloggs.com -p passone sip:fred1@bloggs.com -p passtwo sip:fred2@bloggs.com\n"
-               ;
-    return;
-  }
-
-  PTRACE_INITIALISE(args);
-
-  m_manager = new MyManager();
-
-  if (args.HasOption('T'))
-    m_manager->SetTranslationHost(args.GetOptionString('T'));
-
-  PString listeners = args.GetOptionString('L');
-
-#if OPAL_PTLIB_STUN
-  if (args.HasOption('S')) {
-    cout << "Executing STUN lookup..." << flush;
-    m_manager->SetSTUNServer(args.GetOptionString('S'));
-    PSTUNClient * stun = m_manager->GetSTUNClient();
-    if (stun != NULL)
-      cout << stun->GetNatTypeName();
-    else
-      cout << "(unknown)";
-    cout << "...done" << endl;
-    if ((stun != NULL) && (stun->GetNatType() != PSTUNClient::OpenNat))
-      listeners = "udp$*:*";
-  }
-#endif
-
-  m_presenceAgent = args.GetOptionString('P');
-  m_xcapRoot = args.GetOptionString('X');
-  m_xcapAuthID = args.GetOptionString("xcap-auth-id");
-  m_xcapPassword = args.GetOptionString("xcap-password");
-
-  SIPEndPoint * sip  = new SIPEndPoint(*m_manager);
-  if (!sip->StartListeners(listeners)) {
-    cerr << "Could not start SIP listeners." << endl;
-    return;
-  }
-
-  if (args.HasOption("proxy"))
-    sip->SetProxy(args.GetOptionString("proxy"));
-
-  if (args.GetCount() != 0) {
-    do {
-      AddPresentity(args);
-    } while (args.Parse(URL_OPTIONS));
-
-    if (m_presentities.GetSize() == 0) {
-      cerr << "error: no presentities available" << endl;
-      return;
-    }
-  }
-
-  PCLIStandard cli;
-  cli.SetPrompt("PRES> ");
-  cli.SetCommand("create", PCREATE_NOTIFIER(CmdCreate),
-                 "Create presentity.",
-                 "[ -a -p -s ] <url>", URL_OPTIONS);
-  cli.SetCommand("list", PCREATE_NOTIFIER(CmdList),
-                 "List presentities.");
-  cli.SetCommand("subscribe", PCREATE_NOTIFIER(CmdSubscribeToPresence),
-                 "Subscribe to presence state for presentity.",
-                 "<url-watcher> <url-watched>");
-  cli.SetCommand("unsubscribe", PCREATE_NOTIFIER(CmdUnsubscribeToPresence),
-                 "Subscribe to presence state for presentity.",
-                 "<url-watcher> <url-watched>");
-  cli.SetCommand("authorise", PCREATE_NOTIFIER(CmdPresenceAuthorisation),
-                 "Authorise a presentity to see local presence.",
-                 "<url-watched> <url-watcher> [ deny | deny-politely | remove ]");
-  cli.SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
-                 "Publish local presence state for presentity.",
-                 "<url> { available | unavailable | busy } [ <note> ]");
-  cli.SetCommand("buddy list\nshow buddies", PCREATE_NOTIFIER(CmdBuddyList),
-                 "Show buddy list for presentity.",
-                 "<presentity>");
-  cli.SetCommand("buddy add\nadd buddy", PCREATE_NOTIFIER(CmdBuddyAdd),
-                 "Add buddy to list for presentity.",
-                 "<presentity> <url-buddy> <display-name>");
-  cli.SetCommand("buddy remove\ndel buddy", PCREATE_NOTIFIER(CmdBuddyRemove),
-                 "Delete buddy from list for presentity.",
-                 "<presentity> <url-buddy>");
-  cli.SetCommand("buddy subscribe", PCREATE_NOTIFIER(CmdBuddySusbcribe),
-                 "Susbcribe to all URIs in the buddy list for presentity.",
-                 "<presentity>");
-  cli.SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
-                  "Delay for n seconds",
-                  "secs");
-  cli.SetCommand("quit\nq\nexit", PCREATE_NOTIFIER(CmdQuit),
-                  "Quit command line interpreter, note quitting from console also shuts down application.");
-
-  if (args.HasOption('f')) {
-    PTextFile scriptFile;
-    if (scriptFile.Open(args.GetOptionString('f'))) {
-      cout << "Running script \"" << scriptFile.GetFilePath() << '"' << endl;
-      cli.RunScript(scriptFile);
-      cout << "Script complete" << endl;
-    }
-    else
-      cerr << "error: cannot open script file '" << args.GetOptionString('f') << "'" << endl;
-  }
-
-  cli.Start(false); // Do not spawn thread, wait till end of input
-
-  cout << "\nExiting ..." << endl;
-}
-
-
-void TestPresEnt::CmdCreate(PCLI::Arguments & args, INT)
+void MyManager::CmdCreate(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() == 0)
     args.WriteUsage();
   else if (m_presentities.Contains(args[0]))
     args.WriteError() << "Presentity \"" << args[0] << "\" already exists." << endl;
   else
-    AddPresentity(args);
+    AddPresentityCmd(args);
 }
 
 
-void TestPresEnt::CmdList(PCLI::Arguments &, INT)
+void MyManager::CmdList(PCLI::Arguments &, INT)
 {
   for (PDictionary<PString, OpalPresentity>::iterator it = m_presentities.end(); it != m_presentities.end(); ++it) {
     PString key = it->first;
@@ -304,7 +249,8 @@ void TestPresEnt::CmdList(PCLI::Arguments &, INT)
   }
 }
 
-void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
+
+void MyManager::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -315,7 +261,7 @@ void TestPresEnt::CmdSubscribeToPresence(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdUnsubscribeToPresence(PCLI::Arguments & args, INT)
+void MyManager::CmdUnsubscribeToPresence(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -326,7 +272,7 @@ void TestPresEnt::CmdUnsubscribeToPresence(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
+void MyManager::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
 {
   OpalPresentity::Authorisation auth = OpalPresentity::AuthorisationPermitted;
   if (args.GetCount() > 2) {
@@ -351,7 +297,7 @@ void TestPresEnt::CmdPresenceAuthorisation(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
+void MyManager::CmdSetLocalPresence(PCLI::Arguments & args, INT)
 {
   PString note;
   if (args.GetCount() > 2)
@@ -372,7 +318,7 @@ void TestPresEnt::CmdSetLocalPresence(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdBuddyList(PCLI::Arguments & args, INT)
+void MyManager::CmdBuddyList(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -392,7 +338,7 @@ void TestPresEnt::CmdBuddyList(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdBuddyAdd(PCLI::Arguments & args, INT)
+void MyManager::CmdBuddyAdd(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -408,7 +354,7 @@ void TestPresEnt::CmdBuddyAdd(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdBuddyRemove(PCLI::Arguments & args, INT)
+void MyManager::CmdBuddyRemove(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 2)
     args.WriteUsage();
@@ -419,7 +365,7 @@ void TestPresEnt::CmdBuddyRemove(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdBuddySusbcribe(PCLI::Arguments & args, INT)
+void MyManager::CmdBuddySusbcribe(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -430,7 +376,7 @@ void TestPresEnt::CmdBuddySusbcribe(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdDelay(PCLI::Arguments & args, INT)
+void MyManager::CmdDelay(PCLI::Arguments & args, INT)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -439,13 +385,13 @@ void TestPresEnt::CmdDelay(PCLI::Arguments & args, INT)
 }
 
 
-void TestPresEnt::CmdQuit(PCLI::Arguments & args, INT)
+void MyManager::CmdQuit(PCLI::Arguments & args, INT)
 {
   args.GetContext().Stop();
 }
 
 
-void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity::AuthorisationRequest request)
+void MyManager::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity::AuthorisationRequest request)
 {
   cout << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
   if (!request.m_note.IsEmpty())
@@ -453,7 +399,7 @@ void TestPresEnt::AuthorisationRequest(OpalPresentity & presentity, OpalPresenti
 }
 
 
-void TestPresEnt::PresenceChange(OpalPresentity & presentity, OpalPresenceInfo info)
+void MyManager::PresenceChange(OpalPresentity & presentity, OpalPresenceInfo info)
 {
   cout << "Presentity " << presentity.GetAOR();
   if (info.m_entity != info.m_target)
