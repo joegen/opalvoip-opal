@@ -173,7 +173,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
   unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
   if (simultaneous == 0)
-    simultaneous = 1;
+    simultaneous = args.HasOption('C') ? 1 : args.GetCount();
 
   if (args.HasOption('c')) {
     if (m_cdrFile.Open(args.GetOptionString('c'), PFile::WriteOnly, PFile::Create)) {
