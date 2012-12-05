@@ -749,12 +749,9 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     return;
   }
 
-  // Remember (possibly new) NAT address
-  m_externalAddress == externalAddress;
-
   if (GetExpire() == 0) {
     // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
-    PTRACE(2, "SIP\tRe-registering with NAT address " << externalAddress);
+    PTRACE(2, "SIP\tRe-registering NAT address change from " << m_externalAddress << " to "  << externalAddress);
     for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
       contact->SetHostAddress(externalAddress);
     SetExpire(m_originalExpireTime);
@@ -762,12 +759,16 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   else {
     /* If we got here then we have done a successful register, but registrar indicated
        that we are behind firewall. Unregister what we just registered */
-    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
+    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact address ("
+           << m_externalAddress << ") required due to NAT address (" << externalAddress << ')');
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
       contact->GetFieldParameters().Remove("expires");
     m_contactAddresses = replyContacts;
     SetExpire(0);
   }
+
+  // Remember (possibly new) NAT address
+  m_externalAddress == externalAddress;
 
   SendRequest(previousState);
   SendStatus(SIP_PDU::Information_Trying, previousState);
