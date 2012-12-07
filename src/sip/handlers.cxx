@@ -340,11 +340,6 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
   // Received a response, so indicate that and collapse the forking on multiple interfaces.
   m_receivedResponse = true;
 
-  m_transactions.Remove(&transaction); // Take this transaction out of list
-
-  // And kill all the rest
-  AbortPendingTransactions();
-
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :

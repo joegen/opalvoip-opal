@@ -2693,8 +2693,20 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
 
   transport->UnlockReadOnly();
 
+  // Take this transaction out of list
+  m_transactions.Remove(&transaction);
+
+  // And kill all the rest
+  AbortPendingTransactions();
+
+  // Then tell endpoint - backward compatibility API
   m_endpoint.OnReceivedResponse(transaction, response);
 
+  // Ignore the pending responses
+  if (response.GetStatusCode()/100 == 1)
+    return;
+
+  // Handling of specific responses
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
