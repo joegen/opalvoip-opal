@@ -691,8 +691,15 @@ bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, b
 PString SIPURLList::ToString() const
 {
   PStringStream strm;
+  strm << *this;
+  return strm;
+}
+
+
+ostream & operator<<(ostream & strm, const SIPURLList & urls)
+{
   bool outputCommas = false;
-  for (const_iterator it = begin(); it != end(); ++it) {
+  for (SIPURLList::const_iterator it = urls.begin(); it != urls.end(); ++it) {
     if (it->IsEmpty())
       continue;
 
