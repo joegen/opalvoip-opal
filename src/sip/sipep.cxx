@@ -1963,9 +1963,6 @@ void SIP_PDU_Work::Work()
   if (PAssertNULL(m_pdu) == NULL)
     return;
 
-  PSafePtr<SIPConnection> connection;
-  bool hasConnection = GetTarget(connection);
-
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
     PString transactionID = m_pdu->GetTransactionID();
     PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
@@ -1979,12 +1976,14 @@ void SIP_PDU_Work::Work()
       PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
   }
-
-  else if (hasConnection) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
-    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
-    connection->OnReceivedPDU(*m_pdu);
-    PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+  else {
+    PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
+    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+    if (connection != NULL) {
+      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
+      connection->OnReceivedPDU(*m_pdu);
+      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+    }
   }
 }
 
