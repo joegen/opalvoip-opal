@@ -121,6 +121,8 @@ class H264Encoder
 
   #if WIN32
     HANDLE m_hNamedPipe;
+    HANDLE m_hEvent;
+    friend class Overlapped;
   #else // WIN32
     char  m_dlName[100];
     char  m_ulName[100];

@@ -384,6 +384,37 @@ static const char DefaultPluginDirs[] = "." DIR_TOKENISER "C:\\PTLib_Plugins";
 
 #include <io.h>
 
+
+class Overlapped : public OVERLAPPED
+{
+  private:
+    HANDLE m_hNamedPipe;
+  public:
+    Overlapped(H264Encoder & enc)
+    {
+      memset(this, 0, sizeof(OVERLAPPED));
+      m_hNamedPipe = enc.m_hNamedPipe;
+      hEvent = enc.m_hEvent;
+      ::ResetEvent(hEvent);
+    }
+
+    bool Completed(LPDWORD bytes = NULL)
+    {
+      DWORD dummy;
+
+      if (GetLastError() != ERROR_IO_PENDING)
+        return false;
+
+      if (WaitForSingleObject(hEvent, 1000) == WAIT_OBJECT_0)
+        return GetOverlappedResult(m_hNamedPipe, this, bytes != NULL ? bytes : &dummy, FALSE) != FALSE;
+
+      CancelIo(m_hNamedPipe);
+      SetLastError(ERROR_TIMEOUT);
+      return false;
+    }
+};
+
+
 static bool IsExecutable(const char * path)
 {
   return _access(path, 4) == 0;
@@ -393,6 +424,7 @@ static bool IsExecutable(const char * path)
 H264Encoder::H264Encoder()
   : m_loaded(false)
   , m_hNamedPipe(NULL)
+  , m_hEvent(NULL)
   , m_startNewFrame(true)
 {
 }
@@ -400,19 +432,32 @@ H264Encoder::H264Encoder()
 
 H264Encoder::~H264Encoder()
 {
-  if (!DisconnectNamedPipe(m_hNamedPipe))
-    PTRACE(1, PipeTraceName, "Failure on disconnecting Pipe (" << GetLastError() << ')');
-  if (!CloseHandle(m_hNamedPipe))
-    PTRACE(1, PipeTraceName, "Failure on closing Handle (" << GetLastError() << ')');
+  if (m_hNamedPipe != NULL) {
+    if (!DisconnectNamedPipe(m_hNamedPipe))
+      PTRACE(1, PipeTraceName, "Failure on disconnecting pipe (" << GetLastError() << ')');
+    if (!CloseHandle(m_hNamedPipe))
+      PTRACE(1, PipeTraceName, "Failure on closing pipe handle (" << GetLastError() << ')');
+  }
+
+  if (m_hEvent != NULL && !CloseHandle(m_hEvent))
+    PTRACE(1, PipeTraceName, "Failure on closing event handle (" << GetLastError() << ')');
 }
 
 
 bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePath)
 {
+  if ((m_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL) {
+    PTRACE(1, PipeTraceName, "Failure on creating event (" << GetLastError() << ')');
+    return false;
+  }
+
   char pipeName[_MAX_PATH];
   _snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d-%p", GetCurrentProcessId(), instance);
   if ((m_hNamedPipe = CreateNamedPipe(pipeName,
-                                      PIPE_ACCESS_DUPLEX, // FILE_FLAG_FIRST_PIPE_INSTANCE (not supported by minGW lib)
+#ifdef _MSC_VER
+                                      FILE_FLAG_FIRST_PIPE_INSTANCE // (not supported by minGW lib)
+#endif
+                                      |PIPE_ACCESS_DUPLEX|FILE_FLAG_OVERLAPPED,
                                       PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // deny via network ACE
                                       1,    // Max instances
                                       4096, // Output buffer
@@ -451,19 +496,20 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
 
   PTRACE(4, PipeTraceName, "Successfully created child process " << pi.dwProcessId << " using " << command);
 
-  if (!ConnectNamedPipe(m_hNamedPipe, NULL) && GetLastError() != ERROR_PIPE_CONNECTED) {
-    PTRACE(1, PipeTraceName, "Could not establish communication with child process (" << GetLastError() << ')');
-    return false;
-  }
+  Overlapped overlapped(*this);
+  if (ConnectNamedPipe(m_hNamedPipe, &overlapped) || GetLastError() == ERROR_PIPE_CONNECTED || overlapped.Completed())
+    return true;
 
-  return true;
+  PTRACE(1, PipeTraceName, "Could not establish communication with child process (" << GetLastError() << ')');
+  return false;
 }
 
 
 bool H264Encoder::ReadPipe(void * ptr, size_t len)
 {
+  Overlapped overlapped(*this);
   DWORD bytesRead;
-  if (ReadFile(m_hNamedPipe, ptr, len, &bytesRead, NULL) && bytesRead == len)
+  if ((ReadFile(m_hNamedPipe, ptr, len, &bytesRead, &overlapped) || overlapped.Completed(&bytesRead)) && bytesRead == len)
     return true;
 
   PTRACE(1, PipeTraceName, "Failure on read (" << GetLastError() << ')');
@@ -473,8 +519,9 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
 
 bool H264Encoder::WritePipe(const void * ptr, size_t len)
 {
+  Overlapped overlapped(*this);
   DWORD bytesWritten;
-  if (WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, NULL) && bytesWritten == len)
+  if ((WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, &overlapped) || overlapped.Completed(&bytesWritten)) && bytesWritten == len)
     return true;
 
   PTRACE(1, PipeTraceName, "Failure on write (" << GetLastError() << ')');
