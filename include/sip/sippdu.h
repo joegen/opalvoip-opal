@@ -250,6 +250,7 @@ class SIPURLList : public std::list<SIPURL>
       bool reversed = false
     );
     PString ToString() const;
+    friend ostream & operator<<(ostream & strm, const SIPURLList & urls);
 };
 
 
