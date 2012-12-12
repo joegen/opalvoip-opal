@@ -236,7 +236,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
                                             SIP_PDU::StatusCodes & reason)
 {
   SIPURL targetURI = transactor.GetTargetURI();
-  PString domain = targetURI.GetHostName();
+  PString domain = targetURI.GetHostPort();
   PString localInterface = transactor.GetInterface();
   PINDEX dnsEntry = transactor.GetDNSEntry();
   OpalTransportAddress remoteAddress;
@@ -265,8 +265,10 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
   // See if already have a link to that remote
   OpalTransportPtr transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
-  if (transport != NULL && transport->IsOpen())
+  if (transport != NULL && transport->IsOpen()) {
+    PTRACE(4, "SIP\tFound existing transport " << *transport);
     return transport;
+  }
 
   if (transport == NULL) {
     // No link, so need to create one
