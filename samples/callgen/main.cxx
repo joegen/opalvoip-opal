@@ -126,11 +126,13 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   videoOutputDevice.deviceName = "NULL";
   videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
 
-  {
-    PFilePath wavFile = args.GetOptionString('W');
-    if (wavFile.IsEmpty())
-      cout << "Not using outgoing audio file." << endl;
-    else if (PFile::Exists(wavFile)) {
+  if (!args.HasOption('W'))
+    cout << "Not using outgoing audio file." << endl;
+  else {
+    PString wavFile = args.GetOptionString('W');
+    PINDEX last = wavFile.GetLength()-1;
+    PWAVFile check;
+    if (check.Open(wavFile[last] == '*' ? wavFile.Left(last) : wavFile, PFile::ReadOnly)) {
       cout << "Using outgoing audio file: " << wavFile << endl;
       pcss->SetSoundChannelRecordDevice(wavFile);
     }
@@ -140,11 +142,12 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     }
   }
 
-  {
-    PFilePath yuvFile = args.GetOptionString('Y');
-    if (yuvFile.IsEmpty())
-      cout << "Not using outgoing video file." << endl;
-    else if (PFile::Exists(yuvFile)) {
+  if (!args.HasOption('Y'))
+    cout << "Not using outgoing video file." << endl;
+  else {
+    PString yuvFile = args.GetOptionString('Y');
+    PINDEX last = yuvFile.GetLength()-1;
+    if (PFile::Exists(yuvFile[last] == '*' ? yuvFile.Left(last) : yuvFile)) {
       cout << "Using outgoing video file: " << yuvFile << endl;
       videoInputDevice.deviceName = yuvFile;
     }
