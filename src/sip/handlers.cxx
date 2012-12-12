@@ -431,9 +431,11 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
   SIPTransactionOwner::OnTransactionFailed(transaction);
 
+  if (transaction.IsCanceled())
+    return;
+
   OnFailed(transaction.GetStatusCode());
-  if (!transaction.IsCanceled())
-    RetryLater(m_offlineExpireTime);
+  RetryLater(m_offlineExpireTime);
 }
 
 
