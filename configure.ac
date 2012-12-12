@@ -398,7 +398,9 @@ dnl     ########################
 dnl MSWIN_DISPLAY     java,Java interface
 dnl MSWIN_CHECK_FILE  java,include\jni.h,OPAL_JAVA=1
 dnl MSWIN_DIR_SYMBOL  java,JAVA_DIR
-dnl MSWIN_CHECK_DIR   java,c:\Program Files\java\jdk*
+dnl MSWIN_CHECK_DIR   java,%JAVA_HOME%\
+dnl MSWIN_CHECK_DIR   java,%ProgramFiles%\java\jdk*
+dnl MSWIN_CHECK_DIR   java,%ProgramW6432%\java\jdk*
 
 AC_ARG_ENABLE([java],
               [AC_HELP_STRING([--enable-java],[enable Java JNI support])],
@@ -421,7 +423,8 @@ dnl MSWIN_DISPLAY    ruby,Ruby interface
 dnl MSWIN_DEFAULT    ruby,Disabled
 dnl MSWIN_CHECK_FILE ruby,ruby.h,OPAL_RUBY=1
 dnl MSWIN_DIR_SYMBOL ruby,RUBY_DIR
-dnl MSWIN_CHECK_DIR  ruby,c:\Program Files\Ruby\include\*
+dnl MSWIN_CHECK_DIR  ruby,%ProgramFiles%\Ruby\include\*
+dnl MSWIN_CHECK_DIR  ruby,%ProgramW6432%\Ruby\include\*
 dnl MSWIN_CHECK_DIR  ruby,c:\Ruby\include\*
 dnl MSWIN_CHECK_DIR  ruby,c:\tools\Ruby\include\*
 
@@ -564,8 +567,8 @@ dnl MSWIN_DISPLAY    rfc2435,RFC2435 JPEG Video support (experimental)
 dnl MSWIN_DEFAULT    rfc2435,Disabled
 dnl MSWIN_CHECK_FILE rfc2435,jpeglib.h,OPAL_RFC2435=1
 dnl MSWIN_DIR_SYMBOL rfc2435,JPEGLIB_DIR
-dnl MSWIN_CHECK_DIR  rfc2435,C:\Program Files\GnuWin32\include\
-dnl MSWIN_CHECK_DIR  rfc2435,C:\Program Files (x86)\GnuWin32\include\
+dnl MSWIN_CHECK_DIR  rfc2435,%ProgramFiles%\GnuWin32\include\
+dnl MSWIN_CHECK_DIR  rfc2435,%ProgramW6432%\GnuWin32\include\
 OPAL_SIMPLE_OPTION(rfc2435,OPAL_RFC2435, [whether to enable RFC2435 support (experimental)], [OPAL_VIDEO])
 
 dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation
