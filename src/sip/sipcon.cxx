@@ -234,6 +234,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_responseFailTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseTimeout)
   , m_responseRetryTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
+  , m_inviteCollisionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteCollision)
   , m_referInProgress(false)
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
@@ -1513,6 +1514,12 @@ void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
 }
 
 
+void SIPConnection::OnInviteCollision()
+{
+  SendReINVITE(PTRACE_PARAM("resend after pending received"));
+}
+
+
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
   bool startImmediate = !m_handlingINVITE && m_pendingInvitations.IsEmpty();
@@ -2417,7 +2424,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
 
     case SIP_PDU::Failure_RequestPending :
-      SendReINVITE(PTRACE_PARAM("resend after pending received"));
+      m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(0, 2000));
       break;
 
     default :

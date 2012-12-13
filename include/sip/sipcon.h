@@ -665,6 +665,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     void OnSessionTimeout();
     void OnInviteResponseRetry();
     void OnInviteResponseTimeout();
+    void OnInviteCollision();
 
     virtual bool OnSendOfferSDP(
       SDPSessionDescription & sdpOut,
@@ -784,6 +785,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     PoolTimer      m_responseFailTimer;
     PoolTimer      m_responseRetryTimer;
     unsigned       m_responseRetryCount;
+    PoolTimer      m_inviteCollisionTimer;
 
     bool                      m_referInProgress;
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
