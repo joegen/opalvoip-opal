@@ -2417,10 +2417,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
 
     case SIP_PDU::Failure_RequestPending :
-      m_handlingINVITE = false;
-      if (StartPendingReINVITE())
-        return;
-      // Is real error then
+      SendReINVITE(PTRACE_PARAM("resend after pending received"));
       break;
 
     default :
