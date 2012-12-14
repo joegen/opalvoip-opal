@@ -2425,7 +2425,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_RequestPending :
       m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(1, 2000));
-      break;
+      return;
 
     default :
       switch (responseClass) {
