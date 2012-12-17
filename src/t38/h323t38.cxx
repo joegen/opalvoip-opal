@@ -107,7 +107,7 @@ H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
                                                 unsigned int sessionID,
                              const H245_H2250LogicalChannelParameters * params) const
 {
-  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params, NULL);
+  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params);
 }
 
 
@@ -242,7 +242,7 @@ H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & conn
                                                 unsigned int sessionID,
                              const H245_H2250LogicalChannelParameters * params) const
 {
-  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params, NULL);
+  return connection.CreateRealTimeLogicalChannel(*this, direction, sessionID, params);
 }
 
 

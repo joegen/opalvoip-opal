@@ -56,19 +56,6 @@ class RTCP_XR_Metrics;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// class to hold the QoS definitions for an RTP channel
-
-class RTP_QOS : public PObject
-{
-  PCLASSINFO(RTP_QOS,PObject);
-  public:
-    PQoS dataQoS;
-    PQoS ctrlQoS;
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
@@ -141,11 +128,6 @@ class OpalRTPSession : public OpalMediaSession
     /**Get current time units of the jitter buffer.
      */
     unsigned GetJitterTimeUnits() const { return m_timeUnits; }
-
-#if P_QOS
-    /**Modifies the QOS specifications for this RTP session*/
-    virtual bool ModifyQOS(RTP_QOS *);
-#endif
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
@@ -569,7 +551,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
-    virtual void ApplyQOS(const PIPSocket::Address & addr);
     virtual bool InternalReadData(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
@@ -698,7 +679,6 @@ class OpalRTPSession : public OpalMediaSession
 
     bool m_shutdownRead;
     bool m_shutdownWrite;
-    bool m_appliedQOS;
     bool m_remoteBehindNAT;
     bool m_localHasRestrictedNAT;
     bool m_firstControl;
