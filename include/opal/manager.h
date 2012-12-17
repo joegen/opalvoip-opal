@@ -1556,21 +1556,11 @@ class OpalManager : public PObject
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
-    BYTE GetMediaTypeOfService() const { return m_defaultMediaTypeOfService; }
+    BYTE GetMediaTypeOfService() const;
 
     /**Set the IP Type Of Service byte for media (eg RTP) channels.
      */
-    void SetMediaTypeOfService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
-
-    /**Get the IP Type Of Service byte for RTP channels.
-       Deprecated, use OpalManager::GetMediaTypeOfService().
-     */
-    BYTE P_DEPRECATED GetRtpIpTypeofService() const { return m_defaultMediaTypeOfService; }
-
-    /**Set the IP Type Of Service byte for RTP channels.
-       Deprecated, use OpalManager::SetMediaTypeOfService().
-     */
-    void P_DEPRECATED SetRtpIpTypeofService(unsigned tos) { m_defaultMediaTypeOfService = (BYTE)tos; }
+    void SetMediaTypeOfService(unsigned tos);
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
@@ -1579,6 +1569,14 @@ class OpalManager : public PObject
     /**Set the IP Type Of Service byte for media (eg RTP) channels.
      */
     void SetMediaTypeOfService(const OpalMediaType & type, unsigned tos);
+
+    /**Get the IP Quality of Service info for media (eg RTP) channels.
+     */
+    const PIPSocket::QoS & GetMediaQoS(const OpalMediaType & type) const;
+
+    /**Set the IP Quality of Service info for media (eg RTP) channels.
+     */
+    void SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos);
 
     /**Get the maximum transmitted RTP payload size.
        Defaults to maximum safe MTU size (576 bytes as per RFC879) minus the
@@ -1911,8 +1909,8 @@ class OpalManager : public PObject
     PString       defaultUserName;
     PString       defaultDisplayName;
 
-    BYTE                     m_defaultMediaTypeOfService;
-    std::map<OpalMediaType, BYTE> m_mediaTypeOfService;
+    typedef std::map<OpalMediaType, PIPSocket::QoS> MediaQoSMap;
+    mutable MediaQoSMap m_mediaQoS;
 
     OpalConnection::StringOptions m_defaultConnectionOptions;
 

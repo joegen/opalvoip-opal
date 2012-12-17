@@ -595,7 +595,8 @@ class OptionsDialog : public wxDialog
     // Networking fields
     wxString        m_RxBandwidth;
     wxString        m_TxBandwidth;
-    int             m_RTPTOS;
+    int             m_DiffServAudio;
+    int             m_DiffServVideo;
     int             m_MaxRtpPayloadSize;
 #if OPAL_PTLIB_SSL
     PwxString       m_CertificateAuthority;
