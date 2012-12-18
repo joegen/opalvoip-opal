@@ -2680,6 +2680,19 @@ SIPTransactionOwner::~SIPTransactionOwner()
 }
 
 
+OpalTransportAddress SIPTransactionOwner::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  SIPURL proxy = GetProxy();
+  if (!proxy.IsEmpty())
+    return proxy.GetTransportAddress(dnsEntry);
+
+  if (!m_proxy.IsEmpty())
+    return m_proxy.GetTransportAddress(dnsEntry);
+
+  return GetTargetURI().GetTransportAddress(dnsEntry);
+}
+
+
 unsigned SIPTransactionOwner::GetAllowedMethods() const
 {
   return m_endpoint.GetAllowedMethods();

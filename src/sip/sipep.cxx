@@ -236,29 +236,18 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
                                             SIP_PDU::StatusCodes & reason)
 {
   SIPURL targetURI = transactor.GetTargetURI();
-  PString domain = targetURI.GetHostPort();
-  PString localInterface = transactor.GetInterface();
-  PINDEX dnsEntry = transactor.GetDNSEntry();
-  OpalTransportAddress remoteAddress;
 
-  SIPURL proxy = transactor.GetProxy();
-  if (!proxy.IsEmpty())
-    remoteAddress = proxy.GetTransportAddress(dnsEntry);
-  else if (!m_proxy.IsEmpty())
-    remoteAddress = m_proxy.GetTransportAddress(dnsEntry);
-  else {
-    remoteAddress = targetURI.GetTransportAddress(dnsEntry);
-    if (remoteAddress.IsEmpty()) {
-      for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
-        if (handler == NULL) {
-          reason = SIP_PDU::Local_CannotMapScheme;
-          PTRACE(1, "SIP\tCannot use " << targetURI.GetScheme() << " URI without phone-context or existing registration.");
-          return NULL;
-        }
-        if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
-          remoteAddress = handler->GetTargetURI().GetTransportAddress();
-          break;
-        }
+  OpalTransportAddress remoteAddress = transactor.GetRemoteTransportAddress(transactor.GetDNSEntry());
+  if (remoteAddress.IsEmpty()) {
+    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
+      if (handler == NULL) {
+        reason = SIP_PDU::Local_CannotMapScheme;
+        PTRACE(1, "SIP\tCannot use " << targetURI.GetScheme() << " URI without phone-context or existing registration.");
+        return NULL;
+      }
+      if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
+        remoteAddress = handler->GetTargetURI().GetTransportAddress();
+        break;
       }
     }
   }
@@ -273,11 +262,13 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
   if (transport == NULL) {
     // No link, so need to create one
     OpalTransportAddress localAddress;
+    PString localInterface = transactor.GetInterface();
     if (!localInterface.IsEmpty()) {
       if (localInterface != "*") // Nasty kludge to get around infinite recursion in REGISTER
         localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
     }
     else {
+      PString domain = targetURI.GetHostPort();
       PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
       if (handler != NULL) {
         localAddress = handler->GetInterface();
@@ -333,7 +324,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     return NULL;
   }
 
-  if (!transport->IsAuthenticated(domain)) {
+  if (!transport->IsAuthenticated(targetURI.GetHostName())) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = SIP_PDU::Local_NotAuthenticated;
     transport->CloseWait();

@@ -3072,6 +3072,24 @@ void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & /*r
 }
 
 
+OpalTransportAddress SIPConnection::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  return m_dialog.GetRemoteTransportAddress(dnsEntry);
+}
+
+
+SIPURL SIPConnection::GetTargetURI() const
+{
+  return m_dialog.GetRequestURI();
+}
+
+
+PString SIPConnection::GetAuthID() const
+{
+  return m_dialog.GetLocalURI().GetUserName();
+}
+
+
 void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 {
   GetEndPoint().OnStartTransaction(*this, transaction);

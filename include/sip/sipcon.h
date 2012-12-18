@@ -647,8 +647,9 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     );
 
     // Overrides from SIPTransactionOwner
-    virtual SIPURL GetTargetURI() const { return m_dialog.GetRequestURI(); }
-    virtual PString GetAuthID() const { return m_dialog.GetLocalURI().GetUserName(); }
+    virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
+    virtual SIPURL GetTargetURI() const;
+    virtual PString GetAuthID() const;
 
 
     virtual void OnStartTransaction(SIPTransaction & transaction);
