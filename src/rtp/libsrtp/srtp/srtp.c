@@ -1787,10 +1787,7 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
   }
 
   /* we've passed the authentication check, so add seq_num to the rdb */
-  rdb_add_index(&stream->rtcp_rdb, seq_num);
-    
-    
-  return err_status_ok;  
+  return rdb_add_index(&stream->rtcp_rdb, seq_num);
 }
 
 
