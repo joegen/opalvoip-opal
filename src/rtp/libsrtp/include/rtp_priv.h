@@ -1,15 +1,14 @@
 /*
- * gf2_8.h
+ * rtp_priv.h
  *
- * GF(256) implementation
+ * private, internal header file for RTP
  *
  * David A. McGrew
  * Cisco Systems, Inc.
  */
-
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -44,36 +43,32 @@
  */
 
 
-#ifndef GF2_8_H
-#define GF2_8_H
+#ifndef RTP_PRIV_H
+#define RTP_PRIV_H
 
-#include "datatypes.h"  /* for uint8_t definition */
+#include "srtp_priv.h"
+#include "rtp.h"
 
-typedef uint8_t gf2_8;
+typedef srtp_hdr_t rtp_hdr_t;
 
-#define gf2_8_field_polynomial 0x1B
+typedef struct {
+  srtp_hdr_t header;        
+  char body[RTP_MAX_BUF_LEN];  
+} rtp_msg_t;
 
-/*
- * gf2_8_shift(x) returns 
- */
+typedef struct rtp_sender_ctx_t {
+  rtp_msg_t message;         
+  int socket;
+  srtp_ctx_t *srtp_ctx;
+  struct sockaddr_in addr;   /* reciever's address */
+} rtp_sender_ctx_t;
 
-/*
- * gf2_8_shift(z) returns the result of the GF(2^8) 'multiply by x' 
- * operation, using the field representation from AES; that is, the 
- * next gf2_8 value in the cyclic representation of that field.  The 
- * value z should be an uint8_t.
- */
+typedef struct rtp_receiver_ctx_t {
+  rtp_msg_t message;
+  int socket;
+  srtp_ctx_t *srtp_ctx;
+  struct sockaddr_in addr;   /* receiver's address */
+} rtp_receiver_ctx_t;
 
-#define gf2_8_shift(z) (((z) & 128) ? \
-       (((z) << 1) ^ gf2_8_field_polynomial) : ((z) << 1))
 
-gf2_8
-gf2_8_compute_inverse(gf2_8 x);
-
-void
-test_gf2_8(void);
-
-gf2_8
-gf2_8_multiply(gf2_8 x, gf2_8 y);
-
-#endif /* GF2_8_H */
+#endif /* RTP_PRIV_H */

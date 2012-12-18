@@ -1,15 +1,14 @@
 /*
- * gf2_8.h
+ * getopt.h
  *
- * GF(256) implementation
+ * interface to a minimal implementation of the getopt() function,
+ * written so that test applications that use that function can run on
+ * non-POSIX platforms
  *
- * David A. McGrew
- * Cisco Systems, Inc.
  */
-
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -43,37 +42,19 @@
  *
  */
 
+#ifndef GETOPT_S_H
+#define GETOPT_S_H
 
-#ifndef GF2_8_H
-#define GF2_8_H
-
-#include "datatypes.h"  /* for uint8_t definition */
-
-typedef uint8_t gf2_8;
-
-#define gf2_8_field_polynomial 0x1B
-
-/*
- * gf2_8_shift(x) returns 
+/* 
+ * getopt_s(), optarg_s, and optind_s are small, locally defined
+ * versions of the POSIX standard getopt() interface.
  */
+ 
+int
+getopt_s(int argc, char * const argv[], const char *optstring);
 
-/*
- * gf2_8_shift(z) returns the result of the GF(2^8) 'multiply by x' 
- * operation, using the field representation from AES; that is, the 
- * next gf2_8 value in the cyclic representation of that field.  The 
- * value z should be an uint8_t.
- */
+extern char *optarg_s;    /* defined in getopt.c */
 
-#define gf2_8_shift(z) (((z) & 128) ? \
-       (((z) << 1) ^ gf2_8_field_polynomial) : ((z) << 1))
+extern int optind_s;      /* defined in getopt.c */
 
-gf2_8
-gf2_8_compute_inverse(gf2_8 x);
-
-void
-test_gf2_8(void);
-
-gf2_8
-gf2_8_multiply(gf2_8 x, gf2_8 y);
-
-#endif /* GF2_8_H */
+#endif /* GETOPT_S_H */
