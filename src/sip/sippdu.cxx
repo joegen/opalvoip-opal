@@ -1871,6 +1871,9 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 
 PString SIP_PDU::CreateVia()
 {
+  if (m_transport == NULL)
+    return PString::Empty();
+
   OpalTransportAddress via = m_transport->GetLocalAddress();
 
   PCaselessString proto = via.GetProtoPrefix();

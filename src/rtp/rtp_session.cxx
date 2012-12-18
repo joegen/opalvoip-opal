@@ -1581,14 +1581,16 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionId, 
                                                     bool isSource)
 {
-  PIPSocket::QoS qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
-  qos.m_receive.m_maxBandwidth = mediaFormat.GetMaxBandwidth();
-  qos.m_receive.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption());
-  qos.m_transmit.m_maxBandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
-  qos.m_transmit.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
-  qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 500000;
-  qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000;
-  m_dataSocket->SetQoS(qos);
+  if (m_dataSocket != NULL) {
+    PIPSocket::QoS qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
+    qos.m_receive.m_maxBandwidth = mediaFormat.GetMaxBandwidth();
+    qos.m_receive.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption());
+    qos.m_transmit.m_maxBandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
+    qos.m_transmit.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
+    qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 500000;
+    qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000;
+    m_dataSocket->SetQoS(qos);
+  }
 
   if (PAssert(m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
     return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection),
