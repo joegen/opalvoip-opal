@@ -311,14 +311,7 @@ void SIPConnection::OnApplyStringOptions()
 
 bool SIPConnection::GarbageCollection()
 {
-  if (!CleanPendingTransactions())
-    return false;
-
-  // Remove all the references to the transactions so garbage can be collected
-  m_pendingInvitations.RemoveAll();
-  m_forkedInvitations.RemoveAll();
-
-  return OpalConnection::GarbageCollection();
+  return CleanPendingTransactions() && OpalConnection::GarbageCollection();
 }
 
 
@@ -432,6 +425,10 @@ void SIPConnection::OnReleased()
   // Abort the queued up re-INVITEs we never got a chance to send.
   for (PSafePtr<SIPTransaction> invitation(m_pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
     invitation->Abort();
+
+  // Remove all the references to the transactions so garbage can be collected
+  m_pendingInvitations.RemoveAll();
+  m_forkedInvitations.RemoveAll();
 
   // No termination event set yet, get it from the call end reason
   if (notifyDialogEvent == SIPDialogNotification::NoEvent) {
