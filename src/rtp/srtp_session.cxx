@@ -60,8 +60,8 @@ class PNatMethod;
 //
 
 #ifdef _MSC_VER
+#define uint32_t uint32_t
 #include <srtp.h>
-#pragma warning(default:LIBSRTP_DISABLED_MSVC_WARNINGS)
 #pragma comment(lib, "ws2_32.lib") // As libsrtp uses htonl etc
 #else
 #include <srtp/srtp.h>
@@ -71,7 +71,7 @@ class PNatMethod;
 struct OpalLibSRTP::Context
 {
   Context();
-  ~Context() { Close(); }
+  ~Context();
 
   bool Open(DWORD ssrc, OpalMediaCryptoKeyList & keys);
   bool Change(DWORD from_ssrc, DWORD to_ssrc);
@@ -81,6 +81,7 @@ struct OpalLibSRTP::Context
   bool UnprotectRTP(RTP_DataFrame & frame);
   bool UnprotectRTCP(RTP_ControlFrame & frame);
 
+  OpalSRTPKeyInfo * m_keyInfo;
   struct srtp_ctx_t * m_ctx;
   BYTE m_key_salt[32]; // libsrtp vague on size, looking at source code, says 32 bytes
 #if PTRACING
@@ -473,6 +474,7 @@ bool OpalLibSRTP::Context::Open(DWORD ssrc, OpalMediaCryptoKeyList & keys)
       keys.AllowDeleteObjects();
       keys.RemoveAll();
       keys.Append(keyInfo);
+      m_keyInfo = new OpalSRTPKeyInfo(*keyInfo);
       return true;
     }
 
@@ -499,13 +501,21 @@ bool OpalLibSRTP::Context::Change(DWORD from_ssrc, DWORD to_ssrc)
 
 
 OpalLibSRTP::Context::Context()
+  : m_keyInfo(NULL)
 #if PTRACING
-  : m_firstRTP(true)
+  , m_firstRTP(true)
   , m_firstRTCP(true)
 #endif
 {
   CHECK_ERROR(srtp_create,(&m_ctx, NULL));
   memset(m_key_salt, 0, sizeof(m_key_salt));
+}
+
+
+OpalLibSRTP::Context::~Context()
+{
+  Close();
+  delete m_keyInfo;
 }
 
 
@@ -636,6 +646,15 @@ bool OpalSRTPSession::Close()
   m_rx->Close();
   m_tx->Close();
   return OpalRTPSession::Close();
+}
+
+
+OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
+{
+  if (m_offeredCryptokeys.IsEmpty() && m_rx->m_keyInfo != NULL)
+    m_offeredCryptokeys.Append(new OpalSRTPKeyInfo(*m_rx->m_keyInfo));
+
+  return OpalRTPSession::GetOfferedCryptoKeys();
 }
 
 
