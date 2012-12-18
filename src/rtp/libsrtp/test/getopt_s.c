@@ -1,10 +1,10 @@
 /*
- * env.c
+ * getopt.c
  *
- * prints out a brief report on the build environment
+ * a minimal implementation of the getopt() function, written so that
+ * test applications that use that function can run on non-POSIX
+ * platforms 
  *
- * David McGrew
- * Cisco Systems, Inc.
  */
 /*
  *	
@@ -42,58 +42,71 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>     /* for srtcmp() */
-#include "config.h"
+#include <stdlib.h>  /* for NULL */
 
-int 
-main(void) {
-  int err_count = 0;
-  char *str;
+int optind_s = 0;
 
-#ifdef WORDS_BIGENDIAN
-  printf("CPU set to big-endian\t\t\t(WORDS_BIGENDIAN == 1)\n");
-#else
-  printf("CPU set to little-endian\t\t(WORDS_BIGENDIAN == 0)\n");
-#endif
+char *optarg_s;
 
-#ifdef CPU_RISC
-  printf("CPU set to RISC\t\t\t\t(CPU_RISC == 1)\n");
-#elif defined(CPU_CISC)
-  printf("CPU set to CISC\t\t\t\t(CPU_CISC == 1)\n");
-#else
-  printf("CPU set to an unknown type, probably due to a configuration error\n");
-  err_count++;
-#endif
+#define GETOPT_FOUND_WITHOUT_ARGUMENT    2
+#define GETOPT_FOUND_WITH_ARGUMENT       1
+#define GETOPT_NOT_FOUND                 0 
 
-#ifdef CPU_ALTIVEC
-  printf("CPU set to ALTIVEC\t\t\t\t(CPU_ALTIVEC == 0)\n");
-#endif
+static int 
+getopt_check_character(char c, const char *string) {
+  unsigned int max_string_len = 128;
 
-#ifndef NO_64BIT_MATH
-  printf("using native 64-bit type\t\t(NO_64_BIT_MATH == 0)\n");
-#else
-  printf("using built-in 64-bit math\t\t(NO_64_BIT_MATH == 1)\n");
-#endif
-
-#ifdef ERR_REPORTING_STDOUT
-  printf("using stdout for error reporting\t(ERR_REPORTING_STDOUT == 1)\n");
-#endif
-
-#ifdef DEV_URANDOM
-  str = DEV_URANDOM;
-#else
-  str = "";
-#endif
-  printf("using %s as a random source\t(DEV_URANDOM == %s)\n",
-	 str, str);
-  if (strcmp("", str) == 0) {
-    err_count++;
+  while (*string != 0) {
+    if (max_string_len == 0) {
+      return '?';
+    }
+    if (*string++ == c) {
+      if (*string == ':') {
+	return GETOPT_FOUND_WITH_ARGUMENT;
+      } else {
+	return GETOPT_FOUND_WITHOUT_ARGUMENT;
+      }
+    }
   }
-  
-  if (err_count)
-    printf("warning: configuration is probably in error "
-	   "(found %d problems)\n", err_count);
+  return GETOPT_NOT_FOUND;
+}
 
-  return err_count;
+int
+getopt_s(int argc, 
+       char * const argv[], 
+       const char *optstring) {
+
+
+  while (optind_s + 1 < argc) {
+    char *string;
+    
+    /* move 'string' on to next argument */
+    optind_s++;
+    string = argv[optind_s];
+
+    if (string == NULL)
+      return '?'; /* NULL argument string */
+
+    if (string[0] != '-')
+      return -1; /* found an unexpected character */
+
+    switch(getopt_check_character(string[1], optstring)) {
+    case GETOPT_FOUND_WITH_ARGUMENT:
+      if (optind_s + 1 < argc) {
+	optind_s++;
+	optarg_s = argv[optind_s];
+	return string[1]; 
+      } else {
+	return '?';  /* argument missing */
+      }
+    case GETOPT_FOUND_WITHOUT_ARGUMENT:
+      return string[1];
+    case GETOPT_NOT_FOUND:
+    default:
+      return '?'; /* didn't find expected character */
+      break;
+    }
+  }
+
+  return -1;
 }

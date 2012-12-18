@@ -672,3 +672,9 @@ EXPORTS
     _x917_prng_deinit @58109 NONAME
     _x917_prng_get_octet_string @58110 NONAME
     _x917_prng_init @58111 NONAME
+    _append_salt_to_key @1 NONAME
+    _crypto_policy_set_from_profile_for_rtcp @1 NONAME
+    _crypto_policy_set_from_profile_for_rtp @1 NONAME
+    _srtp_profile_get_master_key_length @1 NONAME
+    _srtp_profile_get_master_salt_length @1 NONAME
+    _srtp_stream_init_keys @1 NONAME

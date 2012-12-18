@@ -1091,9 +1091,6 @@
     <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\win32\config.h">
-      <Filter>Source Files\RTP\libSRTP\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto.h">
       <Filter>Source Files\RTP\libSRTP\Headers</Filter>
     </ClInclude>
@@ -1181,6 +1178,9 @@
     <ClInclude Include="..\..\include\ep\opalmixer.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\config.h">
+      <Filter>Source Files\RTP\libSRTP</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal\buildopts.h.in">
@@ -1188,6 +1188,9 @@
     </CustomBuild>
     <CustomBuild Include="..\..\revision.h.in">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\rtp\libsrtp\config.hw">
+      <Filter>Source Files\RTP\libSRTP</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
