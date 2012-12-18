@@ -852,7 +852,6 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   else {
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
     localMedia->SetDirection((SDPMediaDescription::Direction)(3&(unsigned)GetAutoStart(mediaType)));
-    localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
   }
 
   if (mediaType == OpalMediaType::Audio()) {
@@ -863,6 +862,8 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
+
+  localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
 
   sdp.AddMediaDescription(localMedia);
 

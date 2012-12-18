@@ -1279,15 +1279,19 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
 void SDPRTPAVPMediaDescription::SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys)
 {
   m_cryptoSuites.RemoveAll();
-  unsigned tag = 1;
+
+  unsigned nextTag = 1;
   for (OpalMediaCryptoKeyList::iterator it = cryptoKeys.begin(); it != cryptoKeys.end(); ++it) {
+    unsigned tag = it->GetTag().AsUnsigned();
+    if (tag == 0)
+      tag = nextTag;
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(tag);
     if (!cryptoSuite->SetKeyInfo(*it))
       delete cryptoSuite;
     else {
       m_cryptoSuites.Append(cryptoSuite);
-      it->SetTag(cryptoSuite->GetTag());
-      ++tag;
+      it->SetTag(tag);
+      nextTag = tag + 1;
     }
   }
 }
