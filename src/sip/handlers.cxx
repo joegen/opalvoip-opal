@@ -836,6 +836,12 @@ SIPHandlerWithDialog::SIPHandlerWithDialog(SIP_PDU::Methods method,
 }
 
 
+OpalTransportAddress SIPHandlerWithDialog::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  return m_dialog.GetRemoteTransportAddress(dnsEntry);
+}
+
+
 SIPURL SIPHandlerWithDialog::GetTargetURI() const
 {
   return m_dialog.GetRequestURI();
