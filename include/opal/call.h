@@ -602,6 +602,7 @@ class OpalCall : public PSafeObject
     PTime   startTime;
     bool    isEstablished;
     bool    isClearing;
+    PAtomicBoolean m_isCleared;
 
     OpalConnection::CallEndReason callEndReason;
     std::list<PSyncPoint *> m_endCallSyncPoint;
